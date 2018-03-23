@@ -539,7 +539,6 @@ begin
     if bc_arr && array[
         'national_government',
         'regional_and_state_government',
-        'us_territory_or_possession',
         'local_government',
         'indian_native_american_tribal_government',
         'authorities_and_commissions',

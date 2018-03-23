@@ -610,8 +610,7 @@ def get_business_categories(row, data_type):
                 or legal_entity_bool_dict['planning_commission'] is True:
             business_category_set.add('authorities_and_commissions')
 
-        if business_category_set & {'national_government', 'regional_and_state_government',
-                                    'us_territory_or_possession', 'local_government',
+        if business_category_set & {'national_government', 'regional_and_state_government', 'local_government',
                                     'indian_native_american_tribal_government', 'authorities_and_commissions',
                                     'interstate_entity', 'council_of_governments'}:
             business_category_set.add('government')
