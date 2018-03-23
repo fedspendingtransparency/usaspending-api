@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+import csv
 
 from collections import OrderedDict
 from django.conf import settings
@@ -72,7 +73,7 @@ def generate_csvs(download_job, sqs_message=None):
     file_name = start_download(download_job)
     try:
         # Create temporary files and working directory
-        file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
+        file_path = settings.CSV_LOCAL_PATH + file_name
         working_dir = os.path.splitext(file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
@@ -113,7 +114,7 @@ def generate_csvs(download_job, sqs_message=None):
         raise Exception(download_job.error_message)
     finally:
         # Remove generated file
-        if os.path.exists(file_path):
+        if not settings.IS_LOCAL and os.path.exists(file_path):
             os.remove(file_path)
 
     return finish_download(download_job)
@@ -165,11 +166,22 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job, message)
 
+        # The process below modifies the download job and thus cannot be in a separate process
+        # Assuming the process to count the number of lines in a CSV file takes less than DOWNLOAD_VISIBILITY_TIMEOUT
+        #  in case the visibility times out before then
+        if message:
+            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+        # Log how many rows we have
+        with open(source_path, 'r') as source_csv:
+            download_job.number_of_rows += sum(1 for row in csv.reader(source_csv)) - 1
+            download_job.save()
+
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
                                                                                download_job,))
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job, message)
+        download_job.save()
     except Exception as e:
         raise e
     finally:
