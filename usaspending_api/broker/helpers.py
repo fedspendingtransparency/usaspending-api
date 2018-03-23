@@ -506,6 +506,9 @@ def get_business_categories(row, data_type):
         if legal_entity_bool_dict['foreign_government'] is True:
             business_category_set.add('foreign_government')
 
+        if legal_entity_bool_dict['international_organization'] is True:
+            business_category_set.add('international_organization')
+
         if legal_entity_bool_dict['domestic_shelter'] is True:
             business_category_set.add('domestic_shelter')
 
