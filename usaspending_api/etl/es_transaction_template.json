@@ -6,6 +6,20 @@
     "index": {
       "number_of_shards" : 3,
       "number_of_replicas" : 1
+    },
+    "analysis": {
+      "analyzer": {
+        "stemmer_analyzer": {
+            "tokenizer": "standard",
+            "filter": ["standard", "lowercase", "singular_stemmer"]
+        }
+      },
+      "filter": {
+        "singular_stemmer": {
+          "type": "stemmer",
+          "name": "minimal_english"
+        }
+      }
     }
   },
   "sort": {
@@ -60,7 +74,8 @@
           "type": "text"
         },
         "award_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "stemmer_analyzer"
         },
 
         "product_or_service_code": {
