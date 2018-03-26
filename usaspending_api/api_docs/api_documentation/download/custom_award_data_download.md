@@ -21,14 +21,14 @@ This route sends a request to the backend to begin generating a zipfile of award
         },
         "recipient_locations": [
             {
-        	"country": "USA",
+            "country": "USA",
             "state": "VA",
             "county": "059"
             }
         ],
         "place_of_performance_locations": [
             {
-        	"country": "USA",
+            "country": "USA",
             "state": "VA",
             "county": "059"
             }
