@@ -367,9 +367,16 @@ class LegalEntity(DataSourceTrackedModel):
 
     Possible entries:
 
-    business
+    category_business
     - small_business
     - other_than_small_business
+    - corporate_entity_tax_exempt
+    - corporate_entity_not_tax_exempt
+    - partnership_or_limited_liability_partnership
+    - sole_proprietorship
+    - manufacturer_of_goods
+    - subchapter_s_corporation
+    - limited_liability_corporation
 
     minority_owned_business
     - alaskan_native_owned_business
@@ -410,20 +417,29 @@ class LegalEntity(DataSourceTrackedModel):
     - foreign_owned_and_located_business
     - foreign_government
     - international_organization
+    - domestic_shelter
+    - hospital
+    - veterinary_hospital
 
     nonprofit
     - foundation
     - community_development_corporations
 
     higher_education
+    - educational_institution
     - public_institution_of_higher_education
     - private_institution_of_higher_education
     - minority_serving_institution_of_higher_education
+    - school_of_forestry
+    - veterinary_college
 
     government
     - national_government
+    - interstate_entity
     - regional_and_state_government
+    - regional_organization
     - us_territory_or_possession
+    - council_of_governments
     - local_government
     - indian_native_american_tribal_government
     - authorities_and_commissions
