@@ -16,6 +16,7 @@ from rest_framework.exceptions import NotFound
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
+from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
@@ -112,6 +113,15 @@ class BaseDownloadViewSet(APIDocumentationView):
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
         json_request['filters']['award_type_codes'] = filters['award_type_codes']
+
+        # Validate locations
+        for location_filter in ['place_of_performance_locations', 'recipient_locations']:
+            if filters.get(location_filter):
+                for location_dict in filters[location_filter]:
+                    if not isinstance(location_dict, dict):
+                        raise InvalidParameterException('Location is not a dictionary: {}'.format(location_dict))
+                    location_error_handling(location_dict.keys())
+                json_request['filters'][location_filter] = filters[location_filter]
 
         # Validate time periods
         total_range_count = validate_time_periods(filters, json_request)
@@ -226,7 +236,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 
         # Validate keyword search first, remove all other filters
         if 'keyword' in filters and len(filters.keys()) == 1:
-
             request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
             return
 
@@ -268,7 +277,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 del filters['sub_agency']
             else:
                 filters['agencies'] = [{'type': 'awarding', 'tier': 'toptier', 'name': toptier_name}]
-
         del filters['agency']
 
         request_data['filters'] = filters
