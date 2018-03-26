@@ -99,6 +99,22 @@ class DataJob:
 # ==============================================================================
 
 
+def process_guarddog(process_list):
+    """
+        pass in a list of multiprocess Process objects.
+        If one errored then terminate the others and return True
+    """
+    for proc in process_list:
+        # If exitcode is None, process is still running. exit code 0 is normal
+        if proc.exitcode not in (None, 0):
+            msg = 'TERMINATING ALL PROCESSES AND QUITTING' + \
+                '{} exited with error. Returned {}'.format(proc.name, proc.exitcode)
+            printf({'msg': msg})
+            [x.terminate() for x in process_list]
+            return True
+    return False
+
+
 def configure_sql_strings(config, filename, deleted_ids):
     '''
     Populates the formatted strings defined globally in this file to create the desired SQL
@@ -156,7 +172,7 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     while not fetch_jobs.empty():
         if done_jobs.full():
-            printf({'msg': 'Waiting 60s reduce temporary disk space used', 'f': 'Download'})
+            printf({'msg': 'Paused downloading new CSVs so ES index process can catch up', 'f': 'Download'})
             sleep(60)
         else:
             start = perf_counter()
@@ -202,7 +218,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
             'msg': msg.format(count, download_count, filename),
             'job': job_id,
             'f': 'Download'})
-
+        raise SystemExit
     return count
 
 

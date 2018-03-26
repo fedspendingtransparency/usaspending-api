@@ -15,6 +15,7 @@ from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.es_etl_helpers import process_guarddog
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -109,7 +110,7 @@ class Command(BaseCommand):
     def controller(self):
 
         download_queue = Queue()  # Queue for jobs whch need a csv downloaded
-        es_ingest_queue = Queue(10)  # Queue for jobs which have a csv and are ready for ES ingest
+        es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_id = 0
         for fy in self.config['fiscal_years']:
@@ -141,25 +142,37 @@ class Command(BaseCommand):
 
         printf({'msg': 'There are {} jobs to process'.format(job_id)})
 
-        if self.config['provide_deleted']:
-            s3_delete_process = Process(target=deleted_transactions, args=(ES, self.config))
-        download_proccess = Process(target=download_db_records, args=(download_queue, es_ingest_queue, self.config))
-        es_index_process = Process(target=es_data_loader, args=(ES, download_queue, es_ingest_queue, self.config))
+        process_list = []
+        process_list.append(Process(
+            name='Download Proccess',
+            target=download_db_records,
+            args=(download_queue, es_ingest_queue, self.config)))
+        process_list.append(Process(
+            name='ES Index Process',
+            target=es_data_loader,
+            args=(ES, download_queue, es_ingest_queue, self.config)))
 
-        download_proccess.start()
+        process_list[0].start()
 
         if self.config['provide_deleted']:
-            s3_delete_process.start()
-            while s3_delete_process.is_alive():
+            process_list.append(Process(
+                name='S3 Deleted Records Scrapper Process',
+                target=deleted_transactions,
+                args=(ES, self.config)))
+            process_list[-1].start()
+            while process_list[-1].is_alive():
                 printf({'msg': 'Waiting to start ES ingest until S3 deletes are complete'})
                 sleep(7)
 
-        es_index_process.start()
+        process_list[1].start()
 
-        if self.config['provide_deleted']:
-            s3_delete_process.join()
-        download_proccess.join()
-        es_index_process.join()
+        while True:
+            sleep(10)
+            if process_guarddog(process_list):
+                break
+            elif all([not x.is_alive() for x in process_list]):
+                printf({'msg': 'All processes completed execution with no error codes'})
+                break
 
 
 def set_config():
