@@ -2,22 +2,27 @@
   "index_patterns": ["*transactions*"],
   "settings": {
     "index.mapping.ignore_malformed": true,
-    "index.max_result_window" : 500000,
+    "index.max_result_window": 50000,
+    "index.refresh_interval": 1,
     "index": {
-      "number_of_shards" : 3,
-      "number_of_replicas" : 1
-    }
-  },
-  "sort": {
-    "fields": [
-      "transaction_amount",
-      "action_date"
-    ],
-    "order": [
-      "desc",
-      "desc"
-    ]
-  },
+      "number_of_shards": 5,
+      "number_of_replicas": 1
+    },
+    "analysis": {
+        "analyzer": {
+          "stemmer_analyzer": {
+              "tokenizer": "standard",
+              "filter": ["standard", "lowercase", "singular_stemmer"]
+          }
+        },
+        "filter": {
+          "singular_stemmer": {
+            "type": "stemmer",
+            "name": "minimal_english"
+          }
+        }
+      }
+    },
   "mappings": {
     "transaction_mapping": {
       "properties": {
@@ -27,10 +32,10 @@
         "detached_award_proc_unique": {
           "type": "text"
         },
-        "afa_generated_unique":{
+        "afa_generated_unique": {
           "type": "text"
         },
-        "generated_unique_transaction_id":{
+        "generated_unique_transaction_id": {
           "type": "text"
         },
         "display_award_id": {
@@ -60,9 +65,9 @@
           "type": "text"
         },
         "award_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "stemmer_analyzer"
         },
-
         "product_or_service_code": {
           "type": "text"
         },
@@ -78,19 +83,15 @@
         "type_description": {
           "type": "keyword",
           "fields": {
-            "raw": { 
+            "raw": {
               "type": "text"
             }
           }
         },
         "award_category": {
-            "type": "keyword",
-            "fields": {
-              "raw": { 
-                "type": "text"
-              }
-            }
-          },
+          "type": "text",
+          "index": false
+        },
         "recipient_unique_id": {
           "type": "text"
         },
@@ -100,7 +101,7 @@
         "recipient_name": {
           "type": "keyword",
           "fields": {
-            "raw": { 
+            "raw": {
               "type": "text"
             }
           }
@@ -153,7 +154,7 @@
         "awarding_toptier_agency_name": {
           "type": "keyword",
           "fields": {
-            "raw": { 
+            "raw": {
               "type": "text"
             }
           }
@@ -164,7 +165,7 @@
         "awarding_subtier_agency_name": {
           "type": "keyword",
           "fields": {
-            "raw": { 
+            "raw": {
               "type": "text"
             }
           }
@@ -206,14 +207,6 @@
           "index": false
         },
         "pulled_from": {
-            "type": "keyword",
-            "fields": {
-              "raw": { 
-                "type": "text"
-              }
-            }
-          },
-        "type": {
           "type": "text",
           "index": false
         },
@@ -267,6 +260,10 @@
         "recipient_location_congressional_code": {
           "type": "text",
           "index": false
+        },
+        "type": {
+          "type": "keyword",
+          "null_value": "NULL"
         }
       }
     }

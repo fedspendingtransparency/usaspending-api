@@ -120,6 +120,17 @@ class Command(BaseCommand):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
+        does_index_exist = ES.indices.exists(self.config['index_name'])
+        
+        if does_index_exist and not self.config['recreate']:
+            printf({'msg': 'Index exists and not recreate'})
+            raise SystemExit
+        
+        if does_index_exist and self.config['recreate']:
+            ES.indices.delete(self.config['index_name'])
+            printf({'msg': 'Deleting index {}'.format(self.config['index_name'])})
+
+
         self.controller()
         printf({'msg': '---------------------------------------------------------------'})
         printf({'msg': 'Script completed in {} seconds'.format(perf_counter() - start)})
@@ -179,9 +190,8 @@ class Command(BaseCommand):
         es_index_process.join()
 
         if self.config['recreate']:
-            print('got recreate')
+            printf({'msg': 'Closing old indices and adding aliases'})
             reset_indices(ES, self.config['index_name'], self.config['previous_index'])
-        print('done')
 
 
 def set_config():

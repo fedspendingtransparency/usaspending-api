@@ -257,7 +257,7 @@ def put_alias(client, index, alias_name, award_type_codes):
     try:
         client.indices.delete_alias(index, alias_name)
     except TransportError as e:
-        print(e)
+        printf({'msg': 'Error {}'.format(str(e)), 'job': None, 'f': 'ES Alias Put'})
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
@@ -278,11 +278,14 @@ def reset_indices(client, new_index, old_index):
     for index in old_indices:
         try:
             client.indices.delete_alias(index, '_all')
+            printf({'msg': 'Removing aliases for "{}"'.format(index), 'job': None, 'f': 'ES Alias Drop'})
+        except TransportError as e:
+            printf({'msg': 'ERROR: {}'.format(str(e)), 'job': None, 'f': 'ES Alias Drop'})
+        try:
             client.indices.close(index)
-            printf({'msg': 'Closing index "{}"'.format(index), 'job': '', 'f': 'ES Index Close'})
-        except (TransportError, Exception) as e:
-            print(e)
-            # raise SystemExit
+            printf({'msg': 'Closing index "{}"'.format(index), 'job': None, 'f': 'ES Index Close'})
+        except (Exception) as e:
+            printf({'msg': 'Failed {}'.format(str(e)), 'job': None, 'f': 'ES Ingest'})
 
     index_settings = dict(refresh_interval='1s', number_of_replicas=1)
     index_settings = dict(index=index_settings)
@@ -302,12 +305,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         printf({'msg': 'Creating index "{}"'.format(job.index), 'job':
                 job.name, 'f': 'ES Ingest'})
         client.indices.create(index=job.index, body=config['mapping'])
-        indices_to_award_types['contracts'] += ('NULL',)
-        printf({'msg': 'Creating aliases for index {}'.format(job.index), 'job': job.name, 'f': 'ES Alias Put'})
-
-    elif does_index_exist and config['recreate']:
-        printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.delete(job.index)
+        client.indices.refresh(job.index)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
