@@ -5,7 +5,9 @@ from django.conf import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
 from usaspending_api.core.elasticsearch.client import es_client_query
+
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
@@ -116,19 +118,63 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-def spending_by_transaction_count(request_data):
-    keyword = request_data['keyword']
-    response = {}
+def clean_sub_index(sub_index):
+    lookup = {"loans": "loans", "other": "other", "contract":
+              "contracts", "direct": "direct_payments", "grant": "grants", "insurance": "insurance"}
+    try:
+        return lookup[(sub_index)]
+    except KeyError:
+        logger.error('Unexpected Response')
+        return None
 
-    for category in indices_to_award_types.keys():
-        total = get_total_results(keyword, category)
-        if total is not None:
-            if category == 'directpayments':
-                category = 'direct_payments'
-            response[category] = total
-        else:
-            return total
-    return response
+
+def category_aggregation_query(keyword):
+    query = {
+            "query": {"query_string": {"query": keyword}},
+            "aggs": {
+                "award_category": {
+                    "terms": {
+                        "field": "award_category"
+                    }
+                },
+                "pulled_from": {
+                    "terms": {
+                        "field": "pulled_from"
+                    }
+                }
+            },
+            "size": 0
+        }
+    return query
+
+
+def spending_by_transaction_count(filters, retries=3):
+    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    keyword = filters['keyword']
+    query = category_aggregation_query(keyword)
+    response = es_client_query(index=index_name, body=query, retries=retries)
+    results = {key: 0 for key in award_categories}
+    pulled_from_idv = 0
+    insurance_count = 0
+    if response:
+        try:
+            pulled_from_buckets = response['aggregations']["pulled_from"]["buckets"]
+            for bucket in pulled_from_buckets:
+                if bucket["key"] == "idv":
+                    pulled_from_idv += bucket["doc_count"]
+            award_category_buckets = response['aggregations']["award_category"]["buckets"]
+            for bucket in award_category_buckets:
+                if bucket["key"] == "insurance":
+                    insurance_count += bucket["doc_count"]
+                else:
+                    results[clean_sub_index(bucket["key"])] = bucket["doc_count"]
+            results["contracts"] += pulled_from_idv
+            results["other"] += insurance_count
+            return results
+        except KeyError:
+            logger.error('Was unable to parse aggregation responses.')
+    else:
+        return None
 
 
 def get_sum_aggregation_results(keyword, field='transaction_amount'):
