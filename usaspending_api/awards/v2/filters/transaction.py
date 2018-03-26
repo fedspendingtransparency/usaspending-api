@@ -182,7 +182,7 @@ def transaction_filter(filters):
                 elif type == "awarding":
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_agency__toptier_agency__name=name)
-                    if tier == "subtier":
+                    elif tier == "subtier":
                         if 'toptier_name' in v:
                             awarding_subtier |= (Q(awarding_agency__subtier_agency__name=name) &
                                                  Q(awarding_agency__toptier_agency__name=v['toptier_name']))
