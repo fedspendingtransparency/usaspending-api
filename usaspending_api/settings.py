@@ -211,24 +211,20 @@ LOGGING = {
         'user_readable': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
             'format': "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s " +
-                      "%(response_ms)d %(message)s %(request)s %(traceback)s"
+                      "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s"
         }
     },
     'handlers': {
         'server': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/server.log'),
-            'maxBytes': 1024*1024*20,  # 20 MB
-            'backupCount': 5,
             'formatter': 'user_readable'
         },
         'console_file': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
             'formatter': 'specifics'
         },
         'console': {
@@ -241,7 +237,7 @@ LOGGING = {
         'server': {
             'handlers': ['server'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
         'console': {
             'handlers': ['console', 'console_file'],

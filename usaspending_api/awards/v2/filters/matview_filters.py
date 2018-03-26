@@ -55,8 +55,11 @@ def matview_search_filter(filters, model):
             keyword = value
             upper_kw = keyword.upper()
 
-            compound_or = Q(keyword_string__contains=upper_kw) | \
-                Q(award_id_string__contains=upper_kw) | \
+            # keyword_string & award_id_string are Postgres TS_vectors.
+            # keyword_string = recipient_name + naics_code + naics_description + psc_description + awards_description
+            # award_id_string = piid + fain + uri
+            compound_or = Q(keyword_ts_vector=keyword) | \
+                Q(award_ts_vector=keyword) | \
                 Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
@@ -97,14 +100,23 @@ def matview_search_filter(filters, model):
                     if tier == "toptier":
                         funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        funding_subtier |= Q(funding_subtier_agency_name=name)
+                        if 'toptier_name' in v:
+                            funding_subtier |= (Q(funding_subtier_agency_name=name) &
+                                                Q(funding_toptier_agency_name=v['toptier_name']))
+                        else:
+                            funding_subtier |= Q(funding_subtier_agency_name=name)
+
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        awarding_subtier |= Q(awarding_subtier_agency_name=name)
+                        if 'toptier_name' in v:
+                            awarding_subtier |= (Q(awarding_subtier_agency_name=name) &
+                                                 Q(awarding_toptier_agency_name=v['toptier_name']))
+                        else:
+                            awarding_subtier |= Q(awarding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
@@ -135,7 +147,8 @@ def matview_search_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
             upper_recipient_string = str(value[0]).upper()
 
-            filter_obj = Q(recipient_name__contains=upper_recipient_string)
+            # recipient_name_ts_vector is a postgres TS_Vector
+            filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 filter_obj |= Q(recipient_unique_id=upper_recipient_string)
@@ -182,7 +195,9 @@ def matview_search_filter(filters, model):
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(award_id_string__contains=val.upper())
+                    # award_id_string is a Postgres TS_vector
+                    # award_id_string = piid + fain + uri
+                    filter_obj |= Q(award_ts_vector=val)
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":

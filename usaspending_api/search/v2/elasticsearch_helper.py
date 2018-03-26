@@ -31,7 +31,7 @@ def swap_keys(dictionary_):
 
 
 def format_for_frontend(response):
-    '''calls reverse key from TRANSACTIONS_LOOKUP '''
+    """ calls reverse key from TRANSACTIONS_LOOKUP """
     response = [result['_source'] for result in response]
     return [swap_keys(result) for result in response]
 
@@ -92,7 +92,7 @@ def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
                         }
                     },
                     {
-                      "multi_match": {
+                      "query_string": {
                             "query": keyword,
                             "fields": fields
                         }
@@ -104,7 +104,7 @@ def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
 
 
 def search_transactions(request_data, lower_limit, limit):
-    '''
+    """
     filters: dictionary
     fields: list
     sort: string
@@ -113,11 +113,12 @@ def search_transactions(request_data, lower_limit, limit):
     limit: integer
 
     if transaction_type_code not found, return results for contracts
+
     the two queries below are for contracts and all other award types.
-    '''
+    """
     keyword = request_data['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
-    query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
+    query_fields.extend(['award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
     types = request_data['award_type_codes']
     for index, award_types in indices_to_award_types.items():
