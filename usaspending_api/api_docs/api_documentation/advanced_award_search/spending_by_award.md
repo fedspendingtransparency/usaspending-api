@@ -10,7 +10,7 @@ fields: Defines what award variables are returned in an array using the Fields p
 
 filters: Defines how the awards are filtered.  The filter object is defined here.  Each top-level key in the filter object is compounded together using AND logic. However, when multiple values are provided for a specific key, those values are compounded using OR logic.
 
-https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
+[Filter Object](../../search_filters.md)
 
 limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
 
