@@ -23,7 +23,7 @@ before_script:
 script:
 - flake8
 - pytest --cov=usaspending_api
-- python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dir='temp_sql/'
+- python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest='temp_sql/'
 - psql $DATABASE_URL -c '\timing' -f temp_sql/universal_transaction_matview.sql -v ON_ERROR_STOP=1
 - psql $DATABASE_URL -c '\timing' -f temp_sql/universal_award_matview.sql -v ON_ERROR_STOP=1
 - psql $DATABASE_URL -c '\timing' -f temp_sql/summary_transaction_view.sql -v ON_ERROR_STOP=1
