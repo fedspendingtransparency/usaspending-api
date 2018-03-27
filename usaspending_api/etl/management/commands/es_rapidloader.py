@@ -15,7 +15,7 @@ from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
-from usaspending_api.etl.es_etl_helpers import reset_indices
+from usaspending_api.etl.es_etl_helpers import swap_aliases
 from usaspending_api.etl.es_etl_helpers import printf
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
@@ -56,11 +56,6 @@ class Command(BaseCommand):
             help='Set an index name to ingest data into',
             default='staging_transactions')
         parser.add_argument(
-            '--previous_index',
-            type=str,
-            help='Set an index name to ingest data into',
-            default='-transactions')
-        parser.add_argument(
             '-d',
             '--deleted',
             action='store_true',
@@ -80,6 +75,11 @@ class Command(BaseCommand):
             '--keep',
             action='store_true',
             help='CSV files are not deleted after they are uploaded')
+        parser.add_argument(
+            '-w',
+            '--swap',
+            action='store_true',
+            help='Flag allowed to put aliases to index and close all indices with aliases associated')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -94,9 +94,9 @@ class Command(BaseCommand):
         self.config['provide_deleted'] = options['deleted']
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
+        self.config['swap'] = options['swap']
         self.config['keep'] = options['keep']
         self.config['index_name'] = options['index_name']
-        self.config['previous_index'] = options['previous_index']
 
         mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
         with open(mappingfile) as f:
@@ -184,9 +184,9 @@ class Command(BaseCommand):
         download_proccess.join()
         es_index_process.join()
 
-        if self.config['recreate']:
+        if self.config['swap']:
             printf({'msg': 'Closing old indices and adding aliases'})
-            reset_indices(ES, self.config['index_name'], self.config['previous_index'])
+            swap_aliases(ES, self.config['index_name'])
 
 
 def set_config():

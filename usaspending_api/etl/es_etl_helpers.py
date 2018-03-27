@@ -254,43 +254,44 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type='trans
 
 def put_alias(client, index, alias_name, award_type_codes):
     alias_body = {'filter': {'terms': {"type": award_type_codes}}}
-    try:
-        client.indices.delete_alias(index, alias_name)
-    except TransportError as e:
-        printf({'msg': 'Error {}'.format(str(e)), 'job': None, 'f': 'ES Alias Put'})
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def reset_indices(client, new_index, old_index):
-    client.indices.refresh(new_index)
+def swap_aliases(client, index):
+    client.indices.refresh(index)
     # add null values to contracts alias
-
     indices_to_award_types['contracts'] += ('NULL',)
+    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + '*'
+    try:
+        old_indices = client.indices.get_alias('*', alias_patterns).keys()
+    except TypeError as e:
+        printf({'msg': 'ERROR: no aliases found {} for {}'.format(str(e), alias_patterns),
+                'job': None, 'f': 'ES Alias Drop'})
+
+    for old_index in old_indices:
+        try:
+            client.indices.delete_alias(old_index, '_all')
+            client.indices.close(old_index)
+            printf({'msg': 'Removing aliases & closing "{}"'.format(old_index),
+                    'job': None, 'f': 'ES Alias Drop'})
+        except TransportError as e:
+            printf({'msg': 'ERROR: {}'.format(str(e)), 'job': None, 'f': 'ES Alias Drop'})
+
+    if client.indices.get_alias(index, '*'):
+        printf({'msg': 'Removing old aliases for index "{}"'.format(index),
+                'job': None, 'f': 'ES Alias Drop'})
+        client.indices.delete_alias(index, '_all')
 
     for award_type, award_type_codes in indices_to_award_types.items():
         alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
         printf({'msg': 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
                 'job': '', 'f': 'ES Alias Put'})
-        put_alias(client, new_index, alias_name, award_type_codes)
-
-    old_index_patterns = old_index + '*'
-    old_indices = client.indices.get(old_index_patterns).keys()
-    for index in old_indices:
-        try:
-            client.indices.delete_alias(index, '_all')
-            printf({'msg': 'Removing aliases for "{}"'.format(index), 'job': None, 'f': 'ES Alias Drop'})
-        except TransportError as e:
-            printf({'msg': 'ERROR: {}'.format(str(e)), 'job': None, 'f': 'ES Alias Drop'})
-        try:
-            client.indices.close(index)
-            printf({'msg': 'Closing index "{}"'.format(index), 'job': None, 'f': 'ES Index Close'})
-        except (Exception) as e:
-            printf({'msg': 'Failed {}'.format(str(e)), 'job': None, 'f': 'ES Ingest'})
+        put_alias(client, index, alias_name, award_type_codes)
 
     index_settings = dict(refresh_interval='1s', number_of_replicas=1)
     index_settings = dict(index=index_settings)
-    client.indices.put_settings(index_settings, new_index)
-    client.indices.refresh(new_index)
+    client.indices.put_settings(index_settings, index)
+    client.indices.refresh(index)
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
