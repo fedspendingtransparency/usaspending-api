@@ -89,7 +89,11 @@ def ingest_json(path):
 
 
 def generate_uid(characters=8, filename=None):
-    git_hash = get_git_commit(characters - 1, filename)
+    git_hash = None
+    try:
+        git_hash = get_git_commit(characters - 1, filename)
+    except Exception as e:
+        print('Error: [{}]. Continuing...'.format(e))
     if git_hash is None:
         return str(uuid4())[:characters]
     else:
