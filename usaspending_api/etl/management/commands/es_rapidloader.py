@@ -16,6 +16,7 @@ from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import swap_aliases
+from usaspending_api.etl.es_etl_helpers import take_snapshot
 from usaspending_api.etl.es_etl_helpers import printf
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
@@ -80,6 +81,10 @@ class Command(BaseCommand):
             '--swap',
             action='store_true',
             help='Flag allowed to put aliases to index and close all indices with aliases associated')
+        parser.add_argument(
+            '--save',
+            action='store_true',
+            help='Flag allowed to put aliases to index and close all indices with aliases associated')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -96,6 +101,7 @@ class Command(BaseCommand):
         self.config['stale'] = options['stale']
         self.config['swap'] = options['swap']
         self.config['keep'] = options['keep']
+        self.config['save'] = options['save']
         self.config['index_name'] = options['index_name']
 
         mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
@@ -187,6 +193,10 @@ class Command(BaseCommand):
         if self.config['swap']:
             printf({'msg': 'Closing old indices and adding aliases'})
             swap_aliases(ES, self.config['index_name'])
+
+        if self.config['save']:
+            printf({'msg': 'Taking snapshot'})
+            take_snapshot(ES, self.config['index_name'], settings.ES_REPOSITORY)
 
 
 def set_config():

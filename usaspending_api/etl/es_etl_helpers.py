@@ -260,27 +260,24 @@ def put_alias(client, index, alias_name, award_type_codes):
 def swap_aliases(client, index):
     client.indices.refresh(index)
     # add null values to contracts alias
-    indices_to_award_types['contracts'] += ('NULL',)
-    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + '*'
-    try:
-        old_indices = client.indices.get_alias('*', alias_patterns).keys()
-    except TypeError as e:
-        printf({'msg': 'ERROR: no aliases found {} for {}'.format(str(e), alias_patterns),
-                'job': None, 'f': 'ES Alias Drop'})
-
-    for old_index in old_indices:
-        try:
-            client.indices.delete_alias(old_index, '_all')
-            client.indices.close(old_index)
-            printf({'msg': 'Removing aliases & closing "{}"'.format(old_index),
-                    'job': None, 'f': 'ES Alias Drop'})
-        except TransportError as e:
-            printf({'msg': 'ERROR: {}'.format(str(e)), 'job': None, 'f': 'ES Alias Drop'})
-
     if client.indices.get_alias(index, '*'):
         printf({'msg': 'Removing old aliases for index "{}"'.format(index),
                 'job': None, 'f': 'ES Alias Drop'})
         client.indices.delete_alias(index, '_all')
+
+    indices_to_award_types['contracts'] += ('NULL',)
+    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + '*'
+
+    try:
+        old_indices = client.indices.get_alias('*', alias_patterns).keys()
+        for old_index in old_indices:
+            client.indices.delete_alias(old_index, '_all')
+            client.indices.close(old_index)
+            printf({'msg': 'Removing aliases & closing "{}"'.format(old_index),
+                    'job': None, 'f': 'ES Alias Drop'})
+    except Exception as e:
+        printf({'msg': 'ERROR: no aliases found for {}'.format(alias_patterns),
+                'f': 'ES Alias Drop'})
 
     for award_type, award_type_codes in indices_to_award_types.items():
         alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
@@ -341,6 +338,22 @@ def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
     id_list = [{'key': deleted_id, 'col': UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
     delete_transactions_from_es(client, id_list, None, config, None)
+
+
+def take_snapshot(client, index, repository):
+    snapshot_name = '{}-{}'.format(index, str(datetime.now().date()))
+    try:
+        client.snapshot.create(repository,
+                               snapshot_name,
+                               body={'indices': index})
+        printf({
+            'msg': 'Taking snapshot INDEX: "{}" SNAPSHOT: "{}" REPO: "{}"'.format(index, snapshot_name, repository),
+            'f': 'ES Snapshot'
+            })
+    except TransportError as e:
+        printf({
+            'msg': 'SNAPSHOT "{}" FAILED'.format(str(e)), 'f': 'ES Snapshot'})
+        raise SystemExit
 
 
 def gather_deleted_ids(config):
