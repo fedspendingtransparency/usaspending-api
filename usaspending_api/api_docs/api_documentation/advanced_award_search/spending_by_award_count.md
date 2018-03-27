@@ -1,4 +1,4 @@
-## [Spending by Award Count](spending_by_award#spending-by-award)
+## [Spending by Award Count](spending_by_award.md#spending-by-award)
 **Route:** `/api/v2/search/spending_by_award_count/`
 
 **Method:** `POST`
