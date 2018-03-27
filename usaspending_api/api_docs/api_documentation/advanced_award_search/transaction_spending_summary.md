@@ -9,7 +9,7 @@ This route returns the number of transactions and the sum of federal action obli
 
 filters: Defines how the awards are filtered.  The filter object is defined here.
 
-[Filter Object](../../search_filters.md)
+[Filter Object](../search_filters.md)
 
 #### Example
 

@@ -10,7 +10,7 @@ group: the unit of time that awards are aggregated by. You must use one of: mont
 
 filters: how the awards are filtered.  The filter object is defined here.
 
-[Filter Object](../../search_filters.md)
+[Filter Object](../search_filters.md)
 
 ```
 {
