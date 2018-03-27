@@ -89,7 +89,11 @@ def ingest_json(path):
 
 
 def generate_uid(characters=8, filename=None):
-    git_hash = get_git_commit(characters - 1, filename)
+    git_hash = None
+    try:
+        git_hash = get_git_commit(characters - 1, filename)
+    except Exception as e:
+        print('Error: [{}]. Continuing...'.format(e))
     if git_hash is None:
         return str(uuid4())[:characters]
     else:
@@ -98,9 +102,10 @@ def generate_uid(characters=8, filename=None):
 
 def get_git_commit(characters=8, filename=None):
     cmd = 'git log -n 1 --pretty=format:"%H"'
-    if filename and os.path.isfile(filename):
-        cmd += ' -- {}'.format(filename)
     args = cmd.split(' ')
+    if filename and os.path.isfile(filename):
+        args.append(filename)
+
     shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
     if shell.stdout:
         # First character is a '#' so skip it
