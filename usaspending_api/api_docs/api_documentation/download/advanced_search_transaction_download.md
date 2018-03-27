@@ -24,7 +24,7 @@ This route sends a request to the backend to begin generating a zipfile of trans
 
 ### Request Parameters Description
 
-* `filters` - *required* - a standard Search v2 JSON filter object
+* `filters` - *required* - a standard [Search v2 JSON filter object](../search_filters.md)
 * `columns` - *required* - an array of column names (using the `value` string from the `/v2/download/columns` endpoint)
     * API should generate a CSV with columns in the same order as the array
     * An empty columns array returns all available columns
