@@ -121,15 +121,10 @@ class Command(BaseCommand):
             raise SystemExit
 
         does_index_exist = ES.indices.exists(self.config['index_name'])
-        
-        if does_index_exist and not self.config['recreate']:
-            printf({'msg': 'Index exists and not recreate'})
-            raise SystemExit
-        
+
         if does_index_exist and self.config['recreate']:
             ES.indices.delete(self.config['index_name'])
             printf({'msg': 'Deleting index {}'.format(self.config['index_name'])})
-
 
         self.controller()
         printf({'msg': '---------------------------------------------------------------'})
