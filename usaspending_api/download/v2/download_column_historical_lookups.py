@@ -1564,7 +1564,7 @@ human_names = {
             'prime_awardee_name',
             'subawardee_duns',
             'subawardee_name',
-            'subawardee_dba_name'
+            'subawardee_dba_name',
             'subawardee_address_line_1',
             'subawardee_city_name',
             'subawardee_state_code',
