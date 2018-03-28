@@ -18,7 +18,6 @@ default_mapping = {
     'Description': 'description',
     'Last Modified Date': 'last_modified_date',
     'Base Obligation Date': 'date_signed',
-
 }
 
 award_contracts_mapping = default_mapping.copy()

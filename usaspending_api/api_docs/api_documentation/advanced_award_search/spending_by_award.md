@@ -66,7 +66,30 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 }
 ```
 ### Fields
-The possible fields returned are split by contracts or assistace awards (loans, grants, etc.)
+The possible fields returned are split by contracts or assistance awards (loans, grants, etc.)
+
+#### Possible Award Fields (available for every type of award)
+```
+    'Recipient Name': 'recipient_name',
+    'Recipient DUNS Number': 'recipient_unique_id',
+    'Awarding Agency': 'awarding_toptier_agency_name',
+    'Awarding Agency Code': 'awarding_toptier_agency_code',
+    'Awarding Sub Agency': 'awarding_subtier_agency_name',
+    'Awarding Sub Agency Code': 'awarding_subtier_agency_code',
+    'Funding Agency': 'funding_toptier_agency_name',
+    'Funding Agency Code': 'funding_toptier_agency_code',
+    'Funding Sub Agency': 'funding_subtier_agency_name',
+    'Funding Sub Agency Code': 'funding_subtier_agency_code',
+    'Place of Performance City Code': 'pop_city_code',
+    'Place of Performance State Code': 'pop_state_code',
+    'Place of Performance Country Code': 'pop_country_code',
+    'Place of Performance Zip5': 'pop_zip5',
+    'Period of Performance Start Date': 'period_of_performance_start_date',
+    'Period of Performance Current End Date': 'period_of_performance_current_end_date',
+    'Description': 'description',
+    'Last Modified Date': 'last_modified_date',
+    'Base Obligation Date': 'date_signed'
+```
 
 #### Possible Contract Fields w/ db mapping
 ```
