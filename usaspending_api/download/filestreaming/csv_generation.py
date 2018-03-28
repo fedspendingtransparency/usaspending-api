@@ -200,7 +200,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
 
         # Zip the split CSVs into one zipfile
         log_time = time.time()
-        zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', allowZip64=True)
+        zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
 
