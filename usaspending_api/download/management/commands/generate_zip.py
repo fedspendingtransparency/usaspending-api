@@ -37,8 +37,6 @@ class Command(BaseCommand):
                         second_attempt = download_job.error_message is not None
 
                         # Retrieve the data and write to the CSV(s)
-                        write_to_log(message='Starting to work on DownloadJob {}'.format(download_job.download_job_id),
-                                     download_job=download_job)
                         csv_generation.generate_csvs(download_job=download_job, sqs_message=message)
 
                         # If successful, we do not want to run again; delete
