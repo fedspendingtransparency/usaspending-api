@@ -20,8 +20,6 @@ For downloading transactions, please use [Advanced_Search_Transaction_Download](
 
 For downloading awards, please use [Advanced_Search_Award_Download](advanced_search_award_download.md).
 
-For downloading subawards, please use [Advanced_Search_Subaward_Download](advanced_search_subaward_download.md).
-
 ### Year Constraint Downloads
 
 These downloads do not have a row constraint but they are limited to only a certain number of filters and the time range filter is limited to `1 year` at most. This allows you to download millions of rows for larger requests.

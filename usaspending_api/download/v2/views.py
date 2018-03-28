@@ -182,7 +182,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['awards']
+        request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
@@ -196,7 +196,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['transactions']
+        request.data['award_levels'] = ['transactions', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
