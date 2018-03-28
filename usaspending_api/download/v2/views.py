@@ -194,7 +194,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['awards']
+        request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
@@ -208,7 +208,20 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['transactions']
+        request.data['award_levels'] = ['transactions', 'sub_awards']
+        request.data['constraint_type'] = 'row_count'
+        return BaseDownloadViewSet.post(self, request)
+
+
+class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of subaward data in CSV form for download.
+
+    endpoint_doc: /download/advanced_search_subaward_download.md
+    """
+
+    def post(self, request):
+        request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
