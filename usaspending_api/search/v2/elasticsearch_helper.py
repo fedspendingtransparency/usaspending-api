@@ -145,6 +145,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
                 }
             }
         }
+        
     }
 
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -205,7 +206,8 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
+    #index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
+    index_name = "test_index"
     query = {
         "query": base_query(keyword),
         "aggs": {
@@ -218,7 +220,17 @@ def get_sum_and_count_aggregation_results(keyword):
                 "value_count": {
                     "field": "transaction_id"
                 }
-            }
+            },
+            "face_value_loan_guarantee_sum": {
+                "sum": {
+                    "field": "face_value_loan_guarantee"
+                }
+            },
+            "original_loan_subsidy_cost_sum": {
+                "sum": {
+                    "field": "original_loan_subsidy_cost"
+                }
+            }         
         },
         "size": 0}
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -227,7 +239,16 @@ def get_sum_and_count_aggregation_results(keyword):
             results = {}
             results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
             results["prime_awards_obligation_amount"] = \
-                round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
+                round(response['aggregations']["prime_awards_obligation_amount"]["value"] + \
+                response['aggregations']["face_value_loan_guarantee_sum"]["value"] + \
+                response['aggregations']["original_loan_subsidy_cost_sum"]["value"], 2)
+            
+            #this is just for testing, remove these later.
+            results["face_value_loan_guarantee_sum"] = \
+                round(response['aggregations']["face_value_loan_guarantee_sum"]["value"], 2)
+            results["original_loan_subsidy_cost_sum"] = \
+                round(response['aggregations']["original_loan_subsidy_cost_sum"]["value"], 2)
+            
             return results
         except KeyError:
             logger.error('Unexpected Response')
