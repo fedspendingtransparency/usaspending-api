@@ -56,7 +56,9 @@ VALUE_MAPPINGS['prime_awards'] = VALUE_MAPPINGS['transactions']
 SHARED_FILTER_DEFAULTS = {
     'award_type_codes': list(award_type_mapping.keys()),
     'agencies': [],
-    'time_period': []
+    'time_period': [],
+    'place_of_performance_locations': [],
+    'recipient_locations': []
 }
 YEAR_CONSTRAINT_FILTER_DEFAULTS = {'elasticsearch_keyword': ''}
 ROW_CONSTRAINT_FILTER_DEFAULTS = {
@@ -64,10 +66,8 @@ ROW_CONSTRAINT_FILTER_DEFAULTS = {
     'legal_entities': [],
     'recipient_search_text': [],
     'recipient_scope': '',
-    'recipient_locations': [],
     'recipient_type_names': [],
     'place_of_performance_scope': '',
-    'place_of_performance_locations': [],
     'award_amounts': [],
     'award_ids': [],
     'program_numbers': [],

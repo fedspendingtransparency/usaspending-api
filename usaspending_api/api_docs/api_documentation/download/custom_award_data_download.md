@@ -18,7 +18,21 @@ This route sends a request to the backend to begin generating a zipfile of award
         "date_range": {
             "start_date": "2016-10-01",
             "end_date": "2017-09-30"
-        }
+        },
+        "recipient_locations": [
+            {
+            "country": "USA",
+            "state": "VA",
+            "county": "059"
+            }
+        ],
+        "place_of_performance_locations": [
+            {
+            "country": "USA",
+            "state": "VA",
+            "county": "059"
+            }
+       ]
     },
     "columns": [],
     "file_format": "csv"
@@ -45,6 +59,8 @@ This route sends a request to the backend to begin generating a zipfile of award
     * `sub_agency` - *optional* - sub-agency name to include (based on the agency filter)
     * `date_type` - *optional* - choice between two types: "action_date", "last_modified_date"
     * `date_range` - *optional* - object with start and end dates
+    * `recipient_locations` - *optional* - see the same filter from the [Universal Filters](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-id)
+    * `place_of_performance_locations` - *optional* - see the same filter from the [Universal Filters](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-id)
 * `columns` - *optional* - columns to select
 * `file_format` - *optional* - must be `csv`
 
