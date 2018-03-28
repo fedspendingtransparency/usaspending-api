@@ -18,16 +18,18 @@ from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import swap_aliases
 from usaspending_api.etl.es_etl_helpers import take_snapshot
 from usaspending_api.etl.es_etl_helpers import printf
+
+
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
 # 2. Iterate by job
-#   a. Download 1 CSV file
+#   a. Download 1 CSV file by year and trans type
 #       i. Download the next CSV file until no more jobs need CSVs
 #   b. Upload CSV to Elasticsearch
-#       1. As a new CSV is ready, upload to ES
-#       2. Either recreate index or remove existing docs with matching ids
-#       3. [default] delete CSV file
-#   d. Lather. Rinse. Repeat.
+# 3. Take a snapshot of the index reloaded
+#
+# IF RELOADING ---
+# [command] --index_name=NEWINDEX --swap --snapshot
 
 ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
@@ -62,17 +64,10 @@ class Command(BaseCommand):
             action='store_true',
             help='Flag to include deleted transactions from S3')
         parser.add_argument(
-            '-r',
-            '--recreate',
-            action='store_true',
-            help='Flag to delete each ES index and recreate with new data')
-        parser.add_argument(
-            '-s',
             '--stale',
             action='store_true',
             help='Flag allowed existing CSVs (if they exist) to be used instead of downloading new data')
         parser.add_argument(
-            '-k',
             '--keep',
             action='store_true',
             help='CSV files are not deleted after they are uploaded')
@@ -82,7 +77,8 @@ class Command(BaseCommand):
             action='store_true',
             help='Flag allowed to put aliases to index and close all indices with aliases associated')
         parser.add_argument(
-            '--save',
+            '-s',
+            '--snapshot',
             action='store_true',
             help='Flag allowed to put aliases to index and close all indices with aliases associated')
 
@@ -97,11 +93,10 @@ class Command(BaseCommand):
         self.config['fiscal_years'] = options['fiscal_years']
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
-        self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['swap'] = options['swap']
         self.config['keep'] = options['keep']
-        self.config['save'] = options['save']
+        self.config['snapshot'] = options['snapshot']
         self.config['index_name'] = options['index_name']
 
         mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
@@ -111,26 +106,27 @@ class Command(BaseCommand):
         self.config['doc_type'] = str(list(mapping_dict['mappings'].keys())[0])
         self.config['max_query_size'] = mapping_dict['settings']['index.max_result_window']
 
+        does_index_exist = ES.indices.exists(self.config['index_name'])
+
+        if not does_index_exist:
+            self.config['provide_deleted'] = False
+
         if not options['since']:
             # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
             #   before the earliest records in S3 and when Postgres records were updated.
             #   Choose the beginning of FY2008, and made it timezone-award for S3
             self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
         else:
-            if self.config['recreate']:
-                print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
-                raise SystemExit
             self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
         if not os.path.isdir(self.config['directory']):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
-        does_index_exist = ES.indices.exists(self.config['index_name'])
-
-        if does_index_exist and self.config['recreate']:
-            ES.indices.delete(self.config['index_name'])
-            printf({'msg': 'Deleting index {}'.format(self.config['index_name'])})
+        if does_index_exist and (self.config['starting_date'] == datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')):
+            print('''Bad mix of parameters! Index exists and full data load implied.
+                    Choose a different index_name or load a subset of data''')
+            raise SystemExit
 
         self.controller()
         printf({'msg': '---------------------------------------------------------------'})
@@ -194,7 +190,7 @@ class Command(BaseCommand):
             printf({'msg': 'Closing old indices and adding aliases'})
             swap_aliases(ES, self.config['index_name'])
 
-        if self.config['save']:
+        if self.config['snapshot']:
             printf({'msg': 'Taking snapshot'})
             take_snapshot(ES, self.config['index_name'], settings.ES_REPOSITORY)
 

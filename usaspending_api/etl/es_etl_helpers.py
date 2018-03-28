@@ -311,7 +311,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             printf({'msg': 'No documents to add/delete for chunk #{}'.format(count), 'f': 'ES Ingest', 'job': job.name})
             continue
         iteration = perf_counter()
-        if config['recreate'] is False:
+        if config['provide_deleted']:
             id_list = [{'key': c[UNIVERSAL_TRANSACTION_ID_NAME], 'col': UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
             delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
@@ -375,7 +375,7 @@ def gather_deleted_ids(config):
         print('\n[ERROR]\n')
         print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
         print('  or is using env variables: CSV_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME')
-        print('\n{}\n'.format(e))
+        print('\n {} \n'.format(e))
         raise SystemExit
 
     if config['verbose']:
