@@ -21,10 +21,7 @@
     "  awards.fain,",
     "  awards.uri,",
     "  awards.total_obligation,",
-<<<<<<< HEAD
     "  awards.description,",
-=======
->>>>>>> dev
     "  obligation_to_enum(awards.total_obligation) AS total_obl_bin,",
     "  awards.total_subsidy_cost,",
     "  awards.total_loan_value,",
@@ -37,18 +34,11 @@
     "",
     "  latest_transaction.action_date,",
     "  latest_transaction.fiscal_year,",
-<<<<<<< HEAD
     "  latest_transaction.last_modified_date,",
     "  awards.period_of_performance_start_date,",
     "  awards.period_of_performance_current_end_date,",
     "  awards.date_signed,",
     "",
-
-=======
-    "  awards.period_of_performance_start_date,",
-    "  awards.period_of_performance_current_end_date,",
-    "",
->>>>>>> dev
     "  assistance_data.original_loan_subsidy_cost,",
     "  assistance_data.face_value_loan_guarantee,",
     "",
@@ -58,13 +48,10 @@
     "  TFA.name AS funding_toptier_agency_name,",
     "  SAA.name AS awarding_subtier_agency_name,",
     "  SFA.name AS funding_subtier_agency_name,",
-<<<<<<< HEAD
     "  TAA.cgac_code AS awarding_toptier_agency_code,",
     "  TFA.cgac_code AS funding_toptier_agency_code,",
     "  SAA.subtier_code AS awarding_subtier_agency_code,",
     "  SFA.subtier_code AS funding_subtier_agency_code,",
-=======
->>>>>>> dev
     "",
     "  recipient_location.country_name AS recipient_location_country_name,",
     "  recipient_location.location_country_code AS recipient_location_country_code,",
@@ -79,18 +66,12 @@
     "  place_of_performance.state_code AS pop_state_code,",
     "  place_of_performance.county_code AS pop_county_code,",
     "  place_of_performance.county_name AS pop_county_name,",
-<<<<<<< HEAD
     "  place_of_performance.city_code AS pop_city_code,",
-=======
->>>>>>> dev
     "  place_of_performance.zip5 AS pop_zip5,",
     "  place_of_performance.congressional_code AS pop_congressional_code,",
     "",
     "  assistance_data.cfda_number,",
-<<<<<<< HEAD
     "  assistance_data.sai_number,",
-=======
->>>>>>> dev
     "  contract_data.pulled_from,",
     "  contract_data.type_of_contract_pricing,",
     "  contract_data.extent_competed,",
