@@ -145,7 +145,6 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
                 }
             }
         }
-        
     }
 
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -224,7 +223,7 @@ def get_sum_and_count_aggregation_results(keyword):
                 "sum": {
                     "field": "original_loan_subsidy_cost"
                 }
-            }         
+            }
         },
         "size": 0}
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -233,7 +232,8 @@ def get_sum_and_count_aggregation_results(keyword):
             results = {}
             results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
             results["prime_awards_obligation_amount"] = \
-                round((response['aggregations']["prime_awards_obligation_amount"]["value"] + response['aggregations']["original_loan_subsidy_cost_sum"]["value"]), 2)
+                round((response['aggregations']["prime_awards_obligation_amount"]["value"] +
+                       response['aggregations']["original_loan_subsidy_cost_sum"]["value"]), 2)
             return results
         except KeyError:
             logger.error('Unexpected Response')
