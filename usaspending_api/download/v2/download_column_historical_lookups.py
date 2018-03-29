@@ -410,7 +410,7 @@ query_paths = {
             'recipient_zip_last_4_code': 'latest_transaction__assistance_data__legal_entity_zip_last4',
             'record_type_code': 'latest_transaction__assistance_data__record_type',
             'sai_number': 'latest_transaction__assistance_data__sai_number',
-            'total_funding_amount': 'latest_transaction__assistance_data__total_funding_amount',
+            'total_funding_amount': 'total_funding_amount',
             'total_subsidy_cost': 'total_subsidy_cost'
         }
     },
@@ -735,7 +735,7 @@ query_paths = {
             'recipient_zip_last_4_code': 'assistance_data__legal_entity_zip_last4',
             'record_type_code': 'assistance_data__record_type',
             'sai_number': 'assistance_data__sai_number',
-            'total_funding_amount': 'assistance_data__total_funding_amount',
+            'total_funding_amount': 'total_funding_amount',
             'total_subsidy_cost': 'award__total_subsidy_cost'
         },
     },
