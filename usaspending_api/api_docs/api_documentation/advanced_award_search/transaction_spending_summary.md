@@ -9,7 +9,7 @@ This route returns the number of transactions and the sum of federal action obli
 
 filters: Defines how the awards are filtered.  The filter object is defined here.
 
-https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
+[Filter Object](../search_filters.md)
 
 #### Example
 

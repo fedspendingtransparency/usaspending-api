@@ -1,4 +1,5 @@
 DROP MATERIALIZED VIEW IF EXISTS summary_award_view_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_transaction_geo_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_transaction_month_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_transaction_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_view_old;

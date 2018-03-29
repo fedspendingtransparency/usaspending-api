@@ -763,6 +763,7 @@ query_paths = {
                 'award__latest_transaction__contract_data__place_of_perform_country_c',
             'subawardee_duns': 'recipient__recipient_unique_id',
             'subawardee_name': 'recipient__recipient_name',
+            'subawardee_dba_name': 'recipient__vendor_doing_as_business_name',
             'subawardee_parent_duns': 'recipient__parent_recipient_unique_id',
             # 'subawardee_parent_name': 'recipient__parent_recipient_name', -- need to add this column
             'subawardee_address_line_1': 'recipient__location__address_line1',
@@ -819,6 +820,7 @@ query_paths = {
                 'award__latest_transaction__assistance_data__place_of_perform_country_c',
             'subawardee_duns': 'recipient__recipient_unique_id',
             'subawardee_name': 'recipient__recipient_name',
+            'subawardee_dba_name': 'recipient__vendor_doing_as_business_name',
             'subawardee_address_line_1': 'recipient__location__address_line1',
             'subawardee_city_name': 'recipient__location__city_name',
             'subawardee_state_code': 'recipient__location__state_code',
@@ -1507,6 +1509,7 @@ human_names = {
             'prime_awardee_name',
             'subawardee_duns',
             'subawardee_name',
+            'subawardee_dba_name',
             'subawardee_parent_duns',
             # 'subawardee_parent_name', -- put back once we have this column
             'subawardee_address_line_1',
@@ -1561,6 +1564,7 @@ human_names = {
             'prime_awardee_name',
             'subawardee_duns',
             'subawardee_name',
+            'subawardee_dba_name',
             'subawardee_address_line_1',
             'subawardee_city_name',
             'subawardee_state_code',
