@@ -223,7 +223,6 @@ class Award(DataSourceTrackedModel):
                                              verbose_name="Transaction Unique ID")
     total_funding_amount = models.TextField(blank=True, null=True)
 
-
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     subaward_count = models.IntegerField(default=0)
@@ -372,7 +371,6 @@ class TransactionNormalized(models.Model):
                                                  verbose_name="Generated Unique Award ID")
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     total_funding_amount = models.TextField(blank=True, null=True)
-
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
