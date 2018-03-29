@@ -1,9 +1,9 @@
-## [Advanced Search Award Download](#Advanced_Search_Award_Download)
-**Route:** `/api/v2/download/awards/`
+## [Advanced Search Subaward Download](#Advanced_Search_Subaward_Download)
+**Route:** `/api/v2/download/subawards/`
 
 **Method:** `POST`
 
-This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
+This route sends a request to the backend to begin generating a zipfile of subaward data in CSV form for download.
 
 ### Request example
 
@@ -24,7 +24,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 
 ### Request Parameters Description
 
-* `filters` - *required* - how the awards are filtered.  The filter object is defined here: [Filter Object](../search_filters.md)
+* `filters` - *required* - how the subawards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
 
 * `columns` - *required* - an array of column names (using the `value` string from the `/v2/download/columns` endpoint)
     * API should generate a CSV with columns in the same order as the array
@@ -36,11 +36,11 @@ This route sends a request to the backend to begin generating a zipfile of award
 {
    "status":"ready",
    "total_rows":null,
-   "file_name":"5757660_968336105_awards.zip",
+   "file_name":"5757660_968336105_subawards.zip",
    "total_size":null,
    "total_columns":null,
    "message":null,
-   "url":"/Volumes/exlinux/Users/catherine/werk/dataact/usaspending-api/downloads/5757660_968336105_awards.zip",
+   "url":"/Volumes/exlinux/Users/catherine/werk/dataact/usaspending-api/downloads/5757660_968336105_subawards.zip",
    "seconds_elapsed":null
 }
 ```
@@ -49,7 +49,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 * `total_columns` is the number of columns in the CSV, or `null` if not finished
 * `total_rows` is the number of rows in the CSV, or `null` if not finished
 * `file_name` is the name of the zipfile containing CSVs that will be generated
-    * File name is a timestamp followed by `_awards`
+    * File name is a timestamp followed by `_subawards`
 * `status` is a string representing the current state of the CSV generation request. Possible values are:
     * `ready` - job is ready to be run
     * `running` - job is currently in progress

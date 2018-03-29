@@ -84,7 +84,6 @@ def location_error_handling(fields):
     # Request must have country, and can only have 3 fields,
     # and must have state if there is county or district
     if 'country' not in fields:
-
         raise InvalidParameterException(
             'Invalid filter:  Missing necessary location field: country.'
         )

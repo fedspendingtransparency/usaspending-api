@@ -97,7 +97,19 @@ class LoggingMiddleware(MiddlewareMixin):
         elif 400 <= status_code < 500:
             # Logged at an WARNING level: 4xx (Client error)
             self.log["status"] = 'WARNING'
-            self.server_logger.warning(self.get_message_string(), extra=self.log)
+
+            # Get response message
+            try:
+                # If API returns error message
+                self.log["error_msg"] = str(response.data)
+            except AttributeError:
+                # For cases when Django responds with an error template, get the response content (byte string)
+                self.log["error_msg"] = response.getvalue().decode('ASCII')
+
+            # Adding separate error message to message field for user to view error on Kibana default view
+            error_msg_str = '['+self.log["error_msg"]+']'
+
+            self.server_logger.warning('{} {}'.format(self.get_message_string(), error_msg_str), extra=self.log)
         else:
             # 500 or greater messages will be processed by the process_exception function
             pass

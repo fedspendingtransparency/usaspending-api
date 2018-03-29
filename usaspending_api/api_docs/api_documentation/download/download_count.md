@@ -25,7 +25,7 @@ POST a JSON body:
 
 #### Request Parameters Description
 
-* `filters` - *required* - a standard [Search v2 JSON](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation) filter object
+* `filters` - *required* - a standard [Search v2 JSON](../search_filters.md) filter object
 
 ### Response
 

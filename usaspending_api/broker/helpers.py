@@ -280,6 +280,7 @@ def get_business_categories(row, data_type):
     business_category_set = set()
 
     if data_type == 'fabs':
+        # BUSINESS (FOR-PROFIT)
         business_types = row.get('business_types')
         if business_types in ('R', '23'):
             business_category_set.add('small_business')
@@ -290,9 +291,11 @@ def get_business_categories(row, data_type):
         if business_category_set & {'small_business', 'other_than_small_business'}:
             business_category_set.add('category_business')
 
+        # NON-PROFIT
         if business_types in ('M', 'N', '12'):
             business_category_set.add('nonprofit')
 
+        # HIGHER EDUCATION
         if business_types in ('H', '06'):
             business_category_set.add('public_institution_of_higher_education')
 
@@ -306,8 +309,12 @@ def get_business_categories(row, data_type):
                                     'minority_serving_institution_of_higher_education'}:
             business_category_set.add('higher_education')
 
-        if business_types in ('A', 'E', '00'):
+        # GOVERNMENT
+        if business_types in ('A', '00'):
             business_category_set.add('regional_and_state_government')
+
+        if business_types == 'E':
+            business_category_set.add('regional_organization')
 
         if business_types == 'F':
             business_category_set.add('us_territory_or_possession')
@@ -322,9 +329,11 @@ def get_business_categories(row, data_type):
             business_category_set.add('authorities_and_commissions')
 
         if business_category_set & {'regional_and_state_government', 'us_territory_or_possession', 'local_government',
-                                    'indian_native_american_tribal_government', 'authorities_and_commissions'}:
+                                    'indian_native_american_tribal_government', 'authorities_and_commissions',
+                                    'regional_organization'}:
             business_category_set.add('government')
 
+        # INDIVIDUALS
         if business_types in ('P', '21'):
             business_category_set.add('individuals')
 
@@ -332,10 +341,49 @@ def get_business_categories(row, data_type):
 
     elif data_type == 'fpds':
         legal_entity_bool_dict = build_legal_entity_booleans_dict(row)
-        # SMALL BUSINESS
-        if legal_entity_bool_dict['small_business_competitive'] is True \
-                or legal_entity_bool_dict['for_profit_organization'] is True:
-            business_category_set |= {'small_business', 'category_business'}
+
+        # BUSINESS (FOR-PROFIT)
+        if row.get('contracting_officers_deter') == 'S' \
+                or legal_entity_bool_dict['women_owned_small_business'] is True \
+                or legal_entity_bool_dict['economically_disadvantaged'] is True \
+                or legal_entity_bool_dict['joint_venture_women_owned'] is True \
+                or legal_entity_bool_dict['emerging_small_business'] is True \
+                or legal_entity_bool_dict['self_certified_small_disad'] is True \
+                or legal_entity_bool_dict['small_agricultural_coopera'] is True \
+                or legal_entity_bool_dict['small_disadvantaged_busine'] is True:
+            business_category_set.add('small_business')
+
+        if row.get('contracting_officers_deter') == 'O':
+            business_category_set.add('other_than_small_business')
+
+        if legal_entity_bool_dict['corporate_entity_tax_exemp'] is True:
+            business_category_set.add('corporate_entity_tax_exempt')
+
+        if legal_entity_bool_dict['corporate_entity_not_tax_e'] is True:
+            business_category_set.add('corporate_entity_not_tax_exempt')
+
+        if legal_entity_bool_dict['partnership_or_limited_lia'] is True:
+            business_category_set.add('partnership_or_limited_liability_partnership')
+
+        if legal_entity_bool_dict['sole_proprietorship'] is True:
+            business_category_set.add('sole_proprietorship')
+
+        if legal_entity_bool_dict['manufacturer_of_goods'] is True:
+            business_category_set.add('manufacturer_of_goods')
+
+        if legal_entity_bool_dict['subchapter_s_corporation'] is True:
+            business_category_set.add('subchapter_s_corporation')
+
+        if legal_entity_bool_dict['limited_liability_corporat'] is True:
+            business_category_set.add('limited_liability_corporation')
+
+        if legal_entity_bool_dict['for_profit_organization'] is True or \
+                (business_category_set & {'small_business', 'other_than_small_business',
+                                          'corporate_entity_tax_exempt', 'corporate_entity_not_tax_exempt',
+                                          'partnership_or_limited_liability_partnership', 'sole_proprietorship',
+                                          'manufacturer_of_goods', 'subchapter_s_corporation',
+                                          'limited_liability_corporation'}):
+            business_category_set.add('category_business')
 
         # MINORITY BUSINESS
         if legal_entity_bool_dict['alaskan_native_owned_corpo'] is True:
@@ -461,6 +509,15 @@ def get_business_categories(row, data_type):
         if legal_entity_bool_dict['international_organization'] is True:
             business_category_set.add('international_organization')
 
+        if legal_entity_bool_dict['domestic_shelter'] is True:
+            business_category_set.add('domestic_shelter')
+
+        if legal_entity_bool_dict['hospital_flag'] is True:
+            business_category_set.add('hospital')
+
+        if legal_entity_bool_dict['veterinary_hospital'] is True:
+            business_category_set.add('veterinary_hospital')
+
         if business_category_set & {'8a_program_participant', 'ability_one_program',
                                     'dot_certified_disadvantaged_business_enterprise', 'emerging_small_business',
                                     'federally_funded_research_and_development_corp',
@@ -469,7 +526,8 @@ def get_business_categories(row, data_type):
                                     'small_agricultural_cooperative', 'small_disadvantaged_business',
                                     'community_developed_corporation_owned_firm', 'us_owned_business',
                                     'foreign_owned_and_us_located_business', 'foreign_owned_and_located_business',
-                                    'foreign_government', 'international_organization'}:
+                                    'foreign_government', 'international_organization', 'domestic_shelter',
+                                    'hospital', 'veterinary_hospital'}:
             business_category_set.add('special_designations')
 
         # NON-PROFIT
@@ -485,6 +543,9 @@ def get_business_categories(row, data_type):
             business_category_set.add('nonprofit')
 
         # HIGHER EDUCATION
+        if legal_entity_bool_dict['educational_institution'] is True:
+            business_category_set.add('educational_institution')
+
         if legal_entity_bool_dict['state_controlled_instituti'] is True \
                 or legal_entity_bool_dict['c1862_land_grant_college'] is True \
                 or legal_entity_bool_dict['c1890_land_grant_college'] is True \
@@ -502,20 +563,31 @@ def get_business_categories(row, data_type):
                 or legal_entity_bool_dict['hispanic_servicing_institu'] is True:
             business_category_set.add('minority_serving_institution_of_higher_education')
 
-        if business_category_set & {'public_institution_of_higher_education', 'private_institution_of_higher_education',
-                                    'minority_serving_institution_of_higher_education'}:
+        if legal_entity_bool_dict['school_of_forestry'] is True:
+            business_category_set.add('school_of_forestry')
+
+        if legal_entity_bool_dict['veterinary_college'] is True:
+            business_category_set.add('veterinary_college')
+
+        if business_category_set & {'educational_institution', 'public_institution_of_higher_education',
+                                    'private_institution_of_higher_education', 'school_of_forestry',
+                                    'minority_serving_institution_of_higher_education', 'veterinary_college'}:
             business_category_set.add('higher_education')
 
         # GOVERNMENT
         if legal_entity_bool_dict['us_federal_government'] is True \
                 or legal_entity_bool_dict['federal_agency'] is True \
-                or legal_entity_bool_dict['us_government_entity'] is True \
-                or legal_entity_bool_dict['interstate_entity'] is True:
+                or legal_entity_bool_dict['us_government_entity'] is True:
             business_category_set.add('national_government')
 
-        if legal_entity_bool_dict['us_state_government'] is True \
-                or legal_entity_bool_dict['council_of_governments'] is True:
+        if legal_entity_bool_dict['interstate_entity'] is True:
+            business_category_set.add('interstate_entity')
+
+        if legal_entity_bool_dict['us_state_government'] is True:
             business_category_set.add('regional_and_state_government')
+
+        if legal_entity_bool_dict['council_of_governments'] is True:
+            business_category_set.add('council_of_governments')
 
         if legal_entity_bool_dict['city_local_government'] is True \
                 or legal_entity_bool_dict['county_local_government'] is True \
@@ -538,9 +610,9 @@ def get_business_categories(row, data_type):
                 or legal_entity_bool_dict['planning_commission'] is True:
             business_category_set.add('authorities_and_commissions')
 
-        if business_category_set & {'national_government', 'regional_and_state_government',
-                                    'us_territory_or_possession', 'local_government',
-                                    'indian_native_american_tribal_government', 'authorities_and_commissions'}:
+        if business_category_set & {'national_government', 'regional_and_state_government', 'local_government',
+                                    'indian_native_american_tribal_government', 'authorities_and_commissions',
+                                    'interstate_entity', 'council_of_governments'}:
             business_category_set.add('government')
 
         return list(business_category_set)
