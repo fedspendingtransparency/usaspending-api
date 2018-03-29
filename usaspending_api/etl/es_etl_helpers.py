@@ -285,10 +285,20 @@ def swap_aliases(client, index):
                 'job': '', 'f': 'ES Alias Put'})
         put_alias(client, index, alias_name, award_type_codes)
 
-    index_settings = dict(refresh_interval='1s', number_of_replicas=1)
-    index_settings = dict(index=index_settings)
+    es_settingsfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_settings.json')
+    with open(es_settingsfile) as f:
+        settings_dict = json.load(f)
+    index_settings = settings_dict['settings']['index']
+
+    current_settings = client.indices.get(index)[index]['settings']['index']
+
     client.indices.put_settings(index_settings, index)
     client.indices.refresh(index)
+    for setting_, value_ in index_settings.items():
+        message = 'Changing "{}" from {} to {}'.format(setting_,
+                                                       current_settings.get(setting_),
+                                                       value_)
+        printf({'msg': message, 'job': None, 'f': 'ES Settings Put'})
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):

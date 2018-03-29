@@ -109,6 +109,8 @@ class Command(BaseCommand):
         does_index_exist = ES.indices.exists(self.config['index_name'])
 
         if not does_index_exist:
+            printf({'msg': '"{}" does not exist, skipping deletions for ths load,\
+                             provide_deleted overwritten to False'.format(self.config['index_name'])})
             self.config['provide_deleted'] = False
 
         if not options['since']:
@@ -123,9 +125,12 @@ class Command(BaseCommand):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
-        if does_index_exist and (self.config['starting_date'] == datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')):
-            print('''Bad mix of parameters! Index exists and full data load implied.
-                    Choose a different index_name or load a subset of data''')
+        if does_index_exist and not options['since']:
+            print('''
+                  Bad mix of parameters! Index exists and
+                  full data load implied. Choose a different
+                  index_name or load a subset of data using --since
+                  ''')
             raise SystemExit
 
         self.controller()
