@@ -13,7 +13,6 @@ import csv
 from collections import OrderedDict
 from django.conf import settings
 
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
