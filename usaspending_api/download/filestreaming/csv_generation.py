@@ -12,6 +12,7 @@ import zipfile
 from collections import OrderedDict
 from django.conf import settings
 
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
@@ -124,6 +125,12 @@ def get_csv_sources(json_request):
     for award_level in json_request['award_levels']:
         queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])
         award_level_table = VALUE_MAPPINGS[award_level]['table']
+
+        # Add join between the matview and original table
+        if award_level_table == UniversalAwardView:
+            queryset = queryset.filter(award_id__isnull=False)
+        elif award_level_table == UniversalTransactionView:
+            queryset = queryset.filter(transaction_id__isnull=False)
 
         award_type_codes = set(json_request['filters']['award_type_codes'])
         d1_award_type_codes = set(contract_type_mapping.keys())

@@ -28,8 +28,8 @@ VALUE_MAPPINGS = {
         'table': UniversalAwardView,
         'table_name': 'award',
         'download_name': 'prime_awards',
-        'contract_data': 'latest_transaction__contract_data',
-        'assistance_data': 'latest_transaction__assistance_data',
+        'contract_data': 'award_id__latest_transaction__contract_data',
+        'assistance_data': 'award_id__latest_transaction__assistance_data',
         'filter_function': universal_award_matview_filter
     },
     # Transaction Level
