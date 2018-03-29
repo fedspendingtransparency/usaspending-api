@@ -126,12 +126,6 @@ def get_csv_sources(json_request):
         queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])
         award_level_table = VALUE_MAPPINGS[award_level]['table']
 
-        # Add join between the matview and original table
-        if award_level_table == UniversalAwardView:
-            queryset = queryset.filter(award_id__isnull=False)
-        elif award_level_table == UniversalTransactionView:
-            queryset = queryset.filter(transaction_id__isnull=False)
-
         award_type_codes = set(json_request['filters']['award_type_codes'])
         d1_award_type_codes = set(contract_type_mapping.keys())
         d2_award_type_codes = set(assistance_type_mapping.keys())
