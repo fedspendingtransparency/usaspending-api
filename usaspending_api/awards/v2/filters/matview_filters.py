@@ -14,6 +14,7 @@ from usaspending_api.search.v2 import elasticsearch_helper
 
 logger = logging.getLogger(__name__)
 
+
 def universal_award_matview_filter(filters):
     return matview_search_filter(filters, UniversalAwardView)
 
