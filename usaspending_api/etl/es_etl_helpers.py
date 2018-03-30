@@ -301,6 +301,11 @@ def swap_aliases(client, index):
         printf({'msg': message, 'job': None, 'f': 'ES Settings Put'})
 
 
+def test_mapping(client, index, config):
+    index_mapping = client.indices.get(index)[index]['mappings']
+    return index_mapping == config['mapping']
+
+
 def post_to_elasticsearch(client, job, config, chunksize=250000):
     printf({'msg': 'Populating ES Index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
     start = perf_counter()
@@ -314,6 +319,10 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 job.name, 'f': 'ES Ingest'})
         client.indices.create(index=job.index, body=config['mapping'])
         client.indices.refresh(job.index)
+        if not test_mapping(client, job.index, config):
+            printf({'msg': 'MAPPING FAILED TO STICK TO {}'.format(job.index), 'job':
+                    job.name, 'f': 'ES Create'})
+            raise SystemExit
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
