@@ -6,9 +6,11 @@
 This route takes award filters, and returns spending by time.  The amount of time is denoted by the "group" value.
 
 ### Request
-group: the unit of time that awards are aggregated by. You must use one of: month, quarter, fiscal_year.
+group: the unit of time that awards are aggregated by.  You must use one of: month, quarter, fiscal_year.
 
 filters: how the awards are filtered.  The filter object is defined here.
+
+subawards: boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
 
 [Filter Object](../search_filters.md)
 
@@ -30,7 +32,8 @@ filters: how the awards are filtered.  The filter object is defined here.
             "lower_bound": 500000000.00
               }
              ],
-    }
+    },
+    "subawards": False
 }
 ```
 

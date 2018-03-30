@@ -12,6 +12,8 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 
 [Filter Object](../search_filters.md)
 
+subawards: boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+
 limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
 
 page (**OPTIONAL**):  The page number that is currently returned.
@@ -60,6 +62,7 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
        ],
        "award_ids": [1018950]
   },
+  "subawards": False,
   "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
   "sort": "Recipient Name",
   "order": "desc"

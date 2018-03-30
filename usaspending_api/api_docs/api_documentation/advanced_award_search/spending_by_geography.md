@@ -8,6 +8,8 @@ This route takes award filters, and returns spending by state code, county code,
 ### Request
 scope: What type of data will be returned. Must be either: `place_of_performance` or `recipient_location`.
 
+subawards: boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+
 geo_layer: Defines which geographical level should be returned in the request. Options include: "state", "county", "district"
 
 geo_layer_filter: Defines a filter for a specific geographic area correlating to the geo_layer. It is a list of strings that are the unique identifiers for the geographic location.
@@ -38,7 +40,8 @@ filters: how the awards are filtered.  The filter object is defined here: [Filte
 				"lower_bound": 500000000.00
 			}
 		]
-	}
+	},
+    "subawards": False
 }
 ```
 

@@ -32,6 +32,17 @@ def test_spending_over_time_success(client):
         }))
     assert resp.status_code == status.HTTP_200_OK
 
+    # test subawards
+    resp = client.post(
+        '/api/v2/search/spending_over_time',
+        content_type='application/json',
+        data=json.dumps({
+            "group": "quarter",
+            "filters": all_filters(),
+            "subawards": True
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
 
 @pytest.mark.skip
 @pytest.mark.django_db

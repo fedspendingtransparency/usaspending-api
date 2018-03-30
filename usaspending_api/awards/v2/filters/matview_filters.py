@@ -72,8 +72,7 @@ def matview_search_filter(filters, model):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
-                                                       "action_date")
+            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year", "action_date")
             if success:
                 queryset &= or_queryset
 

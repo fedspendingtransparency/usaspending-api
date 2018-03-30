@@ -13,35 +13,26 @@ from usaspending_api.common.cache_decorator import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
-from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
-from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
-from usaspending_api.awards.v2.filters.view_selector import can_use_view
-from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
-from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
-from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
-from usaspending_api.awards.v2.filters.view_selector import spending_over_time
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
-from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
-from usaspending_api.awards.v2.lookups.lookups import non_loan_assistance_type_mapping
-from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping
-from usaspending_api.awards.v2.lookups.matview_lookups import loan_award_mapping
-from usaspending_api.awards.v2.lookups.matview_lookups import non_loan_assistance_award_mapping
-from usaspending_api.common.exceptions import ElasticsearchConnectionException
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.view_selector import (can_use_view, get_view_queryset, spending_by_award_count,
+                                                             spending_by_geography, spending_over_time)
+from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contract_type_mapping, loan_type_mapping,
+                                                       non_loan_assistance_type_mapping)
+from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
+                                                               non_loan_assistance_award_mapping)
+from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
-
+from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
+                                                            spending_by_transaction_sum_and_count)
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +48,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         json_request = request.data
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
+        subawards = json_request.get('subawards', False)
 
         if group is None:
             raise InvalidParameterException('Missing one or more required request parameters: group')
@@ -65,8 +57,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         potential_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
         if group not in potential_groups:
             raise InvalidParameterException('group does not have a valid value')
+        if not subawards.upper() in ('TRUE', 'FALSE'):
+            raise InvalidParameterException('subawards does not have a valid value')
+        subawards = subawards.upper() == 'TRUE'
 
-        queryset = spending_over_time(filters)
+        if subawards:
+            # We do not use matviews for Subaward filtering, just the Subaward download filters
+            queryset = subaward_filter(filters)
+        else:
+            queryset = spending_over_time(filters)
+
         filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
 
         # define what values are needed in the sql query
@@ -79,7 +79,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
         if group == 'fy' or group == 'fiscal_year':
-
             fy_set = sum_transaction_amount(queryset.values('fiscal_year'), filter_types=filter_types)
 
             for trans in fy_set:
@@ -88,9 +87,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 group_results[key] = trans['transaction_amount']
 
         elif group == 'm' or group == 'month':
-
-            month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month')
+            month_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
             month_set = sum_transaction_amount(month_set, filter_types=filter_types)
 
             for trans in month_set:
@@ -101,10 +98,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 key = str(key)
                 group_results[key] = trans['transaction_amount']
             nested_order = 'month'
-        else:  # quarterly, take months and add them up
 
-            month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month')
+        else:  # quarterly, take months and add them up
+            month_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
             month_set = sum_transaction_amount(month_set, filter_types=filter_types)
 
             for trans in month_set:
@@ -117,11 +113,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 # If key exists {fy : quarter}, aggregate
                 if group_results.get(key) is None:
                     group_results[key] = trans['transaction_amount']
-                else:
-                    if trans['transaction_amount']:
-                        group_results[key] = group_results.get(key) + trans['transaction_amount']
-                    else:
-                        group_results[key] = group_results.get(key)
+                elif trans['transaction_amount']:
+                    group_results[key] = group_results.get(key) + trans['transaction_amount']
             nested_order = 'quarter'
 
         # convert result into expected format, sort by key to meet front-end specs
@@ -417,6 +410,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         json_request = request.data
+        subawards = json_request.get('subawards', False)
+
         self.scope = json_request.get("scope")
         self.filters = json_request.get("filters", {})
         self.geo_layer = json_request.get("geo_layer")
@@ -444,11 +439,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         if scope_field_name is None:
             raise InvalidParameterException("Invalid request parameters: scope")
-
         if loc_field_name is None:
             raise InvalidParameterException("Invalid request parameters: geo_layer")
+        if not subawards.upper() in ('TRUE', 'FALSE'):
+            raise InvalidParameterException("subawards does not have a valid value")
+        subawards = subawards.upper() == 'TRUE'
 
-        self.queryset, self.matview_model = spending_by_geography(self.filters)
+        if subawards:
+            # We do not use matviews for Subaward filtering, just the Subaward download filters
+            self.queryset = subaward_filter(self.filters)
+            self.matview_model = False
+        else:
+            self.queryset, self.matview_model = spending_by_geography(self.filters)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
@@ -458,7 +460,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             }
 
             # Only state scope will add its own state code
-            # State codes are consistent in db ie AL, AK
+            # State codes are consistent in database i.e. AL, AK
             fields_list.append(loc_lookup)
 
             state_response = {
@@ -619,6 +621,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = request.data
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
+        subawards = json_request.get("subawards", "False")
         order = json_request.get("order", "asc")
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
@@ -638,22 +641,32 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "Missing one or more required request parameters: filters['award_type_codes']")
         if order not in ["asc", "desc"]:
             raise InvalidParameterException("Invalid value for order: {}".format(order))
+        if not subawards.upper() in ('TRUE', 'FALSE'):
+            raise InvalidParameterException('subawards does not have a valid value')
+        subawards = subawards.upper() == 'TRUE'
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # build sql query filters
-        queryset = matview_search_filter(filters, UniversalAwardView).values()
+        if subawards:
+            # We do not use matviews for Subaward filtering, just the Subaward download filters
+            queryset = subaward_filter(filters)
 
-        values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
-        for field in fields:
-            if award_contracts_mapping.get(field):
-                values.add(award_contracts_mapping.get(field))
-            if loan_award_mapping.get(field):
-                values.add(loan_award_mapping.get(field))
-            if non_loan_assistance_award_mapping.get(field):
-                values.add(non_loan_assistance_award_mapping.get(field))
+            values = {'award_id', 'subaward_number', 'recipient__recipient_name', 'action_date', 'amount',
+                      'description'}
+        else:
+            queryset = matview_search_filter(filters, UniversalAwardView).values()
+
+            values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
+            for field in fields:
+                if award_contracts_mapping.get(field):
+                    values.add(award_contracts_mapping.get(field))
+                if loan_award_mapping.get(field):
+                    values.add(loan_award_mapping.get(field))
+                if non_loan_assistance_award_mapping.get(field):
+                    values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort and "no intersection" not in filters["award_type_codes"]:
@@ -665,34 +678,40 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_filters = [non_loan_assistance_award_mapping[sort]]
 
             if sort == "Award ID":
-                sort_filters = ["piid", "fain", "uri"]
+                sort_filters = ["award_id"] if subawards else ["piid", "fain", "uri"]
             if order == 'desc':
                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
 
-            queryset = queryset.order_by(*sort_filters).values(*list(values))
+            queryset = queryset.order_by(*sort_filters)
+            if subawards:
+                queryset = queryset.annotate(award_id=Coalesce('award__piid', 'award__fain'))
+            queryset = queryset.values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 
         results = []
         for award in limited_queryset[:limit]:
-            row = {"internal_id": award["award_id"]}
+            if subawards:
+                row = award
+            else:
+                row = {"internal_id": award["award_id"]}
 
-            if award['type'] in loan_type_mapping:  # loans
-                for field in fields:
-                    row[field] = award.get(loan_award_mapping.get(field))
-            elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
-                for field in fields:
-                    row[field] = award.get(non_loan_assistance_award_mapping.get(field))
-            elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV + contract
-                for field in fields:
-                    row[field] = award.get(award_contracts_mapping.get(field))
+                if award['type'] in loan_type_mapping:  # loans
+                    for field in fields:
+                        row[field] = award.get(loan_award_mapping.get(field))
+                elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
+                    for field in fields:
+                        row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+                elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV + contract
+                    for field in fields:
+                        row[field] = award.get(award_contracts_mapping.get(field))
 
-            if "Award ID" in fields:
-                for id_type in ["piid", "fain", "uri"]:
-                    if award[id_type]:
-                        row["Award ID"] = award[id_type]
-                        break
+                if "Award ID" in fields:
+                    for id_type in ["piid", "fain", "uri"]:
+                        if award[id_type]:
+                            row["Award ID"] = award[id_type]
+                            break
             results.append(row)
         # build response
         response = {

@@ -34,6 +34,18 @@ def test_spending_by_geography_success(client):
         }))
     assert resp.status_code == status.HTTP_200_OK
 
+    # test subawards
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "filters": all_filters(),
+            "subawards": True
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
 
 @pytest.mark.skip
 @pytest.mark.django_db
