@@ -18,6 +18,7 @@ class UniversalTransactionView(models.Model):
     action_type = models.TextField()
     award_id = models.IntegerField()
     award_category = models.TextField()
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obligation = models.DecimalField(
         max_digits=15, decimal_places=2, blank=True, null=True)
     total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
@@ -88,6 +89,7 @@ class SummaryTransactionView(models.Model):
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
     total_obl_bin = models.TextField()
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     federal_action_obligation = models.DecimalField(
         max_digits=20, db_index=True, decimal_places=2, blank=True,
         null=True)
@@ -251,8 +253,9 @@ class SummaryView(models.Model):
     funding_toptier_agency_abbreviation = models.TextField()
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
@@ -269,8 +272,9 @@ class SummaryNaicsCodesView(models.Model):
     pulled_from = models.TextField()
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
@@ -286,8 +290,8 @@ class SummaryPscCodesView(models.Model):
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
     product_or_service_code = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
@@ -304,8 +308,8 @@ class SummaryCfdaNumbersView(models.Model):
     pulled_from = models.TextField()
     cfda_number = models.TextField(blank=True, null=True)
     cfda_title = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
@@ -362,8 +366,9 @@ class SummaryTransactionMonthView(models.Model):
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()
     extent_competed = models.TextField()
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
@@ -407,8 +412,8 @@ class SummaryTransactionGeoView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
-                                                    blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     counts = models.IntegerField()
