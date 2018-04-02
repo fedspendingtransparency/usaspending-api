@@ -12,9 +12,9 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 
 [Filter Object](../search_filters.md)
 
-limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
+limit (**OPTIONAL**): How many results are returned. If no limit is specified, the limit is set to 10.
 
-page (**OPTIONAL**):  The page number that is currently returned.
+page (**OPTIONAL**): The page number that is currently returned.
 
 sort (**OPTIONAL**): Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first `field` provided. Example: ['Award ID']
 
@@ -94,70 +94,53 @@ The possible fields returned are split by contracts or assistance awards (loans,
 #### Possible Contract Fields w/ db mapping
 ```
     'Award ID': 'piid',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
     'Contract Award Type': 'type_description',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
  ```
 
 #### Possible Grant Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Loan Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Issued Date': 'action_date',
-    'Loan Value': 'face_value_loan_guarantee',
-    'Subsidy Cost': 'original_loan_subsidy_cost',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'Loan Value': 'total_loan_value',
+    'Subsidy Cost': 'total_subsidy_cost',
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Direct Payment Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Other Award Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 ### Response (JSON)
