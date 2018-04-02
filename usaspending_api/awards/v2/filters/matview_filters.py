@@ -1,4 +1,5 @@
 import logging
+import itertools
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -7,9 +8,19 @@ from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.search.v2 import elasticsearch_helper
 
 
 logger = logging.getLogger(__name__)
+
+
+def universal_award_matview_filter(filters):
+    return matview_search_filter(filters, UniversalAwardView)
+
+
+def universal_transaction_matview_filter(filters):
+    return matview_search_filter(filters, UniversalTransactionView)
 
 
 def matview_search_filter(filters, model):
@@ -24,6 +35,7 @@ def matview_search_filter(filters, model):
 
         key_list = [
             'keyword',
+            'elasticsearch_keyword',
             'time_period',
             'award_type_codes',
             'agencies',
@@ -70,6 +82,18 @@ def matview_search_filter(filters, model):
                 compound_or |= Q(product_or_service_code__iexact=keyword)
 
             queryset = queryset.filter(compound_or)
+
+        elif key == "elasticsearch_keyword":
+            keyword = value
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
+            # flatten IDs
+            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
+            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
+            if model is UniversalAwardView:
+                queryset = queryset.filter(latest_transaction__id__isnull=False)
+            queryset &= queryset.extra(
+                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
             success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",

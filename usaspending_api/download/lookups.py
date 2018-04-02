@@ -4,9 +4,10 @@
 
 from collections import namedtuple, OrderedDict
 
-from usaspending_api.awards.models import Subaward, Award, TransactionNormalized
-from usaspending_api.awards.v2.filters.award import award_filter
-from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.models import Subaward
+from usaspending_api.awards.v2.filters.matview_filters import universal_award_matview_filter, \
+    universal_transaction_matview_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 
@@ -24,21 +25,21 @@ JOB_STATUS_DICT_ID = {item.id: item.name for item in JOB_STATUS}
 VALUE_MAPPINGS = {
     # Award Level
     'awards': {
-        'table': Award,
+        'table': UniversalAwardView,
         'table_name': 'award',
         'download_name': 'prime_awards',
-        'contract_data': 'latest_transaction__contract_data',
-        'assistance_data': 'latest_transaction__assistance_data',
-        'filter_function': award_filter
+        'contract_data': 'award__latest_transaction__contract_data',
+        'assistance_data': 'award__latest_transaction__assistance_data',
+        'filter_function': universal_award_matview_filter
     },
     # Transaction Level
     'transactions': {
-        'table': TransactionNormalized,
+        'table': UniversalTransactionView,
         'table_name': 'transaction',
         'download_name': 'prime_transactions',
-        'contract_data': 'contract_data',
-        'assistance_data': 'assistance_data',
-        'filter_function': transaction_filter
+        'contract_data': 'transaction__contract_data',
+        'assistance_data': 'transaction__assistance_data',
+        'filter_function': universal_transaction_matview_filter
     },
     # SubAward Level
     'sub_awards': {
