@@ -15,45 +15,45 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
 
 ```
 {
-  "filters": {
-       "award_type_codes": ["10"],
-       "agencies": [
+    "filters": {
+        "award_type_codes": ["10"],
+        "agencies": [
             {
-                 "type": "awarding",
-                 "tier": "toptier",
-                 "name": "Social Security Administration"
+                "type": "awarding",
+                "tier": "toptier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "awarding",
-                 "tier": "subtier",
-                 "name": "Social Security Administration"
+                "type": "awarding",
+                "tier": "subtier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "funding",
-                 "tier": "toptier",
-                 "name": "Social Security Administration"
+                "type": "funding",
+                "tier": "toptier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "funding",
-                 "tier": "subtier",
-                 "name": "Social Security Administration"
+                "type": "funding",
+                "tier": "subtier",
+                "name": "Social Security Administration"
             }
-       ],
-       "legal_entities": [779928],
-       "recipient_scope": "domestic",
-       "recipient_locations": [650597],
-       "recipient_type_names": ["Individual"],
-       "place_of_performance_scope": "domestic",
-       "place_of_performance_locations": [60323],
-       "award_amounts": [
-              {
-                  "lower_bound": 1500000.00,
-                  "upper_bound": 1600000.00
-              }
-       ],
-       "award_ids": [1018950]
-  },
-  "subawards": false
+        ],
+        "legal_entities": [779928],
+        "recipient_scope": "domestic",
+        "recipient_locations": [650597],
+        "recipient_type_names": ["Individual"],
+        "place_of_performance_scope": "domestic",
+        "place_of_performance_locations": [60323],
+        "award_amounts": [
+            {
+                "lower_bound": 1500000.00,
+                "upper_bound": 1600000.00
+            }
+        ],
+        "award_ids": [1018950]
+    },
+    "subawards": false
 }
 ```
 
@@ -97,6 +97,6 @@ Possible HTTP Status Codes:
 
 ```
 {
-  "detail": "Sample error message"
+    "detail": "Sample error message"
 }
 ```

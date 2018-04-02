@@ -21,17 +21,17 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
         "award_type_codes": ["A", "B", "03"],
         "award_ids": [1, 2, 3],
         "award_amounts": [
-              {
-            "lower_bound": 1000000.00,
-            "upper_bound": 25000000.00
-              },
-              {
-            "upper_bound": 1000000.00
-              },
-              {
-            "lower_bound": 500000000.00
-              }
-             ],
+            {
+                "lower_bound": 1000000.00,
+                "upper_bound": 25000000.00
+            },
+            {
+                "upper_bound": 1000000.00
+            },
+            {
+                "lower_bound": 500000000.00
+            }
+        ],
     },
     "subawards": false
 }
@@ -46,7 +46,7 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
     "results": [
         {
             "time_period": {"fiscal_year": "2017", "quarter": "3"},
-                "aggregated_amount": "200000000"
+            "aggregated_amount": "200000000"
         },
         ....
 
@@ -68,6 +68,6 @@ Possible HTTP Status Codes:
 
 ```
 {
-  "detail": "Sample error message"
+    "detail": "Sample error message"
 }
 ```

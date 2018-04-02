@@ -23,24 +23,25 @@ filters: how the awards are filtered.  The filter object is defined here: [Filte
 
 ```JSON
 {
-	"scope": "place_of_performance",
-	"geo_layer": "state",
-	"geo_layer_filters": ["MN", "WA", "DC"],
-	"filters": {
-		"award_type_codes": ["A", "B", "03"],
-		"award_ids": [1, 2, 3],
-		"award_amounts": [{
-				"lower_bound": 1000000.00,
-				"upper_bound": 25000000.00
-			},
-			{
-				"upper_bound": 1000000.00
-			},
-			{
-				"lower_bound": 500000000.00
-			}
-		]
-	},
+    "scope": "place_of_performance",
+    "geo_layer": "state",
+    "geo_layer_filters": ["MN", "WA", "DC"],
+    "filters": {
+        "award_type_codes": ["A", "B", "03"],
+        "award_ids": [1, 2, 3],
+        "award_amounts": [
+            {
+                "lower_bound": 1000000.00,
+                "upper_bound": 25000000.00
+            },
+            {
+                "upper_bound": 1000000.00
+            },
+            {
+                "lower_bound": 500000000.00
+            }
+        ]
+    },
     "subawards": false
 }
 ```
@@ -121,6 +122,6 @@ Possible HTTP Status Codes:
 
 ```
 {
-  "detail": "Sample error message"
+    "detail": "Sample error message"
 }
 ```
