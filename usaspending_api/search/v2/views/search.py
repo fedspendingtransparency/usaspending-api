@@ -21,7 +21,8 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import (can_use_view, get_view_queryset, spending_by_award_count,
                                                              spending_by_geography, spending_over_time)
 from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contract_type_mapping, loan_type_mapping,
-                                                       non_loan_assistance_type_mapping)
+                                                       non_loan_assistance_type_mapping, contract_subaward_mapping,
+                                                       grant_subaward_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
@@ -663,13 +664,22 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
+        subawards_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+        awards_values = list(award_contracts_mapping.keys()) + list(non_loan_assistance_award_mapping.keys())
+        if (subawards and sort not in subawards_values) or (not subawards and sort not in awards_values):
+            raise InvalidParameterException("Sort value not found in award mappings: {}".format(sort))
+
         # build sql query filters
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             queryset = subaward_filter(filters)
 
-            values = {'award_id', 'subaward_number', 'recipient__recipient_name', 'action_date', 'amount',
-                      'description'}
+            values = {'award_id', 'award_type'}
+            for field in fields:
+                if contract_subaward_mapping.get(field):
+                    values.add(contract_subaward_mapping.get(field))
+                if grant_subaward_mapping.get(field):
+                    values.add(grant_subaward_mapping.get(field))
         else:
             queryset = matview_search_filter(filters, UniversalAwardView).values()
 
@@ -684,22 +694,24 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort and "no intersection" not in filters["award_type_codes"]:
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_filters = [award_contracts_mapping[sort]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-                sort_filters = [loan_award_mapping[sort]]
-            else:  # assistance data
-                sort_filters = [non_loan_assistance_award_mapping[sort]]
+            if subawards:
+                sort_filters = [contract_subaward_mapping[sort]]
+            else:
+                if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
+                    sort_filters = [award_contracts_mapping[sort]]
+                elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+                    sort_filters = [loan_award_mapping[sort]]
+                else:  # assistance data
+                    sort_filters = [non_loan_assistance_award_mapping[sort]]
 
             if sort == "Award ID":
                 sort_filters = ["award_id"] if subawards else ["piid", "fain", "uri"]
             if order == "desc":
                 sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
 
-            queryset = queryset.order_by(*sort_filters)
             if subawards:
                 queryset = queryset.annotate(award_id=Coalesce('award__piid', 'award__fain'))
-            queryset = queryset.values(*list(values))
+            queryset = queryset.order_by(*sort_filters).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
@@ -707,7 +719,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
         results = []
         for award in limited_queryset[:limit]:
             if subawards:
-                row = award
+                row = {"internal_id": award["internal_id"]}
+
+                if award['award_type'] == 'procurement':
+                    subaward_mapping = contract_subaward_mapping
+                else:
+                    subaward_mapping = grant_subaward_mapping
+
+                for field in fields:
+                    row[field] = subaward_mapping[field]
+
             else:
                 row = {"internal_id": award["award_id"]}
 
@@ -728,6 +749,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                             row["Award ID"] = award[id_type]
                             break
             results.append(row)
+
         # build response
         response = {
             'limit': limit,
