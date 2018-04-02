@@ -166,6 +166,8 @@ The possible fields returned are split by contracts or assistace awards (loans, 
     }
 }
 
+```
+
 ### Response (JSON) - Subaward
 
 ```
@@ -191,13 +193,14 @@ The possible fields returned are split by contracts or assistace awards (loans, 
     }
 }
 
+```
+
 **page_metadata Descriptions**
 
 **page** - The current page number of results.
 
 **hasNext** - Boolean object. If true, there is another page of results.
 
-```
 
 ### Errors
 Possible HTTP Status Codes:
