@@ -34,7 +34,22 @@ def test_spending_by_geography_success(client):
         }))
     assert resp.status_code == status.HTTP_200_OK
 
-    # test subawards
+
+@pytest.mark.skip
+@pytest.mark.django_db
+def test_spending_by_geography_failure(client):
+    """Verify error on bad autocomplete request for budget function."""
+
+    resp = client.post(
+        '/api/v2/search/spending_by_geography/',
+        content_type='application/json',
+        data=json.dumps({'scope': 'test', 'filter': {}}))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_subawards_success(client):
+
     resp = client.post(
         '/api/v2/search/spending_by_geography',
         content_type='application/json',
@@ -47,15 +62,18 @@ def test_spending_by_geography_success(client):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_spending_by_geography_failure(client):
-    """Verify error on bad autocomplete request for budget function."""
+def test_spending_by_geography_subawards_failure(client):
 
     resp = client.post(
-        '/api/v2/search/spending_by_geography/',
+        '/api/v2/search/spending_by_geography',
         content_type='application/json',
-        data=json.dumps({'scope': 'test', 'filter': {}}))
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "filters": all_filters(),
+            "subawards": "string"
+        }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
