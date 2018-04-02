@@ -10,7 +10,7 @@ group: the unit of time that awards are aggregated by.  You must use one of: mon
 
 filters: how the awards are filtered.  The filter object is defined here.
 
-subawards: boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
 
 [Filter Object](../search_filters.md)
 

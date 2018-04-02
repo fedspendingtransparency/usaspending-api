@@ -12,7 +12,7 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 
 [Filter Object](../search_filters.md)
 
-subawards: boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
 
 limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
 

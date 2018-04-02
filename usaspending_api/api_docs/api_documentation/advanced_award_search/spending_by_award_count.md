@@ -11,6 +11,8 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 
 [Filter Object](../search_filters.md)
 
+subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+
 ```
 {
   "filters": {
@@ -49,9 +51,9 @@ filters: Defines how the awards are filtered.  The filter object is defined here
                   "upper_bound": 1600000.00
               }
        ],
-       "award_ids": [1018950],
-       "subawards": false
-  }
+       "award_ids": [1018950]
+  },
+  "subawards": false
 }
 ```
 
