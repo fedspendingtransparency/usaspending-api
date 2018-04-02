@@ -50,7 +50,7 @@ filters: Defines how the awards are filtered.  The filter object is defined here
               }
        ],
        "award_ids": [1018950],
-       "subawards": "false"
+       "subawards": false
   }
 }
 ```

@@ -62,7 +62,7 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
        ],
        "award_ids": [1018950]
   },
-  "subawards": "False",
+  "subawards": false,
   "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
   "sort": "Recipient Name",
   "order": "desc"

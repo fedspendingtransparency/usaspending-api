@@ -41,7 +41,7 @@ filters: how the awards are filtered.  The filter object is defined here: [Filte
 			}
 		]
 	},
-    "subawards": "false"
+    "subawards": false
 }
 ```
 
