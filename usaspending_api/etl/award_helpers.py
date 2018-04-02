@@ -41,7 +41,7 @@ def update_awards(award_tuple=None):
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
         'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
-        'SUM(NULLIF(tn.funding_amount, '')::decimal) AS total_funding_amount, '
+        'SUM(tn.funding_amount) AS total_funding_amount, '
         'SUM(face_value_loan_guarantee) AS total_loan_value '
         'FROM transaction_normalized ')
     if award_tuple:
