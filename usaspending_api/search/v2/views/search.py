@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
-from django.db.models.functions import ExtractMonth, Cast, Coalesce
+from django.db.models.functions import ExtractMonth, ExtractYear, Cast, Coalesce
 
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
@@ -60,16 +60,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if type(subawards) is not bool:
             raise InvalidParameterException('subawards does not have a valid value')
 
-        if subawards:
-            # We do not use matviews for Subaward filtering, just the Subaward download filters
-            queryset = subaward_filter(filters)
-        else:
-            queryset = spending_over_time(filters)
+        # initial queryset is different for subawards
+        queryset = spending_over_time(filters) if not subawards else subaward_filter(filters)
 
         filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
 
         # define what values are needed in the sql query
-        queryset = queryset.values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
+        if subawards:
+            queryset = queryset.values('action_date')
+        else:
+            queryset = queryset.values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
 
         # build response
         response = {'group': group, 'results': []}
@@ -77,44 +77,61 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
-        if group == 'fy' or group == 'fiscal_year':
-            fy_set = sum_transaction_amount(queryset.values('fiscal_year'), filter_types=filter_types)
+        if subawards:
+            data_set = queryset.annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date')) \
+                .values('month', 'year')
+        else:
+            if group == 'fy' or group == 'fiscal_year':
+                data_set = sum_transaction_amount(queryset.values('fiscal_year'), filter_types=filter_types)
+            else:
+                # quarterly also takes months and adds them up
+                data_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
 
-            for trans in fy_set:
-                key = {'fiscal_year': str(trans['fiscal_year'])}
-                key = str(key)
-                group_results[key] = trans['transaction_amount']
+            data_set = sum_transaction_amount(data_set, filter_types=filter_types)
 
-        elif group == 'm' or group == 'month':
-            month_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
-            month_set = sum_transaction_amount(month_set, filter_types=filter_types)
+        for record in data_set:
+            if subawards:
+                # all Subaward requests need to extract FiscalDate data from the action_date
+                fiscal_date = FiscalDate(record['year'], record['month'], 1)
 
-            for trans in month_set:
-                # Convert month to fiscal month
-                fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
-
-                key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
-                key = str(key)
-                group_results[key] = trans['transaction_amount']
-            nested_order = 'month'
-
-        else:  # quarterly, take months and add them up
-            month_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
-            month_set = sum_transaction_amount(month_set, filter_types=filter_types)
-
-            for trans in month_set:
-                # Convert month to quarter
-                quarter = FiscalDate(2017, trans['month'], 1).quarter
-
-                key = {'fiscal_year': str(trans['fiscal_year']), 'quarter': str(quarter)}
+                key = {'fiscal_year': str(fiscal_date.fiscal_year)}
+                if group == 'm' or group == 'month':
+                    key['month'] = fiscal_date.month
+                    nested_order = 'month'
+                elif group == 'q' and group == 'quarter':
+                    key['quarter'] = fiscal_date.quarter
+                    nested_order = 'quarter'
                 key = str(key)
 
-                # If key exists {fy : quarter}, aggregate
+                # if key exists {fy : quarter}, aggregate
                 if group_results.get(key) is None:
-                    group_results[key] = trans['transaction_amount']
-                elif trans['transaction_amount']:
-                    group_results[key] = group_results.get(key) + trans['transaction_amount']
-            nested_order = 'quarter'
+                    group_results[key] = record['amount']
+                elif record['amount']:
+                    group_results[key] = group_results.get(key) + record['amount']
+
+            else:
+                key = {'fiscal_year': str(record['fiscal_year'])}
+
+                if group == 'm' or group == 'month':
+                    # convert month to fiscal month
+                    key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
+                    nested_order = 'month'
+
+                if group == 'q' or group == 'quarter':
+                    # convert month to quarter
+                    key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
+                    key = str(key)
+                    nested_order = 'quarter'
+
+                    # if key exists {fy : quarter}, aggregate
+                    if group_results.get(key) is None:
+                        group_results[key] = record['transaction_amount']
+                    elif record['transaction_amount']:
+                        group_results[key] = group_results.get(key) + record['transaction_amount']
+                else:
+                    # year and month should never need to aggregate
+                    key = str(key)
+                    group_results[key] = record['transaction_amount']
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -700,7 +717,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                     for field in fields:
                         row[field] = award.get(non_loan_assistance_award_mapping.get(field))
-                elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV + contract
+                elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:
+                    # IDV + contract
                     for field in fields:
                         row[field] = award.get(award_contracts_mapping.get(field))
 

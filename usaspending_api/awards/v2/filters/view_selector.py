@@ -1,13 +1,7 @@
-from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
-from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
-from usaspending_api.awards.models_matviews import SummaryPscCodesView
-from usaspending_api.awards.models_matviews import SummaryAwardView
-from usaspending_api.awards.models_matviews import SummaryTransactionGeoView
-from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
-from usaspending_api.awards.models_matviews import SummaryTransactionView
-from usaspending_api.awards.models_matviews import SummaryView
-from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.models_matviews import (SummaryCfdaNumbersView, SummaryNaicsCodesView, SummaryPscCodesView,
+                                                    SummaryAwardView, SummaryTransactionGeoView,
+                                                    SummaryTransactionMonthView, SummaryTransactionView, SummaryView,
+                                                    UniversalAwardView, UniversalTransactionView)
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.common.exceptions import InvalidParameterException
