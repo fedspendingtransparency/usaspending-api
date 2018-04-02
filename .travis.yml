@@ -12,6 +12,7 @@ env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+  - ES_HOSTNAME='http://localhost:9200'
 
 install:
 - pip install -r requirements/requirements.txt
@@ -19,10 +20,25 @@ install:
 
 before_script:
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
+- psql -c "CREATE USER readonly;"
 
 script:
 - flake8
 - pytest --cov=usaspending_api
+- python manage.py migrate
+- psql $DATABASE_URL -f usaspending_api/database_scripts/matviews/functions_and_enums.sql
+- python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest='temp_sql/'
+- psql $DATABASE_URL -f temp_sql/universal_transaction_matview.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/universal_award_matview.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_transaction_view.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_transaction_month_view.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_transaction_geo_view.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_award_view.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_view_cfda_number.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_view_naics_codes.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_view_psc_codes.sql -v ON_ERROR_STOP=1
+- psql $DATABASE_URL -f temp_sql/summary_view.sql -v ON_ERROR_STOP=1
+
 
 after_success:
 - codeclimate-test-reporter
