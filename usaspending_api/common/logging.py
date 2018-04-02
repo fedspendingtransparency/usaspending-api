@@ -64,7 +64,7 @@ class LoggingMiddleware(MiddlewareMixin):
             "remote_addr": get_remote_addr(request),
             "host": request.get_host(),
             "method": request.method,
-            "timestamp": now().strftime('%d/%m/%y %H:%M:%S')
+            "timestamp": now().strftime('%m/%d/%y %H:%M:%S')
         }
 
         try:
