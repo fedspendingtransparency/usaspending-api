@@ -153,6 +153,7 @@ class UniversalAwardView(models.Model):
     total_obligation = models.DecimalField(
         max_digits=15, decimal_places=2, blank=True,
         null=True)
+    description = models.TextField()
     total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
@@ -165,6 +166,8 @@ class UniversalAwardView(models.Model):
 
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
+    last_modified_date = models.TextField()
+
     period_of_performance_start_date = models.DateField()
     period_of_performance_current_end_date = models.DateField()
 
@@ -177,6 +180,11 @@ class UniversalAwardView(models.Model):
     funding_toptier_agency_name = models.TextField()
     awarding_subtier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
+
+    awarding_toptier_agency_code = models.TextField()
+    funding_toptier_agency_code = models.TextField()
+    awarding_subtier_agency_code = models.TextField()
+    funding_subtier_agency_code = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
@@ -191,10 +199,12 @@ class UniversalAwardView(models.Model):
     pop_state_code = models.TextField()
     pop_county_code = models.TextField()
     pop_county_name = models.TextField()
+    pop_city_code = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
 
     cfda_number = models.TextField()
+    sai_number = models.TextField()
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     extent_competed = models.TextField()
