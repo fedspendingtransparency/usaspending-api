@@ -16,7 +16,7 @@ geo_layer_filter: Defines a filter for a specific geographic area correlating to
 - When `geo_layer` is `"county"` then the `geo_layer_filters` should be an array of county codes. County codes are the county's state FIPS code concatenated with the county's FIPS code. ex: `["51041", "51117", "51179"]`.
 - When `geo_layer` is `"district"` then  the geo_layer filters should be an array of congressional district codes. The congressional district code is a concatenation of the state FIPS code + the Congressional District code including any leading zeros. ex: `["5109", "5109", "5109"]`.
 
-filters: how the awards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
+filters: how the awards are filtered.  The filter object is defined here: [Filter Object](../search_filters.md)
 
 
 ```JSON
