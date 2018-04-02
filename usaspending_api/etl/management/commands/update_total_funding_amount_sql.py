@@ -30,24 +30,22 @@ class Command(BaseCommand):
 
     TRANSACTION_FABS_TFA = """
         update transaction_fabs as tf
-        set total_funding_amount = (
-            tf.federal_action_obligation + tf.non_federal_funding_amount
-        )
+        set funding_amount= federal_action_obligation + non_federal_funding_amount 
     """
 
+
     TRANSACTION_NORMALIZED_TFA = """
-        update transaction_normalized as tn
-        set total_funding_amount=tf.total_funding_amount from transaction_fabs as tf where tf.transaction_id=tn.id;
+    update transaction_normalized as tn
+    set funding_amount=tf.funding_amount
+    from transaction_fabs as tf
+    where tf.transaction_id=tn.id
     """
+
 
     SUM_TRANSACTION_TFA = """
     With sum_table as (
-        SELECT award_id, SUM(NULLIF(tn.total_funding_amount, '')::decimal) sum_val
-        FROM transaction_normalized as tn
-        join awards a on tn.award_id = a.id
-        WHERE a.id = tn.award_id
-        GROUP BY award_id
-        order by award_id
+    SELECT award_id, SUM(NULLIF(tn.funding_amount, '')::float) sum_val 
+    FROM transaction_normalized as tn join awards a on tn.award_id = a.id WHERE a.id = tn.award_id GROUP BY award_id
     )
     update awards as a
     set total_funding_amount=sum_table.sum_val
