@@ -443,6 +443,7 @@ query_paths = {
             'record_type_code': 'award__latest_transaction__assistance_data__record_type',
             'sai_number': 'award__latest_transaction__assistance_data__sai_number',
             'total_funding_amount': 'award__latest_transaction__assistance_data__total_funding_amount',
+            'total_loan_value': 'award__total_loan_value',
             'total_subsidy_cost': 'award__total_subsidy_cost'
         }
     },
@@ -783,6 +784,7 @@ query_paths = {
             'record_type_code': 'transaction__assistance_data__record_type',
             'sai_number': 'transaction__assistance_data__sai_number',
             'total_funding_amount': 'transaction__assistance_data__total_funding_amount',
+            'total_loan_value': 'transaction__award__total_loan_value',
             'total_subsidy_cost': 'transaction__award__total_subsidy_cost'
         },
     },
@@ -1157,6 +1159,7 @@ human_names = {
             'face_value_of_loan',
             'original_subsidy_cost',
             'total_subsidy_cost',
+            'total_loan_value',
             'period_of_performance_start_date',
             'period_of_performance_current_end_date',
             'awarding_agency_code',
@@ -1475,6 +1478,7 @@ human_names = {
             'face_value_of_loan',
             'original_subsidy_cost',
             'total_subsidy_cost',
+            'total_loan_value',
             'action_date',
             'period_of_performance_start_date',
             'period_of_performance_current_end_date',
