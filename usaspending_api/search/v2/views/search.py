@@ -57,9 +57,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         potential_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
         if group not in potential_groups:
             raise InvalidParameterException('group does not have a valid value')
-        if not subawards.upper() in ('TRUE', 'FALSE'):
+        if type(subawards) is not bool:
             raise InvalidParameterException('subawards does not have a valid value')
-        subawards = subawards.upper() == 'TRUE'
 
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
@@ -410,7 +409,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         json_request = request.data
-        subawards = json_request.get('subawards', False)
+        subawards = json_request.get("subawards", False)
 
         self.scope = json_request.get("scope")
         self.filters = json_request.get("filters", {})
@@ -441,9 +440,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException("Invalid request parameters: scope")
         if loc_field_name is None:
             raise InvalidParameterException("Invalid request parameters: geo_layer")
-        if not subawards.upper() in ('TRUE', 'FALSE'):
-            raise InvalidParameterException("subawards does not have a valid value")
-        subawards = subawards.upper() == 'TRUE'
+        if type(subawards) is not bool:
+            raise InvalidParameterException('subawards does not have a valid value')
 
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
@@ -621,7 +619,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = request.data
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
-        subawards = json_request.get("subawards", "False")
+        subawards = json_request.get("subawards", False)
         order = json_request.get("order", "asc")
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
@@ -641,9 +639,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "Missing one or more required request parameters: filters['award_type_codes']")
         if order not in ["asc", "desc"]:
             raise InvalidParameterException("Invalid value for order: {}".format(order))
-        if not subawards.upper() in ('TRUE', 'FALSE'):
+        if type(subawards) is not bool:
             raise InvalidParameterException('subawards does not have a valid value')
-        subawards = subawards.upper() == 'TRUE'
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
@@ -679,8 +676,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             if sort == "Award ID":
                 sort_filters = ["award_id"] if subawards else ["piid", "fain", "uri"]
-            if order == 'desc':
-                sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
+            if order == "desc":
+                sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
 
             queryset = queryset.order_by(*sort_filters)
             if subawards:
@@ -736,14 +733,27 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         filters = json_request.get("filters", None)
+        subawards = json_request.get("subawards", False)
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
+        if type(subawards) is not bool:
+            raise InvalidParameterException("subawards does not have a valid value")
 
-        queryset, model = spending_by_award_count(filters)
-        if model == 'SummaryAwardView':
+        if subawards:
+            queryset = subaward_filter(filters)
+        else:
+            queryset, model = spending_by_award_count(filters)
+
+        if subawards:
             queryset = queryset \
-                .values("category") \
+                .values('award_type') \
+                .annotate(category_count=Sum('amount'))
+
+        elif model == 'SummaryAwardView':
+            queryset = queryset \
+                .values('category') \
                 .annotate(category_count=Sum('counts'))
+
         else:
             # for IDV CONTRACTS category is null. change to contract
             queryset = queryset \
@@ -751,7 +761,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
                 .values('category', 'category_count')
 
-        results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+        results = {
+            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+        } if not subawards else {
+            "subcontracts": 0, "subgrants": 0
+        }
 
         categories = {
             'contract': 'contracts',
@@ -759,16 +773,18 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             'direct payment': 'direct_payments',
             'loans': 'loans',
             'other': 'other'
-        }
+        } if not subawards else {'procurement': 'subcontracts', 'grant': 'subgrants'}
+
+        category_name = 'category' if not subawards else 'award_type'
 
         # DB hit here
         for award in queryset:
-            if award['category'] is None:
-                result_key = 'contracts'
-            elif award['category'] not in categories.keys():
+            if award[category_name] is None:
+                result_key = 'contracts' if not subawards else 'subcontracts'
+            elif award[category_name] not in categories.keys():
                 result_key = 'other'
             else:
-                result_key = categories[award['category']]
+                result_key = categories[award[category_name]]
             results[result_key] += award['category_count']
 
         # build response
