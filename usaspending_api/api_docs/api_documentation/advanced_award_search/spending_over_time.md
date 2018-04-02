@@ -33,7 +33,7 @@ subawards: boolean value.  True when you want to group by Subawards instead of A
               }
              ],
     },
-    "subawards": False
+    "subawards": "false"
 }
 ```
 

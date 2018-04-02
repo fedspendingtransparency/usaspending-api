@@ -62,7 +62,7 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
        ],
        "award_ids": [1018950]
   },
-  "subawards": False,
+  "subawards": "False",
   "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
   "sort": "Recipient Name",
   "order": "desc"
@@ -140,7 +140,7 @@ The possible fields returned are split by contracts or assistace awards (loans, 
     'Funding Sub Agency': 'funding_subtier_agency_name'
 ```
 
-### Response (JSON)
+### Response (JSON) - Award
 
 ```
 {
@@ -158,6 +158,31 @@ The possible fields returned are split by contracts or assistace awards (loans, 
             "Award Type": "10",
             "Funding Agency": "Social Security Administration",
             "Funding Sub Agency": "Social Security Administration"
+        }
+    ],
+    "page_metadata": {
+        "page": 1,
+        "hasNext": true
+    }
+}
+
+### Response (JSON) - Subaward
+
+```
+{
+    "limit": 10,
+    "results": [
+        {
+            "internal_id": 4712890,
+            "Subaward ID": null,
+            "Subaward Type": "procurement",
+            "Subawardee Name": null,
+            "Subaward Date": null,
+            "Subaward Amount": 1573663,
+            "Awarding Agency": "Social Security Administration",
+            "Awarding Sub Agency": "Social Security Administration",
+            "Prime Award ID": null,
+            "Prime Recipient Name": "MULTIPLE RECIPIENTS"
         }
     ],
     "page_metadata": {

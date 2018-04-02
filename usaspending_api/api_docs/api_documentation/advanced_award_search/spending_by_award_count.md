@@ -49,13 +49,14 @@ filters: Defines how the awards are filtered.  The filter object is defined here
                   "upper_bound": 1600000.00
               }
        ],
-       "award_ids": [1018950]
+       "award_ids": [1018950],
+       "subawards": "false"
   }
 }
 ```
 
 
-### Response (JSON)
+### Response (JSON) - Awards
 
 ```
 {
@@ -70,6 +71,20 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 ```
 **Response Documentation**
 The result set always returns how many grants, loans, contracts, direct payments, and other awards are returned with the specified filters.
+
+
+### Response (JSON) - Subawards
+
+```
+{
+    "results": {
+        "subgrants": 0,
+        "subcontracts": 0
+    }
+}
+```
+**Response Documentation**
+The result set always returns how many subgrants and subcontracts are returned with the specified filters.
 
 
 
