@@ -127,7 +127,7 @@ class Command(BaseCommand):
                 self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
             else:
                 # If --days is provided, go back X days into the past
-                self.config['starting_date'] = datetime.datetime.utcnow() - timedelta(days=options['days'])
+                self.config['starting_date'] = datetime.utcnow() - timedelta(days=options['days'])
         else:
             self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
@@ -135,7 +135,7 @@ class Command(BaseCommand):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
-        if does_index_exist and (not options['since'] or not options['days']):
+        if does_index_exist and (not options['since'] and not options['days']):
             print('''
                   Bad mix of parameters! Index exists and
                   full data load implied. Choose a different
