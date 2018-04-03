@@ -6,7 +6,9 @@ from django.db.models import Q
 from usaspending_api.awards.models import Subaward, LegalEntity
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import NAICS, PSC
+# Commenting out currently knowing NAICS will be included later
+# from usaspending_api.references.models import NAICS
+from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
 
 logger = logging.getLogger(__name__)
