@@ -1474,7 +1474,7 @@ human_names = {
             'sai_number',
             'federal_action_obligation',
             'non_federal_funding_amount',
-            'funding_amount',
+            'total_funding_amount',
             'face_value_of_loan',
             'original_subsidy_cost',
             'total_subsidy_cost',
