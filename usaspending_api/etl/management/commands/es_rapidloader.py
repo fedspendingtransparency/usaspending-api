@@ -1,7 +1,7 @@
 import os
 import json
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
@@ -49,6 +49,11 @@ class Command(BaseCommand):
             default=None,
             type=str,
             help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
+        parser.add_argument(
+            '--days',
+            default=None,
+            type=int,
+            help='Like `--since` but subtracts X days from today instead of a specific date')
         parser.add_argument(
             '--dir',
             default=os.path.dirname(os.path.abspath(__file__)),
@@ -115,10 +120,14 @@ class Command(BaseCommand):
             self.config['provide_deleted'] = False
 
         if not options['since']:
-            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
-            #   before the earliest records in S3 and when Postgres records were updated.
-            #   Choose the beginning of FY2008, and made it timezone-award for S3
-            self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+            if not options['days']:
+                # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
+                #   before the earliest records in S3 and when Postgres records were updated.
+                #   Choose the beginning of FY2008, and made it timezone-award for S3
+                self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+            else:
+                # If --days is provided, go back X days into the past
+                self.config['starting_date'] = datetime.datetime.utcnow() - timedelta(days=options['days'])
         else:
             self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
@@ -126,7 +135,7 @@ class Command(BaseCommand):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
-        if does_index_exist and not options['since']:
+        if does_index_exist and (not options['since'] or not options['days']):
             print('''
                   Bad mix of parameters! Index exists and
                   full data load implied. Choose a different
@@ -183,26 +192,26 @@ class Command(BaseCommand):
             target=es_data_loader,
             args=(ES, download_queue, es_ingest_queue, self.config)))
 
-        process_list[0].start()
+        process_list[0].start()  # Start Download process
 
         if self.config['provide_deleted']:
             process_list.append(Process(
                 name='S3 Deleted Records Scrapper Process',
                 target=deleted_transactions,
                 args=(ES, self.config)))
-            process_list[-1].start()
+            process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
                 printf({'msg': 'Waiting to start ES ingest until S3 deletes are complete'})
                 sleep(7)
 
-        process_list[1].start()
+        process_list[1].start()  # start ES ingest process
 
         while True:
             sleep(10)
             if process_guarddog(process_list):
-                break
+                raise SystemExit
             elif all([not x.is_alive() for x in process_list]):
-                printf({'msg': 'All processes completed execution with no error codes'})
+                printf({'msg': 'All ETL processes completed execution with no error codes'})
                 break
 
         if self.config['swap']:
@@ -215,14 +224,6 @@ class Command(BaseCommand):
 
 
 def set_config():
-    if not os.environ.get('DATABASE_URL'):
-        print('Missing environment variable `DATABASE_URL`')
-        raise SystemExit
-
-    if not os.environ.get('ES_HOSTNAME'):
-        print('Missing environment variable `ES_HOSTNAME`')
-        raise SystemExit
-
     return {
         'aws_region': os.environ.get('CSV_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'),

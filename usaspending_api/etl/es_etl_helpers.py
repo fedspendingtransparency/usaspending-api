@@ -110,7 +110,7 @@ def process_guarddog(process_list):
     for proc in process_list:
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
-            msg = 'TERMINATING ALL PROCESSES AND QUITTING' + \
+            msg = 'TERMINATING ALL PROCESSES AND QUITTING!!! ' + \
                 '{} exited with error. Returned {}'.format(proc.name, proc.exitcode)
             printf({'msg': msg})
             [x.terminate() for x in process_list]
@@ -318,8 +318,9 @@ def swap_aliases(client, index):
 
 
 def test_mapping(client, index, config):
+    transaction_mapping = json.loads(config['mapping'])['mappings']
     index_mapping = client.indices.get(index)[index]['mappings']
-    return index_mapping == config['mapping']
+    return index_mapping == transaction_mapping
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
