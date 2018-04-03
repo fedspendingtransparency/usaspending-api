@@ -1,7 +1,7 @@
 import os
 import json
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
@@ -18,6 +18,7 @@ from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import swap_aliases
 from usaspending_api.etl.es_etl_helpers import take_snapshot
 from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.es_etl_helpers import process_guarddog
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -48,6 +49,11 @@ class Command(BaseCommand):
             default=None,
             type=str,
             help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
+        parser.add_argument(
+            '--days',
+            default=None,
+            type=int,
+            help='Like `--since` but subtracts X days from today instead of a specific date')
         parser.add_argument(
             '--dir',
             default=os.path.dirname(os.path.abspath(__file__)),
@@ -114,10 +120,14 @@ class Command(BaseCommand):
             self.config['provide_deleted'] = False
 
         if not options['since']:
-            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
-            #   before the earliest records in S3 and when Postgres records were updated.
-            #   Choose the beginning of FY2008, and made it timezone-award for S3
-            self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+            if not options['days']:
+                # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
+                #   before the earliest records in S3 and when Postgres records were updated.
+                #   Choose the beginning of FY2008, and made it timezone-award for S3
+                self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+            else:
+                # If --days is provided, go back X days into the past
+                self.config['starting_date'] = datetime.utcnow() - timedelta(days=options['days'])
         else:
             self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
@@ -125,7 +135,7 @@ class Command(BaseCommand):
             printf({'msg': 'Provided directory does not exist'})
             raise SystemExit
 
-        if does_index_exist and not options['since']:
+        if does_index_exist and (not options['since'] and not options['days']):
             print('''
                   Bad mix of parameters! Index exists and
                   full data load implied. Choose a different
@@ -141,7 +151,8 @@ class Command(BaseCommand):
     def controller(self):
 
         download_queue = Queue()  # Queue for jobs whch need a csv downloaded
-        es_ingest_queue = Queue(10)  # Queue for jobs which have a csv and are ready for ES ingest
+        es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
+
         job_id = 0
         for fy in self.config['fiscal_years']:
             for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
@@ -171,25 +182,37 @@ class Command(BaseCommand):
 
         printf({'msg': 'There are {} jobs to process'.format(job_id)})
 
-        if self.config['provide_deleted']:
-            s3_delete_process = Process(target=deleted_transactions, args=(ES, self.config))
-        download_proccess = Process(target=download_db_records, args=(download_queue, es_ingest_queue, self.config))
-        es_index_process = Process(target=es_data_loader, args=(ES, download_queue, es_ingest_queue, self.config))
+        process_list = []
+        process_list.append(Process(
+            name='Download Proccess',
+            target=download_db_records,
+            args=(download_queue, es_ingest_queue, self.config)))
+        process_list.append(Process(
+            name='ES Index Process',
+            target=es_data_loader,
+            args=(ES, download_queue, es_ingest_queue, self.config)))
 
-        download_proccess.start()
+        process_list[0].start()  # Start Download process
 
         if self.config['provide_deleted']:
-            s3_delete_process.start()
-            while s3_delete_process.is_alive():
+            process_list.append(Process(
+                name='S3 Deleted Records Scrapper Process',
+                target=deleted_transactions,
+                args=(ES, self.config)))
+            process_list[-1].start()  # start S3 csv fetch proces
+            while process_list[-1].is_alive():
                 printf({'msg': 'Waiting to start ES ingest until S3 deletes are complete'})
                 sleep(7)
 
-        es_index_process.start()
+        process_list[1].start()  # start ES ingest process
 
-        if self.config['provide_deleted']:
-            s3_delete_process.join()
-        download_proccess.join()
-        es_index_process.join()
+        while True:
+            sleep(10)
+            if process_guarddog(process_list):
+                raise SystemExit
+            elif all([not x.is_alive() for x in process_list]):
+                printf({'msg': 'All ETL processes completed execution with no error codes'})
+                break
 
         if self.config['swap']:
             printf({'msg': 'Closing old indices and adding aliases'})
@@ -201,14 +224,6 @@ class Command(BaseCommand):
 
 
 def set_config():
-    if not os.environ.get('DATABASE_URL'):
-        print('Missing environment variable `DATABASE_URL`')
-        raise SystemExit
-
-    if not os.environ.get('ES_HOSTNAME'):
-        print('Missing environment variable `ES_HOSTNAME`')
-        raise SystemExit
-
     return {
         'aws_region': os.environ.get('CSV_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'),
