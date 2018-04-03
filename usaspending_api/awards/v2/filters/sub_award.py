@@ -63,15 +63,16 @@ def subaward_filter(filters):
                 recipient_match = True
                 recipient_qs = queryset.filter(recipient__in=recipient_list)
 
-            naics_match = False
-            if keyword.isnumeric():
-                naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
-            else:
-                naics_list = NAICS.objects.all().filter(
-                    description__icontains=keyword).values('code')
-            if naics_list.exists():
-                naics_match = True
-                naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
+            # Commenting out until NAICS is associated with subawards
+            # naics_match = False
+            # if keyword.isnumeric():
+            #     naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+            # else:
+            #     naics_list = NAICS.objects.all().filter(
+            #         description__icontains=keyword).values('code')
+            # if naics_list.exists():
+            #     naics_match = True
+            #     naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
 
             psc_match = False
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
@@ -95,16 +96,18 @@ def subaward_filter(filters):
 
             piid_qs = queryset.filter(award__piid=keyword)
             fain_qs = queryset.filter(award__fain=keyword)
+            subaward_num_qs = queryset.filter(subaward_number=keyword)
 
             # Always filter on fain/piid because fast:
             queryset = piid_qs
             queryset |= fain_qs
+            queryset |= subaward_num_qs
             # if description_match:
             #     queryset |= description_qs
             if recipient_match:
                 queryset |= recipient_qs
-            if naics_match:
-                queryset |= naics_qs
+            # if naics_match:
+            #     queryset |= naics_qs
             if psc_match:
                 queryset |= psc_qs
             if duns_match:
@@ -291,7 +294,7 @@ def subaward_filter(filters):
                 filter_obj = Q()
                 for val in value:
                     filter_obj |= (Q(award__piid__icontains=val) | Q(award__fain__icontains=val) |
-                                   Q(award__uri__icontains=val))
+                                   Q(award__uri__icontains=val) | Q(subaward_number__icontains=val))
 
                 queryset &= Subaward.objects.filter(filter_obj)
 
@@ -301,15 +304,16 @@ def subaward_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= Subaward.objects.filter(
-                    award__latest_transaction__assistance_data__cfda_number__in=or_queryset)
+                    cfda__program_number__in=or_queryset)
 
-        elif key == "naics_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Subaward.objects.filter(
-                    award__latest_transaction__contract_data__naics__in=or_queryset)
+        # Commenting this out as NAICS isn't currently mapped to subawards
+        # elif key == "naics_codes":
+        #     or_queryset = []
+        #     for v in value:
+        #         or_queryset.append(v)
+        #     if len(or_queryset) != 0:
+        #         queryset &= Subaward.objects.filter(
+        #             naics__in=or_queryset)
 
         elif key == "psc_codes":
             or_queryset = []
