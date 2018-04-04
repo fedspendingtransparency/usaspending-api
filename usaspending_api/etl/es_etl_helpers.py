@@ -10,8 +10,11 @@ from collections import defaultdict
 from datetime import datetime
 from django.db import connection
 from elasticsearch import helpers
-from time import perf_counter, sleep
+from elasticsearch import TransportError
 
+from time import perf_counter, sleep
+from usaspending_api import settings
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
@@ -99,6 +102,22 @@ class DataJob:
 # ==============================================================================
 
 
+def process_guarddog(process_list):
+    """
+        pass in a list of multiprocess Process objects.
+        If one errored then terminate the others and return True
+    """
+    for proc in process_list:
+        # If exitcode is None, process is still running. exit code 0 is normal
+        if proc.exitcode not in (None, 0):
+            msg = 'TERMINATING ALL PROCESSES AND QUITTING!!! ' + \
+                '{} exited with error. Returned {}'.format(proc.name, proc.exitcode)
+            printf({'msg': msg})
+            [x.terminate() for x in process_list]
+            return True
+    return False
+
+
 def configure_sql_strings(config, filename, deleted_ids):
     '''
     Populates the formatted strings defined globally in this file to create the desired SQL
@@ -156,7 +175,7 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     while not fetch_jobs.empty():
         if done_jobs.full():
-            printf({'msg': 'Waiting 60s reduce temporary disk space used', 'f': 'Download'})
+            printf({'msg': 'Paused downloading new CSVs so ES index process can catch up', 'f': 'Download'})
             sleep(60)
         else:
             start = perf_counter()
@@ -202,7 +221,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
             'msg': msg.format(count, download_count, filename),
             'job': job_id,
             'f': 'Download'})
-
+        raise SystemExit
     return count
 
 
@@ -234,10 +253,10 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None):
+def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type='transaction_mapping'):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type='transaction_mapping'):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type=doc_type):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -249,6 +268,61 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
     return success, failed
 
 
+def put_alias(client, index, alias_name, award_type_codes):
+    alias_body = {'filter': {'terms': {"type": award_type_codes}}}
+    client.indices.put_alias(index, alias_name, body=alias_body)
+
+
+def swap_aliases(client, index):
+    client.indices.refresh(index)
+    # add null values to contracts alias
+    if client.indices.get_alias(index, '*'):
+        printf({'msg': 'Removing old aliases for index "{}"'.format(index),
+                'job': None, 'f': 'ES Alias Drop'})
+        client.indices.delete_alias(index, '_all')
+
+    indices_to_award_types['contracts'] += ('NULL',)
+    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + '*'
+
+    try:
+        old_indices = client.indices.get_alias('*', alias_patterns).keys()
+        for old_index in old_indices:
+            client.indices.delete_alias(old_index, '_all')
+            client.indices.close(old_index)
+            printf({'msg': 'Removing aliases & closing "{}"'.format(old_index),
+                    'job': None, 'f': 'ES Alias Drop'})
+    except Exception as e:
+        printf({'msg': 'ERROR: no aliases found for {}'.format(alias_patterns),
+                'f': 'ES Alias Drop'})
+
+    for award_type, award_type_codes in indices_to_award_types.items():
+        alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        printf({'msg': 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
+                'job': '', 'f': 'ES Alias Put'})
+        put_alias(client, index, alias_name, award_type_codes)
+
+    es_settingsfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_settings.json')
+    with open(es_settingsfile) as f:
+        settings_dict = json.load(f)
+    index_settings = settings_dict['settings']['index']
+
+    current_settings = client.indices.get(index)[index]['settings']['index']
+
+    client.indices.put_settings(index_settings, index)
+    client.indices.refresh(index)
+    for setting_, value_ in index_settings.items():
+        message = 'Changing "{}" from {} to {}'.format(setting_,
+                                                       current_settings.get(setting_),
+                                                       value_)
+        printf({'msg': message, 'job': None, 'f': 'ES Settings Put'})
+
+
+def test_mapping(client, index, config):
+    transaction_mapping = json.loads(config['mapping'])['mappings']
+    index_mapping = client.indices.get(index)[index]['mappings']
+    return index_mapping == transaction_mapping
+
+
 def post_to_elasticsearch(client, job, config, chunksize=250000):
     printf({'msg': 'Populating ES Index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
     start = perf_counter()
@@ -258,11 +332,14 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         print(e)
         raise SystemExit
     if not does_index_exist:
-        printf({'msg': 'Creating index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.create(index=job.index)  # removed body paramter since behavior wasn't reliable
-    elif does_index_exist and config['recreate']:
-        printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.delete(job.index)
+        printf({'msg': 'Creating index "{}"'.format(job.index), 'job':
+                job.name, 'f': 'ES Ingest'})
+        client.indices.create(index=job.index, body=config['mapping'])
+        client.indices.refresh(job.index)
+        if not test_mapping(client, job.index, config):
+            printf({'msg': 'MAPPING FAILED TO STICK TO {}'.format(job.index), 'job':
+                    job.name, 'f': 'ES Create'})
+            raise SystemExit
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
@@ -270,7 +347,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             printf({'msg': 'No documents to add/delete for chunk #{}'.format(count), 'f': 'ES Ingest', 'job': job.name})
             continue
         iteration = perf_counter()
-        if config['recreate'] is False:
+        if config['provide_deleted']:
             id_list = [{'key': c[UNIVERSAL_TRANSACTION_ID_NAME], 'col': UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
             delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
@@ -280,7 +357,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             'job': job.name,
             'f': 'ES Ingest'
         })
-        streaming_post_to_es(client, chunk, job.index, job.name)
+        streaming_post_to_es(client, chunk, job.index, job.name, doc_type=config['doc_type'])
         printf({
             'msg': 'Iteration group #{} took {}s'.format(count, perf_counter() - iteration),
             'job': job.name,
@@ -297,6 +374,22 @@ def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
     id_list = [{'key': deleted_id, 'col': UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
     delete_transactions_from_es(client, id_list, None, config, None)
+
+
+def take_snapshot(client, index, repository):
+    snapshot_name = '{}-{}'.format(index, str(datetime.now().date()))
+    try:
+        client.snapshot.create(repository,
+                               snapshot_name,
+                               body={'indices': index})
+        printf({
+            'msg': 'Taking snapshot INDEX: "{}" SNAPSHOT: "{}" REPO: "{}"'.format(index, snapshot_name, repository),
+            'f': 'ES Snapshot'
+            })
+    except TransportError as e:
+        printf({
+            'msg': 'SNAPSHOT "{}" FAILED'.format(str(e)), 'f': 'ES Snapshot'})
+        raise SystemExit
 
 
 def gather_deleted_ids(config):
@@ -318,7 +411,7 @@ def gather_deleted_ids(config):
         print('\n[ERROR]\n')
         print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
         print('  or is using env variables: CSV_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME')
-        print('\n{}\n'.format(e))
+        print('\n {} \n'.format(e))
         raise SystemExit
 
     if config['verbose']:
@@ -402,7 +495,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def delete_transactions_from_es(client, id_list, job_id, config, index=None, size=50000):
+def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     '''
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
@@ -431,10 +524,10 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
         values_generator = chunks(values, 1000)
         for v in values_generator:
             body = filter_query(column, v)
-            response = client.search(index=index, body=json.dumps(body), size=size)
+            response = client.search(index=index, body=json.dumps(body), size=config['max_query_size'])
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(index=index, body=json.dumps(delete_body), size=size)
+                client.delete_by_query(index=index, body=json.dumps(delete_body), size=config['max_query_size'])
             except Exception as e:
                 printf({'msg': '[ERROR][ERROR][ERROR]\n{}'.format(str(e)), 'f': 'ES Delete', 'job': job_id})
     end_ = client.search(index=index)['hits']['total']
