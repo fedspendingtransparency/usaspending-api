@@ -268,24 +268,24 @@ def subaward_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"],
-                                                               amount__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gte=v["lower_bound"],
+                                                               amount__lte=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"],
-                                                              amount__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gte=v["lower_bound"],
+                                                              amount__lte=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gte=v["lower_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gte=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__lte=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__lte=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
