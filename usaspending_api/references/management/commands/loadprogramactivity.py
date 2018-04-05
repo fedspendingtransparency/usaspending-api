@@ -13,6 +13,7 @@ from usaspending_api.references.models import RefProgramActivity
 BUCKET_NAME = 'gtas-sf133'
 FILE_NAME = 'program_activity.csv'
 
+
 class Command(BaseCommand):
     help = "Loads program activity codes."
     logger = logging.getLogger('console')
