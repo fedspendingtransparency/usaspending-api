@@ -7,7 +7,8 @@ from calendar import monthrange, isleap
 from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
+from fiscalyear import FiscalDateTime, FiscalQuarter
+from datetime import datetime
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -25,6 +26,12 @@ def check_valid_toptier_agency(agency_id):
 
 def generate_fiscal_year(date):
     """ Generate fiscal year based on the date provided """
+    if not isinstance(date, datetime):
+        raise TypeError('Incorrect parameter type provided')
+
+    if not (date.day or date.month or date.year):
+        raise Exception('Malformed date object provided')
+
     year = date.year
     if date.month in [10, 11, 12]:
         year += 1
