@@ -96,7 +96,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
-            if group == 'm'  or group == 'month':
+            if group == 'm' or group == 'month':
                 # generate the fiscal month
                 key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
                 nested_order = 'month'
@@ -422,7 +422,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         model_dict = {
             'place_of_performance': 'pop',
-            'recipient_location':'recipient_location',
+            'recipient_location': 'recipient_location',
             'subawards_place_of_performance': 'place_of_performance',
             'subawards_recipient_location': 'recipient__location'
         }
