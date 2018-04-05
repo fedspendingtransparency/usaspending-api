@@ -27,7 +27,7 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
+from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -64,7 +64,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
-        queryset = subaward_filter(filters).values('action_date') if subawards else spending_over_time(filters) \
+        queryset = subaward_filter(filters) if subawards else spending_over_time(filters) \
             .values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
 
         # build response
@@ -76,12 +76,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
         if subawards:
-            data_set = queryset.annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date')) \
-                .values('month', 'year')
+            data_set = queryset.values('award_type'). \
+                annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date'),
+                         transaction_amount=Sum('amount')). \
+                values('month', 'year', 'transaction_amount')
         else:
-            if group == 'fy' or group == 'fiscal_year':
-                queryset.values('fiscal_year')
-            else:
+            data_set = queryset.values('fiscal_year')
+            if not (group == 'fy' or group == 'fiscal_year'):
                 # quarterly also takes months and aggregates the data
                 data_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
 
@@ -89,47 +90,27 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             data_set = sum_transaction_amount(data_set, filter_types=filter_types)
 
         for record in data_set:
+            # create fiscal year data based on the action_date for Subawards
             if subawards:
-                # create FiscalDate based on the action_date
-                fiscal_date = FiscalDate(record['year'], record['month'], 1)
+                record['fiscal_year'] = generate_fiscal_year(date(record['year'], record['month'], 1))
 
-                # generate unique key by fiscal date, depending on group
-                key = {'fiscal_year': str(fiscal_date.fiscal_year)}
-                if group == 'm' or group == 'month':
-                    key['month'] = fiscal_date.month
-                    nested_order = 'month'
-                elif group == 'q' and group == 'quarter':
-                    key['quarter'] = fiscal_date.quarter
-                    nested_order = 'quarter'
-                key = str(key)
+            # generate unique key by fiscal date, depending on group
+            key = {'fiscal_year': str(record['fiscal_year'])}
+            if group == 'm'  or group == 'month':
+                # generate the fiscal month
+                key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
+                nested_order = 'month'
+            elif group == 'q' or group == 'quarter':
+                # generate the fiscal quarter
+                key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
+                nested_order = 'quarter'
+            key = str(key)
 
-                # if key exists, aggregate (this is done for all; fy, month, and quarter)
-                if group_results.get(key) is None:
-                    group_results[key] = record['amount']
-                elif record['amount']:
-                    group_results[key] = group_results.get(key) + record['amount']
-
+            # if key exists, aggregate
+            if group_results.get(key) is None:
+                group_results[key] = record['transaction_amount']
             else:
-                key = {'fiscal_year': str(record['fiscal_year'])}
-
-                if group == 'm' or group == 'month':
-                    key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
-                    nested_order = 'month'
-
-                # when grouping by quarter we may need to aggregate; year and month should never need to
-                if group == 'q' or group == 'quarter':
-                    key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
-                    nested_order = 'quarter'
-
-                    # if key exists {fy : quarter}, aggregate
-                    key = str(key)
-                    if group_results.get(key) is None:
-                        group_results[key] = record['transaction_amount']
-                    elif record['transaction_amount']:
-                        group_results[key] = group_results.get(key) + record['transaction_amount']
-                else:
-                    key = str(key)
-                    group_results[key] = record['transaction_amount']
+                group_results[key] = group_results.get(key) + record['transaction_amount']
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -441,13 +422,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         model_dict = {
             'place_of_performance': 'pop',
-            'recipient_location': 'recipient_location'
+            'recipient_location':'recipient_location',
+            'subawards_place_of_performance': 'place_of_performance',
+            'subawards_recipient_location': 'recipient__location'
         }
 
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
 
-        scope_field_name = self.scope if self.subawards else model_dict.get(self.scope)
+        scope_field_name = model_dict.get('{}{}'.format('subawards_' if self.subawards else '', self.scope))
         loc_field_name = loc_dict.get(self.geo_layer)
         loc_lookup = '{}_{}{}'.format(scope_field_name, '_' if self.subawards else '', loc_field_name)
 
@@ -467,9 +450,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
-            kwargs = {'{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else ''): 'USA'}
-            if not self.subawards:
-                kwargs['federal_action_obligation__isnull'] = False
+            kwargs = {
+                '{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else ''): 'USA',
+                '{}'.format('amount__isnull' if self.subawards else 'federal_action_obligation__is_null'): False
+            }
 
             # Only state scope will add its own state code
             # State codes are consistent in database i.e. AL, AK
@@ -490,7 +474,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             fields_list.append(state_lookup)
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
-            kwargs = {} if self.subawards else {'federal_action_obligation__isnull': False}
+            kwargs = {
+                '{}__isnull'.format('amount' if self.subawards else 'federal_action_obligation'): False
+            }
 
             if self.geo_layer == 'county':
                 # County name added to aggregation since consistent in db
