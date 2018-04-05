@@ -81,7 +81,7 @@ def get_or_create_program_activity(row):
         budget_year=row['year'],
         responsible_agency_id=row['agency_id'].strip().zfill(3),
         main_account_code=row['account'].strip().zfill(4),
-        defaults={'program_activity_name': row['pa_name'].strip()}
+        defaults={'program_activity_name': row['pa_name'].strip().upper()}
     )
 
     return created
