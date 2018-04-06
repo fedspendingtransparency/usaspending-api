@@ -10,11 +10,11 @@ fields: Defines what award variables are returned in an array using the Fields p
 
 filters: Defines how the awards are filtered.  The filter object is defined here.  Each top-level key in the filter object is compounded together using AND logic. However, when multiple values are provided for a specific key, those values are compounded using OR logic.
 
-https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
+[Filter Object](../search_filters.md)
 
-limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
+limit (**OPTIONAL**): How many results are returned. If no limit is specified, the limit is set to 10.
 
-page (**OPTIONAL**):  The page number that is currently returned.
+page (**OPTIONAL**): The page number that is currently returned.
 
 sort (**OPTIONAL**): Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first `field` provided. Example: ['Award ID']
 
@@ -66,75 +66,81 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 }
 ```
 ### Fields
-The possible fields returned are split by contracts or assistace awards (loans, grants, etc.)
+The possible fields returned are split by contracts or assistance awards (loans, grants, etc.)
+
+#### Possible Award Fields (available for every type of award)
+```
+    'Recipient Name': 'recipient_name',
+    'Recipient DUNS Number': 'recipient_unique_id',
+    'Awarding Agency': 'awarding_toptier_agency_name',
+    'Awarding Agency Code': 'awarding_toptier_agency_code',
+    'Awarding Sub Agency': 'awarding_subtier_agency_name',
+    'Awarding Sub Agency Code': 'awarding_subtier_agency_code',
+    'Funding Agency': 'funding_toptier_agency_name',
+    'Funding Agency Code': 'funding_toptier_agency_code',
+    'Funding Sub Agency': 'funding_subtier_agency_name',
+    'Funding Sub Agency Code': 'funding_subtier_agency_code',
+    'Place of Performance City Code': 'pop_city_code',
+    'Place of Performance State Code': 'pop_state_code',
+    'Place of Performance Country Code': 'pop_country_code',
+    'Place of Performance Zip5': 'pop_zip5',
+    'Period of Performance Start Date': 'period_of_performance_start_date',
+    'Period of Performance Current End Date': 'period_of_performance_current_end_date',
+    'Description': 'description',
+    'Last Modified Date': 'last_modified_date',
+    'Base Obligation Date': 'date_signed'
+```
 
 #### Possible Contract Fields w/ db mapping
 ```
     'Award ID': 'piid',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
     'Contract Award Type': 'type_description',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
  ```
 
 #### Possible Grant Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Loan Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Issued Date': 'action_date',
-    'Loan Value': 'face_value_loan_guarantee',
-    'Subsidy Cost': 'original_loan_subsidy_cost',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'Loan Value': 'total_loan_value',
+    'Subsidy Cost': 'total_subsidy_cost',
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Direct Payment Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 #### Possible Other Award Fields w/ db mapping
 ```
     'Award ID': 'fain',
-    'Recipient Name': 'recipient_name',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
     'Award Amount': 'total_obligation',
-    'Awarding Agency': 'awarding_toptier_agency_name',
-    'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Award Type': 'type_description',
-    'Funding Agency': 'funding_toptier_agency_name',
-    'Funding Sub Agency': 'funding_subtier_agency_name'
+    'SAI Number': 'sai_number',
+    'CFDA Number': 'cfda_number'
 ```
 
 ### Response (JSON)

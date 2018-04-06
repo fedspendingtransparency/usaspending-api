@@ -16,6 +16,7 @@ from rest_framework.exceptions import NotFound
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
+from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
@@ -44,9 +45,11 @@ class BaseDownloadViewSet(APIDocumentationView):
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
         cached_download = DownloadJob.objects.filter(
             json_request=ordered_json_request,
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('download_job_id', 'file_name')
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
+            write_to_log(message='Generating file from cached download job ID: {}'
+                         .format(cached_download[0]['download_job_id']))
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
 
@@ -112,6 +115,15 @@ class BaseDownloadViewSet(APIDocumentationView):
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
         json_request['filters']['award_type_codes'] = filters['award_type_codes']
+
+        # Validate locations
+        for location_filter in ['place_of_performance_locations', 'recipient_locations']:
+            if filters.get(location_filter):
+                for location_dict in filters[location_filter]:
+                    if not isinstance(location_dict, dict):
+                        raise InvalidParameterException('Location is not a dictionary: {}'.format(location_dict))
+                    location_error_handling(location_dict.keys())
+                json_request['filters'][location_filter] = filters[location_filter]
 
         # Validate time periods
         total_range_count = validate_time_periods(filters, json_request)
@@ -182,7 +194,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['awards']
+        request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
@@ -196,7 +208,20 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['transactions']
+        request.data['award_levels'] = ['transactions', 'sub_awards']
+        request.data['constraint_type'] = 'row_count'
+        return BaseDownloadViewSet.post(self, request)
+
+
+class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of subaward data in CSV form for download.
+
+    endpoint_doc: /download/advanced_search_subaward_download.md
+    """
+
+    def post(self, request):
+        request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
@@ -226,7 +251,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 
         # Validate keyword search first, remove all other filters
         if 'keyword' in filters and len(filters.keys()) == 1:
-
             request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
             return
 
@@ -268,7 +292,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 del filters['sub_agency']
             else:
                 filters['agencies'] = [{'type': 'awarding', 'tier': 'toptier', 'name': toptier_name}]
-
         del filters['agency']
 
         request_data['filters'] = filters

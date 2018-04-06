@@ -10,7 +10,7 @@ fields: An array of string column names to return. See Fields list below.
 filters: An object with `keyword` and `award_type_codes` keys. `keyword` should be a string that you are performing a keyword search operation with. `award_type_codes` is an array of strings of the award type codes that should be searched within.
 
 A list of award type codes can be found at http://fedspendingtransparency.github.io/whitepapers/types/
-https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
+[Filter Object](../search_filters.md)
 
 limit(**OPTIONAL**): how many results are returned
 
