@@ -47,7 +47,7 @@ class Command(BaseCommand):
             join awards a
             on tn.award_id = a.id
             where a.is_fpds = false
-            and tn.funding_amount is not null 
+            and tn.funding_amount is not null
             GROUP BY award_id
         )
         update awards as a
