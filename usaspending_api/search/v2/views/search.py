@@ -586,13 +586,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def lookup_gen(self, award_model, award_value):
-        award_lookup = '{}_{}'.format(award_model, award_value)
-        if self.subawards:
-            return self.subaward_lookup[award_lookup]
-
-        return award_lookup
-
 
 class SpendingByAwardVisualizationViewSet(APIView):
     """
@@ -642,7 +635,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         subawards_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-        awards_values = list(award_contracts_mapping.keys()) + list(non_loan_assistance_award_mapping.keys())
+        awards_values = list(award_contracts_mapping.keys()) + list(loan_award_mapping) + \
+            list(non_loan_assistance_award_mapping.keys())
         if (subawards and sort not in subawards_values) or (not subawards and sort not in awards_values):
             raise InvalidParameterException("Sort value not found in award mappings: {}".format(sort))
 
