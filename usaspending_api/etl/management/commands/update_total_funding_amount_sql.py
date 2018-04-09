@@ -42,8 +42,13 @@ class Command(BaseCommand):
 
     SUM_TRANSACTION_TFA = """
         With sum_table as (
-        SELECT award_id, SUM(tn.funding_amount) sum_val
-        FROM transaction_normalized as tn join awards a on tn.award_id = a.id WHERE a.id = tn.award_id GROUP BY award_id
+            SELECT award_id, SUM(tn.funding_amount) sum_val
+            FROM transaction_normalized as tn
+            join awards a
+            on tn.award_id = a.id
+            where a.is_fpds = false
+            and tn.funding_amount is not null
+            GROUP BY award_id
         )
         update awards as a
         set total_funding_amount=sum_table.sum_val
