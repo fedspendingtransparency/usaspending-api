@@ -6,7 +6,9 @@ from django.db.models import Q
 from usaspending_api.awards.models import Subaward, LegalEntity
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import NAICS, PSC
+# Commenting out currently knowing NAICS will be included later
+# from usaspending_api.references.models import NAICS
+from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
 
 logger = logging.getLogger(__name__)
@@ -15,8 +17,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters):
 
-    queryset = Subaward.objects.filter(award_id__isnull=False, award__latest_transaction_id__isnull=False,
-                                       award__category__isnull=False)
+    queryset = Subaward.objects.filter(award_id__isnull=False, award__latest_transaction_id__isnull=False)
     for key, value in filters.items():
 
         if value is None:
@@ -63,15 +64,16 @@ def subaward_filter(filters):
                 recipient_match = True
                 recipient_qs = queryset.filter(recipient__in=recipient_list)
 
-            naics_match = False
-            if keyword.isnumeric():
-                naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
-            else:
-                naics_list = NAICS.objects.all().filter(
-                    description__icontains=keyword).values('code')
-            if naics_list.exists():
-                naics_match = True
-                naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
+            # Commenting out until NAICS is associated with subawards
+            # naics_match = False
+            # if keyword.isnumeric():
+            #     naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+            # else:
+            #     naics_list = NAICS.objects.all().filter(
+            #         description__icontains=keyword).values('code')
+            # if naics_list.exists():
+            #     naics_match = True
+            #     naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
 
             psc_match = False
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
@@ -95,16 +97,18 @@ def subaward_filter(filters):
 
             piid_qs = queryset.filter(award__piid=keyword)
             fain_qs = queryset.filter(award__fain=keyword)
+            subaward_num_qs = queryset.filter(subaward_number=keyword)
 
             # Always filter on fain/piid because fast:
             queryset = piid_qs
             queryset |= fain_qs
+            queryset |= subaward_num_qs
             # if description_match:
             #     queryset |= description_qs
             if recipient_match:
                 queryset |= recipient_qs
-            if naics_match:
-                queryset |= naics_qs
+            # if naics_match:
+            #     queryset |= naics_qs
             if psc_match:
                 queryset |= psc_qs
             if duns_match:
@@ -263,24 +267,24 @@ def subaward_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"],
-                                                               amount__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gte=v["lower_bound"],
+                                                               amount__lte=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"],
-                                                              amount__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gte=v["lower_bound"],
+                                                              amount__lte=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gte=v["lower_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gte=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Subaward.objects.filter(amount__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__lte=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Subaward.objects.filter(amount__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__lte=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
@@ -291,7 +295,7 @@ def subaward_filter(filters):
                 filter_obj = Q()
                 for val in value:
                     filter_obj |= (Q(award__piid__icontains=val) | Q(award__fain__icontains=val) |
-                                   Q(award__uri__icontains=val))
+                                   Q(award__uri__icontains=val) | Q(subaward_number__icontains=val))
 
                 queryset &= Subaward.objects.filter(filter_obj)
 
@@ -301,15 +305,16 @@ def subaward_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= Subaward.objects.filter(
-                    award__latest_transaction__assistance_data__cfda_number__in=or_queryset)
+                    cfda__program_number__in=or_queryset)
 
-        elif key == "naics_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Subaward.objects.filter(
-                    award__latest_transaction__contract_data__naics__in=or_queryset)
+        # Commenting this out as NAICS isn't currently mapped to subawards
+        # elif key == "naics_codes":
+        #     or_queryset = []
+        #     for v in value:
+        #         or_queryset.append(v)
+        #     if len(or_queryset) != 0:
+        #         queryset &= Subaward.objects.filter(
+        #             naics__in=or_queryset)
 
         elif key == "psc_codes":
             or_queryset = []
