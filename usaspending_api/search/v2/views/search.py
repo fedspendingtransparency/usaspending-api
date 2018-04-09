@@ -22,8 +22,8 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import (can_use_view, get_view_queryset, spending_by_award_count,
                                                              spending_by_geography, spending_over_time)
 from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contract_type_mapping, loan_type_mapping,
-                                                       non_loan_assistance_type_mapping, contract_subaward_mapping,
-                                                       grant_subaward_mapping)
+                                                       non_loan_assistance_type_mapping, grant_type_mapping,
+                                                       contract_subaward_mapping, grant_subaward_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
@@ -666,7 +666,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort and "no intersection" not in filters["award_type_codes"]:
             if subawards:
-                sort_filters = [contract_subaward_mapping[sort]]
+                if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # Subaward contracts
+                    sort_filters = [contract_subaward_mapping[sort]]
+                elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
+                    sort_filters = [grant_subaward_mapping[sort]]
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]
