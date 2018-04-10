@@ -452,7 +452,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # State will have one field (state_code) containing letter A-Z
             kwargs = {
                 '{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else ''): 'USA',
-                '{}'.format('amount__isnull' if self.subawards else 'federal_action_obligation__is_null'): False
+                '{}'.format('amount__isnull' if self.subawards else 'federal_action_obligation__isnull'): False
             }
 
             # Only state scope will add its own state code
