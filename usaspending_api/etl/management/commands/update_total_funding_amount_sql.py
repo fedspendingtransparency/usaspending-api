@@ -4,6 +4,7 @@ from `create_locations`
 """
 
 import logging
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -18,14 +19,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         with connection.cursor() as curs:
-            curs.execute(self.TRANSACTION_FABS_TFA)
-            logger.info('Updated FABS non_federal_funding_amount, funding_amount in transaction_normalized. '
-                        '{} successful updates'.format(curs.rowcount))
+            start = datetime.now()
+            logger.info('Running updates on transaction_normalized')
+            curs.execute(self.TRANSACTION_NORMALIZED_TFA)
+            logger.info('Finished updates on transaction_normalized in %s seconds (%s rows updated)' %
+                        (str(datetime.now() - start), curs.rowcount))
 
-            curs.execute(self.SUM_TRANSACTION_TFA)
-            logger.info('Updated FABS total_funding_amount in awards. {} successful updates'.format(curs.rowcount))
+            start = datetime.now()
+            logger.info('Running updates on awards')
+            curs.execute(self.AWARDS_TFA)
+            logger.info('Finished updates on awards in %s seconds (%s rows updated)' %
+                        (str(datetime.now() - start), curs.rowcount))
 
-    TRANSACTION_FABS_TFA = """
+    TRANSACTION_NORMALIZED_TFA = """
         UPDATE transaction_normalized AS txn
         SET non_federal_funding_amount = txf.non_federal_funding_amount,
         funding_amount = txf.federal_action_obligation + txf.non_federal_funding_amount
@@ -33,7 +39,7 @@ class Command(BaseCommand):
         WHERE txf.transaction_id = txn.id;
     """
 
-    SUM_TRANSACTION_TFA = """
+    AWARDS_TFA = """
         UPDATE awards AS aw
         SET total_funding_amount = (
             SELECT SUM(funding_amount)
