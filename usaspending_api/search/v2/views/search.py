@@ -691,14 +691,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
         results = []
         for award in limited_queryset[:limit]:
             if subawards:
-                row = {"internal_id": award["internal_id"]}
+                row = {"internal_id": award["subaward_number"]}
 
                 if award['award_type'] == 'procurement':
                     for field in fields:
-                        row[field] = contract_subaward_mapping[field]
+                        row[field] = award.get(contract_subaward_mapping[field])
                 elif award['award_type'] == 'grant':
                     for field in fields:
-                        row[field] = grant_subaward_mapping[field]
+                        row[field] = award.get(grant_subaward_mapping[field])
             else:
                 row = {"internal_id": award["award_id"]}
 
