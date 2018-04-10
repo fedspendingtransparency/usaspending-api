@@ -34,8 +34,8 @@ class CsvSource:
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
-        self.human_names = download_column_historical_lookups.human_names[model_type][file_type]
         self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
+        self.human_names = list(self.query_paths.keys())
         self.queryset = None
 
     def values(self, header):
