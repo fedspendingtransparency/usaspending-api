@@ -31,6 +31,17 @@ def test_spending_by_award_type_success(client):
         }))
     assert resp.status_code == status.HTTP_200_OK
 
+    # test subawards
+    resp = client.post(
+        '/api/v2/search/spending_by_award',
+        content_type='application/json',
+        data=json.dumps({
+            "fields": ["Award ID", "Recipient Name"],
+            "filters": all_filters(),
+            "subawards": True
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
 
 @pytest.mark.skip
 @pytest.mark.django_db

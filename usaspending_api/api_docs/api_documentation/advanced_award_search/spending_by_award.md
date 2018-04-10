@@ -12,6 +12,8 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 
 [Filter Object](../search_filters.md)
 
+subawards (**OPTIONAL**): Boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
+
 limit (**OPTIONAL**): How many results are returned. If no limit is specified, the limit is set to 10.
 
 page (**OPTIONAL**): The page number that is currently returned.
@@ -22,47 +24,48 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 
 ```
 {
-  "filters": {
-       "award_type_codes": ["10"],
-       "agencies": [
+    "filters": {
+        "award_type_codes": ["10"],
+        "agencies": [
             {
-                 "type": "awarding",
-                 "tier": "toptier",
-                 "name": "Social Security Administration"
+                "type": "awarding",
+                "tier": "toptier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "awarding",
-                 "tier": "subtier",
-                 "name": "Social Security Administration"
+                "type": "awarding",
+                "tier": "subtier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "funding",
-                 "tier": "toptier",
-                 "name": "Social Security Administration"
+                "type": "funding",
+                "tier": "toptier",
+                "name": "Social Security Administration"
             },
             {
-                 "type": "funding",
-                 "tier": "subtier",
-                 "name": "Social Security Administration"
+                "type": "funding",
+                "tier": "subtier",
+                "name": "Social Security Administration"
             }
-       ],
-       "legal_entities": [779928],
-       "recipient_scope": "domestic",
-       "recipient_locations": [650597],
-       "recipient_type_names": ["Individual"],
-       "place_of_performance_scope": "domestic",
-       "place_of_performance_locations": [60323],
-       "award_amounts": [
-              {
-                  "lower_bound": 1500000.00,
-                  "upper_bound": 1600000.00
-              }
-       ],
-       "award_ids": [1018950]
-  },
-  "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
-  "sort": "Recipient Name",
-  "order": "desc"
+        ],
+        "legal_entities": [779928],
+        "recipient_scope": "domestic",
+        "recipient_locations": [650597],
+        "recipient_type_names": ["Individual"],
+        "place_of_performance_scope": "domestic",
+        "place_of_performance_locations": [60323],
+        "award_amounts": [
+            {
+                "lower_bound": 1500000.00,
+                "upper_bound": 1600000.00
+            }
+        ],
+        "award_ids": [1018950]
+    },
+    "subawards": false,
+    "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
+    "sort": "Recipient Name",
+    "order": "desc"
 }
 ```
 ### Fields
@@ -143,7 +146,7 @@ The possible fields returned are split by contracts or assistance awards (loans,
     'CFDA Number': 'cfda_number'
 ```
 
-### Response (JSON)
+### Response (JSON) - Award
 
 ```
 {
@@ -169,13 +172,41 @@ The possible fields returned are split by contracts or assistance awards (loans,
     }
 }
 
+```
+
+### Response (JSON) - Subaward
+
+```
+{
+    "limit": 10,
+    "results": [
+        {
+            "internal_id": 4712890,
+            "Subaward ID": null,
+            "Subaward Type": "procurement",
+            "Subawardee Name": null,
+            "Subaward Date": null,
+            "Subaward Amount": 1573663,
+            "Awarding Agency": "Social Security Administration",
+            "Awarding Sub Agency": "Social Security Administration",
+            "Prime Award ID": null,
+            "Prime Recipient Name": "MULTIPLE RECIPIENTS"
+        }
+    ],
+    "page_metadata": {
+        "page": 1,
+        "hasNext": true
+    }
+}
+
+```
+
 **page_metadata Descriptions**
 
 **page** - The current page number of results.
 
 **hasNext** - Boolean object. If true, there is another page of results.
 
-```
 
 ### Errors
 Possible HTTP Status Codes:
@@ -184,6 +215,6 @@ Possible HTTP Status Codes:
 
 ```
 {
-  "detail": "Sample error message"
+    "detail": "Sample error message"
 }
 ```

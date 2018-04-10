@@ -6,9 +6,11 @@
 This route takes award filters, and returns spending by time.  The amount of time is denoted by the "group" value.
 
 ### Request
-group: the unit of time that awards are aggregated by. You must use one of: month, quarter, fiscal_year.
+group: the unit of time that awards are aggregated by.  You must use one of: month, quarter, fiscal_year.
 
 filters: how the awards are filtered.  The filter object is defined here.
+
+subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
 
 [Filter Object](../search_filters.md)
 
@@ -19,18 +21,19 @@ filters: how the awards are filtered.  The filter object is defined here.
         "award_type_codes": ["A", "B", "03"],
         "award_ids": [1, 2, 3],
         "award_amounts": [
-              {
-            "lower_bound": 1000000.00,
-            "upper_bound": 25000000.00
-              },
-              {
-            "upper_bound": 1000000.00
-              },
-              {
-            "lower_bound": 500000000.00
-              }
-             ],
-    }
+            {
+                "lower_bound": 1000000.00,
+                "upper_bound": 25000000.00
+            },
+            {
+                "upper_bound": 1000000.00
+            },
+            {
+                "lower_bound": 500000000.00
+            }
+        ],
+    },
+    "subawards": false
 }
 ```
 
@@ -43,20 +46,19 @@ filters: how the awards are filtered.  The filter object is defined here.
     "results": [
         {
             "time_period": {"fiscal_year": "2017", "quarter": "3"},
-                "aggregated_amount": "200000000"
+            "aggregated_amount": "200000000"
         },
         ....
 
     ]
 }
 ```
+
 **Response results Descriptions**
 
 **time_period** - an object containing what time period the awards amount is filtered by.  This keys in this object are defined by the group request variable.
 
 **hasNext** - Boolean object. If true, there is another page of results.
-
-```
 
 
 ### Errors
@@ -66,6 +68,6 @@ Possible HTTP Status Codes:
 
 ```
 {
-  "detail": "Sample error message"
+    "detail": "Sample error message"
 }
 ```
