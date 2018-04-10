@@ -4,6 +4,7 @@ from `create_locations`
 """
 
 import logging
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -18,35 +19,32 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         with connection.cursor() as curs:
-            curs.execute(self.TRANSACTION_FABS_TFA)
-            logger.info('total_funding_amount recalculated. {} successful updates'.format(curs.rowcount))
-
+            start = datetime.now()
+            logger.info('Running updates on transaction_normalized')
             curs.execute(self.TRANSACTION_NORMALIZED_TFA)
-            logger.info('total_funding_amount moved to the transaction normalized table. {} successful updates'.format(
-                curs.rowcount))
+            logger.info('Finished updates on transaction_normalized in %s seconds (%s rows updated)' %
+                        (str(datetime.now() - start), curs.rowcount))
 
-            curs.execute(self.SUM_TRANSACTION_TFA)
-            logger.info('New sum for total_funding_amount. {} successful updates'.format(curs.rowcount))
-
-    TRANSACTION_FABS_TFA = """
-        update transaction_normalized as tn
-        set non_federal_funding_amount=tf.non_federal_funding_amount
-        from transaction_fabs as tf
-            where tf.transaction_id=tn.id;
-    """
+            start = datetime.now()
+            logger.info('Running updates on awards')
+            curs.execute(self.AWARDS_TFA)
+            logger.info('Finished updates on awards in %s seconds (%s rows updated)' %
+                        (str(datetime.now() - start), curs.rowcount))
 
     TRANSACTION_NORMALIZED_TFA = """
-        update transaction_normalized as tn
-        set funding_amount= federal_action_obligation + non_federal_funding_amount;
+        UPDATE transaction_normalized AS txn
+        SET non_federal_funding_amount = txf.non_federal_funding_amount,
+        funding_amount = txf.federal_action_obligation + txf.non_federal_funding_amount
+        FROM transaction_fabs AS txf
+        WHERE txf.transaction_id = txn.id;
     """
 
-    SUM_TRANSACTION_TFA = """
-        With sum_table as (
-        SELECT award_id, SUM(tn.funding_amount) sum_val
-        FROM transaction_normalized as tn join awards a on tn.award_id = a.id WHERE a.id = tn.award_id GROUP BY award_id
+    AWARDS_TFA = """
+        UPDATE awards AS aw
+        SET total_funding_amount = (
+            SELECT SUM(funding_amount)
+            FROM transaction_normalized AS txn
+            WHERE txn.award_id = aw.id
         )
-        update awards as a
-        set total_funding_amount=sum_table.sum_val
-        from sum_table
-        where a.id = sum_table.award_id;
+        WHERE category IS NOT NULL AND category != 'contract';
     """
