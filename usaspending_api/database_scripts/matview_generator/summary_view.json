@@ -30,7 +30,7 @@
     "  COUNT(*) AS counts",
     "FROM",
     "  transaction_normalized",
-    "INNER JOIN",
+    "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",
     "LEFT OUTER JOIN",
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
