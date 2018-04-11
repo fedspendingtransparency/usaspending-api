@@ -758,7 +758,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if subawards:
             queryset = queryset \
                 .values('award_type') \
-                .annotate(category_count=Sum('amount'))
+                .annotate(category_count=Count('id'))
 
         elif model == 'SummaryAwardView':
             queryset = queryset \
