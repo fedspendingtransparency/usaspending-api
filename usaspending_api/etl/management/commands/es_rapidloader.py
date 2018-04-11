@@ -86,7 +86,7 @@ class Command(BaseCommand):
             '-s',
             '--snapshot',
             action='store_true',
-            help='Flag allowed to put aliases to index and close all indices with aliases associated')
+            help='Take a snapshot of the current cluster and save to S3')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -209,7 +209,7 @@ class Command(BaseCommand):
         while True:
             sleep(10)
             if process_guarddog(process_list):
-                raise SystemExit
+                raise SystemExit(1)
             elif all([not x.is_alive() for x in process_list]):
                 printf({'msg': 'All ETL processes completed execution with no error codes'})
                 break
