@@ -9,8 +9,7 @@ This route takes award filters, and returns the number of awards in each award t
 
 filters: Defines how the awards are filtered.  The filter object is defined here.
 
-https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
-
+[Filter Object](../search_filters.md)
 
 ```
 {
