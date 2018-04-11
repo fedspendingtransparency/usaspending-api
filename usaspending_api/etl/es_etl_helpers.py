@@ -527,7 +527,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
             response = client.search(index=index, body=json.dumps(body), size=config['max_query_size'])
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True, 
+                client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True,
                                        size=config['max_query_size'])
             except Exception as e:
                 printf({'msg': '[ERROR][ERROR][ERROR]\n{}'.format(str(e)), 'f': 'ES Delete', 'job': job_id})
