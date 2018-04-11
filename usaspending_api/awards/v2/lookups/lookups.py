@@ -1090,11 +1090,11 @@ other_award_mapping = {
 }
 
 contract_subaward_mapping = {
-    "Subaward ID": "subaward_number",
-    "Subaward Type": "award_type",
-    "Subawardee Name": "recipient__recipient_name",
-    "Subaward Date": "action_date",
-    "Subaward Amount": "amount",
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient__recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
     "Awarding Agency": "awarding_agency__toptier_agency__name",
     "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
     "Prime Award ID": "award__piid",
@@ -1102,11 +1102,11 @@ contract_subaward_mapping = {
 }
 
 grant_subaward_mapping = {
-    "Subaward ID": "subaward_number",
-    "Subaward Type": "award_type",
-    "Subawardee Name": "recipient__recipient_name",
-    "Subaward Date": "action_date",
-    "Subaward Amount": "amount",
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient__recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
     "Awarding Agency": "awarding_agency__toptier_agency__name",
     "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
     "Prime Award ID": "award__fain",
