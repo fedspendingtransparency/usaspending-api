@@ -1,7 +1,7 @@
 import os
 import json
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
@@ -86,7 +86,7 @@ class Command(BaseCommand):
             '-s',
             '--snapshot',
             action='store_true',
-            help='Flag allowed to put aliases to index and close all indices with aliases associated')
+            help='Take a snapshot of the current cluster and save to S3')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -127,7 +127,7 @@ class Command(BaseCommand):
                 self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
             else:
                 # If --days is provided, go back X days into the past
-                self.config['starting_date'] = datetime.utcnow() - timedelta(days=options['days'])
+                self.config['starting_date'] = datetime.now(timezone.utc) - timedelta(days=options['days'])
         else:
             self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
@@ -209,7 +209,7 @@ class Command(BaseCommand):
         while True:
             sleep(10)
             if process_guarddog(process_list):
-                raise SystemExit
+                raise SystemExit(1)
             elif all([not x.is_alive() for x in process_list]):
                 printf({'msg': 'All ETL processes completed execution with no error codes'})
                 break

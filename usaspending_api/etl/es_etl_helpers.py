@@ -221,7 +221,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
             'msg': msg.format(count, download_count, filename),
             'job': job_id,
             'f': 'Download'})
-        raise SystemExit
+        raise SystemExit(1)
     return count
 
 
@@ -262,7 +262,7 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type='trans
 
     except Exception as e:
         print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(str(e)[:5000], '*' * 80))
-        raise SystemExit
+        raise SystemExit(1)
 
     printf({'msg': 'Success: {}, Fails: {}'.format(success, failed), 'job': job_id, 'f': 'ES Ingest'})
     return success, failed
@@ -330,7 +330,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         does_index_exist = client.indices.exists(job.index)
     except Exception as e:
         print(e)
-        raise SystemExit
+        raise SystemExit(1)
     if not does_index_exist:
         printf({'msg': 'Creating index "{}"'.format(job.index), 'job':
                 job.name, 'f': 'ES Ingest'})
@@ -339,7 +339,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         if not test_mapping(client, job.index, config):
             printf({'msg': 'MAPPING FAILED TO STICK TO {}'.format(job.index), 'job':
                     job.name, 'f': 'ES Create'})
-            raise SystemExit
+            raise SystemExit(1)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
@@ -389,7 +389,7 @@ def take_snapshot(client, index, repository):
     except TransportError as e:
         printf({
             'msg': 'SNAPSHOT "{}" FAILED'.format(str(e)), 'f': 'ES Snapshot'})
-        raise SystemExit
+        raise SystemExit(1)
 
 
 def gather_deleted_ids(config):
@@ -412,7 +412,7 @@ def gather_deleted_ids(config):
         print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
         print('  or is using env variables: CSV_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME')
         print('\n {} \n'.format(e))
-        raise SystemExit
+        raise SystemExit(1)
 
     if config['verbose']:
         printf({'msg': 'CSV data from {} to now'.format(config['starting_date'])})
@@ -527,7 +527,8 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
             response = client.search(index=index, body=json.dumps(body), size=config['max_query_size'])
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(index=index, body=json.dumps(delete_body), size=config['max_query_size'])
+                client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True,
+                                       size=config['max_query_size'])
             except Exception as e:
                 printf({'msg': '[ERROR][ERROR][ERROR]\n{}'.format(str(e)), 'f': 'ES Delete', 'job': job_id})
     end_ = client.search(index=index)['hits']['total']
