@@ -12,7 +12,7 @@ class UniversalTransactionView(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
-    transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
+    transaction = models.OneToOneField(TransactionNormalized, primary_key=True, on_delete=models.DO_NOTHING)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
