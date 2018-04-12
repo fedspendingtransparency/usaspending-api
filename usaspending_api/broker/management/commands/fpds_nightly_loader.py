@@ -107,7 +107,44 @@ class Command(BaseCommand):
         if not ids_to_delete:
             return
 
-        TransactionNormalized.objects.filter(contract_data__detached_award_procurement_id__in=ids_to_delete).delete()
+        transactions = TransactionNormalized.objects.filter(
+            contract_data__detached_award_procurement_id__in=ids_to_delete).values_list('id')
+        transaction_ids_delete = [str(delete_result[0]) for delete_result in transactions]
+        lt_awards = Award.objects.filter(latest_transaction_id__in=transaction_ids_delete).values_list('id')
+        award_ids_delete = [str(delete_result[0]) for delete_result in lt_awards]
+        lt_trans = TransactionNormalized.objects.filter(award_id__in=award_ids_delete).values_list('id')
+        transaction_ids_delete.extend([str(delete_result[0]) for delete_result in lt_trans])
+        transaction_id_list = ','.join(set(transaction_ids_delete))
+        award_ids_list = ','.join(award_ids_delete)
+
+        db_cursor = connections['default'].cursor()
+
+        # Financial Accounts by Awards
+        fa = 'DELETE ' \
+             'FROM "financial_accounts_by_awards" fa '\
+             'WHERE fa."award_id" IN ({});'.format(award_ids_list)
+        # Subawards
+        sub = 'DELETE ' \
+              'FROM "awards_subaward" sub '\
+              'WHERE sub."award_id" IN ({});'.format(award_ids_list)
+        # Transaction FPDS
+        fpds = 'DELETE ' \
+               'FROM "transaction_fpds" tf '\
+               'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
+        # Transaction FABS
+        fabs = 'DELETE ' \
+               'FROM "transaction_fabs" tf '\
+               'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
+        # Transaction Normalized
+        tn = 'DELETE ' \
+             'FROM "transaction_normalized" tn '\
+             'WHERE tn."id" IN ({});'.format(transaction_id_list)
+        # Awards
+        awards = 'DELETE ' \
+                 'FROM "awards" a '\
+                 'WHERE a."id" IN ({});'.format(award_ids_list)
+        db_query = ''.join([fa, sub, fpds, fabs, tn, awards])
+        db_cursor.execute(db_query, [])
 
     def insert_new_fpds(self, to_insert, total_rows):
         logger.info('Starting insertion of new FPDS data')
