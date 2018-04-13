@@ -122,14 +122,6 @@ class Command(BaseCommand):
 
         db_cursor = connections['default'].cursor()
 
-        # Financial Accounts by Awards
-        fa = 'UPDATE "financial_accounts_by_awards" ' \
-             'SET "award_id" = null '\
-             'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
-        # Subawards
-        sub = 'UPDATE "awards_subaward" ' \
-              'SET "award_id" = null ' \
-              'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
         # Transaction FPDS
         fpds = 'DELETE ' \
                'FROM "transaction_fpds" tf '\
@@ -138,8 +130,8 @@ class Command(BaseCommand):
         tn = 'DELETE ' \
              'FROM "transaction_normalized" tn '\
              'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
-        queries = [fa, sub, fpds, tn]
-        # Awards
+        queries = [fpds, tn]
+        # Update Awards
         if update_award_ids:
             # Adding to award_update_id_list so the latest_transaction will be recalculated
             award_update_id_list.extend(update_award_ids)
@@ -148,10 +140,19 @@ class Command(BaseCommand):
                                   'WHERE a."id" IN ({});'.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:
+            # Financial Accounts by Awards
+            fa = 'UPDATE "financial_accounts_by_awards" ' \
+                 'SET "award_id" = null '\
+                 'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Subawards
+            sub = 'UPDATE "awards_subaward" ' \
+                  'SET "award_id" = null ' \
+                  'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Delete Subawards
             delete_awards_query = 'DELETE ' \
                                   'FROM "awards" a ' \
                                   'WHERE a."id" IN ({});'.format(delete_award_str_ids)
-            queries.append(delete_awards_query)
+            queries.extend([fa, sub, delete_awards_query])
         db_query = ''.join(queries)
         db_cursor.execute(db_query, [])
 
