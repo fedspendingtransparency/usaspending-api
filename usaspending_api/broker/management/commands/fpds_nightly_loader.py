@@ -108,7 +108,8 @@ class Command(BaseCommand):
         if not ids_to_delete:
             return
 
-        transactions = TransactionNormalized.objects.filter(contract_data__detached_award_procurement_id__in=ids_to_delete)
+        transactions = TransactionNormalized.objects.filter(
+            contract_data__detached_award_procurement_id__in=ids_to_delete)
         grouped_transactions = transactions.values('award_id').annotate(transaction_count=Count('id'))
         update_awards = grouped_transactions.filter(transaction_count__gt=1)
         delete_awards = grouped_transactions.filter(transaction_count=1)
