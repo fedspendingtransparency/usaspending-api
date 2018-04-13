@@ -131,10 +131,6 @@ class Command(BaseCommand):
         fpds = 'DELETE ' \
                'FROM "transaction_fpds" tf '\
                'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
-        # Transaction FABS
-        fabs = 'DELETE ' \
-               'FROM "transaction_fabs" tf '\
-               'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
         # Transaction Normalized
         tn = 'DELETE ' \
              'FROM "transaction_normalized" tn '\

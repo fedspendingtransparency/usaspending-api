@@ -85,10 +85,6 @@ class Command(BaseCommand):
         sub = 'DELETE ' \
               'FROM "awards_subaward" sub ' \
               'WHERE sub."award_id" IN ({});'.format(award_ids_list)
-        # Transaction FPDS
-        fpds = 'DELETE ' \
-               'FROM "transaction_fpds" tf ' \
-               'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
         # Transaction FABS
         fabs = 'DELETE ' \
                'FROM "transaction_fabs" tf ' \
