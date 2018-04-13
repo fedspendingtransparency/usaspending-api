@@ -7,6 +7,7 @@ import urllib.request
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.db.models import Count
 from django.conf import settings
 
 from usaspending_api.common.helpers import fy, timer
@@ -107,39 +108,51 @@ class Command(BaseCommand):
         if not ids_to_delete:
             return
 
-        transactions = TransactionNormalized.objects.filter(
-            contract_data__detached_award_procurement_id__in=ids_to_delete).values_list('id')
-        transaction_ids_delete = [str(delete_result[0]) for delete_result in transactions]
-        lt_awards = Award.objects.filter(latest_transaction_id__in=transaction_ids_delete).values_list('id')
-        award_ids_delete = [str(delete_result[0]) for delete_result in lt_awards]
-        lt_trans = TransactionNormalized.objects.filter(award_id__in=award_ids_delete).values_list('id')
-        transaction_ids_delete.extend([str(delete_result[0]) for delete_result in lt_trans])
-        transaction_id_list = ','.join(set(transaction_ids_delete))
-        award_ids_list = ','.join(award_ids_delete)
+        transactions = TransactionNormalized.objects.filter(contract_data__detached_award_procurement_id__in=ids_to_delete)
+        grouped_transactions = transactions.values('award_id').annotate(transaction_count=Count('id'))
+        update_awards = grouped_transactions.filter(transaction_count__gt=1)
+        delete_awards = grouped_transactions.filter(transaction_count=1)
+
+        delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
+        update_award_ids = [update_result[0] for update_result in update_awards.values_list('award_id')]
+        delete_award_ids = [delete_result[0] for delete_result in delete_awards.values_list('award_id')]
+        delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
+        update_award_str_ids = ','.join([str(update_result) for update_result in update_award_ids])
+        delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
 
         db_cursor = connections['default'].cursor()
 
         # Financial Accounts by Awards
         fa = 'DELETE ' \
              'FROM "financial_accounts_by_awards" fa '\
-             'WHERE fa."award_id" IN ({});'.format(award_ids_list)
+             'WHERE fa."award_id" IN ({});'.format(delete_award_str_ids)
         # Subawards
         sub = 'UPDATE "awards_subaward" ' \
               'SET "award_id" = null ' \
-              'WHERE "award_id" IN ({});'.format(award_ids_list)
+              'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
         # Transaction FPDS
         fpds = 'DELETE ' \
                'FROM "transaction_fpds" tf '\
-               'WHERE tf."transaction_id" IN ({});'.format(transaction_id_list)
+               'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
         # Transaction Normalized
         tn = 'DELETE ' \
              'FROM "transaction_normalized" tn '\
-             'WHERE tn."id" IN ({});'.format(transaction_id_list)
+             'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+        queries = [fa, sub, fpds, tn]
         # Awards
-        awards = 'DELETE ' \
-                 'FROM "awards" a '\
-                 'WHERE a."id" IN ({});'.format(award_ids_list)
-        db_query = ''.join([fa, sub, fpds, tn, awards])
+        if update_award_ids:
+            # Adding to award_update_id_list so the latest_transaction will be recalculated
+            award_update_id_list.extend(update_award_ids)
+            update_awards_query = 'UPDATE "awards" ' \
+                                  'SET "latest_transaction" = null ' \
+                                  'WHERE a."id" IN ({});'.format(','.join(update_award_str_ids))
+            queries.append(update_awards_query)
+        if delete_award_ids:
+            delete_awards_query = 'DELETE ' \
+                                  'FROM "awards" a ' \
+                                  'WHERE a."id" IN ({});'.format(delete_award_str_ids)
+            queries.append(delete_awards_query)
+        db_query = ''.join(queries)
         db_cursor.execute(db_query, [])
 
     def insert_new_fpds(self, to_insert, total_rows):
