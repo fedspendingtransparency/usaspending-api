@@ -81,9 +81,9 @@ class Command(BaseCommand):
         db_cursor = connections['default'].cursor()
 
         # Financial Accounts by Awards
-        fa = 'DELETE ' \
-             'FROM "financial_accounts_by_awards" fa ' \
-             'WHERE fa."award_id" IN ({});'.format(delete_award_str_ids)
+        fa = 'UPDATE "financial_accounts_by_awards" ' \
+             'SET "award_id" = null '\
+             'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
         # Subawards
         sub = 'UPDATE "awards_subaward" ' \
               'SET "award_id" = null ' \
@@ -103,7 +103,7 @@ class Command(BaseCommand):
             award_update_id_list.extend(update_award_ids)
             update_awards_query = 'UPDATE "awards" ' \
                                   'SET "latest_transaction" = null ' \
-                                  'WHERE a."id" IN ({});'.format(','.join(update_award_str_ids))
+                                  'WHERE a."id" IN ({});'.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:
             delete_awards_query = 'DELETE ' \
