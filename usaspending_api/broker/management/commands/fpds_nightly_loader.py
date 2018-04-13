@@ -123,15 +123,17 @@ class Command(BaseCommand):
 
         db_cursor = connections['default'].cursor()
 
+        queries = []
         # Transaction FPDS
-        fpds = 'DELETE ' \
-               'FROM "transaction_fpds" tf '\
-               'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
-        # Transaction Normalized
-        tn = 'DELETE ' \
-             'FROM "transaction_normalized" tn '\
-             'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
-        queries = [fpds, tn]
+        if delete_transaction_ids:
+            fpds = 'DELETE ' \
+                   'FROM "transaction_fpds" tf '\
+                   'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
+            # Transaction Normalized
+            tn = 'DELETE ' \
+                 'FROM "transaction_normalized" tn '\
+                 'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+            queries.extend([fpds, tn])
         # Update Awards
         if update_award_ids:
             # Adding to award_update_id_list so the latest_transaction will be recalculated
@@ -154,8 +156,9 @@ class Command(BaseCommand):
                                   'FROM "awards" a ' \
                                   'WHERE a."id" IN ({});'.format(delete_award_str_ids)
             queries.extend([fa, sub, delete_awards_query])
-        db_query = ''.join(queries)
-        db_cursor.execute(db_query, [])
+        if queries:
+            db_query = ''.join(queries)
+            db_cursor.execute(db_query, [])
 
     def insert_new_fpds(self, to_insert, total_rows):
         logger.info('Starting insertion of new FPDS data')
