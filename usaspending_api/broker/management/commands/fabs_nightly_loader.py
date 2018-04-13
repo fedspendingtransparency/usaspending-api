@@ -82,9 +82,9 @@ class Command(BaseCommand):
              'FROM "financial_accounts_by_awards" fa ' \
              'WHERE fa."award_id" IN ({});'.format(award_ids_list)
         # Subawards
-        sub = 'DELETE ' \
-              'FROM "awards_subaward" sub ' \
-              'WHERE sub."award_id" IN ({});'.format(award_ids_list)
+        sub = 'UPDATE "awards_subaward" ' \
+              'SET "award_id" = null ' \
+              'WHERE "award_id" IN ({});'.format(award_ids_list)
         # Transaction FABS
         fabs = 'DELETE ' \
                'FROM "transaction_fabs" tf ' \
@@ -97,7 +97,7 @@ class Command(BaseCommand):
         awards = 'DELETE ' \
                  'FROM "awards" a ' \
                  'WHERE a."id" IN ({});'.format(award_ids_list)
-        db_query = ''.join([fa, sub, fpds, fabs, tn, awards])
+        db_query = ''.join([fa, sub, fabs, tn, awards])
         db_cursor.execute(db_query, [])
 
     def insert_new_fabs(self, to_insert, total_rows):
