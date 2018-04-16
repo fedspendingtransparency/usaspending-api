@@ -139,7 +139,7 @@ class Command(BaseCommand):
             # Adding to award_update_id_list so the latest_transaction will be recalculated
             award_update_id_list.extend(update_award_ids)
             update_awards_query = 'UPDATE "awards" ' \
-                                  'SET "latest_transaction" = null ' \
+                                  'SET "latest_transaction_id" = null ' \
                                   'WHERE "id" IN ({});'.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:
