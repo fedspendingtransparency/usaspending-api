@@ -5,6 +5,7 @@ import smart_open
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.db.models import Count
 from django.conf import settings
 
 from usaspending_api.common.helpers import fy, timer
@@ -65,8 +66,53 @@ class Command(BaseCommand):
         if not ids_to_delete:
             return
 
-        # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
-        TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete).delete()
+        transactions = TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete)
+        grouped_transactions = transactions.values('award_id').annotate(transaction_count=Count('id'))
+        update_awards = grouped_transactions.filter(transaction_count__gt=1)
+        delete_awards = grouped_transactions.filter(transaction_count=1)
+
+        delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
+        update_award_ids = [update_result[0] for update_result in update_awards.values_list('award_id')]
+        delete_award_ids = [delete_result[0] for delete_result in delete_awards.values_list('award_id')]
+        delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
+        update_award_str_ids = ','.join([str(update_result) for update_result in update_award_ids])
+        delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
+
+        db_cursor = connections['default'].cursor()
+
+        # Transaction FABS
+        fabs = 'DELETE ' \
+               'FROM "transaction_fabs" tf ' \
+               'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
+        # Transaction Normalized
+        tn = 'DELETE ' \
+             'FROM "transaction_normalized" tn ' \
+             'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+        queries = [fabs, tn]
+        # Update Awards
+        if update_award_ids:
+            # Adding to award_update_id_list so the latest_transaction will be recalculated
+            award_update_id_list.extend(update_award_ids)
+            update_awards_query = 'UPDATE "awards" ' \
+                                  'SET "latest_transaction" = null ' \
+                                  'WHERE a."id" IN ({});'.format(update_award_str_ids)
+            queries.append(update_awards_query)
+        if delete_award_ids:
+            # Financial Accounts by Awards
+            fa = 'UPDATE "financial_accounts_by_awards" ' \
+                 'SET "award_id" = null '\
+                 'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Subawards
+            sub = 'UPDATE "awards_subaward" ' \
+                  'SET "award_id" = null ' \
+                  'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Delete Awards
+            delete_awards_query = 'DELETE ' \
+                                  'FROM "awards" a ' \
+                                  'WHERE a."id" IN ({});'.format(delete_award_str_ids)
+            queries.extend([fa, sub, delete_awards_query])
+        db_query = ''.join(queries)
+        db_cursor.execute(db_query, [])
 
     def insert_new_fabs(self, to_insert, total_rows):
         logger.info('Starting insertion of new FABS data')
