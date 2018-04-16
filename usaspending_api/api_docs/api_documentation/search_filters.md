@@ -103,6 +103,13 @@ Keys in a location object include:
 	"keyword": "example search text"
 }
 ```
+OR
+```
+{
+    "keyword": ["example search text", "some other search phrase"]
+}
+```
+
 
 Request parameter description:
 * `keyword` (String) : String containing the search text. Also the top level key name for the filter.
@@ -215,7 +222,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"recipient_search_text": ["D12345678"]
+	"recipient_search_text": ["D12345678", "Department of Defense"]
 }
 ```
 
