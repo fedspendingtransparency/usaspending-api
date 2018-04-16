@@ -523,6 +523,9 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
         printf({'msg': 'Deleting {} of "{}"'.format(len(values), column), 'f': 'ES Delete', 'job': job_id})
         values_generator = chunks(values, 1000)
         for v in values_generator:
+            # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
+            # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the 
+            # time of this comment, we are migrating to using a single index. 
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config['max_query_size'])
             delete_body = delete_query(response)

@@ -64,24 +64,39 @@ def matview_search_filter(filters, model):
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
         if key == "keyword":
-            keyword = value
-            upper_kw = keyword.upper()
+            def keyword_parse(keyword):
+                upper_kw = keyword.upper()
 
-            # keyword_string & award_id_string are Postgres TS_vectors.
-            # keyword_string = recipient_name + naics_code + naics_description + psc_description + awards_description
-            # award_id_string = piid + fain + uri
-            compound_or = Q(keyword_ts_vector=keyword) | \
-                Q(award_ts_vector=keyword) | \
-                Q(recipient_unique_id=upper_kw) | \
-                Q(parent_recipient_unique_id=keyword)
+                # keyword_string & award_id_string are Postgres TS_vectors.
+                # keyword_string = recipient_name + naics_code + naics_description
+                #     + psc_description + awards_description
+                # award_id_string = piid + fain + uri
+                filter_obj = Q(keyword_ts_vector=keyword) | \
+                    Q(award_ts_vector=keyword) | \
+                    Q(recipient_unique_id=upper_kw) | \
+                    Q(parent_recipient_unique_id=keyword)
 
-            if keyword.isnumeric():
-                compound_or |= Q(naics_code__contains=keyword)
+                if keyword.isnumeric():
+                    filter_obj |= Q(naics_code__contains=keyword)
 
-            if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
-                compound_or |= Q(product_or_service_code__iexact=keyword)
+                if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
+                    filter_obj |= Q(product_or_service_code__iexact=keyword)
+                return filter_obj
 
-            queryset = queryset.filter(compound_or)
+            if isinstance(value, str):
+                filter_obj = keyword_parse(value)
+            else:
+                if not isinstance(value, list):
+                    raise InvalidParameterException('Invalid filter: keyword argument'
+                                                    + ' type must be a string or list of strings.')
+                keyword_filters = [keyword_parse(keyword) for keyword in value]
+                filter_obj = None
+                for filter_part in keyword_filters:
+                    if filter_obj:
+                        filter_obj |= filter_part
+                    else:
+                        filter_obj = filter_part
+            queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
             keyword = value
@@ -167,17 +182,20 @@ def matview_search_filter(filters, model):
                 queryset &= model.objects.filter(recipient_id__in=in_query)
 
         elif key == "recipient_search_text":
-            if len(value) != 1:
-                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
-            upper_recipient_string = str(value[0]).upper()
-
-            # recipient_name_ts_vector is a postgres TS_Vector
-            filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
-
-            if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
-                filter_obj |= Q(recipient_unique_id=upper_recipient_string)
-
-            queryset &= model.objects.filter(filter_obj)
+            if len(value) < 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have at least one value.')
+            all_filters_obj = None
+            for recip in value:
+                upper_recipient_string = str(recip).upper()
+                # recipient_name_ts_vector is a postgres TS_Vector
+                filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
+                if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                    filter_obj |= Q(recipient_unique_id=upper_recipient_string)
+                if not all_filters_obj:
+                    all_filters_obj = filter_obj
+                else:
+                    all_filters_obj |= filter_obj
+            queryset &= model.objects.filter(all_filters_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
