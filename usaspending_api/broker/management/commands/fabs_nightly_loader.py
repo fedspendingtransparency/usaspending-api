@@ -59,21 +59,32 @@ class Command(BaseCommand):
 
         return final_db_rows, ids_to_delete
 
-    @staticmethod
-    def delete_stale_fabs(ids_to_delete=None):
+    def find_related_awards(self, transactions):
+        related_award_ids = [result[0] for result in transactions.values_list('award_id')]
+        tn_count = TransactionNormalized.objects.filter(award_id__in=related_award_ids).values('award_id') \
+            .annotate(transaction_count=Count('id')).values_list('award_id', 'transaction_count')
+        tn_count_filtered = transactions.values('award_id').annotate(transaction_count=Count('id'))\
+            .values_list('award_id', 'transaction_count')
+        tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
+        tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
+        # only delete awards if and only if all their transactions are deleted, otherwise update the award
+        update_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
+                         if tn_count_filtered_mapping[award_id] != transaction_count]
+        delete_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
+                         if tn_count_filtered_mapping[award_id] == transaction_count]
+        return update_awards, delete_awards
+
+    @transaction.atomic
+    def delete_stale_fabs(self, ids_to_delete=None):
         logger.info('Starting deletion of stale FABS data')
 
         if not ids_to_delete:
             return
 
         transactions = TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete)
-        grouped_transactions = transactions.values('award_id').annotate(transaction_count=Count('id'))
-        update_awards = grouped_transactions.filter(transaction_count__gt=1)
-        delete_awards = grouped_transactions.filter(transaction_count=1)
+        update_award_ids, delete_award_ids = self.find_related_awards(transactions)
 
         delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
-        update_award_ids = [update_result[0] for update_result in update_awards.values_list('award_id')]
-        delete_award_ids = [delete_result[0] for delete_result in delete_awards.values_list('award_id')]
         delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
         update_award_str_ids = ','.join([str(update_result) for update_result in update_award_ids])
         delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
@@ -117,6 +128,7 @@ class Command(BaseCommand):
             db_query = ''.join(queries)
             db_cursor.execute(db_query, [])
 
+    @transaction.atomic
     def insert_new_fabs(self, to_insert, total_rows):
         logger.info('Starting insertion of new FABS data')
 
@@ -311,7 +323,6 @@ class Command(BaseCommand):
             help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
         )
 
-    @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FABS nightly data load...')
 
