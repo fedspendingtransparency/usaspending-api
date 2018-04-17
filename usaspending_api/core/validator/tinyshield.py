@@ -195,11 +195,16 @@ class TinyShield():
                     if 'optional' in v and v['optional'] is False:
                         raise Exception('Object {} is missing required key {}'.format(provided_object, k))
                 else:
+                    # copy the parent rules, then overwrite any with the child's rules
                     child_rule = copy.copy(rule)
-                    child_rule['type'] = v['type']
+                    child_rule.update(v)
+                    # Delete parent fields we know exist and aren't useful for the child
+                    del child_rule['object_keys']
+                    del child_rule['array_type']
                     child_rule['value'] = provided_object[k]
-                    child_rule['min'] = rule.get('object_min', None)
-                    child_rule['max'] = rule.get('object_max', None)
+                    # If defined, use the child rules, else if defined use the parent rules, else None
+                    child_rule['min'] = rule.get('object_min', None) or child_rule.get('min', None)
+                    child_rule['max'] = rule.get('object_max', None) or child_rule.get('max', None)
 
                     object_result[k] = self.apply_rule(child_rule)
 
