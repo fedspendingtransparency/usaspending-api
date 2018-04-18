@@ -145,21 +145,45 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
-        json_request = request.data
-        category = json_request.get("category", None)
-        scope = json_request.get("scope", None)
-        filters = json_request.get("filters", None)
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
+        scopes = ["agency", "subagency"]
+
+        models = [
+            {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
+            # {'name': 'page', 'key': 'page', 'type': 'integer', 'default': 1, 'min': 1},
+            # {'name': 'limit', 'key': 'limit', 'type': 'integer', 'default': 10, 'min': 1, 'max': 100},
+        ]
+        models.extend(AWARD_FILTER)
+        models.extend(PAGINATION)
+        # for m in models:
+        #     if m['name'] in ('keyword', 'award_type_codes', 'sort'):
+        #         m['optional'] = False
+        validated_payload = TinyShield(models).block(request.data)
+        print('============================================')
+        print(validated_payload)
+
+        category = validated_payload['category']
+        scope = validated_payload['scope']
+        page = validated_payload['page']
+        limit = validated_payload['limit']
+        filters = {
+            item['name']: validated_payload[item['name']] for item in AWARD_FILTER if item['name'] in validated_payload}
+
+        # json_request = request.data
+        # category = json_request.get("category", None)
+        # scope = json_request.get("scope", None)
+        # filters = json_request.get("filters", None)
+        # limit = json_request.get("limit", 10)
+        # page = json_request.get("page", 1)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        if category is None:
-            raise InvalidParameterException("Missing one or more required request parameters: category")
-        potential_categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
-        if category not in potential_categories:
-            raise InvalidParameterException("Category does not have a valid value")
+        # if category is None:
+        #     raise InvalidParameterException("Missing one or more required request parameters: category")
+        # if category not in categories:
+        #     raise InvalidParameterException("Category does not have a valid value")
         if (scope is None) and (category != "cfda_programs"):
             raise InvalidParameterException("Missing one or more required request parameters: scope")
         if filters is None:
