@@ -159,7 +159,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         print('============================================')
         print(validated_payload)
 
-        response = spending_by_category_logic(validated_payload).logic()
+        response = spending_by_category_logic(validated_payload)
         return Response(response)
 
 

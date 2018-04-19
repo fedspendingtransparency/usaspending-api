@@ -17,39 +17,41 @@ logger = logging.getLogger(__name__)
 
 
 class business_logic:
-    def __init__(self, payload):
-        self.category = payload['category']
-        self.scope = payload['scope']
-        self.page = payload['page']
-        self.limit = payload['limit']
+    def __new__(cls, payload):
+        cls.category = payload['category']
+        cls.scope = payload['scope']
+        cls.page = payload['page']
+        cls.limit = payload['limit']
 
-        self.lower_limit = (self.page - 1) * self.limit
-        self.upper_limit = self.page * self.limit
+        cls.lower_limit = (cls.page - 1) * cls.limit
+        cls.upper_limit = cls.page * cls.limit
 
-        self.filters = {
+        cls.filters = {
             item['name']: payload[item['name']] for item in AWARD_FILTER if item['name'] in payload}
 
-        if (self.scope is None) and (self.category != "cfda_programs"):
+        if (cls.scope is None) and (cls.category != "cfda_programs"):
             raise InvalidParameterException("Missing one or more required request parameters: scope")
 
-        if 'award_type_codes' in self.filters:
-            self.filter_types = self.filters['award_type_codes']
+        if 'award_type_codes' in cls.filters:
+            cls.filter_types = cls.filters['award_type_codes']
         else:
-            self.filter_types = award_type_mapping
-        self.queryset, self.model = sbc_view_queryset('{}-{}'.format(self.category, self.scope or ''), self.filters)
+            cls.filter_types = award_type_mapping
+        cls.queryset, cls.model = sbc_view_queryset('{}-{}'.format(cls.category, cls.scope or ''), cls.filters)
+
+        return cls.logic(cls)
 
     def logic(self):
         # filter the transactions by category
         if self.category == "awarding_agency":
-            results = self.awarding_agency()
+            results = self.awarding_agency(self)
         elif self.category == "funding_agency":
-            results = self.funding_agency()
+            results = self.funding_agency(self)
         elif self.category == 'recipient':
-            results = self.recipient()
+            results = self.recipient(self)
         elif self.category == 'cfda_programs':
-            results = self.cfda_programs()
+            results = self.cfda_programs(self)
         elif self.category == 'industry_codes':
-            results = self.industry_codes()
+            results = self.industry_codes(self)
         else:
             raise InvalidParameterException("Category \"{}\" is not yet implemented".format(self.category))
 
