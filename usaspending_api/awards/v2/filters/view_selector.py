@@ -316,6 +316,8 @@ def spending_by_category(category_scope, filters):
         view_chain = ['SummaryNaicsCodesView']
     elif category_scope == 'cfda_programs-':
         view_chain = ['SummaryCfdaNumbersView']
+
+    # All of these category/scope combinations can use the following:
     view_chain.extend([
         'SummaryTransactionMonthView',
         'SummaryTransactionView',
@@ -326,7 +328,6 @@ def spending_by_category(category_scope, filters):
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
             model = view
-            print('spending_by_category using {}'.format(view))
             break
     else:
         raise InvalidParameterException
