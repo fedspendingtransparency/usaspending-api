@@ -77,7 +77,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryTransactionView,
@@ -97,7 +98,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {
             'time_period': can_use_month_aggregation,
@@ -124,7 +126,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalTransactionView,
@@ -152,8 +155,8 @@ MATVIEW_SELECTOR = {
             'extent_competed_type_codes',
             'federal_account_ids',
             'object_class',
-            'program_activity'
-            ],
+            'program_activity',
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalAwardView,
@@ -285,6 +288,42 @@ def transaction_spending_summary(filters):
         'UniversalTransactionView'
     ]
     model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
+def spending_by_category(category_scope, filters):
+    # category_scope is a string of <category>-<scope>.
+    # It isn't elegant but it works enough until we can refactor this endpoint into individual endpoints
+    view_chain = []
+    if category_scope in [
+        'awarding_agency-agency',
+        'funding_agency-agency',
+        'awarding_agency-subagency',
+        'funding_agency-subagency',
+    ]:
+        view_chain = ['SummaryView']
+    elif category_scope == 'industry_codes-psc':
+        view_chain = ['SummaryPscCodesView']
+    elif category_scope == 'industry_codes-naics':
+        view_chain = ['SummaryNaicsCodesView']
+    elif category_scope == 'cfda_programs-':
+        view_chain = ['SummaryCfdaNumbersView']
+
+    # All of these category/scope combinations can use the following:
+    view_chain.extend([
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ])
+
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)

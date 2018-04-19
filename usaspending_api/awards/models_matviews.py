@@ -123,6 +123,9 @@ class SummaryTransactionView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
     cfda_number = models.TextField()
     cfda_title = models.TextField()
@@ -364,6 +367,9 @@ class SummaryTransactionMonthView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
     cfda_number = models.TextField(blank=True, null=True)
     cfda_title = models.TextField(blank=True, null=True)

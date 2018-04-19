@@ -61,6 +61,11 @@ VALIDATORS = {
         'required_fields': [],
         'defaults': {},
     },
+    'schema': {
+        'func': lambda k: None,
+        'required_fields': [],
+        'defaults': {},
+    },
     'text': {
         'func': validate_text,
         'types': SUPPORTED_TEXT_TYPES,
@@ -111,6 +116,7 @@ class TinyShield():
     def block(self, request):
         self.parse_request(request)
         self.enforce_rules()
+        self.check_dependencies()
         return self.data
 
     def check_models(self, models):
@@ -141,7 +147,7 @@ class TinyShield():
             model['optional'] = model.get('optional', False)
 
         # Check to ensure unique names for destination dictionary
-        keys = [x['name'] for x in models]
+        keys = [x['name'] for x in models if x['type'] != 'schema']  # ignore schema as they are schema-only
         if len(keys) != len(set(keys)):
             raise Exception('Duplicate destination keys provided. Name values must be unique')
         return models
@@ -195,11 +201,16 @@ class TinyShield():
                     if 'optional' in v and v['optional'] is False:
                         raise Exception('Object {} is missing required key {}'.format(provided_object, k))
                 else:
+                    # copy the parent rules, then overwrite any with the child's rules
                     child_rule = copy.copy(rule)
-                    child_rule['type'] = v['type']
+                    child_rule.update(v)
+                    # Delete parent fields we know exist and aren't useful for the child
+                    del child_rule['object_keys']
+                    del child_rule['array_type']
                     child_rule['value'] = provided_object[k]
-                    child_rule['min'] = rule.get('object_min', None)
-                    child_rule['max'] = rule.get('object_max', None)
+                    # If defined, use the child rules, else if defined use the parent rules, else None
+                    child_rule['min'] = rule.get('object_min', None) or child_rule.get('min', None)
+                    child_rule['max'] = rule.get('object_max', None) or child_rule.get('max', None)
 
                     object_result[k] = self.apply_rule(child_rule)
 
@@ -209,3 +220,20 @@ class TinyShield():
             return VALIDATORS[rule['type']]['func'](rule)
         else:
             raise Exception('Invalid Type {} in rule'.format(rule['type']))
+
+    def check_dependencies(self):
+        for rule in self.rules:
+            if 'dependencies' not in rule:
+                return
+            for dependecy in rule['dependencies']:
+                for dependent, kind in dependecy.items():
+                    if kind == 'exists':
+                        if dependent not in self.data:
+                            raise UnprocessableEntityException(
+                                'Field \'{}\' Requires this sister field: \'{}\''.format(rule['name'], dependent))
+                    elif kind == 'contains':
+                        if self.data[dependent] not in rule['value']:
+                            raise UnprocessableEntityException(
+                                'Field \'{}\' value must be within field: \'{}\''.format(rule['name'], dependent))
+                    else:
+                        raise Exception('Invalid Dependency rule {} in '.format(kind, rule['name']))
