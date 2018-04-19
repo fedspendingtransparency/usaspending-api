@@ -294,3 +294,29 @@ def transaction_spending_summary(filters):
         raise InvalidParameterException
 
     return queryset, model
+
+
+def spending_by_category(category, filters):
+    view_chain = []
+    if category in ['awarding_agency', 'funding_agency']:
+        view_chain = ['SummaryView']
+    elif category == 'industry_codes':
+        view_chain = ['SummaryPscCodesView']
+    elif category == 'cfda_programs':
+        view_chain = ['SummaryCfdaNumbersView']
+    elif category == 'naics':
+        view_chain = ['SummaryNaicsCodesView']
+    view_chain.extend([
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ])
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            print('spending_by_category using {}'.format(view))
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset

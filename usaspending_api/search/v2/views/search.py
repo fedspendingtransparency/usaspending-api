@@ -35,6 +35,7 @@ from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
                                                             spending_by_transaction_sum_and_count)
+from usaspending_api.search.v2.views.spending_by_category import business_logic as spending_by_category_logic
 
 logger = logging.getLogger(__name__)
 
@@ -149,271 +150,18 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         scopes = ["agency", "subagency"]
 
         models = [
+            # {'name': '_filters', 'key': 'filters', 'type': 'schema', 'optional': False},
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
-            # {'name': 'page', 'key': 'page', 'type': 'integer', 'default': 1, 'min': 1},
-            # {'name': 'limit', 'key': 'limit', 'type': 'integer', 'default': 10, 'min': 1, 'max': 100},
         ]
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
-        # for m in models:
-        #     if m['name'] in ('keyword', 'award_type_codes', 'sort'):
-        #         m['optional'] = False
         validated_payload = TinyShield(models).block(request.data)
         print('============================================')
         print(validated_payload)
 
-        category = validated_payload['category']
-        scope = validated_payload['scope']
-        page = validated_payload['page']
-        limit = validated_payload['limit']
-        filters = {
-            item['name']: validated_payload[item['name']] for item in AWARD_FILTER if item['name'] in validated_payload}
-
-        # json_request = request.data
-        # category = json_request.get("category", None)
-        # scope = json_request.get("scope", None)
-        # filters = json_request.get("filters", None)
-        # limit = json_request.get("limit", 10)
-        # page = json_request.get("page", 1)
-
-        lower_limit = (page - 1) * limit
-        upper_limit = page * limit
-
-        # if category is None:
-        #     raise InvalidParameterException("Missing one or more required request parameters: category")
-        # if category not in categories:
-        #     raise InvalidParameterException("Category does not have a valid value")
-        if (scope is None) and (category != "cfda_programs"):
-            raise InvalidParameterException("Missing one or more required request parameters: scope")
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-
-        # filter queryset
-        queryset = matview_search_filter(filters, UniversalTransactionView)
-
-        filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-
-        # filter the transactions by category
-        if category == "awarding_agency":
-            potential_scopes = ["agency", "subagency"]
-            if scope not in potential_scopes:
-                raise InvalidParameterException("scope does not have a valid value")
-
-            if scope == "agency":
-                queryset = queryset \
-                    .filter(awarding_toptier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('awarding_toptier_agency_name'),
-                        agency_abbreviation=F('awarding_toptier_agency_abbreviation'))
-
-            elif scope == "subagency":
-                queryset = queryset \
-                    .filter(
-                        awarding_subtier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('awarding_subtier_agency_name'),
-                        agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
-
-            elif scope == "office":
-                    # NOT IMPLEMENTED IN UI
-                    raise NotImplementedError
-
-            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types)\
-                .order_by('-aggregated_amount')
-            results = list(queryset[lower_limit:upper_limit + 1])
-
-            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-            results = results[:limit]
-
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
-            return Response(response)
-
-        elif category == "funding_agency":
-            potential_scopes = ["agency", "subagency"]
-            if scope not in potential_scopes:
-                raise InvalidParameterException("scope does not have a valid value")
-
-            if scope == "agency":
-                queryset = queryset \
-                    .filter(funding_toptier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('funding_toptier_agency_name'),
-                        agency_abbreviation=F('funding_toptier_agency_abbreviation'))
-
-            elif scope == "subagency":
-                queryset = queryset \
-                    .filter(
-                        funding_subtier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('funding_subtier_agency_name'),
-                        agency_abbreviation=F('funding_subtier_agency_abbreviation'))
-
-            elif scope == "office":
-                # NOT IMPLEMENTED IN UI
-                raise NotImplementedError
-
-            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                .order_by('-aggregated_amount')
-            results = list(queryset[lower_limit:upper_limit + 1])
-
-            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-            results = results[:limit]
-
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
-            return Response(response)
-
-        elif category == "recipient":
-            if scope == "duns":
-                queryset = queryset \
-                    .values(legal_entity_id=F("recipient_id"))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount') \
-                    .values("aggregated_amount", "legal_entity_id", "recipient_name") \
-                    .order_by("-aggregated_amount")
-
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-
-            elif scope == "parent_duns":
-                queryset = queryset \
-                    .filter(parent_recipient_unique_id__isnull=False)
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types,
-                                                  calculate_totals=False) \
-                    .values(
-                        'aggregated_amount',
-                        'recipient_name',
-                        'parent_recipient_unique_id') \
-                    .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-
-            else:  # recipient_type
-                raise InvalidParameterException("recipient type is not yet implemented")
-
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
-            return Response(response)
-
-        elif category == "cfda_programs":
-            if can_use_view(filters, 'SummaryCfdaNumbersView'):
-                queryset = get_view_queryset(filters, 'SummaryCfdaNumbersView')
-                queryset = queryset \
-                    .filter(
-                        federal_action_obligation__isnull=False,
-                        cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number"))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .values(
-                        "aggregated_amount",
-                        "cfda_program_number",
-                        program_title=F("cfda_title")) \
-                    .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-                for trans in results:
-                    trans['popular_name'] = None
-                    # small DB hit every loop here
-                    cfda = Cfda.objects \
-                        .filter(
-                            program_title=trans['program_title'],
-                            program_number=trans['cfda_program_number']) \
-                        .values('popular_name').first()
-
-                    if cfda:
-                        trans['popular_name'] = cfda['popular_name']
-
-            else:
-                queryset = queryset \
-                    .filter(
-                        cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number"))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .values(
-                        "aggregated_amount",
-                        "cfda_program_number",
-                        popular_name=F("cfda_popular_name"),
-                        program_title=F("cfda_title")) \
-                    .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-
-            response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
-            return Response(response)
-
-        elif category == "industry_codes":  # industry_codes
-            if scope == "psc":
-                if can_use_view(filters, 'SummaryPscCodesView'):
-                    queryset = get_view_queryset(filters, 'SummaryPscCodesView')
-                    queryset = queryset \
-                        .filter(product_or_service_code__isnull=False) \
-                        .values(psc_code=F("product_or_service_code"))
-                else:
-                    queryset = queryset \
-                        .filter(psc_code__isnull=False) \
-                        .values("psc_code")
-
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount')
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
-                return Response(response)
-
-            elif scope == "naics":
-                if can_use_view(filters, 'SummaryNaicsCodesView'):
-                    queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
-                    queryset = queryset \
-                        .filter(naics_code__isnull=False) \
-                        .values('naics_code')
-                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                        .order_by('-aggregated_amount') \
-                        .values(
-                            'naics_code',
-                            'aggregated_amount',
-                            'naics_description')
-                else:
-                    queryset = queryset \
-                        .filter(naics_code__isnull=False) \
-                        .values("naics_code")
-                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                        .order_by('-aggregated_amount') \
-                        .values(
-                            'naics_code',
-                            'aggregated_amount',
-                            'naics_description')
-
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
-
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
-
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
-                return Response(response)
-
-            else:  # recipient_type
-                raise InvalidParameterException("recipient type is not yet implemented")
+        response = spending_by_category_logic(validated_payload).logic()
+        return Response(response)
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
@@ -844,7 +592,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'dependencies': [{'sort': 'contains'}]},
         ]
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
