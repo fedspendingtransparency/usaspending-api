@@ -319,8 +319,8 @@ def spending_by_category(category, filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ])
-    if category in ['recipient-duns', 'recipient-parent_duns']:
-        view_chain = ['UniversalTransactionView']
+    # if category in ['recipient-duns', 'recipient-parent_duns']:
+    #     view_chain = ['SummaryTransactionView', 'UniversalTransactionView']
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)

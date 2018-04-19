@@ -1,13 +1,10 @@
 import logging
 
-from django.db.models import F
-
-from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
+from django.db.models import F, Sum
 
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
@@ -39,6 +36,10 @@ class business_logic:
         cls.queryset, cls.model = sbc_view_queryset('{}-{}'.format(cls.category, cls.scope or ''), cls.filters)
 
         return cls.logic(cls)
+
+    def raise_not_implemented(self):
+        msg = "Scope '{}' is not implemented for '{}' Category"
+        raise InvalidParameterException(msg.format(self.scope, self.category))
 
     def logic(self):
         # filter the transactions by category
@@ -73,7 +74,9 @@ class business_logic:
                 .filter(awarding_toptier_agency_name__isnull=False) \
                 .values(
                     agency_name=F('awarding_toptier_agency_name'),
-                    agency_abbreviation=F('awarding_toptier_agency_abbreviation'))
+                    agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         elif self.scope == "subagency":
             self.queryset = self.queryset \
@@ -81,13 +84,13 @@ class business_logic:
                     awarding_subtier_agency_name__isnull=False) \
                 .values(
                     agency_name=F('awarding_subtier_agency_name'),
-                    agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
+                    agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         else:
-            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
+            self.raise_not_implemented(self)
 
-        self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types)\
-            .order_by('-aggregated_amount')
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def funding_agency(self):
@@ -96,7 +99,9 @@ class business_logic:
                 .filter(funding_toptier_agency_name__isnull=False) \
                 .values(
                     agency_name=F('funding_toptier_agency_name'),
-                    agency_abbreviation=F('funding_toptier_agency_abbreviation'))
+                    agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         elif self.scope == "subagency":
             self.queryset = self.queryset \
@@ -104,44 +109,32 @@ class business_logic:
                     funding_subtier_agency_name__isnull=False) \
                 .values(
                     agency_name=F('funding_subtier_agency_name'),
-                    agency_abbreviation=F('funding_subtier_agency_abbreviation'))
+                    agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         else:
-            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
-
-        self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
-            .order_by('-aggregated_amount')
+            self.raise_not_implemented(self)
 
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def recipient(self):
-        ###################################################################
-        # POOR PERFORMANCE. Needs `recipient_id`/`parent_recipient_unique_id` in additional matviews
-        ###################################################################
         if self.scope == "duns":
             self.queryset = self.queryset \
-                .values(legal_entity_id=F("recipient_id"))
-            self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
-                .order_by('-aggregated_amount') \
-                .values("aggregated_amount", "legal_entity_id", "recipient_name") \
+                .filter(recipient_unique_id__isnull=False) \
+                .values("recipient_name", legal_entity_id=F("recipient_unique_id")) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
         elif self.scope == "parent_duns":
             self.queryset = self.queryset \
-                .filter(parent_recipient_unique_id__isnull=False)
-            self.queryset = sum_transaction_amount(
-                self.queryset,
-                'aggregated_amount',
-                filter_types=self.filter_types,
-                calculate_totals=False) \
-                .values(
-                    'aggregated_amount',
-                    'recipient_name',
-                    'parent_recipient_unique_id') \
-                .order_by('-aggregated_amount')
+                .filter(parent_recipient_unique_id__isnull=False) \
+                .values("recipient_name", "parent_recipient_unique_id") \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         else:
-            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
+            self.raise_not_implemented(self)
 
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
@@ -151,13 +144,9 @@ class business_logic:
                 .filter(
                     federal_action_obligation__isnull=False,
                     cfda_number__isnull=False) \
-                .values(cfda_program_number=F("cfda_number"))
-            self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
-                .values(
-                    "aggregated_amount",
-                    "cfda_program_number",
-                    program_title=F("cfda_title")) \
-                .order_by('-aggregated_amount')
+                .values(cfda_program_number=F("cfda_number")) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
             # Begin DB hits here
             results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
@@ -177,15 +166,14 @@ class business_logic:
         else:
             self.queryset = self.queryset \
                 .filter(
+                    federal_action_obligation__isnull=False,
                     cfda_number__isnull=False) \
-                .values(cfda_program_number=F("cfda_number"))
-            self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
                 .values(
-                    "aggregated_amount",
-                    "cfda_program_number",
+                    cfda_program_number=F("cfda_number"),
                     popular_name=F("cfda_popular_name"),
                     program_title=F("cfda_title")) \
-                .order_by('-aggregated_amount')
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
             # Begin DB hits here
             results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
@@ -196,21 +184,17 @@ class business_logic:
         if self.scope == "psc":
             self.queryset = self.queryset \
                 .filter(product_or_service_code__isnull=False) \
-                .values(psc_code=F("product_or_service_code"))
-
-            self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
-                .order_by('-aggregated_amount')
+                .values(psc_code=F("product_or_service_code")) \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
 
         elif self.scope == "naics":
             self.queryset = self.queryset \
                 .filter(naics_code__isnull=False) \
-                .values('naics_code')
-            self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
-                .order_by('-aggregated_amount') \
-                .values(
-                    'naics_code',
-                    'aggregated_amount',
-                    'naics_description')
+                .values('naics_code', 'naics_description') \
+                .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
+                .order_by("-aggregated_amount")
+
         else:
-            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
+            self.raise_not_implemented(self)
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
