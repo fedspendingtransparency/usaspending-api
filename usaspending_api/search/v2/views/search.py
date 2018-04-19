@@ -143,24 +143,19 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
         categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
         scopes = ["agency", "subagency", "psc", "naics", "duns", "parent_duns"]
 
         models = [
-            # {'name': '_filters', 'key': 'filters', 'type': 'schema', 'optional': False},
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
         ]
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
         validated_payload = TinyShield(models).block(request.data)
-        print('============================================')
-        print(validated_payload)
 
-        response = spending_by_category_logic(validated_payload)
-        return Response(response)
+        return Response(spending_by_category_logic(validated_payload))
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):

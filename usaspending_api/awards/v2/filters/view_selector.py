@@ -299,28 +299,29 @@ def transaction_spending_summary(filters):
     return queryset, model
 
 
-def spending_by_category(category, filters):
+def spending_by_category(category_scope, filters):
+    # category_scope is a string of <category>-<scope>.
+    # It isn't elegant but it works enough until we can refactor this endpoint into individual endpoints
     view_chain = []
-    if category in [
+    if category_scope in [
         'awarding_agency-agency',
         'funding_agency-agency',
         'awarding_agency-subagency',
         'funding_agency-subagency',
     ]:
         view_chain = ['SummaryView']
-    elif category == 'industry_codes-psc':
+    elif category_scope == 'industry_codes-psc':
         view_chain = ['SummaryPscCodesView']
-    elif category == 'industry_codes-naics':
+    elif category_scope == 'industry_codes-naics':
         view_chain = ['SummaryNaicsCodesView']
-    elif category == 'cfda_programs-':
+    elif category_scope == 'cfda_programs-':
         view_chain = ['SummaryCfdaNumbersView']
     view_chain.extend([
         'SummaryTransactionMonthView',
         'SummaryTransactionView',
         'UniversalTransactionView'
     ])
-    # if category in ['recipient-duns', 'recipient-parent_duns']:
-    #     view_chain = ['SummaryTransactionView', 'UniversalTransactionView']
+
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)

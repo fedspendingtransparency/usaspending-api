@@ -4,7 +4,6 @@ from django.db.models import F, Sum
 
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
@@ -14,7 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class business_logic:
+    __slots__ = ('category', 'scope', 'page', 'limit', 'lower_limit', 'upper_limit', 'filters', 'queryset', 'model', )
+
     def __new__(cls, payload):
+        """
+        Use __new__ instead of __init__ since __new__ can return a value other than None.
+        Since this is a class method using common nomenclature for class: `cls`
+        """
         cls.category = payload['category']
         cls.scope = payload['scope']
         cls.page = payload['page']
@@ -29,12 +34,9 @@ class business_logic:
         if (cls.scope is None) and (cls.category != "cfda_programs"):
             raise InvalidParameterException("Missing one or more required request parameters: scope")
 
-        if 'award_type_codes' in cls.filters:
-            cls.filter_types = cls.filters['award_type_codes']
-        else:
-            cls.filter_types = award_type_mapping
-        cls.queryset, cls.model = sbc_view_queryset('{}-{}'.format(cls.category, cls.scope or ''), cls.filters)
-
+        # some category-scope combinations allow different matviews, combine strings for easier logic
+        category_scope = '{}-{}'.format(cls.category, cls.scope or '')
+        cls.queryset, cls.model = sbc_view_queryset(category_scope, cls.filters)
         return cls.logic(cls)
 
     def raise_not_implemented(self):
@@ -68,7 +70,6 @@ class business_logic:
         return response
 
     def awarding_agency(self):
-        # filter self.queryset
         if self.scope == "agency":
             self.queryset = self.queryset \
                 .filter(awarding_toptier_agency_name__isnull=False) \
@@ -91,6 +92,7 @@ class business_logic:
         else:
             self.raise_not_implemented(self)
 
+        # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def funding_agency(self):
@@ -116,6 +118,7 @@ class business_logic:
         else:
             self.raise_not_implemented(self)
 
+        # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def recipient(self):
@@ -136,6 +139,7 @@ class business_logic:
         else:
             self.raise_not_implemented(self)
 
+        # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def cfda_programs(self):
@@ -148,12 +152,12 @@ class business_logic:
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
-            # Begin DB hits here
+            # DB hit here
             results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
             for trans in results:
                 trans['popular_name'] = None
-                # small DB hit every loop here
+                # small DB hit every loop
                 cfda = Cfda.objects \
                     .filter(
                         program_title=trans['program_title'],
@@ -175,7 +179,7 @@ class business_logic:
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
-            # Begin DB hits here
+            # DB hit here
             results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
         return results
@@ -197,4 +201,5 @@ class business_logic:
 
         else:
             self.raise_not_implemented(self)
+        # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
