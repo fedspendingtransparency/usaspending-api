@@ -146,7 +146,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
         categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
-        scopes = ["agency", "subagency", "psc", "naics"]
+        scopes = ["agency", "subagency", "psc", "naics", "duns", "parent_duns"]
 
         models = [
             # {'name': '_filters', 'key': 'filters', 'type': 'schema', 'optional': False},

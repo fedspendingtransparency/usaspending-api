@@ -22,11 +22,12 @@ class business_logic:
         self.scope = payload['scope']
         self.page = payload['page']
         self.limit = payload['limit']
-        self.filters = {
-            item['name']: payload[item['name']] for item in AWARD_FILTER if item['name'] in payload}
 
         self.lower_limit = (self.page - 1) * self.limit
         self.upper_limit = self.page * self.limit
+
+        self.filters = {
+            item['name']: payload[item['name']] for item in AWARD_FILTER if item['name'] in payload}
 
         if (self.scope is None) and (self.category != "cfda_programs"):
             raise InvalidParameterException("Missing one or more required request parameters: scope")
@@ -49,7 +50,7 @@ class business_logic:
             results = self.cfda_programs()
         elif self.category == 'industry_codes':
             results = self.industry_codes()
-        else:  # recipient_type
+        else:
             raise InvalidParameterException("Category \"{}\" is not yet implemented".format(self.category))
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
@@ -80,9 +81,8 @@ class business_logic:
                     agency_name=F('awarding_subtier_agency_name'),
                     agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
 
-        elif self.scope == "office":
-                # NOT IMPLEMENTED IN UI
-                raise InvalidParameterException("office scope is not yet implemented")
+        else:
+            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
 
         self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types)\
             .order_by('-aggregated_amount')
@@ -104,9 +104,8 @@ class business_logic:
                     agency_name=F('funding_subtier_agency_name'),
                     agency_abbreviation=F('funding_subtier_agency_abbreviation'))
 
-        elif self.scope == "office":
-            # NOT IMPLEMENTED IN UI
-            raise NotImplementedError
+        else:
+            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
 
         self.queryset = sum_transaction_amount(self.queryset, 'aggregated_amount', filter_types=self.filter_types) \
             .order_by('-aggregated_amount')
@@ -114,6 +113,9 @@ class business_logic:
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
     def recipient(self):
+        ###################################################################
+        # POOR PERFORMANCE. Needs `recipient_id`/`parent_recipient_unique_id` in additional matviews
+        ###################################################################
         if self.scope == "duns":
             self.queryset = self.queryset \
                 .values(legal_entity_id=F("recipient_id"))
@@ -136,8 +138,8 @@ class business_logic:
                     'parent_recipient_unique_id') \
                 .order_by('-aggregated_amount')
 
-        else:  # recipient_type
-            raise InvalidParameterException("recipient type is not yet implemented")
+        else:
+            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
 
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
 
@@ -207,6 +209,6 @@ class business_logic:
                     'naics_code',
                     'aggregated_amount',
                     'naics_description')
-        else:  # recipient_type
-            raise InvalidParameterException("recipient type is not yet implemented")
+        else:
+            raise InvalidParameterException("Scope \"{}\" is not implemented".format(self.scope))
         return list(self.queryset[self.lower_limit:self.upper_limit + 1])
