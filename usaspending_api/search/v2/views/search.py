@@ -10,17 +10,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
-from django.db.models import Sum, Count, F, Value, FloatField
+from django.db.models import Sum, Count, Value, FloatField
 from django.db.models.functions import ExtractMonth, ExtractYear, Cast, Coalesce
 
 from usaspending_api.awards.models import Subaward
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import (can_use_view, get_view_queryset, spending_by_award_count,
-                                                             spending_by_geography, spending_over_time)
+from usaspending_api.awards.v2.filters.view_selector import (spending_by_award_count, spending_by_geography,
+                                                             spending_over_time)
 from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contract_type_mapping, loan_type_mapping,
                                                        non_loan_assistance_type_mapping, grant_type_mapping,
                                                        contract_subaward_mapping, grant_subaward_mapping)
@@ -32,7 +32,6 @@ from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
                                                             spending_by_transaction_sum_and_count)
 from usaspending_api.search.v2.views.spending_by_category import business_logic as spending_by_category_logic
@@ -147,7 +146,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
         categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
-        scopes = ["agency", "subagency"]
+        scopes = ["agency", "subagency", "psc", "naics"]
 
         models = [
             # {'name': '_filters', 'key': 'filters', 'type': 'schema', 'optional': False},
@@ -592,7 +591,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'dependencies': [{'sort': 'contains'}]},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
         ]
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
