@@ -60,3 +60,4 @@ ratings:
 exclude_paths:
   - "*/site-packages/*"
   - "usaspending_api/*/migrations/*"
+  - "usaspending_api/static_doc_files/js/*"
