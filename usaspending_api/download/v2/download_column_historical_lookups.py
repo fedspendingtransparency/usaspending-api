@@ -893,5 +893,46 @@ query_paths = {
             ('subawardee_business_type_code', 'recipient__business_types'),
             ('subawardee_business_type_description', 'recipient__business_types_description')
         ])
+    },
+    'account_balances': {
+        'treasury_account': OrderedDict([
+            ('allocation_transfer_agency_identifier', 'treasury_account_identifier__allocation_transfer_agency_id'),
+            ('agency_identifer', 'treasury_account_identifier__agency_id'),
+            ('beginning_period_of_availability', 'treasury_account_identifier__beginning_period_of_availability'),
+            ('ending_period_of_availability', 'treasury_account_identifier__ending_period_of_availability'),
+            ('availability_type_code', 'treasury_account_identifier__availability_type_code'),
+            ('main_account_code', 'treasury_account_identifier__main_account_code'),
+            ('sub_account_code', 'treasury_account_identifier__sub_account_code'),
+            ('federal_account_code', 'treasury_account_identifier__federal_account__federal_account_code'),
+            ('federal_account_name', 'treasury_account_identifier__federal_account__account_title'),
+            ('total_budgetary_resources', 'budget_authority_available_amount_total_cpe'),
+            ('obligations_incurred', 'obligations_incurred_total_by_tas_cpe'),
+            ('deobligations_or_recoveries_or_refunds_from_prior_year', 'deobligations_recoveries_refunds_by_tas_cpe'),
+            ('unobligated_balance', 'unobligated_balance_cpe'),
+            ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe')
+        ])
+    },
+    'object_class_program_activity': {
+        'treasury_account': OrderedDict([
+            ('allocation_transfer_agency_identifier', 'treasury_account__allocation_transfer_agency_id'),
+            ('agency_identifer', 'treasury_account__agency_id'),
+            ('beginning_period_of_availability', 'treasury_account__beginning_period_of_availability'),
+            ('ending_period_of_availability', 'treasury_account__ending_period_of_availability'),
+            ('availability_type_code', 'treasury_account__availability_type_code'),
+            ('main_account_code', 'treasury_account__main_account_code'),
+            ('sub_account_code', 'treasury_account__sub_account_code'),
+            ('federal_account_code', 'treasury_account__federal_account__federal_account_code'),
+            ('federal_account_name', 'treasury_account__federal_account__account_title'),
+            ('program_activity_name', 'program_activity__program_activity_name'),
+            ('program_activity_code', 'program_activity__program_activity_code'),
+            ('object_class_code', 'object_class__object_class'),
+            ('object_class_name', 'object_class__object_class_name'),
+            ('direct_or_reimbursable_funding_source', 'object_class__direct_reimbursable'),
+            ('obligations_incurred', 'obligations_incurred_by_program_object_class_cpe'),
+            ('deobligations_or_recoveries_or_refunds_from_prior_year',
+             'deobligations_recoveries_refund_pri_program_object_class_cpe'),
+            ('gross_outlay_amount', 'gross_outlay_amount_by_program_object_class_cpe')
+                                    # ALSO gross_outlay_amount_by_program_object_class_fyb (how)
+        ])
     }
 }
