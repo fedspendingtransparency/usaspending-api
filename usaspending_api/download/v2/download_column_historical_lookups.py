@@ -932,7 +932,7 @@ query_paths = {
             ('deobligations_or_recoveries_or_refunds_from_prior_year',
              'deobligations_recoveries_refund_pri_program_object_class_cpe'),
             ('gross_outlay_amount', 'gross_outlay_amount_by_program_object_class_cpe')
-                                    # ALSO gross_outlay_amount_by_program_object_class_fyb (how)
+            # ALSO gross_outlay_amount_by_program_object_class_fyb (how)
         ])
     }
 }

@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
@@ -17,7 +16,8 @@ def account_balances_filter(filters):
 
     # TODO: Filter by federal account
     # if filters.get('federal_account', False):
-    #     query_filters['treasury_account_identifier__federal_account__federal_account_code'] = filters['federal_account']
+    #     query_filters['treasury_account_identifier__federal_account__federal_account_code'] = \
+    #         filters['federal_account']
 
     # Filter by Fiscal Year and Quarter
     if filters.get('fiscal_year', False) and filters.get('fiscal_quarter', False):

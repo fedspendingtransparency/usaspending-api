@@ -39,7 +39,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
     def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
-        json_request = (self.validate_award_request(request.data) if request_type=='award' else
+        json_request = (self.validate_award_request(request.data) if request_type == 'award' else
                         self.validate_account_request(request.data))
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
