@@ -320,7 +320,7 @@ SPAGHETTI_SAUCE = {
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
 
 # Elasticsearch
-ES_HOSTNAME = ""
+ES_HOSTNAME = "http://localhost:9200"#"http://52.222.76.101:9200/"
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
 DOWNLOAD_QUERY_SIZE = 500000
 ES_TIMEOUT = 30
@@ -629,3 +629,5 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
 }
+
+API_VERSION = 2
