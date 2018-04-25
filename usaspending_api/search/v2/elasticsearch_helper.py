@@ -239,6 +239,7 @@ def get_sum_and_count_aggregation_results(keyword):
 def spending_by_transaction_sum_and_count(request_data):
     return get_sum_and_count_aggregation_results(request_data['keyword'])
 
+
 def concat_if_array(data):
     if isinstance(data, str):
         return data
@@ -247,6 +248,6 @@ def concat_if_array(data):
             str_from_array = " ".join(data)
             return str_from_array
         else:
-            #This should never happen if TinyShield is functioning properly
+            # This should never happen if TinyShield is functioning properly
             logger.error('Keyword submitted was not a string or array')
             return ""

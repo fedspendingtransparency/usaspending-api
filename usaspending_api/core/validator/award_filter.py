@@ -52,6 +52,7 @@ for a in AWARD_FILTER:
     if a['type'] == 'array':
         a['min'] = a.get('min', 1)
 
+
 def reconstitute_filter(disassembled_obj, object_dict_with_keys):
     filter_obj = {}
     filters = [a['name'] for a in object_dict_with_keys]
