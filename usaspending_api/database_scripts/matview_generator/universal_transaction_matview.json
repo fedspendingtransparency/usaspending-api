@@ -113,7 +113,7 @@
     "LEFT OUTER JOIN",
     "  psc ON (transaction_fpds.product_or_service_code = psc.code)",
     "WHERE",
-    "  transaction_normalized.action_date >= '2007-10-01'",
+    "  transaction_normalized.action_date >= '2000-10-01'",
     "ORDER BY",
     "  transaction_normalized.action_date DESC"
   ],
