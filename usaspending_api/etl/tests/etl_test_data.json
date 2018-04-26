@@ -4436,7 +4436,7 @@
       "borrowing_authority_amount_cpe": "1.51",
       "tas_id": 0,
       "unobligated_balance_cpe": "2.02",
-      "budget_authority_available_cpe": "10.1",
+      "total_budgetary_resources_cpe": "10.1",
       "gross_outlay_amount_by_tas_cpe": "3500",
       "status_of_budgetary_resour_cpe": "10.1",
       "created_at": "2016-06-27T12:08:40.215",

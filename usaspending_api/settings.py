@@ -342,7 +342,7 @@ LONG_TO_TERSE_LABELS = {
     "contract_authority_amount_total_cpe": "contract_authority_amount_cpe",
     "spending_authority_from_offsetting_collections_amount_cpe": "spending_authority_from_of_cpe",
     "other_budgetary_resources_amount_cpe": "other_budgetary_resources_cpe",
-    "budget_authority_available_amount_total_cpe": "budget_authority_available_cpe",
+    "total_budgetary_resources_amount_cpe": "total_budgetary_resources_cpe",
     "gross_outlay_amount_by_tas_cpe": "gross_outlay_amount_by_tas_cpe",
     "obligations_incurred_total_by_tas_cpe": "obligations_incurred_total_cpe",
     "deobligations_recoveries_refunds_by_tas_cpe": "deobligations_recoveries_r_cpe",
