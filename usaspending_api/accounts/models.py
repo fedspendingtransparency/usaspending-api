@@ -15,9 +15,7 @@ class FederalAccount(models.Model):
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
     account_title = models.TextField()
-    # This field is a combination of the above fields for the purpose of autocomplete
-    # The format is: agency_identifier + '-' + main_account_code + ' - ' + account_title
-    federal_account_code = models.TextField(null=True)
+    federal_account_code = models.TextField(null=True)  # agency_identifier + '-' + main_account_code
 
     class Meta:
         managed = True
@@ -25,8 +23,7 @@ class FederalAccount(models.Model):
         unique_together = ('agency_identifier', 'main_account_code')
 
     def save(self, *args, **kwargs):
-        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code +\
-                                    ' - ' + self.account_title
+        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code
         super().save(*args, **kwargs)
 
 
