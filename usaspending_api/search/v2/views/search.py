@@ -31,7 +31,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_m
 from usaspending_api.common.decorators import api_transformations
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
-from usaspending_api.core.validator.award_filter import AWARD_FILTER, reconstitute_filter
+from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
@@ -64,7 +64,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         models.extend(PAGINATION)
         json_request = TinyShield(models).block(request.data)
         group = json_request.get('group', None)
-        filters = reconstitute_filter(json_request, AWARD_FILTER)
+        filters = json_request.get("filters", None)
         subawards = json_request.get('subawards', False)
 
         if group is None:
@@ -166,7 +166,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
         category = json_request.get("category", None)
         scope = json_request.get("scope", None)
-        filters = reconstitute_filter(json_request, AWARD_FILTER)
+        filters = json_request.get("filters", None)
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
 
@@ -427,7 +427,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         self.subawards = json_request.get("subawards", False)
         self.scope = json_request.get("scope")
-        self.filters = reconstitute_filter(json_request, AWARD_FILTER) or {}
+        self.filters = json_request.get("filters", None)
         self.geo_layer = json_request.get("geo_layer")
         self.geo_layer_filters = json_request.get("geo_layer_filters")
 
@@ -633,7 +633,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 m['optional'] = False
         json_request = TinyShield(models).block(request.data)
         fields = json_request.get("fields", None)
-        filters = reconstitute_filter(json_request, AWARD_FILTER)
+        filters = json_request.get("filters", None)
         subawards = json_request.get("subawards", False)
         order = json_request.get("order", "asc")
         limit = json_request.get("limit", 10)
@@ -763,7 +763,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
         json_request = TinyShield(models).block(request.data)
-        filters = reconstitute_filter(json_request, AWARD_FILTER)
+        filters = json_request.get("filters", None)
         subawards = json_request.get("subawards", False)
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")

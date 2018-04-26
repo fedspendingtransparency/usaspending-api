@@ -105,9 +105,12 @@ def validate_datetime(rule):
 
 def validate_enum(rule):
     value = rule['value']
-    if value not in rule['enum_values']:
-        error_message = 'Field \'{}\' is outside valid values {}'.format(rule['key'], list(rule['enum_values']))
-        raise InvalidParameterException(error_message)
+    try:
+        if value not in rule['enum_values']:
+            error_message = 'Field \'{}\' is outside valid values {}'.format(rule['key'], list(rule['enum_values']))
+            raise InvalidParameterException(error_message)
+    except KeyError as e:
+        raise Exception(rule)
     return value
 
 
@@ -147,10 +150,10 @@ def validate_object(rule):
 
     for key, value in rule['object_keys'].items():
         if key not in provided_object:
-            if 'optional' in value and value['optional'] is True:
-                continue
-            else:
+            if 'optional' in value and value['optional'] is False:
                 raise UnprocessableEntityException('Required object fields: {}'.format(rule['object_keys'].keys()))
+            else:
+                continue
 
     return provided_object
 
@@ -170,7 +173,9 @@ def validate_text(rule):
         ord('\r'): None,  # carriage return
         ord('\n'): None,  # newline
     }
-    text_type = rule['text_type']
+    text_type = rule.get('text_type', None)
+    if not text_type:
+        raise Exception("Model with text type is missing text_type paramter")
     if text_type not in SUPPORTED_TEXT_TYPES:
         msg = 'Invalid model {key}: \'{text_type}\' is not a valid text_type'.format(**rule)
         raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))

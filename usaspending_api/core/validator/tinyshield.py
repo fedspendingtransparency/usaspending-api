@@ -108,6 +108,18 @@ class TinyShield():
         self.rules = self.check_models(model_list)
         self.data = {}
 
+    def recurse_append(self, struct, mydict, data):
+        if len(struct) == 1:
+            mydict[struct[0]] = data
+            return
+        else:
+            level = struct.pop(0)
+            if level in mydict:
+                self.recurse_append(struct, mydict[level], data)
+            else:
+                mydict[level] = {}
+                self.recurse_append(struct, mydict[level], data)
+
     def block(self, request):
         self.parse_request(request)
         self.enforce_rules()
@@ -169,43 +181,61 @@ class TinyShield():
     def enforce_rules(self):
         for item in self.rules:
             if item['value'] != ...:
-                self.data[item['name']] = self.apply_rule(item)
+                struct = item['key'].split(TINY_SHIELD_SEPARATOR)
+                self.recurse_append(struct, self.data, self.apply_rule(item))
 
     def apply_rule(self, rule):
+        if rule['type'] not in ('array', 'object'):
+            if rule['type'] in VALIDATORS:
+                return VALIDATORS[rule['type']]['func'](rule)
+            else:
+                raise Exception('Invalid Type {} in rule'.format(rule['type']))
         # Array is a "special" type since it is a list of other types which need to be validated
-        if rule['type'] == 'array':
+        elif rule['type'] == 'array':
             value = VALIDATORS[rule['type']]['func'](rule)
             child_rule = copy.copy(rule)
             child_rule['type'] = rule['array_type']
-            child_rule['min'] = rule.get('array_min', None)
-            child_rule['max'] = rule.get('array_max', None)
+            child_rule = self.promote_subrules(child_rule, child_rule)
             array_result = []
             for v in value:
                 child_rule['value'] = v
                 array_result.append(self.apply_rule(child_rule))
             return array_result
-
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
             provided_object = VALIDATORS[rule['type']]['func'](rule)
-
             object_result = {}
             for k, v in rule['object_keys'].items():
-                if k not in provided_object:
-                    if 'optional' in v and v['optional'] is False:
-                        raise Exception('Object {} is missing required key {}'.format(provided_object, k))
-                else:
-                    child_rule = copy.copy(rule)
-                    child_rule['type'] = v['type']
-                    child_rule['value'] = provided_object[k]
-                    child_rule['min'] = rule.get('object_min', None)
-                    child_rule['max'] = rule.get('object_max', None)
-
-                    object_result[k] = self.apply_rule(child_rule)
-
+                try:
+                    value = provided_object[k]
+                except KeyError as e:
+                    if "optional" in v and v['optional'] is False:
+                        raise UnprocessableEntityException('Required object fields: {}'.format(k))
+                    else:
+                        continue
+                child_rule = copy.copy(rule)
+                child_rule['value'] = value
+                child_rule['type'] = v['type']
+                child_rule = self.promote_subrules(child_rule, v)
+                object_result[k] = self.apply_rule(child_rule)
             return object_result
 
-        elif rule['type'] in VALIDATORS:
-            return VALIDATORS[rule['type']]['func'](rule)
-        else:
-            raise Exception('Invalid Type {} in rule'.format(rule['type']))
+    def promote_subrules(self, child_rule, source={}):
+        param_type = source.get('type', None)
+        if "text_type" in source:
+            child_rule['text_type'] = source['text_type']
+        try:
+            if param_type == "object":
+                child_rule['object_keys'] = source['object_keys']
+                child_rule['min'] = source.get('object_min', None)
+                child_rule['max'] = source.get('object_max', None)
+            if param_type == "enum":
+                child_rule['enum_values'] = source['enum_values']
+            if param_type == "array":
+                child_rule['array_type'] = source['array_type']
+                child_rule['object_keys'] = source.get('object_keys', {})
+                child_rule['min'] = source.get('array_min', None)
+                child_rule['max'] = source.get('array_max', None)
+        except KeyError as e:
+            raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
+        return child_rule
