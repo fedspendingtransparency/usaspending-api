@@ -35,7 +35,7 @@ award_contracts_mapping.update({
 
 })
 
-grant_award_mapping = {
+grant_award_mapping.update({
     'Award ID': 'fain',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
@@ -43,18 +43,18 @@ grant_award_mapping = {
     'Award Type': 'type_description',
     'SAI Number': 'sai_number',
     'CFDA Number': 'cfda_number'
-    }
+})
 
-loan_award_mapping = {
+loan_award_mapping.update({
     'Award ID': 'fain',
     'Issued Date': 'action_date',
     'Loan Value': 'total_loan_value',
     'Subsidy Cost': 'total_subsidy_cost',
     'SAI Number': 'sai_number',
     'CFDA Number': 'cfda_number'
-}
+})
 
-direct_payment_award_mapping = {
+direct_payment_award_mapping.update({
     'Award ID': 'fain',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
@@ -62,9 +62,9 @@ direct_payment_award_mapping = {
     'Award Type': 'type_description',
     'SAI Number': 'sai_number',
     'CFDA Number': 'cfda_number'
-}
+})
 
-other_award_mapping = {
+other_award_mapping.update({
     'Award ID': 'fain',
     'Start Date': 'period_of_performance_start_date',
     'End Date': 'period_of_performance_current_end_date',
@@ -72,7 +72,7 @@ other_award_mapping = {
     'Award Type': 'type_description',
     'SAI Number': 'sai_number',
     'CFDA Number': 'cfda_number'
-}
+})
 
 award_assistance_mapping = {**grant_award_mapping, **loan_award_mapping, **direct_payment_award_mapping,
                             **other_award_mapping}
