@@ -355,7 +355,7 @@ class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True, db_index=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number")
-    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name")
+    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name", null=True)
     vendor_doing_as_business_name = models.TextField(blank=True, null=True)
     vendor_phone_number = models.TextField(blank=True, null=True)
     vendor_fax_number = models.TextField(blank=True, null=True)
