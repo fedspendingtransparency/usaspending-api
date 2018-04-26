@@ -76,7 +76,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
             treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
         queryset = queryset.aggregate(
             outlay=Sum('gross_outlay_amount_by_tas_cpe'),
-            budget_authority=Sum('budget_authority_available_amount_total_cpe'),
+            budget_authority=Sum('total_budgetary_resources_amount_cpe'),
             obligated=Sum('obligations_incurred_total_by_tas_cpe'),
             unobligated=Sum('unobligated_balance_cpe'),
             balance_brought_forward=Sum(
@@ -408,7 +408,7 @@ class FederalAccountsViewSet(APIDocumentationView):
                      account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
                      account_name=F('account_title'),
                      budgetary_resources=Sum(
-                         'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
+                         'treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe'),
                      managing_agency=Subquery(agency_subquery.values('name')[:1]),
                      managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
                      )

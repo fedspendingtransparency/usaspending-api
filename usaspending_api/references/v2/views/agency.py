@@ -69,7 +69,7 @@ class AgencyViewSet(APIDocumentationView):
                 treasury_account_identifier__funding_toptier_agency=toptier_agency
             )
         aggregate_dict = queryset.aggregate(
-            budget_authority_amount=Sum('budget_authority_available_amount_total_cpe'),
+            budget_authority_amount=Sum('total_budgetary_resources_amount_cpe'),
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
             outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
 
