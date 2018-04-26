@@ -150,7 +150,7 @@ class TinyShield():
             for default_key, default_value in type_description['defaults'].items():
                 model[default_key] = model.get(default_key, default_value)
 
-            model['optional'] = model.get('optional', False)
+            model['optional'] = model.get('optional', True)
 
         # Check to ensure unique names for destination dictionary
         keys = [x['name'] for x in models]
