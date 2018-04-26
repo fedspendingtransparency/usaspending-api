@@ -905,11 +905,22 @@ query_paths = {
             ('sub_account_code', 'treasury_account_identifier__sub_account_code'),
             ('federal_account_code', 'treasury_account_identifier__federal_account__federal_account_code'),
             ('federal_account_name', 'treasury_account_identifier__federal_account__account_title'),
+            ('budget_authority_unobligated_balance_brought_forward',
+             'budget_authority_unobligated_balance_brought_forward_fyb'),
+            ('adjustments_to_unobligated_balance_brought_forward',
+             'adjustments_to_unobligated_balance_brought_forward_cpe'),
+            ('budget_authority_appropriated_amount', 'budget_authority_appropriated_amount_cpe'),
+            ('borrowing_authority_amount', 'borrowing_authority_amount_total_cpe'),
+            ('contract_authority_amount', 'contract_authority_amount_total_cpe'),
+            ('spending_authority_from_offsetting_collections_amount',
+             'spending_authority_from_offsetting_collections_amount_cpe'),
+            ('total_other_budgetary_resources_amount', 'other_budgetary_resources_amount_cpe'),
             ('total_budgetary_resources', 'budget_authority_available_amount_total_cpe'),
+            ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe'),
             ('obligations_incurred', 'obligations_incurred_total_by_tas_cpe'),
             ('deobligations_or_recoveries_or_refunds_from_prior_year', 'deobligations_recoveries_refunds_by_tas_cpe'),
             ('unobligated_balance', 'unobligated_balance_cpe'),
-            ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe')
+            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe'),
         ])
     },
     'object_class_program_activity': {
@@ -932,7 +943,6 @@ query_paths = {
             ('deobligations_or_recoveries_or_refunds_from_prior_year',
              'deobligations_recoveries_refund_pri_program_object_class_cpe'),
             ('gross_outlay_amount', 'gross_outlay_amount_by_program_object_class_cpe')
-            # ALSO gross_outlay_amount_by_program_object_class_fyb (how)
         ])
     }
 }

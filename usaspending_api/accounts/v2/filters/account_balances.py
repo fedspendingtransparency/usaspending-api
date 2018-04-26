@@ -15,16 +15,14 @@ def account_balances_filter(filters):
         query_filters['treasury_account_identifier__agency_id'] = filters['agency']
 
     # TODO: Filter by federal account
-    # if filters.get('federal_account', False):
-    #     query_filters['treasury_account_identifier__federal_account__federal_account_code'] = \
-    #         filters['federal_account']
+    # federal_account = filters.get('federal_account', False)
+    # if federal_account:
+    #     query_filters['treasury_account_identifier__federal_account__federal_account_code'] = federal_account
 
     # Filter by Fiscal Year and Quarter
-    if filters.get('fiscal_year', False) and filters.get('fiscal_quarter', False):
-        start_date, end_date = start_and_end_dates_from_fyq(filters['fiscal_year'], filters['fiscal_quarter'])
+    if filters.get('fy', False) and filters.get('quarter', False):
+        start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
         query_filters['reporting_period_start'] = start_date
         query_filters['reporting_period_end'] = end_date
-    else:
-        raise InvalidParameterException('fiscal_year and fiscal_quarter are required parameters')
 
     return AppropriationAccountBalances.objects.filter(**query_filters)

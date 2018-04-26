@@ -41,6 +41,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         """Push a message to SQS with the validated request JSON"""
         json_request = (self.validate_award_request(request.data) if request_type == 'award' else
                         self.validate_account_request(request.data))
+        json_request['request_type'] = request_type
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
@@ -164,13 +165,6 @@ class BaseDownloadViewSet(APIDocumentationView):
                                             '"treasury_account"')
         json_request['account_level'] = request_data['account_level']
 
-        # Validate file_type parameters
-        if request_data.get('file_type', None) not in ["account_balances", "object_class_program_activity",
-                                                       "award_financial"]:
-            raise InvalidParameterException('Invalid Parameter: file_type must be "account_balances", '
-                                            '"object_class_program_activity", or "award_financial"')
-        json_request['download_types'] = [request_data['file_type']]
-
         # Validate the filters parameter and its contents
         json_request['filters'] = {}
         filters = request_data['filters']
@@ -180,16 +174,26 @@ class BaseDownloadViewSet(APIDocumentationView):
             raise InvalidParameterException('At least one filter is required.')
 
         # Validate required filters
-        for required_filter in ["fiscal_year", "fiscal_quarter"]:
+        for required_filter in ["fy", "quarter"]:
             if required_filter not in filters:
                 raise InvalidParameterException('Missing one or more required filters: {}'.format(required_filter))
-            elif not isinstance(filters[required_filter], int):
-                raise InvalidParameterException('{} filter not provided as an integer'.format(required_filter))
+            else:
+                try:
+                    filters[required_filter] = int(filters[required_filter])
+                except TypeError:
+                    raise InvalidParameterException('{} filter not provided as an integer'.format(required_filter))
             json_request['filters'][required_filter] = filters[required_filter]
 
         # Validate fiscal_quarter
-        if json_request['filters']['fiscal_quarter'] not in [1, 2, 3, 4]:
-            raise InvalidParameterException('fiscal_quarter filter must be a valid fiscal quarter (1, 2, 3, 4)')
+        if json_request['filters']['quarter'] not in [1, 2, 3, 4]:
+            raise InvalidParameterException('quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)')
+
+        # Validate submission_type parameters
+        if filters.get('submission_type', None) not in ["account_balances", "object_class_program_activity",
+                                                        "award_financial"]:
+            raise InvalidParameterException('Invalid Parameter: submission_type must be "account_balances", '
+                                            '"object_class_program_activity", or "award_financial"')
+        json_request['download_types'] = [filters['submission_type']]
 
         # Validate the rest of the filters
         check_types_and_assign_defaults(filters, json_request['filters'], ACCOUNT_FILTER_DEFAULTS)
@@ -246,7 +250,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -260,7 +264,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['transactions', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
@@ -273,7 +277,7 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
@@ -289,7 +293,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
 
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""
