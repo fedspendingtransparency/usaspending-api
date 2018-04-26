@@ -352,10 +352,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
-    """This route sends a request to begin generating a zipfile of account data in CSV form for download.
-
-    endpoint_doc: /download/custom_award_data_download.md
-    """
+    """This route sends a request to begin generating a zipfile of account data in CSV form for download."""
 
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""

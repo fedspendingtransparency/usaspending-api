@@ -169,7 +169,7 @@ def test_download_accounts_v2_endpoint(client, account_data):
     connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
     csv_generation.retrieve_db_string = Mock(return_value=connection_string)
 
-    resp_two = client.post(
+    resp = client.post(
         '/api/v2/download/accounts',
         content_type='application/json',
         data=json.dumps({
@@ -182,8 +182,8 @@ def test_download_accounts_v2_endpoint(client, account_data):
             "file_format": "csv"
         }))
 
-    assert resp_two.status_code == status.HTTP_200_OK
-    assert '.zip' in resp_two.json()['url']
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.zip' in resp.json()['url']
 
 
 @pytest.mark.django_db
