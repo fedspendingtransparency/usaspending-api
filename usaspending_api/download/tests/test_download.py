@@ -3,11 +3,14 @@ import pytest
 import random
 
 from django.conf import settings
+from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
+from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 
@@ -16,11 +19,7 @@ from usaspending_api.etl.award_helpers import update_awards
 def award_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make(
-            'download.JobStatus',
-            job_status_id=js.id,
-            name=js.name,
-            description=js.desc)
+        mommy.make('download.JobStatus', job_status_id=js.id, name=js.name, description=js.desc)
 
     # Create Locations
     mommy.make('references.Location')
@@ -48,10 +47,8 @@ def award_data(db):
     mommy.make('references.SubtierAgency', name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = mommy.make(
-        'references.Agency', id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make(
-        'references.Agency', id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = mommy.make('references.Agency', id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = mommy.make('references.Agency', id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
     mommy.make(
@@ -107,6 +104,30 @@ def award_data(db):
     update_awards()
 
 
+@pytest.fixture
+def account_data(db):
+    # Populate job status lookup table
+    for js in JOB_STATUS:
+        mommy.make('download.JobStatus', job_status_id=js.id, name=js.name, description=js.desc)
+
+    # Create TreasuryAppropriationAccount models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
+    tas3 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-02')
+
+    # Create AppropriationAccountBalances models
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2)
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas3)
+
+    # Create FinancialAccountsByProgramActivityObjectClass models
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas2)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas3)
+
+
 @pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
@@ -142,9 +163,33 @@ def test_download_awards_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
+def test_download_accounts_v2_endpoint(client, account_data):
+    """test the accounts endpoint."""
+    db = connection.cursor().db.settings_dict
+    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
+    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
+
+    resp_two = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "treasury_account",
+            "filters": {
+                "submission_type": "object_class_program_activity",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp_two.status_code == status.HTTP_200_OK
+    assert '.zip' in resp_two.json()['url']
+
+
+@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_status_endpoint(client, award_data):
-    """Test the transaction status endpoint."""
+    """Test the transactions status endpoint."""
 
     dl_resp = client.post(
         '/api/v2/download/transactions',
@@ -154,8 +199,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
             "columns": []
         }))
 
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
@@ -165,7 +209,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
 @pytest.mark.django_db
 @pytest.mark.skip
 def test_download_awards_v2_status_endpoint(client, award_data):
-    """Test the transaction status endpoint."""
+    """Test the awards status endpoint."""
 
     dl_resp = client.post(
         '/api/v2/download/awards',
@@ -197,8 +241,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
             "filters": {"award_type_codes": []},
             "columns": ["award_id_piid", "modification_number"]
         }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] == 2
@@ -206,8 +249,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
 
 @pytest.mark.django_db
 @pytest.mark.skip
-def test_download_transactions_v2_endpoint_column_filtering(client,
-                                                            award_data):
+def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
     """Test the transaction status endpoint's filtering."""
 
     dl_resp = client.post(
@@ -223,8 +265,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 2
 
@@ -241,8 +282,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 1
 
@@ -266,8 +306,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
 

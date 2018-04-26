@@ -2,7 +2,6 @@ import logging
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
 

@@ -312,8 +312,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         log_time = time.time()
 
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
-                                 'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        subprocess.check_output(['psql', '-o', source_path, retrieve_db_string(), '-v', 'ON_ERROR_STOP=1'],
+                                stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), time.time() - log_time),
                      download_job=download_job)
@@ -325,3 +325,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     except Exception as e:
         logger.error(e)
         raise e
+
+
+def retrieve_db_string():
+    """It is necessary for this to be a function so the test suite can mock the connection string"""
+    return os.environ['DOWNLOAD_DATABASE_URL']
