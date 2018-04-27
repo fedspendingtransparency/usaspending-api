@@ -4,7 +4,7 @@
 
 ```
 {
-	"keyword": "example search text",
+	"keywords": ["example search text"],
 	"time_period": [
 		{
 			"start_date": "2001-01-01",
@@ -100,19 +100,15 @@ Keys in a location object include:
 **Example Request:**
 ```
 {
-	"keyword": "example search text"
-}
-```
-OR
-```
-{
-    "keyword": ["example search text", "some other search phrase"]
+	"keywords": ["example search text", "more search text"]
 }
 ```
 
 
 Request parameter description:
-* `keyword` (String) : String containing the search text. Also the top level key name for the filter.
+* `keywords` (String) : String containing the search text. Also the top level key name for the filter.
+
+**NOTE: `keyword` (singluar), which accepts a string rather than an array, is being deprecated, but will continue to function until the API is moved to v3**
 
 ## Time Period
 
