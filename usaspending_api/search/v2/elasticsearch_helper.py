@@ -86,7 +86,7 @@ def search_transactions(request_data, lower_limit, limit):
     }
 
     for index, award_types in indices_to_award_types.items():
-        if sorted(award_types) == sorted(request_data['award_type_codes']):
+        if sorted(award_types) == sorted(request_data['filters']['award_type_codes']):
             index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
             break
     else:
