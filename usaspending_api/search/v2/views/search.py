@@ -849,7 +849,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search','optional': False},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text',
+                'text_type': 'search', 'optional': False},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -897,7 +898,8 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type':'text', 'text_type': 'search', 'optional': False}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array',
+                  'array_type': 'text', 'text_type': 'search', 'optional': False}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -916,7 +918,8 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type':'text', 'text_type': 'search', 'optional': False}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type': 'text',
+                  'text_type': 'search', 'optional': False}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
         if not results:
