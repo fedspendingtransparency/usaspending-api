@@ -70,7 +70,7 @@ def search_transactions(request_data, lower_limit, limit):
     if transaction_type_code not found, return results for contracts
     """
 
-    keyword = request_data['keyword']
+    keyword = request_data['filters']['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
     query_fields.extend(['award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
@@ -118,7 +118,7 @@ def get_total_results(keyword, sub_index, retries=3):
 
 
 def spending_by_transaction_count(request_data):
-    keyword = request_data['keyword']
+    keyword = request_data['filters']['keyword']
     response = {}
 
     for category in indices_to_award_types.keys():
@@ -237,7 +237,7 @@ def get_sum_and_count_aggregation_results(keyword):
 
 
 def spending_by_transaction_sum_and_count(request_data):
-    return get_sum_and_count_aggregation_results(request_data['keyword'])
+    return get_sum_and_count_aggregation_results(request_data['filters']['keyword'])
 
 
 def concat_if_array(data):

@@ -105,12 +105,9 @@ def validate_datetime(rule):
 
 def validate_enum(rule):
     value = rule['value']
-    try:
-        if value not in rule['enum_values']:
-            error_message = 'Field \'{}\' is outside valid values {}'.format(rule['key'], list(rule['enum_values']))
-            raise InvalidParameterException(error_message)
-    except KeyError as e:
-        raise Exception(rule)
+    if value not in rule['enum_values']:
+        error_message = 'Field \'{}\' is outside valid values {}'.format(rule['key'], list(rule['enum_values']))
+        raise InvalidParameterException(error_message)
     return value
 
 

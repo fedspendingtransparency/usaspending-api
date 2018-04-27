@@ -1,5 +1,6 @@
 import ast
 import logging
+import copy
 
 from collections import OrderedDict
 from datetime import date
@@ -60,8 +61,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             {'name': 'group', 'key': 'group', 'type': 'enum',
                 'enum_values': ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm'], 'optional': False}
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
         group = json_request.get('group', None)
         filters = json_request.get("filters", None)
@@ -161,8 +162,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
                 'optional': False}
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
         category = json_request.get("category", None)
         scope = json_request.get("scope", None)
@@ -421,8 +422,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         models = [
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
 
         self.subawards = json_request.get("subawards", False)
@@ -626,8 +627,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'min': 1},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m['name'] in ('award_type_codes', 'fields'):
                 m['optional'] = False
@@ -760,8 +761,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         models = [
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        '''for m in models:
+            if m['name'] in ('award_type_codes', 'fields'):
+                m['optional'] = True'''
         json_request = TinyShield(models).block(request.data)
         filters = json_request.get("filters", None)
         subawards = json_request.get("subawards", False)
@@ -845,10 +849,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search','optional': False},
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m['name'] in ('keyword', 'award_type_codes', 'sort'):
                 m['optional'] = False
@@ -893,7 +897,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type':'text', 'text_type': 'search', 'optional': False}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -912,9 +916,8 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type':'text', 'text_type': 'search', 'optional': False}]
         validated_payload = TinyShield(models).block(request.data)
-
         results = spending_by_transaction_count(validated_payload)
         if not results:
             raise ElasticsearchConnectionException('Error during the aggregations')
