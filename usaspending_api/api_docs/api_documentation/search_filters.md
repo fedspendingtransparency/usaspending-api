@@ -92,7 +92,7 @@ Keys in a location object include:
 
 ## Keyword Search
 
-**Description:** Search is based on a single string input.
+**Description:** Search is based on a list of string inputs.
 
 **TODO:**
 1. Determine what backend fields are being searched against.
@@ -106,9 +106,9 @@ Keys in a location object include:
 
 
 Request parameter description:
-* `keywords` (String) : String containing the search text. Also the top level key name for the filter.
+* `keywords` (List) : List containing one or more strings to search for. Also the top level key name for the filter.
 
-**NOTE: `keyword` (singluar), which accepts a string rather than an array, is being deprecated, but will continue to function until the API is moved to v3**
+**NOTE: `keyword` (singluar), which accepts a string rather than a list, is being deprecated, but will continue to function until the API is moved to v3**
 
 ## Time Period
 
