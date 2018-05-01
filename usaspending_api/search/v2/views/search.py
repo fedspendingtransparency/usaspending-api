@@ -27,14 +27,14 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
                                                             spending_by_transaction_sum_and_count)
-from usaspending_api.search.v2.views.spending_by_category import business_logic as spending_by_category_logic
+from usaspending_api.search.v2.views.spending_by_category import BusinessLogic as SpendingByCategoryLogic
 
 logger = logging.getLogger(__name__)
 
@@ -150,12 +150,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
         ]
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
+
         validated_payload = TinyShield(models).block(request.data)
 
-        return Response(spending_by_category_logic(validated_payload))
+        return Response(SpendingByCategoryLogic(validated_payload))
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):

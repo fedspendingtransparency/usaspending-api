@@ -3,10 +3,10 @@ from django.db.models.functions import Coalesce
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
-from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
-from usaspending_api.common.helpers import generate_date_from_string
-from usaspending_api.common.helpers import dates_are_month_bookends
+from usaspending_api.common.helpers.generic_helper import dates_are_fiscal_year_bookends
+from usaspending_api.common.helpers.generic_helper import generate_all_fiscal_years_in_range
+from usaspending_api.common.helpers.generic_helper import generate_date_from_string
+from usaspending_api.common.helpers.generic_helper import dates_are_month_bookends
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.awards.models import TransactionNormalized
 

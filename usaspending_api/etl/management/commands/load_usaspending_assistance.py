@@ -14,7 +14,7 @@
 # from usaspending_api.references.models import Agency, LegalEntity, Cfda
 # from usaspending_api.submissions.models import SubmissionAttributes
 #
-# from usaspending_api.common.helpers import fy
+# from usaspending_api.common.helpers.generic_helper import fy
 #
 #
 # class Command(BaseCommand):

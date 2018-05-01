@@ -2,24 +2,44 @@ import logging
 
 from django.db.models import F, Sum
 
-# from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import get_simple_pagination_metadata
+from usaspending_api.common.helpers.api_helper import alias_response
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.references.models import Cfda
 
 logger = logging.getLogger(__name__)
 
 
-class business_logic:
-    __slots__ = ('category', 'scope', 'page', 'limit', 'lower_limit', 'upper_limit', 'filters', 'queryset', 'model', )
+ALIAS_DICT = {
+    'awarding_agency': {'awarding_toptier_agency_name': 'agency_name',
+                        'awarding_subtier_agency_name': 'agency_name',
+                        'awarding_toptier_agency_abbreviation': 'agency_abbreviation',
+                        'awarding_subtier_agency_abbreviation': 'agency_abbreviation'},
+    'funding_agency': {'funding_toptier_agency_name': 'agency_name',
+                       'funding_subtier_agency_name': 'agency_name',
+                       'funding_toptier_agency_abbreviation': 'agency_abbreviation',
+                       'funding_subtier_agency_abbreviation': 'agency_abbreviation'},
+    'duns': {'recipient_unique_id': 'legal_entity_id'},
+    'cfda': {'cfda_number': 'cfda_program_number',
+             'cfda_popular_name': 'popular_name',
+             'cfda_title': 'popular_title'},
+    'psc': {'product_or_service_code': 'psc_code'}
+
+}
+
+
+class BusinessLogic:
+    __slots__ = ('subawards', 'category', 'scope', 'page', 'limit', 'lower_limit', 'upper_limit', 'filters', 'queryset',
+                 'model', )
 
     def __new__(cls, payload):
         """
         Use __new__ instead of __init__ since __new__ can return a value other than None.
         Since this is a class method using common nomenclature for class: `cls`
         """
+        cls.subawards = payload['subawards']
         cls.category = payload['category']
         cls.scope = payload['scope']
         cls.page = payload['page']
@@ -36,7 +56,12 @@ class business_logic:
 
         # some category-scope combinations allow different matviews, combine strings for easier logic
         category_scope = '{}-{}'.format(cls.category, cls.scope or '')
-        cls.queryset, cls.model = sbc_view_queryset(category_scope, cls.filters)
+        if cls.subawards:
+            # We do not use matviews for Subaward filtering, just the Subaward download filters
+            # TODO: Future implementation
+            raise InvalidParameterException("Subawards are not yet supported")
+        else:
+            cls.queryset, cls.model = sbc_view_queryset(category_scope, cls.filters)
         return cls.logic(cls)
 
     def raise_not_implemented(self):
@@ -64,7 +89,7 @@ class business_logic:
             "category": self.category,
             "limit": self.limit,
             "page_metadata": page_metadata,
-            "results": results[:self.limit],
+            "results": alias_response(ALIAS_DICT[self.category], results[:self.limit]),
             "scope": self.scope,
         }
         return response
@@ -73,9 +98,7 @@ class business_logic:
         if self.scope == "agency":
             self.queryset = self.queryset \
                 .filter(awarding_toptier_agency_name__isnull=False) \
-                .values(
-                    agency_name=F('awarding_toptier_agency_name'),
-                    agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
+                .values('awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation') \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -83,9 +106,7 @@ class business_logic:
             self.queryset = self.queryset \
                 .filter(
                     awarding_subtier_agency_name__isnull=False) \
-                .values(
-                    agency_name=F('awarding_subtier_agency_name'),
-                    agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
+                .values('awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation') \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -99,9 +120,7 @@ class business_logic:
         if self.scope == "agency":
             self.queryset = self.queryset \
                 .filter(funding_toptier_agency_name__isnull=False) \
-                .values(
-                    agency_name=F('funding_toptier_agency_name'),
-                    agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
+                .values('funding_toptier_agency_name', 'funding_toptier_agency_abbreviation') \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -109,9 +128,7 @@ class business_logic:
             self.queryset = self.queryset \
                 .filter(
                     funding_subtier_agency_name__isnull=False) \
-                .values(
-                    agency_name=F('funding_subtier_agency_name'),
-                    agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
+                .values('funding_subtier_agency_name', 'funding_subtier_agency_abbreviation') \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -125,11 +142,12 @@ class business_logic:
         if self.scope == "duns":
             self.queryset = self.queryset \
                 .filter(recipient_unique_id__isnull=False) \
-                .values("recipient_name", legal_entity_id=F("recipient_unique_id")) \
+                .values("recipient_name", "recipient_unique_id") \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
         elif self.scope == "parent_duns":
+            # TODO: check if we can aggregate on recipient name and parent duns, since parent recipient name isn't available
             self.queryset = self.queryset \
                 .filter(parent_recipient_unique_id__isnull=False) \
                 .values("recipient_name", "parent_recipient_unique_id") \
@@ -148,7 +166,7 @@ class business_logic:
                 .filter(
                     federal_action_obligation__isnull=False,
                     cfda_number__isnull=False) \
-                .values(cfda_program_number=F("cfda_number")) \
+                .values("cfda_number") \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -172,10 +190,7 @@ class business_logic:
                 .filter(
                     federal_action_obligation__isnull=False,
                     cfda_number__isnull=False) \
-                .values(
-                    cfda_program_number=F("cfda_number"),
-                    popular_name=F("cfda_popular_name"),
-                    program_title=F("cfda_title")) \
+                .values("cfda_number", "cfda_popular_name", "cfda_title") \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 
@@ -188,7 +203,7 @@ class business_logic:
         if self.scope == "psc":
             self.queryset = self.queryset \
                 .filter(product_or_service_code__isnull=False) \
-                .values(psc_code=F("product_or_service_code")) \
+                .values("product_or_service_code") \
                 .annotate(aggregated_amount=Sum("generated_pragmatic_obligation")) \
                 .order_by("-aggregated_amount")
 

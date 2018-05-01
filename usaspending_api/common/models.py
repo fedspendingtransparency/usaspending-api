@@ -37,7 +37,7 @@ class DeleteIfChildlessMixin(object):
 class FiscalYear(models.Transform):
     """Allows Date and DateTime fields to support `__fy` operations
 
-    Requires that the FY function be defined in the database (raw SQL is in helpers.py, run in a migration)
+    Requires that the FY function be defined in the database (raw SQL is in generic_helper.py, run in a migration)
     """
     lookup_name = 'fy'
     function = 'FY'
