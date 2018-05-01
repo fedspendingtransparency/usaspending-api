@@ -13,19 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 ALIAS_DICT = {
-    'awarding_agency': {'awarding_toptier_agency_name': 'agency_name',
-                        'awarding_subtier_agency_name': 'agency_name',
+    'awarding_agency': {'awarding_toptier_agency_name': 'agency_name', 'awarding_subtier_agency_name': 'agency_name',
                         'awarding_toptier_agency_abbreviation': 'agency_abbreviation',
                         'awarding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'funding_agency': {'funding_toptier_agency_name': 'agency_name',
-                       'funding_subtier_agency_name': 'agency_name',
+    'funding_agency': {'funding_toptier_agency_name': 'agency_name', 'funding_subtier_agency_name': 'agency_name',
                        'funding_toptier_agency_abbreviation': 'agency_abbreviation',
                        'funding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'duns': {'recipient_unique_id': 'legal_entity_id'},
-    'cfda': {'cfda_number': 'cfda_program_number',
-             'cfda_popular_name': 'popular_name',
-             'cfda_title': 'popular_title'},
-    'psc': {'product_or_service_code': 'psc_code'}
+    'recipient': {'recipient_unique_id': 'legal_entity_id'},
+    'cfda_programs': {'cfda_number': 'cfda_program_number', 'cfda_popular_name': 'popular_name',
+                      'cfda_title': 'popular_title'},
+    'industry_codes': {'product_or_service_code': 'psc_code'}
 
 }
 

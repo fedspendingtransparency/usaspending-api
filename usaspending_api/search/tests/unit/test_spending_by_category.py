@@ -175,7 +175,53 @@ def test_category_funding_agency_scope_subagency(mock_matviews_qs):
 
 
 def test_category_recipient_scope_duns(mock_matviews_qs):
-    pass
+    mock_model_1 = MockModel(recipient_name='University of Pawnee',
+                             recipient_unique_id='00UOP00', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(recipient_name='University of Pawnee',
+                             recipient_unique_id='00UOP00', generated_pragmatic_obligation=1)
+    mock_model_3 = MockModel(recipient_name='John Doe',
+                             recipient_unique_id='1234JD4321', generated_pragmatic_obligation=1)
+    mock_model_4 = MockModel(recipient_name='John Doe',
+                             recipient_unique_id='1234JD4321', generated_pragmatic_obligation=10)
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
+
+    test_payload = {
+        'category': 'recipient',
+        'scope': 'duns',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload)
+
+    expected_response = {
+        'category': 'recipient',
+        'scope': 'duns',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'aggregated_amount': 11,
+                'recipient_name': 'John Doe',
+                'legal_entity_id': '1234JD4321'
+            },
+            {
+                'aggregated_amount': 2,
+                'recipient_name': 'University of Pawnee',
+                'legal_entity_id': '00UOP00'
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
 
 
 def test_category_recipient_scope_parent_duns(mock_matviews_qs):
