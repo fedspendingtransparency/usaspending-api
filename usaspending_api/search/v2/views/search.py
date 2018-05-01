@@ -144,8 +144,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
-        categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
-        scopes = ["agency", "subagency", "psc", "naics", "duns", "parent_duns"]
+        categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
+        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns']
 
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},

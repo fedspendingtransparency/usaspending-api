@@ -14,6 +14,9 @@ from django_mock_queries.query import MockSet
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
+
+    # TODO: Uncomment this mock when support for subawards is necessary
+    # monkeypatch.setattr('usaspending_api.awards.models.Subaward.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryPscCodesView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)
