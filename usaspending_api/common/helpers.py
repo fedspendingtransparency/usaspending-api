@@ -7,8 +7,7 @@ from calendar import monthrange, isleap
 from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDateTime, FiscalQuarter
-from datetime import datetime
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -19,7 +18,7 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 
 def validate_date(date):
-    if not isinstance(date, datetime):
+    if not isinstance(date, datetime.datetime):
         raise TypeError('Incorrect parameter type provided')
 
     if not (date.day or date.month or date.year):
@@ -102,8 +101,8 @@ def within_one_year(d1, d2):
     days_diff = abs((d2 - d1).days)
     for leap_year in [year for year in year_range if isleap(year)]:
         leap_date = datetime.datetime(leap_year, 2, 29)
-        if leap_date >= d1 and leap_date <= d2:
-            days_diff = days_diff - 1
+        if d1 <= leap_date <= d2:
+            days_diff -= 1
     return days_diff <= 365
 
 

@@ -10,7 +10,7 @@ django-cors-headers==1.2.2
 django-debug-toolbar==1.7
 django-extensions==1.7.5
 django-filter==0.14.0
-django-mock-queries==1.0.7
+git+https://github.com/nmonga91/django-mock-queries#egg=django-mock-queries
 django-queryset-csv==1.0.0
 django-simple-history==1.8.2
 django-spaghetti-and-meatballs==0.2.2
