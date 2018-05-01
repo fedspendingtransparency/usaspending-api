@@ -616,7 +616,7 @@ query_paths = {
             ('cost_or_pricing_data', 'transaction__contract_data__cost_or_pricing_data_desc'),
             ('cost_accounting_standards_clause_code', 'transaction__contract_data__cost_accounting_standards'),
             ('cost_accounting_standards_clause', 'transaction__contract_data__cost_accounting_stand_desc'),
-            ('gfe_gfp_code', 'transaction__contract_data__government_furnished_equip'),
+            ('gfe_gfp_code', 'transaction__contract_data__government_furnished_prope'),
             ('gfe_gfp', 'transaction__contract_data__government_furnished_desc'),
             ('sea_transportation_code', 'transaction__contract_data__sea_transportation'),
             ('sea_transportation', 'transaction__contract_data__sea_transportation_desc'),
