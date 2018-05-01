@@ -7,6 +7,7 @@ import urllib.request
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.db.models import Count
 from django.conf import settings
 
 from usaspending_api.common.helpers import fy, timer
@@ -100,15 +101,77 @@ class Command(BaseCommand):
 
         return db_rows, ids_to_delete
 
-    @staticmethod
-    def delete_stale_fpds(ids_to_delete=None):
+    def find_related_awards(self, transactions):
+        related_award_ids = [result[0] for result in transactions.values_list('award_id')]
+        tn_count = TransactionNormalized.objects.filter(award_id__in=related_award_ids).values('award_id') \
+            .annotate(transaction_count=Count('id')).values_list('award_id', 'transaction_count')
+        tn_count_filtered = transactions.values('award_id').annotate(transaction_count=Count('id'))\
+            .values_list('award_id', 'transaction_count')
+        tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
+        tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
+        # only delete awards if and only if all their transactions are deleted, otherwise update the award
+        update_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
+                         if tn_count_filtered_mapping[award_id] != transaction_count]
+        delete_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
+                         if tn_count_filtered_mapping[award_id] == transaction_count]
+        return update_awards, delete_awards
+
+    @transaction.atomic
+    def delete_stale_fpds(self, ids_to_delete=None):
         logger.info('Starting deletion of stale FPDS data')
 
         if not ids_to_delete:
             return
 
-        TransactionNormalized.objects.filter(contract_data__detached_award_procurement_id__in=ids_to_delete).delete()
+        transactions = TransactionNormalized.objects.filter(
+            contract_data__detached_award_procurement_id__in=ids_to_delete)
+        update_award_ids, delete_award_ids = self.find_related_awards(transactions)
 
+        delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
+        delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
+        update_award_str_ids = ','.join([str(update_result) for update_result in update_award_ids])
+        delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
+
+        db_cursor = connections['default'].cursor()
+
+        queries = []
+        # Transaction FPDS
+        if delete_transaction_ids:
+            fpds = 'DELETE ' \
+                   'FROM "transaction_fpds" tf '\
+                   'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
+            # Transaction Normalized
+            tn = 'DELETE ' \
+                 'FROM "transaction_normalized" tn '\
+                 'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+            queries.extend([fpds, tn])
+        # Update Awards
+        if update_award_ids:
+            # Adding to award_update_id_list so the latest_transaction will be recalculated
+            award_update_id_list.extend(update_award_ids)
+            update_awards_query = 'UPDATE "awards" ' \
+                                  'SET "latest_transaction_id" = null ' \
+                                  'WHERE "id" IN ({});'.format(update_award_str_ids)
+            queries.append(update_awards_query)
+        if delete_award_ids:
+            # Financial Accounts by Awards
+            fa = 'UPDATE "financial_accounts_by_awards" ' \
+                 'SET "award_id" = null '\
+                 'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Subawards
+            sub = 'UPDATE "awards_subaward" ' \
+                  'SET "award_id" = null ' \
+                  'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            # Delete Subawards
+            delete_awards_query = 'DELETE ' \
+                                  'FROM "awards" a ' \
+                                  'WHERE a."id" IN ({});'.format(delete_award_str_ids)
+            queries.extend([fa, sub, delete_awards_query])
+        if queries:
+            db_query = ''.join(queries)
+            db_cursor.execute(db_query, [])
+
+    @transaction.atomic
     def insert_new_fpds(self, to_insert, total_rows):
         logger.info('Starting insertion of new FPDS data')
 
@@ -261,7 +324,6 @@ class Command(BaseCommand):
             help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
         )
 
-    @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FPDS nightly data load...')
 

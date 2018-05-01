@@ -47,6 +47,36 @@ def test_spending_by_geography_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db
+def test_spending_by_geography_subawards_success(client):
+
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "filters": all_filters(),
+            "subawards": True
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_subawards_failure(client):
+
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "filters": all_filters(),
+            "subawards": "string"
+        }))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_state(client):

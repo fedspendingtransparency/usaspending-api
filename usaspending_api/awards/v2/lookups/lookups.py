@@ -1089,6 +1089,30 @@ other_award_mapping = {
     'Funding Sub Agency': 'funding_agency__subtier_agency__name'
 }
 
+contract_subaward_mapping = {
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient__recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Prime Award ID": "award__piid",
+    "Prime Recipient Name": "award__recipient__recipient_name"
+}
+
+grant_subaward_mapping = {
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient__recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Prime Award ID": "award__fain",
+    "Prime Recipient Name": "award__recipient__recipient_name"
+}
+
 award_assistance_mapping = {**grant_award_mapping, **loan_award_mapping, **direct_payment_award_mapping,
                             **other_award_mapping}
 non_loan_assistance_award_mapping = assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping,
