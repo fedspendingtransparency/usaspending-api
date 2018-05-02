@@ -124,213 +124,230 @@
       "columns": [{"name": "transaction_id", "order": "ASC NULLS LAST"}]
     }, {
       "name": "action_date",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "fiscal_year",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
     }, {
       "name": "type",
-      "where": "type IS NOT NULL",
+      "where": "type IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "type"}]
     }, {
       "name": "ordered_type",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "type", "order": "DESC NULLS LAST"}]
     }, {
       "name": "action_type",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "action_type"}]
     }, {
       "name": "award_id",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "award_id"}]
     }, {
       "name": "award_category",
-      "where": "award_category IS NOT NULL",
+      "where": "award_category IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "award_category"}]
     }, {
       "name": "total_obligation",
-      "where": "total_obligation IS NOT NULL",
+      "where": "total_obligation IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_obligation"}]
     }, {
       "name": "ordered_total_obligation",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_obl_bin"}]
     }, {
       "name": "total_subsidy_cost",
-      "where": "total_subsidy_cost IS NOT NULL",
+      "where": "total_subsidy_cost IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_subsidy_cost"}]
     }, {
       "name": "total_loan_value",
-      "where": "total_loan_value IS NOT NULL",
+      "where": "total_loan_value IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_loan_value"}]
     }, {
       "name": "ordered_total_subsidy_cost",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_subsidy_cost", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_total_loan_value",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "total_loan_value", "order": "DESC NULLS LAST"}]
     }, {
       "name": "pop_country_code",
-      "where": "pop_country_code IS NOT NULL",
+      "where": "pop_country_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_country_code"}]
     }, {
       "name": "pop_state_code",
-      "where": "pop_state_code IS NOT NULL",
+      "where": "pop_state_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_state_code"}]
     }, {
       "name": "pop_county_code",
-      "where": "pop_county_code IS NOT NULL",
+      "where": "pop_county_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_county_code"}]
     }, {
       "name": "pop_zip5",
-      "where": "pop_zip5 IS NOT NULL",
+      "where": "pop_zip5 IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_zip5"}]
     }, {
       "name": "pop_congressional_code",
-      "where": "pop_congressional_code IS NOT NULL",
+      "where": "pop_congressional_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_congressional_code"}]
     }, {
       "name": "gin_recipient_name",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_name", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "gin_recipient_unique_id",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_unique_id", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "gin_parent_recipient_unique_id",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "parent_recipient_unique_id", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "recipient_id",
-      "where": "recipient_id IS NOT NULL",
+      "where": "recipient_id IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_id"}]
     }, {
       "name": "recipient_unique_id",
-      "where": "recipient_unique_id IS NOT NULL",
+      "where": "recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_unique_id"}]
     }, {
       "name": "parent_recipient_unique_id",
-      "where": "parent_recipient_unique_id IS NOT NULL",
+      "where": "parent_recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "parent_recipient_unique_id"}]
     }, {
       "name": "awarding_agency_id",
-      "where": "awarding_agency_id IS NOT NULL",
+      "where": "awarding_agency_id IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "awarding_agency_id", "order": "ASC NULLS LAST"}]
     }, {
       "name": "funding_agency_id",
-      "where": "funding_agency_id IS NOT NULL",
+      "where": "funding_agency_id IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "funding_agency_id", "order": "ASC NULLS LAST"}]
     }, {
       "name": "awarding_toptier_agency_name",
-      "where": "awarding_toptier_agency_name IS NOT NULL",
+      "where": "awarding_toptier_agency_name IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "awarding_toptier_agency_name"}]
     }, {
       "name": "awarding_subtier_agency_name",
-      "where": "awarding_subtier_agency_name IS NOT NULL",
+      "where": "awarding_subtier_agency_name IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "awarding_subtier_agency_name"}]
     }, {
       "name": "funding_toptier_agency_name",
-      "where": "funding_toptier_agency_name IS NOT NULL",
+      "where": "funding_toptier_agency_name IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "funding_toptier_agency_name"}]
     }, {
       "name": "funding_subtier_agency_name",
-      "where": "funding_subtier_agency_name IS NOT NULL",
+      "where": "funding_subtier_agency_name IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "funding_subtier_agency_name"}]
     }, {
       "name": "recipient_location_country_code",
-      "where": "recipient_location_country_code IS NOT NULL",
+      "where": "recipient_location_country_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_country_code"}]
     }, {
       "name": "recipient_location_state_code",
-      "where": "recipient_location_state_code IS NOT NULL",
+      "where": "recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_state_code"}]
     }, {
       "name": "recipient_location_county_code",
-      "where": "recipient_location_county_code IS NOT NULL",
+      "where": "recipient_location_county_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_county_code"}]
     }, {
       "name": "recipient_location_zip5",
-      "where": "recipient_location_zip5 IS NOT NULL",
+      "where": "recipient_location_zip5 IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_zip5"}]
     }, {
       "name": "recipient_location_congressional_code",
-      "where": "recipient_location_congressional_code IS NOT NULL",
+      "where": "recipient_location_congressional_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_congressional_code"}]
     }, {
       "name": "cfda_multi",
-      "where": "cfda_number IS NOT NULL",
+      "where": "cfda_number IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [
         {"name": "cfda_number"},
         {"name": "cfda_title"}
       ]
     }, {
       "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
+      "where": "pulled_from IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pulled_from"}]
     }, {
       "name": "type_of_contract_pricing",
-      "where": "type_of_contract_pricing IS NOT NULL",
+      "where": "type_of_contract_pricing IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "type_of_contract_pricing"}]
     }, {
       "name": "extent_competed",
-      "where": "extent_competed IS NOT NULL",
+      "where": "extent_competed IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "extent_competed"}]
     }, {
       "name": "type_set_aside",
-      "where": "type_set_aside IS NOT NULL",
+      "where": "type_set_aside IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "type_set_aside"}]
     }, {
       "name": "product_or_service_code",
-      "where": "product_or_service_code IS NOT NULL",
+      "where": "product_or_service_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "product_or_service_code"}]
     }, {
       "name": "gin_naics_code",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "naics_code", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "naics_code",
-      "where": "naics_code IS NOT NULL",
+      "where": "naics_code IS NOT NULL AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "naics_code"}]
     }, {
       "name": "business_categories",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "business_categories"}]
     }, {
       "name": "keyword_ts_vector",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "keyword_ts_vector"}]
     }, {
       "name": "award_ts_vector",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "award_ts_vector"}]
     }, {
       "name": "recipient_name_ts_vector",
       "method": "GIN",
+      "where": "action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
       "name": "compound_geo_pop_1",
-      "where": "pop_country_code = 'USA'",
+      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_country_code"}, {"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "fiscal_year"}]
     }, {
       "name": "compound_geo_pop_2",
-      "where": "pop_country_code = 'USA'",
+      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_country_code"}, {"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "fiscal_year"}]
     }, {
       "name": "compound_geo_pop_3",
-      "where": "pop_country_code = 'USA'",
+      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "pop_country_code"}, {"name": "pop_zip5"}, {"name": "fiscal_year"}]
     }, {
       "name": "compound_geo_rl_1",
-      "where": "recipient_location_country_code = 'USA'",
+      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "fiscal_year"}]
     }, {
       "name": "compound_geo_rl_2",
-      "where": "recipient_location_country_code = 'USA'",
+      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "fiscal_year"}]
     }, {
       "name": "compound_geo_rl_3",
-      "where": "recipient_location_country_code = 'USA'",
+      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01' AND fiscal_year >= 2008",
       "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_zip5"}, {"name": "fiscal_year"}]
     }
   ]
