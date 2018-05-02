@@ -108,18 +108,6 @@ class TinyShield(object):
         self.rules = self.check_models(model_list)
         self.data = {}
 
-    def recurse_append(self, struct, mydict, data):
-        if len(struct) == 1:
-            mydict[struct[0]] = data
-            return
-        else:
-            level = struct.pop(0)
-            if level in mydict:
-                self.recurse_append(struct, mydict[level], data)
-            else:
-                mydict[level] = {}
-                self.recurse_append(struct, mydict[level], data)
-
     def block(self, request):
         self.parse_request(request)
         self.enforce_rules()
@@ -239,3 +227,16 @@ class TinyShield(object):
         except KeyError as e:
             raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
         return child_rule
+
+
+    def recurse_append(self, struct, mydict, data):
+        if len(struct) == 1:
+            mydict[struct[0]] = data
+            return
+        else:
+            level = struct.pop(0)
+            if level in mydict:
+                self.recurse_append(struct, mydict[level], data)
+            else:
+                mydict[level] = {}
+                self.recurse_append(struct, mydict[level], data)
