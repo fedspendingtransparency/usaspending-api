@@ -27,8 +27,9 @@ from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
                                               write_to_download_log as write_to_log)
-from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_FILTER_DEFAULTS, CFO_CGACS,
-                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
+from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_AWARD_FILTER_DEFAULTS, CFO_CGACS,
+                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
+                                              ACCOUNT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
@@ -36,9 +37,11 @@ from usaspending_api.references.models import ToptierAgency
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
-    def post(self, request):
+    def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
-        json_request = self.validate_request(request.data)
+        json_request = (self.validate_award_request(request.data) if request_type == 'award' else
+                        self.validate_account_request(request.data))
+        json_request['request_type'] = request_type
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
@@ -55,8 +58,9 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Create download name and timestamped name for uniqueness
         download_name = '_'.join(VALUE_MAPPINGS[award_level]['download_name']
-                                 for award_level in json_request['award_levels'])
+                                 for award_level in json_request['download_types'])
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
+
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
                                                   file_name=timestamped_file_name,
                                                   json_request=ordered_json_request)
@@ -67,7 +71,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         return self.get_download_response(file_name=timestamped_file_name)
 
-    def validate_request(self, request_data):
+    def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
@@ -92,7 +96,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         for award_level in request_data['award_levels']:
             if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
-        json_request['award_levels'] = request_data['award_levels']
+        json_request['download_types'] = request_data['award_levels']
 
         if not isinstance(request_data['filters'], dict):
             raise InvalidParameterException('Filters parameter not provided as a dict')
@@ -106,7 +110,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Validate shared filter types and assign defaults
         filters = request_data['filters']
-        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_FILTER_DEFAULTS)
+        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_AWARD_FILTER_DEFAULTS)
 
         # Validate award type types
         if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
@@ -143,6 +147,56 @@ class BaseDownloadViewSet(APIDocumentationView):
             check_types_and_assign_defaults(filters, json_request['filters'], YEAR_CONSTRAINT_FILTER_DEFAULTS)
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
+
+        return json_request
+
+    def validate_account_request(self, request_data):
+        json_request = {}
+
+        # Validate required parameters
+        for required_param in ["account_level", "filters"]:
+            if required_param not in request_data:
+                raise InvalidParameterException(
+                    'Missing one or more required query parameters: {}'.format(required_param))
+
+        # Validate account_level parameters
+        if request_data.get('account_level', None) not in ["federal_account", "treasury_account"]:
+            raise InvalidParameterException('Invalid Parameter: account_level must be either "federal_account" or '
+                                            '"treasury_account"')
+        json_request['account_level'] = request_data['account_level']
+
+        # Validate the filters parameter and its contents
+        json_request['filters'] = {}
+        filters = request_data['filters']
+        if not isinstance(filters, dict):
+            raise InvalidParameterException('Filters parameter not provided as a dict')
+        elif len(filters) == 0:
+            raise InvalidParameterException('At least one filter is required.')
+
+        # Validate required filters
+        for required_filter in ["fy", "quarter"]:
+            if required_filter not in filters:
+                raise InvalidParameterException('Missing one or more required filters: {}'.format(required_filter))
+            else:
+                try:
+                    filters[required_filter] = int(filters[required_filter])
+                except TypeError:
+                    raise InvalidParameterException('{} filter not provided as an integer'.format(required_filter))
+            json_request['filters'][required_filter] = filters[required_filter]
+
+        # Validate fiscal_quarter
+        if json_request['filters']['quarter'] not in [1, 2, 3, 4]:
+            raise InvalidParameterException('quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)')
+
+        # Validate submission_type parameters
+        if filters.get('submission_type', None) not in ["account_balances", "object_class_program_activity",
+                                                        "award_financial"]:
+            raise InvalidParameterException('Invalid Parameter: submission_type must be "account_balances", '
+                                            '"object_class_program_activity", or "award_financial"')
+        json_request['download_types'] = [filters['submission_type']]
+
+        # Validate the rest of the filters
+        check_types_and_assign_defaults(filters, json_request['filters'], ACCOUNT_FILTER_DEFAULTS)
 
         return json_request
 
@@ -196,7 +250,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -210,7 +264,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['transactions', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
@@ -223,7 +277,7 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
@@ -239,7 +293,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
 
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""
@@ -295,6 +349,15 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         del filters['agency']
 
         request_data['filters'] = filters
+
+
+class AccountDownloadViewSet(BaseDownloadViewSet):
+    """This route sends a request to begin generating a zipfile of account data in CSV form for download."""
+
+    def post(self, request):
+        """Push a message to SQS with the validated request JSON"""
+
+        return BaseDownloadViewSet.post(self, request, 'account')
 
 
 class DownloadStatusViewSet(BaseDownloadViewSet):

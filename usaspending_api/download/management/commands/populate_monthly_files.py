@@ -41,7 +41,7 @@ class Command(BaseCommand):
             date_range['end_date'] = end_date
         json_request = {
             'constraint_type': 'year',
-            'award_levels': award_levels,
+            'download_types': award_levels,
             'filters': {
                 'award_types': award_types,
                 'agency': str(agency),
