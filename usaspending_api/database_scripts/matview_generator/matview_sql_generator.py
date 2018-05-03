@@ -30,7 +30,7 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
     "LEFT OUTER JOIN",
     "  \"transaction_normalized\" ON (\"awards\".\"latest_transaction_id\" = \"transaction_normalized\".\"id\")",
     "WHERE",
-    "  \"transaction_normalized\".action_date >= '2007-10-01'",
+    "  \"transaction_normalized\".action_date >= '2000-10-01'",
     "ORDER BY",
     "  \"action_date\" DESC"
 
