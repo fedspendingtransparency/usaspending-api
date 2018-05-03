@@ -12,20 +12,21 @@ from usaspending_api.awards.models import TransactionNormalized
 
 
 def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
-    full_fiscal_years = []
-    for v in date_dict:
-        s = generate_date_from_string(v.get("start_date"))
-        e = generate_date_from_string(v.get("end_date"))
-        if dates_are_fiscal_year_bookends(s, e):
-            full_fiscal_years.append((s, e))
+    # COMMENTED OUT FISCAL_YEAR LOGIC SO ONLY ACTION_DATE IS USED
+    # full_fiscal_years = []
+    # for v in date_dict:
+    #     s = generate_date_from_string(v.get("start_date"))
+    #     e = generate_date_from_string(v.get("end_date"))
+    #     if dates_are_fiscal_year_bookends(s, e):
+    #         full_fiscal_years.append((s, e))
 
-    if len(full_fiscal_years) == len(date_dict):
-        fys = []
-        for s, e in full_fiscal_years:
-            fys.append(generate_all_fiscal_years_in_range(s, e))
-        all_fiscal_years = set([x for sublist in fys for x in sublist])
-        fiscal_year_filters = {"{}__in".format(fiscal_year_column): all_fiscal_years}
-        return True, table.objects.filter(**fiscal_year_filters)
+    # if len(full_fiscal_years) == len(date_dict):
+    #     fys = []
+    #     for s, e in full_fiscal_years:
+    #         fys.append(generate_all_fiscal_years_in_range(s, e))
+    #     all_fiscal_years = set([x for sublist in fys for x in sublist])
+    #     fiscal_year_filters = {"{}__in".format(fiscal_year_column): all_fiscal_years}
+    #     return True, table.objects.filter(**fiscal_year_filters)
 
     or_queryset = None
     queryset_init = False
