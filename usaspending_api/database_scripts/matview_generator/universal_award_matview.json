@@ -131,7 +131,7 @@
     "  (awards.category IS NOT NULL or contract_data.pulled_from='IDV') AND",
     "  latest_transaction.action_date >= '2000-10-01'",
     "ORDER BY",
-    "  latest_transaction.action_date DESC"
+    "  awards.total_obligation DESC NULLS LAST"
   ],
   "indexes": [
     {
