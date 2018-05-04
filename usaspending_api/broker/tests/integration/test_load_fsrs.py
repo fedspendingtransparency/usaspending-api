@@ -33,7 +33,8 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
         'awards': [None, None, None],
         'recipient_names': ["JJ'S DINER", 'HARRY POTTER', 'HARRY POTTER'],
         'ppop_city_names': ['PAWNEE', '', ''],
-        'subaward_descs': ['RANDOM DESCRIPTION TEXT', 'HOGWARTS ACCEPTANCE LETTER', 'HOGWARTS ACCEPTANCE LETTER REVISED'],
+        'subaward_descs': ['RANDOM DESCRIPTION TEXT', 'HOGWARTS ACCEPTANCE LETTER',
+                           'HOGWARTS ACCEPTANCE LETTER REVISED'],
         'duns': ['DUNS12345', 'DUNS54321', 'DUNS54321'],
         'broker_award_ids': [-1, -2, -3],
         'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2']

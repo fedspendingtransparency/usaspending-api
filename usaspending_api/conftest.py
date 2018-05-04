@@ -7,7 +7,6 @@ from django.conf import settings
 # Third-party app imports
 import pytest
 from django_mock_queries.query import MockSet
-from unittest.mock import MagicMock
 
 # Imports from your apps
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
