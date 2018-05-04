@@ -24,7 +24,7 @@ def fed_account_data(db):
         agency_identifier='999',
         main_account_code='0000',
         account_title='aaa',
-        federal_account_code='999-0000 - aaa')
+        federal_account_code='999-0000')
 
 
 @pytest.mark.parametrize("fields,value,expected", [
@@ -44,8 +44,8 @@ def fed_account_data(db):
     (['account_title'], 'ghi', {
         'account_title': []
     }),
-    (['federal_account_code'], '999-0000 - aaa', {
-        'federal_account_code': '999-0000 - aaa'
+    (['federal_account_code'], '999-0000', {
+        'federal_account_code': '999-0000'
     }),
 ])
 @pytest.mark.django_db

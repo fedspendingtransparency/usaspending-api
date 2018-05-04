@@ -79,11 +79,10 @@ def insert_federal_accounts():
             agency_identifier=f[0] or '',
             main_account_code=f[1] or '',
             account_title=f[2] or '',
-            federal_account_code=f[0] or '' + '-' + f[1] or '' + ' - ' + f[2] or '') for f in federal_accounts]
+            federal_account_code='{}-{}'.format(f[0] or '', f[1] or '')) for f in federal_accounts]
         FederalAccount.objects.bulk_create(fa_objects)
 
         # now that the new account records are inserted, add federal_account
         # FKs to their corresponding treasury_appropriation_account records
-        tas_update_list = [
-            t.treasury_account_identifier for t in tas_no_federal_account]
+        tas_update_list = [t.treasury_account_identifier for t in tas_no_federal_account]
         update_federal_accounts(tuple(tas_update_list))
