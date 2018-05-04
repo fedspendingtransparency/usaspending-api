@@ -10,6 +10,8 @@ logger = logging.getLogger('console')
 
 def dictfetchall(cursor):
     if isinstance(cursor, PhonyCursor):
+        if not cursor.results:
+            return []
         return cursor.results
     else:
         "Return all rows from a cursor as a dict"
@@ -20,14 +22,15 @@ def dictfetchall(cursor):
 class PhonyCursor:
     """Spoofs the db cursor responses."""
 
-    def __init__(self):
-        with open(
-                os.path.join(os.path.dirname(__file__), 'tests/etl_test_data.json')) as json_data:
+    def __init__(self, test_file=None):
+        if not test_file:
+            test_file = os.path.join(os.path.dirname(__file__), 'tests/etl_test_data.json')
+        with open(test_file) as json_data:
             self.db_responses = json.load(json_data)
 
         self.results = None
 
-    def execute(self, statement, parameters):
+    def execute(self, statement, parameters=None):
         self.results = None
         for key in self.db_responses.keys():
             if "".join(key.split()) == "".join(statement.split()):  # Ignore whitespace in the query

@@ -90,8 +90,8 @@ def within_one_year(d1, d2):
     days_diff = abs((d2 - d1).days)
     for leap_year in [year for year in year_range if isleap(year)]:
         leap_date = datetime.datetime(leap_year, 2, 29)
-        if leap_date >= d1 and leap_date <= d2:
-            days_diff = days_diff - 1
+        if d1 <= leap_date <= d2:
+            days_diff -= 1
     return days_diff <= 365
 
 

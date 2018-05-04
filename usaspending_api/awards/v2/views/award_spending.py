@@ -4,7 +4,7 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpendingSerializer, \
     RecipientAwardSpendingSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import check_valid_toptier_agency
+from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC

@@ -9,7 +9,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
     Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers.generic_helper import fy
 from django.core.cache import caches, CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)

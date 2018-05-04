@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from usaspending_api.common.helpers import fy, get_pagination, timer
+from usaspending_api.common.helpers.generic_helper import fy, get_pagination, timer
 
 legal_dates = {
     dt.datetime(2017, 2, 2, 16, 43, 28, 377373): 2017,

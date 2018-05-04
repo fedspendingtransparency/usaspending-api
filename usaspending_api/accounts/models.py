@@ -1,7 +1,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from django.db import models, connection
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers.generic_helper import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel

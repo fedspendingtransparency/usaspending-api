@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from usaspending_api.common.helpers import CORRECTED_CGAC_PG_FUNCTION_DEF
-from usaspending_api.common.helpers import REV_CORRECTED_CGAC_PG_FUNCTION_DEF
+from usaspending_api.common.helpers.generic_helper import CORRECTED_CGAC_PG_FUNCTION_DEF
+from usaspending_api.common.helpers.generic_helper import REV_CORRECTED_CGAC_PG_FUNCTION_DEF
 
 
 class Migration(migrations.Migration):

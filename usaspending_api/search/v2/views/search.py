@@ -27,7 +27,7 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield

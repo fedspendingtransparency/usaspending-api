@@ -21,7 +21,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_aw
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import order_nested_object
+from usaspending_api.common.helpers.generic_helper import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
