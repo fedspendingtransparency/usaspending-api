@@ -678,14 +678,43 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:  # assistance data
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
-            if sort == "Award ID":
-                sort_filters = ["award__piid", "award__fain"] if subawards else ["piid", "fain", "uri"]
-            if order == "desc":
-                sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
+            # if sort == "Award ID":
+            #     sort_filters = ["award__piid", "award__fain"] if subawards else ["piid", "fain", "uri"]
+            # if order == "desc":
+            #     sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
 
-            queryset = queryset.order_by(*sort_filters).values(*list(values))
+            # queryset = queryset.order_by(*sort_filters).values(*list(values))
+
+            if sort == "Award ID" and subawards:
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('award__piid').desc(nulls_last=True),
+                        F('award__fain').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('award__piid').asc(nulls_last=True),
+                        F('award__fain').asc(nulls_last=True)).values(*list(values))
+            elif sort == "Award ID":
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('piid').desc(nulls_last=True),
+                        F('fain').desc(nulls_last=True),
+                        F('uri').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('piid').asc(nulls_last=True),
+                        F('fain').asc(nulls_last=True),
+                        F('uri').asc(nulls_last=True)).values(*list(values))
+            elif order == "desc":
+                queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+            else:
+                queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(limited_queryset))
         has_next = len(limited_queryset) > limit
 
         results = []
@@ -789,6 +818,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         category_name = 'category' if not subawards else 'award_type'
 
         # DB hit here
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(queryset))
+
         for award in queryset:
             if award[category_name] is None:
                 result_key = 'contracts' if not subawards else 'subcontracts'

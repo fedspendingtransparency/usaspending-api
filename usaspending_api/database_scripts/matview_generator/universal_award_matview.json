@@ -169,7 +169,7 @@
     }, {
       "name": "ordered_total_obligation",
       "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "total_obligation", "order": "DESC"}]
+      "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
       "where": "action_date >= '2007-10-01'",
@@ -366,6 +366,34 @@
       "name": "compound_cfda_fy",
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "cfda_number"}, {"name": "fiscal_year"}]
+    }, {
+      "name": "awarding_toptier_agency_name_pre2008",
+      "where": "awarding_toptier_agency_name IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "awarding_toptier_agency_name"}]
+    }, {
+      "name": "awarding_subtier_agency_name_pre2008",
+      "where": "awarding_subtier_agency_name IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "awarding_subtier_agency_name"}]
+    }, {
+      "name": "type_pre2008",
+      "where": "type IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "type"}]
+    }, {
+      "name": "pulled_from_pre2008",
+      "where": "pulled_from IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "pulled_from"}]
+    }, {
+      "name": "recipient_location_country_code_pre2008",
+      "where": "recipient_location_country_code IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "recipient_location_country_code"}]
+    }, {
+      "name": "recipient_location_state_code_pre2008",
+      "where": "recipient_location_state_code IS NOT NULL AND action_date < '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}]
+    }, {
+      "name": "action_date_pre2008",
+      "where": "action_date < '2007-10-01'",
+      "columns": [{"name": "action_date"}]
     }
   ]
 }
