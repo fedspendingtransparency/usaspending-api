@@ -1,5 +1,6 @@
 import logging
 import itertools
+from collections import OrderedDict
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -10,6 +11,7 @@ from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.search.v2 import elasticsearch_helper
+
 
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,10 @@ def matview_search_filter(filters, model):
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
 
+    if "keyword" in filters:
+        filters = OrderedDict(filters)
+        filters.move_to_end('keyword', last=False)
+        
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
@@ -65,38 +71,36 @@ def matview_search_filter(filters, model):
 
         if key == "keyword":
             def keyword_parse(keyword):
-                upper_kw = keyword.upper()
-
-                # keyword_string & award_id_string are Postgres TS_vectors.
-                # keyword_string = recipient_name + naics_code + naics_description
-                #     + psc_description + awards_description
-                # award_id_string = piid + fain + uri
                 filter_obj = Q(keyword_ts_vector=keyword) | \
-                    Q(award_ts_vector=keyword) | \
-                    Q(recipient_unique_id=upper_kw) | \
-                    Q(parent_recipient_unique_id=keyword)
-
+                    Q(award_ts_vector=keyword)
                 if keyword.isnumeric():
                     filter_obj |= Q(naics_code__contains=keyword)
-
                 if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
                     filter_obj |= Q(product_or_service_code__iexact=keyword)
+
                 return filter_obj
 
-            if isinstance(value, str):
-                filter_obj = keyword_parse(value)
-            else:
-                if not isinstance(value, list):
-                    raise InvalidParameterException('Invalid filter: keyword argument'
-                                                    + ' type must be a string or list of strings.')
-                keyword_filters = [keyword_parse(keyword) for keyword in value]
-                filter_obj = None
-                for filter_part in keyword_filters:
-                    if filter_obj:
-                        filter_obj |= filter_part
-                    else:
-                        filter_obj = filter_part
-            queryset = queryset.filter(filter_obj)
+            filter_obj = Q()
+            for keyword in value:
+                filter_obj |= keyword_parse(keyword)
+            potential_DUNS = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
+            if len(potential_DUNS) > 0:
+                filter_obj |=Q(recipient_unique_id__in=potential_DUNS) | \
+                    Q(parent_recipient_unique_id__in=potential_DUNS)
+            
+            # keyword_string & award_id_string are Postgres TS_vectors.
+            # keyword_string = recipient_name + naics_code + naics_description
+            #     + psc_description + awards_description
+            # award_id_string = piid + fain + uri
+            #query = "|".join(value)
+            #db_table = model._meta.db_table
+
+            #where_clause = '''"{0}"."keyword_ts_vector" @@ (to_tsquery(%s)) = true
+             #                OR "{1}"."award_ts_vector" @@ (to_tsquery(%s)) = true'''.format(db_table, db_table)
+            
+            #queryset = queryset.extra(where=[where_clause], params=[query, query])
+            queryset = queryset.filter(filter_obj) 
+            
 
         elif key == "elasticsearch_keyword":
             keyword = value

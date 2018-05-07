@@ -702,6 +702,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             queryset = queryset.order_by(*sort_filters).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(generate_raw_quoted_query(limited_queryset))
         has_next = len(limited_queryset) > limit
 
         results = []
