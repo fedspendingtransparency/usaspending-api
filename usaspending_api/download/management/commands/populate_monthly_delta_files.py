@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.common.helpers import generate_raw_quoted_query, generate_fiscal_year
+from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
@@ -41,8 +41,8 @@ AWARD_MAPPINGS = {
 
 class Command(BaseCommand):
 
-    def download(self, award_type, fiscal_year, agency='all', generate_since=None):
-        """Create a delta file based on award_type, fiscal_year, and agency_code (or all agencies)"""
+    def download(self, award_type, agency='all', generate_since=None):
+        """Create a delta file based on award_type, and agency_code (or all agencies)"""
         award_map = AWARD_MAPPINGS[award_type]
 
         # Create Source and update fields to include correction_delete_ind
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         source.human_names = list(source.query_paths.keys())
 
         # Apply filters to the queryset
-        filters, agency_code = self.parse_filters(award_map['award_types'], fiscal_year, agency)
+        filters, agency_code = self.parse_filters(award_map['award_types'], agency)
         source.queryset = VALUE_MAPPINGS['transactions']['filter_function'](filters)
         if award_type == 'Contracts':
             # Derive the correction_delete_ind from the created_at of the records
@@ -67,13 +67,12 @@ class Command(BaseCommand):
         source_query = source.row_emitter(None)
 
         if source_query.count() == 0:
-            logger.info('No data for {}, FY{}, Agency: {}'.format(award_type, fiscal_year, agency['name']
-                                                                  if agency != 'all' else 'all agencies'))
+            logger.info('No data for {}, Agency: {}'.format(award_type, agency if agency == 'all' else agency['name']))
         else:
-            logger.info('Starting generation. {}, FY{}, Agency: {}'.format(award_type, fiscal_year, agency['name']
-                                                                           if agency != 'all' else 'all agencies'))
+            logger.info('Starting generation for {}, Agency: {}'.format(award_type, agency if agency == 'all' else
+                                                                        agency['name']))
             # Generate file
-            file_path = self.create_local_file(self, award_type, source_query, source, fiscal_year, agency_code)
+            file_path = self.create_local_file(self, award_type, source_query, source, agency_code)
 
             if not settings.is_local:
                 # Upload file to S3
@@ -82,7 +81,7 @@ class Command(BaseCommand):
                 # Delete file
                 os.remove(file_path)
 
-    def create_local_file(self, award_type, source_query, source, fiscal_year, agency_code):
+    def create_local_file(self, award_type, source_query, source, agency_code):
         # Create file paths and working directory
         working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
         if not os.path.exists(working_dir):
@@ -107,8 +106,8 @@ class Command(BaseCommand):
                                output_name_template='{}_delta_%s.csv'.format(source_name))
 
         # Zip the split CSVs into one zipfile
-        zipfile_path = '{}{}_{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, fiscal_year, agency_code, award_type,
-                                                        datetime.strftime(date.today(), '%Y%m%d'))
+        zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
+                                                     datetime.strftime(date.today(), '%Y%m%d'))
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
@@ -140,17 +139,13 @@ class Command(BaseCommand):
 
         return raw_query.replace(select_string, selects_str)
 
-    def parse_filters(self, award_types, fiscal_year, agency):
+    def parse_filters(self, award_types, agency):
         """Convert readable filters to a filter object usable for the matview filter"""
         award_type_codes = []
         for award_type in award_types:
             award_type_codes = award_type_codes + all_award_types_mappings[award_type]
-        time_periods_list = [{
-            'start_date': '{}-{}-{}'.format(str(fiscal_year-1), '10', '01'),
-            'end_date': '{}-{}-{}'.format(str(fiscal_year), '09', '30'),
-            'date_type': 'action_date'}]
 
-        filters = {'award_type_codes': award_type_codes, 'time_period': time_periods_list}
+        filters = {'award_type_codes': award_type_codes}
         agency_code = agency
         if agency != 'all':
             agency_code = agency['cgac_code']
@@ -162,13 +157,11 @@ class Command(BaseCommand):
         """Add arguments to the parser"""
         parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=int,
                             help='Specific toptier agency database ids. Note \'all\' may be provided to account for '
-                                 'the downloads that comprise all agencies for a fiscal_year. Defaults to \'all\' and '
-                                 'all individual agencies.')
+                                 'the downloads that comprise all agencies. Defaults to \'all\' and all individual '
+                                 'agencies.')
         parser.add_argument('--award_types', dest='award_types', nargs='+', default=['assistance', 'contracts'],
                             type=str, help='Specific award types, must be \'contracts\' and/or \'assistance\'. '
                                            'Defaults to both.')
-        parser.add_argument('--fiscal_years', dest='fiscal_years', nargs='+', default=None, type=int,
-                            help='Specific Fiscal Years. Defaults to all FY since 2001.')
         parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True,
                             help='Date of last Delta file creation.')
 
@@ -176,11 +169,7 @@ class Command(BaseCommand):
         """Run the application."""
         agencies = options['agencies']
         award_types = options['award_types']
-        fiscal_years = options['fiscal_years']
         last_date = options['last_date']
-
-        if not fiscal_years:
-            fiscal_years = range(2008, generate_fiscal_year(date.today())+1)
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
@@ -197,5 +186,4 @@ class Command(BaseCommand):
 
         for agency in toptier_agencies:
             for award_type in award_types:
-                for fiscal_year in fiscal_years:
-                    self.download(award_type.capitalize(), fiscal_year, agency, last_date)
+                self.download(award_type.capitalize(), agency, last_date)

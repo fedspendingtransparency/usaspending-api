@@ -18,7 +18,7 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 
 def validate_date(date):
-    if not isinstance(date, datetime.datetime):
+    if not isinstance(date, datetime.datetime) and not isinstance(date, datetime.date):
         raise TypeError('Incorrect parameter type provided')
 
     if not (date.day or date.month or date.year):
