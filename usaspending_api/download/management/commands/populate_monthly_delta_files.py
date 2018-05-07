@@ -12,11 +12,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.helpers import generate_raw_quoted_query, generate_fiscal_year
 from usaspending_api.download.filestreaming.csv_generation import CsvSource
-from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs
+from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency
 
@@ -45,14 +44,7 @@ class Command(BaseCommand):
 
     def download(self, award_type, fiscal_year, agency='all', generate_since=None):
         """Create a delta file based on award_type, fiscal_year, and agency_code (or all agencies)"""
-        logger.info('Generating a {} {} file for {}'.format(fiscal_year, award_type,
-                                                            'all agencies' if agency == 'all' else agency['name']))
         award_map = AWARD_MAPPINGS[award_type]
-
-        # Create temporary files and working directory
-        working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
-        if not os.path.exists(working_dir):
-            os.mkdir(working_dir)
 
         # Create Source and update fields to include correction_delete_ind
         source = CsvSource('transaction', award_map['letter_name'].lower(), 'transactions')
@@ -74,6 +66,28 @@ class Command(BaseCommand):
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
         source_query = source.row_emitter(None)
+
+        if source_query.count() == 0:
+            logger.info('No data for {}, FY{}, Agency: {}'.format(award_type, fiscal_year, agency['name']
+                                                                  if agency != 'all' else 'all agencies'))
+        else:
+            logger.info('Starting generation. {}, FY{}, Agency: {}'.format(award_type, fiscal_year, agency['name']
+                                                                           if agency != 'all' else 'all agencies'))
+            # Generate file
+            file_path = self.create_file_locally(self, award_type, source_query, source, fiscal_year, agency_code)
+
+            if not settings.is_local:
+                # Upload file to S3
+                multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
+                                 os.path.basename(file_path))
+                # Delete file
+                os.remove(file_path)
+
+    def create_file_locally(self, award_type, source_query, source, fiscal_year, agency_code):
+        # Create file paths and working directory
+        working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
+        if not os.path.exists(working_dir):
+            os.mkdir(working_dir)
         source_name = '{}_{}'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
@@ -82,7 +96,7 @@ class Command(BaseCommand):
         csv_query_annotated = self.apply_annotations_to_sql(raw_quoted_query, source.human_names)
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
         with open(temp_sql_file_path, 'w') as file:
-            file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
+            file.write('\\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
 
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
@@ -103,6 +117,15 @@ class Command(BaseCommand):
         os.close(temp_sql_file)
         os.remove(temp_sql_file_path)
         shutil.rmtree(working_dir)
+
+        return source_path
+
+    def upload_file_to_s3(self, file_path):
+        """Uses the multipart_upload function of the normal downloader, then deletes the local version of the file"""
+        multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
+                         os.path.basename(file_path))
+        # Delete file
+        os.remove(file_path)
 
     def apply_annotations_to_sql(self, raw_query, aliases):
         """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
@@ -135,10 +158,7 @@ class Command(BaseCommand):
             'end_date': '{}-{}-{}'.format(str(fiscal_year), '09', '30'),
             'date_type': 'action_date'}]
 
-        filters = {
-            'award_type_codes': award_type_codes,
-            'time_period': time_periods_list
-        }
+        filters = {'award_type_codes': award_type_codes, 'time_period': time_periods_list}
         agency_code = agency
         if agency != 'all':
             agency_code = agency['cgac_code']
@@ -148,16 +168,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to the parser"""
-        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=str,
+        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=int,
                             help='Specific toptier agency database ids. Note \'all\' may be provided to account for '
                                  'the downloads that comprise all agencies for a fiscal_year. Defaults to \'all\' and '
                                  'all individual agencies.')
-        parser.add_argument('--award_types', dest='award_types', nargs='+', default=['assistance', 'contracts'], 
+        parser.add_argument('--award_types', dest='award_types', nargs='+', default=['assistance', 'contracts'],
                             type=str, help='Specific award types, must be \'contracts\' and/or \'assistance\'. '
                                            'Defaults to both.')
         parser.add_argument('--fiscal_years', dest='fiscal_years', nargs='+', default=None, type=int,
                             help='Specific Fiscal Years. Defaults to all FY since 2001.')
-        parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True, 
+        parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True,
                             help='Date of last Delta file creation.')
 
     def handle(self, *args, **options):

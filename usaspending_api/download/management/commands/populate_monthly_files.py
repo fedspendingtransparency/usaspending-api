@@ -2,8 +2,6 @@ import logging
 import datetime
 import json
 import multiprocessing
-import os
-import pandas as pd
 import boto
 import re
 
