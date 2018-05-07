@@ -79,9 +79,9 @@ def validate_array(rule):
 
 def validate_boolean(rule):
     # Could restrict this to ONLY True or False. Some tools like to use 0/1 or t/f so this function is inclusive
-    if str(rule['value']).lower() in ('1', 't', 'true'):
+    if str(rule['value']).lower() in ('1', 't', 'true') or rule['value'] === True:
         return True
-    elif str(rule['value']).lower() in ('0', 'f', 'false'):
+    elif str(rule['value']).lower() in ('0', 'f', 'false') or rule['value'] === False:
         return False
     else:
         msg = INVALID_TYPE_MSG.format(**rule) + '. Use true/false'

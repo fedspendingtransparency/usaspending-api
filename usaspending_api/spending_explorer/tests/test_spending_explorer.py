@@ -121,7 +121,7 @@ def test_budget_function_failure(client):
         '/api/v2/search/spending_over_time/',
         content_type='application/json',
         data=json.dumps({}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
@@ -219,7 +219,7 @@ def test_object_class_failure(client):
         '/api/v2/search/spending_over_time/',
         content_type='application/json',
         data=json.dumps({}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
@@ -330,7 +330,7 @@ def test_agency_failure(client):
         '/api/v2/search/spending_over_time/',
         content_type='application/json',
         data=json.dumps({}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Test for Object Class Results
     resp = client.post(
