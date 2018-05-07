@@ -621,7 +621,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'min': 1},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -847,7 +847,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text',
-                'text_type': 'search', 'optional': False},
+             'text_type': 'search', 'optional': False},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))

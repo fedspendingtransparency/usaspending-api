@@ -180,6 +180,8 @@ class TinyShield():
                 raise Exception('Invalid Type {} in rule'.format(rule['type']))
         # Array is a "special" type since it is a list of other types which need to be validated
         elif rule['type'] == 'array':
+            rule['array_min'] = rule.get('array_min', 1)
+            rule['array_max'] = rule.get('array_max', 0)
             value = VALIDATORS[rule['type']]['func'](rule)
             child_rule = copy.copy(rule)
             child_rule['type'] = rule['array_type']
@@ -191,6 +193,8 @@ class TinyShield():
             return array_result
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
+            rule['object_min'] = rule.get('object_min', 1)
+            rule['object_max'] = rule.get('object_max', 0)
             provided_object = VALIDATORS[rule['type']]['func'](rule)
             object_result = {}
             for k, v in rule['object_keys'].items():
