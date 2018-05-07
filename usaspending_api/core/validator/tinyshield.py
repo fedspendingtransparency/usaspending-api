@@ -73,7 +73,7 @@ VALIDATORS = {
 }
 
 
-class TinyShield(object):
+class TinyShield():
     """
     Structure
     model- dictionary representing a validator
