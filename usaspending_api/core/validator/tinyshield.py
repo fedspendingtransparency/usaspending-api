@@ -196,7 +196,7 @@ class TinyShield():
 
             object_result = {}
             for k, v in rule['object_keys'].items():
-               try:
+                try:
                     value = provided_object[k]
                 except KeyError as e:
                     if "optional" in v and v['optional'] is False:
@@ -210,25 +210,25 @@ class TinyShield():
                 object_result[k] = self.apply_rule(child_rule)
             return object_result
 
-   def promote_subrules(self, child_rule, source={}):
-    param_type = source.get('type', None)
-    if "text_type" in source:
-        child_rule['text_type'] = source['text_type']
-    try:
-        if param_type == "object":
-            child_rule['object_keys'] = source['object_keys']
-            child_rule['min'] = source.get('object_min', None)
-            child_rule['max'] = source.get('object_max', None)
-        if param_type == "enum":
-            child_rule['enum_values'] = source['enum_values']
-        if param_type == "array":
-            child_rule['array_type'] = source['array_type']
-            child_rule['object_keys'] = source.get('object_keys', {})
-            child_rule['min'] = source.get('array_min', None)
-            child_rule['max'] = source.get('array_max', None)
-    except KeyError as e:
-        raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
-    return child_rule
+    def promote_subrules(self, child_rule, source={}):
+        param_type = source.get('type', None)
+        if "text_type" in source:
+            child_rule['text_type'] = source['text_type']
+        try:
+            if param_type == "object":
+                child_rule['object_keys'] = source['object_keys']
+                child_rule['min'] = source.get('object_min', None)
+                child_rule['max'] = source.get('object_max', None)
+            if param_type == "enum":
+                child_rule['enum_values'] = source['enum_values']
+            if param_type == "array":
+                child_rule['array_type'] = source['array_type']
+                child_rule['object_keys'] = source.get('object_keys', {})
+                child_rule['min'] = source.get('array_min', None)
+                child_rule['max'] = source.get('array_max', None)
+        except KeyError as e:
+            raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
+        return child_rule
 
 
     def recurse_append(self, struct, mydict, data):
