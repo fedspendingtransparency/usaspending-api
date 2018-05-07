@@ -9,9 +9,9 @@ from django_mock_queries.query import MockSet
 import pytest
 
 # Imports from your apps
-from usaspending_api.common.helpers import check_valid_toptier_agency
-from usaspending_api.common.helpers import generate_fiscal_period
-from usaspending_api.common.helpers import generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_period
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 
 
 # example of a mocked unit test
