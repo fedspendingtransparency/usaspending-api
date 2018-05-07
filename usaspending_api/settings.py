@@ -629,3 +629,6 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
 }
+
+API_VERSION = 2
+
