@@ -251,4 +251,3 @@ def concat_if_array(data):
             # This should never happen if TinyShield is functioning properly
             logger.error('Keyword submitted was not a string or array')
             return ""
-
