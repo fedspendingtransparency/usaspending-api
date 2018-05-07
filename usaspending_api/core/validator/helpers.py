@@ -23,31 +23,37 @@ SUPPORTED_TEXT_TYPES = ['search', 'raw', 'sql', 'url', 'password']
 
 
 def _check_max(rule):
-    value = rule['value']
-    if rule['type'] in ('integer', 'float'):
-        if value > rule['max'] and rule['max'] != 0:
-            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
+    try:
+        value = rule['value']
+        if rule['type'] in ('integer', 'float'):
+            if value > rule['max'] and rule['max'] != 0:
+                raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'enum'):
-        if len(value) > rule['max'] and rule['max'] != 0:
-            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
-    if rule['type'] in ('array', 'object'):
-        if len(value) > rule[rule['type']+'_max'] and rule[rule['type']+'_max'] != 0:
-            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
+        if rule['type'] in ('text', 'enum'):
+            if len(value) > rule['max'] and rule['max'] != 0:
+                raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
+        if rule['type'] in ('array', 'object'):
+            if len(value) > rule[rule['type']+'_max'] and rule[rule['type']+'_max'] != 0:
+                raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
+    except KeyError as e:
+        raise InvalidParameterException('Rule for \'{}\' requires a properly defined max value. Expected: {}'.format(rule['name'], e))
 
 
 def _check_min(rule):
-    value = rule['value']
-    if rule['type'] in ('integer', 'float'):
-        if value < rule['min']:
-            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
+    try:
+        value = rule['value']
+        if rule['type'] in ('integer', 'float'):
+            if value < rule['min']:
+                raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'enum'):
-        if len(value) < rule['min']:
-            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
-    if rule['type'] in ('array', 'object'):
-        if len(value) < rule[rule['type']+'_min']:
-            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
+        if rule['type'] in ('text', 'enum'):
+            if len(value) < rule['min']:
+                raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
+        if rule['type'] in ('array', 'object'):
+            if len(value) < rule[rule['type']+'_min']:
+                raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
+    except KeyError as e:
+        raise InvalidParameterException('Rule for \'{}\' requires a properly defined min value. Expected: {}'.format(rule['name'], e))
 
 
 def _verify_int_value(value):
