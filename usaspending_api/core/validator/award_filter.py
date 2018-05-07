@@ -14,7 +14,7 @@ AWARD_FILTER = [
     {'name': 'program_numbers', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'psc_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'recipient_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
-    {'name': 'recipient_search_text', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'max': 1, 'min': 1},
+    {'name': 'recipient_search_text', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'array_max': 1, 'array_min': 1},
     {'name': 'recipient_type_names', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'set_aside_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'time_period', 'type': 'array', 'array_type': 'object', 'object_keys': {
@@ -50,4 +50,8 @@ for a in AWARD_FILTER:
     a['optional'] = a.get('optional', True)  # future TODO: want to make time_period required
     a['key'] = 'filters{sep}{name}'.format(sep=TINY_SHIELD_SEPARATOR, name=a['name'])
     if a['type'] == 'array':
-        a['min'] = a.get('min', 1)
+        a['array_min'] = a.get('array_min', 1)
+        a['array_max'] = a.get('array_max', 0)
+    if a['type'] == 'object':
+        a['object_min'] = a.get('object_min', 1)
+        a['object_max'] = a.get('object_max', 0)
