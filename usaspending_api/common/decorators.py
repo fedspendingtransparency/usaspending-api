@@ -21,4 +21,4 @@ def api_transformations(api_version, function_list):
         ClassBasedView.post = method_decorator(view_func)(ClassBasedView.post)
         return ClassBasedView
     return class_based_decorator
-    
+ 
