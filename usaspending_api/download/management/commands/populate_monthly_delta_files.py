@@ -14,14 +14,13 @@ from django.db.models import Case, When, Value, CharField
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.helpers import generate_raw_quoted_query, generate_fiscal_year
-from usaspending_api.download.filestreaming.csv_generation import CsvSource
+from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger('console')
 
-EXCEL_ROW_LIMIT = 1000000
 AWARD_MAPPINGS = {
     'Contracts': {
         'award_types': ['contracts'],
