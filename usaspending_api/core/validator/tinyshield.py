@@ -231,7 +231,6 @@ class TinyShield():
             raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
         return child_rule
 
-
     def recurse_append(self, struct, mydict, data):
         if len(struct) == 1:
             mydict[struct[0]] = data

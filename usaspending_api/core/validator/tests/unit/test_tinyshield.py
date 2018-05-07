@@ -13,7 +13,7 @@ from usaspending_api.core.validator.tinyshield import TinyShield
 
 
 ARRAY_RULE = {'name': 'test', 'type': 'array', 'key': 'filters|test',
-              'array_type': 'integer', 'optional': True, 'array_min': 1, 'array_max':3, 'value': [1, 2, 3]}
+              'array_type': 'integer', 'optional': True, 'array_min': 1, 'array_max': 3, 'value': [1, 2, 3]}
 BOOLEAN_RULE = {'name': 'test', 'type': 'boolean', 'key': 'filters|test', 'optional': True, 'value': True}
 DATETIME_RULE = {'name': 'test', 'type': 'datetime', 'key': 'filters|test', 'optional': True,
                  'value': '1984-09-16T4:05:00'}
