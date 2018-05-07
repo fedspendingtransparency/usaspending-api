@@ -6,24 +6,25 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
-from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
+from .filter_helpers import combine_datetime_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.search.v2 import elasticsearch_helper
+from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
 
 logger = logging.getLogger(__name__)
 
 
 def universal_award_matview_filter(filters):
-    return matview_search_filter(filters, UniversalAwardView)
+    return matview_search_filter(filters, UniversalAwardView, for_downloads=True)
 
 
 def universal_transaction_matview_filter(filters):
-    return matview_search_filter(filters, UniversalTransactionView)
+    return matview_search_filter(filters, UniversalTransactionView, for_downloads=True)
 
 
-def matview_search_filter(filters, model):
+def matview_search_filter(filters, model, for_downloads=False):
     queryset = model.objects.all()
 
     faba_flag = False
@@ -96,10 +97,10 @@ def matview_search_filter(filters, model):
                 where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
-                                                       "action_date")
-            if success:
-                queryset &= or_queryset
+            min_date = API_SEARCH_MIN_DATE
+            if for_downloads:
+                min_date = API_MIN_DATE
+            queryset &= combine_datetime_queryset(value, model, "action_date", min_date, API_MAX_DATE, )
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())

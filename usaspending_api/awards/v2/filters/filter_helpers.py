@@ -1,51 +1,66 @@
+from datetime import datetime, timedelta
+from collections import namedtuple
+
 from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
-from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
 from usaspending_api.common.helpers import generate_date_from_string
 from usaspending_api.common.helpers import dates_are_month_bookends
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.awards.models import TransactionNormalized
 
 
-def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
-    # COMMENTED OUT FISCAL_YEAR LOGIC SO ONLY ACTION_DATE IS USED
-    # full_fiscal_years = []
-    # for v in date_dict:
-    #     s = generate_date_from_string(v.get("start_date"))
-    #     e = generate_date_from_string(v.get("end_date"))
-    #     if dates_are_fiscal_year_bookends(s, e):
-    #         full_fiscal_years.append((s, e))
+Range = namedtuple('Range', ['start', 'end'])
 
-    # if len(full_fiscal_years) == len(date_dict):
-    #     fys = []
-    #     for s, e in full_fiscal_years:
-    #         fys.append(generate_all_fiscal_years_in_range(s, e))
-    #     all_fiscal_years = set([x for sublist in fys for x in sublist])
-    #     fiscal_year_filters = {"{}__in".format(fiscal_year_column): all_fiscal_years}
-    #     return True, table.objects.filter(**fiscal_year_filters)
 
-    or_queryset = None
-    queryset_init = False
-
-    for v in date_dict:
-        kwargs = {}
-        if v.get("start_date") is not None:
-            kwargs["{}__gte".format(action_date_column)] = v.get("start_date")
-        if v.get("end_date") is not None:
-            kwargs["{}__lte".format(action_date_column)] = v.get("end_date")
-        # (may have to cast to date) (oct 1 to sept 30)
-        if queryset_init:
-            or_queryset |= table.objects.filter(**kwargs)
+def merge_date_ranges(date_range_list):
+    """
+        Given a list of date ranges (using the defined namedtuple "Range"), combine overlapping date ranges
+        While adjacent fiscal years do not overlap the desired behavior is to combine them
+            FY2010 ends on 2010-09-30, FY2011 start on 2010-10-01.
+        To address this, when comparing ranges 1 day is removed from the start date and 1 day is added to the end date
+        Then the overlapping ranges must be > 1 instead of 1
+        Inspired by Raymond Hettinger [https://stackoverflow.com/a/9044111]
+    """
+    ordered_list = sorted([sorted(t) for t in date_range_list])
+    saved_range = Range(start=ordered_list[0][0], end=ordered_list[0][1])
+    for st, en in ordered_list[1:]:
+        r = Range(st, en)
+        latest_start = max(r.start, saved_range.start) + timedelta(days=-1)
+        earliest_end = min(r.end, saved_range.end) + timedelta(days=1)
+        delta = (earliest_end - latest_start).days + 1  # added since ranges are closed on both ends
+        if delta >= 2:  # since the ranges are extended by 2 days, the overlap needs to be at least 2 days
+            saved_range = Range(start=min(saved_range.start, st), end=max(saved_range.end, en))
         else:
-            queryset_init = True
-            or_queryset = table.objects.filter(**kwargs)
-    if queryset_init:
-        return True, or_queryset
-    return False, None
+            yield saved_range
+            saved_range = Range(start=st, end=en)
+    yield saved_range
+
+
+def date_list_to_queryset(date_list, table, action_date_column):
+    or_queryset = Q()
+    for v in date_list:
+        # Modified May 2018 so that there will always be a start and end value from combine_datetime_queryset()
+        kwargs = {
+            "{}__gte".format(action_date_column): v["start_date"],
+            "{}__lte".format(action_date_column): v["end_date"],
+        }
+        or_queryset |= Q(**kwargs)
+
+    return table.objects.filter(or_queryset)
+
+
+def combine_datetime_queryset(date_dicts, table, action_date_column, min_start, max_end, dt_format='%Y-%m-%d'):
+    list_of_ranges = [
+        (
+            datetime.strptime(v.get('start_date', None) or min_start, dt_format),
+            datetime.strptime(v.get('end_date', None) or max_end, dt_format)
+        ) for v in date_dicts]  # convert date strings to datetime objects
+
+    final_ranges = [{'start_date': r[0], 'end_date': r[1]} for r in list(merge_date_ranges(list_of_ranges))]
+    return date_list_to_queryset(final_ranges, table, action_date_column)
 
 
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
