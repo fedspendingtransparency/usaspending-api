@@ -215,15 +215,18 @@ class TinyShield():
         try:
             if param_type == "object":
                 child_rule['object_keys'] = source['object_keys']
-                child_rule['min'] = source.get('object_min', None)
-                child_rule['max'] = source.get('object_max', None)
+                child_rule['object_min'] = source.get('object_min', 1)
+                child_rule['object_max'] = source.get('object_max', 0)
             if param_type == "enum":
                 child_rule['enum_values'] = source['enum_values']
             if param_type == "array":
                 child_rule['array_type'] = source['array_type']
                 child_rule['object_keys'] = source.get('object_keys', {})
-                child_rule['min'] = source.get('array_min', None)
-                child_rule['max'] = source.get('array_max', None)
+                child_rule['array_min'] = source.get('array_min', 1)
+                child_rule['array_max'] = source.get('array_max', 0)
+            if param_type == "text":
+                child_rule['min'] = source.get('min', 1)
+                child_rule['max'] = source.get('max', 0)
         except KeyError as e:
             raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
         return child_rule

@@ -50,4 +50,8 @@ for a in AWARD_FILTER:
     a['optional'] = a.get('optional', True)  # future TODO: want to make time_period required
     a['key'] = 'filters{sep}{name}'.format(sep=TINY_SHIELD_SEPARATOR, name=a['name'])
     if a['type'] == 'array':
-        a['min'] = a.get('min', 1)
+        a['array_min'] = a.get('array_min', 1)
+        a['array_max'] = a.get('array_max', 0)
+    if a['type'] == 'object':
+        a['object_min'] = a.get('object_min', 1)
+        a['object_max'] = a.get('object_max', 0)

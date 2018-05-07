@@ -25,11 +25,14 @@ SUPPORTED_TEXT_TYPES = ['search', 'raw', 'sql', 'url', 'password']
 def _check_max(rule):
     value = rule['value']
     if rule['type'] in ('integer', 'float'):
-        if value > rule['max']:
+        if value > rule['max'] and rule['max'] != 0:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'array', 'object', 'enum'):
-        if len(value) > rule['max']:
+    if rule['type'] in ('text','enum'):
+        if len(value) > rule['max'] and rule['max'] != 0:
+            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
+    if rule['type'] in ('array', 'object'):
+        if len(value) > rule[rule['type']+'_max'] and rule[rule['type']+'_max'] != 0:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
 
 
@@ -39,8 +42,11 @@ def _check_min(rule):
         if value < rule['min']:
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'array', 'object', 'enum'):
+    if rule['type'] in ('text', 'enum'):
         if len(value) < rule['min']:
+            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
+    if rule['type'] in ('array', 'object'):
+        if len(value) < rule[rule['type']+'_min']:
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
 
 
