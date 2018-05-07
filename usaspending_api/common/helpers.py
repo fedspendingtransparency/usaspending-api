@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 QUOTABLE_TYPES = (str, datetime.date)
 
 
+def validate_date(date):
+    if not isinstance(date, datetime.datetime):
+        raise TypeError('Incorrect parameter type provided')
+
+    if not (date.day or date.month or date.year):
+        raise Exception('Malformed date object provided')
+
+
 def check_valid_toptier_agency(agency_id):
     """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
@@ -25,22 +33,25 @@ def check_valid_toptier_agency(agency_id):
 
 def generate_fiscal_year(date):
     """ Generate fiscal year based on the date provided """
+    validate_date(date)
+
     year = date.year
     if date.month in [10, 11, 12]:
         year += 1
     return year
 
 
-def generate_fiscal_period(date):
-    """ Generate fiscal period based on the date provided """
-    return ((generate_fiscal_month(date) - 1) // 3) + 1
-
-
 def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
+    validate_date(date)
+
     if date.month in [10, 11, 12, "10", "11", "12"]:
         return date.month - 9
     return date.month + 3
+
+
+# aliasing the generate_fiscal_month function to the more appropriate function name
+generate_fiscal_period = generate_fiscal_month
 
 
 def generate_date_from_string(date_str):
@@ -90,8 +101,8 @@ def within_one_year(d1, d2):
     days_diff = abs((d2 - d1).days)
     for leap_year in [year for year in year_range if isleap(year)]:
         leap_date = datetime.datetime(leap_year, 2, 29)
-        if leap_date >= d1 and leap_date <= d2:
-            days_diff = days_diff - 1
+        if d1 <= leap_date <= d2:
+            days_diff -= 1
     return days_diff <= 365
 
 
