@@ -28,7 +28,7 @@ def _check_max(rule):
         if value > rule['max'] and rule['max'] != 0:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text','enum'):
+    if rule['type'] in ('text', 'enum'):
         if len(value) > rule['max'] and rule['max'] != 0:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
     if rule['type'] in ('array', 'object'):

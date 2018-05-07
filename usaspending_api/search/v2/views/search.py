@@ -18,7 +18,6 @@ from django.conf import settings
 from usaspending_api.awards.models import Subaward
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
-from usaspending_api.awards.v2.filters.filter_helpers import transform_keyword
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
