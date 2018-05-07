@@ -189,7 +189,8 @@ class Command(BaseCommand):
         toptier_agencies = ToptierAgency.objects.all()
         include_all = True
         if use_modified_list:
-            toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
+            used_cgacs = set(self.pull_modified_agencies_cgacs())
+            toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
         if agencies:
             if 'all' in agencies:
                 agencies.remove('all')
