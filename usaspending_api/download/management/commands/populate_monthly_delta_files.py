@@ -1,5 +1,7 @@
+import boto
 import logging
 import os
+import pandas as pd
 import re
 import shutil
 import subprocess
@@ -17,7 +19,7 @@ from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 logger = logging.getLogger('console')
 
@@ -27,14 +29,25 @@ AWARD_MAPPINGS = {
         'correction_delete_ind': 'correction_delete_ind',
         'date_filter': 'updated_at',
         'letter_name': 'd1',
-        'model': 'contract_data'
+        'model': 'contract_data',
+        'unique_iden': 'detached_award_proc_unique',
+        'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}\.csv'),
+        'columns': {
+            0: 'awarding_sub_agency_code', 2: 'award_id_piid', 3: 'modification_number',
+            4: 'parent_award_id', 5: 'transaction_number'
+        }
     },
     'Assistance': {
         'award_types': ['grants', 'direct_payments', 'loans', 'other_financial_assistance'],
         'correction_delete_ind': 'transaction__assistance_data__correction_late_delete_ind',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
-        'model': 'assistance_data'
+        'model': 'assistance_data',
+        'unique_iden': 'afa_generated_unique',
+        'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}\.csv'),
+        'columns': {
+            0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
+        }
     }
 }
 
@@ -43,6 +56,8 @@ class Command(BaseCommand):
 
     def download(self, award_type, agency='all', generate_since=None):
         """Create a delta file based on award_type, and agency_code (or all agencies)"""
+        logger.info('Starting generation. {}, Agency: {}'.format(award_type, agency if agency == 'all' else
+                                                                 agency['name']))
         award_map = AWARD_MAPPINGS[award_type]
 
         # Create Source and update fields to include correction_delete_ind
@@ -66,22 +81,17 @@ class Command(BaseCommand):
         })
         source_query = source.row_emitter(None)
 
-        if source_query.count() == 0:
-            logger.info('No data for {}, Agency: {}'.format(award_type, agency if agency == 'all' else agency['name']))
-        else:
-            logger.info('Starting generation for {}, Agency: {}'.format(award_type, agency if agency == 'all' else
-                                                                        agency['name']))
-            # Generate file
-            file_path = self.create_local_file(self, award_type, source_query, source, agency_code)
+        # Generate file
+        file_path = self.create_local_file(award_type, source_query, source, agency_code, generate_since)
 
-            if not settings.is_local:
-                # Upload file to S3
-                multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
-                                 os.path.basename(file_path))
-                # Delete file
-                os.remove(file_path)
+        if not settings.is_local:
+            # Upload file to S3
+            multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
+                             os.path.basename(file_path))
+            # Delete file
+            os.remove(file_path)
 
-    def create_local_file(self, award_type, source_query, source, agency_code):
+    def create_local_file(self, award_type, source_query, source, agency_code, generate_since):
         # Create file paths and working directory
         working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
         if not os.path.exists(working_dir):
@@ -101,6 +111,11 @@ class Command(BaseCommand):
         subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
+        added_rows = False
+        if not settings.is_local:
+            added_rows = self.add_deletion_records(working_dir, award_type, agency_code, source_path, generate_since,
+                                                   source.columns)
+
         # Split CSV into separate files
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
                                output_name_template='{}_delta_%s.csv'.format(source_name))
@@ -117,6 +132,59 @@ class Command(BaseCommand):
         shutil.rmtree(working_dir)
 
         return source_path
+
+    def add_deletion_records(self, working_dir, award_type, agency_code, file_path, generate_since, headers):
+        award_map = AWARD_MAPPINGS[award_type]
+
+        bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME or 'fpds-deleted-records'
+        region_name = settings.BULK_DOWNLOAD_AWS_REGION or 'us-gov-west-1'
+        bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+
+        # Retrieve all SubtierAgency IDs within this TopTierAgency
+        subtier_agencies = SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code)
+
+        # Create a list of keys in the bucket that match the date range we want
+        added_rows = False
+        for key in bucket.list():
+            rematch = re.match(award_map['match'], key.name)
+            if rematch and date(int(rematch.group('year')), int(rematch.group('month')), int(rematch.group('day'))) > \
+               datetime.strptime(generate_since, "%Y-%m-%d").date():
+                # Create a local copy of the deletion file
+                delete_filepath = '{}{}'.format(working_dir, key.name)
+                key.get_contents_to_filename(delete_filepath)
+                df = pd.read_csv(delete_filepath)
+                os.remove(delete_filepath)
+
+                # Split deleted unique identifier into usable columns
+                df = df[award_map['unique_iden']] \
+                    .apply(lambda x: pd.Series(x.split('_'))) \
+                    .replace('-none-', '', regex=True) \
+                    .rename(columns=award_map['columns'])
+
+                # Skip empty files
+                if len(df.index) == 0:
+                    continue
+
+                # Only include records within the correct agency
+                if agency_code != 'all':
+                    df = df[df['awarding_sub_agency_code'].isin(list(subtier_agencies.values_list('subtier_code',
+                                                                                                  flat=True)))]
+
+                # Skip files that do not include deletions for this agency
+                if len(df.index) == 0:
+                    continue
+
+                # Append records to the end of the Delta file
+                added_rows = True
+                if award_type == 'Contracts':
+                    df.drop(columns=1)
+                for header in headers:
+                    if header not in list(award_map['columns'].values()):
+                        df[header] = [''] * len(df.index)
+                with open(file_path, 'a') as delta_file:
+                    df.to_csv(path_or_buf=delta_file, mode='a', header=False)
+
+        return added_rows
 
     def apply_annotations_to_sql(self, raw_query, aliases):
         """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
@@ -155,7 +223,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to the parser"""
-        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=int,
+        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=str,
                             help='Specific toptier agency database ids. Note \'all\' may be provided to account for '
                                  'the downloads that comprise all agencies. Defaults to \'all\' and all individual '
                                  'agencies.')
