@@ -128,7 +128,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Expected results structure
         # [{
         # 'time_period': {'fy': '2017', 'quarter': '3'},
-        #   'aggregated_amount': '200000000'
+        #       'aggregated_amount': '200000000'
         # }]
         sorted_group_results = sorted(
             group_results.items(),

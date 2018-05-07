@@ -189,11 +189,9 @@ class TinyShield():
                 child_rule['value'] = v
                 array_result.append(self.apply_rule(child_rule))
             return array_result
-
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
             provided_object = VALIDATORS[rule['type']]['func'](rule)
-
             object_result = {}
             for k, v in rule['object_keys'].items():
                 try:
