@@ -74,7 +74,7 @@ class Command(BaseCommand):
             logger.info('Starting generation. {}, FY{}, Agency: {}'.format(award_type, fiscal_year, agency['name']
                                                                            if agency != 'all' else 'all agencies'))
             # Generate file
-            file_path = self.create_file_locally(self, award_type, source_query, source, fiscal_year, agency_code)
+            file_path = self.create_local_file(self, award_type, source_query, source, fiscal_year, agency_code)
 
             if not settings.is_local:
                 # Upload file to S3
@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 # Delete file
                 os.remove(file_path)
 
-    def create_file_locally(self, award_type, source_query, source, fiscal_year, agency_code):
+    def create_local_file(self, award_type, source_query, source, fiscal_year, agency_code):
         # Create file paths and working directory
         working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
         if not os.path.exists(working_dir):
@@ -119,13 +119,6 @@ class Command(BaseCommand):
         shutil.rmtree(working_dir)
 
         return source_path
-
-    def upload_file_to_s3(self, file_path):
-        """Uses the multipart_upload function of the normal downloader, then deletes the local version of the file"""
-        multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
-                         os.path.basename(file_path))
-        # Delete file
-        os.remove(file_path)
 
     def apply_annotations_to_sql(self, raw_query, aliases):
         """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
