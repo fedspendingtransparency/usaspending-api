@@ -42,9 +42,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (search_transactions,
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
-API_TRANSFORM_FUNCTIONS = [
-    transform_keyword,
-]
+API_TRANSFORM_FUNCTIONS = []
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
