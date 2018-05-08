@@ -56,7 +56,6 @@ def test_spending_over_time_subawards_success(client):
             "filters": all_filters(),
             "subawards": True
         }))
-    raise Exception(resp.content)
     assert resp.status_code == status.HTTP_200_OK
 
 
