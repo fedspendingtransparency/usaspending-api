@@ -65,7 +65,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
         queryset = subaward_filter(filters) if subawards else spending_over_time(filters) \
-            .values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
+            .values('action_date', 'generated_pragmatic_obligation')
 
         # build response
         response = {'group': group, 'results': []}
@@ -74,20 +74,27 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         group_results = OrderedDict()
 
-        # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
+        # for Subawards we extract data from action_date
         if subawards:
-            data_set = queryset.values('award_type'). \
-                annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date'),
-                         transaction_amount=Sum('amount')). \
-                values('month', 'year', 'transaction_amount')
+            data_set = queryset \
+                .values('award_type') \
+                .annotate(
+                    month=ExtractMonth('action_date'),
+                    year=ExtractYear('action_date'),
+                    transaction_amount=Sum('amount')) \
+                .values('month', 'year', 'transaction_amount')
         else:
-            data_set = queryset.values('fiscal_year')
-            if not (group == 'fy' or group == 'fiscal_year'):
+            queryset = queryset.values('fiscal_year')
+            if group in ('fy', 'fiscal_year'):
+                data_set = queryset.annotate(transaction_amount=Sum('generated_pragmatic_obligation')). \
+                values('fiscal_year', 'transaction_amount')
+            else:
                 # quarterly also takes months and aggregates the data
-                data_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
-
-            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-            data_set = sum_transaction_amount(data_set, filter_types=filter_types)
+                data_set = queryset \
+                    .annotate(
+                        month=ExtractMonth('action_date'),
+                        transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'month', 'transaction_amount')
 
         for record in data_set:
             # create fiscal year data based on the action_date for Subawards
@@ -117,7 +124,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Expected results structure
         # [{
         # 'time_period': {'fy': '2017', 'quarter': '3'},
-        # 	'aggregated_amount': '200000000'
+        # 'aggregated_amount': '200000000'
         # }]
         sorted_group_results = sorted(
             group_results.items(),
