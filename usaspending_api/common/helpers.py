@@ -5,7 +5,7 @@ import timeit
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 
@@ -151,6 +151,10 @@ def order_nested_object(nested_object):
         return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
     else:
         return nested_object
+
+
+def table_exists(model):
+    return model._meta.db_table in connection.introspection.table_names()
 
 
 def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
