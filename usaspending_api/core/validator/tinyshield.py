@@ -181,7 +181,7 @@ class TinyShield():
         # Array is a "special" type since it is a list of other types which need to be validated
         elif rule['type'] == 'array':
             rule['array_min'] = rule.get('array_min', 1)
-            rule['array_max'] = rule.get('array_max', 0)
+            rule['array_max'] = rule.get('array_max', 5000)
             value = VALIDATORS[rule['type']]['func'](rule)
             child_rule = copy.copy(rule)
             child_rule['type'] = rule['array_type']
@@ -194,7 +194,7 @@ class TinyShield():
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
             rule['object_min'] = rule.get('object_min', 1)
-            rule['object_max'] = rule.get('object_max', 0)
+            rule['object_max'] = rule.get('object_max', 5000)
             provided_object = VALIDATORS[rule['type']]['func'](rule)
             object_result = {}
             for k, v in rule['object_keys'].items():
@@ -220,17 +220,17 @@ class TinyShield():
             if param_type == "object":
                 child_rule['object_keys'] = source['object_keys']
                 child_rule['object_min'] = source.get('object_min', 1)
-                child_rule['object_max'] = source.get('object_max', 0)
+                child_rule['object_max'] = source.get('object_max', 5000)
             if param_type == "enum":
                 child_rule['enum_values'] = source['enum_values']
             if param_type == "array":
                 child_rule['array_type'] = source['array_type']
                 child_rule['object_keys'] = source.get('object_keys', {})
                 child_rule['array_min'] = source.get('array_min', 1)
-                child_rule['array_max'] = source.get('array_max', 0)
+                child_rule['array_max'] = source.get('array_max', 5000)
             if param_type == "text":
                 child_rule['min'] = source.get('min', 1)
-                child_rule['max'] = source.get('max', 0)
+                child_rule['max'] = source.get('max', 5000)
         except KeyError as e:
             raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
         return child_rule

@@ -79,9 +79,9 @@ def validate_array(rule):
 
 def validate_boolean(rule):
     # Could restrict this to ONLY True or False. Some tools like to use 0/1 or t/f so this function is inclusive
-    if str(rule['value']).lower() in ('1', 't', 'true') or rule['value'] === True:
+    if str(rule['value']).lower() in ('1', 't', 'true'):
         return True
-    elif str(rule['value']).lower() in ('0', 'f', 'false') or rule['value'] === False:
+    elif str(rule['value']).lower() in ('0', 'f', 'false'):
         return False
     else:
         msg = INVALID_TYPE_MSG.format(**rule) + '. Use true/false'
@@ -176,9 +176,7 @@ def validate_text(rule):
         ord('\r'): None,  # carriage return
         ord('\n'): None,  # newline
     }
-    text_type = rule.get('text_type', None)
-    if not text_type:
-        raise Exception("Model with text type is missing text_type paramter")
+    text_type = rule['text_type']
     if text_type not in SUPPORTED_TEXT_TYPES:
         msg = 'Invalid model {key}: \'{text_type}\' is not a valid text_type'.format(**rule)
         raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
