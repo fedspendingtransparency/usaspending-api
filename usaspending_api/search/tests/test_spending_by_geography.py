@@ -59,6 +59,7 @@ def test_spending_by_geography_subawards_success(client):
             "filters": all_filters(),
             "subawards": True
         }))
+    raise Exception(resp.content)
     assert resp.status_code == status.HTTP_200_OK
 
 
