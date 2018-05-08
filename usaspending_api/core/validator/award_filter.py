@@ -1,5 +1,5 @@
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR, MAX_ITEMS
 
 
 AWARD_FILTER = [
@@ -52,7 +52,7 @@ for a in AWARD_FILTER:
     a['key'] = 'filters{sep}{name}'.format(sep=TINY_SHIELD_SEPARATOR, name=a['name'])
     if a['type'] == 'array':
         a['array_min'] = a.get('array_min', 1)
-        a['array_max'] = a.get('array_max', 5000)
+        a['array_max'] = a.get('array_max', MAX_ITEMS)
     if a['type'] == 'object':
         a['object_min'] = a.get('object_min', 1)
-        a['object_max'] = a.get('object_max', 5000)
+        a['object_max'] = a.get('object_max', MAX_ITEMS)

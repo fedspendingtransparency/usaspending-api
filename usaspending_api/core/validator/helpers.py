@@ -12,6 +12,7 @@ MAX_INT = sys.maxsize  # == 2^(63-1) == 9223372036854775807
 MIN_INT = -sys.maxsize - 1  # == -2^(63-1) - 1 == 9223372036854775808
 MAX_FLOAT = sys.float_info.max  # 1.7976931348623157e+308
 MIN_FLOAT = sys.float_info.min  # 2.2250738585072014e-308
+MAX_ITEMS = 5000
 
 TINY_SHIELD_SEPARATOR = '|'
 
@@ -25,14 +26,14 @@ SUPPORTED_TEXT_TYPES = ['search', 'raw', 'sql', 'url', 'password']
 def _check_max(rule):
     value = rule['value']
     if rule['type'] in ('integer', 'float'):
-        if value > rule['max'] and rule['max'] != 0:
+        if value > rule['max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
     if rule['type'] in ('text', 'enum'):
-        if len(value) > rule['max'] and rule['max'] != 0:
+        if len(value) > rule['max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
     if rule['type'] in ('array', 'object'):
-        if len(value) > rule[rule['type']+'_max'] and rule[rule['type']+'_max'] != 0:
+        if len(value) > rule[rule['type']+'_max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
 
 
