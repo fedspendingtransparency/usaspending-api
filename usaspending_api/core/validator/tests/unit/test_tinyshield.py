@@ -43,8 +43,8 @@ FILTER_OBJ = {
             ],
             "time_period": [
                 {
-                    "start_date": "2001-01-01",
-                    "end_date": "2001-01-31"
+                    "start_date": "2008-01-01",
+                    "end_date": "2011-01-31"
                 }
             ],
             "place_of_performance_scope": "domestic",
