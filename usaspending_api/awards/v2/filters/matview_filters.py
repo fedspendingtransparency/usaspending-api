@@ -105,11 +105,10 @@ def matview_search_filter(filters, model, for_downloads=False):
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())
 
-            if len(value) != 0:
-                filter_obj = Q(type__in=value)
-                if idv_flag:
-                    filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
-                queryset &= model.objects.filter(filter_obj)
+            filter_obj = Q(type__in=value)
+            if idv_flag:
+                filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
