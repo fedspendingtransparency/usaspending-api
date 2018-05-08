@@ -64,8 +64,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
-        queryset = subaward_filter(filters) if subawards else spending_over_time(filters) \
-            .values('action_date', 'generated_pragmatic_obligation')
+
+        if subawards:
+            queryset = subaward_filter(filters)
+        else:
+            queryset = spending_over_time(filters).values('action_date', 'generated_pragmatic_obligation')
 
         # build response
         response = {'group': group, 'results': []}
@@ -86,8 +89,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         else:
             queryset = queryset.values('fiscal_year')
             if group in ('fy', 'fiscal_year'):
-                data_set = queryset.annotate(transaction_amount=Sum('generated_pragmatic_obligation')). \
-                values('fiscal_year', 'transaction_amount')
+                data_set = queryset \
+                    .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'transaction_amount')
             else:
                 # quarterly also takes months and aggregates the data
                 data_set = queryset \
@@ -531,12 +535,19 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
 
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', *lookup_fields)
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
         results = [{
             'shape_code': x[loc_lookup],
             'aggregated_amount': x['transaction_amount'],
@@ -567,14 +578,23 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
             .annotate(code_as_float=Cast(loc_lookup, FloatField()))
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', 'code_as_float', *fields_list)
 
         return self.geo_queryset
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
+
         results = [{
             'shape_code': code_to_state.get(x[state_lookup])['fips'] + pad_codes(self.geo_layer, x['code_as_float']),
             'aggregated_amount': x['transaction_amount'],
@@ -585,6 +605,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
+        from usaspending_api.common.helpers import generate_raw_quoted_query
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
+
         results = [{
             'shape_code': code_to_state.get(x[state_lookup])['fips'] + pad_codes(self.geo_layer, x['code_as_float']),
             'aggregated_amount': x['transaction_amount'],
