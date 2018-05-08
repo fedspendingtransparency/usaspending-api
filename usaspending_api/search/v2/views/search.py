@@ -418,11 +418,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def post(self, request):
         models = [
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
-            {'name': 'scope', 'key': 'scope', 'type': 'enum', 
+            {'name': 'scope', 'key': 'scope', 'type': 'enum',
              'enum_values': ['place_of_performance', 'recipient_location']},
-            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum', 
+            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum',
              'enum_values': ['state', 'county', 'district']},
-            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters', 
+            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters',
              'type': 'array', 'array_type': 'text', 'text_type': 'search'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
