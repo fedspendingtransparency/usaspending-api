@@ -596,11 +596,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(self.request.path)
-        print(generate_raw_quoted_query(self.geo_queryset))
-
         results = [{
             'shape_code': code_to_state.get(x[state_lookup])['fips'] + pad_codes(self.geo_layer, x['code_as_float']),
             'aggregated_amount': x['transaction_amount'],
