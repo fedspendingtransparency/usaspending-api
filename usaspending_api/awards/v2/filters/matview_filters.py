@@ -100,7 +100,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_datetime_queryset(value, model, "action_date", min_date, API_MAX_DATE, )
+            queryset &= combine_datetime_queryset(value, model, "action_date", min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())
@@ -108,7 +108,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             if len(value) != 0:
                 filter_obj = Q(type__in=value)
                 if idv_flag:
-                    filter_obj |= Q(pulled_from='IDV')
+                    filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":

@@ -678,13 +678,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:  # assistance data
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
-            # if sort == "Award ID":
-            #     sort_filters = ["award__piid", "award__fain"] if subawards else ["piid", "fain", "uri"]
-            # if order == "desc":
-            #     sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
-
-            # queryset = queryset.order_by(*sort_filters).values(*list(values))
-
+            # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
             if sort == "Award ID" and subawards:
                 if order == "desc":
                     queryset = queryset.order_by(
@@ -711,10 +705,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(limited_queryset))
         has_next = len(limited_queryset) > limit
 
         results = []
@@ -818,11 +808,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         category_name = 'category' if not subawards else 'award_type'
 
         # DB hit here
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
-
         for award in queryset:
             if award[category_name] is None:
                 result_key = 'contracts' if not subawards else 'subcontracts'
