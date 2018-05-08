@@ -157,9 +157,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum',
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
-                'optional': False}
+                'optional': False},
             {'name': 'limit', 'type': 'integer', 'default': 10},
-            {'name': 'page', 'type': 'integer', 'default': 1},
+            {'name': 'page', 'type': 'integer', 'default': 1}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
