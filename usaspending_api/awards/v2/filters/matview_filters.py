@@ -1,6 +1,5 @@
 import logging
 import itertools
-from collections import OrderedDict
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -30,10 +29,6 @@ def matview_search_filter(filters, model):
 
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
-
-    if "keyword" in filters:
-        filters = OrderedDict(filters)
-        filters.move_to_end('keyword', last=False)
         
     for key, value in filters.items():
         if value is None:
@@ -71,6 +66,10 @@ def matview_search_filter(filters, model):
 
         if key == "keyword":
             def keyword_parse(keyword):
+                # keyword_string & award_id_string are Postgres TS_vectors.
+                # keyword_string = recipient_name + naics_code + naics_description
+                #     + psc_description + awards_description
+                # award_id_string = piid + fain + uri
                 filter_obj = Q(keyword_ts_vector=keyword) | \
                     Q(award_ts_vector=keyword)
                 if keyword.isnumeric():
@@ -87,18 +86,7 @@ def matview_search_filter(filters, model):
             if len(potential_DUNS) > 0:
                 filter_obj |=Q(recipient_unique_id__in=potential_DUNS) | \
                     Q(parent_recipient_unique_id__in=potential_DUNS)
-            
-            # keyword_string & award_id_string are Postgres TS_vectors.
-            # keyword_string = recipient_name + naics_code + naics_description
-            #     + psc_description + awards_description
-            # award_id_string = piid + fain + uri
-            #query = "|".join(value)
-            #db_table = model._meta.db_table
-
-            #where_clause = '''"{0}"."keyword_ts_vector" @@ (to_tsquery(%s)) = true
-             #                OR "{1}"."award_ts_vector" @@ (to_tsquery(%s)) = true'''.format(db_table, db_table)
-            
-            #queryset = queryset.extra(where=[where_clause], params=[query, query])
+    
             queryset = queryset.filter(filter_obj) 
             
 

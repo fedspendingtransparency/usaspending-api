@@ -169,7 +169,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
         category = json_request["category"]
         scope = json_request.get("scope", None)
-        filters = json_request("filters", None)
+        filters = json_request.get("filters", None)
         limit = json_request["limit"]
         page = json_request["page"]
 
@@ -856,7 +856,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text',
-             'text_type': 'search', 'optional': False},
+             'text_type': 'search', 'optional': False,  'min': 3},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -905,7 +905,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
         """
 
         models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array',
-                  'array_type': 'text', 'text_type': 'search', 'optional': False}]
+                  'array_type': 'text', 'text_type': 'search', 'optional': False,  'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
