@@ -158,8 +158,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             {'name': 'category', 'key': 'category', 'type': 'enum',
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
                 'optional': False},
-            {'name': 'limit', 'type': 'integer', 'default': 10},
-            {'name': 'page', 'type': 'integer', 'default': 1}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -630,9 +628,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
-            {'name': 'limit', 'type': 'integer', 'default': 10},
-            {'name': 'page', 'type': 'integer', 'default': 1}
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
