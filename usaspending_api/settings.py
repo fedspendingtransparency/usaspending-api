@@ -159,6 +159,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+API_VERSION = 2
+
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
@@ -629,5 +631,3 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
 }
-
-API_VERSION = 2

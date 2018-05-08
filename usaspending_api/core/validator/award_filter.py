@@ -3,7 +3,7 @@ from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
 
 
 AWARD_FILTER = [
-    {'name': 'award_ids', 'type': 'array', 'array_type': 'text', 'text_type':'search'},
+    {'name': 'award_ids', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'award_type_codes', 'type': 'array', 'array_type': 'enum',
      'enum_values': list(award_type_mapping.keys())},
     {'name': 'contract_pricing_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
@@ -14,7 +14,7 @@ AWARD_FILTER = [
     {'name': 'place_of_performance_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
     {'name': 'program_numbers', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'psc_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-    {'name': 'recipient_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
+    {'name': 'recipient_scope', 'type': 'enum', 'enum_values': ('domestic', 'foreign')},
     {'name': 'recipient_search_text', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'recipient_type_names', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'set_aside_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
@@ -52,7 +52,7 @@ for a in AWARD_FILTER:
     a['key'] = 'filters{sep}{name}'.format(sep=TINY_SHIELD_SEPARATOR, name=a['name'])
     if a['type'] == 'array':
         a['array_min'] = a.get('array_min', 1)
-        a['array_max'] = a.get('array_max', 0)
+        a['array_max'] = a.get('array_max', 5000)
     if a['type'] == 'object':
         a['object_min'] = a.get('object_min', 1)
-        a['object_max'] = a.get('object_max', 0)
+        a['object_max'] = a.get('object_max', 5000)
