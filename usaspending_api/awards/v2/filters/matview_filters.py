@@ -6,7 +6,7 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
-from .filter_helpers import combine_datetime_queryset, total_obligation_queryset
+from .filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.search.v2 import elasticsearch_helper
@@ -100,7 +100,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_datetime_queryset(value, model, "action_date", min_date, API_MAX_DATE)
+            queryset &= combine_date_range_queryset(value, model, "action_date", min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())

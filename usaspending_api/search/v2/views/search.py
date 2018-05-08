@@ -115,11 +115,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
-            if group == 'm' or group == 'month':
+            if group in ('m', 'month'):
                 # generate the fiscal month
                 key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
                 nested_order = 'month'
-            elif group == 'q' or group == 'quarter':
+            elif group in ('q', 'quarter'):
                 # generate the fiscal quarter
                 key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
                 nested_order = 'quarter'

@@ -1,15 +1,17 @@
-from datetime import datetime, timedelta
 from collections import namedtuple
+from datetime import datetime
+from datetime import timedelta
 
 from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
 
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.common.helpers import generate_date_from_string
-from usaspending_api.common.helpers import dates_are_month_bookends
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import dates_are_month_bookends
+from usaspending_api.common.helpers import generate_date_from_string
+from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 
 
 Range = namedtuple('Range', ['start', 'end'])
@@ -21,7 +23,7 @@ def merge_date_ranges(date_range_list):
         While adjacent fiscal years do not overlap the desired behavior is to combine them
             FY2010 ends on 2010-09-30, FY2011 start on 2010-10-01.
         To address this, when comparing ranges 1 day is removed from the start date and 1 day is added to the end date
-        Then the overlapping ranges must be > 1 instead of 1
+        Then the overlapping ranges must be > 1 instead of > 0
         Inspired by Raymond Hettinger [https://stackoverflow.com/a/9044111]
     """
     ordered_list = sorted([sorted(t) for t in date_range_list])
@@ -31,7 +33,7 @@ def merge_date_ranges(date_range_list):
         latest_start = max(r.start, saved_range.start) + timedelta(days=-1)
         earliest_end = min(r.end, saved_range.end) + timedelta(days=1)
         delta = (earliest_end - latest_start).days + 1  # added since ranges are closed on both ends
-        if delta >= 2:  # since the ranges are extended by 2 days, the overlap needs to be at least 2 days
+        if delta > 1:  # since the overlap range is potentially extended by 1-2 days, the overlap needs to be at least 2 days
             saved_range = Range(start=min(saved_range.start, st), end=max(saved_range.end, en))
         else:
             yield saved_range
@@ -42,7 +44,7 @@ def merge_date_ranges(date_range_list):
 def date_list_to_queryset(date_list, table, action_date_column):
     or_queryset = Q()
     for v in date_list:
-        # Modified May 2018 so that there will always be a start and end value from combine_datetime_queryset()
+        # Modified May 2018 so that there will always be a start and end value from combine_date_range_queryset()
         kwargs = {
             "{}__gte".format(action_date_column): v["start_date"],
             "{}__lte".format(action_date_column): v["end_date"],
@@ -52,7 +54,7 @@ def date_list_to_queryset(date_list, table, action_date_column):
     return table.objects.filter(or_queryset)
 
 
-def combine_datetime_queryset(date_dicts, table, action_date_column, min_start, max_end, dt_format='%Y-%m-%d'):
+def combine_date_range_queryset(date_dicts, table, action_date_column, min_start, max_end, dt_format='%Y-%m-%d'):
     list_of_ranges = [
         (
             datetime.strptime(v.get('start_date', None) or min_start, dt_format),
