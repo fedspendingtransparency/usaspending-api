@@ -42,6 +42,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (search_transactions,
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
+
 API_TRANSFORM_FUNCTIONS = [
     transform_keyword,
 ]
@@ -161,15 +162,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             {'name': 'category', 'key': 'category', 'type': 'enum',
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
                 'optional': False}
+
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
-        category = json_request.get("category", None)
+        category = json_request["category"]
         scope = json_request.get("scope", None)
-        filters = json_request.get("filters", None)
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        filters = json_request("filters", None)
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
@@ -420,7 +422,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum',
+             'enum_values': ['place_of_performance', 'recipient_location']},
+            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum',
+             'enum_values': ['state', 'county', 'district']},
+            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters',
+             'type': 'array', 'array_type': 'text', 'text_type': 'search'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -637,14 +645,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filters = json_request.get("filters", None)
         subawards = json_request.get("subawards", False)
         order = json_request.get("order", "asc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
-
-        if type(subawards) is not bool:
-            raise InvalidParameterException('subawards does not have a valid value')
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
@@ -828,6 +833,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # ELASTIC SEARCH ENDPOINTS #
         # ONLY BELOW THIS POINT    #
     #  ###############################  #
+
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
