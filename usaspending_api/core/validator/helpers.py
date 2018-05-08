@@ -25,14 +25,14 @@ SUPPORTED_TEXT_TYPES = ['search', 'raw', 'sql', 'url', 'password']
 def _check_max(rule):
     value = rule['value']
     if rule['type'] in ('integer', 'float'):
-        if value > rule['max'] and rule['max'] != 0:
+        if value > rule['max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
     if rule['type'] in ('text', 'enum'):
-        if len(value) > rule['max'] and rule['max'] != 0:
+        if len(value) > rule['max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
     if rule['type'] in ('array', 'object'):
-        if len(value) > rule[rule['type']+'_max'] and rule[rule['type']+'_max'] != 0:
+        if len(value) > rule[rule['type']+'_max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
 
 

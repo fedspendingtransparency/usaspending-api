@@ -158,15 +158,17 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             {'name': 'category', 'key': 'category', 'type': 'enum',
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
                 'optional': False}
+            {'name': 'limit', 'type': 'integer', 'default': 10},
+            {'name': 'page', 'type': 'integer', 'default': 1},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
-        category = json_request.get("category", None)
+        category = json_request["category"]
         scope = json_request.get("scope", None)
-        filters = json_request.get("filters", None)
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        filters = json_request("filters", None)
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
@@ -628,7 +630,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
+            {'name': 'limit', 'type': 'integer', 'default': 10},
+            {'name': 'page', 'type': 'integer', 'default': 1}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -640,14 +644,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filters = json_request.get("filters", None)
         subawards = json_request.get("subawards", False)
         order = json_request.get("order", "asc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
-
-        if type(subawards) is not bool:
-            raise InvalidParameterException('subawards does not have a valid value')
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
@@ -901,8 +902,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array',
-                  'array_type': 'text', 'text_type': 'search', 'optional': False}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -921,8 +921,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type': 'text',
-                  'text_type': 'search', 'optional': False}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
         if not results:
