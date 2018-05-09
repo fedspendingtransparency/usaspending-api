@@ -143,12 +143,12 @@ class Command(BaseCommand):
     def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
         """Retrieve deletion files from S3 and append necessary records to the end of the the file"""
         logger.info('Retrieving deletion records from S3 files and appending to the CSV')
-        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.\
-            format(award_type, VALUE_MAPPINGS['transactions']['download_name']))
+        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.
+                                 format(award_type, VALUE_MAPPINGS['transactions']['download_name']))
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
-        subtier_agencies = list(SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code).\
-            values_list('subtier_code', flat=True))
+        subtier_agencies = list(SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code).
+                                values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
         added_rows = False
