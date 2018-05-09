@@ -118,10 +118,8 @@ class Command(BaseCommand):
         subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
-        # Deletion data comes from an S3 bucket
-        # if not settings.IS_LOCAL:
-            # Append deleted rows to the end of the file
-            # TODO set this to variable and ensure we do not create empty files
+        # Append deleted rows to the end of the file
+        # TODO set this to variable and ensure we do not create empty files
         self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
 
         # Split CSV into separate files
