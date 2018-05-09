@@ -369,6 +369,11 @@
       "name": "action_date_pre2008",
       "where": "action_date < '2007-10-01'",
       "columns": [{"name": "action_date"}]
+    }, {
+      "name": "fiscal_year_pre2008",
+      "where": "action_date < '2007-10-01'",
+      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}],
+      "__comment": "CAN BE REMOVED AFTER SPRINT 65"
     }
   ]
 }

@@ -220,6 +220,10 @@
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
+      "name": "fiscal_year",
+      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}],
+      "__comment": "CAN BE REMOVED AFTER SPRINT 65"
+    }, {
       "name": "awarding_agency_id",
       "where": "awarding_agency_id IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "awarding_agency_id", "order": "ASC NULLS LAST"}]
