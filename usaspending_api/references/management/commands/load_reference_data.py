@@ -30,9 +30,9 @@ class Command(BaseCommand):
 
         self.logger.info("Loading program_activity.csv")
         if settings.IS_LOCAL:
-            call_command('loadprogramactivity', 'usaspending_api/data/program_activity.csv')
+            call_command('load_program_activity', 'usaspending_api/data/program_activity.csv')
         else:
-            call_command('loadprogramactivity')
+            call_command('load_program_activity')
 
         self.logger.info("Loading ref_city_county_code.csv")
         call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv',
