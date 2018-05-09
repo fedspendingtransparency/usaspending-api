@@ -18,7 +18,6 @@ from django.conf import settings
 from usaspending_api.awards.models import Subaward
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
-from usaspending_api.awards.v2.filters.filter_helpers import transform_keyword
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -29,7 +28,7 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
                                                        contract_subaward_mapping, grant_subaward_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
-from usaspending_api.common.decorators import api_transformations
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
@@ -42,10 +41,6 @@ from usaspending_api.search.v2.elasticsearch_helper import (search_transactions,
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
-
-API_TRANSFORM_FUNCTIONS = [
-    transform_keyword,
-]
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -861,7 +856,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
-            if m['name'] in ('keyword', 'award_type_codes', 'sort'):
+            if m['name'] in ('keywords', 'award_type_codes', 'sort'):
                 m['optional'] = False
         validated_payload = TinyShield(models).block(request.data)
 
@@ -904,7 +899,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array',
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array',
                   'array_type': 'text', 'text_type': 'search', 'optional': False,  'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
@@ -924,7 +919,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'array', 'array_type': 'text',
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array', 'array_type': 'text',
                   'text_type': 'search', 'optional': False}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)

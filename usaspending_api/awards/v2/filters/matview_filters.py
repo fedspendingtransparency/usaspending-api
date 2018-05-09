@@ -174,19 +174,14 @@ def matview_search_filter(filters, model):
                 queryset &= model.objects.filter(recipient_id__in=in_query)
 
         elif key == "recipient_search_text":
-            if len(value) < 1:
-                raise InvalidParameterException('Invalid filter: recipient_search_text must have at least one value.')
-            all_filters_obj = None
+            all_filters_obj = Q()
             for recip in value:
                 upper_recipient_string = str(recip).upper()
                 # recipient_name_ts_vector is a postgres TS_Vector
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
-                if not all_filters_obj:
-                    all_filters_obj = filter_obj
-                else:
-                    all_filters_obj |= filter_obj
+                all_filters_obj |= filter_obj
             queryset &= model.objects.filter(all_filters_obj)
 
         elif key == "recipient_scope":

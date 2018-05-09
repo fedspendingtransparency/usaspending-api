@@ -1,6 +1,6 @@
 def all_filters():
     return {
-        "keyword": "test",
+        "keywords": ["test", "testing"],
         "time_period": [
             {
                 "start_date": "2016-10-01",

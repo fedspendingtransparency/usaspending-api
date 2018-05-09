@@ -24,7 +24,7 @@ def subaward_filter(filters):
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = [
-            'keyword',
+            'keywords',
             'elasticsearch_keyword',
             'time_period',
             'award_type_codes',
@@ -49,70 +49,74 @@ def subaward_filter(filters):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        if key == "keyword":
-            keyword = value  # alias
+        if key == "keywords":
 
             # description_match = False
             # description_qs = queryset.filter(description__icontains=keyword)
             # if description_qs.exists():
             #     description_match = True
+            def keyword_parse(keyword, queryset):
+                recipient_match = False
+                recipient_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                    recipient_name__icontains=keyword)
+                if recipient_list.exists():
+                    recipient_match = True
+                    recipient_qs = queryset.filter(recipient__in=recipient_list)
 
-            recipient_match = False
-            recipient_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                recipient_name__icontains=keyword)
-            if recipient_list.exists():
-                recipient_match = True
-                recipient_qs = queryset.filter(recipient__in=recipient_list)
+                # Commenting out until NAICS is associated with subawards
+                # naics_match = False
+                # if keyword.isnumeric():
+                #     naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+                # else:
+                #     naics_list = NAICS.objects.all().filter(
+                #         description__icontains=keyword).values('code')
+                # if naics_list.exists():
+                #     naics_match = True
+                #     naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
 
-            # Commenting out until NAICS is associated with subawards
-            # naics_match = False
-            # if keyword.isnumeric():
-            #     naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
-            # else:
-            #     naics_list = NAICS.objects.all().filter(
-            #         description__icontains=keyword).values('code')
-            # if naics_list.exists():
-            #     naics_match = True
-            #     naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
+                psc_match = False
+                if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+                    psc_list = PSC.objects.all().filter(code=keyword).values('code')
+                else:
+                    psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+                if psc_list.exists():
+                    psc_match = True
+                    psc_qs = queryset.filter(
+                        award__latest_transaction__contract_data__product_or_service_code__in=psc_list)
 
-            psc_match = False
-            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_list = PSC.objects.all().filter(code=keyword).values('code')
-            else:
-                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
-            if psc_list.exists():
-                psc_match = True
-                psc_qs = queryset.filter(
-                    award__latest_transaction__contract_data__product_or_service_code__in=psc_list)
+                duns_match = False
+                non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                    recipient_unique_id=keyword)
+                parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                    parent_recipient_unique_id=keyword)
+                duns_list = non_parent_duns_list | parent_duns_list
+                if duns_list.exists():
+                    duns_match = True
+                    duns_qs = queryset.filter(recipient__in=duns_list)
 
-            duns_match = False
-            non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                recipient_unique_id=keyword)
-            parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                parent_recipient_unique_id=keyword)
-            duns_list = non_parent_duns_list | parent_duns_list
-            if duns_list.exists():
-                duns_match = True
-                duns_qs = queryset.filter(recipient__in=duns_list)
+                piid_qs = queryset.filter(award__piid=keyword)
+                fain_qs = queryset.filter(award__fain=keyword)
+                subaward_num_qs = queryset.filter(subaward_number=keyword)
 
-            piid_qs = queryset.filter(award__piid=keyword)
-            fain_qs = queryset.filter(award__fain=keyword)
-            subaward_num_qs = queryset.filter(subaward_number=keyword)
-
-            # Always filter on fain/piid because fast:
-            queryset = piid_qs
-            queryset |= fain_qs
-            queryset |= subaward_num_qs
-            # if description_match:
-            #     queryset |= description_qs
-            if recipient_match:
-                queryset |= recipient_qs
-            # if naics_match:
-            #     queryset |= naics_qs
-            if psc_match:
-                queryset |= psc_qs
-            if duns_match:
-                queryset |= duns_qs
+                # Always filter on fain/piid because fast:
+                queryset = piid_qs
+                queryset |= fain_qs
+                queryset |= subaward_num_qs
+                # if description_match:
+                #     queryset |= description_qs
+                if recipient_match:
+                    queryset |= recipient_qs
+                # if naics_match:
+                #     queryset |= naics_qs
+                if psc_match:
+                    queryset |= psc_qs
+                if duns_match:
+                    queryset |= duns_qs
+                return queryset
+            keyword_qs = Q()
+            for keyword in value:
+                keyword_qs = |keyword_parse(keyword, queryset)
+            queryset = keyword_qs
 
         elif key == "elasticsearch_keyword":
             keyword = value
@@ -219,15 +223,16 @@ def subaward_filter(filters):
                 queryset &= Subaward.objects.filter(recipient__legal_entity_id__in=or_queryset)
 
         elif key == "recipient_search_text":
-            if len(value) != 1:
-                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
-            recipient_string = str(value[0])
+            def recip_string_parse(recipient_string):
 
-            filter_obj = Q(recipient__recipient_name__icontains=recipient_string)
+                filter_obj = Q(recipient__recipient_name__icontains=recipient_string)
 
-            if len(recipient_string) == 9:
-                filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
-
+                if len(recipient_string) == 9:
+                    filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
+                return filter_obj
+            filter_obj= Q()
+            for recip in value:
+                filter_obj |= recip_string_parse(recip)
             queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "recipient_scope":

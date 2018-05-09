@@ -1,6 +1,10 @@
 from django.utils.decorators import method_decorator
 from usaspending_api.common.exceptions import InvalidParameterException
 
+API_TRANSFORM_FUNCTIONS = [
+    transform_keyword,
+]
+
 
 def api_transformations(api_version, function_list):
     """

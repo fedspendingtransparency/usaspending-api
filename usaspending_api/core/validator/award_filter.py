@@ -8,7 +8,7 @@ AWARD_FILTER = [
      'enum_values': list(award_type_mapping.keys())},
     {'name': 'contract_pricing_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'extent_competed_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-    {'name': 'keyword', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+    {'name': 'keywords', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'legal_entities', 'type': 'array', 'array_type': 'integer'},
     {'name': 'naics_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'place_of_performance_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
