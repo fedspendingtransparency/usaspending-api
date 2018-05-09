@@ -40,7 +40,6 @@ script:
 - psql $DATABASE_URL -f temp_sql/summary_view.sql -v ON_ERROR_STOP=1
 
 
-
 after_success:
 - codeclimate-test-reporter
 #- coveralls
