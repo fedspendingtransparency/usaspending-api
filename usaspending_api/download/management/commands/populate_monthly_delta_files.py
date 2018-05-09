@@ -97,6 +97,8 @@ class Command(BaseCommand):
     def create_local_file(self, award_type, source, agency_code, generate_since):
         """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         logger.info('Generating CSV file with creations and modifications')
+        
+        # We pass None to row_emitter() in order to request all headers
         source_query = source.row_emitter(None)
 
         # Create file paths and working directory
@@ -246,11 +248,9 @@ class Command(BaseCommand):
 
     def parse_filters(self, award_types, agency):
         """Convert readable filters to a filter object usable for the matview filter"""
-        award_type_codes = []
-        for award_type in award_types:
-            award_type_codes = award_type_codes + all_award_types_mappings[award_type]
-
-        filters = {'award_type_codes': award_type_codes}
+        filters = {
+            'award_type_codes': [all_award_types_mappings[award_type] for award_type in award_types]
+        }
         agency_code = agency
         if agency != 'all':
             agency_code = agency['cgac_code']
