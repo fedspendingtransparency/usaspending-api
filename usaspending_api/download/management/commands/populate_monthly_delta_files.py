@@ -74,7 +74,7 @@ class Command(BaseCommand):
             # Generate file
             file_path = self.create_local_file(self, award_type, source_query, source, agency_code)
 
-            if not settings.is_local:
+            if not settings.IS_LOCAL:
                 # Upload file to S3
                 multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
                                  os.path.basename(file_path))
@@ -116,7 +116,7 @@ class Command(BaseCommand):
         os.remove(temp_sql_file_path)
         shutil.rmtree(working_dir)
 
-        return source_path
+        return zipfile_path
 
     def apply_annotations_to_sql(self, raw_query, aliases):
         """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
@@ -155,7 +155,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add arguments to the parser"""
-        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=int,
+        parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=str,
                             help='Specific toptier agency database ids. Note \'all\' may be provided to account for '
                                  'the downloads that comprise all agencies. Defaults to \'all\' and all individual '
                                  'agencies.')
