@@ -12,7 +12,6 @@ from usaspending_api.awards.models_matviews import UniversalAwardView, Universal
 from usaspending_api.search.v2 import elasticsearch_helper
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,13 +28,13 @@ def matview_search_filter(filters, model):
 
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
-        
+
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = [
-            'keyword',
+            'keywords',
             'elasticsearch_keyword',
             'time_period',
             'award_type_codes',
@@ -64,7 +63,7 @@ def matview_search_filter(filters, model):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        if key == "keyword":
+        if key == "keywords":
             def keyword_parse(keyword):
                 # keyword_string & award_id_string are Postgres TS_vectors.
                 # keyword_string = recipient_name + naics_code + naics_description
@@ -84,14 +83,13 @@ def matview_search_filter(filters, model):
                 filter_obj |= keyword_parse(keyword)
             potential_DUNS = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
             if len(potential_DUNS) > 0:
-                filter_obj |=Q(recipient_unique_id__in=potential_DUNS) | \
+                filter_obj |= Q(recipient_unique_id__in=potential_DUNS) | \
                     Q(parent_recipient_unique_id__in=potential_DUNS)
-    
-            queryset = queryset.filter(filter_obj) 
-            
+
+            queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
-            keyword = value
+            keyword = " ".join(value)
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))

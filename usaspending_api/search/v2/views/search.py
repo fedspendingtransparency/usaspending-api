@@ -830,7 +830,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     #  ###############################  #
 
 
-
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByTransactionVisualizationViewSet(APIView):
     """

@@ -35,7 +35,6 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
 
-
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)

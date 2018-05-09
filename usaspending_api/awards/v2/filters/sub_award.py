@@ -115,7 +115,7 @@ def subaward_filter(filters):
                 return queryset
             keyword_qs = Q()
             for keyword in value:
-                keyword_qs = |keyword_parse(keyword, queryset)
+                keyword_qs |= keyword_parse(keyword, queryset)
             queryset = keyword_qs
 
         elif key == "elasticsearch_keyword":
@@ -230,7 +230,7 @@ def subaward_filter(filters):
                 if len(recipient_string) == 9:
                     filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
                 return filter_obj
-            filter_obj= Q()
+            filter_obj = Q()
             for recip in value:
                 filter_obj |= recip_string_parse(recip)
             queryset &= Subaward.objects.filter(filter_obj)
