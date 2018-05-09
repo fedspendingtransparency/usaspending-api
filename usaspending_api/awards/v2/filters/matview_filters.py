@@ -130,8 +130,6 @@ def matview_search_filter(filters, model):
                         else:
                             funding_subtier |= Q(funding_subtier_agency_name=name)
 
-                    else:
-                        raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
@@ -141,10 +139,6 @@ def matview_search_filter(filters, model):
                                                  Q(awarding_toptier_agency_name=v['toptier_name']))
                         else:
                             awarding_subtier |= Q(awarding_subtier_agency_name=name)
-                    else:
-                        raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
-                else:
-                    raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
             awarding_queryfilter = Q()
             funding_queryfilter = Q()
@@ -162,9 +156,12 @@ def matview_search_filter(filters, model):
             queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset &= model.objects.filter(recipient_id__in=in_query)
+            # This filter key has effectively become obsolete by recipient_search_text
+            msg = 'API request included "{}" key. No filtering will occur with provided value "{}"'
+            logger.info(msg.format(key, value))
+            # in_query = [v for v in value]
+            # if len(in_query) != 0:
+            #     queryset &= model.objects.filter(recipient_id__in=in_query)
 
         elif key == "recipient_search_text":
             if len(value) != 1:
@@ -211,18 +208,15 @@ def matview_search_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            success, and_queryset = total_obligation_queryset(value, model, filters)
-            if success:
-                queryset &= and_queryset
+            queryset &= total_obligation_queryset(value, model, filters)
 
         elif key == "award_ids":
-            if len(value) != 0:
-                filter_obj = Q()
-                for val in value:
-                    # award_id_string is a Postgres TS_vector
-                    # award_id_string = piid + fain + uri
-                    filter_obj |= Q(award_ts_vector=val)
-                queryset &= model.objects.filter(filter_obj)
+            filter_obj = Q()
+            for val in value:
+                # award_id_string is a Postgres TS_vector
+                # award_id_string = piid + fain + uri
+                filter_obj |= Q(award_ts_vector=val)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":
             in_query = [v for v in value]
