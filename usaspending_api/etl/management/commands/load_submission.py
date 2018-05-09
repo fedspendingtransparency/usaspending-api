@@ -219,13 +219,14 @@ def get_or_create_program_activity(row, submission_attributes):
                'program_activity_name': row['program_activity_name'].upper(),
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
+               'allocation_transfer_agency_id': row['allocation_transfer_agency'],
                'main_account_code': row['main_account_code'], }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
         # If the PA has a blank name, create it with the value in the row.
         # PA loader should overwrite the names for the unique PAs from the official
         # domain values list if the title needs updating, but for now grab it from the submission
-        prg_activity = RefProgramActivity.objects.create(**filters, program_activity_name=row['program_activity_name'])
+        prg_activity = RefProgramActivity.objects.create(**filters)
         # logger.warning('Created missing program activity record for {}'.format(str(filters)))
 
     return prg_activity
