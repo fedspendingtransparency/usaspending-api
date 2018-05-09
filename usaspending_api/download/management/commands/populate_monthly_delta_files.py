@@ -32,8 +32,8 @@ AWARD_MAPPINGS = {
         'model': 'contract_data',
         'unique_iden': 'detached_award_proc_unique',
         'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}\.csv'),
-        'columns': {
-            0: 'awarding_sub_agency_code', 2: 'award_id_piid', 3: 'modification_number',
+        'column_headers': {
+            0: 'awarding_sub_agency_code', 1: 'unused_column', 2: 'award_id_piid', 3: 'modification_number',
             4: 'parent_award_id', 5: 'transaction_number'
         }
     },
@@ -45,7 +45,7 @@ AWARD_MAPPINGS = {
         'model': 'assistance_data',
         'unique_iden': 'afa_generated_unique',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}\.csv'),
-        'columns': {
+        'column_headers': {
             0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
         }
     }
@@ -79,24 +79,25 @@ class Command(BaseCommand):
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
-        source_query = source.row_emitter(None)
 
         # Generate file
-        file_path = self.create_local_file(award_type, source_query, source, agency_code, generate_since)
+        file_path = self.create_local_file(award_type, source, agency_code, generate_since)
 
-        if not settings.is_local:
+        if not settings.IS_LOCAL:
             # Upload file to S3
             multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
                              os.path.basename(file_path))
             # Delete file
             os.remove(file_path)
 
-    def create_local_file(self, award_type, source_query, source, agency_code, generate_since):
+    def create_local_file(self, award_type, source, agency_code, generate_since):
+        source_query = source.row_emitter(None)
+
         # Create file paths and working directory
         working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
-        source_name = '{}_{}'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
+        source_name = '{}_{}_delta'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
         # Create a unique temporary file with the raw query
@@ -111,14 +112,15 @@ class Command(BaseCommand):
         subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
-        added_rows = False
-        if not settings.is_local:
-            added_rows = self.add_deletion_records(working_dir, award_type, agency_code, source_path, generate_since,
-                                                   source.columns)
+        # Deletion data comes from an S3 bucket
+        if not settings.IS_LOCAL:
+            # Append deleted rows to the end of the file
+            # TODO set this to variable and ensure we do not create empty files
+            self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
 
         # Split CSV into separate files
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                               output_name_template='{}_delta_%s.csv'.format(source_name))
+                               output_name_template='{}_%s.csv'.format(source_name))
 
         # Zip the split CSVs into one zipfile
         zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
@@ -131,60 +133,86 @@ class Command(BaseCommand):
         os.remove(temp_sql_file_path)
         shutil.rmtree(working_dir)
 
-        return source_path
+        return zipfile_path
 
-    def add_deletion_records(self, working_dir, award_type, agency_code, file_path, generate_since, headers):
-        award_map = AWARD_MAPPINGS[award_type]
-
-        bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME or 'fpds-deleted-records'
-        region_name = settings.BULK_DOWNLOAD_AWS_REGION or 'us-gov-west-1'
-        bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+    def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
+        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.format(award_type,
+                                                                       VALUE_MAPPINGS['transactions']['download_name']))
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
         subtier_agencies = SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code)
 
         # Create a list of keys in the bucket that match the date range we want
         added_rows = False
+        bucket = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
         for key in bucket.list():
-            rematch = re.match(award_map['match'], key.name)
-            if rematch and date(int(rematch.group('year')), int(rematch.group('month')), int(rematch.group('day'))) > \
-               datetime.strptime(generate_since, "%Y-%m-%d").date():
+            re_match = re.match(AWARD_MAPPINGS[award_type]['match'], key.name)
+            match_date = self.check_regex_match(re_match, generate_since)
+            if match_date:
                 # Create a local copy of the deletion file
                 delete_filepath = '{}{}'.format(working_dir, key.name)
                 key.get_contents_to_filename(delete_filepath)
                 df = pd.read_csv(delete_filepath)
                 os.remove(delete_filepath)
 
-                # Split deleted unique identifier into usable columns
-                df = df[award_map['unique_iden']] \
-                    .apply(lambda x: pd.Series(x.split('_'))) \
-                    .replace('-none-', '', regex=True) \
-                    .rename(columns=award_map['columns'])
+                # Split unique identifier into usable columns and add unused columns
+                df = df[AWARD_MAPPINGS[award_type]['unique_iden']].apply(lambda x: pd.Series(x.split('_'))) \
+                    .replace('-none-', '', regex=True).replace('-NONE-', '', regex=True) \
+                    .rename(columns=AWARD_MAPPINGS[award_type]['column_headers'])
 
-                # Skip empty files
+                # Only include records within the correct agency, and populated files
                 if len(df.index) == 0:
                     continue
-
-                # Only include records within the correct agency
                 if agency_code != 'all':
                     df = df[df['awarding_sub_agency_code'].isin(list(subtier_agencies.values_list('subtier_code',
                                                                                                   flat=True)))]
+                    if len(df.index) == 0:
+                        continue
 
-                # Skip files that do not include deletions for this agency
-                if len(df.index) == 0:
-                    continue
+                # Add and reorder columns to make it CSV-ready
+                df = self.organize_deletion_columns(source, df, award_type, match_date)
 
                 # Append records to the end of the Delta file
                 added_rows = True
-                if award_type == 'Contracts':
-                    df.drop(columns=1)
-                for header in headers:
-                    if header not in list(award_map['columns'].values()):
-                        df[header] = [''] * len(df.index)
-                with open(file_path, 'a') as delta_file:
-                    df.to_csv(path_or_buf=delta_file, mode='a', header=False)
+                df.to_csv(file_path, mode='a', header=False, index=False)
 
         return added_rows
+
+    def organize_deletion_columns(self, source, dataframe, award_type, match_date):
+        """Ensure that the dataframe has all necessary columns in the correct order"""
+        if award_type == 'Contracts':
+            dataframe = dataframe.drop(['unused_column'], axis=1)
+            ordered_columns = ['correction_delete_ind'] + source.columns(None)
+        else:
+            ordered_columns = source.columns(None)
+
+        # Loop through columns and give empty (or specifically-populated) rows for each
+        for header in ordered_columns:
+            if header == 'correction_delete_ind':
+                dataframe['correction_delete_ind'] = ['D'] * len(dataframe.index)
+
+            elif header == 'last_modified_date':
+                dataframe['last_modified_date'] = [match_date] * len(dataframe.index)
+
+            elif header not in list(AWARD_MAPPINGS[award_type]['column_headers'].values()):
+                dataframe[header] = [''] * len(dataframe.index)
+
+        # Ensure columns are in correct order
+        return dataframe[ordered_columns]
+
+    def check_regex_match(self, re_match, generate_since):
+        """Create a date object from a regular expression match"""
+        if not re_match:
+            return False
+
+        year = re_match.group('year')
+        month = re_match.group('month')
+        day = re_match.group('day')
+
+        if date(int(year), int(month), int(day)) < datetime.strptime(generate_since, "%Y-%m-%d").date():
+            return False
+
+        return '{}-{}-{}'.format(year, month, day)
 
     def apply_annotations_to_sql(self, raw_query, aliases):
         """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
