@@ -63,6 +63,9 @@ class Command(BaseCommand):
                 '_' + \
                 (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else '-NONE-')
         else:
+            # For assistance awards, 'ASST_AW_' is NOT prepended because we are unable to build the full unique
+            # identifier since all the required fields to do so are not provided by the subaward tables from the source.
+            # Therefore, we can only use the FAIN to find the closest match instead of generated_unique_award_id.
             return row['fain'].replace('-', '')
 
     def get_award(self, row, award_type):
