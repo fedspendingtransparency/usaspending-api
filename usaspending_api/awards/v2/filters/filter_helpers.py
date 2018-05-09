@@ -33,12 +33,12 @@ def merge_date_ranges(date_range_list):
         latest_start = max(r.start, saved_range.start) + timedelta(days=-1)
         earliest_end = min(r.end, saved_range.end) + timedelta(days=1)
         delta = (earliest_end - latest_start).days + 1  # added since ranges are closed on both ends
-        if delta > 1:  # since the overlap range is potentially extended by 1-2 days, the overlap needs to be at least 2 days
+        if delta > 1:  # since the overlap is potentially extended by 1-2 days, the overlap needs to be at least 2 days
             saved_range = Range(start=min(saved_range.start, st), end=max(saved_range.end, en))
         else:
-            yield saved_range
+            yield (saved_range.start, saved_range.end)
             saved_range = Range(start=st, end=en)
-    yield saved_range
+    yield (saved_range.start, saved_range.end)
 
 
 def date_list_to_queryset(date_list, table, action_date_column):
