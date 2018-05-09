@@ -31,9 +31,9 @@ AWARD_MAPPINGS = {
         'letter_name': 'd1',
         'model': 'contract_data',
         'unique_iden': 'detached_award_proc_unique',
-        'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}\.csv'),
+        'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}.csv'),
         'column_headers': {
-            0: 'awarding_sub_agency_code', 1: 'unused_column', 2: 'award_id_piid', 3: 'modification_number',
+            0: 'awarding_sub_agency_code', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
             4: 'parent_award_id', 5: 'transaction_number'
         }
     },
@@ -44,7 +44,7 @@ AWARD_MAPPINGS = {
         'letter_name': 'd2',
         'model': 'assistance_data',
         'unique_iden': 'afa_generated_unique',
-        'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}\.csv'),
+        'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
         'column_headers': {
             0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
         }
@@ -143,19 +143,20 @@ class Command(BaseCommand):
         return zipfile_path
 
     def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
+        """Retrieve deletion files from S3 and append necessary records to the end of the the file"""
         logger.info('Retrieving deletion records from S3 files and appending to the CSV')
-        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.format(award_type,
-                                                                       VALUE_MAPPINGS['transactions']['download_name']))
+        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.\
+            format(award_type, VALUE_MAPPINGS['transactions']['download_name']))
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
-        subtier_agencies = SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code)
+        subtier_agencies = list(SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code).\
+            values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
         added_rows = False
         bucket = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
         for key in bucket.list():
-            re_match = re.match(AWARD_MAPPINGS[award_type]['match'], key.name)
-            match_date = self.check_regex_match(re_match, generate_since)
+            match_date = self.check_regex_match(award_type, key.name, generate_since)
             if match_date:
                 # Create a local copy of the deletion file
                 delete_filepath = '{}{}'.format(working_dir, key.name)
@@ -172,19 +173,17 @@ class Command(BaseCommand):
                 if len(df.index) == 0:
                     continue
                 if agency_code != 'all':
-                    df = df[df['awarding_sub_agency_code'].isin(list(subtier_agencies.values_list('subtier_code',
-                                                                                                  flat=True)))]
+                    df = df[df['awarding_sub_agency_code'].isin(subtier_agencies)]
                     if len(df.index) == 0:
                         continue
 
-                # Add and reorder columns to make it CSV-ready
+                # Reorder columns to make it CSV-ready and append records to the end of the Delta file
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
-
-                # Append records to the end of the Delta file
                 logger.info('Appending {} records to the end of the file'.format(len(df.index)))
-                added_rows = True
                 with open(file_path, 'a') as delta_file:
                     df.to_csv(delta_file, mode='a', header=False, index=False)
+                added_rows = True
+
         if not added_rows:
             logger.info('No deletion records to append to file')
 
@@ -193,7 +192,6 @@ class Command(BaseCommand):
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
         """Ensure that the dataframe has all necessary columns in the correct order"""
         if award_type == 'Contracts':
-            dataframe = dataframe.drop(['unused_column'], axis=1)
             ordered_columns = ['correction_delete_ind'] + source.columns(None)
         else:
             ordered_columns = source.columns(None)
@@ -212,8 +210,9 @@ class Command(BaseCommand):
         # Ensure columns are in correct order
         return dataframe[ordered_columns]
 
-    def check_regex_match(self, re_match, generate_since):
+    def check_regex_match(self, award_type, file_name, generate_since):
         """Create a date object from a regular expression match"""
+        re_match = re.match(AWARD_MAPPINGS[award_type]['match'], file_name)
         if not re_match:
             return False
 
