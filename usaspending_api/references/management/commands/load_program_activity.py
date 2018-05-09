@@ -1,11 +1,11 @@
 import logging
-import boto
+import boto3
 import os
 import csv
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models.functions import Upper
 
 from usaspending_api.etl.csv_data_reader import CsvDataReader
 from usaspending_api.references.models import RefProgramActivity
@@ -28,9 +28,9 @@ class Command(BaseCommand):
         if not csv_file:
             # Get program activity csv from
             # moving it to self.bucket as it may be used in different cases
-            region_name = settings.BULK_DOWNLOAD_AWS_REGION
-            self.bucket = boto.s3.connect_to_region(region_name).get_bucket(BUCKET_NAME)
-            keys = list(self.bucket.list(prefix=FILE_NAME))
+            bucket = boto3.resource('s3').Bucket(BUCKET_NAME)
+            keys = list(bucket.objects.filter(Prefix=FILE_NAME))
+
             if len(keys) == 0:
                 self.logger.error("Program activity file not found in bucket. Exiting.")
                 return
@@ -40,7 +40,8 @@ class Command(BaseCommand):
             else:
                 self.logger.info('Retrieving program activity file.')
                 csv_file = os.path.join('/', 'tmp', FILE_NAME)
-                keys[0].get_contents_to_filename(csv_file)
+                bucket.download_file(keys[0].key, csv_file)
+
                 # lower headers
                 with open(csv_file) as data:
                     data = csv.reader(data)
@@ -49,11 +50,15 @@ class Command(BaseCommand):
                 with open(csv_file, 'w') as data:
                     writer = csv.writer(data)
                     writer.writerows(updated_data)
+
         reader = CsvDataReader(csv_file)
 
         try:
             self.logger.info('Processing {}'.format(FILE_NAME))
             with transaction.atomic():
+                # Upper case all existing program activity names to ensure consistent casing
+                RefProgramActivity.objects.update(program_activity_name=Upper('program_activity_name'))
+
                 # Load program activity file in a single transaction to ensure
                 # integrity and to speed things up a bit
                 for idx, row in enumerate(reader):
@@ -79,10 +84,11 @@ def get_or_create_program_activity(row):
 
     obj, created = RefProgramActivity.objects.get_or_create(
         program_activity_code=row['pa_code'].strip().zfill(4),
-        budget_year=row['year'],
+        program_activity_name=row['pa_name'].strip().upper(),
         responsible_agency_id=row['agency_id'].strip().zfill(3),
+        allocation_transfer_agency_id=row['alloc_id'].strip().zfill(3),
         main_account_code=row['account'].strip().zfill(4),
-        defaults={'program_activity_name': row['pa_name'].strip().upper()}
+        budget_year=row['year']
     )
 
     return created

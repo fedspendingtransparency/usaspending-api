@@ -216,6 +216,7 @@ def get_or_create_object_class_rw(row, logger):
 def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to duplicate existing pk's with null values
     filters = {'program_activity_code': row['program_activity_code'],
+               'program_activity_name': row['program_activity_name'].upper(),
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
                'main_account_code': row['main_account_code'], }
