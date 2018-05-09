@@ -54,7 +54,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
             {'name': 'group', 'key': 'group', 'type': 'enum',
                 'enum_values': ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm'], 'optional': False}
         ]
@@ -63,7 +63,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
         group = json_request.get('group', None)
         filters = json_request.get("filters", None)
-        subawards = json_request.get('subawards', False)
+        subawards = json_request['subawards']
 
         if group is None:
             raise InvalidParameterException('Missing one or more required request parameters: group')
@@ -84,10 +84,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
         if subawards:
-            data_set = queryset.values('award_type'). \
-                annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date'),
-                         transaction_amount=Sum('amount')). \
-                values('month', 'year', 'transaction_amount')
+            data_set = queryset \
+                .values('type') \
+                .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('subaward_obligation')) \
+                .values('month', 'fiscal_year', 'transaction_amount')
         else:
             data_set = queryset.values('fiscal_year')
             if not (group == 'fy' or group == 'fiscal_year'):
@@ -103,10 +103,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         print(generate_raw_quoted_query(data_set))
 
         for record in data_set:
-            # create fiscal year data based on the action_date for Subawards
-            if subawards:
-                record['fiscal_year'] = generate_fiscal_year(date(record['year'], record['month'], 1))
-
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
             if group == 'm' or group == 'month':
@@ -645,7 +641,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -655,7 +651,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
-        subawards = json_request.get("subawards", False)
+        subawards = json_request["subawards"]
         order = json_request.get("order", "asc")
         limit = json_request["limit"]
         page = json_request["page"]

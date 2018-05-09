@@ -715,10 +715,13 @@ class SubawardView(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
+    latest_transaction_id = models.IntegerField()
+    last_modified_date = models.DateField()
     subaward_number = models.TextField()
-    federal_action_obligation = models.DecimalField(
+    subaward_obligation = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True,
         null=True)
+    total_obl_bin = models.TextField()
     description = models.TextField()
     fiscal_year = models.IntegerField()
     action_date = models.DateField()
@@ -730,6 +733,8 @@ class SubawardView(models.Model):
     funding_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
     awarding_subtier_agency_name = models.TextField()
+    funding_toptier_agency_name = models.TextField()
+    funding_subtier_agency_name = models.TextField()
 
     place_of_performance_id = models.IntegerField()
     recipient_id = models.IntegerField()
@@ -739,12 +744,19 @@ class SubawardView(models.Model):
     piid = models.TextField()
     fain = models.TextField()
 
+    business_categories = ArrayField(models.TextField(), default=list)
     recipient_name = models.TextField()
     prime_recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
+
+    pulled_from = models.TextField()
+    type_of_contract_pricing = models.TextField()
+    type_set_aside = models.TextField()
+    extent_competed = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
+    cfda_number = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
