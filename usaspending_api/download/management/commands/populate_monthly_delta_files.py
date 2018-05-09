@@ -19,6 +19,7 @@ from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
+from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 logger = logging.getLogger('console')
@@ -82,13 +83,13 @@ class Command(BaseCommand):
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
-
-        if not settings.IS_LOCAL:
+        if file_path is None:
+            logger.info('No new, modified, or deleted data; discarding file')
+        elif not settings.IS_LOCAL:
+            # Upload file to S3 and delete local version
             logger.info('Uploading file to S3 bucket and deleting local copy')
-            # Upload file to S3
             multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
                              os.path.basename(file_path))
-            # Delete file
             os.remove(file_path)
 
         logger.info('Finished generation. {}, Agency: {}'.format(award_type, agency if agency == 'all' else
@@ -97,9 +98,6 @@ class Command(BaseCommand):
     def create_local_file(self, award_type, source, agency_code, generate_since):
         """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         logger.info('Generating CSV file with creations and modifications')
-        
-        # We pass None to row_emitter() in order to request all headers
-        source_query = source.row_emitter(None)
 
         # Create file paths and working directory
         working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
@@ -109,7 +107,7 @@ class Command(BaseCommand):
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
         # Create a unique temporary file with the raw query
-        raw_quoted_query = generate_raw_quoted_query(source_query)
+        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
         csv_query_annotated = self.apply_annotations_to_sql(raw_quoted_query, source.human_names)
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
         with open(temp_sql_file_path, 'w') as file:
@@ -121,20 +119,21 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Append deleted rows to the end of the file
-        # TODO set this to variable and ensure we do not create empty files
         self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
+        if csv_row_count(source_path, has_header=True) > 0:
+            # Split CSV into separate files
+            split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
+                                   output_name_template='{}_%s.csv'.format(source_name))
 
-        # Split CSV into separate files
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                               output_name_template='{}_%s.csv'.format(source_name))
-
-        # Zip the split CSVs into one zipfile
-        zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
-                                                     datetime.strftime(date.today(), '%Y%m%d'))
-        logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
-        zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
-        for split_csv_part in split_csvs:
-            zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+            # Zip the split CSVs into one zipfile
+            zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
+                                                         datetime.strftime(date.today(), '%Y%m%d'))
+            logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
+            zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
+            for split_csv_part in split_csvs:
+                zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+        else:
+            zipfile_path = None
 
         os.close(temp_sql_file)
         os.remove(temp_sql_file_path)
@@ -186,8 +185,6 @@ class Command(BaseCommand):
 
         if not added_rows:
             logger.info('No deletion records to append to file')
-
-        return added_rows
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
         """Ensure that the dataframe has all necessary columns in the correct order"""
