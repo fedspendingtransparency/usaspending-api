@@ -138,7 +138,7 @@ def test_state_metadata_success(client, state_data):
     assert resp.data['code'] == 'TD'
     assert resp.data['type'] == 'district'
 
-    # test small request - state
+    # test small request - territory
     resp = client.get(state_metadata_endpoint('03'))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data['name'] == 'Test Territory'
