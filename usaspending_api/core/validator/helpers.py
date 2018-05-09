@@ -12,6 +12,7 @@ MAX_INT = sys.maxsize  # == 2^(63-1) == 9223372036854775807
 MIN_INT = -sys.maxsize - 1  # == -2^(63-1) - 1 == 9223372036854775808
 MAX_FLOAT = sys.float_info.max  # 1.7976931348623157e+308
 MIN_FLOAT = sys.float_info.min  # 2.2250738585072014e-308
+MAX_ITEMS = 5000
 
 TINY_SHIELD_SEPARATOR = '|'
 
@@ -28,8 +29,11 @@ def _check_max(rule):
         if value > rule['max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'array', 'object', 'enum'):
+    if rule['type'] in ('text', 'enum'):
         if len(value) > rule['max']:
+            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
+    if rule['type'] in ('array', 'object'):
+        if len(value) > rule[rule['type']+'_max']:
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
 
 
@@ -39,8 +43,11 @@ def _check_min(rule):
         if value < rule['min']:
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
 
-    if rule['type'] in ('text', 'array', 'object', 'enum'):
+    if rule['type'] in ('text', 'enum'):
         if len(value) < rule['min']:
+            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
+    if rule['type'] in ('array', 'object'):
+        if len(value) < rule[rule['type']+'_min']:
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
 
 
@@ -147,10 +154,10 @@ def validate_object(rule):
 
     for key, value in rule['object_keys'].items():
         if key not in provided_object:
-            if 'optional' in value and value['optional'] is True:
-                continue
-            else:
+            if 'optional' in value and value['optional'] is False:
                 raise UnprocessableEntityException('Required object fields: {}'.format(rule['object_keys'].keys()))
+            else:
+                continue
 
     return provided_object
 

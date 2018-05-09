@@ -16,6 +16,7 @@ TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
 def preprocess(keyword):
+    keyword = concat_if_array(keyword)
     """Remove Lucene special characters instead of escaping for now"""
     processed_string = re.sub('[\/:\]\[\^!]', '', keyword)
     if len(processed_string) != len(keyword):
@@ -69,7 +70,7 @@ def search_transactions(request_data, lower_limit, limit):
     if transaction_type_code not found, return results for contracts
     """
 
-    keyword = request_data['keyword']
+    keyword = request_data['filters']['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
     query_fields.extend(['award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
@@ -85,7 +86,7 @@ def search_transactions(request_data, lower_limit, limit):
     }
 
     for index, award_types in indices_to_award_types.items():
-        if sorted(award_types) == sorted(request_data['award_type_codes']):
+        if sorted(award_types) == sorted(request_data['filters']['award_type_codes']):
             index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
             break
     else:
@@ -117,7 +118,7 @@ def get_total_results(keyword, sub_index, retries=3):
 
 
 def spending_by_transaction_count(request_data):
-    keyword = request_data['keyword']
+    keyword = request_data['filters']['keyword']
     response = {}
 
     for category in indices_to_award_types.keys():
@@ -236,4 +237,17 @@ def get_sum_and_count_aggregation_results(keyword):
 
 
 def spending_by_transaction_sum_and_count(request_data):
-    return get_sum_and_count_aggregation_results(request_data['keyword'])
+    return get_sum_and_count_aggregation_results(request_data['filters']['keyword'])
+
+
+def concat_if_array(data):
+    if isinstance(data, str):
+        return data
+    else:
+        if isinstance(data, list):
+            str_from_array = " ".join(data)
+            return str_from_array
+        else:
+            # This should never happen if TinyShield is functioning properly
+            logger.error('Keyword submitted was not a string or array')
+            return ""
