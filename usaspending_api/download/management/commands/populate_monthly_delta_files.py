@@ -64,6 +64,7 @@ class Command(BaseCommand):
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
+        # We pass None to row_emitter() in order to request all headers
         source_query = source.row_emitter(None)
 
         if source_query.count() == 0:
@@ -141,11 +142,9 @@ class Command(BaseCommand):
 
     def parse_filters(self, award_types, agency):
         """Convert readable filters to a filter object usable for the matview filter"""
-        award_type_codes = []
-        for award_type in award_types:
-            award_type_codes = award_type_codes + all_award_types_mappings[award_type]
-
-        filters = {'award_type_codes': award_type_codes}
+        filters = {
+            'award_type_codes': [all_award_types_mappings[award_type] for award_type in award_types]
+        }
         agency_code = agency
         if agency != 'all':
             agency_code = agency['cgac_code']
