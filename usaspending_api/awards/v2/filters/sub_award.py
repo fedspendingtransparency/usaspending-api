@@ -5,12 +5,11 @@ from django.db.models import Q
 
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
-
 logger = logging.getLogger(__name__)
 
 
@@ -205,15 +204,7 @@ def subaward_filter(filters):
                 filter_obj |= Q(award_ts_vector=val)
             queryset &= SubawardView.objects.filter(filter_obj)
 
-        # Commenting this out as NAICS isn't currently mapped to subawards
-        # elif key == "naics_codes":
-        #     or_queryset = []
-        #     for v in value:
-        #         or_queryset.append(v)
-        #     if len(or_queryset) != 0:
-        #         queryset &= SubawardView.objects.filter(
-        #             naics__in=or_queryset)
-
+        # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
             filter_to_col = {
                 "program_numbers": "cfda_number",
@@ -224,34 +215,14 @@ def subaward_filter(filters):
             if len(in_query) != 0:
                 queryset &= SubawardView.objects.filter(**{'{}__in'.format(filter_to_col[key]): in_query})
 
-        # elif key == "program_numbers":
-        #     in_query = [v for v in value]
-        #     if len(in_query) != 0:
-        #         queryset &= SubawardView.objects.filter(
-        #             cfda_number__in=in_query)
-
-        # elif key == "psc_codes":
-        #     in_query = [v for v in value]
-        #     if len(in_query) != 0:
-        #         queryset &= SubawardView.objects.filter(
-        #             product_or_service_code__in=in_query)
-
-        # elif key == "contract_pricing_type_codes":
-        #     in_query = [v for v in value]
-        #     if len(in_query) != 0:
-        #         queryset &= SubawardView.objects.filter(
-        #             type_of_contract_pricing__in=in_query)
-
-        elif key == "set_aside_type_codes":
+        elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
+            filter_to_col = {
+                "set_aside_type_codes": "type_set_aside",
+                "extent_competed_type_codes": "extent_competed",
+            }
             for v in value:
-                or_queryset |= Q(type_set_aside__exact=v)
-            queryset = queryset.filter(or_queryset)
-
-        elif key == "extent_competed_type_codes":
-            or_queryset = Q()
-            for v in value:
-                or_queryset |= Q(extent_competed__exact=v)
+                or_queryset |= Q(**{'{}__exact'.format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
 
     return queryset

@@ -12,11 +12,10 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
-from django.db.models.functions import ExtractMonth, ExtractYear, Cast, Coalesce
+from django.db.models.functions import ExtractMonth, Cast, Coalesce
 from django.conf import settings
 
-from usaspending_api.awards.models import Subaward
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -30,7 +29,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_m
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.decorators import api_transformations
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
+from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -53,22 +52,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
+        valid_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
         models = [
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
-            {'name': 'group', 'key': 'group', 'type': 'enum',
-                'enum_values': ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm'], 'optional': False}
+            {'name': 'group', 'key': 'group', 'type': 'enum', 'enum_values': valid_groups, 'optional': False}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
-        group = json_request.get('group', None)
-        filters = json_request.get("filters", None)
+        group = json_request['group']
         subawards = json_request['subawards']
+        filters = json_request.get("filters", None)
 
-        if group is None:
-            raise InvalidParameterException('Missing one or more required request parameters: group')
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException('Missing request parameters: filters')
 
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
@@ -418,19 +415,19 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'},
-            {'name': 'scope', 'key': 'scope', 'type': 'enum',
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'optional': False,
              'enum_values': ['place_of_performance', 'recipient_location']},
-            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum',
+            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum', 'optional': False,
              'enum_values': ['state', 'county', 'district']},
-            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters',
+            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters', 'optional': False,
              'type': 'array', 'array_type': 'text', 'text_type': 'search'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
 
-        self.subawards = json_request.get("subawards", False)
+        self.subawards = json_request["subawards"]
         self.scope = json_request.get("scope")
         self.filters = json_request.get("filters", None)
         self.geo_layer = json_request.get("geo_layer")
@@ -454,27 +451,25 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
 
-        scope_field_name = model_dict.get('{}{}'.format('subawards_' if self.subawards else '', self.scope))
+        scope_field_name = model_dict.get(self.scope)
         loc_field_name = loc_dict.get(self.geo_layer)
-        loc_lookup = '{}_{}{}'.format(scope_field_name, '_' if self.subawards else '', loc_field_name)
-
-        if scope_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: scope")
-        if loc_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: geo_layer")
+        loc_lookup = '{}_{}'.format(scope_field_name, loc_field_name)
 
         if self.subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.queryset = subaward_filter(self.filters)
-            self.model_name = Subaward
+            self.model_name = SubawardView
         else:
             self.queryset, self.model_name = spending_by_geography(self.filters)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
+            column_isnull = 'federal_action_obligation__isnull'
+            if self.subawards:
+                column_isnull = 'subaward_obligation__isnull'
             kwargs = {
-                '{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else ''): 'USA',
-                '{}'.format('amount__isnull' if self.subawards else 'federal_action_obligation__isnull'): False
+                '{}_country_code'.format(scope_field_name): 'USA',
+                column_isnull: False
             }
 
             # Only state scope will add its own state code
@@ -492,17 +487,17 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # County and district scope will need to select multiple fields
             # State code is needed for county/district aggregation
-            state_lookup = '{}_{}{}'.format(scope_field_name, '_' if self.subawards else '', loc_dict['state'])
+            state_lookup = '{}_{}'.format(scope_field_name, loc_dict['state'])
             fields_list.append(state_lookup)
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
             kwargs = {
-                '{}__isnull'.format('amount' if self.subawards else 'federal_action_obligation'): False
+                '{}__isnull'.format('subaward_obligation' if self.subawards else 'federal_action_obligation'): False
             }
 
             if self.geo_layer == 'county':
                 # County name added to aggregation since consistent in db
-                county_name_lookup = '{}_{}county_name'.format(scope_field_name, '_' if self.subawards else '')
+                county_name_lookup = '{}_county_name'.format(scope_field_name)
                 fields_list.append(county_name_lookup)
                 self.county_district_queryset(
                     kwargs,
@@ -548,7 +543,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
         filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
         self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+            else self.geo_queryset.annotate(transaction_amount=Sum('subaward_obligation'))
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -577,7 +572,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
             kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
-            kwargs['{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else '')] = 'USA'
+            kwargs['{}_country_code'.format(scope_field_name)] = 'USA'
             kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
 
         # Turn county/district codes into float since inconsistent in database
@@ -588,7 +583,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             .annotate(code_as_float=Cast(loc_lookup, FloatField()))
         filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
         self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+            else self.geo_queryset.annotate(transaction_amount=Sum('subaward_obligation'))
 
         return self.geo_queryset
 
