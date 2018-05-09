@@ -159,6 +159,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+API_VERSION = 2
+
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
