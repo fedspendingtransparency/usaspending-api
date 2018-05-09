@@ -84,13 +84,19 @@ class Command(BaseCommand):
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
 
         if not settings.IS_LOCAL:
+            logger.info('Uploading file to S3 bucket and deleting local copy')
             # Upload file to S3
             multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
                              os.path.basename(file_path))
             # Delete file
             os.remove(file_path)
 
+        logger.info('Finished generation. {}, Agency: {}'.format(award_type, agency if agency == 'all' else
+                                                                 agency['name']))
+
     def create_local_file(self, award_type, source, agency_code, generate_since):
+        """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
+        logger.info('Generating CSV file with creations and modifications')
         source_query = source.row_emitter(None)
 
         # Create file paths and working directory
@@ -113,10 +119,10 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Deletion data comes from an S3 bucket
-        if not settings.IS_LOCAL:
+        # if not settings.IS_LOCAL:
             # Append deleted rows to the end of the file
             # TODO set this to variable and ensure we do not create empty files
-            self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
+        self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
 
         # Split CSV into separate files
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
@@ -125,6 +131,7 @@ class Command(BaseCommand):
         # Zip the split CSVs into one zipfile
         zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
                                                      datetime.strftime(date.today(), '%Y%m%d'))
+        logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
@@ -136,6 +143,7 @@ class Command(BaseCommand):
         return zipfile_path
 
     def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
+        logger.info('Retrieving deletion records from S3 files and appending to the CSV')
         file_path = os.path.join(working_dir, '{}_{}_delta.csv'.format(award_type,
                                                                        VALUE_MAPPINGS['transactions']['download_name']))
 
@@ -173,8 +181,12 @@ class Command(BaseCommand):
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
 
                 # Append records to the end of the Delta file
+                logger.info('Appending {} records to the end of the file'.format(len(df.index)))
                 added_rows = True
-                df.to_csv(file_path, mode='a', header=False, index=False)
+                with open(file_path, 'a') as delta_file:
+                    df.to_csv(delta_file, mode='a', header=False, index=False)
+        if not added_rows:
+            logger.info('No deletion records to append to file')
 
         return added_rows
 
