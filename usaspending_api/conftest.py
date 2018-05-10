@@ -33,14 +33,13 @@ def pytest_configure():
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker):
-    return super().django_db_setup(**args, **kwargs)
-    '''
-        with django_db_blocker.unblock():
-            with connection.cursor() as c:
-                subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
-                for file in get_sql(TEMP_SQL_FILES):
-                    c.execute(file)
-    '''
+      with django_db_blocker.unblock():
+          with connection.cursor() as c:
+            if request.config.getoption('is_local') == "true":
+              subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+              for file in get_sql(TEMP_SQL_FILES):
+                  c.execute(file)
+  '''
 
 
 def get_sql(sql_files):
