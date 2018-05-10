@@ -137,6 +137,16 @@ class Command(load_base.Command):
         logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
+def update_skipped_tas(row, skipped_tas):
+    if row['tas'] not in skipped_tas:
+        skipped_tas[row['tas']] = {}
+        skipped_tas[row['tas']]['count'] = 1
+        skipped_tas[row['tas']]['rows'] = [row['row_number']]
+    else:
+        skipped_tas[row['tas']]['count'] += 1
+        skipped_tas[row['tas']]['rows'] += [row['row_number']]
+
+
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
     """Lookup an object class record.
 
@@ -521,13 +531,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                if row['tas'] not in skipped_tas:
-                    skipped_tas[row['tas']] = {}
-                    skipped_tas[row['tas']]['count'] = 1
-                    skipped_tas[row['tas']]['rows'] = [row['row_number']]
-                else:
-                    skipped_tas[row['tas']]['count'] += 1
-                    skipped_tas[row['tas']]['rows'] += [row['row_number']]
+                update_skipped_tas(row, skipped_tas)
                 continue
         except Exception:    # TODO: What is this trying to catch, actually?
             continue
@@ -702,13 +706,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            if row['tas'] not in skipped_tas:
-                skipped_tas[row['tas']] = {}
-                skipped_tas[row['tas']]['count'] = 1
-                skipped_tas[row['tas']]['rows'] = [row['row_number']]
-            else:
-                skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += [row['row_number']]
+            update_skipped_tas(row, skipped_tas)
             continue
 
         # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
