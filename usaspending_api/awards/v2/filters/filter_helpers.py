@@ -190,16 +190,16 @@ def transform_keyword(request, api_version):
         if "keyword" not in filter_obj and "keywords" not in filter_obj:
             return request
         keyword_array_passed = filter_obj.get('keywords', False)
-        filter_obj.pop("keywords", None)
+        keyword_string_passed = filter_obj.get('keyword', False)
+        filter_obj.pop("keyword", None)
         if api_version < 3:
-            keyword_string_passed = filter_obj.get('keyword', False)
-            keyword = keyword_array_passed if keyword_array_passed else [keyword_string_passed]
+            keywords = keyword_array_passed if keyword_array_passed else [keyword_string_passed]
         else:
             if keyword_array_passed:
-                keyword = keyword_array_passed
+                keywords = keyword_array_passed
             else:
                 raise InvalidParameterException("'keyword' is deprecated. Please use 'keywords'. "
                                                 + "See documentation for more information.")
-        filter_obj['keyword'] = keyword
+        filter_obj['keywords'] = keywords
         request.data["filters"] = filter_obj
     return request

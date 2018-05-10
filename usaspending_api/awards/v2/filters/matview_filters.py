@@ -89,7 +89,7 @@ def matview_search_filter(filters, model):
             queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
-            keyword = " ".join(value)
+            keyword = " ".join(value) if isinstance(value, list) else value
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))

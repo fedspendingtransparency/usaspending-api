@@ -61,7 +61,7 @@ def subaward_filter(filters):
                     recipient_name__icontains=keyword)
                 if recipient_list.exists():
                     recipient_match = True
-                    recipient_qs = queryset.filter(recipient__in=recipient_list)
+                    recipient_qs = Q(recipient__in=recipient_list)
 
                 # Commenting out until NAICS is associated with subawards
                 # naics_match = False
@@ -81,7 +81,7 @@ def subaward_filter(filters):
                     psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
                 if psc_list.exists():
                     psc_match = True
-                    psc_qs = queryset.filter(
+                    psc_qs = Q(
                         award__latest_transaction__contract_data__product_or_service_code__in=psc_list)
 
                 duns_match = False
@@ -92,11 +92,11 @@ def subaward_filter(filters):
                 duns_list = non_parent_duns_list | parent_duns_list
                 if duns_list.exists():
                     duns_match = True
-                    duns_qs = queryset.filter(recipient__in=duns_list)
+                    duns_qs = Q(recipient__in=duns_list)
 
-                piid_qs = queryset.filter(award__piid=keyword)
-                fain_qs = queryset.filter(award__fain=keyword)
-                subaward_num_qs = queryset.filter(subaward_number=keyword)
+                piid_qs = Q(award__piid=keyword)
+                fain_qs = Q(award__fain=keyword)
+                subaward_num_qs = Q(subaward_number=keyword)
 
                 # Always filter on fain/piid because fast:
                 queryset = piid_qs
@@ -116,7 +116,7 @@ def subaward_filter(filters):
             keyword_qs = Q()
             for keyword in value:
                 keyword_qs |= keyword_parse(keyword, queryset)
-            queryset = keyword_qs
+            queryset = queryset.filter(keyword_qs)
 
         elif key == "elasticsearch_keyword":
             keyword = value
