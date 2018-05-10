@@ -345,14 +345,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            if row['tas'] not in skipped_tas:
-                skipped_tas[row['tas']] = {}
-                skipped_tas[row['tas']]['count'] = 1
-                skipped_tas[row['tas']]['rows'] = [row['row_number']]
-            else:
-                skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += row['row_number']
-
+            update_skipped_tas(row, skipped_tas)
             continue
 
         # Now that we have the account, we can load the appropriation balances
