@@ -17,7 +17,7 @@ This route returns basic information about the specified state.
 {
     "name": "Virginia",
     "code": "VA",
-    "fips": 51,
+    "fips": "51",
     "type": "state",
     "population": 8414380,
     "pop_year": 2017,
@@ -27,7 +27,7 @@ This route returns basic information about the specified state.
     "mhi_source": "U.S. Census Bureau, 2017 American Community Survey 1-Year Estimates",
     "total_prime_amount": 300200000000,
     "total_prime_awards": 327721,
-    "award_amount_per_capita": 916,023.08
+    "award_amount_per_capita": 916023.08
 }
 ```
 
