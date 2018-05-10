@@ -1,6 +1,6 @@
 # State Data
 
-**Route:** /api/v2/recipient/state/:fips?year=:year
+**Route:** /api/v2/recipient/state/:fips/?year=:year
 
 **Method:** GET
 
