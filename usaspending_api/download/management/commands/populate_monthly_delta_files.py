@@ -119,7 +119,7 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Append deleted rows to the end of the file
-        self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
+        self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
             # Split CSV into separate files
             split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
@@ -141,11 +141,9 @@ class Command(BaseCommand):
 
         return zipfile_path
 
-    def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
+    def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
         """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
         logger.info('Retrieving deletion records from S3 files and appending to the CSV')
-        file_path = os.path.join(working_dir, '{}_{}_delta.csv'.
-                                 format(award_type, VALUE_MAPPINGS['transactions']['download_name']))
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
         subtier_agencies = list(SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code).
@@ -179,7 +177,7 @@ class Command(BaseCommand):
                 # Reorder columns to make it CSV-ready and append records to the end of the Delta file
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
                 logger.info('Appending {} records to the end of the file'.format(len(df.index)))
-                df.to_csv(file_path, mode='a', header=False, index=False)
+                df.to_csv(source_path, mode='a', header=False, index=False)
                 added_rows = True
 
         if not added_rows:
@@ -222,8 +220,8 @@ class Command(BaseCommand):
         return '{}-{}-{}'.format(year, month, day)
 
     def apply_annotations_to_sql(self, raw_query, aliases):
-        """ The csv_generation version of this function would incorrectly annotate the D1 correction_delete_i nd.
-        Reusing the code but including the correction_delete_ind col for both file types"""
+        """ The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
+        Reusing the code but including the correction_delete_ind col for both file types """
         select_string = re.findall('SELECT (.*?) FROM', raw_query)[0]
 
         selects, cases = [], []
