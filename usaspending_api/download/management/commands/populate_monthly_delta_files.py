@@ -56,7 +56,7 @@ AWARD_MAPPINGS = {
 class Command(BaseCommand):
 
     def download(self, award_type, agency='all', generate_since=None):
-        """Create a delta file based on award_type, and agency_code (or all agencies)"""
+        """ Create a delta file based on award_type, and agency_code (or all agencies) """
         logger.info('Starting generation. {}, Agency: {}'.format(award_type, agency if agency == 'all' else
                                                                  agency['name']))
         award_map = AWARD_MAPPINGS[award_type]
@@ -96,7 +96,7 @@ class Command(BaseCommand):
                                                                  agency['name']))
 
     def create_local_file(self, award_type, source, agency_code, generate_since):
-        """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
+        """ Generate complete file from SQL query and S3 bucket deletion files, then zip it locally """
         logger.info('Generating CSV file with creations and modifications')
 
         # Create file paths and working directory
@@ -107,7 +107,8 @@ class Command(BaseCommand):
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
         # Create a unique temporary file with the raw query
-        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
+        source_query = source.row_emitter(None)  # None requests all headers
+        raw_quoted_query = generate_raw_quoted_query(source_query)
         csv_query_annotated = self.apply_annotations_to_sql(raw_quoted_query, source.human_names)
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
         with open(temp_sql_file_path, 'w') as file:
@@ -119,7 +120,7 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Append deleted rows to the end of the file
-        self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
+        # self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
             # Split CSV into separate files
             split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
@@ -142,7 +143,7 @@ class Command(BaseCommand):
         return zipfile_path
 
     def add_deletion_records(self, working_dir, award_type, agency_code, source, generate_since):
-        """Retrieve deletion files from S3 and append necessary records to the end of the the file"""
+        """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
         logger.info('Retrieving deletion records from S3 files and appending to the CSV')
         file_path = os.path.join(working_dir, '{}_{}_delta.csv'.
                                  format(award_type, VALUE_MAPPINGS['transactions']['download_name']))
@@ -179,15 +180,14 @@ class Command(BaseCommand):
                 # Reorder columns to make it CSV-ready and append records to the end of the Delta file
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
                 logger.info('Appending {} records to the end of the file'.format(len(df.index)))
-                with open(file_path, 'a') as delta_file:
-                    df.to_csv(delta_file, mode='a', header=False, index=False)
+                df.to_csv(file_path, mode='a', header=False, index=False)
                 added_rows = True
 
         if not added_rows:
             logger.info('No deletion records to append to file')
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
-        """Ensure that the dataframe has all necessary columns in the correct order"""
+        """ Ensure that the dataframe has all necessary columns in the correct order """
         if award_type == 'Contracts':
             ordered_columns = ['correction_delete_ind'] + source.columns(None)
         else:
@@ -208,7 +208,7 @@ class Command(BaseCommand):
         return dataframe[ordered_columns]
 
     def check_regex_match(self, award_type, file_name, generate_since):
-        """Create a date object from a regular expression match"""
+        """ Create a date object from a regular expression match """
         re_match = re.match(AWARD_MAPPINGS[award_type]['match'], file_name)
         if not re_match:
             return False
@@ -223,7 +223,7 @@ class Command(BaseCommand):
         return '{}-{}-{}'.format(year, month, day)
 
     def apply_annotations_to_sql(self, raw_query, aliases):
-        """The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
+        """ The csv_generation version of this function would incorrectly annotate the D1 correction_delete_i nd.
         Reusing the code but including the correction_delete_ind col for both file types"""
         select_string = re.findall('SELECT (.*?) FROM', raw_query)[0]
 
@@ -244,10 +244,12 @@ class Command(BaseCommand):
         return raw_query.replace(select_string, selects_str)
 
     def parse_filters(self, award_types, agency):
-        """Convert readable filters to a filter object usable for the matview filter"""
+        """ Convert readable filters to a filter object usable for the matview filter """
+        award_type_code_lists = [all_award_types_mappings[award_type] for award_type in award_types]
         filters = {
-            'award_type_codes': [all_award_types_mappings[award_type] for award_type in award_types]
+            'award_type_codes': reduce(lambda x, y: x.extend(y), award_type_code_lists)
         }
+
         agency_code = agency
         if agency != 'all':
             agency_code = agency['cgac_code']
@@ -256,7 +258,7 @@ class Command(BaseCommand):
         return filters, agency_code
 
     def add_arguments(self, parser):
-        """Add arguments to the parser"""
+        """ Add arguments to the parser """
         parser.add_argument('--agencies', dest='agencies', nargs='+', default=None, type=str,
                             help='Specific toptier agency database ids. Note \'all\' may be provided to account for '
                                  'the downloads that comprise all agencies. Defaults to \'all\' and all individual '
@@ -268,7 +270,7 @@ class Command(BaseCommand):
                             help='Date of last Delta file creation.')
 
     def handle(self, *args, **options):
-        """Run the application."""
+        """ Run the application. """
         agencies = options['agencies']
         award_types = options['award_types']
         last_date = options['last_date']
