@@ -7,7 +7,7 @@ This route takes keyword search terms and returns awards where a certain subset 
 ### Request
 fields: An array of string column names to return. See Fields list below.
 
-filters: An object with `keyword` and `award_type_codes` keys. `keyword` should be a string that you are performing a keyword search operation with. `award_type_codes` is an array of strings of the award type codes that should be searched within.
+filters: An object with `keywords` and `award_type_codes` keys. `keywords` should be an array of strings that you are performing a keyword search operation with. `award_type_codes` is an array of strings of the award type codes that should be searched within.
 
 A list of award type codes can be found at http://fedspendingtransparency.github.io/whitepapers/types/
 [Filter Object](../search_filters.md)
@@ -23,7 +23,7 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 ```
 {
     "filters": {
-        "keyword": "money",
+        "keywords": ["money","government"],
         "award_type_codes": [
             "A",
             "B",
