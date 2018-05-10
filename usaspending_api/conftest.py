@@ -16,6 +16,9 @@ TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
                   '../matviews/summary_view_psc_codes.sql',
                   '../matviews/summary_view.sql']
 
+def pytest_addoption(parser):
+    parser.addoption('--local', action='store', dest='is_local')
+
 
 def pytest_configure():
     # To make sure the test setup process doesn't try
@@ -30,16 +33,15 @@ def pytest_configure():
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker):
-    try:
+    return super().django_db_setup(**args, **kwargs)
+    '''
         with django_db_blocker.unblock():
             with connection.cursor() as c:
                 subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
                 for file in get_sql(TEMP_SQL_FILES):
                     c.execute(file)
-    except:
-        print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~") 
-        print ('Pytest skipped local matview creation')# Need this so Travis ignores this stuff
-        print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~") 
+    '''
+
 
 def get_sql(sql_files):
     data = []
