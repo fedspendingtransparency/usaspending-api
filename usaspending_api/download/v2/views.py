@@ -505,71 +505,65 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params"""
-        response_data = {}
+        agency_id = request.data.get('agency', None)
+        fiscal_year = request.data.get('fiscal_year', None)
+        type_param = request.data.get('type', None)
 
-        post_data = request.data
-        agency_id = post_data.get('agency', None)
-        fiscal_year = post_data.get('fiscal_year', None)
-        download_type = post_data.get('type', None)
-
-        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
-        for required_param, param_value in required_params.items():
+        # Check required params
+        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': type_param}
+        for required, param_value in required_params.items():
             if param_value is None:
-                raise InvalidParameterException('Missing one or more required query parameters: {}'.
-                                                format(required_param))
+                raise InvalidParameterException('Missing one or more required query parameters: {}'.format(required))
 
-        # Populate regex
-        fiscal_year_regex = str(fiscal_year) if fiscal_year else '\d{4}'
-        download_type_regex = download_type.capitalize() if download_type else '(Contracts|Assistance)'
-
-        cgac_regex = '.*'
-        if agency_id and agency_id == 'all':
-            cgac_regex = 'all'
-        elif agency_id:
-            cgac_codes = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code')
-            if cgac_codes:
-                cgac_regex = cgac_codes[0]['cgac_code']
+        # Capitalize type_param and retrieve agency information from agency ID
+        download_type = type_param.capitalize()
+        if agency_id == 'all':
+            agency = {'cgac_code': 'all', 'cgac_name': 'All', 'abbreviation': None}
+        else:
+            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code', 'cgac_name',
+                                                                                            'abbreviation')
+            if agency_check:
+                agency = agency_check[0]
             else:
                 raise InvalidParameterException('{} agency not found'.format(agency_id))
-        monthly_dl_regex = '{}_{}_{}_Full_.*\.zip'.format(fiscal_year_regex, cgac_regex, download_type_regex)
 
-        # Generate regex possible prefix
-        prefixes = []
-        for regex, add_regex in [(fiscal_year_regex, fiscal_year), (cgac_regex, agency_id),
-                                 (download_type_regex, download_type)]:
-            if not add_regex:
-                break
-            prefixes.append(regex)
-        prefix = '_'.join(prefixes)
+        # Populate regex
+        monthly_download_prefixes = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], download_type)
+        monthly_download_regex = '{}_Full_.*\.zip'.format(monthly_download_prefixes)
+        delta_download_prefixes = '{}_{}'.format(agency['cgac_code'], download_type)
+        delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
-        # Get and filter the files we need
-        bucket_name = self.s3_handler.bucketRoute
-        region_name = S3Handler.REGION
-        bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
-        monthly_dls_names = list(filter(re.compile(monthly_dl_regex).search,
-                                        [key.name for key in bucket.list(prefix=prefix)]))
+        # Retrieve and filter the files we need
+        bucket = boto.s3.connect_to_region(S3Handler.REGION).get_bucket(self.s3_handler.bucketRoute)
+        monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
+                                             [key.name for key in bucket.list(prefix=monthly_download_prefixes)]))
+        delta_download_names = list(filter(re.compile(delta_download_regex).search,
+                                           [key.name for key in bucket.list(prefix=delta_download_prefixes)]))
+
         # Generate response
         downloads = []
-        for name in monthly_dls_names:
-            name_data = re.findall('(.*)_(.*)_(.*)_Full_(.*)\.zip', name)[0]
-            agency_name = None
-            agency_abbr = None
-            agency_cgac = name_data[1]
-            if agency_cgac != 'all':
-                agency = ToptierAgency.objects.filter(cgac_code=agency_cgac).values('name', 'abbreviation')
-                if agency:
-                    agency_name = agency[0]['name']
-                    agency_abbr = agency[0]['abbreviation']
-            else:
-                agency_name = 'All'
-            # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
-            updated_date = '-'.join([name_data[3][:4], name_data[3][4:6], name_data[3][6:]])
-            downloads.append({'fiscal_year': name_data[0],
-                              'agency_name': agency_name,
-                              'agency_acronym': agency_abbr,
-                              'type': name_data[2].lower(),
-                              'updated_date': updated_date,
-                              'file_name': name,
-                              'url': self.s3_handler.get_simple_url(file_name=name)})
-        response_data['monthly_files'] = downloads
-        return Response(response_data)
+        for filename in monthly_download_names:
+            downloads.append(self.create_download_response_obj(filename, fiscal_year, type_param, agency))
+        for filename in delta_download_names:
+            downloads.append(self.create_download_response_obj(filename, None, type_param, agency, is_delta=True))
+
+        return Response({'monthly_files': downloads})
+
+    def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
+        """Return a """
+        regex = '(.*)_(.*)_Delta_(.*)\.zip' if is_delta else '(.*)_(.*)_(.*)_Full_(.*)\.zip'
+        filename_data = re.findall(regex, filename)[0]
+
+        # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
+        unformatted_date = filename_data[2 if is_delta else 3]
+        updated_date = '-'.join([unformatted_date[:4], unformatted_date[4:6], unformatted_date[6:]])
+
+        return {
+            'fiscal_year': fiscal_year,
+            'agency_name': agency['name'],
+            'agency_acronym': agency['abbreviation'],
+            'type': type_param,
+            'updated_date': updated_date,
+            'file_name': filename,
+            'url': self.s3_handler.get_simple_url(file_name=filename)
+        }
