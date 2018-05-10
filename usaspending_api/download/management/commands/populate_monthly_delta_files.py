@@ -14,7 +14,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField
 
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
@@ -245,9 +245,8 @@ class Command(BaseCommand):
 
     def parse_filters(self, award_types, agency):
         """ Convert readable filters to a filter object usable for the matview filter """
-        award_type_code_lists = [all_award_types_mappings[award_type] for award_type in award_types]
         filters = {
-            'award_type_codes': reduce(lambda x, y: x.extend(y), award_type_code_lists)
+            'award_type_codes': [award_type for sublist in award_types for award_type in all_ats_mappings[sublist]]
         }
 
         agency_code = agency
