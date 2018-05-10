@@ -82,8 +82,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
         if subawards:
             data_set = queryset \
-                .values('type') \
-                .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('subaward_obligation')) \
+                .values('award_type') \
+                .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('amount')) \
                 .values('month', 'fiscal_year', 'transaction_amount')
         else:
             data_set = queryset.values('fiscal_year')
@@ -428,10 +428,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
 
         self.subawards = json_request["subawards"]
-        self.scope = json_request.get("scope")
+        self.scope = json_request["scope"]
         self.filters = json_request.get("filters", None)
-        self.geo_layer = json_request.get("geo_layer")
-        self.geo_layer_filters = json_request.get("geo_layer_filters")
+        self.geo_layer = json_request["geo_layer"]
+        self.geo_layer_filters = json_request["geo_layer_filters"]
 
         fields_list = []  # fields to include in the aggregate query
 
@@ -444,8 +444,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         model_dict = {
             'place_of_performance': 'pop',
             'recipient_location': 'recipient_location',
-            'subawards_place_of_performance': 'place_of_performance',
-            'subawards_recipient_location': 'recipient__location'
+            # 'subawards_place_of_performance': 'pop',
+            # 'subawards_recipient_location': 'recipient_location'
         }
 
         # Build the query based on the scope fields and geo_layers
@@ -466,7 +466,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # State will have one field (state_code) containing letter A-Z
             column_isnull = 'federal_action_obligation__isnull'
             if self.subawards:
-                column_isnull = 'subaward_obligation__isnull'
+                column_isnull = 'amount__isnull'
             kwargs = {
                 '{}_country_code'.format(scope_field_name): 'USA',
                 column_isnull: False
@@ -492,7 +492,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
             kwargs = {
-                '{}__isnull'.format('subaward_obligation' if self.subawards else 'federal_action_obligation'): False
+                '{}__isnull'.format('amount' if self.subawards else 'federal_action_obligation'): False
             }
 
             if self.geo_layer == 'county':
@@ -543,7 +543,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
         filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
         self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('subaward_obligation'))
+            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -583,7 +583,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             .annotate(code_as_float=Cast(loc_lookup, FloatField()))
         filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
         self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('subaward_obligation'))
+            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
 
         return self.geo_queryset
 
@@ -643,11 +643,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for m in models:
             if m['name'] in ('award_type_codes', 'fields'):
                 m['optional'] = False
+
         json_request = TinyShield(models).block(request.data)
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
         subawards = json_request["subawards"]
-        order = json_request.get("order", "asc")
+        order = json_request["order"]
         limit = json_request["limit"]
         page = json_request["page"]
 
@@ -703,7 +704,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
             if sort == "Award ID":
-                sort_filters = ["award__piid", "award__fain"] if subawards else ["piid", "fain", "uri"]
+                sort_filters = ["piid", "fain"] if subawards else ["piid", "fain", "uri"]
             if order == "desc":
                 sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
 
@@ -771,7 +772,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean'}
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -780,7 +781,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 m['optional'] = True'''
         json_request = TinyShield(models).block(request.data)
         filters = json_request.get("filters", None)
-        subawards = json_request.get("subawards", False)
+        subawards = json_request["subawards"]
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 

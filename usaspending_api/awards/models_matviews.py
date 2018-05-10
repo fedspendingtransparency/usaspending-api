@@ -1,9 +1,11 @@
 import warnings
-from django.db import models
-from django.core.cache import CacheKeyWarning
+
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.search import SearchVectorField
+from django.core.cache import CacheKeyWarning
+from django.db import models
 from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.references.models import LegalEntity, Location
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -718,17 +720,16 @@ class SubawardView(models.Model):
     latest_transaction_id = models.IntegerField()
     last_modified_date = models.DateField()
     subaward_number = models.TextField()
-    subaward_obligation = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True,
-        null=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
     total_obl_bin = models.TextField()
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     fiscal_year = models.IntegerField()
     action_date = models.DateField()
     award_report_fy_month = models.IntegerField()
     award_report_fy_year = models.IntegerField()
 
-    award_id = models.IntegerField()
+    # award = models.OneToOneField(Award, primary_key=True)
+    award = models.ForeignKey(Award, models.DO_NOTHING)
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
@@ -736,9 +737,9 @@ class SubawardView(models.Model):
     funding_toptier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
 
-    place_of_performance_id = models.IntegerField()
-    recipient_id = models.IntegerField()
-    type = models.TextField()
+    place_of_performance = models.ForeignKey(Location, models.DO_NOTHING)
+    recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    award_type = models.TextField()
 
     cfda_id = models.IntegerField()
     piid = models.TextField()

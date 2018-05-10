@@ -15,7 +15,7 @@
     "  latest_transaction.id AS latest_transaction_id,",
     "  latest_transaction.last_modified_date,",
     "  sub.subaward_number,",
-    "  sub.amount AS subaward_obligation,",
+    "  sub.amount AS amount,",
     "  obligation_to_enum(sub.amount) AS total_obl_bin,",
     "  sub.description,",
     "  fy(sub.action_date) AS fiscal_year,",
@@ -33,7 +33,7 @@
     "",
     "  sub.place_of_performance_id,",
     "  sub.recipient_id,",
-    "  sub.award_type AS type,",
+    "  sub.award_type,",
     "",
     "  sub.cfda_id,",
     "  awards.piid,",
@@ -117,7 +117,7 @@
     "  sub.award_id IS NOT NULL AND",
     "  awards.latest_transaction_id IS NOT NULL",
     "ORDER BY",
-    "  subaward_obligation DESC NULLS LAST"
+    "  amount DESC NULLS LAST"
   ],
   "indexes": [
     {
@@ -125,12 +125,12 @@
       "unique": true,
       "columns": [{"name": "id"}]
     }, {
-      "name": "type",
-      "where": "type IS NOT NULL",
-      "columns": [{"name": "type"}]
+      "name": "award_type",
+      "where": "award_type IS NOT NULL",
+      "columns": [{"name": "award_type"}]
     }, {
-      "name": "ordered_type",
-      "columns": [{"name": "type", "order": "DESC NULLS LAST"}]
+      "name": "ordered_award_type",
+      "columns": [{"name": "award_type", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_fain",
       "where": "fain IS NOT NULL",
@@ -140,12 +140,12 @@
       "where": "piid IS NOT NULL",
       "columns": [{"name": "UPPER(piid)", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "subaward_obligation",
-      "where": "subaward_obligation IS NOT NULL",
-      "columns": [{"name": "subaward_obligation"}]
+      "name": "amount",
+      "where": "amount IS NOT NULL",
+      "columns": [{"name": "amount"}]
     }, {
-      "name": "ordered_subaward_obligation",
-      "columns": [{"name": "subaward_obligation", "order": "DESC NULLS LAST"}]
+      "name": "ordered_amount",
+      "columns": [{"name": "amount", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "total_obl_bin"}]

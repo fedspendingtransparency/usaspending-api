@@ -86,7 +86,7 @@ def get_total_transaction_columns(filters, model):
     """
     total_transaction_columns = []
     if model == SubawardView:
-        total_transaction_columns.append('subaward_obligation')
+        total_transaction_columns.append('amount')
     else:
         award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
         awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
