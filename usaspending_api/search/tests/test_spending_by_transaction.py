@@ -3,7 +3,6 @@ import pytest
 from rest_framework import status
 
 
-#@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_transaction_kws_success(client):
     """Verify error on bad autocomplete

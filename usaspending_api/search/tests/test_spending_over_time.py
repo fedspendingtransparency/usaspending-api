@@ -6,7 +6,6 @@ from rest_framework import status
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
-#@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_over_time_success(client):
 
@@ -33,7 +32,6 @@ def test_spending_over_time_success(client):
     assert resp.status_code == status.HTTP_200_OK
 
 
-#@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_over_time_failure(client):
     """Verify error on bad autocomplete request for budget function."""
