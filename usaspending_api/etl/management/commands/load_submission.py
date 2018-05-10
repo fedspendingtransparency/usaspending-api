@@ -16,6 +16,7 @@ from usaspending_api.accounts.models import (
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
+from usaspending_api.common.helpers import upper_case_dict_values
 from usaspending_api.references.models import Agency, ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
@@ -695,9 +696,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                                                                         str(total_rows),
                                                                         datetime.now() - start_time))
 
-        for key in row:
-            if isinstance(row[key], str):
-                row[key] = row[key].upper()
+        upper_case_dict_values(row)
 
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
