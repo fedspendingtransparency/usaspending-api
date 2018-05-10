@@ -107,8 +107,7 @@ class Command(BaseCommand):
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
         # Create a unique temporary file with the raw query
-        source_query = source.row_emitter(None)  # None requests all headers
-        raw_quoted_query = generate_raw_quoted_query(source_query)
+        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
         csv_query_annotated = self.apply_annotations_to_sql(raw_quoted_query, source.human_names)
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
         with open(temp_sql_file_path, 'w') as file:
@@ -120,7 +119,7 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Append deleted rows to the end of the file
-        # self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
+        self.add_deletion_records(working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
             # Split CSV into separate files
             split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
