@@ -3,7 +3,7 @@ import pytest
 from rest_framework import status
 
 
-@pytest.mark.skip
+#@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_transaction_kws_success(client):
     """Verify error on bad autocomplete
@@ -16,8 +16,8 @@ def test_spending_by_transaction_kws_success(client):
             {
                 "filters":
                     {
-                        "search_term": "a",
-                        "transaction_type": "Direct Payments"
+                        "keyword": "test",
+                        "award_type_codes": ["A", "B", "C", "D"]
                     },
                 "fields": ["Award ID", "Recipient Name", "Mod"],
                 "page": 1,
