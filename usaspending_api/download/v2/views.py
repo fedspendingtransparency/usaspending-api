@@ -518,9 +518,9 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
         # Capitalize type_param and retrieve agency information from agency ID
         download_type = type_param.capitalize()
         if agency_id == 'all':
-            agency = {'cgac_code': 'all', 'cgac_name': 'All', 'abbreviation': None}
+            agency = {'cgac_code': 'all', 'name': 'All', 'abbreviation': None}
         else:
-            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code', 'cgac_name',
+            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code', 'name',
                                                                                             'abbreviation')
             if agency_check:
                 agency = agency_check[0]
