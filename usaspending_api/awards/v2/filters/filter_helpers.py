@@ -197,8 +197,8 @@ def transform_keyword(request, api_version):
             if keyword_array_passed:
                 keywords = keyword_array_passed
             else:
-                raise InvalidParameterException('''keyword' is deprecated. Please use 'keywords'.
-                                                See documentation for more information.''')
+                raise InvalidParameterException("keyword' is deprecated. Please use 'keywords'."
+                                                "See documentation for more information.")
         filter_obj['keywords'] = keywords
         request.data["filters"] = filter_obj
     return request
