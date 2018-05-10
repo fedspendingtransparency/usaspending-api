@@ -42,14 +42,14 @@ class Command(BaseCommand):
                 csv_file = os.path.join('/', 'tmp', FILE_NAME)
                 bucket.download_file(keys[0].key, csv_file)
 
-                # lower headers
-                with open(csv_file) as data:
-                    data = csv.reader(data)
-                    header = [row.lower() for row in next(data)]
-                    updated_data = [header] + list(data)
-                with open(csv_file, 'w') as data:
-                    writer = csv.writer(data)
-                    writer.writerows(updated_data)
+        # lower headers
+        with open(csv_file) as data:
+            data = csv.reader(data)
+            header = [row.lower() for row in next(data)]
+            updated_data = [header] + list(data)
+        with open(csv_file, 'w') as data:
+            writer = csv.writer(data)
+            writer.writerows(updated_data)
 
         reader = CsvDataReader(csv_file)
 
