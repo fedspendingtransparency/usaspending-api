@@ -564,10 +564,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
         if self.geo_layer_filters:
-            self.queryset &= geocode_filter_locations(scope_field_name, [
+            geo_layers_list = [
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
-            ], self.model_name, not self.subawards)
+            ]
+            self.queryset &= geocode_filter_locations(scope_field_name, geo_layers_list, self.model_name, True)
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False

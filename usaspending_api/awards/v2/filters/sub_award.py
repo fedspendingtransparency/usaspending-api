@@ -89,7 +89,7 @@ def subaward_filter(filters):
             idv_flag = all(i in value for i in contract_type_mapping.keys())
 
             if len(value) != 0:
-                filter_obj = Q(award_type__in=value)
+                filter_obj = Q(prime_award_type__in=value)
                 if idv_flag:
                     filter_obj |= Q(pulled_from='IDV')
                 queryset &= SubawardView.objects.filter(filter_obj)

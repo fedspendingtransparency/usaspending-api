@@ -7,8 +7,7 @@ from collections import namedtuple, OrderedDict
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.accounts.v2.filters.account_balances import account_balances_filter
 from usaspending_api.accounts.v2.filters.object_class_program_activity import object_class_program_activity_filter
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
-from usaspending_api.awards.models import Subaward
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
                                                                universal_transaction_matview_filter)
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -50,7 +49,7 @@ VALUE_MAPPINGS = {
     # SubAward Level
     'sub_awards': {
         'source_type': 'award',
-        'table': Subaward,
+        'table': SubawardView,
         'table_name': 'subaward',
         'download_name': 'subawards',
         'contract_data': 'award__latest_transaction__contract_data',

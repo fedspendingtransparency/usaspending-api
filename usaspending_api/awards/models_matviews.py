@@ -729,7 +729,7 @@ class SubawardView(models.Model):
     award_report_fy_year = models.IntegerField()
 
     # award = models.OneToOneField(Award, primary_key=True)
-    award = models.ForeignKey(Award, models.DO_NOTHING)
+    award = models.OneToOneField(Award, primary_key=True)
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
@@ -737,9 +737,10 @@ class SubawardView(models.Model):
     funding_toptier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
 
-    place_of_performance = models.ForeignKey(Location, models.DO_NOTHING)
-    recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    place_of_performance = models.OneToOneField(Location, primary_key=True)
+    recipient = models.OneToOneField(LegalEntity, primary_key=True)
     award_type = models.TextField()
+    prime_award_type = models.TextField()
 
     cfda_id = models.IntegerField()
     piid = models.TextField()

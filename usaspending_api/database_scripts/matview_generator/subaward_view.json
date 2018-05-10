@@ -34,6 +34,7 @@
     "  sub.place_of_performance_id,",
     "  sub.recipient_id,",
     "  sub.award_type,",
+    "  awards.type AS prime_award_type,",
     "",
     "  sub.cfda_id,",
     "  awards.piid,",
