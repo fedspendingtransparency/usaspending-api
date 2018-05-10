@@ -190,8 +190,7 @@ def transform_keyword(request, api_version):
         if "keyword" not in filter_obj and "keywords" not in filter_obj:
             return request
         keyword_array_passed = filter_obj.get('keywords', False)
-        keyword_string_passed = filter_obj.get('keyword', False)
-        filter_obj.pop("keyword", None)
+        keyword_string_passed = filter_obj.pop("keyword", None)
         if api_version < 3:
             keywords = keyword_array_passed if keyword_array_passed else [keyword_string_passed]
         else:
