@@ -850,7 +850,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         models = [
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text',
-             'text_type': 'search', 'optional': False,  'min': 3},
+             'text_type': 'search', 'optional': False},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -919,7 +919,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     def post(self, request):
 
         models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array', 'array_type': 'text',
-                  'text_type': 'search', 'optional': False}]
+                  'text_type': 'search', 'optional': False, 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
         if not results:
