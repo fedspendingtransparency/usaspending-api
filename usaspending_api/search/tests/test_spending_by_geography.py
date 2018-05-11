@@ -83,7 +83,7 @@ def test_spending_by_geography_incorrect_state(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'state',
-            'filter': {}
+            'filters': {}
         })
     )
 
@@ -98,7 +98,7 @@ def test_spending_by_geography_incorrect_county(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'county',
-            'filter': {}
+            'filters': {}
         })
     )
 
@@ -113,7 +113,7 @@ def test_spending_by_geography_incorrect_district(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'district',
-            'filter': {}
+            'filters': {}
         })
     )
 

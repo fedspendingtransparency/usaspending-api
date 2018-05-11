@@ -36,5 +36,5 @@ def test_spending_by_award_type_failure(client):
     resp = client.post(
         '/api/v2/search/spending_by_award_count/',
         content_type='application/json',
-        data=json.dumps({'test': {}, 'filter': {}}))
+        data=json.dumps({'test': {}, 'filters': {}}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

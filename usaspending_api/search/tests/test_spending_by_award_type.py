@@ -35,7 +35,7 @@ def test_spending_by_award_type_success(client):
         '/api/v2/search/spending_by_award',
         content_type='application/json',
         data=json.dumps({
-            "fields": ["Award ID", "Recipient Name"],
+            "fields": ["Sub-Award ID"],
             "filters": all_filters(),
             "subawards": True
         }))
@@ -50,4 +50,4 @@ def test_spending_by_award_type_failure(client):
         '/api/v2/search/spending_by_award/',
         content_type='application/json',
         data=json.dumps({'filters': {}}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
