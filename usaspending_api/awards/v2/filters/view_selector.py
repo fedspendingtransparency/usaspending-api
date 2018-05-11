@@ -106,7 +106,7 @@ MATVIEW_SELECTOR = {
     },
     'UniversalTransactionView': {
         'allowed_filters': [
-            'keyword',
+            'keywords',
             'time_period',
             'award_type_codes',
             'agencies',
@@ -131,7 +131,7 @@ MATVIEW_SELECTOR = {
     },
     'UniversalAwardView': {
         'allowed_filters': [
-            'keyword',
+            'keywords',
             'time_period',
             'award_type_codes',
             'agencies',

@@ -182,3 +182,23 @@ def can_use_total_obligation_enum(amount_obj):
     except Exception:
         pass
     return False
+
+
+def transform_keyword(request, api_version):
+    filter_obj = request.data.get("filters", None)
+    if filter_obj:
+        if "keyword" not in filter_obj and "keywords" not in filter_obj:
+            return request
+        keyword_array_passed = filter_obj.get('keywords', False)
+        keyword_string_passed = filter_obj.pop("keyword", None)
+        if api_version < 3:
+            keywords = keyword_array_passed if keyword_array_passed else [keyword_string_passed]
+        else:
+            if keyword_array_passed:
+                keywords = keyword_array_passed
+            else:
+                raise InvalidParameterException("keyword' is deprecated. Please use 'keywords'."
+                                                "See documentation for more information.")
+        filter_obj['keywords'] = keywords
+        request.data["filters"] = filter_obj
+    return request

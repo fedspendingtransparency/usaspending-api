@@ -3,17 +3,17 @@
 
 **Method:** `POST`
 
-This route takes keyword search fields, and returns the fields of the searched term.
+This route takes keyword search fields, and returns the fields of the searched term(s).
 
 ### Request
 **field** - Defines what award variables are returned.
 
-**keyword** - search term used to query the database.
+**keywords** - search term(s) used to query the database.
 
 ```
 {
     "filters": {
-        "keyword": "Education",
+        "keywords": ["Education"],
         "award_type": "prime", // future enhancement
         "description_only": true // future enhancement
     }

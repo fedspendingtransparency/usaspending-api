@@ -34,7 +34,7 @@ OBJECT_RULE = {'name': 'test', 'type': 'object', 'key': 'filters|test',
 
 FILTER_OBJ = {
         "filters": {
-            "keyword": "money",
+            "keywords": ["grumpy", "bungle"],
             "award_type_codes": [
                 "A",
                 "B",

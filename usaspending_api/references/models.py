@@ -653,10 +653,11 @@ class RefProgramActivity(models.Model):
         managed = True
         db_table = 'ref_program_activity'
         unique_together = (('program_activity_code',
-                            'budget_year',
+                            'program_activity_name',
                             'responsible_agency_id',
                             'allocation_transfer_agency_id',
-                            'main_account_code'),)
+                            'main_account_code',
+                            'budget_year'),)
 
 
 class Cfda(DataSourceTrackedModel):

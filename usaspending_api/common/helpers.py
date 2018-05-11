@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 QUOTABLE_TYPES = (str, datetime.date)
 
 
+def upper_case_dict_values(input_dict):
+    for key in input_dict:
+        if isinstance(input_dict[key], str):
+            input_dict[key] = input_dict[key].upper()
+
+
 def validate_date(date):
     if not isinstance(date, (datetime.datetime, datetime.date)):
         raise TypeError('Incorrect parameter type provided')
