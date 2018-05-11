@@ -27,7 +27,7 @@ before_script:
 
 script:
 - flake8
-- pytest --cov=usaspending_api
+- pytest --cov=usaspending_api --local=false
 
 
 after_success:

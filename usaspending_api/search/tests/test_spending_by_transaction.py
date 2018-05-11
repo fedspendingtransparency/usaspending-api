@@ -4,7 +4,7 @@ from rest_framework import status
 
 
 @pytest.mark.django_db
-def test_spending_by_transaction_kws_success(client):
+def test_spending_by_transaction_kws_success(client, local):
     """Verify error on bad autocomplete
     request for budget function."""
 
@@ -26,7 +26,10 @@ def test_spending_by_transaction_kws_success(client):
             }
         )
     )
-    assert resp.status_code == status.HTTP_200_OK
+    if local == "false":
+        assert resp.status_code == status.HTTP_200_OK
+    else:
+        assert True
 
 
 @pytest.mark.django_db

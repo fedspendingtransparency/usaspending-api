@@ -15,7 +15,11 @@ def pytest_configure():
     settings.DATABASE_ROUTERS.clear()
 
 
-ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
+MATVIEW_GENERATOR_FILE = "database_scripts/matview_generator/matview_sql_generator.py"
+
+
+ENUM_FILE = ['database_scripts/matviews/functions_and_enums.sql']
+
 
 TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
                   '../matviews/universal_award_matview.sql',
@@ -28,10 +32,18 @@ TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
                   '../matviews/summary_view_psc_codes.sql',
                   '../matviews/summary_view.sql']
 
+def pytest_addoption(parser):
+    parser.addoption("--local", action="store", default="true")
+
+@pytest.fixture(scope="session")
+def local(request):
+    return request.config.getoption("--local")
+
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker,
                     django_db_keepdb,
+                    local,
                     request):
 
     from pytest_django.compat import setup_databases, teardown_databases
@@ -45,9 +57,14 @@ def django_db_setup(django_db_blocker,
                 **setup_databases_args
             )
         with connection.cursor() as c:
-                c.execute(get_sql(ENUM_FILE)[0])
-                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ",
-                                shell=True)
+                if local == "false":
+                    enum_file = ['usaspending_api/'+ ENUM_FILE[0]]
+                    matview_file = 'usaspending_api/'+ MATVIEW_GENERATOR_FILE
+                else:
+                    enum_file = ENUM_FILE
+                    matview_file = MATVIEW_GENERATOR_FILE
+                c.execute(get_sql(enum_file)[0])
+                subprocess.call("python  " + matview_file, shell=True)
                 for file in get_sql(TEMP_SQL_FILES):
                     c.execute(file)
 
