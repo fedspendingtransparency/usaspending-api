@@ -7,7 +7,7 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
 @pytest.mark.django_db
-def test_spending_over_time_success(client):
+def test_spending_over_time_success(client, refresh_matviews):
 
     # test for needed filters
     resp = client.post(
