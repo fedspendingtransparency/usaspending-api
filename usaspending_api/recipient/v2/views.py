@@ -41,6 +41,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         get_request = request.query_params
         year = get_request.get('year')
 
+        fips = fips.zfill(2)
         state_data_qs = StateData.objects.filter(fips=fips)
         if not state_data_qs.count():
             raise InvalidParameterException('Invalid FIPS ({}) or data unavailable.'.format(fips))
