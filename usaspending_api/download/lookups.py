@@ -87,7 +87,7 @@ SHARED_AWARD_FILTER_DEFAULTS = {
 }
 YEAR_CONSTRAINT_FILTER_DEFAULTS = {'elasticsearch_keyword': ''}
 ROW_CONSTRAINT_FILTER_DEFAULTS = {
-    'keyword': '',
+    'keywords': [],
     'legal_entities': [],
     'recipient_search_text': [],
     'recipient_scope': '',

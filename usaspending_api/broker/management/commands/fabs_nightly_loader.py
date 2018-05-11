@@ -8,7 +8,7 @@ from django.db import connections, transaction
 from django.db.models import Count
 from django.conf import settings
 
-from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
@@ -176,9 +176,7 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
-            for key in row:
-                if isinstance(row[key], str):
-                    row[key] = row[key].upper()
+            upper_case_dict_values(row)
 
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})

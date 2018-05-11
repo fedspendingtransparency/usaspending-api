@@ -2,8 +2,6 @@ import logging
 import datetime
 import json
 import multiprocessing
-import os
-import pandas as pd
 import boto
 import re
 
@@ -12,7 +10,7 @@ from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year, order_nested_object
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.download.filestreaming import csv_generation
-from usaspending_api.download.helpers import multipart_upload
+from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.views import YearLimitedDownloadViewSet
@@ -24,9 +22,6 @@ award_mappings = {
     'contracts': ['contracts'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
-
-MODIFIED_AGENCIES_LIST = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
-                                      'modified_authoritative_agency_list.csv')
 
 
 class Command(BaseCommand):
@@ -163,17 +158,6 @@ class Command(BaseCommand):
             help='Empty contracts file for uploading'
         )
 
-    def pull_modified_agencies_cgacs(self):
-        # Get a cgac_codes from the modified_agencies_list
-        cgac_codes = []
-        with open(MODIFIED_AGENCIES_LIST, encoding='Latin-1') as modified_agencies_list_csv:
-            mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
-        mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE']]
-        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
-        for _, row in mod_gencies_list_df.iterrows():
-            cgac_codes.append(row['CGAC AGENCY CODE'])
-        return cgac_codes
-
     def handle(self, *args, **options):
         """Run the application."""
 
@@ -205,7 +189,7 @@ class Command(BaseCommand):
         toptier_agencies = ToptierAgency.objects.all()
         include_all = True
         if use_modified_list:
-            used_cgacs = set(self.pull_modified_agencies_cgacs())
+            used_cgacs = set(pull_modified_agencies_cgacs())
             toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
         if agencies:
             if 'all' in agencies:

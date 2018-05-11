@@ -28,7 +28,7 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
                                                        contract_subaward_mapping, grant_subaward_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
-from usaspending_api.common.decorators import api_transformations
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_month, generate_fiscal_year, \
     get_simple_pagination_metadata
@@ -42,7 +42,6 @@ from usaspending_api.search.v2.elasticsearch_helper import (search_transactions,
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
-API_TRANSFORM_FUNCTIONS = []
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -126,7 +125,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Expected results structure
         # [{
         # 'time_period': {'fy': '2017', 'quarter': '3'},
-        #       'aggregated_amount': '200000000'
+        #   'aggregated_amount': '200000000'
         # }]
         sorted_group_results = sorted(
             group_results.items(),
@@ -158,14 +157,15 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum',
                 'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
-                'optional': False},
+                'optional': False}
+
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
         category = json_request["category"]
         scope = json_request.get("scope", None)
-        filters = json_request("filters", None)
+        filters = json_request.get("filters", None)
         limit = json_request["limit"]
         page = json_request["page"]
 
@@ -856,7 +856,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
-            if m['name'] in ('keyword', 'award_type_codes', 'sort'):
+            if m['name'] in ('keywords', 'award_type_codes', 'sort'):
                 m['optional'] = False
         validated_payload = TinyShield(models).block(request.data)
 
@@ -899,7 +899,8 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array',
+                  'array_type': 'text', 'text_type': 'search', 'optional': False,  'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -918,7 +919,8 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array', 'array_type': 'text',
+                  'text_type': 'search', 'optional': False, 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
         if not results:
