@@ -3,6 +3,18 @@ import subprocess
 import pytest
 from django.db import connection
 
+def pytest_configure():
+    # To make sure the test setup process doesn't try
+    # to set up another test db, remove everything but the default
+    # DATABASE_URL from the list of databases in django settings
+    test_db = settings.DATABASES.pop('default', None)
+    settings.DATABASES.clear()
+    settings.DATABASES['default'] = test_db
+    # Also remove any database routers
+    settings.DATABASE_ROUTERS.clear()
+
+
+
 ENUM_FILE = ['database_scripts/matviews/functions_and_enums.sql']
 
 TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
@@ -26,50 +38,34 @@ def local(request):
     return request.config.getoption("--local")
 
 
-def pytest_configure():
-    # To make sure the test setup process doesn't try
-    # to set up another test db, remove everything but the default
-    # DATABASE_URL from the list of databases in django settings
-    test_db = settings.DATABASES.pop('default', None)
-    settings.DATABASES.clear()
-    settings.DATABASES['default'] = test_db
-    # Also remove any database routers
-    settings.DATABASE_ROUTERS.clear()
-
-
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker,
                     django_db_keepdb,
                     request,
                     local):
-    # if local == "true":
+    from pytest_django.compat import setup_databases, teardown_databases
+
+    setup_databases_args = {}
+
     with django_db_blocker.unblock():
-        with connection.cursor() as c:
-                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
-                for file in get_sql(TEMP_SQL_FILES):
-                    c.execute(file)
-    return
-    '''else:
-        from pytest_django.compat import setup_databases, teardown_databases
-
-        setup_databases_args = {}
-
-        with django_db_blocker.unblock():
-            db_cfg = setup_databases(
+        db_cfg = setup_databases(
                 verbosity=pytest.config.option.verbose,
                 interactive=False,
                 **setup_databases_args
             )
-
-        def teardown_database():
+        with connection.cursor() as c:
+                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+                for file in get_sql(TEMP_SQL_FILES):
+                    c.execute(file)
+    def teardown_database():
             with django_db_blocker.unblock():
                 teardown_databases(
                     db_cfg,
                     verbosity=pytest.config.option.verbose,
                 )
 
-        if not django_db_keepdb:
-            request.addfinalizer(teardown_database)'''
+    if not django_db_keepdb:
+        request.addfinalizer(teardown_database)
 
 
 def get_sql(sql_files):
