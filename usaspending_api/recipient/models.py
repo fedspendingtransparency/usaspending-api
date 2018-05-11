@@ -13,7 +13,7 @@ class StateData(models.Model):
     year = models.IntegerField(db_index=True)
     population = models.BigIntegerField(null=True, blank=True)
     pop_source = models.TextField(null=True, blank=True)
-    median_household_income = models.BigIntegerField(null=True, blank=True)
+    median_household_income = models.DecimalField(null=True, blank=True, decimal_places=2, max_digits=21)
     mhi_source = models.TextField(null=True, blank=True)
 
     class Meta:
