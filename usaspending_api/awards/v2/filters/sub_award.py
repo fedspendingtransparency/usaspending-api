@@ -23,7 +23,7 @@ def subaward_filter(filters):
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = [
-            'keyword',
+            'keywords',
             'elasticsearch_keyword',
             'time_period',
             'award_type_codes',
@@ -48,25 +48,29 @@ def subaward_filter(filters):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        if key == "keyword":
-            keyword = value
-            upper_kw = keyword.upper()
+        if key == "keywords":
+            def keyword_parse(keyword):
+                # keyword_ts_vector & award_ts_vector are Postgres TS_vectors.
+                # keyword_ts_vector = recipient_name + psc_description + subaward_description
+                # award_ts_vector = piid + fain + uri + subaward_number
+                filter_obj = Q(keyword_ts_vector=keyword) | \
+                    Q(award_ts_vector=keyword)
+                if keyword.isnumeric():
+                    filter_obj |= Q(naics_code__contains=keyword)
+                if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
+                    filter_obj |= Q(product_or_service_code__iexact=keyword)
 
-            # keyword_string & award_id_string are Postgres TS_vectors.
-            # keyword_string = recipient_name + psc_description + subaward_description
-            # award_id_string = piid + fain + uri + subaward_number
-            compound_or = Q(keyword_ts_vector=keyword) | \
-                Q(award_ts_vector=keyword) | \
-                Q(recipient_unique_id=upper_kw) | \
-                Q(parent_recipient_unique_id=keyword)
+                return filter_obj
 
-            if keyword.isnumeric():
-                compound_or |= Q(naics_code__contains=keyword)
+            filter_obj = Q()
+            for keyword in value:
+                filter_obj |= keyword_parse(keyword)
+            potential_DUNS = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
+            if len(potential_DUNS) > 0:
+                filter_obj |= Q(recipient_unique_id__in=potential_DUNS) | \
+                    Q(parent_recipient_unique_id__in=potential_DUNS)
 
-            if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
-                compound_or |= Q(product_or_service_code__iexact=keyword)
-
-            queryset = queryset.filter(compound_or)
+            queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
             keyword = value
@@ -150,16 +154,21 @@ def subaward_filter(filters):
             #     queryset &= SubawardView.objects.filter(recipient__legal_entity_id__in=or_queryset)
 
         elif key == "recipient_search_text":
-            if len(value) != 1:
-                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
-            upper_recipient_string = str(value[0]).upper()
+            def recip_string_parse(recipient_string):
+                upper_recipient_string = str(value[0]).upper()
 
-            # recipient_name_ts_vector is a postgres TS_Vector
-            filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
+                # recipient_name_ts_vector is a postgres TS_Vector
+                filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
 
-            if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
-                filter_obj |= Q(recipient_unique_id=upper_recipient_string)
+                if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                    filter_obj |= Q(recipient_unique_id=upper_recipient_string)
 
+                filter_obj &= SubawardView.objects.filter(filter_obj)
+                return filter_obj
+
+            filter_obj = Q()
+            for recip in value:
+                filter_obj |= recip_string_parse(recip)
             queryset &= SubawardView.objects.filter(filter_obj)
 
         elif key == "recipient_scope":

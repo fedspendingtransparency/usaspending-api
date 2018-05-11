@@ -19,6 +19,7 @@ from usaspending_api.awards.v2.filters.view_selector import download_transaction
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object
@@ -34,6 +35,7 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
 
+@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
@@ -304,8 +306,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'keyword' in filters and len(filters.keys()) == 1:
-            request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
+        if 'keywords' in filters and len(filters.keys()) == 1:
+            request_data['filters'] = {'elasticsearch_keyword': filters['keywords']}
             return
 
         # Validate other parameters previously required by the Bulk Download endpoint
