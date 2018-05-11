@@ -159,10 +159,6 @@ def order_nested_object(nested_object):
         return nested_object
 
 
-def table_exists(model):
-    return model._meta.db_table in connection.introspection.table_names()
-
-
 def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
     """ Generate the most recently completed fiscal quarter """
 

@@ -8,13 +8,11 @@ from usaspending_api.common.views import APIDocumentationView
 
 from django.db.models import Sum
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.matview_filters import universal_transaction_matview_filter
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import table_exists, generate_fiscal_year
+from usaspending_api.common.helpers import generate_fiscal_year
 from usaspending_api.recipient.models import StateData
 
 logger = logging.getLogger(__name__)
@@ -76,10 +74,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         state_mhi_data = self.get_state_data(state_data_results, 'median_household_income', year)
 
         # calculate award total filtered by state
-        if table_exists(UniversalTransactionView):
-            total_award_qs = universal_transaction_matview_filter(filters)
-        else:
-            total_award_qs = transaction_filter(filters)
+        total_award_qs = universal_transaction_matview_filter(filters)
         total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
         total_award_count = total_award_qs.values('award_id').distinct().count()
         total_award_amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] \
