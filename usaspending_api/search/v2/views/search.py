@@ -704,6 +704,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_filters = [contract_subaward_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
                     sort_filters = [grant_subaward_mapping[sort]]
+                else:
+                    sort_filters = []
+                    # TODO- Raise an error here that explains that you cannot mix award types
+                    # from different categories. (DEV-975)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]
