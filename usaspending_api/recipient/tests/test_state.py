@@ -131,8 +131,8 @@ def test_state_metadata_success(client, state_data):
     assert resp.data['mhi_year'] == 2016
     assert resp.data['mhi_source'] == 'Census 2010 MHI'
 
-    # test small request - district
-    resp = client.get(state_metadata_endpoint('02'))
+    # test small request - district, testing 1 digit FIPS
+    resp = client.get(state_metadata_endpoint('2'))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data['name'] == 'Test District'
     assert resp.data['code'] == 'TD'
