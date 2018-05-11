@@ -15,7 +15,8 @@ def pytest_configure():
 
 
 
-ENUM_FILE = ['database_scripts/matviews/functions_and_enums.sql']
+
+ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
 
 TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
                   '../matviews/universal_award_matview.sql',
@@ -54,6 +55,7 @@ def django_db_setup(django_db_blocker,
                 **setup_databases_args
             )
         with connection.cursor() as c:
+                c.execute(get_sql(ENUM_FILE)[0])
                 subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
                 for file in get_sql(TEMP_SQL_FILES):
                     c.execute(file)
