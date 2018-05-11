@@ -8,8 +8,6 @@ from rest_framework import status
 from model_mommy import mommy
 import pytest
 
-
-
 # Imports from your apps
 from usaspending_api.common.helpers import generate_fiscal_year
 
@@ -117,7 +115,7 @@ def state_data(db):
 
 
 @pytest.mark.django_db
-def test_state_metadata_success(client, state_data):
+def test_state_metadata_success(client, state_data, refresh_matviews):
     # test small request - state
     resp = client.get(state_metadata_endpoint('01'))
     assert resp.status_code == status.HTTP_200_OK
@@ -193,7 +191,7 @@ def test_state_metadata_success(client, state_data):
 
 
 @pytest.mark.django_db
-def test_state_metadata_failure(client, state_data):
+def test_state_metadata_failure(client, state_data, refresh_matviews):
     """Verify error on bad autocomplete request for budget function."""
 
     # There is no FIPS with 03
