@@ -20,6 +20,7 @@ TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
 def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="false")
 
+
 @pytest.fixture(scope='session')
 def local(request):
     return request.config.getoption("--local")
@@ -38,12 +39,12 @@ def pytest_configure():
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker, local):
-      with django_db_blocker.unblock():
-          with connection.cursor() as c:
+    with django_db_blocker.unblock():
+        with connection.cursor() as c:
             if local == "true":
-              subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
-              for file in get_sql(TEMP_SQL_FILES):
-                  c.execute(file)
+                subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+                for file in get_sql(TEMP_SQL_FILES):
+                    c.execute(file)
 
 
 def get_sql(sql_files):
