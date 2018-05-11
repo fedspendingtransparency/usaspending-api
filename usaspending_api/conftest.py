@@ -3,6 +3,7 @@ import subprocess
 import pytest
 from django.db import connection
 
+
 def pytest_configure():
     # To make sure the test setup process doesn't try
     # to set up another test db, remove everything but the default
@@ -12,8 +13,6 @@ def pytest_configure():
     settings.DATABASES['default'] = test_db
     # Also remove any database routers
     settings.DATABASE_ROUTERS.clear()
-
-
 
 
 ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
@@ -28,15 +27,6 @@ TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
                   '../matviews/summary_view_naics_codes.sql',
                   '../matviews/summary_view_psc_codes.sql',
                   '../matviews/summary_view.sql']
-
-
-def pytest_addoption(parser):
-    parser.addoption("--local", action="store", default="false")
-
-
-@pytest.fixture(scope='session')
-def local(request):
-    return request.config.getoption("--local")
 
 
 @pytest.fixture(scope='session')
@@ -56,9 +46,11 @@ def django_db_setup(django_db_blocker,
             )
         with connection.cursor() as c:
                 c.execute(get_sql(ENUM_FILE)[0])
-                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ",
+                                shell=True)
                 for file in get_sql(TEMP_SQL_FILES):
                     c.execute(file)
+
     def teardown_database():
             with django_db_blocker.unblock():
                 teardown_databases(
