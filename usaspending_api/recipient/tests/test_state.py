@@ -117,77 +117,127 @@ def state_data(db):
 @pytest.mark.django_db
 def test_state_metadata_success(client, state_data, refresh_matviews):
     # test small request - state
+    expected_state = {
+        'name': 'Test State',
+        'code': 'TS',
+        'fips': '01',
+        'type': 'state',
+        'population': 100000,
+        'pop_year': 2017,
+        'pop_source': 'Census 2010 Pop',
+        'median_household_income': 50000,
+        'mhi_year': 2016,
+        'mhi_source': 'Census 2010 MHI',
+        'total_prime_amount': 0,
+        'total_prime_awards': 0,
+        'award_amount_per_capita': 0.00
+    }
+    expected_district = expected_state.copy()
+    expected_district.update({
+        'name': 'Test District',
+        'code': 'TD',
+        'type': 'district',
+        'pop_year': 2016,
+        'median_household_income': 20000,
+        'fips': '02',
+        'population': 5000
+    })
+    expected_territory = expected_state.copy()
+    expected_territory.update({
+        'name': 'Test Territory',
+        'code': 'TT',
+        'type': 'territory',
+        'pop_year': 2016,
+        'median_household_income': 10000,
+        'fips': '03',
+        'population': 5000
+    })
+
     resp = client.get(state_metadata_endpoint('01'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['name'] == 'Test State'
-    assert resp.data['code'] == 'TS'
-    assert resp.data['fips'] == '01'
-    assert resp.data['type'] == 'state'
-    assert resp.data['population'] == 100000
-    assert resp.data['pop_year'] == 2017
-    assert resp.data['pop_source'] == 'Census 2010 Pop'
-    assert resp.data['median_household_income'] == 50000
-    assert resp.data['mhi_year'] == 2016
-    assert resp.data['mhi_source'] == 'Census 2010 MHI'
+    assert resp.data == expected_state
 
     # test small request - district, testing 1 digit FIPS
     resp = client.get(state_metadata_endpoint('2'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['name'] == 'Test District'
-    assert resp.data['code'] == 'TD'
-    assert resp.data['type'] == 'district'
+    assert resp.data == expected_district
 
     # test small request - territory
     resp = client.get(state_metadata_endpoint('03'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['name'] == 'Test Territory'
-    assert resp.data['code'] == 'TT'
-    assert resp.data['type'] == 'territory'
+    assert resp.data == expected_territory
 
     # test year with amounts
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'population': 50000,
+        'pop_year': 2016,
+        'median_household_income': 50000,
+        'mhi_year': 2016,
+        'total_prime_amount': 200000,
+        'total_prime_awards': 2,
+        'award_amount_per_capita': 4
+    })
     resp = client.get(state_metadata_endpoint('01', '2016'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['population'] == 50000
-    assert resp.data['pop_year'] == 2016
-    assert resp.data['median_household_income'] == 50000
-    assert resp.data['mhi_year'] == 2016
-    assert resp.data['total_prime_amount'] == 200000
-    assert resp.data['total_prime_awards'] == 2
-    assert resp.data['award_amount_per_capita'] == 4
+    assert resp.data == expected_response
+    assert resp.data == expected_response
 
     # test future year
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'pop_year': 2017,
+        'mhi_year': 2016
+    })
     resp = client.get(state_metadata_endpoint('01', '3000'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['pop_year'] == 2017
-    assert resp.data['mhi_year'] == 2016
+    assert resp.data == expected_response
 
     # test old year
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'pop_year': 2016,
+        'mhi_year': 2016,
+        'population': 50000
+    })
     resp = client.get(state_metadata_endpoint('01', '2000'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['pop_year'] == 2016
-    assert resp.data['mhi_year'] == 2016
+    assert resp.data == expected_response
 
     # test latest year
     # Note: the state data will be based on 2016/2017 state metadata but amounts should be based on the last 12 months
     # Amounts aren't really testable as they're tied to the day its run
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'pop_year': 2017,
+        'mhi_year': 2016
+    })
     resp = client.get(state_metadata_endpoint('01', 'latest'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['pop_year'] == 2017
-    assert resp.data['mhi_year'] == 2016
+    assert resp.data == expected_response
 
     # test all years
     # Note: the state data will be based on 2016/2017 state metadata but amounts should be based on all years
     # Amounts aren't really testable as they're tied to the day its run
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'pop_year': 2017,
+        'mhi_year': 2016,
+        'award_amount_per_capita': None,
+        'total_prime_awards': 2,
+        'total_prime_amount': 200000
+    })
     resp = client.get(state_metadata_endpoint('01', 'all'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['pop_year'] == 2017
-    assert resp.data['mhi_year'] == 2016
-    assert resp.data['award_amount_per_capita'] is None
+    assert resp.data == expected_response
 
     # making sure amount per capita is null for current fiscal year
+    expected_response = expected_state.copy()
+    expected_response.update({
+        'award_amount_per_capita': None
+    })
     resp = client.get(state_metadata_endpoint('01', generate_fiscal_year(datetime.date.today())))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['award_amount_per_capita'] is None
+    assert resp.data == expected_response
 
 
 @pytest.mark.django_db
