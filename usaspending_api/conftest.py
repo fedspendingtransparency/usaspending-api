@@ -45,7 +45,7 @@ def django_db_setup(django_db_blocker,
     # if local == "true":
     with django_db_blocker.unblock():
         with connection.cursor() as c:
-                subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+                subprocess.call("python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
                 for file in get_sql(TEMP_SQL_FILES):
                     c.execute(file)
     return
