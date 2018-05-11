@@ -20,7 +20,7 @@ def all_filters():
             }
         ],
         "legal_entities": [1, 2, 3],
-        'recipient_scope': "domestic",
+        "recipient_scope": "domestic",
         "recipient_locations": [{"country": "XYZ"},
                                 {"country": "USA"},
                                 {"country": "ABC"}
@@ -31,7 +31,7 @@ def all_filters():
         "place_of_performance_scope": "domestic",
         "place_of_performance_locations": [{"country": "USA"},
                                            {"country": "PQR"}],
-        "award_type_codes": ["A", "B", "02", '05', 'S'],
+        "award_type_codes": ["A", "B"],
         "award_ids": ["D0G0EL1", "A2D9D0C", "3DAB3021"],
         "award_amounts": [
             {
