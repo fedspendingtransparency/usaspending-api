@@ -18,6 +18,9 @@ LOCAL_STATE_DATA = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data', LO
 class Command(BaseCommand):
     help = "Loads state data from Census data"
 
+    def add_arguments(self, parser):
+        parser.add_argument('file', nargs='?', help='the file to load')
+
     def handle(self, *args, **options):
         state_data_field_map = {
             'fips': 'FIPS',
@@ -31,14 +34,22 @@ class Command(BaseCommand):
             'mhi_source': 'Median Household Income Source'
         }
 
-        remote = (not settings.IS_LOCAL and os.environ.get('AWS_REGION') and os.environ.get('STATE_DATA_BUCKET'))
+        csv_file = options['file']
+        remote = False
 
-        if remote:
+        if csv_file:
+            if not os.path.exists(csv_file):
+                raise FileExistsError(csv_file)
+            elif os.path.splitext(csv_file)[1] != '.csv':
+                raise Exception('Wrong filetype provided, expecting csv')
+            file_path = csv_file
+        elif not settings.IS_LOCAL and os.environ.get('AWS_REGION') and os.environ.get('STATE_DATA_BUCKET'):
             s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
             s3bucket = s3connection.lookup(os.environ.get('STATE_DATA_BUCKET'))
             key = s3bucket.get_key(LOCAL_STATE_DATA_FILENAME)
             file_path = os.path.join('/', 'tmp', LOCAL_STATE_DATA_FILENAME)
             key.get_contents_to_filename(file_path)
+            remote = True
         else:
             file_path = LOCAL_STATE_DATA
 
