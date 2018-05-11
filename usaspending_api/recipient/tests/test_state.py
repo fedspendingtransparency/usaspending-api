@@ -167,6 +167,7 @@ def test_state_metadata_success(client, state_data, refresh_matviews):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == EXPECTED_TERRITORY
 
+
 @pytest.mark.django_db
 def test_state_amounts_success(client, state_data, refresh_matviews):
     # test year with amounts
@@ -183,6 +184,7 @@ def test_state_amounts_success(client, state_data, refresh_matviews):
     resp = client.get(state_metadata_endpoint('01', '2016'))
     assert resp.data == expected_response
     assert resp.data == expected_response
+
 
 @pytest.mark.django_db
 def test_state_years_success(client, state_data, refresh_matviews):
@@ -219,6 +221,7 @@ def test_state_years_success(client, state_data, refresh_matviews):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == expected_response
 
+
 @pytest.mark.django_db
 def test_state_current_all_years_success(client, state_data, refresh_matviews):
     # test all years
@@ -235,6 +238,7 @@ def test_state_current_all_years_success(client, state_data, refresh_matviews):
     resp = client.get(state_metadata_endpoint('01', 'all'))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == expected_response
+
 
 @pytest.mark.django_db
 def test_state_current_fy_capita_success(client, state_data, refresh_matviews):
