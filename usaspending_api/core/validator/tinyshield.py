@@ -219,6 +219,8 @@ class TinyShield():
         param_type = child_rule['type']
         if "text_type" in source:
             child_rule['text_type'] = source['text_type']
+            child_rule['min'] = source.get('text_min')
+            child_rule['max'] = source.get('text_max')
         try:
             if param_type == "object":
                 child_rule['object_keys'] = source['object_keys']  # TODO investigate why

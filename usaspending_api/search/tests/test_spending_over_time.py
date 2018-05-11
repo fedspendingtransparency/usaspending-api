@@ -17,7 +17,7 @@ def test_spending_over_time_success(client):
         data=json.dumps({
             "group": "fiscal_year",
             "filters": {
-                "keyword": "test"
+                "keywords": ["test", "testing"]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
