@@ -696,6 +696,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_filters = [contract_subaward_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
                     sort_filters = [grant_subaward_mapping[sort]]
+                else:
+                    msg = 'Award Type codes limited for Subawards. Only contracts {} or grants {} are available'
+                    msg = msg.format(list(contract_type_mapping.keys()), list(grant_type_mapping.keys()))
+                    raise InvalidParameterException(msg)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]

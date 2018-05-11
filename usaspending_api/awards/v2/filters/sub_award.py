@@ -159,11 +159,8 @@ def subaward_filter(filters):
 
                 # recipient_name_ts_vector is a postgres TS_Vector
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
-
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
-
-                filter_obj &= SubawardView.objects.filter(filter_obj)
                 return filter_obj
 
             filter_obj = Q()
@@ -230,6 +227,7 @@ def subaward_filter(filters):
                 "set_aside_type_codes": "type_set_aside",
                 "extent_competed_type_codes": "extent_competed",
             }
+            in_query = [v for v in value]
             for v in value:
                 or_queryset |= Q(**{'{}__exact'.format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
