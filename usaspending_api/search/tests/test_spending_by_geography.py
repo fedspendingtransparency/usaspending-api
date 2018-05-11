@@ -6,7 +6,7 @@ from rest_framework import status
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_spending_by_geography_success(client):
 
@@ -35,7 +35,7 @@ def test_spending_by_geography_success(client):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_spending_by_geography_failure(client):
     """Verify error on bad autocomplete request for budget function."""
@@ -77,7 +77,7 @@ def test_spending_by_geography_subawards_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_state(client):
     resp = client.post(
@@ -93,7 +93,7 @@ def test_spending_by_geography_incorrect_state(client):
     assert resp.data['results'][0]['display_name'] in ['Alabama', 'None']
 
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_county(client):
     resp = client.post(
@@ -109,7 +109,7 @@ def test_spending_by_geography_incorrect_county(client):
     assert resp.data['results'][0]['display_name'] == 'County'
 
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_district(client):
     resp = client.post(
