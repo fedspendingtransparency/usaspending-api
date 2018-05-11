@@ -14,7 +14,7 @@ def test_transaction_spending_success(client):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "keyword": "test"
+                "keywords": ["test", "testing"]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
@@ -25,7 +25,7 @@ def test_transaction_spending_success(client):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "keyword": "test",
+                "keywords": ["test", "testing"],
                 "agencies": [{
                      "type": "awarding",
                      "tier": "toptier",
