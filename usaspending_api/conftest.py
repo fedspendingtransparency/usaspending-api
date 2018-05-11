@@ -38,13 +38,38 @@ def pytest_configure():
 
 
 @pytest.fixture(scope='session')
-def django_db_setup(django_db_blocker, local):
-    with django_db_blocker.unblock():
-        with connection.cursor() as c:
-            if local == "true":
-                subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
-                for file in get_sql(TEMP_SQL_FILES):
-                    c.execute(file)
+def django_db_setup(django_db_blocker,
+                    django_db_keepdb,
+                    request,
+                    local):
+    if local == "true":
+        with django_db_blocker.unblock():
+            with connection.cursor() as c:
+                    subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
+                    for file in get_sql(TEMP_SQL_FILES):
+                        c.execute(file)
+        return
+    else:
+        from pytest_django.compat import setup_databases, teardown_databases
+
+        setup_databases_args = {}
+
+        with django_db_blocker.unblock():
+            db_cfg = setup_databases(
+                verbosity=pytest.config.option.verbose,
+                interactive=False,
+                **setup_databases_args
+            )
+
+        def teardown_database():
+            with django_db_blocker.unblock():
+                teardown_databases(
+                    db_cfg,
+                    verbosity=pytest.config.option.verbose,
+                )
+
+        if not django_db_keepdb:
+            request.addfinalizer(teardown_database)
 
 
 def get_sql(sql_files):
