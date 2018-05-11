@@ -5,6 +5,7 @@ import pytest
 from rest_framework import status
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_transaction_spending_success(client):
 
