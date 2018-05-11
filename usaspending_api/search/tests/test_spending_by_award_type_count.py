@@ -6,7 +6,6 @@ from rest_framework import status
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
-
 @pytest.mark.django_db
 def test_spending_by_award_type_success(client):
 
@@ -28,7 +27,6 @@ def test_spending_by_award_type_success(client):
             "filters": all_filters()
         }))
     assert resp.status_code == status.HTTP_200_OK
-
 
 
 @pytest.mark.django_db

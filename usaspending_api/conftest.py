@@ -32,8 +32,8 @@ TEMP_SQL_FILES = ['../matviews/universal_transaction_matview.sql',
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_blocker,
                     django_db_keepdb,
-                    request,
-                    local):
+                    request):
+
     from pytest_django.compat import setup_databases, teardown_databases
 
     setup_databases_args = {}

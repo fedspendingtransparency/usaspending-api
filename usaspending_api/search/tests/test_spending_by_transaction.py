@@ -29,7 +29,6 @@ def test_spending_by_transaction_kws_success(client):
     assert resp.status_code == status.HTTP_200_OK
 
 
-
 @pytest.mark.django_db
 def test_spending_by_transaction_kws_failure(client):
     """Verify error on bad autocomplete
