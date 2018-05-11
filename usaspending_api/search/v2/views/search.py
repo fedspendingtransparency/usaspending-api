@@ -93,11 +93,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
             data_set = sum_transaction_amount(data_set, filter_types=filter_types)
 
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(data_set))
-
         for record in data_set:
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
@@ -547,10 +542,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(self.request.path)
-        print(generate_raw_quoted_query(self.geo_queryset))
         results = [{
             'shape_code': x[loc_lookup],
             'aggregated_amount': x['transaction_amount'],
@@ -590,10 +581,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(self.request.path)
-        print(generate_raw_quoted_query(self.geo_queryset))
         results = [{
             'shape_code': code_to_state.get(x[state_lookup])['fips'] + pad_codes(self.geo_layer, x['code_as_float']),
             'aggregated_amount': x['transaction_amount'],
@@ -604,10 +591,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(self.request.path)
-        print(generate_raw_quoted_query(self.geo_queryset))
         results = [{
             'shape_code': code_to_state.get(x[state_lookup])['fips'] + pad_codes(self.geo_layer, x['code_as_float']),
             'aggregated_amount': x['transaction_amount'],
@@ -715,10 +698,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             queryset = queryset.order_by(*sort_filters).values(*list(values))
 
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 
@@ -829,10 +808,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         category_name = 'category' if not subawards else 'award_type'
 
-        from usaspending_api.common.helpers import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
         # DB hit here
         for award in queryset:
             if award[category_name] is None:

@@ -147,15 +147,10 @@ def subaward_filter(filters):
             # This filter key has effectively become obsolete by recipient_search_text
             msg = 'API request included "{}" key. No filtering will occur with provided value "{}"'
             logger.info(msg.format(key, value))
-            # or_queryset = []
-            # for v in value:
-            #     or_queryset.append(v)
-            # if len(or_queryset) != 0:
-            #     queryset &= SubawardView.objects.filter(recipient__legal_entity_id__in=or_queryset)
 
         elif key == "recipient_search_text":
             def recip_string_parse(recipient_string):
-                upper_recipient_string = str(value[0]).upper()
+                upper_recipient_string = recipient_string.upper()
 
                 # recipient_name_ts_vector is a postgres TS_Vector
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
@@ -164,8 +159,8 @@ def subaward_filter(filters):
                 return filter_obj
 
             filter_obj = Q()
-            for recip in value:
-                filter_obj |= recip_string_parse(recip)
+            for recipient in value:
+                filter_obj |= recip_string_parse(recipient)
             queryset &= SubawardView.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
