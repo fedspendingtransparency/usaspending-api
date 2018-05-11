@@ -42,7 +42,7 @@ def django_db_setup(django_db_blocker,
                     django_db_keepdb,
                     request,
                     local):
-    #if local == "true":
+    # if local == "true":
     with django_db_blocker.unblock():
         with connection.cursor() as c:
                 subprocess.call("python database_scripts/matview_generator/matview_sql_generator.py ", shell=True)
