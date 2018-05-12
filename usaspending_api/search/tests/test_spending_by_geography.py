@@ -16,6 +16,7 @@ def test_spending_by_geography_success(client):
         data=json.dumps({
             "scope": "place_of_performance",
             "geo_layer": "state",
+            "geo_layer_filters": ["01"],
             "filters": {
                 'recipient_locations': [{'country': 'ABC'}]
             }
@@ -29,6 +30,7 @@ def test_spending_by_geography_success(client):
         data=json.dumps({
             "scope": "recipient_location",
             "geo_layer": "county",
+            "geo_layer_filters": ["01"],
             "filters": all_filters()
         }))
     assert resp.status_code == status.HTTP_200_OK
@@ -42,7 +44,7 @@ def test_spending_by_geography_failure(client):
         '/api/v2/search/spending_by_geography/',
         content_type='application/json',
         data=json.dumps({'scope': 'test', 'filters': {}}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
@@ -54,6 +56,7 @@ def test_spending_by_geography_subawards_success(client):
         data=json.dumps({
             "scope": "recipient_location",
             "geo_layer": "county",
+            "geo_layer_filters": ["01"],
             "filters": all_filters(),
             "subawards": True
         }))
@@ -69,6 +72,7 @@ def test_spending_by_geography_subawards_failure(client):
         data=json.dumps({
             "scope": "recipient_location",
             "geo_layer": "county",
+            "geo_layer_filters": ["01"],
             "filters": all_filters(),
             "subawards": "string"
         }))
@@ -84,6 +88,7 @@ def test_spending_by_geography_incorrect_state(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'state',
+            "geo_layer_filters": ["01"],
             'filters': all_filters()
         })
     )
@@ -100,6 +105,7 @@ def test_spending_by_geography_incorrect_county(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'county',
+            "geo_layer_filters": ["01"],
             'filters': all_filters()
         })
     )
@@ -115,6 +121,7 @@ def test_spending_by_geography_incorrect_district(client):
         data=json.dumps({
             'scope': 'place_of_performance',
             'geo_layer': 'district',
+            "geo_layer_filters": ["01"],
             'filters': all_filters()
         })
     )
