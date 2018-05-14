@@ -22,7 +22,7 @@ def test_spending_by_award_subaward_success(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_success(client):
+def test_spending_by_award_success(client, refresh_matviews):
 
     resp = client.post(
         '/api/v2/search/spending_by_award',
