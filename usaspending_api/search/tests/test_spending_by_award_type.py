@@ -43,7 +43,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_failure(client):
+def test_spending_by_award_type_failure(client, refresh_matviews):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(

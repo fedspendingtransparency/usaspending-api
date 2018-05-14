@@ -9,6 +9,7 @@ from usaspending_api.common.helpers import generate_date_from_string
 from usaspending_api.common.helpers import dates_are_month_bookends
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models_matviews import SubawardView
 
 
 def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
@@ -84,15 +85,18 @@ def get_total_transaction_columns(filters, model):
     rows can be award type loan and/or all other award types
     """
     total_transaction_columns = []
-    award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-    awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
-    award_join = 'award__' if model == TransactionNormalized else ''
-    if set(award_types_requested) & set(loan_type_mapping):
-        # if there are any loans
-        total_transaction_columns.append('{}total_subsidy_cost'.format(award_join))
-    if set(award_types_requested) & set(awards_sans_loans):
-        # if there is anything else besides loans
-        total_transaction_columns.append('{}total_obligation'.format(award_join))
+    if model == SubawardView:
+        total_transaction_columns.append('amount')
+    else:
+        award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
+        awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
+        award_join = 'award__' if model == TransactionNormalized else ''
+        if set(award_types_requested) & set(loan_type_mapping):
+            # if there are any loans
+            total_transaction_columns.append('{}total_subsidy_cost'.format(award_join))
+        if set(award_types_requested) & set(awards_sans_loans):
+            # if there is anything else besides loans
+            total_transaction_columns.append('{}total_obligation'.format(award_join))
     return total_transaction_columns
 
 
@@ -106,13 +110,11 @@ def total_obligation_queryset(amount_obj, model, filters):
                 bins.append(key)
                 break
 
-    total_transaction_columns = get_total_transaction_columns(filters, model)
-
     if len(bins) == len(amount_obj):
-        return True, model.objects.filter(total_obl_bin__in=bins)
+        or_queryset = model.objects.filter(total_obl_bin__in=bins)
     else:
-        or_queryset = None
-        queryset_init = False
+        total_transaction_columns = get_total_transaction_columns(filters, model)
+        or_queryset = Q()
 
         for v in amount_obj:
             for column in total_transaction_columns:
@@ -121,34 +123,21 @@ def total_obligation_queryset(amount_obj, model, filters):
                         '{}__gte'.format(column): v["lower_bound"],
                         '{}__lte'.format(column): v["upper_bound"]
                     }
-                    if queryset_init:
-                        or_queryset |= model.objects.filter(**bound_dict)
-                    else:
-                        queryset_init = True
-                        or_queryset = model.objects.filter(**bound_dict)
+                    or_queryset |= model.objects.filter(**bound_dict)
+
                 elif v.get("lower_bound") is not None:
                     bound_dict = {
                         '{}__gte'.format(column): v["lower_bound"]
                     }
-                    if queryset_init:
-                        or_queryset |= model.objects.filter(**bound_dict)
-                    else:
-                        queryset_init = True
-                        or_queryset = model.objects.filter(**bound_dict)
+                    or_queryset |= model.objects.filter(**bound_dict)
                 elif v.get("upper_bound") is not None:
                     bound_dict = {
                         '{}__lte'.format(column): v["upper_bound"]
                     }
-                    if queryset_init:
-                        or_queryset |= model.objects.filter(**bound_dict)
-                    else:
-                        queryset_init = True
-                        or_queryset = model.objects.filter(**bound_dict)
+                    or_queryset |= model.objects.filter(**bound_dict)
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
-    if queryset_init:
-        return True, or_queryset
-    return False, None
+    return or_queryset
 
 
 def can_use_month_aggregation(time_period):
