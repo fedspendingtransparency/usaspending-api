@@ -26,29 +26,31 @@ logger = logging.getLogger('console')
 
 AWARD_MAPPINGS = {
     'Contracts': {
+        'agency_field': 'agency_id',
         'award_types': ['contracts'],
-        'correction_delete_ind': 'correction_delete_ind',
-        'date_filter': 'updated_at',
-        'letter_name': 'd1',
-        'model': 'contract_data',
-        'unique_iden': 'detached_award_proc_unique',
-        'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}.csv'),
         'column_headers': {
             0: 'agency_id', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
             4: 'parent_award_id', 5: 'transaction_number'
-        }
+        },
+        'correction_delete_ind': 'correction_delete_ind',
+        'date_filter': 'updated_at',
+        'letter_name': 'd1',
+        'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}.csv'),
+        'model': 'contract_data',
+        'unique_iden': 'detached_award_proc_unique'
     },
     'Assistance': {
+        'agency_field': 'awarding_sub_agency_code',
         'award_types': ['grants', 'direct_payments', 'loans', 'other_financial_assistance'],
+        'column_headers': {
+            0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
+        },
         'correction_delete_ind': 'transaction__assistance_data__correction_late_delete_ind',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
-        'model': 'assistance_data',
-        'unique_iden': 'afa_generated_unique',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
-        'column_headers': {
-            0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
-        }
+        'model': 'assistance_data',
+        'unique_iden': 'afa_generated_unique'
     }
 }
 
@@ -174,8 +176,7 @@ class Command(BaseCommand):
                 if len(df.index) == 0:
                     continue
                 if agency_code != 'all':
-                    identifying_field = 'agency_id' if award_type == 'Contracts' else 'awarding_sub_agency_code'
-                    df = df[df[identifying_field].isin(subtier_agencies)]
+                    df = df[df[AWARD_MAPPINGS[award_type]['agency_field']].isin(subtier_agencies)]
                     if len(df.index) == 0:
                         continue
 
