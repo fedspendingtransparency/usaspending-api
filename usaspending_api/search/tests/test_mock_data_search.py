@@ -20,7 +20,7 @@ def all_filters():
             }
         ],
         "legal_entities": [1, 2, 3],
-        'recipient_scope': "domestic",
+        "recipient_scope": "domestic",
         "recipient_locations": [{"country": "XYZ"},
                                 {"country": "USA"},
                                 {"country": "ABC"}

@@ -4,17 +4,23 @@ import logging
 from django.db.models import Q
 
 from usaspending_api.awards.models_matviews import SubawardView
-from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset, total_obligation_queryset
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
+from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 logger = logging.getLogger(__name__)
 
 
+def subaward_download(filters):
+    """ Used by the Custom download"""
+    return subaward_filter(filters, for_downloads=True)
+
+
 # TODO: Performance when multiple false values are initially provided
-def subaward_filter(filters):
+def subaward_filter(filters, for_downloads=False):
 
     queryset = SubawardView.objects.all()
     for key, value in filters.items():
@@ -85,9 +91,10 @@ def subaward_filter(filters):
 
         elif key == "time_period":
             # TODO- Handle both "action_date" and "last_modified_date"
-            success, or_queryset = date_or_fy_queryset(value, SubawardView, "fiscal_year", "action_date")
-            if success:
-                queryset &= or_queryset
+            min_date = API_SEARCH_MIN_DATE
+            if for_downloads:
+                min_date = API_MIN_DATE
+            queryset &= combine_date_range_queryset(value, SubawardView, "action_date", min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())

@@ -13,7 +13,6 @@ def test_spending_by_award_subaward_success(client, refresh_matviews):
         '/api/v2/search/spending_by_award',
         content_type='application/json',
         data=json.dumps({
-            "group": "fiscal_year",
             "subawards": True,
             "fields": ["Sub-Award ID"],
             "sort": "Sub-Award ID",
@@ -29,7 +28,6 @@ def test_spending_by_award_success(client, refresh_matviews):
         '/api/v2/search/spending_by_award',
         content_type='application/json',
         data=json.dumps({
-            "group": "fiscal_year",
             "subawards": False,
             "fields": ["Award ID"],
             "sort": "Award ID",

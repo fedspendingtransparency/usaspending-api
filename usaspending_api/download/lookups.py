@@ -10,7 +10,7 @@ from usaspending_api.accounts.v2.filters.object_class_program_activity import ob
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
                                                                universal_transaction_matview_filter)
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -54,7 +54,7 @@ VALUE_MAPPINGS = {
         'download_name': 'subawards',
         'contract_data': 'award__latest_transaction__contract_data',
         'assistance_data': 'award__latest_transaction__assistance_data',
-        'filter_function': subaward_filter
+        'filter_function': subaward_download
     },
     # Appropriations Account Data
     'account_balances': {

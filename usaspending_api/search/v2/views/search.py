@@ -28,7 +28,8 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
+from usaspending_api.common.exceptions import (ElasticsearchConnectionException, InvalidParameterException,
+                                               UnprocessableEntityException)
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
@@ -68,8 +69,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
-        queryset = subaward_filter(filters) if subawards else spending_over_time(filters) \
-            .values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
+
+        if subawards:
+            queryset = subaward_filter(filters)
+        else:
+            queryset = spending_over_time(filters).values('action_date', 'generated_pragmatic_obligation')
 
         # build response
         response = {'group': group, 'results': []}
@@ -78,29 +82,35 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         group_results = OrderedDict()
 
-        # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
+        # for Subawards we extract data from action_date
         if subawards:
             data_set = queryset \
                 .values('award_type') \
                 .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('amount')) \
                 .values('month', 'fiscal_year', 'transaction_amount')
         else:
-            data_set = queryset.values('fiscal_year')
-            if not (group == 'fy' or group == 'fiscal_year'):
+            # for Awards we Sum generated_pragmatic_obligation for transaction_amount
+            queryset = queryset.values('fiscal_year')
+            if group in ('fy', 'fiscal_year'):
+                data_set = queryset \
+                    .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'transaction_amount')
+            else:
                 # quarterly also takes months and aggregates the data
-                data_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
-
-            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-            data_set = sum_transaction_amount(data_set, filter_types=filter_types)
+                data_set = queryset \
+                    .annotate(
+                        month=ExtractMonth('action_date'),
+                        transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'month', 'transaction_amount')
 
         for record in data_set:
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
-            if group == 'm' or group == 'month':
+            if group in ('m', 'month'):
                 # generate the fiscal month
                 key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
                 nested_order = 'month'
-            elif group == 'q' or group == 'quarter':
+            elif group in ('q', 'quarter'):
                 # generate the fiscal quarter
                 key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
                 nested_order = 'quarter'
@@ -117,7 +127,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Expected results structure
         # [{
         # 'time_period': {'fy': '2017', 'quarter': '3'},
-        #   'aggregated_amount': '200000000'
+        # 'aggregated_amount': '200000000'
         # }]
         sorted_group_results = sorted(
             group_results.items(),
@@ -536,10 +546,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
 
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', *lookup_fields)
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
         results = [{
@@ -573,9 +586,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
             .annotate(code_as_float=Cast(loc_lookup, FloatField()))
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', 'code_as_float', *fields_list)
 
         return self.geo_queryset
 
@@ -682,7 +699,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:
                     msg = 'Award Type codes limited for Subawards. Only contracts {} or grants {} are available'
                     msg = msg.format(list(contract_type_mapping.keys()), list(grant_type_mapping.keys()))
-                    raise InvalidParameterException(msg)
+                    raise UnprocessableEntityException(msg)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]
@@ -691,12 +708,31 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:  # assistance data
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
-            if sort == "Award ID":
-                sort_filters = ["piid", "fain"] if subawards else ["piid", "fain", "uri"]
-            if order == "desc":
-                sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
-
-            queryset = queryset.order_by(*sort_filters).values(*list(values))
+            # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
+            if sort == "Award ID" and subawards:
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('award__piid').desc(nulls_last=True),
+                        F('award__fain').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('award__piid').asc(nulls_last=True),
+                        F('award__fain').asc(nulls_last=True)).values(*list(values))
+            elif sort == "Award ID":
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('piid').desc(nulls_last=True),
+                        F('fain').desc(nulls_last=True),
+                        F('uri').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('piid').asc(nulls_last=True),
+                        F('fain').asc(nulls_last=True),
+                        F('uri').asc(nulls_last=True)).values(*list(values))
+            elif order == "desc":
+                queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+            else:
+                queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
@@ -896,7 +932,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
         """
 
         models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array',
-                  'array_type': 'text', 'text_type': 'search', 'optional': False,  'min': 3}]
+                  'array_type': 'text', 'text_type': 'search', 'optional': False, 'text_min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -916,7 +952,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     def post(self, request):
 
         models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array', 'array_type': 'text',
-                  'text_type': 'search', 'optional': False, 'min': 3}]
+                  'text_type': 'search', 'optional': False, 'text_min': 3}]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
         if not results:

@@ -26,7 +26,7 @@
     "INNER JOIN",
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "WHERE",
-    "  transaction_normalized.action_date >= '2000-10-01'",
+    "  transaction_normalized.action_date >= '2007-10-01'",
     "GROUP BY",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
