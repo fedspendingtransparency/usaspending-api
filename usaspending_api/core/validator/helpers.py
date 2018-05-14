@@ -16,7 +16,7 @@ MAX_ITEMS = 5000
 
 TINY_SHIELD_SEPARATOR = '|'
 
-INVALID_TYPE_MSG = 'Invalid value in \'{key}\'. \'{value}\' is not a valid ({type})'
+INVALID_TYPE_MSG = 'Invalid value in \'{key}\'. \'{value}\' is not a valid type ({type})'
 ABOVE_MAXIMUM_MSG = 'Field \'{key}\' value \'{value}\' is above max \'{max}\''
 BELOW_MINIMUM_MSG = 'Field \'{key}\' value \'{value}\' is below min \'{min}\''
 

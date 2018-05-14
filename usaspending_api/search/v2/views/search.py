@@ -94,6 +94,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     transaction_amount=Sum('amount')) \
                 .values('month', 'year', 'transaction_amount')
         else:
+            # for Awards we Sum generated_pragmatic_obligation for transaction_amount
             queryset = queryset.values('fiscal_year')
             if group in ('fy', 'fiscal_year'):
                 data_set = queryset \
