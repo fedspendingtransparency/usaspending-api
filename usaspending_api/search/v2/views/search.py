@@ -28,7 +28,8 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
+from usaspending_api.common.exceptions import (ElasticsearchConnectionException, InvalidParameterException,
+                                               UnprocessableEntityException)
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
@@ -698,7 +699,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:
                     msg = 'Award Type codes limited for Subawards. Only contracts {} or grants {} are available'
                     msg = msg.format(list(contract_type_mapping.keys()), list(grant_type_mapping.keys()))
-                    raise InvalidParameterException(msg)
+                    raise UnprocessableEntityException(msg)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]
