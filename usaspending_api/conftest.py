@@ -36,17 +36,17 @@ def django_db_setup(django_db_blocker,
 
     with django_db_blocker.unblock():
         db_cfg = setup_databases(
-                verbosity=pytest.config.option.verbose,
-                interactive=False,
-                **setup_databases_args
-            )
+            verbosity=pytest.config.option.verbose,
+            interactive=False,
+            **setup_databases_args
+        )
 
     def teardown_database():
-            with django_db_blocker.unblock():
-                teardown_databases(
-                    db_cfg,
-                    verbosity=pytest.config.option.verbose,
-                )
+        with django_db_blocker.unblock():
+            teardown_databases(
+                db_cfg,
+                verbosity=pytest.config.option.verbose,
+            )
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)

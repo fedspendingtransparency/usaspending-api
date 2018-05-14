@@ -171,6 +171,7 @@ def make_indexes_sql(sql_json, matview_name):
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
 
         final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '_' + idx['name']
+        final_index = final_index.replace('-', '')
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
