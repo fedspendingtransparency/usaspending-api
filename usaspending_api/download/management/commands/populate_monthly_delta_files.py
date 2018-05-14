@@ -201,7 +201,7 @@ class Command(BaseCommand):
             'correction_delete_ind': 'D', 'last_modified_date': match_date
         }
         for header in ordered_columns:
-            if header in list(unique_values_map.keys()):
+            if header in unique_values_map:
                 dataframe[header] = [unique_values_map[header]] * len(dataframe.index)
 
             elif header not in list(AWARD_MAPPINGS[award_type]['column_headers'].values()):
