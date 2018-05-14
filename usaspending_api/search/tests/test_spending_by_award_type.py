@@ -6,7 +6,7 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client):
+def test_spending_by_award_type_success(client, refresh_matviews):
 
     # test small request
     resp = client.post(
@@ -43,7 +43,7 @@ def test_spending_by_award_type_success(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_failure(client):
+def test_spending_by_award_type_failure(client, refresh_matviews):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(

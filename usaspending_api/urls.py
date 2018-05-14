@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'^api/v2/federal_obligations/', include('usaspending_api.accounts.urls_federal_obligations')),
     url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
+    url(r'^api/v2/recipient/', include('usaspending_api.recipient.v2.urls')),
     url(r'^api/v2/references/', include('usaspending_api.references.v2.urls')),
     url(r'^api/v2/search/', include('usaspending_api.search.v2.urls_search')),
     url(r'^api/v2/spending/', include('usaspending_api.spending_explorer.v2.urls')),
