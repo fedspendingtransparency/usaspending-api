@@ -12,7 +12,7 @@ from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amo
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.matview_filters import universal_transaction_matview_filter
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.recipient.models import StateData
 
 logger = logging.getLogger(__name__)

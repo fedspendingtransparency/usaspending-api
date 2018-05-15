@@ -9,7 +9,7 @@ from model_mommy import mommy
 import pytest
 
 # Imports from your apps
-from usaspending_api.common.helpers import generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 
 EXPECTED_STATE = {
         'name': 'Test State',

@@ -5,7 +5,7 @@ import logging
 from django.conf import settings
 import pytest
 
-from usaspending_api.common.helpers import generate_matviews
+from usaspending_api.common.helpers.generic_helper import generate_matviews
 
 # Third-party app imports
 import pytest
