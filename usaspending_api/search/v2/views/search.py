@@ -36,7 +36,6 @@ from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
                                                             spending_by_transaction_sum_and_count)
-from usaspending_api.search.v2.views.spending_by_category import BusinessLogic as SpendingByCategoryLogic
 
 logger = logging.getLogger(__name__)
 
@@ -142,32 +141,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response['results'] = results
 
         return Response(response)
-
-
-@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
-class SpendingByCategoryVisualizationViewSet(APIView):
-    """
-    This route takes award filters, and returns spending by the defined category/scope.
-    The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
-    endpoint_doc: /advanced_award_search/spending_by_category.md
-    """
-    @cache_response()
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
-        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns']
-
-        models = [
-            {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
-            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
-        ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
-
-        validated_payload = TinyShield(models).block(request.data)
-
-        return Response(SpendingByCategoryLogic(validated_payload))
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

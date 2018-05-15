@@ -1,17 +1,26 @@
+import copy
 import logging
 
+from django.conf import settings
 from django.db.models import Sum
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models import Subaward
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
+from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.models import Cfda
 
 logger = logging.getLogger(__name__)
 
+API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
     'awarding_agency': {'awarding_toptier_agency_name': 'agency_name', 'awarding_subtier_agency_name': 'agency_name',
@@ -28,9 +37,35 @@ ALIAS_DICT = {
 }
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+class SpendingByCategoryVisualizationViewSet(APIView):
+    """
+    This route takes award filters, and returns spending by the defined category/scope.
+    The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
+    endpoint_doc: /advanced_award_search/spending_by_category.md
+    """
+    @cache_response()
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
+        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns']
+        models = [
+            {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+
+        validated_payload = TinyShield(models).block(request.data)
+        return Response(BusinessLogic(validated_payload))
+
+
 class BusinessLogic:
-    __slots__ = ('subawards', 'category', 'scope', 'page', 'limit', 'lower_limit', 'upper_limit', 'filters', 'queryset',
-                 'model', )
+    __slots__ = (
+        'subawards', 'category', 'scope', 'page', 'limit',
+        'lower_limit', 'upper_limit', 'filters', 'queryset', 'model',
+    )
 
     def __new__(cls, payload):
         """
@@ -42,12 +77,10 @@ class BusinessLogic:
         cls.scope = payload['scope']
         cls.page = payload['page']
         cls.limit = payload['limit']
+        cls.filters = payload['filters']
 
         cls.lower_limit = (cls.page - 1) * cls.limit
-        cls.upper_limit = cls.page * cls.limit
-
-        cls.filters = {
-            item['name']: payload[item['name']] for item in AWARD_FILTER if item['name'] in payload}
+        cls.upper_limit = cls.page * cls.limit + 1  # Add 1 for simple "Next Page" check
 
         if (cls.scope is None) and (cls.category != 'cfda_programs'):
             raise InvalidParameterException('Missing one or more required request parameters: scope')
@@ -124,7 +157,7 @@ class BusinessLogic:
             self.raise_not_implemented(self)
 
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit + 1])
+        return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def funding_agency(self):
         if self.scope == 'agency':
@@ -146,7 +179,7 @@ class BusinessLogic:
             self.raise_not_implemented(self)
 
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit + 1])
+        return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def recipient(self):
         if self.scope == 'duns':
@@ -169,7 +202,7 @@ class BusinessLogic:
             self.raise_not_implemented(self)
 
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit + 1])
+        return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def cfda_programs(self):
         if self.model == 'SummaryCfdaNumbersView':
@@ -182,7 +215,7 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
             # DB hit here
-            results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
+            results = list(self.queryset[self.lower_limit:self.upper_limit])
 
             for trans in results:
                 trans['popular_name'] = None
@@ -206,7 +239,7 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
             # DB hit here
-            results = list(self.queryset[self.lower_limit:self.upper_limit + 1])
+            results = list(self.queryset[self.lower_limit:self.upper_limit])
 
         return results
 
@@ -217,15 +250,13 @@ class BusinessLogic:
                 .values('product_or_service_code') \
                 .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
                 .order_by('-aggregated_amount')
-
         elif self.scope == 'naics':
             self.queryset = self.queryset \
                 .filter(naics_code__isnull=False) \
                 .values('naics_code', 'naics_description') \
                 .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
                 .order_by('-aggregated_amount')
-
         else:
             self.raise_not_implemented(self)
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit + 1])
+        return list(self.queryset[self.lower_limit:self.upper_limit])
