@@ -85,6 +85,7 @@ class BusinessLogic:
         if (cls.scope is None) and (cls.category != 'cfda_programs'):
             raise InvalidParameterException('Missing one or more required request parameters: scope')
 
+        cls.scope = cls.scope if not cls.category == 'cfda_programs' else None
         # some category-scope combinations allow different matviews, combine strings for easier logic
         category_scope = '{}-{}'.format(cls.category, cls.scope or '')
         if cls.subawards:
@@ -124,7 +125,7 @@ class BusinessLogic:
             'limit': self.limit,
             'page_metadata': page_metadata,
             'results': alias_response(ALIAS_DICT[self.category], results[:self.limit]),
-            'scope': self.scope if not self.category == 'cfda_programs' else None,
+            'scope': self.scope,
         }
         return response
 
