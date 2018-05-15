@@ -1,5 +1,6 @@
 import ast
 import logging
+import copy
 
 from collections import OrderedDict
 from datetime import date
@@ -11,10 +12,10 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
-from django.db.models.functions import ExtractMonth, ExtractYear, Cast, Coalesce
+from django.db.models.functions import ExtractMonth, Cast, Coalesce
+from django.conf import settings
 
-from usaspending_api.awards.models import Subaward
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -26,8 +27,10 @@ from usaspending_api.awards.v2.lookups.lookups import (award_type_mapping, contr
                                                        contract_subaward_mapping, grant_subaward_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
                                                                non_loan_assistance_award_mapping)
-from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, generate_fiscal_year, get_simple_pagination_metadata
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.exceptions import (ElasticsearchConnectionException, InvalidParameterException,
+                                               UnprocessableEntityException)
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -35,10 +38,12 @@ from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import (search_transactions, spending_by_transaction_count,
                                                             spending_by_transaction_sum_and_count)
-
 logger = logging.getLogger(__name__)
 
+API_VERSION = settings.API_VERSION
 
+
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingOverTimeVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
@@ -47,25 +52,28 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
-        group = json_request.get('group', None)
-        filters = json_request.get('filters', None)
-        subawards = json_request.get('subawards', False)
+        valid_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
+        models = [
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
+            {'name': 'group', 'key': 'group', 'type': 'enum', 'enum_values': valid_groups, 'optional': False}
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        json_request = TinyShield(models).block(request.data)
+        group = json_request['group']
+        subawards = json_request['subawards']
+        filters = json_request.get("filters", None)
 
-        if group is None:
-            raise InvalidParameterException('Missing one or more required request parameters: group')
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
-        potential_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
-        if group not in potential_groups:
-            raise InvalidParameterException('group does not have a valid value')
-        if type(subawards) is not bool:
-            raise InvalidParameterException('subawards does not have a valid value')
+            raise InvalidParameterException('Missing request parameters: filters')
 
         # define what values are needed in the sql query
         # we do not use matviews for Subaward filtering, just the Subaward download filters
-        queryset = subaward_filter(filters) if subawards else spending_over_time(filters) \
-            .values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
+
+        if subawards:
+            queryset = subaward_filter(filters)
+        else:
+            queryset = spending_over_time(filters).values('action_date', 'generated_pragmatic_obligation')
 
         # build response
         response = {'group': group, 'results': []}
@@ -74,33 +82,35 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         group_results = OrderedDict()
 
-        # for Subawards we extract data from action_date, for Awards we use sum_transaction_amount
+        # for Subawards we extract data from action_date
         if subawards:
-            data_set = queryset.values('award_type'). \
-                annotate(month=ExtractMonth('action_date'), year=ExtractYear('action_date'),
-                         transaction_amount=Sum('amount')). \
-                values('month', 'year', 'transaction_amount')
+            data_set = queryset \
+                .values('award_type') \
+                .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('amount')) \
+                .values('month', 'fiscal_year', 'transaction_amount')
         else:
-            data_set = queryset.values('fiscal_year')
-            if not (group == 'fy' or group == 'fiscal_year'):
+            # for Awards we Sum generated_pragmatic_obligation for transaction_amount
+            queryset = queryset.values('fiscal_year')
+            if group in ('fy', 'fiscal_year'):
+                data_set = queryset \
+                    .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'transaction_amount')
+            else:
                 # quarterly also takes months and aggregates the data
-                data_set = queryset.annotate(month=ExtractMonth('action_date')).values('fiscal_year', 'month')
-
-            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-            data_set = sum_transaction_amount(data_set, filter_types=filter_types)
+                data_set = queryset \
+                    .annotate(
+                        month=ExtractMonth('action_date'),
+                        transaction_amount=Sum('generated_pragmatic_obligation')) \
+                    .values('fiscal_year', 'month', 'transaction_amount')
 
         for record in data_set:
-            # create fiscal year data based on the action_date for Subawards
-            if subawards:
-                record['fiscal_year'] = generate_fiscal_year(date(record['year'], record['month'], 1))
-
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
-            if group == 'm' or group == 'month':
+            if group in ('m', 'month'):
                 # generate the fiscal month
                 key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
                 nested_order = 'month'
-            elif group == 'q' or group == 'quarter':
+            elif group in ('q', 'quarter'):
                 # generate the fiscal quarter
                 key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
                 nested_order = 'quarter'
@@ -117,7 +127,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Expected results structure
         # [{
         # 'time_period': {'fy': '2017', 'quarter': '3'},
-        # 	'aggregated_amount': '200000000'
+        # 'aggregated_amount': '200000000'
         # }]
         sorted_group_results = sorted(
             group_results.items(),
@@ -134,6 +144,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return Response(response)
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByCategoryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by the defined category/scope.
@@ -145,21 +156,24 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
-        json_request = request.data
-        category = json_request.get("category", None)
+        models = [
+            {'name': 'category', 'key': 'category', 'type': 'enum',
+                'enum_values': ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"],
+                'optional': False}
+
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        json_request = TinyShield(models).block(request.data)
+        category = json_request["category"]
         scope = json_request.get("scope", None)
         filters = json_request.get("filters", None)
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        if category is None:
-            raise InvalidParameterException("Missing one or more required request parameters: category")
-        potential_categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
-        if category not in potential_categories:
-            raise InvalidParameterException("Category does not have a valid value")
         if (scope is None) and (category != "cfda_programs"):
             raise InvalidParameterException("Missing one or more required request parameters: scope")
         if filters is None:
@@ -392,6 +406,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("recipient type is not yet implemented")
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByGeographyVisualizationViewSet(APIView):
     """
         This route takes award filters, and returns spending by state code, county code, or congressional district code.
@@ -404,13 +419,24 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        json_request = request.data
+        models = [
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'optional': False,
+             'enum_values': ['place_of_performance', 'recipient_location']},
+            {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum', 'optional': False,
+             'enum_values': ['state', 'county', 'district']},
+            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters', 'optional': False,
+             'type': 'array', 'array_type': 'text', 'text_type': 'search'}
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        json_request = TinyShield(models).block(request.data)
 
-        self.subawards = json_request.get("subawards", False)
-        self.scope = json_request.get("scope")
-        self.filters = json_request.get("filters", {})
-        self.geo_layer = json_request.get("geo_layer")
-        self.geo_layer_filters = json_request.get("geo_layer_filters")
+        self.subawards = json_request["subawards"]
+        self.scope = json_request["scope"]
+        self.filters = json_request.get("filters", None)
+        self.geo_layer = json_request["geo_layer"]
+        self.geo_layer_filters = json_request["geo_layer_filters"]
 
         fields_list = []  # fields to include in the aggregate query
 
@@ -423,36 +449,32 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         model_dict = {
             'place_of_performance': 'pop',
             'recipient_location': 'recipient_location',
-            'subawards_place_of_performance': 'place_of_performance',
-            'subawards_recipient_location': 'recipient__location'
+            # 'subawards_place_of_performance': 'pop',
+            # 'subawards_recipient_location': 'recipient_location'
         }
 
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
 
-        scope_field_name = model_dict.get('{}{}'.format('subawards_' if self.subawards else '', self.scope))
+        scope_field_name = model_dict.get(self.scope)
         loc_field_name = loc_dict.get(self.geo_layer)
-        loc_lookup = '{}_{}{}'.format(scope_field_name, '_' if self.subawards else '', loc_field_name)
-
-        if scope_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: scope")
-        if loc_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: geo_layer")
-        if type(self.subawards) is not bool:
-            raise InvalidParameterException('subawards does not have a valid value')
+        loc_lookup = '{}_{}'.format(scope_field_name, loc_field_name)
 
         if self.subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.queryset = subaward_filter(self.filters)
-            self.model_name = Subaward
+            self.model_name = SubawardView
         else:
             self.queryset, self.model_name = spending_by_geography(self.filters)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
+            column_isnull = 'federal_action_obligation__isnull'
+            if self.subawards:
+                column_isnull = 'amount__isnull'
             kwargs = {
-                '{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else ''): 'USA',
-                '{}'.format('amount__isnull' if self.subawards else 'federal_action_obligation__isnull'): False
+                '{}_country_code'.format(scope_field_name): 'USA',
+                column_isnull: False
             }
 
             # Only state scope will add its own state code
@@ -470,7 +492,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # County and district scope will need to select multiple fields
             # State code is needed for county/district aggregation
-            state_lookup = '{}_{}{}'.format(scope_field_name, '_' if self.subawards else '', loc_dict['state'])
+            state_lookup = '{}_{}'.format(scope_field_name, loc_dict['state'])
             fields_list.append(state_lookup)
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
@@ -480,7 +502,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             if self.geo_layer == 'county':
                 # County name added to aggregation since consistent in db
-                county_name_lookup = '{}_{}county_name'.format(scope_field_name, '_' if self.subawards else '')
+                county_name_lookup = '{}_county_name'.format(scope_field_name)
                 fields_list.append(county_name_lookup)
                 self.county_district_queryset(
                     kwargs,
@@ -524,10 +546,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
 
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', *lookup_fields)
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
         results = [{
@@ -543,15 +568,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
         if self.geo_layer_filters:
-            self.queryset &= geocode_filter_locations(scope_field_name, [
+            geo_layers_list = [
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
-            ], self.model_name, not self.subawards)
+            ]
+            self.queryset &= geocode_filter_locations(scope_field_name, geo_layers_list, self.model_name, True)
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
             kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
-            kwargs['{}_{}country_code'.format(scope_field_name, '_location_' if self.subawards else '')] = 'USA'
+            kwargs['{}_country_code'.format(scope_field_name)] = 'USA'
             kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
 
         # Turn county/district codes into float since inconsistent in database
@@ -560,9 +586,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
             .annotate(code_as_float=Cast(loc_lookup, FloatField()))
-        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
-        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types) if not self.subawards \
-            else self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+
+        if self.subawards:
+            self.geo_queryset = self.geo_queryset.annotate(transaction_amount=Sum('amount'))
+        else:
+            self.geo_queryset = self.geo_queryset \
+                .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
+                .values('transaction_amount', 'code_as_float', *fields_list)
 
         return self.geo_queryset
 
@@ -587,6 +617,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return results
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardVisualizationViewSet(APIView):
     """
     This route takes award filters and fields, and returns the fields of the filtered awards.
@@ -604,31 +635,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
+        models = [
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        for m in models:
+            if m['name'] in ('award_type_codes', 'fields'):
+                m['optional'] = False
+
+        json_request = TinyShield(models).block(request.data)
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
-        subawards = json_request.get("subawards", False)
-        order = json_request.get("order", "asc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        subawards = json_request["subawards"]
+        order = json_request["order"]
+        limit = json_request["limit"]
+        page = json_request["page"]
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
-
-        # input validation
-        if fields is None:
-            raise InvalidParameterException("Missing one or more required request parameters: fields")
-        elif len(fields) == 0:
-            raise InvalidParameterException("Please provide a field in the fields request parameter.")
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if "award_type_codes" not in filters:
-            raise InvalidParameterException(
-                "Missing one or more required request parameters: filters['award_type_codes']")
-        if order not in ["asc", "desc"]:
-            raise InvalidParameterException("Invalid value for order: {}".format(order))
-        if type(subawards) is not bool:
-            raise InvalidParameterException('subawards does not have a valid value')
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
@@ -670,6 +696,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_filters = [contract_subaward_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
                     sort_filters = [grant_subaward_mapping[sort]]
+                else:
+                    msg = 'Award Type codes limited for Subawards. Only contracts {} or grants {} are available'
+                    msg = msg.format(list(contract_type_mapping.keys()), list(grant_type_mapping.keys()))
+                    raise UnprocessableEntityException(msg)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
                     sort_filters = [award_contracts_mapping[sort]]
@@ -678,12 +708,31 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 else:  # assistance data
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
-            if sort == "Award ID":
-                sort_filters = ["award__piid", "award__fain"] if subawards else ["piid", "fain", "uri"]
-            if order == "desc":
-                sort_filters = ["-" + sort_filter for sort_filter in sort_filters]
-
-            queryset = queryset.order_by(*sort_filters).values(*list(values))
+            # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
+            if sort == "Award ID" and subawards:
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('award__piid').desc(nulls_last=True),
+                        F('award__fain').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('award__piid').asc(nulls_last=True),
+                        F('award__fain').asc(nulls_last=True)).values(*list(values))
+            elif sort == "Award ID":
+                if order == "desc":
+                    queryset = queryset.order_by(
+                        F('piid').desc(nulls_last=True),
+                        F('fain').desc(nulls_last=True),
+                        F('uri').desc(nulls_last=True)).values(*list(values))
+                else:
+                    queryset = queryset.order_by(
+                        F('piid').asc(nulls_last=True),
+                        F('fain').asc(nulls_last=True),
+                        F('uri').asc(nulls_last=True)).values(*list(values))
+            elif order == "desc":
+                queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+            else:
+                queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
@@ -733,6 +782,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return Response(response)
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
@@ -741,13 +791,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
+        models = [
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        '''for m in models:
+            if m['name'] in ('award_type_codes', 'fields'):
+                m['optional'] = True'''
+        json_request = TinyShield(models).block(request.data)
         filters = json_request.get("filters", None)
-        subawards = json_request.get("subawards", False)
+        subawards = json_request["subawards"]
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if type(subawards) is not bool:
-            raise InvalidParameterException("subawards does not have a valid value")
 
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
@@ -801,7 +857,13 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # build response
         return Response({"results": results})
 
+    #  ###############################  #
+        # ELASTIC SEARCH ENDPOINTS #
+        # ONLY BELOW THIS POINT    #
+    #  ###############################  #
 
+
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByTransactionVisualizationViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
@@ -820,12 +882,13 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text',
+             'text_type': 'search', 'optional': False},
         ]
-        models.extend(AWARD_FILTER)
-        models.extend(PAGINATION)
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
         for m in models:
-            if m['name'] in ('keyword', 'award_type_codes', 'sort'):
+            if m['name'] in ('keywords', 'award_type_codes', 'sort'):
                 m['optional'] = False
         validated_payload = TinyShield(models).block(request.data)
 
@@ -851,6 +914,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         return Response(response)
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class TransactionSummaryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of transactions and summation of federal action obligations.
@@ -867,7 +931,8 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array',
+                  'array_type': 'text', 'text_type': 'search', 'optional': False, 'text_min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -876,6 +941,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
         return Response({"results": results})
 
 
+@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
@@ -885,9 +951,9 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        models = [{'name': 'keywords', 'key': 'filters|keywords', 'type': 'array', 'array_type': 'text',
+                  'text_type': 'search', 'optional': False, 'text_min': 3}]
         validated_payload = TinyShield(models).block(request.data)
-
         results = spending_by_transaction_count(validated_payload)
         if not results:
             raise ElasticsearchConnectionException('Error during the aggregations')

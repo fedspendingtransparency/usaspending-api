@@ -3,6 +3,8 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.accounts.models import FederalAccount
+
 
 @pytest.fixture
 def financial_spending_data(db):
@@ -10,12 +12,12 @@ def financial_spending_data(db):
         'submissions.SubmissionAttributes', certified_date='2017-12-01', reporting_fiscal_year=2017)
     last_year_subm = mommy.make(
         'submissions.SubmissionAttributes', certified_date='2016-12-01', reporting_fiscal_year=2016)
+    federal_account = mommy.make(FederalAccount, id=1)
 
     # create Object classes
     mommy.make(
         'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
+        treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,
         submission=latest_subm,
         gross_outlay_amount_by_tas_cpe=1000000,
@@ -31,16 +33,14 @@ def financial_spending_data(db):
     # these AAB records should not show up in the endpoint, they are too old
     mommy.make(
         'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
+        treasury_account_identifier__federal_account=federal_account,
         final_of_fy=False,
         submission=latest_subm,
         gross_outlay_amount_by_tas_cpe=999,
     )
     mommy.make(
         'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
+        treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,
         submission=last_year_subm,
         gross_outlay_amount_by_tas_cpe=999,

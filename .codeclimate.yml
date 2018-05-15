@@ -1,5 +1,44 @@
+version: "2"
+
 languages:
   Python: true
+  Javascript: true
+
+checks:
+  argument-count:
+    enabled: true
+    config:
+      threshold: 6
+  complex-logic:
+    enabled: true
+    config:
+      threshold: 8
+  file-lines:
+    enabled: true
+    config:
+      threshold: 250
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 15
+  method-count:
+    enabled: true
+    config:
+      threshold: 20
+  method-lines:
+    enabled: true
+    config:
+      threshold: 45
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 5
+  return-statements:
+    enabled: true
+    config:
+      threshold: 3
+  similar-code:
+    enabled: false
 
 engines:
   pep8:
@@ -21,3 +60,5 @@ ratings:
 exclude_paths:
   - "*/site-packages/*"
   - "usaspending_api/*/migrations/*"
+  - "usaspending_api/*/tests/*"
+  - "usaspending_api/static_doc_files/js/*"

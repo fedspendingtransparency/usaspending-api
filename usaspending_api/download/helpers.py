@@ -5,6 +5,7 @@ import math
 import mimetypes
 import multiprocessing
 import os
+import pandas as pd
 
 from datetime import datetime
 from django.conf import settings
@@ -230,3 +231,16 @@ def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='o
                 current_out_writer.writerow(headers)
         current_out_writer.writerow(row)
     return split_csvs
+
+
+def pull_modified_agencies_cgacs():
+    # Get a cgac_codes from the modified_agencies_list
+    cgac_codes = []
+    file_path = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
+    with open(file_path, encoding='Latin-1') as modified_agencies_list_csv:
+        mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
+    mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE']]
+    mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
+    for _, row in mod_gencies_list_df.iterrows():
+        cgac_codes.append(row['CGAC AGENCY CODE'])
+    return cgac_codes
