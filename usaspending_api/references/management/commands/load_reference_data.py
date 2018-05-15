@@ -21,6 +21,9 @@ class Command(BaseCommand):
         self.logger.info("Loading agency list")
         call_command('load_agencies')
 
+        self.logger.info("Loading state data")
+        call_command('load_state_data')
+
         # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
         if settings.IS_LOCAL:

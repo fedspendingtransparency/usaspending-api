@@ -2,10 +2,11 @@ import contextlib
 import logging
 import time
 import timeit
+import subprocess
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 
@@ -15,6 +16,22 @@ from usaspending_api.references.models import Agency
 logger = logging.getLogger(__name__)
 
 QUOTABLE_TYPES = (str, datetime.date)
+
+TEMP_SQL_FILES = [
+    '../matviews/universal_transaction_matview.sql',
+    '../matviews/universal_award_matview.sql',
+    '../matviews/summary_transaction_view.sql',
+    '../matviews/summary_transaction_month_view.sql',
+    '../matviews/summary_transaction_geo_view.sql',
+    '../matviews/summary_award_view.sql',
+    '../matviews/summary_view_cfda_number.sql',
+    '../matviews/summary_view_naics_codes.sql',
+    '../matviews/summary_view_psc_codes.sql',
+    '../matviews/summary_view.sql',
+    '../matviews/subaward_view.sql',
+]
+MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
+ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
 
 
 def upper_case_dict_values(input_dict):
@@ -101,7 +118,7 @@ def generate_all_fiscal_years_in_range(start, end):
 
 def within_one_year(d1, d2):
     """ includes leap years """
-    year_range = list(range(d1.year, d2.year+1))
+    year_range = list(range(d1.year, d2.year + 1))
     if len(year_range) > 2:
         return False
     days_diff = abs((d2 - d1).days)
@@ -157,6 +174,23 @@ def order_nested_object(nested_object):
         return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
     else:
         return nested_object
+
+
+def generate_matviews():
+    with connection.cursor() as c:
+        c.execute(CREATE_READONLY_SQL)
+        c.execute(get_sql(ENUM_FILE)[0])
+        subprocess.call("python  " + MATVIEW_GENERATOR_FILE, shell=True)
+        for file in get_sql(TEMP_SQL_FILES):
+            c.execute(file)
+
+
+def get_sql(sql_files):
+    data = []
+    for file in sql_files:
+        with open(file, 'r') as myfile:
+            data.append(myfile.read())
+    return data
 
 
 def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
@@ -391,3 +425,9 @@ CORRECTED_CGAC_PG_FUNCTION_DEF = '''
 REV_CORRECTED_CGAC_PG_FUNCTION_DEF = '''
     DROP FUNCTION corrected_cgac(text);
 '''
+
+CREATE_READONLY_SQL = """DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
+CREATE ROLE readonly;
+END IF;
+END$$;"""

@@ -26,29 +26,31 @@ logger = logging.getLogger('console')
 
 AWARD_MAPPINGS = {
     'Contracts': {
+        'agency_field': 'agency_id',
         'award_types': ['contracts'],
+        'column_headers': {
+            0: 'agency_id', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
+            4: 'parent_award_id', 5: 'transaction_number'
+        },
         'correction_delete_ind': 'correction_delete_ind',
         'date_filter': 'updated_at',
         'letter_name': 'd1',
-        'model': 'contract_data',
-        'unique_iden': 'detached_award_proc_unique',
         'match': re.compile(r'(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}.csv'),
-        'column_headers': {
-            0: 'awarding_sub_agency_code', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
-            4: 'parent_award_id', 5: 'transaction_number'
-        }
+        'model': 'contract_data',
+        'unique_iden': 'detached_award_proc_unique'
     },
     'Assistance': {
+        'agency_field': 'awarding_sub_agency_code',
         'award_types': ['grants', 'direct_payments', 'loans', 'other_financial_assistance'],
+        'column_headers': {
+            0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
+        },
         'correction_delete_ind': 'transaction__assistance_data__correction_late_delete_ind',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
-        'model': 'assistance_data',
-        'unique_iden': 'afa_generated_unique',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
-        'column_headers': {
-            0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
-        }
+        'model': 'assistance_data',
+        'unique_iden': 'afa_generated_unique'
     }
 }
 
@@ -66,6 +68,10 @@ class Command(BaseCommand):
         source.query_paths.update({
             'correction_delete_ind': award_map['correction_delete_ind']
         })
+        if award_type == 'Contracts':
+            # Add the agency_id column to the mappings
+            source.query_paths.update({'agency_id': 'transaction__contract_data__agency_id'})
+            source.query_paths.move_to_end('agency_id', last=False)
         source.query_paths.move_to_end('correction_delete_ind', last=False)
         source.human_names = list(source.query_paths.keys())
 
@@ -170,7 +176,7 @@ class Command(BaseCommand):
                 if len(df.index) == 0:
                     continue
                 if agency_code != 'all':
-                    df = df[df['awarding_sub_agency_code'].isin(subtier_agencies)]
+                    df = df[df[AWARD_MAPPINGS[award_type]['agency_field']].isin(subtier_agencies)]
                     if len(df.index) == 0:
                         continue
 
@@ -190,13 +196,13 @@ class Command(BaseCommand):
         else:
             ordered_columns = source.columns(None)
 
-        # Loop through columns and give empty (or specifically-populated) rows for each
+        # Loop through columns and populate rows for each
+        unique_values_map = {
+            'correction_delete_ind': 'D', 'last_modified_date': match_date
+        }
         for header in ordered_columns:
-            if header == 'correction_delete_ind':
-                dataframe['correction_delete_ind'] = ['D'] * len(dataframe.index)
-
-            elif header == 'last_modified_date':
-                dataframe['last_modified_date'] = [match_date] * len(dataframe.index)
+            if header in unique_values_map:
+                dataframe[header] = [unique_values_map[header]] * len(dataframe.index)
 
             elif header not in list(AWARD_MAPPINGS[award_type]['column_headers'].values()):
                 dataframe[header] = [''] * len(dataframe.index)

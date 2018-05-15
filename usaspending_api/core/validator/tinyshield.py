@@ -67,7 +67,7 @@ VALIDATORS = {
         'required_fields': ['text_type'],
         'defaults': {
             'min': 1,
-            'max': 500
+            'max': MAX_ITEMS
         }
     }
 }
@@ -185,6 +185,8 @@ class TinyShield():
             value = VALIDATORS[rule['type']]['func'](rule)
             child_rule = copy.copy(rule)
             child_rule['type'] = rule['array_type']
+            child_rule['min'] = rule.get('array_min')
+            child_rule['max'] = rule.get('array_max')
             child_rule = self.promote_subrules(child_rule, child_rule)
             array_result = []
             for v in value:
@@ -205,32 +207,32 @@ class TinyShield():
                         raise UnprocessableEntityException('Required object fields: {}'.format(k))
                     else:
                         continue
-                child_rule = copy.copy(rule)
+                # Start with the sub-rule definition and supplement with parent's key-values as needed
+                child_rule = copy.copy(v)
+                child_rule['key'] = rule['key']
                 child_rule['value'] = value
-                child_rule['type'] = v['type']
                 child_rule = self.promote_subrules(child_rule, v)
                 object_result[k] = self.apply_rule(child_rule)
             return object_result
 
     def promote_subrules(self, child_rule, source={}):
-        param_type = source.get('type', None)
+        param_type = child_rule['type']
         if "text_type" in source:
             child_rule['text_type'] = source['text_type']
+            child_rule['min'] = source.get('text_min')
+            child_rule['max'] = source.get('text_max')
         try:
             if param_type == "object":
-                child_rule['object_keys'] = source['object_keys']
+                child_rule['object_keys'] = source['object_keys']  # TODO investigate why
                 child_rule['object_min'] = source.get('object_min', 1)
                 child_rule['object_max'] = source.get('object_max', MAX_ITEMS)
             if param_type == "enum":
                 child_rule['enum_values'] = source['enum_values']
             if param_type == "array":
                 child_rule['array_type'] = source['array_type']
-                child_rule['object_keys'] = source.get('object_keys', {})
-                child_rule['array_min'] = source.get('array_min', 1)
-                child_rule['array_max'] = source.get('array_max', MAX_ITEMS)
-            if param_type == "text":
-                child_rule['min'] = source.get('min', 1)
-                child_rule['max'] = source.get('max', MAX_ITEMS)
+                child_rule['min'] = child_rule.get('min') or source.get('array_min')
+                child_rule['max'] = child_rule.get('max') or source.get('array_max')
+
         except KeyError as e:
             raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
         return child_rule

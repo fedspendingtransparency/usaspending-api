@@ -6,24 +6,25 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
-from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
+from .filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.search.v2 import elasticsearch_helper
+from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
 
 logger = logging.getLogger(__name__)
 
 
 def universal_award_matview_filter(filters):
-    return matview_search_filter(filters, UniversalAwardView)
+    return matview_search_filter(filters, UniversalAwardView, for_downloads=True)
 
 
 def universal_transaction_matview_filter(filters):
-    return matview_search_filter(filters, UniversalTransactionView)
+    return matview_search_filter(filters, UniversalTransactionView, for_downloads=True)
 
 
-def matview_search_filter(filters, model):
+def matview_search_filter(filters, model, for_downloads=False):
     queryset = model.objects.all()
 
     faba_flag = False
@@ -65,10 +66,10 @@ def matview_search_filter(filters, model):
 
         if key == "keywords":
             def keyword_parse(keyword):
-                # keyword_string & award_id_string are Postgres TS_vectors.
-                # keyword_string = recipient_name + naics_code + naics_description
+                # keyword_ts_vector & award_ts_vector are Postgres TS_vectors.
+                # keyword_ts_vector = recipient_name + naics_code + naics_description
                 #     + psc_description + awards_description
-                # award_id_string = piid + fain + uri
+                # award_ts_vector = piid + fain + uri
                 filter_obj = Q(keyword_ts_vector=keyword) | \
                     Q(award_ts_vector=keyword)
                 if keyword.isnumeric():
@@ -101,19 +102,18 @@ def matview_search_filter(filters, model):
                 where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
-                                                       "action_date")
-            if success:
-                queryset &= or_queryset
+            min_date = API_SEARCH_MIN_DATE
+            if for_downloads:
+                min_date = API_MIN_DATE
+            queryset &= combine_date_range_queryset(value, model, "action_date", min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())
 
-            if len(value) != 0:
-                filter_obj = Q(type__in=value)
-                if idv_flag:
-                    filter_obj |= Q(pulled_from='IDV')
-                queryset &= model.objects.filter(filter_obj)
+            filter_obj = Q(type__in=value)
+            if idv_flag:
+                filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -135,8 +135,6 @@ def matview_search_filter(filters, model):
                         else:
                             funding_subtier |= Q(funding_subtier_agency_name=name)
 
-                    else:
-                        raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
@@ -146,10 +144,6 @@ def matview_search_filter(filters, model):
                                                  Q(awarding_toptier_agency_name=v['toptier_name']))
                         else:
                             awarding_subtier |= Q(awarding_subtier_agency_name=name)
-                    else:
-                        raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
-                else:
-                    raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
             awarding_queryfilter = Q()
             funding_queryfilter = Q()
@@ -167,9 +161,12 @@ def matview_search_filter(filters, model):
             queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset &= model.objects.filter(recipient_id__in=in_query)
+            # This filter key has effectively become obsolete by recipient_search_text
+            msg = 'API request included "{}" key. No filtering will occur with provided value "{}"'
+            logger.info(msg.format(key, value))
+            # in_query = [v for v in value]
+            # if len(in_query) != 0:
+            #     queryset &= model.objects.filter(recipient_id__in=in_query)
 
         elif key == "recipient_search_text":
             all_filters_obj = Q()
@@ -214,18 +211,15 @@ def matview_search_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            success, and_queryset = total_obligation_queryset(value, model, filters)
-            if success:
-                queryset &= and_queryset
+            queryset &= total_obligation_queryset(value, model, filters)
 
         elif key == "award_ids":
-            if len(value) != 0:
-                filter_obj = Q()
-                for val in value:
-                    # award_id_string is a Postgres TS_vector
-                    # award_id_string = piid + fain + uri
-                    filter_obj |= Q(award_ts_vector=val)
-                queryset &= model.objects.filter(filter_obj)
+            filter_obj = Q()
+            for val in value:
+                # award_id_string is a Postgres TS_vector
+                # award_id_string = piid + fain + uri
+                filter_obj |= Q(award_ts_vector=val)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":
             in_query = [v for v in value]
