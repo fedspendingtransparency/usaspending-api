@@ -742,6 +742,10 @@ class SubawardView(models.Model):
     awarding_subtier_agency_name = models.TextField()
     funding_toptier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
+    awarding_toptier_agency_abbreviation = models.TextField()
+    funding_toptier_agency_abbreviation = models.TextField()
+    awarding_subtier_agency_abbreviation = models.TextField()
+    funding_subtier_agency_abbreviation = models.TextField()
 
     place_of_performance = models.OneToOneField(Location, primary_key=True)
     recipient = models.OneToOneField(LegalEntity, primary_key=True)
@@ -765,6 +769,8 @@ class SubawardView(models.Model):
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
     cfda_number = models.TextField()
+    cfda_title = models.TextField()
+    cfda_popular_name = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()

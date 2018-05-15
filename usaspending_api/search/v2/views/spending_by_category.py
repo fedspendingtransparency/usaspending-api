@@ -6,7 +6,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import Subaward
+from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
@@ -63,7 +63,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 class BusinessLogic:
     __slots__ = (
-        'subawards', 'category', 'scope', 'page', 'limit',
+        'subawards', 'category', 'scope', 'page', 'limit', 'obligation_column',
         'lower_limit', 'upper_limit', 'filters', 'queryset', 'model',
     )
 
@@ -88,29 +88,20 @@ class BusinessLogic:
         # some category-scope combinations allow different matviews, combine strings for easier logic
         category_scope = '{}-{}'.format(cls.category, cls.scope or '')
         if cls.subawards:
-            # We do not use matviews for Subaward filtering, just the Subaward download filters
-            # TODO: Future implementation
-            cls.queryset = Subaward.objects.none()
-            cls.model = Subaward
+            cls.queryset, cls.model = subaward_filter(cls.filters), None
+            cls.obligation_column = 'amount'
         else:
             cls.queryset, cls.model = sbc_view_queryset(category_scope, cls.filters)
+            cls.obligation_column = 'generated_pragmatic_obligation'
         return cls.logic(cls)
 
     def raise_not_implemented(self):
         msg = "Scope '{}' is not implemented for '{}' Category"
+        if self.subawards:
+            msg += ' when subawards is True'
         raise InvalidParameterException(msg.format(self.scope, self.category))
 
     def logic(self):
-        if self.model == Subaward:
-            response = {
-                'category': self.category,
-                'limit': self.limit,
-                'page_metadata': get_simple_pagination_metadata(0, self.limit, self.page),
-                'results': [],
-                'scope': self.scope,
-            }
-            return response
-
         # filter the transactions by category
         if self.category == 'awarding_agency':
             results = self.awarding_agency(self)
@@ -133,7 +124,7 @@ class BusinessLogic:
             'limit': self.limit,
             'page_metadata': page_metadata,
             'results': alias_response(ALIAS_DICT[self.category], results[:self.limit]),
-            'scope': self.scope,
+            'scope': self.scope if not self.category == 'cfda_programs' else None,
         }
         return response
 
@@ -142,7 +133,7 @@ class BusinessLogic:
             self.queryset = self.queryset \
                 .filter(awarding_toptier_agency_name__isnull=False) \
                 .values('awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         elif self.scope == 'subagency':
@@ -150,7 +141,7 @@ class BusinessLogic:
                 .filter(
                     awarding_subtier_agency_name__isnull=False) \
                 .values('awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         else:
@@ -164,7 +155,7 @@ class BusinessLogic:
             self.queryset = self.queryset \
                 .filter(funding_toptier_agency_name__isnull=False) \
                 .values('funding_toptier_agency_name', 'funding_toptier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         elif self.scope == 'subagency':
@@ -172,7 +163,7 @@ class BusinessLogic:
                 .filter(
                     funding_subtier_agency_name__isnull=False) \
                 .values('funding_subtier_agency_name', 'funding_subtier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         else:
@@ -186,7 +177,7 @@ class BusinessLogic:
             self.queryset = self.queryset \
                 .filter(recipient_unique_id__isnull=False) \
                 .values('recipient_name', 'recipient_unique_id') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         elif self.scope == 'parent_duns':
@@ -195,7 +186,7 @@ class BusinessLogic:
             self.queryset = self.queryset \
                 .filter(parent_recipient_unique_id__isnull=False) \
                 .values('recipient_name', 'parent_recipient_unique_id') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
         else:
@@ -211,7 +202,7 @@ class BusinessLogic:
                     federal_action_obligation__isnull=False,
                     cfda_number__isnull=False) \
                 .values('cfda_number', 'cfda_title') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
             # DB hit here
@@ -230,12 +221,11 @@ class BusinessLogic:
                     trans['popular_name'] = cfda['popular_name']
 
         else:
+            filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
             self.queryset = self.queryset \
-                .filter(
-                    federal_action_obligation__isnull=False,
-                    cfda_number__isnull=False) \
+                .filter(**filters) \
                 .values('cfda_number', 'cfda_popular_name', 'cfda_title') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
 
             # DB hit here
@@ -248,13 +238,15 @@ class BusinessLogic:
             self.queryset = self.queryset \
                 .filter(product_or_service_code__isnull=False) \
                 .values('product_or_service_code') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
         elif self.scope == 'naics':
+            if self.model is None:  # self.model is None if self.subawards = True
+                self.raise_not_implemented(self)
             self.queryset = self.queryset \
                 .filter(naics_code__isnull=False) \
                 .values('naics_code', 'naics_description') \
-                .annotate(aggregated_amount=Sum('generated_pragmatic_obligation')) \
+                .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
         else:
             self.raise_not_implemented(self)
