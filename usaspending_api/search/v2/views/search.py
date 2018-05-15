@@ -30,7 +30,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_m
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.exceptions import (ElasticsearchConnectionException, InvalidParameterException,
                                                UnprocessableEntityException)
-from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield

@@ -16,7 +16,7 @@ from usaspending_api.accounts.models import (
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
-from usaspending_api.common.helpers import upper_case_dict_values
+from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.references.models import Agency, ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
@@ -227,7 +227,8 @@ def get_or_create_object_class_rw(row, logger):
 def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to duplicate existing pk's with null values
     filters = {'program_activity_code': row['program_activity_code'],
-               'program_activity_name': row['program_activity_name'].upper(),
+               'program_activity_name': row['program_activity_name'].upper() if row['program_activity_name']
+               else row['program_activity_name'],
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
                'allocation_transfer_agency_id': row['allocation_transfer_agency'],

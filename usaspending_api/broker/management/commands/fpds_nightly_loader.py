@@ -10,7 +10,7 @@ from django.db import connections, transaction
 from django.db.models import Count
 from django.conf import settings
 
-from usaspending_api.common.helpers import fy, timer, upper_case_dict_values
+from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate

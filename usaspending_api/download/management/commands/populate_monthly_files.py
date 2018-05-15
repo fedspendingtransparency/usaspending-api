@@ -7,7 +7,7 @@ import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from usaspending_api.common.helpers import generate_fiscal_year, order_nested_object
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year, order_nested_object
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs

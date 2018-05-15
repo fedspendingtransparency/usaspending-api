@@ -13,7 +13,7 @@ from usaspending_api.accounts.models import (AppropriationAccountBalances,
                                              FederalAccount,
                                              TreasuryAppropriationAccount)
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.financial_activities.models import \
     FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
