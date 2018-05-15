@@ -19,6 +19,10 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
+API_MAX_DATE = '2020-09-30'
+API_MIN_DATE = '2000-10-01'
+API_SEARCH_MIN_DATE = '2007-10-01'
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
@@ -45,6 +49,14 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 BULK_DOWNLOAD_AWS_REGION = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 BROKER_AGENCY_BUCKET_NAME = ""
+FPDS_BUCKET_NAME = ""
+
+# Elasticsearch
+ES_HOSTNAME = ""
+TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
+DOWNLOAD_QUERY_SIZE = 500000
+ES_TIMEOUT = 30
+ES_REPOSITORY = ""
 
 # Application definition
 
@@ -73,6 +85,7 @@ INSTALLED_APPS = [
     'usaspending_api.broker',
     'usaspending_api.download',
     'usaspending_api.bulk_download',
+    'usaspending_api.recipient',
     'django_spaghetti',
     'simple_history'
 ]
@@ -158,6 +171,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+API_VERSION = 2
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -318,14 +333,6 @@ SPAGHETTI_SAUCE = {
 # Mapping dictionaries (used for converting terse_labels from broker to
 # semi-terse labels used in the datastore)
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
-
-# Elasticsearch
-ES_HOSTNAME = ""
-TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
-DOWNLOAD_QUERY_SIZE = 500000
-ES_TIMEOUT = 30
-ES_REPOSITORY = ""
-
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",

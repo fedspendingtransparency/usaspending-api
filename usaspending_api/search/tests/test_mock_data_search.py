@@ -1,6 +1,6 @@
 def all_filters():
     return {
-        "keyword": "test",
+        "keywords": ["test", "testing"],
         "time_period": [
             {
                 "start_date": "2016-10-01",
@@ -20,7 +20,7 @@ def all_filters():
             }
         ],
         "legal_entities": [1, 2, 3],
-        'recipient_scope': "domestic",
+        "recipient_scope": "domestic",
         "recipient_locations": [{"country": "XYZ"},
                                 {"country": "USA"},
                                 {"country": "ABC"}
@@ -31,8 +31,8 @@ def all_filters():
         "place_of_performance_scope": "domestic",
         "place_of_performance_locations": [{"country": "USA"},
                                            {"country": "PQR"}],
-        "award_type_codes": ["A", "B", "03", '011', '020'],
-        "award_ids": [1, 2, 3],
+        "award_type_codes": ["A", "B"],
+        "award_ids": ["D0G0EL1", "A2D9D0C", "3DAB3021"],
         "award_amounts": [
             {
                 "lower_bound": 1000000.00,

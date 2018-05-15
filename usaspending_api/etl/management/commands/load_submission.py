@@ -16,6 +16,7 @@ from usaspending_api.accounts.models import (
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
+from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.references.models import Agency, ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
@@ -136,6 +137,16 @@ class Command(load_base.Command):
         logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
+def update_skipped_tas(row, skipped_tas):
+    if row['tas'] not in skipped_tas:
+        skipped_tas[row['tas']] = {}
+        skipped_tas[row['tas']]['count'] = 1
+        skipped_tas[row['tas']]['rows'] = [row['row_number']]
+    else:
+        skipped_tas[row['tas']]['count'] += 1
+        skipped_tas[row['tas']]['rows'] += [row['row_number']]
+
+
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
     """Lookup an object class record.
 
@@ -216,15 +227,18 @@ def get_or_create_object_class_rw(row, logger):
 def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to duplicate existing pk's with null values
     filters = {'program_activity_code': row['program_activity_code'],
+               'program_activity_name': row['program_activity_name'].upper() if row['program_activity_name']
+               else row['program_activity_name'],
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
+               'allocation_transfer_agency_id': row['allocation_transfer_agency'],
                'main_account_code': row['main_account_code'], }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
         # If the PA has a blank name, create it with the value in the row.
         # PA loader should overwrite the names for the unique PAs from the official
         # domain values list if the title needs updating, but for now grab it from the submission
-        prg_activity = RefProgramActivity.objects.create(**filters, program_activity_name=row['program_activity_name'])
+        prg_activity = RefProgramActivity.objects.create(**filters)
         # logger.warning('Created missing program activity record for {}'.format(str(filters)))
 
     return prg_activity
@@ -332,14 +346,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            if row['tas'] not in skipped_tas:
-                skipped_tas[row['tas']] = {}
-                skipped_tas[row['tas']]['count'] = 1
-                skipped_tas[row['tas']]['rows'] = [row['row_number']]
-            else:
-                skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += row['row_number']
-
+            update_skipped_tas(row, skipped_tas)
             continue
 
         # Now that we have the account, we can load the appropriation balances
@@ -518,13 +525,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                if row['tas'] not in skipped_tas:
-                    skipped_tas[row['tas']] = {}
-                    skipped_tas[row['tas']]['count'] = 1
-                    skipped_tas[row['tas']]['rows'] = [row['row_number']]
-                else:
-                    skipped_tas[row['tas']]['count'] += 1
-                    skipped_tas[row['tas']]['rows'] += [row['row_number']]
+                update_skipped_tas(row, skipped_tas)
                 continue
         except Exception:    # TODO: What is this trying to catch, actually?
             continue
@@ -693,21 +694,13 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                                                                         str(total_rows),
                                                                         datetime.now() - start_time))
 
-        for key in row:
-            if isinstance(row[key], str):
-                row[key] = row[key].upper()
+        upper_case_dict_values(row)
 
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            if row['tas'] not in skipped_tas:
-                skipped_tas[row['tas']] = {}
-                skipped_tas[row['tas']]['count'] = 1
-                skipped_tas[row['tas']]['rows'] = [row['row_number']]
-            else:
-                skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += [row['row_number']]
+            update_skipped_tas(row, skipped_tas)
             continue
 
         # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an

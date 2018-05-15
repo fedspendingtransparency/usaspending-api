@@ -7,7 +7,7 @@ from rest_framework import status
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_transaction_spending_success(client, budget_function_data):
+def test_transaction_spending_success(client):
 
     # test for needed filters
     resp = client.post(
@@ -15,7 +15,7 @@ def test_transaction_spending_success(client, budget_function_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "keyword": "test"
+                "keywords": ["test", "testing"]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
@@ -26,7 +26,7 @@ def test_transaction_spending_success(client, budget_function_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "keyword": "test",
+                "keywords": ["test", "testing"],
                 "agencies": [{
                      "type": "awarding",
                      "tier": "toptier",

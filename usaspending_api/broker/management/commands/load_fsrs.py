@@ -2,9 +2,10 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
-from django.db.models import Max
+from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_award_subawards
@@ -49,7 +50,26 @@ class Command(BaseCommand):
         return dictfetchall(db_cursor)
 
     @staticmethod
-    def get_award(row, award_type):
+    def generate_unique_ids(row, award_type):
+        if award_type == 'procurement':
+            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
+            # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
+            return \
+                'CONT_AW_' + \
+                (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else '-NONE-') + \
+                '_' + \
+                (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else '-NONE-') + \
+                '_' + \
+                (row['contract_number'].replace('-', '') if row['contract_number'] else '-NONE-') + \
+                '_' + \
+                (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else '-NONE-')
+        else:
+            # For assistance awards, 'ASST_AW_' is NOT prepended because we are unable to build the full unique
+            # identifier since all the required fields to do so are not provided by the subaward tables from the source.
+            # Therefore, we can only use the FAIN to find the closest match instead of generated_unique_award_id.
+            return row['fain'].replace('-', '')
+
+    def get_award(self, row, award_type):
         if award_type == 'procurement':
             # we don't need the agency for grants
             agency = get_valid_awarding_agency(row)
@@ -61,15 +81,15 @@ class Command(BaseCommand):
                 return None
 
             # Find the award to attach this sub-contract to, using the generated unique ID:
-            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
-            generated_unique_id = 'CONT_AW_' + \
-                (row['contract_agency_code'] if row['contract_agency_code'] else '-NONE-') + '_' + \
-                (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') + '_' + \
-                (row['contract_number'] if row['contract_number'] else '-NONE-') + '_' + \
-                (row['idv_reference_number'] if row['idv_reference_number'] else '-NONE-')
-            award = Award.objects.filter(generated_unique_award_id=generated_unique_id,
-                                         latest_transaction_id__isnull=False).\
+            award = Award.objects.annotate(
+                modified_generated_unique_award_id=Func(
+                    F('generated_unique_award_id'),
+                    Value('-'), Value(''),
+                    function='replace',
+                )
+            ).\
+                filter(modified_generated_unique_award_id=self.generate_unique_ids(row, award_type),
+                       latest_transaction_id__isnull=False).\
                 distinct().order_by("-date_signed").first()
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
@@ -83,14 +103,22 @@ class Command(BaseCommand):
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
             # a transaction with a matching fain
-            all_awards = Award.objects.filter(fain=row['fain'],
-                                              latest_transaction_id__isnull=False).distinct().order_by("-date_signed")
-            award = all_awards.first()
+            all_awards = Award.objects.annotate(
+                modified_fain=Func(
+                    F('fain'),
+                    Value('-'), Value(''),
+                    function='replace',
+                )
+            ).\
+                filter(modified_fain=self.generate_unique_ids(row, award_type), latest_transaction_id__isnull=False).\
+                distinct().order_by("-date_signed")
 
             if all_awards.count() > 1:
                 logger.warning("Multiple awards found with fain {}".format(row['fain']))
 
-            # We don't have a matching award for this subcontract, log a warning and continue to the next row
+            award = all_awards.first()
+
+            # We don't have a matching award for this subgrant, log a warning and continue to the next row
             if not award:
                 logger.warning(
                     "Internal ID {} cannot find award with fain {};".
@@ -240,9 +268,7 @@ class Command(BaseCommand):
         if row['internal_id'] in shared_award_mappings:
             shared_mappings = shared_award_mappings[row['internal_id']]
 
-            for key in row:
-                if isinstance(row[key], str):
-                    row[key] = row[key].upper()
+            upper_case_dict_values(row)
 
             cfda = None
             # check if the key exists and if it isn't empty (only here for grants)
@@ -305,6 +331,7 @@ class Command(BaseCommand):
             max_id = 0
 
         fsrs_award_data = self.get_award_data(db_cursor, award_type, max_id)
+
         shared_award_mappings = self.gather_shared_award_data(fsrs_award_data, award_type)
 
         # if this is not the initial load, delete all existing subawards with internal IDs matching the list of
@@ -398,7 +425,7 @@ def location_d2_recipient_mapper(row):
         "state_code": row.get("awardee_address_state"),
         "state_name": row.get("awardee_address_state_name"),
         "address_line1": row.get("awardee_address_street"),
-        "congressional_code": row.get("awardee_address_district", None)
+        "congressional_code": row.get("awardee_address_district")
     }
     return loc
 
@@ -411,6 +438,6 @@ def pop_mapper(row):
         "state_code": row.get("principle_place_state"),
         "state_name": row.get("principle_place_state_name"),
         "address_line1": row.get("principle_place_street"),
-        "congressional_code": row.get("principle_place_district", None)
+        "congressional_code": row.get("principle_place_district")
     }
     return loc

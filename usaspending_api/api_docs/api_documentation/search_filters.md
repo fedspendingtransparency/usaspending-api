@@ -4,7 +4,7 @@
 
 ```
 {
-	"keyword": "example search text",
+	"keywords": ["example search text"],
 	"time_period": [
 		{
 			"start_date": "2001-01-01",
@@ -92,7 +92,7 @@ Keys in a location object include:
 
 ## Keyword Search
 
-**Description:** Search is based on a single string input.
+**Description:** Search is based on a list of string inputs.
 
 **TODO:**
 1. Determine what backend fields are being searched against.
@@ -100,12 +100,15 @@ Keys in a location object include:
 **Example Request:**
 ```
 {
-	"keyword": "example search text"
+	"keywords": ["example search text", "more search text"]
 }
 ```
 
+
 Request parameter description:
-* `keyword` (String) : String containing the search text. Also the top level key name for the filter.
+* `keywords` (List) : List containing one or more strings to search for. Also the top level key name for the filter.
+
+**NOTE: `keyword` (singluar), which accepts a string rather than a list, is being deprecated, but will continue to function until the API is moved to v3**
 
 ## Time Period
 
@@ -215,7 +218,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"recipient_search_text": ["D12345678"]
+	"recipient_search_text": ["D12345678", "Department of Defense"]
 }
 ```
 

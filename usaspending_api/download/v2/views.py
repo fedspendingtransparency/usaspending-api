@@ -1,4 +1,5 @@
 import boto
+import copy
 import datetime
 import json
 import os
@@ -15,30 +16,38 @@ from rest_framework.exceptions import NotFound
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
-from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
+from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import order_nested_object
+from usaspending_api.common.helpers.generic_helper import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
+from usaspending_api.core.validator.award_filter import AWARD_FILTER
+from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
                                               write_to_download_log as write_to_log)
-from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_FILTER_DEFAULTS, CFO_CGACS,
-                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
+from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_AWARD_FILTER_DEFAULTS, CFO_CGACS,
+                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
+                                              ACCOUNT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
 
+@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
-    def post(self, request):
+    def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
-        json_request = self.validate_request(request.data)
+        json_request = (self.validate_award_request(request.data) if request_type == 'award' else
+                        self.validate_account_request(request.data))
+        json_request['request_type'] = request_type
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
@@ -55,8 +64,9 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Create download name and timestamped name for uniqueness
         download_name = '_'.join(VALUE_MAPPINGS[award_level]['download_name']
-                                 for award_level in json_request['award_levels'])
+                                 for award_level in json_request['download_types'])
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
+
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
                                                   file_name=timestamped_file_name,
                                                   json_request=ordered_json_request)
@@ -67,7 +77,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         return self.get_download_response(file_name=timestamped_file_name)
 
-    def validate_request(self, request_data):
+    def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
@@ -92,7 +102,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         for award_level in request_data['award_levels']:
             if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
-        json_request['award_levels'] = request_data['award_levels']
+        json_request['download_types'] = request_data['award_levels']
 
         if not isinstance(request_data['filters'], dict):
             raise InvalidParameterException('Filters parameter not provided as a dict')
@@ -106,7 +116,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Validate shared filter types and assign defaults
         filters = request_data['filters']
-        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_FILTER_DEFAULTS)
+        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_AWARD_FILTER_DEFAULTS)
 
         # Validate award type types
         if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
@@ -143,6 +153,56 @@ class BaseDownloadViewSet(APIDocumentationView):
             check_types_and_assign_defaults(filters, json_request['filters'], YEAR_CONSTRAINT_FILTER_DEFAULTS)
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
+
+        return json_request
+
+    def validate_account_request(self, request_data):
+        json_request = {}
+
+        # Validate required parameters
+        for required_param in ["account_level", "filters"]:
+            if required_param not in request_data:
+                raise InvalidParameterException(
+                    'Missing one or more required query parameters: {}'.format(required_param))
+
+        # Validate account_level parameters
+        if request_data.get('account_level', None) not in ["federal_account", "treasury_account"]:
+            raise InvalidParameterException('Invalid Parameter: account_level must be either "federal_account" or '
+                                            '"treasury_account"')
+        json_request['account_level'] = request_data['account_level']
+
+        # Validate the filters parameter and its contents
+        json_request['filters'] = {}
+        filters = request_data['filters']
+        if not isinstance(filters, dict):
+            raise InvalidParameterException('Filters parameter not provided as a dict')
+        elif len(filters) == 0:
+            raise InvalidParameterException('At least one filter is required.')
+
+        # Validate required filters
+        for required_filter in ["fy", "quarter"]:
+            if required_filter not in filters:
+                raise InvalidParameterException('Missing one or more required filters: {}'.format(required_filter))
+            else:
+                try:
+                    filters[required_filter] = int(filters[required_filter])
+                except TypeError:
+                    raise InvalidParameterException('{} filter not provided as an integer'.format(required_filter))
+            json_request['filters'][required_filter] = filters[required_filter]
+
+        # Validate fiscal_quarter
+        if json_request['filters']['quarter'] not in [1, 2, 3, 4]:
+            raise InvalidParameterException('quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)')
+
+        # Validate submission_type parameters
+        if filters.get('submission_type', None) not in ["account_balances", "object_class_program_activity",
+                                                        "award_financial"]:
+            raise InvalidParameterException('Invalid Parameter: submission_type must be "account_balances", '
+                                            '"object_class_program_activity", or "award_financial"')
+        json_request['download_types'] = [filters['submission_type']]
+
+        # Validate the rest of the filters
+        check_types_and_assign_defaults(filters, json_request['filters'], ACCOUNT_FILTER_DEFAULTS)
 
         return json_request
 
@@ -196,7 +256,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -210,7 +270,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['transactions', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
@@ -223,7 +283,7 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
@@ -239,7 +299,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
 
-        return BaseDownloadViewSet.post(self, request)
+        return BaseDownloadViewSet.post(self, request, 'award')
 
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""
@@ -250,8 +310,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'keyword' in filters and len(filters.keys()) == 1:
-            request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
+        if 'keywords' in filters and len(filters.keys()) == 1:
+            request_data['filters'] = {'elasticsearch_keyword': filters['keywords']}
             return
 
         # Validate other parameters previously required by the Bulk Download endpoint
@@ -297,6 +357,15 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         request_data['filters'] = filters
 
 
+class AccountDownloadViewSet(BaseDownloadViewSet):
+    """This route sends a request to begin generating a zipfile of account data in CSV form for download."""
+
+    def post(self, request):
+        """Push a message to SQS with the validated request JSON"""
+
+        return BaseDownloadViewSet.post(self, request, 'account')
+
+
 class DownloadStatusViewSet(BaseDownloadViewSet):
     """
     This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or
@@ -325,18 +394,26 @@ class DownloadTransactionCountViewSet(APIDocumentationView):
     @cache_response()
     def post(self, request):
         """Returns boolean of whether a download request is greater than the max limit. """
-        json_request = request.data
+        models = [
+            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        json_request = TinyShield(models).block(request.data)
 
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
-        is_over_limit = False
-        queryset, model = download_transaction_count(filters)
 
-        if model in ['UniversalTransactionView']:
-            total_count = queryset.count()
+        is_over_limit = False
+
+        if json_request['subawards']:
+            total_count = subaward_filter(filters).count()
         else:
-            # "summary" materialized views are pre-aggregated and contain a counts col
-            total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
+            queryset, model = download_transaction_count(filters)
+            if model in ['UniversalTransactionView']:
+                total_count = queryset.count()
+            else:
+                # "summary" materialized views are pre-aggregated and contain a counts col
+                total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
 
         if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
             is_over_limit = True
@@ -442,71 +519,65 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params"""
-        response_data = {}
+        agency_id = request.data.get('agency', None)
+        fiscal_year = request.data.get('fiscal_year', None)
+        type_param = request.data.get('type', None)
 
-        post_data = request.data
-        agency_id = post_data.get('agency', None)
-        fiscal_year = post_data.get('fiscal_year', None)
-        download_type = post_data.get('type', None)
-
-        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
-        for required_param, param_value in required_params.items():
+        # Check required params
+        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': type_param}
+        for required, param_value in required_params.items():
             if param_value is None:
-                raise InvalidParameterException('Missing one or more required query parameters: {}'.
-                                                format(required_param))
+                raise InvalidParameterException('Missing one or more required query parameters: {}'.format(required))
 
-        # Populate regex
-        fiscal_year_regex = str(fiscal_year) if fiscal_year else '\d{4}'
-        download_type_regex = download_type.capitalize() if download_type else '(Contracts|Assistance)'
-
-        cgac_regex = '.*'
-        if agency_id and agency_id == 'all':
-            cgac_regex = 'all'
-        elif agency_id:
-            cgac_codes = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code')
-            if cgac_codes:
-                cgac_regex = cgac_codes[0]['cgac_code']
+        # Capitalize type_param and retrieve agency information from agency ID
+        download_type = type_param.capitalize()
+        if agency_id == 'all':
+            agency = {'cgac_code': 'all', 'name': 'All', 'abbreviation': None}
+        else:
+            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code', 'name',
+                                                                                            'abbreviation')
+            if agency_check:
+                agency = agency_check[0]
             else:
                 raise InvalidParameterException('{} agency not found'.format(agency_id))
-        monthly_dl_regex = '{}_{}_{}_Full_.*\.zip'.format(fiscal_year_regex, cgac_regex, download_type_regex)
 
-        # Generate regex possible prefix
-        prefixes = []
-        for regex, add_regex in [(fiscal_year_regex, fiscal_year), (cgac_regex, agency_id),
-                                 (download_type_regex, download_type)]:
-            if not add_regex:
-                break
-            prefixes.append(regex)
-        prefix = '_'.join(prefixes)
+        # Populate regex
+        monthly_download_prefixes = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], download_type)
+        monthly_download_regex = '{}_Full_.*\.zip'.format(monthly_download_prefixes)
+        delta_download_prefixes = '{}_{}'.format(agency['cgac_code'], download_type)
+        delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
-        # Get and filter the files we need
-        bucket_name = self.s3_handler.bucketRoute
-        region_name = S3Handler.REGION
-        bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
-        monthly_dls_names = list(filter(re.compile(monthly_dl_regex).search,
-                                        [key.name for key in bucket.list(prefix=prefix)]))
+        # Retrieve and filter the files we need
+        bucket = boto.s3.connect_to_region(S3Handler.REGION).get_bucket(self.s3_handler.bucketRoute)
+        monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
+                                             [key.name for key in bucket.list(prefix=monthly_download_prefixes)]))
+        delta_download_names = list(filter(re.compile(delta_download_regex).search,
+                                           [key.name for key in bucket.list(prefix=delta_download_prefixes)]))
+
         # Generate response
         downloads = []
-        for name in monthly_dls_names:
-            name_data = re.findall('(.*)_(.*)_(.*)_Full_(.*)\.zip', name)[0]
-            agency_name = None
-            agency_abbr = None
-            agency_cgac = name_data[1]
-            if agency_cgac != 'all':
-                agency = ToptierAgency.objects.filter(cgac_code=agency_cgac).values('name', 'abbreviation')
-                if agency:
-                    agency_name = agency[0]['name']
-                    agency_abbr = agency[0]['abbreviation']
-            else:
-                agency_name = 'All'
-            # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
-            updated_date = '-'.join([name_data[3][:4], name_data[3][4:6], name_data[3][6:]])
-            downloads.append({'fiscal_year': name_data[0],
-                              'agency_name': agency_name,
-                              'agency_acronym': agency_abbr,
-                              'type': name_data[2].lower(),
-                              'updated_date': updated_date,
-                              'file_name': name,
-                              'url': self.s3_handler.get_simple_url(file_name=name)})
-        response_data['monthly_files'] = downloads
-        return Response(response_data)
+        for filename in monthly_download_names:
+            downloads.append(self.create_download_response_obj(filename, fiscal_year, type_param, agency))
+        for filename in delta_download_names:
+            downloads.append(self.create_download_response_obj(filename, None, type_param, agency, is_delta=True))
+
+        return Response({'monthly_files': downloads})
+
+    def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
+        """Return a """
+        regex = '(.*)_(.*)_Delta_(.*)\.zip' if is_delta else '(.*)_(.*)_(.*)_Full_(.*)\.zip'
+        filename_data = re.findall(regex, filename)[0]
+
+        # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
+        unformatted_date = filename_data[2 if is_delta else 3]
+        updated_date = '-'.join([unformatted_date[:4], unformatted_date[4:6], unformatted_date[6:]])
+
+        return {
+            'fiscal_year': fiscal_year,
+            'agency_name': agency['name'],
+            'agency_acronym': agency['abbreviation'],
+            'type': type_param,
+            'updated_date': updated_date,
+            'file_name': filename,
+            'url': self.s3_handler.get_simple_url(file_name=filename)
+        }

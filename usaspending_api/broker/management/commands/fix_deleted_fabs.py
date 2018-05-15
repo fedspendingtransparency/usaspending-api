@@ -12,7 +12,7 @@ from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.common.helpers import timer
+from usaspending_api.common.helpers.generic_helper import timer
 
 logger = logging.getLogger('console')
 
