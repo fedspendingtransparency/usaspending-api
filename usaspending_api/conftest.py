@@ -3,15 +3,13 @@ import logging
 
 # Core Django imports
 from django.conf import settings
-import pytest
-
-from usaspending_api.common.helpers.generic_helper import generate_matviews
 
 # Third-party app imports
 import pytest
 from django_mock_queries.query import MockSet
 
 # Imports from your apps
+from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
