@@ -45,56 +45,58 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     endpoint_doc: /advanced_award_search/spending_by_category.md
     """
     @cache_response()
-    def post(self, request):
+    def post(self, request: dict):
         """Return all budget function/subfunction titles matching the provided search text"""
         categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
-        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns']
+        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns', None]
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
-            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes},
+            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes, 'default': None},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
 
+        # Apply/enforce POST body schema and data validation in request
         validated_payload = TinyShield(models).block(request.data)
-        return Response(BusinessLogic(validated_payload))
+
+        # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
+        return Response(BusinessLogic(validated_payload).results())
 
 
 class BusinessLogic:
+    # __slots__ will keep this object smaller
     __slots__ = (
         'subawards', 'category', 'scope', 'page', 'limit', 'obligation_column',
         'lower_limit', 'upper_limit', 'filters', 'queryset', 'model',
     )
 
-    def __new__(cls, payload):
+    def __init__(self, payload: dict):
         """
-        Use __new__ instead of __init__ since __new__ can return a value other than None.
-        Since this is a class method using common nomenclature for class: `cls`
+            payload is tightly integrated with
         """
-        cls.subawards = payload['subawards']
-        cls.category = payload['category']
-        cls.scope = payload['scope']
-        cls.page = payload['page']
-        cls.limit = payload['limit']
-        cls.filters = payload['filters']
+        self.subawards = payload['subawards']
+        self.category = payload['category']
+        self.scope = payload['scope']
+        self.page = payload['page']
+        self.limit = payload['limit']
+        self.filters = payload['filters']
 
-        cls.lower_limit = (cls.page - 1) * cls.limit
-        cls.upper_limit = cls.page * cls.limit + 1  # Add 1 for simple "Next Page" check
+        self.lower_limit = (self.page - 1) * self.limit
+        self.upper_limit = self.page * self.limit + 1  # Add 1 for simple "Next Page" check
 
-        if (cls.scope is None) and (cls.category != 'cfda_programs'):
+        if (self.scope is None) and (self.category != 'cfda_programs'):
             raise InvalidParameterException('Missing one or more required request parameters: scope')
 
-        cls.scope = cls.scope if not cls.category == 'cfda_programs' else None
+        self.scope = self.scope if not self.category == 'cfda_programs' else None
         # some category-scope combinations allow different matviews, combine strings for easier logic
-        category_scope = '{}-{}'.format(cls.category, cls.scope or '')
-        if cls.subawards:
-            cls.queryset, cls.model = subaward_filter(cls.filters), None
-            cls.obligation_column = 'amount'
+        category_scope = '{}-{}'.format(self.category, self.scope or '')
+        if self.subawards:
+            self.queryset, self.model = subaward_filter(self.filters), None
+            self.obligation_column = 'amount'
         else:
-            cls.queryset, cls.model = sbc_view_queryset(category_scope, cls.filters)
-            cls.obligation_column = 'generated_pragmatic_obligation'
-        return cls.logic(cls)
+            self.queryset, self.model = sbc_view_queryset(category_scope, self.filters)
+            self.obligation_column = 'generated_pragmatic_obligation'
 
     def raise_not_implemented(self):
         msg = "Scope '{}' is not implemented for '{}' Category"
@@ -102,19 +104,18 @@ class BusinessLogic:
             msg += ' when subawards is True'
         raise InvalidParameterException(msg.format(self.scope, self.category))
 
-    def logic(self):
+    def results(self) -> dict:
         # filter the transactions by category
         if self.category == 'awarding_agency':
-            results = self.awarding_agency(self)
+            results = self.awarding_agency()
         elif self.category == 'funding_agency':
-            results = self.funding_agency(self)
+            results = self.funding_agency()
         elif self.category == 'recipient':
-            results = self.recipient(self)
+            results = self.recipient()
         elif self.category == 'cfda_programs':
-            results = self.cfda_programs(self)
+            results = self.cfda_programs()
         elif self.category == 'industry_codes':
-            # TODO: Not filterable on subawards directly, need business decisions around supporting these for subawards
-            results = self.industry_codes(self)
+            results = self.industry_codes()
         else:
             raise InvalidParameterException("Category '{}' is not yet implemented".format(self.category))
 
@@ -129,7 +130,7 @@ class BusinessLogic:
         }
         return response
 
-    def awarding_agency(self):
+    def awarding_agency(self) -> list:
         if self.scope == 'agency':
             self.queryset = self.queryset \
                 .filter(awarding_toptier_agency_name__isnull=False) \
@@ -146,12 +147,12 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
         else:
-            self.raise_not_implemented(self)
+            self.raise_not_implemented()
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def funding_agency(self):
+    def funding_agency(self) -> list:
         if self.scope == 'agency':
             self.queryset = self.queryset \
                 .filter(funding_toptier_agency_name__isnull=False) \
@@ -168,12 +169,12 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
         else:
-            self.raise_not_implemented(self)
+            self.raise_not_implemented()
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def recipient(self):
+    def recipient(self) -> list:
         if self.scope == 'duns':
             self.queryset = self.queryset \
                 .filter(recipient_unique_id__isnull=False) \
@@ -191,12 +192,12 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
         else:
-            self.raise_not_implemented(self)
+            self.raise_not_implemented()
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def cfda_programs(self):
+    def cfda_programs(self) -> list:
         if self.model == 'SummaryCfdaNumbersView':
             self.queryset = self.queryset \
                 .filter(
@@ -234,7 +235,7 @@ class BusinessLogic:
 
         return results
 
-    def industry_codes(self):
+    def industry_codes(self) -> list:
         if self.scope == 'psc':
             self.queryset = self.queryset \
                 .filter(product_or_service_code__isnull=False) \
@@ -242,14 +243,15 @@ class BusinessLogic:
                 .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
         elif self.scope == 'naics':
+            # TODO: Not filterable on subawards directly, need business decisions around supporting these for subawards
             if self.model is None:  # self.model is None if self.subawards = True
-                self.raise_not_implemented(self)
+                self.raise_not_implemented()
             self.queryset = self.queryset \
                 .filter(naics_code__isnull=False) \
                 .values('naics_code', 'naics_description') \
                 .annotate(aggregated_amount=Sum(self.obligation_column)) \
                 .order_by('-aggregated_amount')
         else:
-            self.raise_not_implemented(self)
+            self.raise_not_implemented()
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
