@@ -116,7 +116,6 @@ class TinyShield:
     def block(self, request):
         self.parse_request(request)
         self.enforce_rules()
-        self.check_dependencies()
         return self.data
 
     def check_models(self, models):
