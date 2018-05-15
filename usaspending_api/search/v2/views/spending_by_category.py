@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models import F, Sum
+from django.db.models import Sum
 
 from usaspending_api.awards.models import Subaward
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
@@ -157,7 +157,8 @@ class BusinessLogic:
                 .order_by('-aggregated_amount')
 
         elif self.scope == 'parent_duns':
-            # TODO: check if we can aggregate on recipient name and parent duns, since parent recipient name isn't available
+            # TODO: check if we can aggregate on recipient name and parent duns,
+            #    since parent recipient name isn't available
             self.queryset = self.queryset \
                 .filter(parent_recipient_unique_id__isnull=False) \
                 .values('recipient_name', 'parent_recipient_unique_id') \

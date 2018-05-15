@@ -2,10 +2,11 @@ import contextlib
 import logging
 import time
 import timeit
+import subprocess
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 
@@ -16,6 +17,36 @@ logger = logging.getLogger(__name__)
 
 QUOTABLE_TYPES = (str, datetime.date)
 
+TEMP_SQL_FILES = [
+    '../matviews/universal_transaction_matview.sql',
+    '../matviews/universal_award_matview.sql',
+    '../matviews/summary_transaction_view.sql',
+    '../matviews/summary_transaction_month_view.sql',
+    '../matviews/summary_transaction_geo_view.sql',
+    '../matviews/summary_award_view.sql',
+    '../matviews/summary_view_cfda_number.sql',
+    '../matviews/summary_view_naics_codes.sql',
+    '../matviews/summary_view_psc_codes.sql',
+    '../matviews/summary_view.sql',
+    '../matviews/subaward_view.sql',
+]
+MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
+ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
+
+
+def upper_case_dict_values(input_dict):
+    for key in input_dict:
+        if isinstance(input_dict[key], str):
+            input_dict[key] = input_dict[key].upper()
+
+
+def validate_date(date):
+    if not isinstance(date, (datetime.datetime, datetime.date)):
+        raise TypeError('Incorrect parameter type provided')
+
+    if not (date.day or date.month or date.year):
+        raise Exception('Malformed date object provided')
+
 
 def check_valid_toptier_agency(agency_id):
     """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
@@ -25,22 +56,25 @@ def check_valid_toptier_agency(agency_id):
 
 def generate_fiscal_year(date):
     """ Generate fiscal year based on the date provided """
+    validate_date(date)
+
     year = date.year
     if date.month in [10, 11, 12]:
         year += 1
     return year
 
 
-def generate_fiscal_period(date):
-    """ Generate fiscal period based on the date provided """
-    return ((generate_fiscal_month(date) - 1) // 3) + 1
-
-
 def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
+    validate_date(date)
+
     if date.month in [10, 11, 12, "10", "11", "12"]:
         return date.month - 9
     return date.month + 3
+
+
+# aliasing the generate_fiscal_month function to the more appropriate function name
+generate_fiscal_period = generate_fiscal_month
 
 
 def generate_date_from_string(date_str):
@@ -84,14 +118,14 @@ def generate_all_fiscal_years_in_range(start, end):
 
 def within_one_year(d1, d2):
     """ includes leap years """
-    year_range = list(range(d1.year, d2.year+1))
+    year_range = list(range(d1.year, d2.year + 1))
     if len(year_range) > 2:
         return False
     days_diff = abs((d2 - d1).days)
     for leap_year in [year for year in year_range if isleap(year)]:
         leap_date = datetime.datetime(leap_year, 2, 29)
-        if leap_date >= d1 and leap_date <= d2:
-            days_diff = days_diff - 1
+        if d1 <= leap_date <= d2:
+            days_diff -= 1
     return days_diff <= 365
 
 
@@ -140,6 +174,23 @@ def order_nested_object(nested_object):
         return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
     else:
         return nested_object
+
+
+def generate_matviews():
+    with connection.cursor() as c:
+        c.execute(CREATE_READONLY_SQL)
+        c.execute(get_sql(ENUM_FILE)[0])
+        subprocess.call("python  " + MATVIEW_GENERATOR_FILE, shell=True)
+        for file in get_sql(TEMP_SQL_FILES):
+            c.execute(file)
+
+
+def get_sql(sql_files):
+    data = []
+    for file in sql_files:
+        with open(file, 'r') as myfile:
+            data.append(myfile.read())
+    return data
 
 
 def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
@@ -374,3 +425,9 @@ CORRECTED_CGAC_PG_FUNCTION_DEF = '''
 REV_CORRECTED_CGAC_PG_FUNCTION_DEF = '''
     DROP FUNCTION corrected_cgac(text);
 '''
+
+CREATE_READONLY_SQL = """DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
+CREATE ROLE readonly;
+END IF;
+END$$;"""

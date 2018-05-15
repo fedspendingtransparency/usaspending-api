@@ -30,7 +30,7 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
     "LEFT OUTER JOIN",
     "  \"transaction_normalized\" ON (\"awards\".\"latest_transaction_id\" = \"transaction_normalized\".\"id\")",
     "WHERE",
-    "  \"transaction_normalized\".action_date >= '2007-10-01'",
+    "  \"transaction_normalized\".action_date >= '2000-10-01'",
     "ORDER BY",
     "  \"action_date\" DESC"
 
@@ -64,15 +64,7 @@ TEMPLATE = {
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
     'grant_select': 'GRANT SELECT ON {} TO {};',
 }
-HEADER = [
-    '--------------------------------------------------------',
-    '-- Created using matview_sql_generator.py             --',
-    '--    The SQL definition is stored in a json file     --',
-    '--    Look in matview_generator for the code.         --',
-    '--                                                    --',
-    '--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --',
-    '--------------------------------------------------------',
-]
+
 CLUSTERING_INDEX = None
 COMMIT_HASH = ''
 DEST_FOLDER = '../matviews/'
@@ -146,10 +138,6 @@ def create_index_string(matview_name, index_name, idx):
     return idx_str
 
 
-def make_sql_header():
-    return ['\n'.join(HEADER)]
-
-
 def make_matview_drops(final_matview_name):
     matview_temp_name = final_matview_name + '_temp'
     matview_archive_name = final_matview_name + '_old'
@@ -183,6 +171,7 @@ def make_indexes_sql(sql_json, matview_name):
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
 
         final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '_' + idx['name']
+        final_index = final_index.replace('-', '')
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
@@ -242,7 +231,6 @@ def create_all_sql_strings(sql_json):
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    final_sql_strings.extend(make_sql_header())
     final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append('')
     final_sql_strings.extend(make_matview_create(matview_name, sql_json['matview_sql']))
@@ -274,23 +262,23 @@ def create_componentized_files(sql_json):
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    sql_strings = make_sql_header() + make_matview_drops(matview_name)
+    sql_strings = make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + '__drops')
 
-    sql_strings = make_sql_header() + make_matview_create(matview_name, sql_json['matview_sql'])
+    sql_strings = make_matview_create(matview_name, sql_json['matview_sql'])
     write_sql_file(sql_strings, filename_base + '__matview')
 
-    sql_strings = make_sql_header() + create_indexes
+    sql_strings = create_indexes
     write_sql_file(sql_strings, filename_base + '__indexes')
 
-    sql_strings = make_sql_header() + make_modification_sql(matview_name)
+    sql_strings = make_modification_sql(matview_name)
     write_sql_file(sql_strings, filename_base + '__mods')
 
-    sql_strings = make_sql_header() + make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
+    sql_strings = make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
     write_sql_file(sql_strings, filename_base + '__renames')
 
     if 'refresh' in sql_json and sql_json['refresh'] is True:
-        sql_strings = make_sql_header() + make_matview_refresh(matview_name)
+        sql_strings = make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + '__refresh')
 
 

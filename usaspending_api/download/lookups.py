@@ -4,12 +4,15 @@
 
 from collections import namedtuple, OrderedDict
 
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
-from usaspending_api.awards.models import Subaward
-from usaspending_api.awards.v2.filters.matview_filters import universal_award_matview_filter, \
-    universal_transaction_matview_filter
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.v2.filters.account_balances import account_balances_filter
+from usaspending_api.accounts.v2.filters.object_class_program_activity import object_class_program_activity_filter
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
+from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
+                                                               universal_transaction_matview_filter)
+from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 LookupType = namedtuple('LookupType', ['id', 'name', 'desc'])
 
@@ -25,6 +28,7 @@ JOB_STATUS_DICT_ID = {item.id: item.name for item in JOB_STATUS}
 VALUE_MAPPINGS = {
     # Award Level
     'awards': {
+        'source_type': 'award',
         'table': UniversalAwardView,
         'table_name': 'award',
         'download_name': 'prime_awards',
@@ -34,6 +38,7 @@ VALUE_MAPPINGS = {
     },
     # Transaction Level
     'transactions': {
+        'source_type': 'award',
         'table': UniversalTransactionView,
         'table_name': 'transaction',
         'download_name': 'prime_transactions',
@@ -43,18 +48,36 @@ VALUE_MAPPINGS = {
     },
     # SubAward Level
     'sub_awards': {
-        'table': Subaward,
+        'source_type': 'award',
+        'table': SubawardView,
         'table_name': 'subaward',
         'download_name': 'subawards',
         'contract_data': 'award__latest_transaction__contract_data',
         'assistance_data': 'award__latest_transaction__assistance_data',
-        'filter_function': subaward_filter
+        'filter_function': subaward_download
+    },
+    # Appropriations Account Data
+    'account_balances': {
+        'source_type': 'account',
+        'table': TreasuryAppropriationAccount,
+        'table_name': 'account_balances',
+        'download_name': 'account_balances',
+        'filter_function': account_balances_filter
+    },
+    # Object Class Program Activity Account Data
+    'object_class_program_activity': {
+        'source_type': 'account',
+        'table': FinancialAccountsByProgramActivityObjectClass,
+        'table_name': 'object_class_program_activity',
+        'download_name': 'object_class_program_activity',
+        'filter_function': object_class_program_activity_filter
     }
 }
+
 # Bulk Download still uses "prime awards" instead of "transactions"
 VALUE_MAPPINGS['prime_awards'] = VALUE_MAPPINGS['transactions']
 
-SHARED_FILTER_DEFAULTS = {
+SHARED_AWARD_FILTER_DEFAULTS = {
     'award_type_codes': list(award_type_mapping.keys()),
     'agencies': [],
     'time_period': [],
@@ -63,7 +86,7 @@ SHARED_FILTER_DEFAULTS = {
 }
 YEAR_CONSTRAINT_FILTER_DEFAULTS = {'elasticsearch_keyword': ''}
 ROW_CONSTRAINT_FILTER_DEFAULTS = {
-    'keyword': '',
+    'keywords': [],
     'legal_entities': [],
     'recipient_search_text': [],
     'recipient_scope': '',
@@ -80,6 +103,10 @@ ROW_CONSTRAINT_FILTER_DEFAULTS = {
     'federal_account_ids': [],
     'object_class_ids': [],
     'program_activity_ids': []
+}
+ACCOUNT_FILTER_DEFAULTS = {
+    'agency': 'all',
+    'federal_account': ''
 }
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference

@@ -354,7 +354,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True, db_index=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
-    parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number")
+    parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number",
+                                                  db_index=True)
     recipient_name = models.TextField(blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.TextField(blank=True, null=True)
     vendor_phone_number = models.TextField(blank=True, null=True)
@@ -652,10 +653,11 @@ class RefProgramActivity(models.Model):
         managed = True
         db_table = 'ref_program_activity'
         unique_together = (('program_activity_code',
-                            'budget_year',
+                            'program_activity_name',
                             'responsible_agency_id',
                             'allocation_transfer_agency_id',
-                            'main_account_code'),)
+                            'main_account_code',
+                            'budget_year'),)
 
 
 class Cfda(DataSourceTrackedModel):

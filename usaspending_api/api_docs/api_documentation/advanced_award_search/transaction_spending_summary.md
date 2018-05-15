@@ -16,7 +16,7 @@ filters: Defines how the awards are filtered.  The filter object is defined here
 ```
 {
     "filters": {
-        "keyword": "booz allen",
+        "keywords": ["booz allen"],
         "agencies": [
             {
                  "type": "awarding",
