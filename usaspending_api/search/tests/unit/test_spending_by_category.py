@@ -1,5 +1,5 @@
 # Stdlib imports
-
+import pytest
 # Core Django imports
 
 # Third-party app imports
@@ -26,7 +26,7 @@ def test_category_awarding_agency_scope_agency_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'awarding_agency',
@@ -53,10 +53,10 @@ def test_category_awarding_agency_scope_agency_awards(mock_matviews_qs):
 
 def test_category_awarding_agency_scope_agency_subawards(mock_matviews_qs):
     """This is testing that results are empty until implemented """
-    mock_model_1 = MockModel(award__awarding_agency__toptier_agency__name='Department of Pizza',
-                             award__awarding_agency__toptier_agency__abbreviation='DOP', subaward_amount=5)
-    mock_model_2 = MockModel(award__awarding_agency__toptier_agency__name='Department of Pizza',
-                             award__awarding_agency__toptier_agency__abbreviation='DOP', subaward_amount=10)
+    mock_model_1 = MockModel(awarding_toptier_agency_name='Department of Pizza',
+                             awarding_toptier_agency_abbreviation='DOP', amount=5)
+    mock_model_2 = MockModel(awarding_toptier_agency_name='Department of Pizza',
+                             awarding_toptier_agency_abbreviation='DOP', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -68,7 +68,7 @@ def test_category_awarding_agency_scope_agency_subawards(mock_matviews_qs):
         'limit': 50,
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'awarding_agency',
@@ -81,7 +81,7 @@ def test_category_awarding_agency_scope_agency_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [{'agency_abbreviation': 'DOP', 'agency_name': 'Department of Pizza', 'aggregated_amount': 15}]
     }
 
     assert expected_response == spending_by_category_logic
@@ -103,7 +103,7 @@ def test_category_awarding_agency_scope_subagency_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'awarding_agency',
@@ -130,10 +130,10 @@ def test_category_awarding_agency_scope_subagency_awards(mock_matviews_qs):
 
 def test_category_awarding_agency_scope_subagency_subawards(mock_matviews_qs):
     """This is testing that results are empty until implemented """
-    mock_model_1 = MockModel(award__awarding_agency__subtier_agency__name='Department of Pizza',
-                             award__awarding_agency__subtier_agency__abbreviation='DOP', subaward_amount=10)
-    mock_model_2 = MockModel(award__awarding_agency__subtier_agency__name='Department of Pizza',
-                             award__awarding_agency__subtier_agency__abbreviation='DOP', subaward_amount=10)
+    mock_model_1 = MockModel(awarding_subtier_agency_name='Department of Pizza',
+                             awarding_subtier_agency_abbreviation='DOP', amount=10)
+    mock_model_2 = MockModel(awarding_subtier_agency_name='Department of Pizza',
+                             awarding_subtier_agency_abbreviation='DOP', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -145,7 +145,7 @@ def test_category_awarding_agency_scope_subagency_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'awarding_agency',
@@ -158,7 +158,7 @@ def test_category_awarding_agency_scope_subagency_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [{'agency_abbreviation': 'DOP', 'agency_name': 'Department of Pizza', 'aggregated_amount': 20}]
     }
 
     assert expected_response == spending_by_category_logic
@@ -180,7 +180,7 @@ def test_category_funding_agency_scope_agency_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'funding_agency',
@@ -206,10 +206,10 @@ def test_category_funding_agency_scope_agency_awards(mock_matviews_qs):
 
 
 def test_category_funding_agency_scope_agency_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(award__funding_agency__toptier_agency__name='Department of Calzone',
-                             award__funding_agency__toptier_agency__abbreviation='DOC', subaward_amount=50)
-    mock_model_2 = MockModel(award__funding_agency__toptier_agency__name='Department of Calzone',
-                             award__funding_agency__toptier_agency__abbreviation='DOC', subaward_amount=50)
+    mock_model_1 = MockModel(funding_toptier_agency_name='Department of Calzone',
+                             funding_toptier_agency_abbreviation='DOC', amount=50)
+    mock_model_2 = MockModel(funding_toptier_agency_name='Department of Calzone',
+                             funding_toptier_agency_abbreviation='DOC', amount=50)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -221,7 +221,7 @@ def test_category_funding_agency_scope_agency_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'funding_agency',
@@ -234,7 +234,7 @@ def test_category_funding_agency_scope_agency_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [{'agency_abbreviation': 'DOC', 'agency_name': 'Department of Calzone', 'aggregated_amount': 100}]
     }
 
     assert expected_response == spending_by_category_logic
@@ -256,7 +256,7 @@ def test_category_funding_agency_scope_subagency_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'funding_agency',
@@ -282,10 +282,10 @@ def test_category_funding_agency_scope_subagency_awards(mock_matviews_qs):
 
 
 def test_category_funding_agency_scope_subagency_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(award__funding_agency__subtier_agency__name='Department of Sub-calzone',
-                             award__funding_agency__subtier_agency__abbreviation='DOSC', subaward_amount=5)
-    mock_model_2 = MockModel(award__funding_agency__subtier_agency__name='Department of Sub-calzone',
-                             award__funding_agency__subtier_agency__abbreviation='DOSC', subaward_amount=-5)
+    mock_model_1 = MockModel(funding_subtier_agency_name='Department of Sub-calzone',
+                             funding_subtier_agency_abbreviation='DOSC', amount=5)
+    mock_model_2 = MockModel(funding_subtier_agency_name='Department of Sub-calzone',
+                             funding_subtier_agency_abbreviation='DOSC', amount=-5)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -297,7 +297,7 @@ def test_category_funding_agency_scope_subagency_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'funding_agency',
@@ -310,7 +310,7 @@ def test_category_funding_agency_scope_subagency_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [{'agency_abbreviation': 'DOSC', 'agency_name': 'Department of Sub-calzone', 'aggregated_amount': 0}]
     }
 
     assert expected_response == spending_by_category_logic
@@ -336,7 +336,7 @@ def test_category_recipient_scope_duns_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'recipient',
@@ -367,14 +367,14 @@ def test_category_recipient_scope_duns_awards(mock_matviews_qs):
 
 
 def test_category_recipient_scope_duns_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(recipient__recipient_name='University of Pawnee',
-                             recipient__recipient_unique_id='00UOP00', subaward_amount=1)
-    mock_model_2 = MockModel(recipient__recipient_name='University of Pawnee',
-                             recipient__recipient_unique_id='00UOP00', subaward_amount=1)
-    mock_model_3 = MockModel(recipient__recipient_name='John Doe',
-                             recipient__recipient_unique_id='1234JD4321', subaward_amount=1)
-    mock_model_4 = MockModel(recipient__recipient_name='John Doe',
-                             recipient__recipient_unique_id='1234JD4321', subaward_amount=10)
+    mock_model_1 = MockModel(recipient_name='University of Pawnee',
+                             recipient_unique_id='00UOP00', amount=1)
+    mock_model_2 = MockModel(recipient_name='University of Pawnee',
+                             recipient_unique_id='00UOP00', amount=1)
+    mock_model_3 = MockModel(recipient_name='John Doe',
+                             recipient_unique_id='1234JD4321', amount=1)
+    mock_model_4 = MockModel(recipient_name='John Doe',
+                             recipient_unique_id='1234JD4321', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
 
@@ -386,7 +386,7 @@ def test_category_recipient_scope_duns_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'recipient',
@@ -399,7 +399,10 @@ def test_category_recipient_scope_duns_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [
+            {'aggregated_amount': 11, 'legal_entity_id': '1234JD4321', 'recipient_name': 'John Doe'},
+            {'aggregated_amount': 2, 'legal_entity_id': '00UOP00', 'recipient_name': 'University of Pawnee'}
+        ]
     }
 
     assert expected_response == spending_by_category_logic
@@ -425,7 +428,7 @@ def test_category_recipient_scope_parent_duns_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'recipient',
@@ -456,14 +459,14 @@ def test_category_recipient_scope_parent_duns_awards(mock_matviews_qs):
 
 
 def test_category_recipient_scope_parent_duns_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(recipient__recipient_name='University of Pawnee',
-                             recipient__parent_recipient_unique_id='00UOP00', subaward_amount=1)
-    mock_model_2 = MockModel(recipient__recipient_name='University of Pawnee',
-                             recipient__parent_recipient_unique_id='00UOP00', subaward_amount=1)
-    mock_model_3 = MockModel(recipient__recipient_name='John Doe',
-                             recipient__parent_recipient_unique_id='1234JD4321', subaward_amount=1)
-    mock_model_4 = MockModel(recipient__recipient_name='John Doe',
-                             recipient__parent_recipient_unique_id='1234JD4321', subaward_amount=10)
+    mock_model_1 = MockModel(recipient_name='University of Pawnee',
+                             parent_recipient_unique_id='00UOP00', amount=1)
+    mock_model_2 = MockModel(recipient_name='University of Pawnee',
+                             parent_recipient_unique_id='00UOP00', amount=1)
+    mock_model_3 = MockModel(recipient_name='John Doe',
+                             parent_recipient_unique_id='1234JD4321', amount=1)
+    mock_model_4 = MockModel(recipient_name='John Doe',
+                             parent_recipient_unique_id='1234JD4321', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
 
@@ -475,7 +478,7 @@ def test_category_recipient_scope_parent_duns_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'recipient',
@@ -488,12 +491,16 @@ def test_category_recipient_scope_parent_duns_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [
+            {'aggregated_amount': 11, 'parent_recipient_unique_id': '1234JD4321', 'recipient_name': 'John Doe'},
+            {'aggregated_amount': 2, 'parent_recipient_unique_id': '00UOP00', 'recipient_name': 'University of Pawnee'}
+        ]
     }
 
     assert expected_response == spending_by_category_logic
 
 
+@pytest.mark.skip
 def test_category_cfda_programs_scope_none_awards(mock_matviews_qs):
     mock_model_1 = MockModel(cfda_title='CFDA TITLE 1234', cfda_number='CFDA1234',
                              cfda_popular_name='POPULAR CFDA TITLE 1234', federal_action_obligation=1,
@@ -501,6 +508,9 @@ def test_category_cfda_programs_scope_none_awards(mock_matviews_qs):
     mock_model_2 = MockModel(cfda_title='CFDA TITLE 1234', cfda_number='CFDA1234',
                              cfda_popular_name='POPULAR CFDA TITLE 1234', federal_action_obligation=1,
                              generated_pragmatic_obligation=1)
+
+    # mock_model_cfda = MockModel(program_title='CFDA TITLE 1234', program_number='CFDA1234',
+    #                             popular_name='Popular Title for 1234')
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -512,11 +522,11 @@ def test_category_cfda_programs_scope_none_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'cfda_programs',
-        'scope': 'cfda',
+        'scope': None,
         'limit': 50,
         'page_metadata': {
             'page': 1,
@@ -539,10 +549,10 @@ def test_category_cfda_programs_scope_none_awards(mock_matviews_qs):
 
 
 def test_category_cfda_programs_scope_none_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(cfda__program_title='CFDA TITLE 1234', cfda__program_number='CFDA1234',
-                             cfda__popular_name='POPULAR CFDA TITLE 1234', subaward_amount=1)
-    mock_model_2 = MockModel(cfda__program_title='CFDA TITLE 1234', cfda__program_number='CFDA1234',
-                             cfda__popular_name='POPULAR CFDA TITLE 1234', subaward_amount=1)
+    mock_model_1 = MockModel(cfda_title='CFDA TITLE 1234', cfda_number='CFDA1234',
+                             cfda_popular_name='POPULAR CFDA TITLE 1234', amount=1)
+    mock_model_2 = MockModel(cfda_title='CFDA TITLE 1234', cfda_number='CFDA1234',
+                             cfda_popular_name='POPULAR CFDA TITLE 1234', amount=1)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -554,11 +564,11 @@ def test_category_cfda_programs_scope_none_subawards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'cfda_programs',
-        'scope': 'cfda',
+        'scope': None,
         'limit': 50,
         'page_metadata': {
             'page': 1,
@@ -567,7 +577,9 @@ def test_category_cfda_programs_scope_none_subawards(mock_matviews_qs):
             'hasNext': False,
             'hasPrevious': False
         },
-        'results': []
+        'results': [{
+            'aggregated_amount': 2, 'cfda_program_number': 'CFDA1234',
+            'popular_name': 'POPULAR CFDA TITLE 1234', 'popular_title': 'CFDA TITLE 1234'}]
     }
 
     assert expected_response == spending_by_category_logic
@@ -589,7 +601,7 @@ def test_category_industry_codes_scope_psc_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'industry_codes',
@@ -637,7 +649,7 @@ def test_category_industry_codes_scope_naics_awards(mock_matviews_qs):
         'limit': 50
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload)
+    spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
         'category': 'industry_codes',

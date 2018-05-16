@@ -80,7 +80,7 @@ class BusinessLogic:
         self.scope = payload['scope']
         self.page = payload['page']
         self.limit = payload['limit']
-        self.filters = payload['filters']
+        self.filters = payload.get('filters', {})
 
         self.lower_limit = (self.page - 1) * self.limit
         self.upper_limit = self.page * self.limit + 1  # Add 1 for simple "Next Page" check
@@ -103,6 +103,13 @@ class BusinessLogic:
         if self.subawards:
             msg += ' when subawards is True'
         raise InvalidParameterException(msg.format(self.scope, self.category))
+
+    def common_db_query(self, filters, values):
+        return self.queryset \
+            .filter(**filters) \
+            .values(*values) \
+            .annotate(aggregated_amount=Sum(self.obligation_column)) \
+            .order_by('-aggregated_amount')
 
     def results(self) -> dict:
         # filter the transactions by category
@@ -132,80 +139,58 @@ class BusinessLogic:
 
     def awarding_agency(self) -> list:
         if self.scope == 'agency':
-            self.queryset = self.queryset \
-                .filter(awarding_toptier_agency_name__isnull=False) \
-                .values('awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
-
+            filters = {'awarding_toptier_agency_name__isnull': False}
+            values = ['awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
         elif self.scope == 'subagency':
-            self.queryset = self.queryset \
-                .filter(
-                    awarding_subtier_agency_name__isnull=False) \
-                .values('awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
-
+            filters = {'awarding_subtier_agency_name__isnull': False}
+            values = ['awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
         else:
             self.raise_not_implemented()
+
+        self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def funding_agency(self) -> list:
         if self.scope == 'agency':
-            self.queryset = self.queryset \
-                .filter(funding_toptier_agency_name__isnull=False) \
-                .values('funding_toptier_agency_name', 'funding_toptier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
-
+            filters = {'funding_toptier_agency_name__isnull': False}
+            values = ['funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
         elif self.scope == 'subagency':
-            self.queryset = self.queryset \
-                .filter(
-                    funding_subtier_agency_name__isnull=False) \
-                .values('funding_subtier_agency_name', 'funding_subtier_agency_abbreviation') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
-
+            filters = {'funding_subtier_agency_name__isnull': False}
+            values = ['funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
         else:
             self.raise_not_implemented()
+
+        self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def recipient(self) -> list:
         if self.scope == 'duns':
-            self.queryset = self.queryset \
-                .filter(recipient_unique_id__isnull=False) \
-                .values('recipient_name', 'recipient_unique_id') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
+            filters = {'recipient_unique_id__isnull': False}
+            values = ['recipient_name', 'recipient_unique_id']
 
         elif self.scope == 'parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
-            self.queryset = self.queryset \
-                .filter(parent_recipient_unique_id__isnull=False) \
-                .values('recipient_name', 'parent_recipient_unique_id') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
-
+            filters = {'parent_recipient_unique_id__isnull': False}
+            values = ['recipient_name', 'parent_recipient_unique_id']
         else:
             self.raise_not_implemented()
+
+        self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def cfda_programs(self) -> list:
         if self.model == 'SummaryCfdaNumbersView':
-            self.queryset = self.queryset \
-                .filter(
-                    federal_action_obligation__isnull=False,
-                    cfda_number__isnull=False) \
-                .values('cfda_number', 'cfda_title') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
+            filters = {'federal_action_obligation__isnull': False, 'cfda_number__isnull': False}
+            values = ['cfda_number', 'cfda_title']
+
+            self.queryset = self.common_db_query(filters, values)
 
             # DB hit here
             results = list(self.queryset[self.lower_limit:self.upper_limit])
@@ -224,11 +209,8 @@ class BusinessLogic:
 
         else:
             filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
-            self.queryset = self.queryset \
-                .filter(**filters) \
-                .values('cfda_number', 'cfda_popular_name', 'cfda_title') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
+            values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
+            self.queryset = self.common_db_query(filters, values)
 
             # DB hit here
             results = list(self.queryset[self.lower_limit:self.upper_limit])
@@ -237,21 +219,19 @@ class BusinessLogic:
 
     def industry_codes(self) -> list:
         if self.scope == 'psc':
-            self.queryset = self.queryset \
-                .filter(product_or_service_code__isnull=False) \
-                .values('product_or_service_code') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
+            filters = {'product_or_service_code__isnull': False}
+            values = ['product_or_service_code']
+
         elif self.scope == 'naics':
             # TODO: Not filterable on subawards directly, need business decisions around supporting these for subawards
             if self.model is None:  # self.model is None if self.subawards = True
                 self.raise_not_implemented()
-            self.queryset = self.queryset \
-                .filter(naics_code__isnull=False) \
-                .values('naics_code', 'naics_description') \
-                .annotate(aggregated_amount=Sum(self.obligation_column)) \
-                .order_by('-aggregated_amount')
+
+            filters = {'naics_code__isnull': False}
+            values = ['naics_code', 'naics_description']
         else:
             self.raise_not_implemented()
+
+        self.queryset = self.common_db_query(filters, values)
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
