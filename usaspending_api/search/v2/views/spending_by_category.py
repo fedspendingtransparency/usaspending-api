@@ -16,7 +16,6 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Cfda
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,7 @@ class BusinessLogic:
     # __slots__ will keep this object smaller
     __slots__ = (
         'subawards', 'category', 'scope', 'page', 'limit', 'obligation_column',
-        'lower_limit', 'upper_limit', 'filters', 'queryset', 'model',
+        'lower_limit', 'upper_limit', 'filters', 'queryset',
     )
 
     def __init__(self, payload: dict):
@@ -92,10 +91,10 @@ class BusinessLogic:
         # some category-scope combinations allow different matviews, combine strings for easier logic
         category_scope = '{}-{}'.format(self.category, self.scope or '')
         if self.subawards:
-            self.queryset, self.model = subaward_filter(self.filters), None
+            self.queryset = subaward_filter(self.filters)
             self.obligation_column = 'amount'
         else:
-            self.queryset, self.model = sbc_view_queryset(category_scope, self.filters)
+            self.queryset = sbc_view_queryset(category_scope, self.filters)
             self.obligation_column = 'generated_pragmatic_obligation'
 
     def raise_not_implemented(self):
@@ -186,34 +185,12 @@ class BusinessLogic:
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def cfda_programs(self) -> list:
-        if self.model == 'SummaryCfdaNumbersView':
-            filters = {'federal_action_obligation__isnull': False, 'cfda_number__isnull': False}
-            values = ['cfda_number', 'cfda_title']
+        filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
+        values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
+        self.queryset = self.common_db_query(filters, values)
 
-            self.queryset = self.common_db_query(filters, values)
-
-            # DB hit here
-            results = list(self.queryset[self.lower_limit:self.upper_limit])
-
-            for trans in results:
-                trans['popular_name'] = None
-                # small DB hit every loop
-                cfda = Cfda.objects \
-                    .filter(
-                        program_title=trans['cfda_title'],
-                        program_number=trans['cfda_number']) \
-                    .values('popular_name').first()
-
-                if cfda:
-                    trans['popular_name'] = cfda['popular_name']
-
-        else:
-            filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
-            values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
-            self.queryset = self.common_db_query(filters, values)
-
-            # DB hit here
-            results = list(self.queryset[self.lower_limit:self.upper_limit])
+        # DB hit here
+        results = list(self.queryset[self.lower_limit:self.upper_limit])
 
         return results
 
@@ -224,7 +201,7 @@ class BusinessLogic:
 
         elif self.scope == 'naics':
             # TODO: Not filterable on subawards directly, need business decisions around supporting these for subawards
-            if self.model is None:  # self.model is None if self.subawards = True
+            if self.subawards:
                 self.raise_not_implemented()
 
             filters = {'naics_code__isnull': False}

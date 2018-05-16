@@ -327,9 +327,8 @@ def spending_by_category(category_scope, filters):
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
-            model = view
             break
     else:
         raise InvalidParameterException
 
-    return queryset, model
+    return queryset
