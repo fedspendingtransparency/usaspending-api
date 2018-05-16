@@ -16,6 +16,7 @@ class UniversalTransactionView(models.Model):
     recipient_name_ts_vector = SearchVectorField()
     transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
+    last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     action_type = models.TextField()
@@ -88,6 +89,7 @@ class UniversalTransactionView(models.Model):
 
 class SummaryTransactionView(models.Model):
     action_date = models.DateField(blank=True, null=False)
+    last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -226,6 +228,7 @@ class UniversalAwardView(models.Model):
 
 class SummaryAwardView(models.Model):
     action_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -253,6 +256,7 @@ class SummaryAwardView(models.Model):
 
 class SummaryView(models.Model):
     action_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -280,6 +284,7 @@ class SummaryView(models.Model):
 
 class SummaryNaicsCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -299,6 +304,7 @@ class SummaryNaicsCodesView(models.Model):
 
 class SummaryPscCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -316,6 +322,7 @@ class SummaryPscCodesView(models.Model):
 
 class SummaryCfdaNumbersView(models.Model):
     action_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -334,6 +341,7 @@ class SummaryCfdaNumbersView(models.Model):
 
 class SummaryTransactionMonthView(models.Model):
     action_date = models.DateField()
+    last_modified_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
     pulled_from = models.TextField()
@@ -393,6 +401,7 @@ class SummaryTransactionMonthView(models.Model):
 
 class SummaryTransactionGeoView(models.Model):
     action_date = models.DateField()
+    last_modified_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
     pulled_from = models.TextField()

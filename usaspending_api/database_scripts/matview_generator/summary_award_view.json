@@ -5,6 +5,7 @@
     "SELECT",
     "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' ')) AS pk,",
     "  transaction_normalized.action_date,",
+    "  transaction_normalized.last_modified_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
     "  transaction_fpds.pulled_from,",
@@ -70,6 +71,9 @@
     }, {
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "last_modified_date",
+      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "type",
       "columns": [{"name": "type"}]

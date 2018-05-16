@@ -170,6 +170,9 @@
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
+      "name": "last_modified_date",
+      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
+    }, {
       "name": "fiscal_year",
       "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
     }, {

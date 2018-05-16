@@ -5,6 +5,7 @@
     "SELECT",
     "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' ')) AS pk,",
     "  cast(date_trunc('month', transaction_normalized.action_date) as date) as action_date,",
+    "  cast(date_trunc('month', transaction_normalized.last_modified_date) as date) as last_modified_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
@@ -117,6 +118,9 @@
     }, {
       "name": "date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "last_modified_date",
+      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "fy",
       "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
