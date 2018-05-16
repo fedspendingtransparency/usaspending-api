@@ -220,7 +220,7 @@ class Command(BaseCommand):
         month = re_match.group('month')
         day = re_match.group('day')
 
-        if date(int(year), int(month), int(day)) < datetime.strptime(generate_since, "%Y-%m-%d").date():
+        if date(int(year), int(month), int(day)) <= datetime.strptime(generate_since, "%Y-%m-%d").date():
             return False
 
         return '{}-{}-{}'.format(year, month, day)
