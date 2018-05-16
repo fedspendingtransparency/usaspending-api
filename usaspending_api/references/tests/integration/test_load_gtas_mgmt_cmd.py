@@ -6,7 +6,6 @@ from django.core.management import call_command
 # Third-party app imports
 import pytest
 from unittest.mock import MagicMock
-from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.references.models import GTASTotalObligation
