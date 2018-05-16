@@ -321,9 +321,13 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         # Not logging the command as it can contain the database connection string
         e.cmd = '[redacted]'
         logger.error(e)
+        broken_sql = subprocess.check_output(['cat', temp_sql_file_path]).decode()[7:-27]
+        logger.error('Broken SQL: {}'.format(broken_sql))
         raise e
     except Exception as e:
         logger.error(e)
+        broken_sql = subprocess.check_output(['cat', temp_sql_file_path]).decode()[7:-27]
+        logger.error('Broken SQL: {}'.format(broken_sql))
         raise e
 
 
