@@ -81,7 +81,7 @@ class Command(BaseCommand):
         if award_type == 'Contracts':
             # Derive the correction_delete_ind from the created_at of the records
             source.queryset = source.queryset. \
-                annotate(correction_delete_ind=Case(When(transaction__contract_data__created_at__gte=generate_since,
+                annotate(correction_delete_ind=Case(When(transaction__contract_data__created_at__lt=generate_since,
                                                     then=Value('C')), default=Value(''), output_field=CharField()))
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
