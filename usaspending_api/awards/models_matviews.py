@@ -478,8 +478,8 @@ class AwardMatview(models.Model):
     cost_or_pricing_data = models.TextField()
     cost_or_pricing_data_desc = models.TextField()
     date_signed = models.TextField()
-    davis_bacon_act = models.TextField()
-    davis_bacon_act_descrip = models.TextField()
+    construction_wage_rate_req = models.TextField()
+    construction_wage_rat_desc = models.TextField()
     description = models.TextField()
     dod_claimant_prog_cod_desc = models.TextField()
     dod_claimant_program_code = models.TextField()
@@ -583,8 +583,8 @@ class AwardMatview(models.Model):
     sai_number = models.TextField()
     sea_transportation = models.TextField()
     sea_transportation_desc = models.TextField()
-    service_contract_act = models.TextField()
-    service_contract_act_desc = models.TextField()
+    labor_standards = models.TextField()
+    labor_standards_descrip = models.TextField()
     small_business_competitive = models.TextField()
     solicitation_identifier = models.TextField()
     solicitation_procedur_desc = models.TextField()
@@ -606,8 +606,8 @@ class AwardMatview(models.Model):
     type_set_aside = models.TextField()
     type_set_aside_description = models.TextField()
     uri = models.TextField()
-    walsh_healey_act = models.TextField()
-    walsh_healey_act_descrip = models.TextField()
+    materials_supplies_article = models.TextField()
+    materials_supplies_descrip = models.TextField()
 
     class Meta:
         managed = False

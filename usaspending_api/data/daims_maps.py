@@ -139,7 +139,7 @@ daims_maps = {
         "Z":    "Not Applicable",
     },
 
-    "correction_late_delete_indicator_map": {
+    "correction_delete_indicator_map": {
         "C": "Current transaction record is a request to replace a previously submitted record that contained "
              "data submission errors. Record should contain replacement (not delta) values for all data fields "
              "that contain submission errors.",
@@ -163,7 +163,7 @@ daims_maps = {
         "Y": "Yes",
     },
 
-    "davis_bacon_act_map": {
+    "construction_wage_rate_req_map": {
         "Y": "Yes",
         "N": "No",
         "X": "Not Applicable",
@@ -373,7 +373,7 @@ daims_maps = {
         "_BLANK": "Not Applicable",
     },
 
-    "service_contract_act_map": {
+    "labor_standards_map": {
         "Y": "Yes",
         "N": "No",
         "X": "Not Applicable",

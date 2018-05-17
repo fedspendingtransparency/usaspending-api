@@ -21,7 +21,7 @@ def financial_spending_data(db):
         final_of_fy=True,
         submission=latest_subm,
         gross_outlay_amount_by_tas_cpe=1000000,
-        budget_authority_available_amount_total_cpe=2000000,
+        total_budgetary_resources_amount_cpe=2000000,
         obligations_incurred_total_by_tas_cpe=3000000,
         unobligated_balance_cpe=4000000,
         budget_authority_unobligated_balance_brought_forward_fyb=5000000,
