@@ -200,6 +200,7 @@ def can_use_total_obligation_enum(amount_obj):
         pass
     return False
 
+
 def only_action_date_type(time_period):
     '''
         if a date_type is last_modified_date, don't use the matview this applies to
