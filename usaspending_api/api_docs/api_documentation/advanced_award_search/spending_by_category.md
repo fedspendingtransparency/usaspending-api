@@ -6,11 +6,12 @@
 This route takes award filters and fields, and returns the fields of the filtered awards.
 
 ### Request
-fields: Defines what award variables are returned in an array using the Fields provided below.
 
 filters: Defines how the awards are filtered.  The filter object is defined here.  Each top-level key in the filter object is compounded together using AND logic. However, when multiple values are provided for a specific key, those values are compounded using OR logic.
 
 [Filter Object](../search_filters.md)
+
+category (**REQUIRED**): String value. Parameter indicating which category to aggregate and return. Allowed values are ('awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency', 'duns', 'parent_duns','cfda', 'psc', 'naics')
 
 subawards (**OPTIONAL**): Boolean value.  True when you want to group by Subawards instead of Awards.  Defaulted to False.
 
@@ -18,9 +19,7 @@ limit (**OPTIONAL**): How many results are returned. If no limit is specified, t
 
 page (**OPTIONAL**): The page number that is currently returned.
 
-sort (**OPTIONAL**): Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first `field` provided. Example: ['Award ID']
 
-order (**OPTIONAL**): Optional parameter indicating what direction results should be sorted by. Valid options include `asc` for ascending order or `desc` for descending order. Defaults to `asc`.
 
 ```
 {
@@ -64,8 +63,6 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
     },
     "subawards": false,
     "fields": ["Award ID", "Recipient Name", "Start Date", "End Date", "Award Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency"],
-    "sort": "Recipient Name",
-    "order": "desc"
 }
 ```
 ### Fields

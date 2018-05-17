@@ -28,7 +28,7 @@ ALIAS_DICT = {
     'funding_agency': {'funding_toptier_agency_name': 'agency_name', 'funding_subtier_agency_name': 'agency_name',
                        'funding_toptier_agency_abbreviation': 'agency_abbreviation',
                        'funding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'duns': {'recipient_unique_id': 'legal_entity_id'},
+    'recipient_duns': {'recipient_unique_id': 'legal_entity_id'},
     'cfda': {'cfda_number': 'cfda_program_number', 'cfda_popular_name': 'popular_name',
              'cfda_title': 'popular_title'},
     'psc': {'product_or_service_code': 'psc_code'},
@@ -37,7 +37,7 @@ ALIAS_DICT = {
 }
 ALIAS_DICT['awarding_subagency'] = ALIAS_DICT['awarding_agency']
 ALIAS_DICT['funding_subagency'] = ALIAS_DICT['funding_agency']
-ALIAS_DICT['parent_duns'] = ALIAS_DICT['duns']
+ALIAS_DICT['recipient_parent_duns'] = ALIAS_DICT['recipient_duns']
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -52,7 +52,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         categories = [
             'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
-            'duns', 'parent_duns',
+            'recipient_duns', 'recipient_parent_duns',
             'cfda', 'psc', 'naics']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
@@ -114,8 +114,8 @@ class BusinessLogic:
             results = self.awarding_agency()
         elif self.category in ('funding_agency', 'funding_subagency'):
             results = self.funding_agency()
-        elif self.category in ('duns', 'parent_duns'):
-            results = self.duns()
+        elif self.category in ('recipient_duns', 'recipient_parent_duns'):
+            results = self.recipient()
         elif self.category in ('cfda', 'psc', 'naics'):
             results = self.industry_and_other_codes()
 
@@ -158,12 +158,12 @@ class BusinessLogic:
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def duns(self) -> list:
-        if self.category == 'duns':
+    def recipient(self) -> list:
+        if self.category == 'recipient_duns':
             filters = {'recipient_unique_id__isnull': False}
             values = ['recipient_name', 'recipient_unique_id']
 
-        elif self.category == 'parent_duns':
+        elif self.category == 'recipient_parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
             filters = {'parent_recipient_unique_id__isnull': False}
