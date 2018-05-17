@@ -16,6 +16,7 @@ class UniversalTransactionView(models.Model):
     recipient_name_ts_vector = SearchVectorField()
     transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
+    last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     action_type = models.TextField()
