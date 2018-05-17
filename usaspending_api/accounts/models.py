@@ -236,7 +236,7 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
                                                                                     blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     deobligations_recoveries_refunds_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=21, decimal_places=2)
@@ -308,9 +308,9 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
                 AS spending_authority_from_offsetting_collections_amount_cpe,
             COALESCE(current.other_budgetary_resources_amount_cpe, 0) -
                 COALESCE(previous.other_budgetary_resources_amount_cpe, 0) AS other_budgetary_resources_amount_cpe,
-            COALESCE(current.budget_authority_available_amount_total_cpe, 0) -
-                COALESCE(previous.budget_authority_available_amount_total_cpe, 0)
-                AS budget_authority_available_amount_total_cpe,
+            COALESCE(current.total_budgetary_resources_amount_cpe, 0) -
+                COALESCE(previous.total_budgetary_resources_amount_cpe, 0)
+                AS total_budgetary_resources_amount_cpe,
             COALESCE(current.gross_outlay_amount_by_tas_cpe, 0) -
                 COALESCE(previous.gross_outlay_amount_by_tas_cpe, 0) AS gross_outlay_amount_by_tas_cpe,
             COALESCE(current.deobligations_recoveries_refunds_by_tas_cpe, 0) -
@@ -383,7 +383,7 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
     spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
                                                                                     blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     deobligations_recoveries_refunds_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=21, decimal_places=2)

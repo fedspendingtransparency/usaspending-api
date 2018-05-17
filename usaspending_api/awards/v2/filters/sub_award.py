@@ -90,11 +90,10 @@ def subaward_filter(filters, for_downloads=False):
                 where=['"latest_transaction_id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
-            # TODO- Handle both "action_date" and "last_modified_date"
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_date_range_queryset(value, SubawardView, "action_date", min_date, API_MAX_DATE)
+            queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())

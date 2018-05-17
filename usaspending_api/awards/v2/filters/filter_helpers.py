@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
+import logging
 
 from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
@@ -14,6 +15,7 @@ from usaspending_api.common.helpers.generic_helper import dates_are_month_booken
 from usaspending_api.common.helpers.generic_helper import generate_date_from_string
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 
+logger = logging.getLogger(__name__)
 
 Range = namedtuple('Range', ['start', 'end'])
 
@@ -42,28 +44,36 @@ def merge_date_ranges(date_range_list):
     yield (saved_range.start, saved_range.end)
 
 
-def date_list_to_queryset(date_list, table, action_date_column):
+def date_list_to_queryset(date_list, table):
     or_queryset = Q()
     for v in date_list:
         # Modified May 2018 so that there will always be a start and end value from combine_date_range_queryset()
+
+        date_type = v.get("date_type", "action_date")
+        if date_type not in ["action_date", "last_modified_date"]:
+            raise InvalidParameterException('Invalid date_type: {}'.format(date_type))
+
         kwargs = {
-            "{}__gte".format(action_date_column): v["start_date"],
-            "{}__lte".format(action_date_column): v["end_date"],
+            "{}__gte".format(date_type): v["start_date"],
+            "{}__lte".format(date_type): v["end_date"],
         }
         or_queryset |= Q(**kwargs)
 
     return table.objects.filter(or_queryset)
 
 
-def combine_date_range_queryset(date_dicts, table, action_date_column, min_start, max_end, dt_format='%Y-%m-%d'):
-    list_of_ranges = [
-        (
-            datetime.strptime(v.get('start_date', None) or min_start, dt_format),
-            datetime.strptime(v.get('end_date', None) or max_end, dt_format)
-        ) for v in date_dicts]  # convert date strings to datetime objects
+def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format='%Y-%m-%d'):
+    final_ranges = []
+    for date_type in set([v.get('date_type', 'action_date') for v in date_dicts]):
+        list_of_ranges = [
+            (
+                datetime.strptime(v.get('start_date', None) or min_start, dt_format),
+                datetime.strptime(v.get('end_date', None) or max_end, dt_format)
+            ) for v in date_dicts]  # convert date strings to datetime objects
 
-    final_ranges = [{'start_date': r[0], 'end_date': r[1]} for r in list(merge_date_ranges(list_of_ranges))]
-    return date_list_to_queryset(final_ranges, table, action_date_column)
+        final_ranges.extend([{'start_date': r[0], 'end_date': r[1], 'date_type': date_type}
+                             for r in list(merge_date_ranges(list_of_ranges))])
+    return date_list_to_queryset(final_ranges, table)
 
 
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
@@ -189,6 +199,19 @@ def can_use_total_obligation_enum(amount_obj):
     except Exception:
         pass
     return False
+
+
+def only_action_date_type(time_period):
+    '''
+        if a date_type is last_modified_date, don't use the matview this applies to
+    '''
+    try:
+        for v in time_period:
+            if v.get('date_type', 'action_date') != 'action_date':
+                return False
+    except Exception:
+        return False
+    return True
 
 
 def transform_keyword(request, api_version):

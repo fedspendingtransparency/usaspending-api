@@ -128,7 +128,7 @@ class Migration(migrations.Migration):
                 ('data_source', models.CharField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', max_length=3, null=True)),
                 ('legal_entity_id', models.AutoField(db_index=True, primary_key=True, serialize=False)),
                 ('parent_recipient_unique_id', models.TextField(blank=True, null=True, verbose_name='Parent DUNS Number')),
-                ('recipient_name', models.TextField(blank=True, verbose_name='Recipient Name')),
+                ('recipient_name', models.TextField(blank=True, null=True, verbose_name='Recipient Name')),
                 ('vendor_doing_as_business_name', models.TextField(blank=True, null=True)),
                 ('vendor_phone_number', models.TextField(blank=True, null=True)),
                 ('vendor_fax_number', models.TextField(blank=True, null=True)),

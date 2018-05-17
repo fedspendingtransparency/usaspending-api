@@ -100,12 +100,12 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
     sea_transportation_desc,
     clinger_cohen_act_planning,
     clinger_cohen_act_pla_desc,
-    davis_bacon_act,
-    davis_bacon_act_descrip,
-    service_contract_act,
-    service_contract_act_desc,
-    walsh_healey_act,
-    walsh_healey_act_descrip,
+    construction_wage_rate_req,
+    construction_wage_rat_desc,
+    labor_standards,
+    labor_standards_descrip,
+    materials_supplies_article,
+    materials_supplies_descrip,
     naics,
     naics_description,
     idv_type,
@@ -306,12 +306,12 @@ FROM
         tf.sea_transportation_desc AS sea_transportation_desc,
         tf.clinger_cohen_act_planning AS clinger_cohen_act_planning,
         tf.clinger_cohen_act_pla_desc AS clinger_cohen_act_pla_desc,
-        tf.davis_bacon_act AS davis_bacon_act,
-        tf.davis_bacon_act_descrip AS davis_bacon_act_descrip,
-        tf.service_contract_act AS service_contract_act,
-        tf.service_contract_act_desc AS service_contract_act_desc,
-        tf.walsh_healey_act AS walsh_healey_act,
-        tf.walsh_healey_act_descrip AS walsh_healey_act_descrip,
+        tf.construction_wage_rate_req AS construction_wage_rate_req,
+        tf.construction_wage_rat_desc AS construction_wage_rat_desc,
+        tf.labor_standards AS labor_standards,
+        tf.labor_standards_descrip AS labor_standards_descrip,
+        tf.materials_supplies_article AS materials_supplies_article,
+        tf.materials_supplies_descrip AS materials_supplies_descrip,
         tf.naics AS naics,
         tf.naics_description AS naics_description,
         tf.idv_type AS idv_type,
@@ -598,12 +598,12 @@ FROM
         sea_transportation_desc text,
         clinger_cohen_act_planning text,
         clinger_cohen_act_pla_desc text,
-        davis_bacon_act text,
-        davis_bacon_act_descrip text,
-        service_contract_act text,
-        service_contract_act_desc text,
-        walsh_healey_act text,
-        walsh_healey_act_descrip text,
+        construction_wage_rate_req text,
+        construction_wage_rat_desc text,
+        labor_standards text,
+        labor_standards_descrip text,
+        materials_supplies_article text,
+        materials_supplies_descrip text,
         naics text,
         naics_description text,
         idv_type text,
@@ -805,12 +805,12 @@ UNION ALL
     sea_transportation_desc,
     clinger_cohen_act_planning,
     clinger_cohen_act_pla_desc,
-    davis_bacon_act,
-    davis_bacon_act_descrip,
-    service_contract_act,
-    service_contract_act_desc,
-    walsh_healey_act,
-    walsh_healey_act_descrip,
+    construction_wage_rate_req,
+    construction_wage_rat_desc,
+    labor_standards,
+    labor_standards_descrip,
+    materials_supplies_article,
+    materials_supplies_descrip,
     naics,
     naics_description,
     idv_type,
@@ -915,18 +915,7 @@ FROM
         coalesce(pafa.fain, ''-none-'') || ''_'' ||
         ''-none-'' AS generated_unique_award_id,
     pafa.assistance_type AS type,
-    CASE
-        WHEN pafa.assistance_type = ''02'' THEN ''Block Grant''
-        WHEN pafa.assistance_type = ''03'' THEN ''Formula Grant''
-        WHEN pafa.assistance_type = ''04'' THEN ''Project Grant''
-        WHEN pafa.assistance_type = ''05'' THEN ''Cooperative Agreement''
-        WHEN pafa.assistance_type = ''06'' THEN ''Direct Payment for Specified Use''
-        WHEN pafa.assistance_type = ''07'' THEN ''Direct Loan''
-        WHEN pafa.assistance_type = ''08'' THEN ''Guaranteed/Insured Loan''
-        WHEN pafa.assistance_type = ''09'' THEN ''Insurance''
-        WHEN pafa.assistance_type = ''10'' THEN ''Direct Payment with Unrestricted Use''
-        WHEN pafa.assistance_type = ''11'' THEN ''Other Financial Assistance''
-    END AS type_description,
+    pafa.assistance_type_desc AS type_description,
     NULL::text AS agency_id,
     NULL::text AS referenced_idv_agency_iden,
     NULL::text AS referenced_idv_agency_desc,
@@ -1021,12 +1010,12 @@ FROM
     NULL::text AS sea_transportation_desc,
     NULL::text AS clinger_cohen_act_planning,
     NULL::text AS clinger_cohen_act_pla_desc,
-    NULL::text AS davis_bacon_act,
-    NULL::text AS davis_bacon_act_descrip,
-    NULL::text AS service_contract_act,
-    NULL::text AS service_contract_act_desc,
-    NULL::text AS walsh_healey_act,
-    NULL::text AS walsh_healey_act_descrip,
+    NULL::text AS construction_wage_rate_req,
+    NULL::text AS construction_wage_rat_desc,
+    NULL::text AS labor_standards,
+    NULL::text AS labor_standards_descrip,
+    NULL::text AS materials_supplies_article,
+    NULL::text AS materials_supplies_descrip,
     NULL::text AS naics,
     NULL::text AS naics_description,
     NULL::text AS idv_type,
@@ -1036,33 +1025,7 @@ FROM
     pafa.assistance_type AS assistance_type,
     pafa.business_funds_indicator AS business_funds_indicator,
     pafa.business_types AS business_types,
-    CASE
-        WHEN UPPER(pafa.business_types) = ''A'' THEN ''State government''
-        WHEN UPPER(pafa.business_types) = ''B'' THEN ''County Government''
-        WHEN UPPER(pafa.business_types) = ''C'' THEN ''City or Township Government''
-        WHEN UPPER(pafa.business_types) = ''D'' THEN ''Special District Government''
-        WHEN UPPER(pafa.business_types) = ''E'' THEN ''Regional Organization''
-        WHEN UPPER(pafa.business_types) = ''F'' THEN ''U.S. Territory or Possession''
-        WHEN UPPER(pafa.business_types) = ''G'' THEN ''Independent School District''
-        WHEN UPPER(pafa.business_types) = ''H'' THEN ''Public/State Controlled Institution of Higher Education''
-        WHEN UPPER(pafa.business_types) = ''I'' THEN ''Indian/Native American Tribal Government (Federally Recognized)''
-        WHEN UPPER(pafa.business_types) = ''J'' THEN ''Indian/Native American Tribal Government (Other than Federally Recognized)''
-        WHEN UPPER(pafa.business_types) = ''K'' THEN ''Indian/Native American Tribal Designated Organization''
-        WHEN UPPER(pafa.business_types) = ''L'' THEN ''Public/Indian Housing Authority''
-        WHEN UPPER(pafa.business_types) = ''M'' THEN ''Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)''
-        WHEN UPPER(pafa.business_types) = ''N'' THEN ''Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)''
-        WHEN UPPER(pafa.business_types) = ''O'' THEN ''Private Institution of Higher Education''
-        WHEN UPPER(pafa.business_types) = ''P'' THEN ''Individual''
-        WHEN UPPER(pafa.business_types) = ''Q'' THEN ''For-Profit Organization (Other than Small Business)''
-        WHEN UPPER(pafa.business_types) = ''R'' THEN ''Small Business''
-        WHEN UPPER(pafa.business_types) = ''S'' THEN ''Hispanic-serving Institution''
-        WHEN UPPER(pafa.business_types) = ''T'' THEN ''Historically Black Colleges and Universities (HBCUs)''
-        WHEN UPPER(pafa.business_types) = ''U'' THEN ''Tribally Controlled Colleges and Universities (TCCUs)''
-        WHEN UPPER(pafa.business_types) = ''V'' THEN ''Alaska Native and Native Hawaiian Serving Institutions''
-        WHEN UPPER(pafa.business_types) = ''W'' THEN ''Non-domestic (non-US) Entity''
-        WHEN UPPER(pafa.business_types) = ''X'' THEN ''Other''
-        ELSE ''Unknown Types''
-    END AS business_types_description,
+    pafa.business_types_desc AS business_types_description,
     compile_fabs_business_categories(pafa.business_types) AS business_categories,
     pafa.cfda_number AS cfda_number,
     pafa.cfda_title AS cfda_title,
@@ -1252,12 +1215,12 @@ ORDER BY
         sea_transportation_desc text,
         clinger_cohen_act_planning text,
         clinger_cohen_act_pla_desc text,
-        davis_bacon_act text,
-        davis_bacon_act_descrip text,
-        service_contract_act text,
-        service_contract_act_desc text,
-        walsh_healey_act text,
-        walsh_healey_act_descrip text,
+        construction_wage_rate_req text,
+        construction_wage_rat_desc text,
+        labor_standards text,
+        labor_standards_descrip text,
+        materials_supplies_article text,
+        materials_supplies_descrip text,
         naics text,
         naics_description text,
         idv_type text,
@@ -1461,12 +1424,12 @@ UNION ALL
     sea_transportation_desc,
     clinger_cohen_act_planning,
     clinger_cohen_act_pla_desc,
-    davis_bacon_act,
-    davis_bacon_act_descrip,
-    service_contract_act,
-    service_contract_act_desc,
-    walsh_healey_act,
-    walsh_healey_act_descrip,
+    construction_wage_rate_req,
+    construction_wage_rat_desc,
+    labor_standards,
+    labor_standards_descrip,
+    materials_supplies_article,
+    materials_supplies_descrip,
     naics,
     naics_description,
     idv_type,
@@ -1571,18 +1534,7 @@ FROM
         ''-none-'' || ''_'' ||
         coalesce(pafa.uri, ''-none-'') AS generated_unique_award_id,
     pafa.assistance_type AS type,
-    CASE
-        WHEN pafa.assistance_type = ''02'' THEN ''Block Grant''
-        WHEN pafa.assistance_type = ''03'' THEN ''Formula Grant''
-        WHEN pafa.assistance_type = ''04'' THEN ''Project Grant''
-        WHEN pafa.assistance_type = ''05'' THEN ''Cooperative Agreement''
-        WHEN pafa.assistance_type = ''06'' THEN ''Direct Payment for Specified Use''
-        WHEN pafa.assistance_type = ''07'' THEN ''Direct Loan''
-        WHEN pafa.assistance_type = ''08'' THEN ''Guaranteed/Insured Loan''
-        WHEN pafa.assistance_type = ''09'' THEN ''Insurance''
-        WHEN pafa.assistance_type = ''10'' THEN ''Direct Payment with Unrestricted Use''
-        WHEN pafa.assistance_type = ''11'' THEN ''Other Financial Assistance''
-    END AS type_description,
+    pafa.assistance_type_desc AS type_description,
     NULL::text AS agency_id,
     NULL::text AS referenced_idv_agency_iden,
     NULL::text AS referenced_idv_agency_desc,
@@ -1677,12 +1629,12 @@ FROM
     NULL::text AS sea_transportation_desc,
     NULL::text AS clinger_cohen_act_planning,
     NULL::text AS clinger_cohen_act_pla_desc,
-    NULL::text AS davis_bacon_act,
-    NULL::text AS davis_bacon_act_descrip,
-    NULL::text AS service_contract_act,
-    NULL::text AS service_contract_act_desc,
-    NULL::text AS walsh_healey_act,
-    NULL::text AS walsh_healey_act_descrip,
+    NULL::text AS construction_wage_rate_req,
+    NULL::text AS construction_wage_rat_desc,
+    NULL::text AS labor_standards,
+    NULL::text AS labor_standards_descrip,
+    NULL::text AS materials_supplies_article,
+    NULL::text AS materials_supplies_descrip,
     NULL::text AS naics,
     NULL::text AS naics_description,
     NULL::text AS idv_type,
@@ -1692,33 +1644,7 @@ FROM
     pafa.assistance_type AS assistance_type,
     pafa.business_funds_indicator AS business_funds_indicator,
     pafa.business_types AS business_types,
-    CASE
-        WHEN UPPER(pafa.business_types) = ''A'' THEN ''State government''
-        WHEN UPPER(pafa.business_types) = ''B'' THEN ''County Government''
-        WHEN UPPER(pafa.business_types) = ''C'' THEN ''City or Township Government''
-        WHEN UPPER(pafa.business_types) = ''D'' THEN ''Special District Government''
-        WHEN UPPER(pafa.business_types) = ''E'' THEN ''Regional Organization''
-        WHEN UPPER(pafa.business_types) = ''F'' THEN ''U.S. Territory or Possession''
-        WHEN UPPER(pafa.business_types) = ''G'' THEN ''Independent School District''
-        WHEN UPPER(pafa.business_types) = ''H'' THEN ''Public/State Controlled Institution of Higher Education''
-        WHEN UPPER(pafa.business_types) = ''I'' THEN ''Indian/Native American Tribal Government (Federally Recognized)''
-        WHEN UPPER(pafa.business_types) = ''J'' THEN ''Indian/Native American Tribal Government (Other than Federally Recognized)''
-        WHEN UPPER(pafa.business_types) = ''K'' THEN ''Indian/Native American Tribal Designated Organization''
-        WHEN UPPER(pafa.business_types) = ''L'' THEN ''Public/Indian Housing Authority''
-        WHEN UPPER(pafa.business_types) = ''M'' THEN ''Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)''
-        WHEN UPPER(pafa.business_types) = ''N'' THEN ''Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)''
-        WHEN UPPER(pafa.business_types) = ''O'' THEN ''Private Institution of Higher Education''
-        WHEN UPPER(pafa.business_types) = ''P'' THEN ''Individual''
-        WHEN UPPER(pafa.business_types) = ''Q'' THEN ''For-Profit Organization (Other than Small Business)''
-        WHEN UPPER(pafa.business_types) = ''R'' THEN ''Small Business''
-        WHEN UPPER(pafa.business_types) = ''S'' THEN ''Hispanic-serving Institution''
-        WHEN UPPER(pafa.business_types) = ''T'' THEN ''Historically Black Colleges and Universities (HBCUs)''
-        WHEN UPPER(pafa.business_types) = ''U'' THEN ''Tribally Controlled Colleges and Universities (TCCUs)''
-        WHEN UPPER(pafa.business_types) = ''V'' THEN ''Alaska Native and Native Hawaiian Serving Institutions''
-        WHEN UPPER(pafa.business_types) = ''W'' THEN ''Non-domestic (non-US) Entity''
-        WHEN UPPER(pafa.business_types) = ''X'' THEN ''Other''
-        ELSE ''Unknown Types''
-    END AS business_types_description,
+    pafa.business_types_desc AS business_types_description,
     compile_fabs_business_categories(pafa.business_types) AS business_categories,
     pafa.cfda_number AS cfda_number,
     pafa.cfda_title AS cfda_title,
@@ -1907,12 +1833,12 @@ ORDER BY
         sea_transportation_desc text,
         clinger_cohen_act_planning text,
         clinger_cohen_act_pla_desc text,
-        davis_bacon_act text,
-        davis_bacon_act_descrip text,
-        service_contract_act text,
-        service_contract_act_desc text,
-        walsh_healey_act text,
-        walsh_healey_act_descrip text,
+        construction_wage_rate_req text,
+        construction_wage_rat_desc text,
+        labor_standards text,
+        labor_standards_descrip text,
+        materials_supplies_article text,
+        materials_supplies_descrip text,
         naics text,
         naics_description text,
         idv_type text,
