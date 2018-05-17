@@ -28,12 +28,16 @@ ALIAS_DICT = {
     'funding_agency': {'funding_toptier_agency_name': 'agency_name', 'funding_subtier_agency_name': 'agency_name',
                        'funding_toptier_agency_abbreviation': 'agency_abbreviation',
                        'funding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'recipient': {'recipient_unique_id': 'legal_entity_id'},
-    'cfda_programs': {'cfda_number': 'cfda_program_number', 'cfda_popular_name': 'popular_name',
-                      'cfda_title': 'popular_title'},
-    'industry_codes': {'product_or_service_code': 'psc_code'}
+    'duns': {'recipient_unique_id': 'legal_entity_id'},
+    'cfda': {'cfda_number': 'cfda_program_number', 'cfda_popular_name': 'popular_name',
+             'cfda_title': 'popular_title'},
+    'psc': {'product_or_service_code': 'psc_code'},
+    'naics': {},
 
 }
+ALIAS_DICT['awarding_subagency'] = ALIAS_DICT['awarding_agency']
+ALIAS_DICT['funding_subagency'] = ALIAS_DICT['funding_agency']
+ALIAS_DICT['parent_duns'] = ALIAS_DICT['duns']
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -46,11 +50,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request: dict):
         """Return all budget function/subfunction titles matching the provided search text"""
-        categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
-        scopes = ['agency', 'subagency', 'cfda', 'psc', 'naics', 'duns', 'parent_duns', None]
+        categories = [
+            'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
+            'duns', 'parent_duns',
+            'cfda', 'psc', 'naics']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
-            {'name': 'scope', 'key': 'scope', 'type': 'enum', 'enum_values': scopes, 'default': None},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -66,7 +71,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 class BusinessLogic:
     # __slots__ will keep this object smaller
     __slots__ = (
-        'subawards', 'category', 'scope', 'page', 'limit', 'obligation_column',
+        'subawards', 'category', 'page', 'limit', 'obligation_column',
         'lower_limit', 'upper_limit', 'filters', 'queryset',
     )
 
@@ -76,7 +81,6 @@ class BusinessLogic:
         """
         self.subawards = payload['subawards']
         self.category = payload['category']
-        self.scope = payload['scope']
         self.page = payload['page']
         self.limit = payload['limit']
         self.filters = payload.get('filters', {})
@@ -84,24 +88,18 @@ class BusinessLogic:
         self.lower_limit = (self.page - 1) * self.limit
         self.upper_limit = self.page * self.limit + 1  # Add 1 for simple "Next Page" check
 
-        if (self.scope is None) and (self.category != 'cfda_programs'):
-            raise InvalidParameterException('Missing one or more required request parameters: scope')
-
-        self.scope = self.scope if not self.category == 'cfda_programs' else None
-        # some category-scope combinations allow different matviews, combine strings for easier logic
-        category_scope = '{}-{}'.format(self.category, self.scope or '')
         if self.subawards:
             self.queryset = subaward_filter(self.filters)
             self.obligation_column = 'amount'
         else:
-            self.queryset = sbc_view_queryset(category_scope, self.filters)
+            self.queryset = sbc_view_queryset(self.category, self.filters)
             self.obligation_column = 'generated_pragmatic_obligation'
 
     def raise_not_implemented(self):
-        msg = "Scope '{}' is not implemented for '{}' Category"
+        msg = "Category '{}' is not implemented"
         if self.subawards:
-            msg += ' when subawards is True'
-        raise InvalidParameterException(msg.format(self.scope, self.category))
+            msg += ' when `subawards` is True'
+        raise InvalidParameterException(msg.format(self.category))
 
     def common_db_query(self, filters, values):
         return self.queryset \
@@ -112,18 +110,14 @@ class BusinessLogic:
 
     def results(self) -> dict:
         # filter the transactions by category
-        if self.category == 'awarding_agency':
+        if self.category in ('awarding_agency', 'awarding_subagency'):
             results = self.awarding_agency()
-        elif self.category == 'funding_agency':
+        elif self.category in ('funding_agency', 'funding_subagency'):
             results = self.funding_agency()
-        elif self.category == 'recipient':
-            results = self.recipient()
-        elif self.category == 'cfda_programs':
-            results = self.cfda_programs()
-        elif self.category == 'industry_codes':
-            results = self.industry_codes()
-        else:
-            raise InvalidParameterException("Category '{}' is not yet implemented".format(self.category))
+        elif self.category in ('duns', 'parent_duns'):
+            results = self.duns()
+        elif self.category in ('cfda', 'psc', 'naics'):
+            results = self.industry_and_other_codes()
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
 
@@ -131,20 +125,18 @@ class BusinessLogic:
             'category': self.category,
             'limit': self.limit,
             'page_metadata': page_metadata,
+            # alias_response is a workaround for tests instead of applying any aliases in the querysets
             'results': alias_response(ALIAS_DICT[self.category], results[:self.limit]),
-            'scope': self.scope,
         }
         return response
 
     def awarding_agency(self) -> list:
-        if self.scope == 'agency':
+        if self.category == 'awarding_agency':
             filters = {'awarding_toptier_agency_name__isnull': False}
             values = ['awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
-        elif self.scope == 'subagency':
+        elif self.category == 'awarding_subagency':
             filters = {'awarding_subtier_agency_name__isnull': False}
             values = ['awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
-        else:
-            self.raise_not_implemented()
 
         self.queryset = self.common_db_query(filters, values)
 
@@ -152,62 +144,52 @@ class BusinessLogic:
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
     def funding_agency(self) -> list:
-        if self.scope == 'agency':
+        if self.subawards:
+            self.raise_not_implemented()
+        if self.category == 'funding_agency':
             filters = {'funding_toptier_agency_name__isnull': False}
             values = ['funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
-        elif self.scope == 'subagency':
+        elif self.category == 'funding_subagency':
             filters = {'funding_subtier_agency_name__isnull': False}
             values = ['funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
-        else:
-            self.raise_not_implemented()
 
         self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def recipient(self) -> list:
-        if self.scope == 'duns':
+    def duns(self) -> list:
+        if self.category == 'duns':
             filters = {'recipient_unique_id__isnull': False}
             values = ['recipient_name', 'recipient_unique_id']
 
-        elif self.scope == 'parent_duns':
+        elif self.category == 'parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
             filters = {'parent_recipient_unique_id__isnull': False}
             values = ['recipient_name', 'parent_recipient_unique_id']
-        else:
-            self.raise_not_implemented()
 
         self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
         return list(self.queryset[self.lower_limit:self.upper_limit])
 
-    def cfda_programs(self) -> list:
-        filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
-        values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
-        self.queryset = self.common_db_query(filters, values)
-
-        # DB hit here
-        results = list(self.queryset[self.lower_limit:self.upper_limit])
-
-        return results
-
-    def industry_codes(self) -> list:
-        if self.scope == 'psc':
+    def industry_and_other_codes(self) -> list:
+        if self.category == 'cfda':
+            filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
+            values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
+        elif self.category == 'psc':
+            if self.subawards:
+                self.raise_not_implemented()
             filters = {'product_or_service_code__isnull': False}
             values = ['product_or_service_code']
 
-        elif self.scope == 'naics':
-            # TODO: Not filterable on subawards directly, need business decisions around supporting these for subawards
+        elif self.category == 'naics':
             if self.subawards:
+                # TODO: get subaward NAICS from Broker
                 self.raise_not_implemented()
-
             filters = {'naics_code__isnull': False}
             values = ['naics_code', 'naics_description']
-        else:
-            self.raise_not_implemented()
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
