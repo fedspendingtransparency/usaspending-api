@@ -8,7 +8,8 @@ from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum
+from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum, \
+    only_action_date_type
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.common.exceptions import InvalidParameterException
 import logging
@@ -19,31 +20,41 @@ MATVIEW_SELECTOR = {
     'SummaryView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryView,
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {},
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryAwardView,
     },
     'SummaryPscCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryPscCodesView,
     },
     'SummaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryCfdaNumbersView,
     },
     'SummaryNaicsCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryNaicsCodesView,
     },
     'SummaryTransactionGeoView':
@@ -59,7 +70,7 @@ MATVIEW_SELECTOR = {
         ],
         'prevent_values': {},
         'examine_values': {
-            'time_period': can_use_month_aggregation,
+            'time_period': [can_use_month_aggregation, only_action_date_type],
         },
         'model': SummaryTransactionGeoView,
     },
@@ -79,7 +90,9 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {},
-        'examine_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]
+        },
         'model': SummaryTransactionView,
     },
     'SummaryTransactionMonthView': {
@@ -100,8 +113,8 @@ MATVIEW_SELECTOR = {
             'extent_competed_type_codes'],
         'prevent_values': {},
         'examine_values': {
-            'time_period': can_use_month_aggregation,
-            'award_amounts': can_use_total_obligation_enum},
+            'time_period': [can_use_month_aggregation, only_action_date_type],
+            'award_amounts': [can_use_total_obligation_enum]},
         'model': SummaryTransactionMonthView,
     },
     'UniversalTransactionView': {
@@ -196,12 +209,13 @@ def can_use_view(filters, view_name):
         elif rules['type'] == 'dict':
             raise NotImplementedError
 
-    for key, func in MATVIEW_SELECTOR[view_name]['examine_values'].items():
-        try:
-            if not func(filters[key]):
-                return False
-        except KeyError:
-            pass
+    for key, func_list in MATVIEW_SELECTOR[view_name]['examine_values'].items():
+        for func in func_list:
+            try:
+                if not func(filters[key]):
+                    return False
+            except KeyError:
+                pass
     return True
 
 
