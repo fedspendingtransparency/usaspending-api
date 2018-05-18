@@ -82,13 +82,6 @@ class BaseDownloadViewSet(APIDocumentationView):
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
 
-        # Overriding all other filters if the keyword filter is provided in year-constraint download
-        if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
-            request_data['filters'] = {'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
-                                       'award_type_codes': list(award_type_mapping.keys())}
-            request_data['limit'] = settings.MAX_DOWNLOAD_LIMIT
-            return request_data
-
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
             if required_param not in request_data:
@@ -103,6 +96,14 @@ class BaseDownloadViewSet(APIDocumentationView):
             if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
         json_request['download_types'] = request_data['award_levels']
+
+        # Overriding all other filters if the keyword filter is provided in year-constraint download
+        # Make sure this is after checking the award_levels
+        if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
+            json_request['filters'] = {'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
+                                       'award_type_codes': list(award_type_mapping.keys())}
+            json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
+            return json_request
 
         if not isinstance(request_data['filters'], dict):
             raise InvalidParameterException('Filters parameter not provided as a dict')
