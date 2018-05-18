@@ -28,11 +28,11 @@ def financial_spending_data(db):
 
     # CREATE AppropriationAccountBalances
     mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
-               submission=submission_1, budget_authority_available_amount_total_cpe=2,
+               submission=submission_1, total_budgetary_resources_amount_cpe=2,
                obligations_incurred_total_by_tas_cpe=2, gross_outlay_amount_by_tas_cpe=2,
                treasury_account_identifier=tas)
     mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
-               submission=submission_2, budget_authority_available_amount_total_cpe=14,
+               submission=submission_2, total_budgetary_resources_amount_cpe=14,
                obligations_incurred_total_by_tas_cpe=14, gross_outlay_amount_by_tas_cpe=14,
                treasury_account_identifier=tas2)
 

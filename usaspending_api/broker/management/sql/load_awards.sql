@@ -86,18 +86,7 @@ CREATE TABLE awards_new AS (
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
                 tfn.assistance_type AS type,
-                CASE
-                    WHEN tfn.assistance_type = '02' THEN 'BLOCK GRANT'
-                    WHEN tfn.assistance_type = '03' THEN 'FORMULA GRANT'
-                    WHEN tfn.assistance_type = '04' THEN 'PROJECT GRANT'
-                    WHEN tfn.assistance_type = '05' THEN 'COOPERATIVE AGREEMENT'
-                    WHEN tfn.assistance_type = '06' THEN 'DIRECT PAYMENT FOR SPECIFIED USE'
-                    WHEN tfn.assistance_type = '07' THEN 'DIRECT LOAN'
-                    WHEN tfn.assistance_type = '08' THEN 'GUARANTEED/INSURED LOAN'
-                    WHEN tfn.assistance_type = '09' THEN 'INSURANCE'
-                    WHEN tfn.assistance_type = '10' THEN 'DIRECT PAYMENT WITH UNRESTRICTED USE'
-                    WHEN tfn.assistance_type = '11' THEN 'OTHER FINANCIAL ASSISTANCE'
-                END AS type_description,
+                tfn.assistance_type_desc AS type_description,
                 NULL::TEXT AS piid,
                 NULL::TEXT AS parent_award_piid,
                 tfn.fain AS fain,
@@ -160,19 +149,7 @@ CREATE TABLE awards_new AS (
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
                 tfn.assistance_type AS type,
-                CASE
-                    WHEN tfn.assistance_type = '02' THEN 'BLOCK GRANT'
-                    WHEN tfn.assistance_type = '03' THEN 'FORMULA GRANT'
-                    WHEN tfn.assistance_type = '04' THEN 'PROJECT GRANT'
-                    WHEN tfn.assistance_type = '05' THEN 'COOPERATIVE AGREEMENT'
-                    WHEN tfn.assistance_type = '06' THEN 'DIRECT PAYMENT FOR SPECIFIED USE'
-                    WHEN tfn.assistance_type = '07' THEN 'DIRECT LOAN'
-                    WHEN tfn.assistance_type = '08' THEN 'GUARANTEED/INSURED LOAN'
-                    WHEN tfn.assistance_type = '09' THEN 'INSURANCE'
-                    WHEN tfn.assistance_type = '10' THEN 'DIRECT PAYMENT WITH UNRESTRICTED USE'
-                    WHEN tfn.assistance_type = '11' THEN 'OTHER FINANCIAL ASSISTANCE'
-                    ELSE 'UNKNOWN ASSISTANCE TYPE'
-                END AS type_description,
+                tfn.assistance_type_desc AS type_description,
                 NULL::TEXT AS piid,
                 NULL::TEXT AS parent_award_piid,
                 NULL::TEXT AS fain,

@@ -133,12 +133,12 @@ transaction_d1_columns = {
         "price_evaluation_adjustment_preference_percent_difference",  # DONE
     "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
     "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
-    "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
-    "Walsh Healey Act": "walsh_healey_act_description",  # TODO
-    "Service Contract Act Code": "service_contract_act",  # DONE
-    "Service Contract Act": "service_contract_act_description",  # DONE
-    "Davis Bacon Act Code": "davis_bacon_act",  # DONE
-    "Davis Bacon Act": "davis_bacon_act_description",  # DONE
+    "Materials Supplies Articles Equipment Code": "materials_supplies_article",  # TODO
+    "Materials Supplies Articles Equipment": "materials_supplies_descrip",  # TODO
+    "Labor Standards Code": "labor_standards",  # DONE
+    "Labor Standards": "labor_standards_descrip",  # DONE
+    "Construction Wage Rate Requirements Code": "construction_wage_rate_req",  # DONE
+    "Construction Wage Rate Requirements": "construction_wage_rat_desc",  # DONE
     "Interagency Contracting Authority Code": "interagency_contracting_authority",  # DONE
     "Interagency Contracting Authority": "interagency_contracting_authority_description",  # DONE
     "Other Statutory Authority": "other_statutory_authority",  # DONE
@@ -479,12 +479,12 @@ transaction_columns = [
     "Price Evaluation Adjustment Preference Percent Difference",
     "Clinger-Cohen Act Planning Compliance Code",
     "Clinger-Cohen Act Planning Compliance",
-    "Walsh Healey Act Code",
-    "Walsh Healey Act",
-    "Service Contract Act Code",
-    "Service Contract Act",
-    "Davis Bacon Act Code",
-    "Davis Bacon Act",
+    "Materials Supplies Articles Equipment Code",
+    "Materials Supplies Articles Equipment",
+    "Labor Standards Code",
+    "Labor Standards",
+    "Construction Wage Rate Requirements Code",
+    "Construction Wage Rate Requirements",
     "Interagency Contracting Authority Code",
     "Interagency Contracting Authority",
     "Other Statutory Authority",
@@ -742,8 +742,8 @@ award_unique_columns = {
     "Country of Product or Service Origin Code",
     "Country of Product or Service Origin",
     "County Local Government",
-    "Davis Bacon Act Code",
-    "Davis Bacon Act",
+    "Construction Wage Rate Requirements Code",
+    "Construction Wage Rate Requirements",
     "DoD Acquisition Program Code",
     "DoD Acquisition Program Description",
     "DoD Claimant Program Code",
@@ -913,8 +913,8 @@ award_unique_columns = {
     "Sea Transportation Code",
     "Sea Transportation",
     "Self-Certified Small Disadvantaged Business",
-    "Service Contract Act Code",
-    "Service Contract Act",
+    "Labor Standards Code",
+    "Labor Standards",
     "Service Disabled Veteran Owned Business",
     "Small Agricultural Cooperative",
     "Small Business Competitiveness Demonstration Program",
@@ -953,8 +953,8 @@ award_unique_columns = {
     "Veteran Owned Business",
     "Veterinary College",
     "Veterinary Hospital",
-    "Walsh Healey Act Code",
-    "Walsh Healey Act",
+    "Materials Supplies Articles Equipment Code",
+    "Materials Supplies Articles Equipment",
     "Woman Owned Business",
     "Women Owned Small Business"
 }
@@ -1021,9 +1021,9 @@ award_contracts_mapping = {
     'Information Technology Commercial Item Category': 'latest_transaction__contract_data__information_technolog_desc',
     'Sea Transportation': 'latest_transaction__contract_data__sea_transportation_desc',
     'Clinger-Cohen Act Compliant': 'latest_transaction__contract_data__clinger_cohen_act_planning',
-    'Subject To Davis Bacon Act': 'latest_transaction__contract_data__davis_bacon_act_descrip',
-    'Subject To Service Contract Act': 'latest_transaction__contract_data__service_contract_act_desc',
-    'Subject To Walsh Healey Act': 'latest_transaction__contract_data__walsh_healey_act',
+    'Subject To Construction Wage Rate Requirements': 'latest_transaction__contract_data__construction_wage_rat_desc',
+    'Subject To Labor Standards': 'latest_transaction__contract_data__labor_standards_descrip',
+    'Subject To Materials Supplies Articles Equipment': 'latest_transaction__contract_data__materials_supplies_descrip',
     'Consolidated Contract': 'latest_transaction__contract_data__consolidated_contract',
     'Cost or Pricing Data': 'latest_transaction__contract_data__cost_or_pricing_data_desc',
     'Fair Opportunity Limited Sources': 'latest_transaction__contract_data__fair_opportunity_limi_desc',

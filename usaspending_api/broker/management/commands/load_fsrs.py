@@ -207,6 +207,7 @@ class Command(BaseCommand):
                          'sub_award.principle_place_city AS principle_place_city',
                          'sub_award.principle_place_zip AS principle_place_zip',
                          'sub_award.principle_place_state AS principle_place_state',
+                         'sub_award.principle_place_state_name AS principle_place_state_name',
                          'sub_award.principle_place_street AS principle_place_street',
                          'sub_award.principle_place_district AS principle_place_district']
 
@@ -223,6 +224,7 @@ class Command(BaseCommand):
                                   'sub_award.company_address_city AS company_address_city',
                                   'sub_award.company_address_zip AS company_address_zip',
                                   'sub_award.company_address_state AS company_address_state',
+                                  'sub_award.company_address_state_name AS company_address_state_name',
                                   'sub_award.company_address_street AS company_address_street',
                                   'sub_award.company_address_district AS company_address_district'
                                   ])
@@ -242,6 +244,7 @@ class Command(BaseCommand):
                                   'sub_award.awardee_address_city AS awardee_address_city',
                                   'sub_award.awardee_address_zip AS awardee_address_zip',
                                   'sub_award.awardee_address_state AS awardee_address_state',
+                                  'sub_award.awardee_address_state_name AS awardee_address_state_name',
                                   'sub_award.awardee_address_street AS awardee_address_street',
                                   'sub_award.awardee_address_district AS awardee_address_district'])
 
@@ -407,6 +410,7 @@ def location_d1_recipient_mapper(row):
         "city_name": row.get("company_address_city", ""),
         "location_zip": row.get("company_address_zip", ""),
         "state_code": row.get("company_address_state"),
+        "state_name": row.get("company_address_state_name"),
         "address_line1": row.get("company_address_street"),
         "congressional_code": row.get("company_address_district", None)
     }
@@ -419,6 +423,7 @@ def location_d2_recipient_mapper(row):
         "city_name": row.get("awardee_address_city", ""),
         "location_zip": row.get("awardee_address_zip", ""),
         "state_code": row.get("awardee_address_state"),
+        "state_name": row.get("awardee_address_state_name"),
         "address_line1": row.get("awardee_address_street"),
         "congressional_code": row.get("awardee_address_district")
     }
@@ -431,6 +436,7 @@ def pop_mapper(row):
         "city_name": row.get("principle_place_city", ""),
         "location_zip": row.get("principle_place_zip", ""),
         "state_code": row.get("principle_place_state"),
+        "state_name": row.get("principle_place_state_name"),
         "address_line1": row.get("principle_place_street"),
         "congressional_code": row.get("principle_place_district")
     }
