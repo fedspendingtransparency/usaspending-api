@@ -230,40 +230,13 @@ CREATE TABLE legal_entity_new AS (
                 transaction_fabs_new.afa_generated_unique AS transaction_unique_id,
                 references_location_new.location_id AS location_id,
                  'DBR'::TEXT AS data_source,
-                NULL AS parent_recipient_unique_id,
+                ultimate_parent_unique_ide AS parent_recipient_unique_id,
                 awardee_or_recipient_legal AS recipient_name,
                 NULL AS vendor_doing_as_business_name,
                 NULL AS vendor_phone_number,
                 NULL AS vendor_fax_number,
                 business_types,
-                CASE
-                    WHEN UPPER(business_types) IN ('A', '00') THEN 'STATE GOVERNMENT'
-                    WHEN UPPER(business_types) IN ('B', '01') THEN 'COUNTY GOVERNMENT'
-                    WHEN UPPER(business_types) IN ('C', '02') THEN 'CITY OR TOWNSHIP GOVERNMENT'
-                    WHEN UPPER(business_types) IN ('D', '04') THEN 'SPECIAL DISTRICT GOVERNMENT'
-                    WHEN UPPER(business_types) = 'E' THEN 'REGIONAL ORGANIZATION'
-                    WHEN UPPER(business_types) = 'F' THEN 'U.S. TERRITORY OR POSSESSION'
-                    WHEN UPPER(business_types) IN ('G', '05') THEN 'INDEPENDENT SCHOOL DISTRICT'
-                    WHEN UPPER(business_types) IN ('H', '06') THEN 'PUBLIC/STATE CONTROLLED INSTITUTION OF HIGHER EDUCATION'
-                    WHEN UPPER(business_types) = 'I' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (FEDERALLY RECOGNIZED)'
-                    WHEN UPPER(business_types) = 'J' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (OTHER THAN FEDERALLY RECOGNIZED)'
-                    WHEN UPPER(business_types) IN ('K', '11') THEN 'INDIAN/NATIVE AMERICAN TRIBAL DESIGNATED ORGANIZATION'
-                    WHEN UPPER(business_types) = '12' THEN 'OTHER NON-PROFIT'
-                    WHEN UPPER(business_types) = 'L' THEN 'PUBLIC/INDIAN HOUSING AUTHORITY'
-                    WHEN UPPER(business_types) = 'M' THEN 'NONPROFIT WITH 501C3 IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
-                    WHEN UPPER(business_types) = 'N' THEN 'NONPROFIT WITHOUT 501C3 IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
-                    WHEN UPPER(business_types) IN ('O', '20') THEN 'PRIVATE INSTITUTION OF HIGHER EDUCATION'
-                    WHEN UPPER(business_types) IN ('P', '21') THEN 'INDIVIDUAL'
-                    WHEN UPPER(business_types) IN ('Q', '22') THEN 'FOR-PROFIT ORGANIZATION (OTHER THAN SMALL BUSINESS)'
-                    WHEN UPPER(business_types) IN ('R', '23') THEN 'SMALL BUSINESS'
-                    WHEN UPPER(business_types) = 'S' THEN 'HISPANIC-SERVING INSTITUTION'
-                    WHEN UPPER(business_types) = 'T' THEN 'HISTORICALLY BLACK COLLEGES AND UNIVERSITIES (HBCUS)'
-                    WHEN UPPER(business_types) = 'U' THEN 'TRIBALLY CONTROLLED COLLEGES AND UNIVERSITIES (TCCUS)'
-                    WHEN UPPER(business_types) = 'V' THEN 'ALASKA NATIVE AND NATIVE HAWAIIAN SERVING INSTITUTIONS'
-                    WHEN UPPER(business_types) = 'W' THEN 'NON-DOMESTIC (NON-US) ENTITY'
-                    WHEN UPPER(business_types) IN ('X', '25') THEN 'OTHER'
-                    ELSE 'UNKNOWN TYPES'
-                END AS business_types_description,
+                business_types_desc AS business_types_description,
                 compile_fabs_business_categories(business_types) AS business_categories,
                 awardee_or_recipient_uniqu AS recipient_unique_id,
 

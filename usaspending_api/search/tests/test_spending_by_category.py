@@ -16,12 +16,12 @@ def test_spending_by_category_success(client):
             "category": "funding_agency",
             "scope": "agency",
             "filters": {
-                "keyword": "test"
+                "keywords": ["test", "testing"]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
     all_filters = {
-        "keyword": "test",
+        "keywords": ["test", "testing"],
         "time_period": [
             {
                 "start_date": "2016-10-01",

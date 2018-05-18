@@ -1,9 +1,11 @@
 import warnings
-from django.db import models
-from django.core.cache import CacheKeyWarning
+
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.search import SearchVectorField
+from django.core.cache import CacheKeyWarning
+from django.db import models
 from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.references.models import LegalEntity, Location
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -14,6 +16,7 @@ class UniversalTransactionView(models.Model):
     recipient_name_ts_vector = SearchVectorField()
     transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
+    last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     action_type = models.TextField()
@@ -475,8 +478,8 @@ class AwardMatview(models.Model):
     cost_or_pricing_data = models.TextField()
     cost_or_pricing_data_desc = models.TextField()
     date_signed = models.TextField()
-    davis_bacon_act = models.TextField()
-    davis_bacon_act_descrip = models.TextField()
+    construction_wage_rate_req = models.TextField()
+    construction_wage_rat_desc = models.TextField()
     description = models.TextField()
     dod_claimant_prog_cod_desc = models.TextField()
     dod_claimant_program_code = models.TextField()
@@ -580,8 +583,8 @@ class AwardMatview(models.Model):
     sai_number = models.TextField()
     sea_transportation = models.TextField()
     sea_transportation_desc = models.TextField()
-    service_contract_act = models.TextField()
-    service_contract_act_desc = models.TextField()
+    labor_standards = models.TextField()
+    labor_standards_descrip = models.TextField()
     small_business_competitive = models.TextField()
     solicitation_identifier = models.TextField()
     solicitation_procedur_desc = models.TextField()
@@ -603,8 +606,8 @@ class AwardMatview(models.Model):
     type_set_aside = models.TextField()
     type_set_aside_description = models.TextField()
     uri = models.TextField()
-    walsh_healey_act = models.TextField()
-    walsh_healey_act_descrip = models.TextField()
+    materials_supplies_article = models.TextField()
+    materials_supplies_descrip = models.TextField()
 
     class Meta:
         managed = False
@@ -708,3 +711,73 @@ class TransactionMatview(models.Model):
     class Meta:
         managed = False
         db_table = 'transaction_matview'
+
+
+class SubawardView(models.Model):
+    id = models.IntegerField(primary_key=True)
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
+    recipient_name_ts_vector = SearchVectorField()
+    latest_transaction_id = models.IntegerField()
+    last_modified_date = models.DateField()
+    subaward_number = models.TextField()
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    total_obl_bin = models.TextField()
+    description = models.TextField(null=True, blank=True)
+    fiscal_year = models.IntegerField()
+    action_date = models.DateField()
+    award_report_fy_month = models.IntegerField()
+    award_report_fy_year = models.IntegerField()
+
+    # award = models.OneToOneField(Award, primary_key=True)
+    award = models.OneToOneField(Award, primary_key=True)
+    awarding_agency_id = models.IntegerField()
+    funding_agency_id = models.IntegerField()
+    awarding_toptier_agency_name = models.TextField()
+    awarding_subtier_agency_name = models.TextField()
+    funding_toptier_agency_name = models.TextField()
+    funding_subtier_agency_name = models.TextField()
+
+    place_of_performance = models.OneToOneField(Location, primary_key=True)
+    recipient = models.OneToOneField(LegalEntity, primary_key=True)
+    award_type = models.TextField()
+    prime_award_type = models.TextField()
+
+    cfda_id = models.IntegerField()
+    piid = models.TextField()
+    fain = models.TextField()
+
+    business_categories = ArrayField(models.TextField(), default=list)
+    recipient_name = models.TextField()
+    prime_recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+
+    pulled_from = models.TextField()
+    type_of_contract_pricing = models.TextField()
+    type_set_aside = models.TextField()
+    extent_competed = models.TextField()
+    product_or_service_code = models.TextField()
+    product_or_service_description = models.TextField()
+    cfda_number = models.TextField()
+
+    recipient_location_country_code = models.TextField()
+    recipient_location_country_name = models.TextField()
+    recipient_location_state_code = models.TextField()
+    recipient_location_county_code = models.TextField()
+    recipient_location_county_name = models.TextField()
+    recipient_location_zip5 = models.TextField()
+    recipient_location_congressional_code = models.TextField()
+
+    pop_country_code = models.TextField()
+    pop_country_name = models.TextField()
+    pop_state_code = models.TextField()
+    pop_county_code = models.TextField()
+    pop_county_name = models.TextField()
+    pop_city_code = models.TextField()
+    pop_zip5 = models.TextField()
+    pop_congressional_code = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'subaward_view'

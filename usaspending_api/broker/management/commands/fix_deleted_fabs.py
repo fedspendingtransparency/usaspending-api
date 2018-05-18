@@ -12,7 +12,7 @@ from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.common.helpers import timer
+from usaspending_api.common.helpers.generic_helper import timer
 
 logger = logging.getLogger('console')
 
@@ -31,12 +31,12 @@ class Command(BaseCommand):
             WITH deletable AS (
                 SELECT  afa_generated_unique,
                         bool_or(is_active) AS is_active,
-                        bool_or(correction_late_delete_ind in ('d', 'D'))
+                        bool_or(correction_delete_indicatr in ('d', 'D'))
                             AS deleted
                 FROM    broker.published_award_financial_assistance
                 GROUP BY 1
                 HAVING  bool_or(is_active) = false
-                AND     bool_or(correction_late_delete_ind in ('d', 'D'))
+                AND     bool_or(correction_delete_indicatr in ('d', 'D'))
                 )
             SELECT tf.afa_generated_unique
             FROM   transaction_fabs tf

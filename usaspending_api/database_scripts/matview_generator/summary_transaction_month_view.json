@@ -91,7 +91,7 @@
     "LEFT OUTER JOIN",
     "  psc ON (transaction_fpds.product_or_service_code = psc.code)",
     "WHERE",
-    "  transaction_normalized.action_date >= '2000-10-01'",
+    "  transaction_normalized.action_date >= '2007-10-01'",
     "GROUP BY",
     "  cast(date_trunc('month', transaction_normalized.action_date) as date),",
     "  transaction_normalized.fiscal_year,",

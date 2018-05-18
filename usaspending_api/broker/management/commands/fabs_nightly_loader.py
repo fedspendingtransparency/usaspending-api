@@ -8,13 +8,12 @@ from django.db import connections, transaction
 from django.db.models import Count
 from django.conf import settings
 
-from usaspending_api.common.helpers import fy, timer
+from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import (get_business_categories, get_business_type_description,
-                                            get_assistance_type_description)
+from usaspending_api.broker.helpers import get_business_categories
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
@@ -38,7 +37,7 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active IS True OR UPPER(correction_late_delete_ind) = \'D\')'
+                   'AND (is_active IS True OR UPPER(correction_delete_indicatr) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -49,7 +48,7 @@ class Command(BaseCommand):
 
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
-            if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
+            if row['correction_delete_indicatr'] and row['correction_delete_indicatr'].upper() == 'D':
                 ids_to_delete.append(row['afa_generated_unique'].upper())
             else:
                 final_db_rows.append(row)
@@ -176,21 +175,20 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
-            for key in row:
-                if isinstance(row[key], str):
-                    row[key] = row[key].upper()
+            upper_case_dict_values(row)
 
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
             recipient_name = row['awardee_or_recipient_legal']
             legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name if recipient_name is not None else ""
+                recipient_name=recipient_name if recipient_name is not None else "",
+                parent_recipient_unique_id=row['ultimate_parent_unique_ide']
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
                 "business_categories": get_business_categories(row=row, data_type='fabs'),
-                "business_types_description": get_business_type_description(row['business_types'])
+                "business_types_description": row['business_types_desc']
             }
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -210,7 +208,7 @@ class Command(BaseCommand):
             if record_type_int == 1:
                 uri = row['uri'] if row['uri'] else '-NONE-'
                 fain = '-NONE-'
-            elif record_type_int == 2:
+            elif record_type_int in (2, 3):
                 uri = '-NONE-'
                 fain = row['fain'] if row['fain'] else '-NONE-'
             else:
@@ -245,7 +243,7 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": last_mod_date,
-                "type_description": get_assistance_type_description(row['assistance_type']),
+                "type_description": row['assistance_type_desc'],
                 "transaction_unique_id": row['afa_generated_unique'],
                 "generated_unique_award_id": generated_unique_id
             }

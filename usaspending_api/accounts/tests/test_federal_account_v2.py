@@ -21,37 +21,37 @@ def fixture_data(db):
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
-               budget_authority_available_amount_total_cpe=1000,
+               total_budgetary_resources_amount_cpe=1000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=False,  # so filter it out
                treasury_account_identifier=ta0,
-               budget_authority_available_amount_total_cpe=100,
+               total_budgetary_resources_amount_cpe=100,
                submission__reporting_period_start='2017-03-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
-               budget_authority_available_amount_total_cpe=2000,
+               total_budgetary_resources_amount_cpe=2000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta1,
-               budget_authority_available_amount_total_cpe=9000,
+               total_budgetary_resources_amount_cpe=9000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta1,
-               budget_authority_available_amount_total_cpe=500,
+               total_budgetary_resources_amount_cpe=500,
                submission__reporting_period_start='2016-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier__treasury_account_identifier='999',
-               budget_authority_available_amount_total_cpe=4000,
+               total_budgetary_resources_amount_cpe=4000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta2,
-               budget_authority_available_amount_total_cpe=1000,
+               total_budgetary_resources_amount_cpe=1000,
                submission__reporting_period_start='2015-06-01')
 
 

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from django.db import models, connection
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers.generic_helper import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -14,10 +14,8 @@ class FederalAccount(models.Model):
     """
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
-    account_title = account_title = models.TextField()
-    # This field is a combination of the above fields for the purpose of autocomplete
-    # The format is: agency_identifier + '-' + main_account_code + ' - ' + account_title
-    federal_account_code = models.TextField(null=True)
+    account_title = models.TextField()
+    federal_account_code = models.TextField(null=True)  # agency_identifier + '-' + main_account_code
 
     class Meta:
         managed = True
@@ -25,8 +23,7 @@ class FederalAccount(models.Model):
         unique_together = ('agency_identifier', 'main_account_code')
 
     def save(self, *args, **kwargs):
-        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code +\
-                                    ' - ' + self.account_title
+        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code
         super().save(*args, **kwargs)
 
 
@@ -239,7 +236,7 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
                                                                                     blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     deobligations_recoveries_refunds_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=21, decimal_places=2)
@@ -311,9 +308,9 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
                 AS spending_authority_from_offsetting_collections_amount_cpe,
             COALESCE(current.other_budgetary_resources_amount_cpe, 0) -
                 COALESCE(previous.other_budgetary_resources_amount_cpe, 0) AS other_budgetary_resources_amount_cpe,
-            COALESCE(current.budget_authority_available_amount_total_cpe, 0) -
-                COALESCE(previous.budget_authority_available_amount_total_cpe, 0)
-                AS budget_authority_available_amount_total_cpe,
+            COALESCE(current.total_budgetary_resources_amount_cpe, 0) -
+                COALESCE(previous.total_budgetary_resources_amount_cpe, 0)
+                AS total_budgetary_resources_amount_cpe,
             COALESCE(current.gross_outlay_amount_by_tas_cpe, 0) -
                 COALESCE(previous.gross_outlay_amount_by_tas_cpe, 0) AS gross_outlay_amount_by_tas_cpe,
             COALESCE(current.deobligations_recoveries_refunds_by_tas_cpe, 0) -
@@ -386,7 +383,7 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
     spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
                                                                                     blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     deobligations_recoveries_refunds_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=21, decimal_places=2)

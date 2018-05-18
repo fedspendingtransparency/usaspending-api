@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
-from usaspending_api.common.helpers import FY_PG_FUNCTION_DEF
+from usaspending_api.common.helpers.generic_helper import FY_PG_FUNCTION_DEF
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 

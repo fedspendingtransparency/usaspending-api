@@ -3,7 +3,7 @@ from rest_framework import serializers
 from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
 from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers.generic_helper import fy
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, \
     CfdaSerializer
@@ -75,12 +75,16 @@ class TransactionFABSSerializer(LimitableSerializer):
             # fields in database table
             'action_date',
             'action_type',
+            'action_type_description',
             'afa_generated_unique',
             'assistance_type',
+            'assistance_type_desc',
             'award_description',
             'award_modification_amendme',
             'awardee_or_recipient_legal',
             'awardee_or_recipient_uniqu',
+            'ultimate_parent_legal_enti',
+            'ultimate_parent_unique_ide',
             'awarding_agency_code',
             'awarding_agency_name',
             'awarding_office_code',
@@ -88,11 +92,14 @@ class TransactionFABSSerializer(LimitableSerializer):
             'awarding_sub_tier_agency_c',
             'awarding_sub_tier_agency_n',
             'business_funds_indicator',
+            'business_funds_ind_desc',
             'business_types',
+            'business_types_desc',
             'cfda_number',
             'cfda_objectives',
             'cfda_title',
-            'correction_late_delete_ind',
+            'correction_delete_indicatr',
+            'correction_delete_ind_desc',
             'created_at',
             'face_value_loan_guarantee',
             'fain',
@@ -140,6 +147,7 @@ class TransactionFABSSerializer(LimitableSerializer):
             'place_of_performance_zip4a',
             'published_award_financial_assistance_id',
             'record_type',
+            'record_type_description',
             'refresh_from_db',
             'sai_number',
             'total_funding_amount',

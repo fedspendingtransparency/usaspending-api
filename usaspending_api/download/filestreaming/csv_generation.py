@@ -14,7 +14,7 @@ from collections import OrderedDict
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
-from usaspending_api.common.helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
@@ -122,36 +122,44 @@ def generate_csvs(download_job, sqs_message=None):
 
 def get_csv_sources(json_request):
     csv_sources = []
-    for award_level in json_request['award_levels']:
-        queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])
-        award_level_table = VALUE_MAPPINGS[award_level]['table']
+    for download_type in json_request['download_types']:
+        queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
+        download_type_table = VALUE_MAPPINGS[download_type]['table']
 
-        award_type_codes = set(json_request['filters']['award_type_codes'])
-        d1_award_type_codes = set(contract_type_mapping.keys())
-        d2_award_type_codes = set(assistance_type_mapping.keys())
+        if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
+            # Award downloads
+            award_type_codes = set(json_request['filters']['award_type_codes'])
+            d1_award_type_codes = set(contract_type_mapping.keys())
+            d2_award_type_codes = set(assistance_type_mapping.keys())
 
-        if award_type_codes & d1_award_type_codes:
-            # only generate d1 files if the user is asking for contract data
-            d1_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd1', award_level)
-            d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['contract_data']): False}
-            d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
-            csv_sources.append(d1_source)
+            if award_type_codes & d1_award_type_codes:
+                # only generate d1 files if the user is asking for contract data
+                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type)
+                d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
+                d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
+                csv_sources.append(d1_source)
 
-        if award_type_codes & d2_award_type_codes:
-            # only generate d2 files if the user is asking for assistance data
-            d2_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd2', award_level)
-            d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['assistance_data']): False}
-            d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
-            csv_sources.append(d2_source)
+            if award_type_codes & d2_award_type_codes:
+                # only generate d2 files if the user is asking for assistance data
+                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type)
+                d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
+                d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
+                csv_sources.append(d2_source)
 
-        verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', []))
+            verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', []))
+        elif VALUE_MAPPINGS[download_type]['source_type'] == 'account':
+            # Account downloads
+            account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
+                                       download_type)
+            account_source.queryset = queryset
+            csv_sources.append(account_source)
 
     return csv_sources
 
 
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
-    d_map = {'d1': 'contracts', 'd2': 'assistance'}
+    d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account'}
     source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
@@ -304,8 +312,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         log_time = time.time()
 
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
-                                 'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        subprocess.check_output(['psql', '-o', source_path, retrieve_db_string(), '-v', 'ON_ERROR_STOP=1'],
+                                stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), time.time() - log_time),
                      download_job=download_job)
@@ -317,3 +325,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     except Exception as e:
         logger.error(e)
         raise e
+
+
+def retrieve_db_string():
+    """It is necessary for this to be a function so the test suite can mock the connection string"""
+    return os.environ['DOWNLOAD_DATABASE_URL']
