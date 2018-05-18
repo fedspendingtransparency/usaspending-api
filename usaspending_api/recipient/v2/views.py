@@ -8,6 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 
 from django.db.models import Sum
 
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
 from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.matview_filters import universal_transaction_matview_filter
@@ -17,6 +18,58 @@ from usaspending_api.recipient.models import StateData
 
 logger = logging.getLogger(__name__)
 
+# Storing FIPS codes + state codes in memory to avoid hitting the database for the same data
+VALID_FIPS = {}
+
+
+def validate_fips(fips):
+    global VALID_FIPS
+    if not VALID_FIPS:
+        VALID_FIPS = {fips_code: state_code for fips_code, state_code
+                      in list(StateData.objects.distinct('fips').values_list('fips', 'code'))}
+
+    if fips not in VALID_FIPS:
+        raise InvalidParameterException('Invalid fips: {}.'.format(fips))
+
+    return fips
+
+
+def validate_year(year=None):
+    if year and not (year.isdigit() or year in ['all', 'latest']):
+        raise InvalidParameterException('Invalid year: {}.'.format(year))
+    return year
+
+
+def recreate_filters(state_code='', year=None, award_type_codes=None):
+    # recreate filters
+    filters = {}
+    if state_code:
+        filters['place_of_performance_locations'] = [{'country': 'USA', 'state': state_code}]
+
+    if year:
+        today = datetime.now()
+        if year and year.isdigit():
+            time_period = [{
+                'start_date': '{}-10-01'.format(int(year) - 1),
+                'end_date': '{}-09-30'.format(year)
+            }]
+        elif year == 'all':
+            time_period = [{
+                'start_date': '2008-10-01',
+                'end_date': datetime.strftime(today, '%Y-%m-%d')
+            }]
+        else:
+            last_year = today - relativedelta(years=1)
+            time_period = [{
+                'start_date': datetime.strftime(last_year, '%Y-%m-%d'),
+                'end_date': datetime.strftime(today, '%Y-%m-%d')
+            }]
+        filters['time_period'] = time_period
+
+    if award_type_codes:
+        filters['award_type_codes'] = award_type_codes
+
+    return filters
 
 class StateMetaDataViewSet(APIDocumentationView):
 
@@ -30,56 +83,29 @@ class StateMetaDataViewSet(APIDocumentationView):
             return state_data[earliest]
         elif year and year.isdigit() and earliest <= year <= latest:
             return state_data[year]
-        elif not year or year > latest or year == 'all' or year == 'latest':
-            return state_data[latest]
         else:
-            raise InvalidParameterException('Invalid year: {}.'.format(year))
+            return state_data[latest]
 
     def get(self, request, fips):
         get_request = request.query_params
-        year = get_request.get('year')
+        year = validate_year(get_request.get('year'))
+        fips = validate_fips(fips)
 
-        fips = fips.zfill(2)
+
         state_data_qs = StateData.objects.filter(fips=fips)
-        if not state_data_qs.count():
-            raise InvalidParameterException('Invalid FIPS ({}) or data unavailable.'.format(fips))
-
         state_data_results = state_data_qs.values()
         general_state_data = state_data_results[0]
-
-        # recreate filters
-        filters = {'place_of_performance_locations': [{'country': 'USA', 'state': general_state_data['code']}]}
-        today = datetime.now()
-        if year and year.isdigit():
-            time_period = [{
-                'start_date': '{}-10-01'.format(int(year)-1),
-                'end_date': '{}-09-30'.format(year)
-            }]
-        elif year == 'all':
-            time_period = [{
-                'start_date': '2008-10-01',
-                'end_date': datetime.strftime(today, '%Y-%m-%d')
-            }]
-        elif year == 'latest' or not year:
-            last_year = today - relativedelta(years=1)
-            time_period = [{
-                'start_date': datetime.strftime(last_year, '%Y-%m-%d'),
-                'end_date': datetime.strftime(today, '%Y-%m-%d')
-            }]
-        else:
-            raise InvalidParameterException('Invalid year: {}.'.format(year))
-
-        filters['time_period'] = time_period
         state_pop_data = self.get_state_data(state_data_results, 'population', year)
         state_mhi_data = self.get_state_data(state_data_results, 'median_household_income', year)
 
         # calculate award total filtered by state
+        filters = recreate_filters(state_code=VALID_FIPS[fips], year=year)
         total_award_qs = universal_transaction_matview_filter(filters)
         total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
         total_award_count = total_award_qs.values('award_id').distinct().count()
         total_award_amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] \
             if total_award_count else 0
-        if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(today)):
+        if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
             amt_per_capita = round(total_award_amount/state_pop_data['population'], 2) if total_award_count else 0
@@ -110,3 +136,26 @@ class StateMetaDataViewSet(APIDocumentationView):
         }
 
         return Response(result)
+
+class StateAwardBreakdownViewSet(APIDocumentationView):
+
+    def get(self, request, fips):
+        get_request = request.query_params
+        year = validate_year(get_request.get('year'))
+        fips = validate_fips(fips)
+
+        results = []
+        for award_type in ats:
+            filters = recreate_filters(state_code=VALID_FIPS[fips], year=year, award_type_codes=ats[award_type])
+            total_award_qs = universal_transaction_matview_filter(filters)
+
+            total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
+            total_award_count = total_award_qs.values('award_id').distinct().count()
+            total_award_amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] \
+                if total_award_count else 0
+            results.append({
+                'type': award_type,
+                'amount': total_award_amount,
+                'count': total_award_count
+            })
+        return Response(results)
