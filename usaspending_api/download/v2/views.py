@@ -310,8 +310,9 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'keywords' in filters and len(filters.keys()) == 1:
-            request_data['filters'] = {'elasticsearch_keyword': filters['keywords']}
+        keyword_filter = filters.get('keyword', None) or filters.get('keywords', None)
+        if keyword_filter and len(filters.keys()) == 1:
+            request_data['filters'] = {'elasticsearch_keyword': keyword_filter}
             return
 
         # Validate other parameters previously required by the Bulk Download endpoint
