@@ -216,8 +216,8 @@ class Command(BaseCommand):
     def add_deletions_to_file(self, df, award_type, source_path):
         """ Append the deletion records to the end of the CSV file """
         logger.info('Removing duplicates from deletion records')
-        sorted_df = df.sort(['last_modified_date'] + list(AWARD_MAPPINGS[award_type]['column_headers'].values()))
-        deduped_df = sorted_df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]['column_headers'].values()))
+        df = df.sort_values(['last_modified_date'] + list(AWARD_MAPPINGS[award_type]['column_headers'].values()))
+        deduped_df = df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]['column_headers'].values()), keep='last')
         logger.info('Removed {} duplicated deletion records'.format(len(df.index) - len(deduped_df.index)))
 
         logger.info('Appending {} records to the end of the file'.format(len(deduped_df.index)))
