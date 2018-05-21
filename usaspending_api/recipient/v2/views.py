@@ -22,11 +22,17 @@ logger = logging.getLogger(__name__)
 VALID_FIPS = {}
 
 
-def validate_fips(fips):
+def populate_fips():
     global VALID_FIPS
+
     if not VALID_FIPS:
         VALID_FIPS = {fips_code: state_code for fips_code, state_code
                       in list(StateData.objects.distinct('fips').values_list('fips', 'code'))}
+
+
+def validate_fips(fips):
+    global VALID_FIPS
+    populate_fips()
 
     if fips not in VALID_FIPS:
         raise InvalidParameterException('Invalid fips: {}.'.format(fips))
@@ -43,6 +49,7 @@ def validate_year(year=None):
 def recreate_filters(state_code='', year=None, award_type_codes=None):
     # recreate filters
     filters = {}
+
     if state_code:
         filters['place_of_performance_locations'] = [{'country': 'USA', 'state': state_code}]
 
@@ -71,6 +78,26 @@ def recreate_filters(state_code='', year=None, award_type_codes=None):
 
     return filters
 
+
+def calcuate_totals(fips, year=None, award_type_codes=None, subawards=False):
+    filters = recreate_filters(state_code=VALID_FIPS[fips], year=year, award_type_codes=award_type_codes)
+
+    if not subawards:
+        # calculate award total filtered by state
+        total_award_qs = universal_transaction_matview_filter(filters)
+        # total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
+        count = total_award_qs.values('award_id').distinct().count()
+        amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] if count else 0
+    else:
+        # calculate subaward total filtered by state - COMMENTED OUT FOR NOW
+        # total_subaward_qs = subaward_filter(filters)
+        # count = total_subaward_qs.count()
+        # amount = total_subaward_qs.aggregate(total=Sum('amount'))['total'] \
+        #     if count else 0
+        pass
+    return count, amount
+
+
 class StateMetaDataViewSet(APIDocumentationView):
 
     def get_state_data(self, state_data_results, field, year=None):
@@ -91,30 +118,17 @@ class StateMetaDataViewSet(APIDocumentationView):
         year = validate_year(get_request.get('year'))
         fips = validate_fips(fips)
 
-
         state_data_qs = StateData.objects.filter(fips=fips)
         state_data_results = state_data_qs.values()
         general_state_data = state_data_results[0]
         state_pop_data = self.get_state_data(state_data_results, 'population', year)
         state_mhi_data = self.get_state_data(state_data_results, 'median_household_income', year)
 
-        # calculate award total filtered by state
-        filters = recreate_filters(state_code=VALID_FIPS[fips], year=year)
-        total_award_qs = universal_transaction_matview_filter(filters)
-        total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
-        total_award_count = total_award_qs.values('award_id').distinct().count()
-        total_award_amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] \
-            if total_award_count else 0
+        total_award_count, total_award_amount = calcuate_totals(fips, year=year)
         if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
             amt_per_capita = round(total_award_amount/state_pop_data['population'], 2) if total_award_count else 0
-
-        # calculate subaward total filtered by state - COMMENTED OUT FOR NOW
-        # total_subaward_qs = subaward_filter(filters)
-        # total_subaward_count = total_subaward_qs.count()
-        # total_subaward_amount = total_subaward_qs.aggregate(total=Sum('amount'))['total'] \
-        #     if total_subaward_count else 0
 
         result = {
             'name': general_state_data['name'],
@@ -146,16 +160,25 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
         results = []
         for award_type in ats:
-            filters = recreate_filters(state_code=VALID_FIPS[fips], year=year, award_type_codes=ats[award_type])
-            total_award_qs = universal_transaction_matview_filter(filters)
-
-            total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
-            total_award_count = total_award_qs.values('award_id').distinct().count()
-            total_award_amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] \
-                if total_award_count else 0
+            total_award_count, total_award_amount = calcuate_totals(fips, year=year, award_type_codes=ats[award_type])
             results.append({
                 'type': award_type,
                 'amount': total_award_amount,
                 'count': total_award_count
+            })
+        return Response(results)
+
+class ListStates(APIDocumentationView):
+
+    def get(self, request):
+        populate_fips()
+
+        results = []
+        for fips, state_code in VALID_FIPS.items():
+            total_award_count, total_award_amount = calcuate_totals(fips, year='latest')
+            results.append({
+                'fips': fips,
+                'state_code': state_code,
+                'amount': total_award_amount
             })
         return Response(results)
