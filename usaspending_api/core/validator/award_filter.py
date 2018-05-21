@@ -22,7 +22,9 @@ AWARD_FILTER = [
     {'name': 'set_aside_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'time_period', 'type': 'array', 'array_type': 'object', 'object_keys': {
         'start_date': {'type': 'date', 'min': settings.API_SEARCH_MIN_DATE, 'max': settings.API_MAX_DATE},
-        'end_date': {'type': 'date', 'min': settings.API_SEARCH_MIN_DATE, 'max': settings.API_MAX_DATE}
+        'end_date': {'type': 'date', 'min': settings.API_SEARCH_MIN_DATE, 'max': settings.API_MAX_DATE},
+        'date_type': {'type': 'enum', 'enum_values': ['action_date', 'last_modified_date'], 'optional': True,
+                      'default': 'action_date'}
     }},
     {'name': 'award_amounts', 'type': 'array', 'array_type': 'object', 'object_keys': {
         'lower_bound': {'type': 'float', 'optional': True},
