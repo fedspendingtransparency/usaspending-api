@@ -166,7 +166,7 @@ MATVIEW_SELECTOR = {
             'federal_account_ids',
             'object_class',
             'program_activity'
-            ],
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalAwardView,
@@ -308,3 +308,16 @@ def transaction_spending_summary(filters):
         raise InvalidParameterException
 
     return queryset, model
+
+
+def recipient_states(filters):
+    view_chain = ['UniversalTransactionView']
+
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset
