@@ -90,7 +90,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             .values('pop_state_code') \
             .annotate(
                 total=Sum('generated_pragmatic_obligation'),
-                award_count=Count('award_id', distinct=True)) \
+                award_count=Count('award_count')) \
             .values('award_count', 'pop_state_code', 'total')
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
@@ -114,8 +114,10 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
         queryset = queryset \
             .filter(pop_state_code__isnull=False, pop_country_code='USA') \
             .values('pop_state_code') \
-            .annotate(total=Sum('generated_pragmatic_obligation')) \
-            .values('pop_state_code', 'total')
+            .annotate(
+                total=Sum('generated_pragmatic_obligation'),
+                award_count=Count('award_count')) \
+            .values('award_count', 'pop_state_code', 'total')
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
@@ -212,5 +214,6 @@ class ListStates(APIDocumentationView):
                 'code': item['pop_state_code'],
                 'name': VALID_FIPS[fips]['name'],
                 'amount': item['total'],
+                'count': item['award_count'],
             })
         return Response(results)
