@@ -6,10 +6,10 @@ from collections import OrderedDict
 from rest_framework.response import Response
 from usaspending_api.common.views import APIDocumentationView
 
-from django.db.models import Sum
+from django.db.models import Sum, Count
+from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
-from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 # from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.matview_filters import universal_transaction_matview_filter
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -62,7 +62,7 @@ def recreate_filters(state_code='', year=None, award_type_codes=None):
             }]
         elif year == 'all':
             time_period = [{
-                'start_date': '2008-10-01',
+                'start_date': settings.API_SEARCH_MIN_DATE,
                 'end_date': datetime.strftime(today, '%Y-%m-%d')
             }]
         else:
@@ -87,7 +87,9 @@ def calcuate_totals(fips, year=None, award_type_codes=None, subawards=False):
         total_award_qs = universal_transaction_matview_filter(filters)
         # total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
         count = total_award_qs.values('award_id').distinct().count()
-        amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] if count else 0
+        amount = 0
+        if count > 0:
+            amount = total_award_qs.aggregate(total=Sum('generated_pragmatic_obligation'))['total']
     else:
         # calculate subaward total filtered by state - COMMENTED OUT FOR NOW
         # total_subaward_qs = subaward_filter(filters)
@@ -96,6 +98,28 @@ def calcuate_totals(fips, year=None, award_type_codes=None, subawards=False):
         #     if count else 0
         pass
     return count, amount
+
+
+def get_all_states(year=None, award_type_codes=None, subawards=False):
+    filters = recreate_filters(year=year, award_type_codes=award_type_codes)
+
+    if not subawards:
+        # calculate award total filtered by state
+        queryset = universal_transaction_matview_filter(filters)
+        queryset = queryset \
+            .filter(pop_state_code__isnull=False, pop_country_code='USA') \
+            .values('pop_state_code') \
+            .annotate(
+                total=Sum('generated_pragmatic_obligation'),
+                award_count=Count('award_id', distinct=True)) \
+            .values('award_count', 'pop_state_code', 'total')
+
+        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        print('=======================================')
+        print(generate_raw_quoted_query(queryset))
+    else:
+        pass
+    return list(queryset)
 
 
 class StateMetaDataViewSet(APIDocumentationView):
@@ -128,7 +152,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
-            amt_per_capita = round(total_award_amount/state_pop_data['population'], 2) if total_award_count else 0
+            amt_per_capita = round(total_award_amount / state_pop_data['population'], 2) if total_award_count else 0
 
         result = {
             'name': general_state_data['name'],
@@ -151,6 +175,7 @@ class StateMetaDataViewSet(APIDocumentationView):
 
         return Response(result)
 
+
 class StateAwardBreakdownViewSet(APIDocumentationView):
 
     def get(self, request, fips):
@@ -168,17 +193,20 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
             })
         return Response(results)
 
+
 class ListStates(APIDocumentationView):
 
     def get(self, request):
         populate_fips()
-
+        valid_states = {v: k for k, v in VALID_FIPS.items()}
         results = []
-        for fips, state_code in VALID_FIPS.items():
-            total_award_count, total_award_amount = calcuate_totals(fips, year='latest')
+        for item in get_all_states(year='latest'):
+            if item['pop_state_code'] not in valid_states.keys():
+                continue
             results.append({
-                'fips': fips,
-                'state_code': state_code,
-                'amount': total_award_amount
+                'fips': valid_states[item['pop_state_code']],
+                'state_code': item['pop_state_code'],
+                'amount': item['total'],
+                'count': item['award_count'],
             })
         return Response(results)
