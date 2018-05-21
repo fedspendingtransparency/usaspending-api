@@ -184,7 +184,7 @@ def make_indexes_sql(sql_json, matview_name):
 
     if len(unique_name_list) != len(set(unique_name_list)):
         raise Exception('Name collision detected. Examine JSON file')
-    print('There are {} index creations'.format(len(create_indexes)))
+    printf('There are {} index creations'.format(len(create_indexes)))
 
     return create_indexes, rename_old_indexes, rename_new_indexes
 
@@ -193,7 +193,7 @@ def make_modification_sql(matview_name):
     global CLUSTERING_INDEX
     sql_strings = []
     if CLUSTERING_INDEX:
-        print('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
+        printf('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
         sql_strings.append(TEMPLATE['cluster_matview'].format(matview_name, CLUSTERING_INDEX))
     sql_strings.append(TEMPLATE['analyze'].format(matview_name))
     sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
@@ -247,7 +247,7 @@ def create_all_sql_strings(sql_json):
 def write_sql_file(str_list, filename):
     fname = filename + '.sql'
 
-    print('Creating file: {}'.format(fname))
+    printf('Creating file: {}'.format(fname))
     with open(fname, 'w') as f:
         fstring = '\n'.join(str_list)
         f.write(fstring)
@@ -284,7 +284,7 @@ def create_componentized_files(sql_json):
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
-    print('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
+    printf('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
     write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json['final_name']))
 
 
@@ -297,11 +297,17 @@ def main(source_file):
     try:
         sql_json = ingest_json(source_file)
     except Exception as e:
+        print('Error on Matview source JSON file: {}'.format(source_file))
         print(e)
-        raise SystemExit
+        raise SystemExit(1)
     create_monolith_file(sql_json)
     create_componentized_files(sql_json)
-    print('Done')
+    printf('Done')
+
+
+def printf(msg):
+    if not args.quiet:
+        print(msg)
 
 
 if __name__ == '__main__':
@@ -318,6 +324,10 @@ if __name__ == '__main__':
         type=str,
         default=None,
         help='filepath to the json file containing the sql description')
+    arg_parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='Flag to suppress stdout when there are no errors')
     args = arg_parser.parse_args()
 
     DEST_FOLDER = args.dest
@@ -326,10 +336,10 @@ if __name__ == '__main__':
 
     if args.file is not None:
         if os.path.isfile(args.file):
-            print('Creating matview SQL using {}'.format(args.file))
+            printf('Creating matview SQL using {}'.format(args.file))
             main(args.file)
     else:
         all_files = glob.glob(os.path.join(HERE, '*.json'))
         for f in all_files:
-            print('\n==== {}'.format(f))
+            printf('\n==== {}'.format(f))
             main(f)
