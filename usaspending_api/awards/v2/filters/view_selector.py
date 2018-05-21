@@ -330,6 +330,8 @@ def spending_by_category(category, filters):
         view_chain = ['SummaryNaicsCodesView']
     elif category == 'cfda':
         view_chain = ['SummaryCfdaNumbersView']
+    elif category in ['recipient_duns', 'recipient_parent_duns']:
+        view_chain = ['UniversalTransactionView']
 
     # All of these category/scope combinations can use the following:
     view_chain.extend([

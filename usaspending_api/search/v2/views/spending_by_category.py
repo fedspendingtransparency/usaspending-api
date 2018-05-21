@@ -16,7 +16,7 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, Cfda, PSC
 
 
 logger = logging.getLogger(__name__)
@@ -34,11 +34,21 @@ ALIAS_DICT = {
         'funding_subtier_agency_name': 'name',
         'funding_toptier_agency_abbreviation': 'code',
         'funding_subtier_agency_abbreviation': 'code'},
-    'recipient_duns': {'recipient_unique_id': 'code'},
+    'recipient_duns': {
+        'recipient_id': 'id',
+        'recipient_name': 'name',
+        'recipient_unique_id': 'code',
+        'parent_recipient_unique_id': 'code',
+    },
     'cfda': {
         'cfda_number': 'code',
-        'cfda_popular_name': 'name'},
-    'psc': {'product_or_service_code': 'code'},
+        # Note: we could pull cfda title from the matviews but noticed the titles vary for the same cfda number
+        #       which leads to incorrect groupings
+        # 'cfda_title': 'name'
+    },
+    'psc': {
+        'product_or_service_code': 'code'
+    },
     'naics': {
         'naics_code': 'code',
         'naics_description': 'name'},
@@ -161,7 +171,6 @@ class BusinessLogic:
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
             row['id'] = fetch_agency_tier_id_by_agency(row['awarding_agency_id'], self.category == 'awarding_subagency')
-            row['code'] = None
             del row['awarding_agency_id']
         return results
 
@@ -182,34 +191,30 @@ class BusinessLogic:
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
             row['id'] = fetch_agency_tier_id_by_agency(row['funding_agency_id'], self.category == 'funding_subagency')
-            row['code'] = None
         return results
 
     def recipient(self) -> list:
         if self.category == 'recipient_duns':
             filters = {'recipient_unique_id__isnull': False}
-            values = ['recipient_name', 'recipient_unique_id']
+            values = ['recipient_id', 'recipient_name', 'recipient_unique_id']
 
         elif self.category == 'recipient_parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
             filters = {'parent_recipient_unique_id__isnull': False}
-            values = ['recipient_name', 'parent_recipient_unique_id']
+            values = ['recipient_id', 'recipient_name', 'parent_recipient_unique_id']
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row['id'] = None
-            row['code'] = None
         return results
 
     def industry_and_other_codes(self) -> list:
         if self.category == 'cfda':
             filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
-            values = ['cfda_number', 'cfda_popular_name', 'cfda_title']
+            values = ['cfda_number']
         elif self.category == 'psc':
             if self.subawards:
                 self.raise_not_implemented()
@@ -229,8 +234,13 @@ class BusinessLogic:
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            row['id'] = None
-            row['code'] = None
+            if self.category == 'cfda':
+                row['id'], row['name'] = fetch_cfda_id_title_by_number(row['code'])
+            elif self.category == 'psc':
+                row['id'] = None
+                row['name'] = fetch_psc_description_by_code(row['code'])
+            elif self.category == 'naics':
+                row['id'] = None
         return results
 
 
@@ -240,4 +250,16 @@ def fetch_agency_tier_id_by_agency(agency_id, is_subtier=False):
         # filters = {'subtier_agency__isnull': False}
         columns = ['subtier_agency_id']
     result = Agency.objects.filter(id=agency_id).values(*columns).first()
+    return result[columns[0]]
+
+
+def fetch_cfda_id_title_by_number(cfda_number):
+    columns = ['id', 'program_title']
+    result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
+    return result[columns[0]], result[columns[1]]
+
+
+def fetch_psc_description_by_code(psc_code):
+    columns = ['description']
+    result = PSC.objects.filter(code=psc_code).values(*columns).first()
     return result[columns[0]]
