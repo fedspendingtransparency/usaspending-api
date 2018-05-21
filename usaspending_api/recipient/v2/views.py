@@ -209,8 +209,8 @@ class ListStates(APIDocumentationView):
             fips = valid_states[item['pop_state_code']]
             results.append({
                 'fips': fips,
-                'state_code': item['pop_state_code'],
-                'state_name': VALID_FIPS[fips]['name'],
+                'code': item['pop_state_code'],
+                'name': VALID_FIPS[fips]['name'],
                 'amount': item['total'],
             })
         return Response(results)
