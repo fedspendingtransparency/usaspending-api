@@ -26,8 +26,8 @@ def populate_fips():
     global VALID_FIPS
 
     if not VALID_FIPS:
-        VALID_FIPS = {fips_code: state_code for fips_code, state_code
-                      in list(StateData.objects.distinct('fips').values_list('fips', 'code'))}
+        VALID_FIPS = {fips_code: {'code': code, 'name': name} for fips_code, code, name
+                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name'))}
 
 
 def validate_fips(fips):
@@ -80,20 +80,18 @@ def recreate_filters(state_code='', year=None, award_type_codes=None):
 
 
 def calcuate_totals(fips, year=None, award_type_codes=None, subawards=False):
-    filters = recreate_filters(state_code=VALID_FIPS[fips], year=year, award_type_codes=award_type_codes)
+    filters = recreate_filters(state_code=VALID_FIPS[fips]['code'], year=year, award_type_codes=award_type_codes)
 
     if not subawards:
         # calculate award total filtered by state
         total_award_qs = universal_transaction_matview_filter(filters)
-        # total_award_qs = sum_transaction_amount(total_award_qs.values('award_id'))
         count = total_award_qs.values('award_id').distinct().count()
-        amount = total_award_qs.aggregate(total=Sum('transaction_amount'))['total'] if count else 0
+        amount = total_award_qs.aggregate(total=Sum('generated_pragmatic_obligation'))['total'] if count else 0
     else:
         # calculate subaward total filtered by state - COMMENTED OUT FOR NOW
         # total_subaward_qs = subaward_filter(filters)
         # count = total_subaward_qs.count()
-        # amount = total_subaward_qs.aggregate(total=Sum('amount'))['total'] \
-        #     if count else 0
+        # amount = total_subaward_qs.aggregate(total=Sum('amount'))['total'] if count else 0
         pass
     return count, amount
 
@@ -174,11 +172,12 @@ class ListStates(APIDocumentationView):
         populate_fips()
 
         results = []
-        for fips, state_code in VALID_FIPS.items():
+        for fips, state_data in VALID_FIPS.items():
             total_award_count, total_award_amount = calcuate_totals(fips, year='latest')
             results.append({
                 'fips': fips,
-                'state_code': state_code,
+                'code': state_data['code'],
+                'name': state_data['name'],
                 'amount': total_award_amount
             })
         return Response(results)
