@@ -58,7 +58,6 @@
     "  psc.description AS product_or_service_description,",
     "  assistance_data.cfda_number,",
     "  references_cfda.program_title AS cfda_title,",
-    "  references_cfda.popular_name AS cfda_popular_name,",
     "",
     "  recipient_location.country_name AS recipient_location_country_name,",
     "  recipient_location.location_country_code AS recipient_location_country_code,",

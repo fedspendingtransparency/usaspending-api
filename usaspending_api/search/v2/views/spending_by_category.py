@@ -16,25 +16,38 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.references.models import Agency
+
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
-    'awarding_agency': {'awarding_toptier_agency_name': 'agency_name', 'awarding_subtier_agency_name': 'agency_name',
-                        'awarding_toptier_agency_abbreviation': 'agency_abbreviation',
-                        'awarding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'funding_agency': {'funding_toptier_agency_name': 'agency_name', 'funding_subtier_agency_name': 'agency_name',
-                       'funding_toptier_agency_abbreviation': 'agency_abbreviation',
-                       'funding_subtier_agency_abbreviation': 'agency_abbreviation'},
-    'recipient_duns': {'recipient_unique_id': 'legal_entity_id'},
-    'cfda': {'cfda_number': 'cfda_program_number', 'cfda_popular_name': 'popular_name',
-             'cfda_title': 'popular_title'},
-    'psc': {'product_or_service_code': 'psc_code'},
-    'naics': {},
+    'awarding_agency': {
+        'awarding_toptier_agency_name': 'name',
+        'awarding_subtier_agency_name': 'name',
+        'awarding_toptier_agency_abbreviation': 'code',
+        'awarding_subtier_agency_abbreviation': 'code'},
+    'funding_agency': {
+        'funding_toptier_agency_name': 'name',
+        'funding_subtier_agency_name': 'name',
+        'funding_toptier_agency_abbreviation': 'code',
+        'funding_subtier_agency_abbreviation': 'code'},
+    'recipient_duns': {'recipient_unique_id': 'code'},
+    'cfda': {
+        'cfda_number': 'code',
+        'cfda_popular_name': 'name'},
+    'psc': {'product_or_service_code': 'code'},
+    'naics': {
+        'naics_code': 'code',
+        'naics_description': 'name'},
 
 }
+# id:
+# name:
+# code:
+# amount:
 ALIAS_DICT['awarding_subagency'] = ALIAS_DICT['awarding_agency']
 ALIAS_DICT['funding_subagency'] = ALIAS_DICT['funding_agency']
 ALIAS_DICT['recipient_parent_duns'] = ALIAS_DICT['recipient_duns']
@@ -105,8 +118,8 @@ class BusinessLogic:
         return self.queryset \
             .filter(**filters) \
             .values(*values) \
-            .annotate(aggregated_amount=Sum(self.obligation_column)) \
-            .order_by('-aggregated_amount')
+            .annotate(amount=Sum(self.obligation_column)) \
+            .order_by('-amount')
 
     def results(self) -> dict:
         # filter the transactions by category
@@ -126,37 +139,51 @@ class BusinessLogic:
             'limit': self.limit,
             'page_metadata': page_metadata,
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
-            'results': alias_response(ALIAS_DICT[self.category], results[:self.limit]),
+            'results': results[:self.limit],
         }
         return response
 
     def awarding_agency(self) -> list:
         if self.category == 'awarding_agency':
             filters = {'awarding_toptier_agency_name__isnull': False}
-            values = ['awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
+            values = ['awarding_agency_id', 'awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
         elif self.category == 'awarding_subagency':
             filters = {'awarding_subtier_agency_name__isnull': False}
-            values = ['awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
+            values = ['awarding_agency_id', 'awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
 
         self.queryset = self.common_db_query(filters, values)
-
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        #         'id':
+        #         'name': '',
+        #         'code': None,
+        #         'amount': row['aggregated_amount'],
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = fetch_agency_tier_id_by_agency(row['awarding_agency_id'], self.category == 'awarding_subagency')
+            row['code'] = None
+            del row['awarding_agency_id']
+        return results
 
     def funding_agency(self) -> list:
         if self.subawards:
             self.raise_not_implemented()
         if self.category == 'funding_agency':
             filters = {'funding_toptier_agency_name__isnull': False}
-            values = ['funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
+            values = ['funding_agency_id', 'funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
         elif self.category == 'funding_subagency':
             filters = {'funding_subtier_agency_name__isnull': False}
-            values = ['funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
+            values = ['funding_agency_id', 'funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
 
         self.queryset = self.common_db_query(filters, values)
-
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = fetch_agency_tier_id_by_agency(row['funding_agency_id'], self.category == 'funding_subagency')
+            row['code'] = None
+        return results
 
     def recipient(self) -> list:
         if self.category == 'recipient_duns':
@@ -170,9 +197,14 @@ class BusinessLogic:
             values = ['recipient_name', 'parent_recipient_unique_id']
 
         self.queryset = self.common_db_query(filters, values)
-
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = None
+            row['code'] = None
+        return results
 
     def industry_and_other_codes(self) -> list:
         if self.category == 'cfda':
@@ -193,4 +225,19 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        return list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = None
+            row['code'] = None
+        return results
+
+
+def fetch_agency_tier_id_by_agency(agency_id, is_subtier=False):
+    columns = ['toptier_agency_id']
+    if is_subtier:
+        # filters = {'subtier_agency__isnull': False}
+        columns = ['subtier_agency_id']
+    result = Agency.objects.filter(id=agency_id).values(*columns).first()
+    return result[columns[0]]
