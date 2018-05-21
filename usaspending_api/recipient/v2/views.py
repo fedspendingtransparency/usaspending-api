@@ -48,7 +48,7 @@ def validate_year(year=None):
     return year
 
 
-def recreate_filters(state_code='', year=None, award_type_codes=None):
+def recreate_filters(state_code=None, year=None, award_type_codes=None):
     # recreate filters
     filters = {}
 
@@ -142,7 +142,7 @@ class StateMetaDataViewSet(APIDocumentationView):
 
     def get(self, request, fips):
         get_request = request.query_params
-        year = validate_year(get_request.get('year'))
+        year = validate_year(get_request.get('year', 'all'))
         fips = validate_fips(fips)
 
         state_data_qs = StateData.objects.filter(fips=fips)
@@ -183,7 +183,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
     def get(self, request, fips):
         get_request = request.query_params
-        year = validate_year(get_request.get('year'))
+        year = validate_year(get_request.get('year', 'all'))
         fips = validate_fips(fips)
 
         results = []
