@@ -1,5 +1,4 @@
 from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
-from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SummaryPscCodesView
 from usaspending_api.awards.models_matviews import SummaryAwardView
@@ -309,17 +308,3 @@ def transaction_spending_summary(filters):
         raise InvalidParameterException
 
     return queryset, model
-
-
-def recipient_states(filters):
-    # view_chain = ['UniversalTransactionView']
-
-    # for view in view_chain:
-    #     if can_use_view(filters, view):
-    #         queryset = get_view_queryset(filters, view)
-    #         break
-    # else:
-    #     raise InvalidParameterException
-    queryset = matview_search_filter(filters, SummaryStateView)
-
-    return queryset
