@@ -46,7 +46,7 @@ def validate_year(year=None):
     return year
 
 
-def recreate_filters(state_code=None, year=None, award_type_codes=None):
+def reshape_filters(state_code=None, year=None, award_type_codes=None):
     # recreate filters
     filters = {}
 
@@ -80,7 +80,7 @@ def recreate_filters(state_code=None, year=None, award_type_codes=None):
 
 
 def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False):
-    filters = recreate_filters(state_code=VALID_FIPS[fips]['code'], year=year, award_type_codes=award_type_codes)
+    filters = reshape_filters(state_code=VALID_FIPS[fips]['code'], year=year, award_type_codes=award_type_codes)
 
     if subawards:
         pass
@@ -92,10 +92,6 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
                 distinct_awards=StringAgg('distinct_awards', ',')) \
             .values('distinct_awards', 'pop_state_code', 'total')
 
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(generate_raw_quoted_query(queryset))
-
     try:
         row = list(queryset)[0]
         result = {
@@ -104,13 +100,14 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             'count': len(set(row['distinct_awards'].split(','))),
         }
         return result
-    except Exception:
+    except IndexError:
+        # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warn('No results found for FIPS {} with filters: {}'.format(fips, filters))
     return {'count': 0, 'pop_state_code': None, 'total': 0}
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
-    filters = recreate_filters(year=year, award_type_codes=award_type_codes)
+    filters = reshape_filters(year=year, award_type_codes=award_type_codes)
 
     if subawards:
         pass
@@ -123,10 +120,6 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
                 total=Sum('generated_pragmatic_obligation'),
                 distinct_awards=StringAgg('distinct_awards', ',')) \
             .values('pop_state_code', 'total', 'distinct_awards')
-
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(generate_raw_quoted_query(queryset))
 
         results = [
             {

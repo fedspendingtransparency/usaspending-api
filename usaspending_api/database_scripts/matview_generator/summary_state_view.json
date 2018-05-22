@@ -62,15 +62,13 @@
       "columns": [{"name": "pulled_from"}]
     }, {
         "name": "pop_country_code",
-        "where": "pop_country_code IS NOT NULL",
         "columns": [{"name": "pop_country_code"}]
     }, {
         "name": "pop_state_code",
         "where": "pop_state_code IS NOT NULL",
         "columns": [{"name": "pop_state_code"}]
     }, {
-      "name": "compound_geo_pop_1",
-      "where": "pop_country_code = 'USA'",
+      "name": "compound_geo_pop",
       "columns": [{"name": "pop_country_code"}, {"name": "pop_state_code"}, {"name": "action_date"}]
     }
   ]
