@@ -161,7 +161,8 @@ class StateMetaDataViewSet(APIDocumentationView):
         if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
-            amt_per_capita = round(state_aggregates['total'] / state_pop_data['population'], 2) if state_aggregates['count'] else 0
+            amt_per_capita = (round(state_aggregates['total'] / state_pop_data['population'], 2)
+                              if state_aggregates['count'] else 0)
 
         result = {
             'name': general_state_data['name'],
