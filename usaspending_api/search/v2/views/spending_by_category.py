@@ -201,6 +201,7 @@ class BusinessLogic:
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
             row['id'] = fetch_agency_tier_id_by_agency(row['funding_agency_id'], self.category == 'funding_subagency')
+            del row['funding_agency_id']
         return results
 
     def recipient(self) -> list:
@@ -254,7 +255,6 @@ class BusinessLogic:
             elif self.category == 'naics':
                 row['id'] = None
         return results
-
 
     def location(self) -> list:
         if self.category == 'county':
