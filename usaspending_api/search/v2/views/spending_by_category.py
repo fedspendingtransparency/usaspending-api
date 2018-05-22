@@ -140,6 +140,7 @@ class BusinessLogic:
             .order_by('-amount')
 
     def results(self) -> dict:
+        results = []
         # filter the transactions by category
         if self.category in ('awarding_agency', 'awarding_subagency'):
             results = self.awarding_agency()
@@ -174,10 +175,6 @@ class BusinessLogic:
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
-        #         'id':
-        #         'name': '',
-        #         'code': None,
-        #         'amount': row['aggregated_amount'],
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
             row['id'] = fetch_agency_tier_id_by_agency(row['awarding_agency_id'], self.category == 'awarding_subagency')
@@ -185,8 +182,6 @@ class BusinessLogic:
         return results
 
     def funding_agency(self) -> list:
-        if self.subawards:
-            self.raise_not_implemented()
         if self.category == 'funding_agency':
             filters = {'funding_toptier_agency_name__isnull': False}
             values = ['funding_agency_id', 'funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
@@ -229,11 +224,8 @@ class BusinessLogic:
             filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
             values = ['cfda_number']
         elif self.category == 'psc':
-            if self.subawards:
-                self.raise_not_implemented()
             filters = {'product_or_service_code__isnull': False}
             values = ['product_or_service_code']
-
         elif self.category == 'naics':
             if self.subawards:
                 # TODO: get subaward NAICS from Broker
