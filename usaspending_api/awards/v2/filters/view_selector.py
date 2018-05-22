@@ -331,7 +331,7 @@ def spending_by_category(category, filters):
     elif category == 'cfda':
         view_chain = ['SummaryCfdaNumbersView']
     elif category in ['recipient_duns', 'recipient_parent_duns']:
-        view_chain = ['UniversalTransactionView']
+        view_chain = ['SummaryTransactionView']
     elif category in ['county', 'district']:
         view_chain = ['SummaryTransactionGeoView']
 
