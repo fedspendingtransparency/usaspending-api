@@ -7,7 +7,7 @@
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
-    "  COUNT(DISTINCT transaction_normalized.award_id) AS award_count,",
+    "  array_to_string(array_agg(DISTINCT transaction_normalized.award_id), ',') AS distinct_awards,",
     "",
     "  place_of_performance.location_country_code AS pop_country_code,",
     "  place_of_performance.state_code AS pop_state_code,",

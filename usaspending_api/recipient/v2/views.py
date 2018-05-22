@@ -4,8 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from rest_framework.response import Response
-
-
+from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
 from django.conf import settings
 from django.db.models import Sum, Count
 
@@ -90,8 +89,8 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             .values('pop_state_code') \
             .annotate(
                 total=Sum('generated_pragmatic_obligation'),
-                award_count=Count('award_count')) \
-            .values('award_count', 'pop_state_code', 'total')
+                distinct_awards=StringAgg('distinct_awards', ',')) \
+            .values('distinct_awards', 'pop_state_code', 'total')
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
@@ -102,7 +101,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         return list(queryset)[0]
     except Exception:
         logger.warn('No results found for FIPS {} with filters: {}'.format(fips, filters))
-    return {'award_count': None, 'pop_state_code': None, 'total': None}
+    return {'distinct_awards': [], 'pop_state_code': None, 'total': 0}
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
@@ -116,8 +115,8 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             .values('pop_state_code') \
             .annotate(
                 total=Sum('generated_pragmatic_obligation'),
-                award_count=Count('award_count')) \
-            .values('award_count', 'pop_state_code', 'total')
+                distinct_awards=StringAgg('distinct_awards', ',')) \
+            .values('pop_state_code', 'total', 'distinct_awards')
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
@@ -157,7 +156,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         if year == 'all' or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
-            amt_per_capita = round(state_aggregates['total'] / state_pop_data['population'], 2) if state_aggregates['award_count'] else 0
+            amt_per_capita = round(state_aggregates['total'] / state_pop_data['population'], 2) if state_aggregates['distinct_awards'] else 0
 
         result = {
             'name': general_state_data['name'],
@@ -171,7 +170,7 @@ class StateMetaDataViewSet(APIDocumentationView):
             'mhi_year': state_mhi_data['year'],
             'mhi_source': state_mhi_data['mhi_source'],
             'total_prime_amount': state_aggregates['total'],
-            'total_prime_awards': state_aggregates['award_count'],
+            'total_prime_awards': len(set(state_aggregates['distinct_awards'].split(','))),
             'award_amount_per_capita': amt_per_capita,
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
@@ -194,7 +193,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
             results.append({
                 'type': award_type,
                 'amount': result['total'],
-                'count': result['award_count']
+                'count': len(set(result['distinct_awards'].split(',')))
             })
         return Response(results)
 
@@ -214,6 +213,6 @@ class ListStates(APIDocumentationView):
                 'code': item['pop_state_code'],
                 'name': VALID_FIPS[fips]['name'],
                 'amount': item['total'],
-                'count': item['award_count'],
+                'count': len(set(item['distinct_awards'].split(','))),
             })
         return Response(results)

@@ -442,7 +442,7 @@ class SummaryStateView(models.Model):
     fiscal_year = models.IntegerField()
     type = models.TextField()
     pulled_from = models.TextField()
-    award_count = models.IntegerField()
+    distinct_awards = ArrayField(models.TextField(), default=list)
 
     pop_country_code = models.TextField()
     pop_state_code = models.TextField()
