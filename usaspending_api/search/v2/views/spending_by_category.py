@@ -51,7 +51,15 @@ ALIAS_DICT = {
     },
     'naics': {
         'naics_code': 'code',
-        'naics_description': 'name'},
+        'naics_description': 'name'
+    },
+    'county': {
+        'pop_county_code': 'code',
+        'pop_county_name': 'name',
+    },
+    'district': {
+        'pop_congressional_code': 'code',
+    }
 
 }
 # id:
@@ -76,7 +84,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         categories = [
             'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
             'recipient_duns', 'recipient_parent_duns',
-            'cfda', 'psc', 'naics']
+            'cfda', 'psc', 'naics', 'county', 'district']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
@@ -141,6 +149,8 @@ class BusinessLogic:
             results = self.recipient()
         elif self.category in ('cfda', 'psc', 'naics'):
             results = self.industry_and_other_codes()
+        elif self.category in ('county', 'district'):
+            results = self.location()
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
 
@@ -241,6 +251,27 @@ class BusinessLogic:
                 row['name'] = fetch_psc_description_by_code(row['code'])
             elif self.category == 'naics':
                 row['id'] = None
+        return results
+
+
+    def location(self) -> list:
+        if self.category == 'county':
+            filters = {'pop_county_code__isnull': False}
+            values = ['pop_county_code', 'pop_county_name']
+        elif self.category == 'district':
+            filters = {'pop_congressional_code__isnull': False}
+            values = ['pop_congressional_code', 'pop_state_code']
+
+        self.queryset = self.common_db_query(filters, values)
+        # DB hit here
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = None
+            if self.category == 'district':
+                row['name'] = '{}-{}'.format(row['pop_state_code'], row['code'])
+                del row['pop_state_code']
         return results
 
 
