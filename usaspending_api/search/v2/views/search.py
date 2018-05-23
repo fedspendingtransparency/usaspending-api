@@ -425,8 +425,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
              'enum_values': ['place_of_performance', 'recipient_location']},
             {'name': 'geo_layer', 'key': 'geo_layer', 'type': 'enum', 'optional': False,
              'enum_values': ['state', 'county', 'district']},
-            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters', 'optional': False,
-             'type': 'array', 'array_type': 'text', 'text_type': 'search'}
+            {'name': 'geo_layer_filters', 'key': 'geo_layer_filters', 'type': 'array', 'array_type': 'text',
+             'text_type': 'search'}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -436,7 +436,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.scope = json_request["scope"]
         self.filters = json_request.get("filters", None)
         self.geo_layer = json_request["geo_layer"]
-        self.geo_layer_filters = json_request["geo_layer_filters"]
+        self.geo_layer_filters = json_request.get("geo_layer_filters", None)
 
         fields_list = []  # fields to include in the aggregate query
 
