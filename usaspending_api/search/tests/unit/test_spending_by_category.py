@@ -452,6 +452,7 @@ def test_category_recipient_duns_subawards(mock_matviews_qs, mock_recipients):
     assert expected_response == spending_by_category_logic
 
 
+@pytest.mark.skip(reason="Currently not supporting recipient parent duns")
 def test_category_recipient_parent_duns_awards(mock_matviews_qs, mock_recipients):
     mock_recipient_1 = MockModel(recipient_unique_id='00UOP00', legal_entity_id=1)
     mock_recipient_2 = MockModel(recipient_unique_id='1234JD4321', legal_entity_id=2)
@@ -505,6 +506,7 @@ def test_category_recipient_parent_duns_awards(mock_matviews_qs, mock_recipients
     assert expected_response == spending_by_category_logic
 
 
+@pytest.mark.skip(reason="Currently not supporting recipient parent duns")
 def test_category_recipient_parent_duns_subawards(mock_matviews_qs, mock_recipients):
     mock_recipient_1 = MockModel(recipient_unique_id='00UOP00', legal_entity_id=1)
     mock_recipient_2 = MockModel(recipient_unique_id='1234JD4321', legal_entity_id=2)

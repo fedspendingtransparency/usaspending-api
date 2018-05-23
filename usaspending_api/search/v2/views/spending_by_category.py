@@ -204,8 +204,10 @@ class BusinessLogic:
         elif self.category == 'recipient_parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
-            filters = {'parent_recipient_unique_id__isnull': False}
-            values = ['recipient_name', 'parent_recipient_unique_id']
+            # Not implemented until Parent Recipient Name's in LegalEntity and matviews
+            self.raise_not_implemented()
+            # filters = {'parent_recipient_unique_id__isnull': False}
+            # values = ['recipient_name', 'parent_recipient_unique_id']
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
