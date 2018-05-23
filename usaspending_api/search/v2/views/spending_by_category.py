@@ -222,7 +222,7 @@ class BusinessLogic:
             values = ['cfda_number']
         elif self.category == 'psc':
             if self.subawards:
-                # TODO: get subaward NAICS from Broker
+                # Not available until it's available in the broker
                 self.raise_not_implemented()
             filters = {'product_or_service_code__isnull': False}
             values = ['product_or_service_code']
