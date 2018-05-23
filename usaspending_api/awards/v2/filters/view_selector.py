@@ -314,7 +314,7 @@ def transaction_spending_summary(filters):
 
 
 def spending_by_category(category, filters):
-    # category is a string of <category>-<scope>.
+    # category is a string of <category>.
     # It isn't elegant but it works enough until we can refactor this endpoint into individual endpoints
     view_chain = []
     if category in [
