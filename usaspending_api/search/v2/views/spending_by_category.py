@@ -276,7 +276,8 @@ def fetch_agency_tier_id_by_agency(agency_id, is_subtier=False):
         columns = ['subtier_agency_id']
     result = Agency.objects.filter(id=agency_id).values(*columns).first()
     if not result:
-        raise ValueError('{} not found for agency_id: {}'.format(','.join(columns), agency_id))
+        logger.warning('{} not found for agency_id: {}'.format(','.join(columns), agency_id))
+        return None
     return result[columns[0]]
 
 
@@ -284,7 +285,8 @@ def fetch_recipient_id_by_duns(duns):
     columns = ['legal_entity_id']
     result = LegalEntity.objects.filter(recipient_unique_id=duns).values(*columns).first()
     if not result:
-        raise ValueError('{} not found for duns: {}'.format(','.join(columns), duns))
+        logger.warning('{} not found for duns: {}'.format(','.join(columns), duns))
+        return None
     return result[columns[0]]
 
 
@@ -292,7 +294,8 @@ def fetch_cfda_id_title_by_number(cfda_number):
     columns = ['id', 'program_title']
     result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
     if not result:
-        raise ValueError('{} not found for cfda_number: {}'.format(','.join(columns), cfda_number))
+        logger.warning('{} not found for cfda_number: {}'.format(','.join(columns), cfda_number))
+        return None
     return result[columns[0]], result[columns[1]]
 
 
@@ -300,5 +303,6 @@ def fetch_psc_description_by_code(psc_code):
     columns = ['description']
     result = PSC.objects.filter(code=psc_code).values(*columns).first()
     if not result:
-        raise ValueError('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
+        logger.warning('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
+        return None
     return result[columns[0]]
