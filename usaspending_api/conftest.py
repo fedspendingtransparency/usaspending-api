@@ -69,12 +69,13 @@ def mock_matviews_qs(monkeypatch):
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryPscCodesView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryStateView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalAwardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalTransactionView.objects', mock_qs)
-
+    
     yield mock_qs
 
     mock_qs.delete()

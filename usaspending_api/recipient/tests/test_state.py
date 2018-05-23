@@ -1,7 +1,9 @@
 # Stdlib imports
 import datetime
+from dateutil.relativedelta import relativedelta
 
 # Core Django imports
+from django.conf import settings
 
 # Third-party app imports
 from rest_framework import status
@@ -10,6 +12,8 @@ import pytest
 
 # Imports from your apps
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
+from usaspending_api.recipient.v2.views import validate_year, reshape_filters, obtain_state_totals
+from usaspending_api.common.exceptions import InvalidParameterException
 
 EXPECTED_STATE = {
         'name': 'Test State',
@@ -150,17 +154,126 @@ def state_data(db):
     )
 
 
+@pytest.fixture
+def state_view_data(db, monkeypatch):
+    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'01': {'code': 'AB'}})
+
+    location = mommy.make(
+        'references.Location',
+        location_country_code='USA',
+        state_code='AB'
+    )
+
+    award_2016 = mommy.make('awards.Award',
+                            type='A')
+
+    award_2017 = mommy.make('awards.Award',
+                            type='B')
+
+    trans_2016 = mommy.make(
+        'awards.TransactionNormalized',
+        award=award_2016,
+        type='A',
+        place_of_performance=location,
+        federal_action_obligation=10,
+        fiscal_year='2016',
+        action_date='2016-01-01'
+    )
+
+    trans_2017 = mommy.make(
+        'awards.TransactionNormalized',
+        award=award_2017,
+        type='B',
+        place_of_performance=location,
+        federal_action_obligation=15,
+        fiscal_year='2017',
+        action_date='2017-01-01'
+    )
+
+    mommy.make('awards.TransactionFPDS', transaction=trans_2016)
+    mommy.make('awards.TransactionFPDS', transaction=trans_2017)
+
+
+@pytest.fixture()
+def state_breakdown_result():
+    expected_result = [{'type': 'contracts', 'amount': 0, 'count': 0},
+                       {'type': 'grants', 'amount': 0, 'count': 0},
+                       {'type': 'direct_payments', 'amount': 0, 'count': 0},
+                       {'type': 'loans', 'amount': 0, 'count': 0},
+                       {'type': 'other_financial_assistance', 'amount': 0, 'count': 0}]
+
+    return expected_result
+
+
+def test_validate_year_success_digit():
+    year = '2000'
+    assert validate_year(year) == year
+
+
+def test_validate_year_success_all():
+    year = 'all'
+    assert validate_year(year) == year
+
+
+def test_validate_year_success_latest():
+    year = 'latest'
+    assert validate_year(year) == year
+
+
+def test_validate_year_failure():
+    year = 'abc'
+
+    with pytest.raises(InvalidParameterException):
+        validate_year(year)
+
+
+def test_reshape_filters_state():
+
+    result = reshape_filters(state_code='AB')
+    expected = {'country': 'USA', 'state': 'AB'}
+
+    assert result['place_of_performance_locations'][0] == expected
+
+
+def test_reshape_filters_year_digit():
+    year = '2017'
+    result = reshape_filters(year=year)
+    expected = {'start_date': '2016-10-01', 'end_date': '2017-09-30'}
+
+    assert result['time_period'][0] == expected
+
+
+def test_reshape_filters_year_all():
+    year = 'all'
+    result = reshape_filters(year=year)
+    expected = {'start_date': settings.API_SEARCH_MIN_DATE,
+                'end_date': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')}
+
+    assert result['time_period'][0] == expected
+
+
+def test_reshape_filters_year_latest():
+    year = 'latest'
+    result = reshape_filters(year=year)
+    expected = {'start_date': datetime.datetime.strftime(datetime.datetime.now()-relativedelta(years=1), '%Y-%m-%d'),
+                'end_date': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')}
+
+    assert result['time_period'][0] == expected
+
+
+def test_reshape_filters_award_type_codes():
+    award_type_codes = ['A', 'B']
+    result = reshape_filters(award_type_codes=award_type_codes)
+
+    assert result['award_type_codes'] == award_type_codes
+
+
 @pytest.mark.django_db
 def test_state_metadata_success(client, state_data, refresh_matviews):
     # test small request - state
     resp = client.get(state_metadata_endpoint('01'))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == EXPECTED_STATE
-
-    # test small request - district, testing 1 digit FIPS
-    resp = client.get(state_metadata_endpoint('2'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == EXPECTED_DISTRICT
 
     # test small request - territory
     resp = client.get(state_metadata_endpoint('03'))
@@ -262,4 +375,58 @@ def test_state_metadata_failure(client, state_data, refresh_matviews):
 
     # There is no FIPS with 03
     resp = client.get(state_metadata_endpoint('01', 'break'))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    # test small request - district, testing 1 digit FIPS
+    resp = client.get(state_metadata_endpoint('2'))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_obtain_state_totals(state_view_data,  refresh_matviews):
+    result = obtain_state_totals('01', '2016', ['A'])
+    expected = {'pop_state_code': 'AB', 'total': 10, 'count': 1}
+    assert result == expected
+
+
+@pytest.mark.django_db
+def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch):
+    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'02': {'code': 'None'}})
+    result = obtain_state_totals('02')
+    expected = {'pop_state_code': None, 'total': 0, 'count': 0}
+    assert result == expected
+
+
+@pytest.mark.django_db
+def test_state_breakdown_success_state(client, state_view_data, state_breakdown_result, refresh_matviews):
+    resp = client.get('/api/v2/recipient/state/awards/01/')
+
+    expected = state_breakdown_result
+    expected[0] = {'type': 'contracts', 'amount': 25, 'count': 2}
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected
+
+
+@pytest.mark.django_db
+def test_state_breakdown_success_year(client, state_view_data, state_breakdown_result, refresh_matviews):
+    resp = client.get('/api/v2/recipient/state/awards/01/?year=2017')
+    expected = state_breakdown_result
+    expected[0] = {'type': 'contracts', 'amount': 15, 'count': 1}
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected
+
+
+@pytest.mark.django_db
+def test_state_breakdown_success_no_data(client, state_view_data, state_breakdown_result, refresh_matviews):
+    resp = client.get('/api/v2/recipient/state/awards/01/?year=2015')
+    expected = state_breakdown_result
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected
+
+
+@pytest.mark.django_db
+def test_state_breakdown_failure(client, state_view_data, refresh_matviews):
+    resp = client.get('/api/v2/recipient/state/awards/05/')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
