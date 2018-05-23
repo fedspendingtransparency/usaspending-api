@@ -59,6 +59,11 @@ def state_metadata_endpoint(fips, year=None):
     return url
 
 
+def sort_breakdown_response(response_list):
+    """Sorting response since on Travis order of breakdown response list is different"""
+    return sorted(response_list, key=lambda k: k['type'])
+
+
 @pytest.fixture
 def state_data(db):
     location_ts = mommy.make(
@@ -197,8 +202,8 @@ def state_view_data(db, monkeypatch):
 @pytest.fixture()
 def state_breakdown_result():
     expected_result = [{'type': 'contracts', 'amount': 0, 'count': 0},
-                       {'type': 'grants', 'amount': 0, 'count': 0},
                        {'type': 'direct_payments', 'amount': 0, 'count': 0},
+                       {'type': 'grants', 'amount': 0, 'count': 0},
                        {'type': 'loans', 'amount': 0, 'count': 0},
                        {'type': 'other_financial_assistance', 'amount': 0, 'count': 0}]
 
@@ -391,42 +396,50 @@ def test_obtain_state_totals(state_view_data,  refresh_matviews):
 
 @pytest.mark.django_db
 def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch):
-    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'02': {'code': 'None'}})
+    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'02': {'code': 'No State'}})
     result = obtain_state_totals('02')
     expected = {'pop_state_code': None, 'total': 0, 'count': 0}
+
     assert result == expected
 
 
 @pytest.mark.django_db
 def test_state_breakdown_success_state(client, state_view_data, state_breakdown_result, refresh_matviews):
     resp = client.get('/api/v2/recipient/state/awards/01/')
+    sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
     expected[0] = {'type': 'contracts', 'amount': 25, 'count': 2}
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == expected
+    assert sorted_resp == expected
 
 
 @pytest.mark.django_db
 def test_state_breakdown_success_year(client, state_view_data, state_breakdown_result, refresh_matviews):
     resp = client.get('/api/v2/recipient/state/awards/01/?year=2017')
+    sorted_resp = sort_breakdown_response(resp.data)
+
     expected = state_breakdown_result
     expected[0] = {'type': 'contracts', 'amount': 15, 'count': 1}
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == expected
+    assert sorted_resp == expected
 
 
 @pytest.mark.django_db
 def test_state_breakdown_success_no_data(client, state_view_data, state_breakdown_result, refresh_matviews):
     resp = client.get('/api/v2/recipient/state/awards/01/?year=2015')
+    sorted_resp = sort_breakdown_response(resp.data)
+
     expected = state_breakdown_result
+
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == expected
+    assert sorted_resp == expected
 
 
 @pytest.mark.django_db
 def test_state_breakdown_failure(client, state_view_data, refresh_matviews):
     resp = client.get('/api/v2/recipient/state/awards/05/')
+
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
