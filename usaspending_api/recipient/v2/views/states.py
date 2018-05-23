@@ -82,9 +82,7 @@ def reshape_filters(state_code=None, year=None, award_type_codes=None):
 def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False):
     filters = reshape_filters(state_code=VALID_FIPS[fips]['code'], year=year, award_type_codes=award_type_codes)
 
-    if subawards:
-        pass
-    else:
+    if not subawards:
         queryset = matview_search_filter(filters, SummaryStateView) \
             .values('pop_state_code') \
             .annotate(
@@ -109,9 +107,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
 def get_all_states(year=None, award_type_codes=None, subawards=False):
     filters = reshape_filters(year=year, award_type_codes=award_type_codes)
 
-    if subawards:
-        pass
-    else:
+    if not subawards:
         # calculate award total filtered by state
         queryset = matview_search_filter(filters, SummaryStateView) \
             .filter(pop_state_code__isnull=False, pop_country_code='USA') \
