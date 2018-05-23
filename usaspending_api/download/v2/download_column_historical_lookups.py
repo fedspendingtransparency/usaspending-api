@@ -989,6 +989,7 @@ query_paths = {
             ('recipient_duns', 'award__recipient__recipient_unique_id'),
             ('recipient_name', 'award__recipient__recipient_name'),
             ('recipient_parent_duns', 'award__recipient__parent_recipient_unique_id'),
+            # TODO: Add column and derive based on whether latest_transaction is Contract or Assistance
             # ('recipient_parent_name',
             # 'award__latest_transaction__(contract|assistance)_data__ultimate_parent_legal_enti'),
             ('recipient_country', 'award__recipient__location__country_name'),
