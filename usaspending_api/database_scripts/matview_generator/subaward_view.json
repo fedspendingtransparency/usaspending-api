@@ -291,10 +291,10 @@
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
       "name": "compound_psc_fy",
-      "columns": [{"name": "product_or_service_code"}, {"name": "fiscal_year"}]
+      "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_cfda_fy",
-      "columns": [{"name": "cfda_number"}, {"name": "fiscal_year"}]
+      "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }
   ]
 }

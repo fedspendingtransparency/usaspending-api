@@ -241,9 +241,9 @@
         "name": "type_of_contract",
         "columns": [{"name": "type_of_contract_pricing"}]
     }, {
-        "name": "ordered_fy_set_aside",
+        "name": "ordered_action_date_and_set_aside",
         "columns": [
-          {"name": "fiscal_year", "order": "DESC NULLS LAST"},
+          {"name": "action_date", "order": "DESC NULLS LAST"},
           {"name": "type_set_aside"}
         ]
     }, {
