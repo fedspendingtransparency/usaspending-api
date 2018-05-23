@@ -8,6 +8,7 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 @pytest.mark.django_db
 def test_spending_by_category_success(client, refresh_matviews):
+    print('donnnne')
 
     # test for required functions
     resp = client.post(
@@ -15,7 +16,6 @@ def test_spending_by_category_success(client, refresh_matviews):
         content_type='application/json',
         data=json.dumps({
             "category": "funding_agency",
-            "scope": "agency",
             "filters": {
                 "keywords": ["test", "testing"]
             }
@@ -26,8 +26,7 @@ def test_spending_by_category_success(client, refresh_matviews):
         '/api/v2/search/spending_by_category',
         content_type='application/json',
         data=json.dumps({
-            "category": "cfda_programs",
-            "scope": "cfda",
+            "category": "cfda",
             "filters": all_filters()
         }))
     assert resp.status_code == status.HTTP_200_OK
