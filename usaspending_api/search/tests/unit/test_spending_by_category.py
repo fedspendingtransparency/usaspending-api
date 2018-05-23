@@ -1,5 +1,5 @@
 # Stdlib imports
-
+import pytest
 # Core Django imports
 
 # Third-party app imports
@@ -687,7 +687,7 @@ def test_category_psc_awards(mock_matviews_qs, mock_psc):
 
     assert expected_response == spending_by_category_logic
 
-
+@pytest.mark.skip(reason="Currently not supporting psc subawards")
 def test_category_psc_subawards(mock_matviews_qs, mock_psc):
     mock_psc_1 = MockModel(code='PSC 1234', description='PSC DESCRIPTION UP')
     mock_psc_2 = MockModel(code='PSC 9876', description='PSC DESCRIPTION DOWN')

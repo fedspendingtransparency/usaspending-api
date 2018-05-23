@@ -62,10 +62,7 @@ ALIAS_DICT = {
     }
 
 }
-# id:
-# name:
-# code:
-# amount:
+
 ALIAS_DICT['awarding_subagency'] = ALIAS_DICT['awarding_agency']
 ALIAS_DICT['funding_subagency'] = ALIAS_DICT['funding_agency']
 ALIAS_DICT['recipient_parent_duns'] = ALIAS_DICT['recipient_duns']
@@ -224,6 +221,9 @@ class BusinessLogic:
             filters = {'{}__isnull'.format(self.obligation_column): False, 'cfda_number__isnull': False}
             values = ['cfda_number']
         elif self.category == 'psc':
+            if self.subawards:
+                # TODO: get subaward NAICS from Broker
+                self.raise_not_implemented()
             filters = {'product_or_service_code__isnull': False}
             values = ['product_or_service_code']
         elif self.category == 'naics':
@@ -275,22 +275,30 @@ def fetch_agency_tier_id_by_agency(agency_id, is_subtier=False):
         # filters = {'subtier_agency__isnull': False}
         columns = ['subtier_agency_id']
     result = Agency.objects.filter(id=agency_id).values(*columns).first()
+    if not result:
+        raise ValueError('{} not found for agency_id: {}'.format(','.join(columns), agency_id))
     return result[columns[0]]
 
 
 def fetch_recipient_id_by_duns(duns):
     columns = ['legal_entity_id']
     result = LegalEntity.objects.filter(recipient_unique_id=duns).values(*columns).first()
+    if not result:
+        raise ValueError('{} not found for duns: {}'.format(','.join(columns), duns))
     return result[columns[0]]
 
 
 def fetch_cfda_id_title_by_number(cfda_number):
     columns = ['id', 'program_title']
     result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
+    if not result:
+        raise ValueError('{} not found for cfda_number: {}'.format(','.join(columns), cfda_number))
     return result[columns[0]], result[columns[1]]
 
 
 def fetch_psc_description_by_code(psc_code):
     columns = ['description']
     result = PSC.objects.filter(code=psc_code).values(*columns).first()
+    if not result:
+        raise ValueError('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
     return result[columns[0]]
