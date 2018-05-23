@@ -8,7 +8,6 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 @pytest.mark.django_db
 def test_spending_by_category_success(client, refresh_matviews):
-    print('donnnne')
 
     # test for required functions
     resp = client.post(
