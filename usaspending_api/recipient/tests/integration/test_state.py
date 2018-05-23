@@ -1,9 +1,7 @@
 # Stdlib imports
 import datetime
-from dateutil.relativedelta import relativedelta
 
 # Core Django imports
-from django.conf import settings
 
 # Third-party app imports
 from rest_framework import status
@@ -12,8 +10,7 @@ import pytest
 
 # Imports from your apps
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
-from usaspending_api.recipient.v2.views import validate_year, reshape_filters, obtain_state_totals
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.recipient.v2.views.states import obtain_state_totals
 
 EXPECTED_STATE = {
         'name': 'Test State',
@@ -161,7 +158,7 @@ def state_data(db):
 
 @pytest.fixture
 def state_view_data(db, monkeypatch):
-    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'01': {'code': 'AB'}})
+    monkeypatch.setattr('usaspending_api.recipient.v2.views.states.VALID_FIPS', {'01': {'code': 'AB'}})
 
     location = mommy.make(
         'references.Location',
@@ -208,69 +205,6 @@ def state_breakdown_result():
                        {'type': 'other_financial_assistance', 'amount': 0, 'count': 0}]
 
     return expected_result
-
-
-def test_validate_year_success_digit():
-    year = '2000'
-    assert validate_year(year) == year
-
-
-def test_validate_year_success_all():
-    year = 'all'
-    assert validate_year(year) == year
-
-
-def test_validate_year_success_latest():
-    year = 'latest'
-    assert validate_year(year) == year
-
-
-def test_validate_year_failure():
-    year = 'abc'
-
-    with pytest.raises(InvalidParameterException):
-        validate_year(year)
-
-
-def test_reshape_filters_state():
-
-    result = reshape_filters(state_code='AB')
-    expected = {'country': 'USA', 'state': 'AB'}
-
-    assert result['place_of_performance_locations'][0] == expected
-
-
-def test_reshape_filters_year_digit():
-    year = '2017'
-    result = reshape_filters(year=year)
-    expected = {'start_date': '2016-10-01', 'end_date': '2017-09-30'}
-
-    assert result['time_period'][0] == expected
-
-
-def test_reshape_filters_year_all():
-    year = 'all'
-    result = reshape_filters(year=year)
-    expected = {'start_date': settings.API_SEARCH_MIN_DATE,
-                'end_date': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')}
-
-    assert result['time_period'][0] == expected
-
-
-def test_reshape_filters_year_latest():
-    year = 'latest'
-    result = reshape_filters(year=year)
-    expected = {'start_date': datetime.datetime.strftime(datetime.datetime.now()-relativedelta(years=1), '%Y-%m-%d'),
-                'end_date': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')}
-
-    assert result['time_period'][0] == expected
-
-
-def test_reshape_filters_award_type_codes():
-    award_type_codes = ['A', 'B']
-    result = reshape_filters(award_type_codes=award_type_codes)
-
-    assert result['award_type_codes'] == award_type_codes
 
 
 @pytest.mark.django_db
@@ -396,7 +330,7 @@ def test_obtain_state_totals(state_view_data,  refresh_matviews):
 
 @pytest.mark.django_db
 def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch):
-    monkeypatch.setattr('usaspending_api.recipient.v2.views.VALID_FIPS', {'02': {'code': 'No State'}})
+    monkeypatch.setattr('usaspending_api.recipient.v2.views.states.VALID_FIPS', {'02': {'code': 'No State'}})
     result = obtain_state_totals('02')
     expected = {'pop_state_code': None, 'total': 0, 'count': 0}
 

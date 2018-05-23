@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from usaspending_api.recipient.v2.views import StateMetaDataViewSet, StateAwardBreakdownViewSet, \
+from usaspending_api.recipient.v2.views.states import StateMetaDataViewSet, StateAwardBreakdownViewSet, \
     ListStates
 
 urlpatterns = [
