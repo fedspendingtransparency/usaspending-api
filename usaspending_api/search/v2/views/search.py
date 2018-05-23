@@ -381,8 +381,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for m in models:
             if m['name'] in ('award_type_codes', 'fields'):
                 m['optional'] = False
-            if m['name'] == 'award_type_codes':
-                m['enum_values'] = m['enum_values'] + ['no intersection']  # handles an edge case from the Frontend
 
         json_request = TinyShield(models).block(request.data)
         fields = json_request.get("fields", None)
