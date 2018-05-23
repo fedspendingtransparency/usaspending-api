@@ -12,21 +12,22 @@ import pytest
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.recipient.v2.views.states import obtain_state_totals
 
+
 EXPECTED_STATE = {
-        'name': 'Test State',
-        'code': 'TS',
-        'fips': '01',
-        'type': 'state',
-        'population': 100000,
-        'pop_year': 2017,
-        'pop_source': 'Census 2010 Pop',
-        'median_household_income': 50000,
-        'mhi_year': 2016,
-        'mhi_source': 'Census 2010 MHI',
-        'total_prime_amount': 0,
-        'total_prime_awards': 0,
-        'award_amount_per_capita': 0.00
-    }
+    'name': 'Test State',
+    'code': 'TS',
+    'fips': '01',
+    'type': 'state',
+    'population': 100000,
+    'pop_year': 2017,
+    'pop_source': 'Census 2010 Pop',
+    'median_household_income': 50000,
+    'mhi_year': 2016,
+    'mhi_source': 'Census 2010 MHI',
+    'total_prime_amount': 0,
+    'total_prime_awards': 0,
+    'award_amount_per_capita': 0.00
+}
 EXPECTED_DISTRICT = EXPECTED_STATE.copy()
 EXPECTED_DISTRICT.update({
     'name': 'Test District',
@@ -322,7 +323,7 @@ def test_state_metadata_failure(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_obtain_state_totals(state_view_data,  refresh_matviews):
+def test_obtain_state_totals(state_view_data, refresh_matviews):
     result = obtain_state_totals('01', '2016', ['A'])
     expected = {'pop_state_code': 'AB', 'total': 10, 'count': 1}
     assert result == expected

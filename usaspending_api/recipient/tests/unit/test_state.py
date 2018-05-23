@@ -12,6 +12,7 @@ import pytest
 from usaspending_api.recipient.v2.views.states import validate_year, reshape_filters
 from usaspending_api.common.exceptions import InvalidParameterException
 
+
 def test_validate_year_success_digit():
     year = '2000'
     assert validate_year(year) == year
@@ -62,7 +63,7 @@ def test_reshape_filters_year_all():
 def test_reshape_filters_year_latest():
     year = 'latest'
     result = reshape_filters(year=year)
-    expected = {'start_date': datetime.datetime.strftime(datetime.datetime.now()-relativedelta(years=1), '%Y-%m-%d'),
+    expected = {'start_date': datetime.datetime.strftime(datetime.datetime.now() - relativedelta(years=1), '%Y-%m-%d'),
                 'end_date': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d')}
 
     assert result['time_period'][0] == expected
