@@ -6,7 +6,7 @@
 These endpoints return data that is grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
 ### Request
 
-filters: The filters to find with said category. The filter object is defined here: [Filter Object](../search_filters.md). 
+filters (**REQUIRED**): The filters to find with said category. The filter object is defined here: [Filter Object](../search_filters.md). 
 
 category (**REQUIRED**): String value. Parameter indicating which category to aggregate and return. Below are the following categories available.
 
