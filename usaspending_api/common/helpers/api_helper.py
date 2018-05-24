@@ -6,5 +6,4 @@ def alias_response(field_to_alias_dict, results):
                 value = result[field]
                 del result[field]
                 result[field_to_alias_dict[field]] = value
-
     return results_copy

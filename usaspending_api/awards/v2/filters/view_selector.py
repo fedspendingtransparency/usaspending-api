@@ -88,7 +88,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {
             'time_period': [only_action_date_type]
@@ -110,7 +111,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {
             'time_period': [can_use_month_aggregation, only_action_date_type],
@@ -137,7 +139,8 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalTransactionView,
@@ -308,3 +311,39 @@ def transaction_spending_summary(filters):
         raise InvalidParameterException
 
     return queryset, model
+
+
+def spending_by_category(category, filters):
+    # category is a string of <category>.
+    view_chain = []
+    if category in [
+        'awarding_agency',
+        'funding_agency',
+        'awarding_subagency',
+        'funding_subagency',
+    ]:
+        view_chain = ['SummaryView']
+    elif category == 'psc':
+        view_chain = ['SummaryPscCodesView']
+    elif category == 'naics':
+        view_chain = ['SummaryNaicsCodesView']
+    elif category == 'cfda':
+        view_chain = ['SummaryCfdaNumbersView']
+    elif category in ['county', 'district']:
+        view_chain = ['SummaryTransactionGeoView']
+
+    # All of these category/scope combinations can use the following:
+    view_chain.extend([
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ])
+
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset
