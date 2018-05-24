@@ -19,6 +19,9 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
+# Default timeout for SQL statements in Django. Set to 5 min (in milliseconds).
+DEFAULT_DB_TIMEOUT_IN_MS = 300000
+
 API_MAX_DATE = '2020-09-30'
 API_MIN_DATE = '2000-10-01'
 API_SEARCH_MIN_DATE = '2007-10-01'
