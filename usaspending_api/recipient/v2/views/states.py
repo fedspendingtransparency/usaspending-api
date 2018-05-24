@@ -186,7 +186,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
     def get(self, request, fips):
         get_request = request.query_params
-        year = validate_year(get_request.get('year', 'all'))
+        year = validate_year(get_request.get('year', 'latest'))
         fips = validate_fips(fips)
 
         results = []
