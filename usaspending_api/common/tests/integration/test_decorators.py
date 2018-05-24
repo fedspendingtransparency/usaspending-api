@@ -51,11 +51,10 @@ def test_statement_timeout_successfully_runs_within_timeout():
             # pg_sleep takes in a parameter corresponding to seconds
             cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
 
-    # noinspection PyBroadException
     try:
         start = timeit.default_timer()
         test_timeout_success()
-    except:
+    except Exception:
         assert False
     else:
         assert (timeit.default_timer() - start) >= pg_sleep_in_seconds
