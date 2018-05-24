@@ -23,6 +23,7 @@ TEMP_SQL_FILES = [
     '../matviews/summary_transaction_view.sql',
     '../matviews/summary_transaction_month_view.sql',
     '../matviews/summary_transaction_geo_view.sql',
+    '../matviews/summary_state_view.sql',
     '../matviews/summary_award_view.sql',
     '../matviews/summary_view_cfda_number.sql',
     '../matviews/summary_view_naics_codes.sql',

@@ -166,7 +166,7 @@ MATVIEW_SELECTOR = {
             'federal_account_ids',
             'object_class',
             'program_activity'
-            ],
+        ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalAwardView,
