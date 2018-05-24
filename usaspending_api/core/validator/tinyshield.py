@@ -61,6 +61,11 @@ VALIDATORS = {
         'required_fields': [],
         'defaults': {},
     },
+    'schema': {
+        'func': lambda k: None,
+        'required_fields': [],
+        'defaults': {},
+    },
     'text': {
         'func': validate_text,
         'types': SUPPORTED_TEXT_TYPES,
@@ -73,7 +78,7 @@ VALIDATORS = {
 }
 
 
-class TinyShield():
+class TinyShield:
     """
     Structure
     model- dictionary representing a validator
@@ -141,7 +146,7 @@ class TinyShield():
             model['optional'] = model.get('optional', True)
 
         # Check to ensure unique names for destination dictionary
-        keys = [x['name'] for x in models]
+        keys = [x['name'] for x in models if x['type'] != 'schema']  # ignore schema as they are schema-only
         if len(keys) != len(set(keys)):
             raise Exception('Duplicate destination keys provided. Name values must be unique')
         return models

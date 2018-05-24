@@ -64,7 +64,6 @@
     "  transaction_fpds.extent_competed,",
     "  transaction_fabs.cfda_number,",
     "  references_cfda.program_title AS cfda_title,",
-    "  references_cfda.popular_name AS cfda_popular_name,",
     "  transaction_normalized.recipient_id,",
     "  UPPER(legal_entity.recipient_name) AS recipient_name,",
     "  legal_entity.recipient_unique_id,",
