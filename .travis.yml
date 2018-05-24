@@ -41,6 +41,7 @@ script:
 - psql $DATABASE_URL -f temp_sql/summary_view_naics_codes.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_view_psc_codes.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_view.sql -v ON_ERROR_STOP=1 --quiet
+- psql $DATABASE_URL -f temp_sql/summary_state_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/subaward_view.sql -v ON_ERROR_STOP=1 --quiet
 
 after_success:
