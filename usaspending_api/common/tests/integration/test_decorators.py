@@ -18,19 +18,20 @@ def test_statement_timeout_successfully_times_out():
     Test the django statement timeout setting
     """
 
-    test_timeout_in_ms = 1000
-    pg_sleep_in_s = 10
+    test_timeout_in_seconds = 1
+    pg_sleep_in_seconds = 10
 
-    @set_db_timeout(test_timeout_in_ms)
+    @set_db_timeout(test_timeout_in_seconds)
     def test_timeout_success():
         with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_s)  # pg_sleep takes in a parameter corresponding to seconds
+            # pg_sleep takes in a parameter corresponding to seconds
+            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
 
     start = timeit.default_timer()
     try:
         test_timeout_success()
     except OperationalError:
-        assert (timeit.default_timer() - start) < pg_sleep_in_s
+        assert (timeit.default_timer() - start) < pg_sleep_in_seconds
     else:
         assert False
 
@@ -41,13 +42,14 @@ def test_statement_timeout_successfully_runs_within_timeout():
     Test the django statement timeout setting
     """
 
-    test_timeout_in_ms = 2000
-    pg_sleep_in_s = 1
+    test_timeout_in_seconds = 2
+    pg_sleep_in_seconds = 1
 
-    @set_db_timeout(test_timeout_in_ms)
+    @set_db_timeout(test_timeout_in_seconds)
     def test_timeout_success():
         with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_s)  # pg_sleep takes in a parameter corresponding to seconds
+            # pg_sleep takes in a parameter corresponding to seconds
+            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
 
     # noinspection PyBroadException
     try:
@@ -56,4 +58,4 @@ def test_statement_timeout_successfully_runs_within_timeout():
     except:
         assert False
     else:
-        assert (timeit.default_timer() - start) >= pg_sleep_in_s
+        assert (timeit.default_timer() - start) >= pg_sleep_in_seconds

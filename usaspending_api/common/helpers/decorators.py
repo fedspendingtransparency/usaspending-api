@@ -6,11 +6,11 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def set_db_timeout(timeout_in_ms=settings.DEFAULT_DB_TIMEOUT_IN_MS):
+def set_db_timeout(timeout_in_seconds=settings.DEFAULT_DB_TIMEOUT_IN_SECONDS):
     """ Decorator used to set the database statement timeout within the Django app scope
 
         Args:
-            timeout_in_ms: timeout value to set, in milliseconds
+            timeout_in_seconds: timeout value to set, in milliseconds
 
         NOTE:
             The statement_timeout is only set for this specific connection. Any subsequent request will have a default
@@ -28,6 +28,8 @@ def set_db_timeout(timeout_in_ms=settings.DEFAULT_DB_TIMEOUT_IN_MS):
             def func_running_db_call(...):
                 ...
     """
+
+    timeout_in_ms = timeout_in_seconds * 1000
 
     def wrap(func):
         def wrapper(*args, **kwargs):
