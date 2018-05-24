@@ -1,7 +1,10 @@
 import logging
 
-from django.db import connection
 from django.conf import settings
+from django.db import connection
+from django.db.utils import OperationalError
+
+from usaspending_api.common.exceptions import EndpointTimeoutException
 
 logger = logging.getLogger(__name__)
 
@@ -39,27 +42,30 @@ def set_db_timeout(timeout_in_seconds=settings.DEFAULT_DB_TIMEOUT_IN_SECONDS):
                                str(cursor.fetchall()[0][0]))
 
                 logger.warning(
-                    'DB TIMEOUT DECORATOR: Setting Django statement_timeout to %sms' % str(timeout_in_ms))
+                    'DB TIMEOUT DECORATOR: Setting Django statement_timeout to %dms' % timeout_in_ms)
                 cursor.execute("set statement_timeout={0}".format(timeout_in_ms))
 
                 cursor.execute("show statement_timeout")
                 logger.warning('DB TIMEOUT DECORATOR: New Django statement_timeout value = %s' %
                                str(cursor.fetchall()[0][0]))
 
-            func_response = func(*args, **kwargs)
+            try:
+                func_response = func(*args, **kwargs)
+            except OperationalError:
+                raise EndpointTimeoutException('Django ORM exceeded the specified timeout of %ds' % timeout_in_seconds)
+            finally:
+                with connection.cursor() as cursor:
+                    cursor.execute("show statement_timeout")
+                    logger.warning('DB TIMEOUT DECORATOR: Old Django statement_timeout value = %s' %
+                                   str(cursor.fetchall()[0][0]))
 
-            with connection.cursor() as cursor:
-                cursor.execute("show statement_timeout")
-                logger.warning('DB TIMEOUT DECORATOR: Old Django statement_timeout value = %s' %
-                               str(cursor.fetchall()[0][0]))
+                    logger.warning(
+                        'DB TIMEOUT DECORATOR: Setting Django statement_timeout to 0')
+                    cursor.execute("set statement_timeout=0")
 
-                logger.warning(
-                    'DB TIMEOUT DECORATOR: Setting Django statement_timeout to 0')
-                cursor.execute("set statement_timeout=0")
-
-                cursor.execute("show statement_timeout")
-                logger.warning('DB TIMEOUT DECORATOR: New Django statement_timeout value = %s' %
-                               str(cursor.fetchall()[0][0]))
+                    cursor.execute("show statement_timeout")
+                    logger.warning('DB TIMEOUT DECORATOR: New Django statement_timeout value = %s' %
+                                   str(cursor.fetchall()[0][0]))
 
             return func_response
         return wrapper

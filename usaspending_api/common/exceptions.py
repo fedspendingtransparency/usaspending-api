@@ -21,3 +21,10 @@ class ElasticsearchConnectionException(APIException):
     status_code = 500
     default_detail = 'Unable to reach the Elasticsearch Cluster'
     default_code = 'service_unavailable'
+
+
+class EndpointTimeoutException(APIException):
+    """Exception for timeout for an API endpoint."""
+    status_code = 504
+    default_detail = 'Endpoint has timed out'
+    default_code = 'timeout'
