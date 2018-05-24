@@ -1,6 +1,7 @@
 # Stdlib imports
 import logging
 
+
 # Core Django imports
 from django.conf import settings
 
@@ -36,6 +37,42 @@ def mock_db_cursor(monkeypatch, request):
 
 
 @pytest.fixture()
+def mock_psc(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_psc_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.references.models.PSC.objects', mock_psc_qs)
+
+    yield mock_psc_qs
+
+    mock_psc_qs.delete()
+
+
+@pytest.fixture()
+def mock_cfda(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_cfda_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.references.models.Cfda.objects', mock_cfda_qs)
+
+    yield mock_cfda_qs
+
+    mock_cfda_qs.delete()
+
+
+@pytest.fixture()
+def mock_recipients(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_recipient_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.references.models.LegalEntity.objects', mock_recipient_qs)
+
+    yield mock_recipient_qs
+
+    mock_recipient_qs.delete()
+
+
+@pytest.fixture()
 def mock_agencies(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_agency_qs = MockSet()
@@ -63,15 +100,16 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SubawardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryPscCodesView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryPscCodesView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryStateView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalAwardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalTransactionView.objects', mock_qs)
 
