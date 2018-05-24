@@ -3,12 +3,12 @@ import timeit
 
 # Core Django imports
 from django.db import connection
-from django.db.utils import OperationalError
 
 # Third-party app imports
 import pytest
 
 # Imports from your apps
+from usaspending_api.common.exceptions import EndpointTimeoutException
 from usaspending_api.common.helpers.decorators import set_db_timeout
 
 
@@ -30,7 +30,7 @@ def test_statement_timeout_successfully_times_out():
     start = timeit.default_timer()
     try:
         test_timeout_success()
-    except OperationalError:
+    except EndpointTimeoutException:
         assert (timeit.default_timer() - start) < pg_sleep_in_seconds
     else:
         assert False
