@@ -29,7 +29,7 @@ def set_db_timeout(timeout_in_seconds=settings.DEFAULT_DB_TIMEOUT_IN_SECONDS):
                 ...
     """
 
-    timeout_in_ms = timeout_in_seconds * 1000
+    timeout_in_ms = int(timeout_in_seconds * 1000)
 
     def wrap(func):
         def wrapper(*args, **kwargs):
@@ -46,7 +46,7 @@ def set_db_timeout(timeout_in_seconds=settings.DEFAULT_DB_TIMEOUT_IN_SECONDS):
                 logger.warning('DB TIMEOUT DECORATOR: New Django statement_timeout value = %s' %
                                str(cursor.fetchall()[0][0]))
 
-            func(*args, **kwargs)
+            func_response = func(*args, **kwargs)
 
             with connection.cursor() as cursor:
                 cursor.execute("show statement_timeout")
@@ -60,5 +60,7 @@ def set_db_timeout(timeout_in_seconds=settings.DEFAULT_DB_TIMEOUT_IN_SECONDS):
                 cursor.execute("show statement_timeout")
                 logger.warning('DB TIMEOUT DECORATOR: New Django statement_timeout value = %s' %
                                str(cursor.fetchall()[0][0]))
+
+            return func_response
         return wrapper
     return wrap
