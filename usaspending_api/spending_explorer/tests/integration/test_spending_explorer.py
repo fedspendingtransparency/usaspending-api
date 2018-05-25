@@ -5,6 +5,16 @@ from rest_framework import status
 
 
 @pytest.mark.django_db
+def test_unreported_data_actual_value(client):
+    pass
+
+
+@pytest.mark.django_db
+def test_unreported_data_no_data_available(client):
+    pass
+
+
+@pytest.mark.django_db
 def test_budget_function_filter_success(client):
 
     # Test for Budget Function Results
