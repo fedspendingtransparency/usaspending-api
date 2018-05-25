@@ -2,9 +2,10 @@ from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.common.helpers.generic_helper import generate_last_completed_fiscal_quarter
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import GTASTotalObligation
+from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
@@ -47,18 +48,18 @@ def type_filter(_type, filters, limit=None):
                                                                              fiscal_quarter=fiscal_quarter)
 
     # Recipient, Award Queryset
-    alt_set = FinancialAccountsByAwards.objects.all().\
-        exclude(transaction_obligated_amount__isnull=True).\
-        exclude(transaction_obligated_amount='NaN').\
-        filter(submission__reporting_fiscal_quarter=fiscal_quarter).\
-        filter(submission__reporting_fiscal_year=fiscal_year).\
+    alt_set = FinancialAccountsByAwards.objects.all(). \
+        exclude(transaction_obligated_amount__isnull=True). \
+        exclude(transaction_obligated_amount='NaN'). \
+        filter(submission__reporting_fiscal_quarter=fiscal_quarter). \
+        filter(submission__reporting_fiscal_year=fiscal_year). \
         annotate(amount=Sum('transaction_obligated_amount'))
 
     # Base Queryset
-    queryset = FinancialAccountsByProgramActivityObjectClass.objects.all().\
-        exclude(obligations_incurred_by_program_object_class_cpe__isnull=True).\
-        filter(submission__reporting_fiscal_quarter=fiscal_quarter).\
-        filter(submission__reporting_fiscal_year=fiscal_year).\
+    queryset = FinancialAccountsByProgramActivityObjectClass.objects.all(). \
+        exclude(obligations_incurred_by_program_object_class_cpe__isnull=True). \
+        filter(submission__reporting_fiscal_quarter=fiscal_quarter). \
+        filter(submission__reporting_fiscal_year=fiscal_year). \
         annotate(amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
     # Apply filters to queryset results
@@ -125,9 +126,13 @@ def type_filter(_type, filters, limit=None):
             total = value
 
         queryset = queryset[:limit] if _type == 'award' else queryset
+        expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
+                             values_list('total_obligation', flat=True). \
+                             first()
 
         results = {
             'total': total,
+            'expected_total': expected_total,
             'end_date': fiscal_date,
             'results': queryset
         }
