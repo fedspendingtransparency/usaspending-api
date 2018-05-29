@@ -96,9 +96,13 @@ def type_filter(_type, filters, limit=None):
             total += award['total']
 
         alt_set = results[:limit] if _type == 'award' else results
+        expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
+            values_list('total_obligation', flat=True). \
+            first()
 
         results = {
             'total': total,
+            'expected_total': expected_total,
             'end_date': fiscal_date,
             'results': alt_set
         }
@@ -127,8 +131,8 @@ def type_filter(_type, filters, limit=None):
 
         queryset = queryset[:limit] if _type == 'award' else queryset
         expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
-                             values_list('total_obligation', flat=True). \
-                             first()
+            values_list('total_obligation', flat=True). \
+            first()
 
         results = {
             'total': total,
