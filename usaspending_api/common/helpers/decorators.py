@@ -13,7 +13,7 @@ def set_db_timeout(timeout_in_seconds=None):
     """ Decorator used to set the database statement timeout within the Django app scope
 
         Args:
-            timeout_in_seconds: timeout value to set, in seconds
+            timeout_in_seconds: timeout value, in seconds
 
         NOTE:
             The statement_timeout is only set for this specific connection. The timeout is reset to 0 at the end of
