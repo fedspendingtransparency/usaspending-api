@@ -6,16 +6,13 @@
 These endpoints return data that is grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
 ### Request
 
-filters (**REQUIRED**): The filters to find with said category. The filter object is defined here: [Filter Object](../search_filters.md). 
+filters (**REQUIRED**): The filters to find with said category. The filter object is defined here: [Filter Object](../search_filters.md).
 
 category (**REQUIRED**): String value. Parameter indicating which category to aggregate and return. Below are the following categories available.
 
 * `awarding_agency`
 * `awarding_subagency`
-* `funding_agency`
-* `funding_subagency`
 * `recipient_duns`
-* `recipient_parent_duns`
 * `cfda`
 * `psc`
 * `naics`
@@ -31,7 +28,7 @@ page (**OPTIONAL**): The page number that is currently returned. Default is 1.
 ```
 {
   "category": "awarding_agency",
-  "filters": {	
+  "filters": {
     "time_period": [
       {
         "start_date": "2016-10-01",
