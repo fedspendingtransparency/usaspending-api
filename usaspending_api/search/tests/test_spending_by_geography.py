@@ -7,8 +7,7 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
 @pytest.mark.django_db
-def test_spending_by_geography_success(client, refresh_matviews):
-
+def test_spending_by_geography_state_success(client, refresh_matviews):
     # test for required filters
     resp = client.post(
         '/api/v2/search/spending_by_geography',
@@ -16,7 +15,6 @@ def test_spending_by_geography_success(client, refresh_matviews):
         data=json.dumps({
             "scope": "place_of_performance",
             "geo_layer": "state",
-            "geo_layer_filters": ["01"],
             "filters": {
                 'recipient_locations': [{'country': 'ABC'}]
             }
@@ -30,6 +28,62 @@ def test_spending_by_geography_success(client, refresh_matviews):
         data=json.dumps({
             "scope": "recipient_location",
             "geo_layer": "county",
+            "geo_layer_filters": ["WA"],
+            "filters": all_filters()
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_county_success(client, refresh_matviews):
+    # test for required filters
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "place_of_performance",
+            "geo_layer": "county",
+            "filters": {
+                'recipient_locations': [{'country': 'ABC'}]
+            }
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
+    # test all filters
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "geo_layer_filters": ["01"],
+            "filters": all_filters()
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_congressional_success(client, refresh_matviews):
+    # test for required filters
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "place_of_performance",
+            "geo_layer": "district",
+            "filters": {
+                'recipient_locations': [{'country': 'ABC'}]
+            }
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
+    # test all filters
+    resp = client.post(
+        '/api/v2/search/spending_by_geography',
+        content_type='application/json',
+        data=json.dumps({
+            "scope": "recipient_location",
+            "geo_layer": "district",
             "geo_layer_filters": ["01"],
             "filters": all_filters()
         }))
@@ -81,7 +135,7 @@ def test_spending_by_geography_subawards_failure(client, refresh_matviews):
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_spending_by_geography_incorrect_state(client):
+def test_spending_by_geography_incorrect_state(client, refresh_matviews):
     resp = client.post(
         '/api/v2/search/spending_by_geography/',
         content_type='application/json',
@@ -98,7 +152,7 @@ def test_spending_by_geography_incorrect_state(client):
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_spending_by_geography_incorrect_county(client):
+def test_spending_by_geography_incorrect_county(client, refresh_matviews):
     resp = client.post(
         '/api/v2/search/spending_by_geography/',
         content_type='application/json',
@@ -109,7 +163,7 @@ def test_spending_by_geography_incorrect_county(client):
             'filters': all_filters()
         })
     )
-    raise Exception(resp.content)
+    # raise Exception(resp.content)
     assert resp.data['results'][0]['display_name'] == 'County'
 
 
