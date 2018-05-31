@@ -114,7 +114,7 @@
     "  subtier_agency AS SAA",
     "    ON (AA.subtier_agency_id = SAA.subtier_agency_id)",
     "LEFT OUTER JOIN",
-    "  agency AS FA ON (awards.funding_agency_id = FA.id)",
+    "  agency AS FA ON (sub.funding_agency_id = FA.id)",
     "LEFT OUTER JOIN",
     "  toptier_agency AS TFA",
     "    ON (FA.toptier_agency_id = TFA.toptier_agency_id)",
