@@ -4,9 +4,9 @@
 
 from collections import namedtuple, OrderedDict
 
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.accounts.v2.filters.account_balances import account_balances_filter
-from usaspending_api.accounts.v2.filters.object_class_program_activity import object_class_program_activity_filter
+from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.v2.filters import account_balances, award_financial, object_class_program_activity
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
                                                                universal_transaction_matview_filter)
@@ -59,10 +59,10 @@ VALUE_MAPPINGS = {
     # Appropriations Account Data
     'account_balances': {
         'source_type': 'account',
-        'table': TreasuryAppropriationAccount,
+        'table': AppropriationAccountBalances,
         'table_name': 'account_balances',
         'download_name': 'account_balances',
-        'filter_function': account_balances_filter
+        'filter_function': account_balances.account_balances_filter
     },
     # Object Class Program Activity Account Data
     'object_class_program_activity': {
@@ -70,7 +70,14 @@ VALUE_MAPPINGS = {
         'table': FinancialAccountsByProgramActivityObjectClass,
         'table_name': 'object_class_program_activity',
         'download_name': 'object_class_program_activity',
-        'filter_function': object_class_program_activity_filter
+        'filter_function': object_class_program_activity.object_class_program_activity_filter
+    },
+    'award_financial': {
+        'source_type': 'account',
+        'table': FinancialAccountsByAwards,
+        'table_name': 'award_financial',
+        'download_name': 'award_financial',
+        'filter_function': award_financial.award_financial_filter
     }
 }
 

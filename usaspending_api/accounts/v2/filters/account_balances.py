@@ -30,4 +30,27 @@ def account_balances_filter(filters):
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
-    return AppropriationAccountBalances.objects.filter(**query_filters)
+    queryset = AppropriationAccountBalances.objects
+
+    # TODO: Derivations
+    # ata_subquery = ToptierAgency.objects.filter(
+    #     cgac_code=OuterRef('treasury_account_identifier__allocation_transfer_agency_id'))
+    # agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account_identifier__agency_id'))
+    # queryset = queryset.annotate(
+    #     treasury_account_symbol=Concat(
+    #         'treasury_account_identifier__agency_id',
+    #         Value('-'),
+    #         Case(When(treasury_account_identifier__availability_type_code='X', then=Value('X')),
+    #              default=Concat('treasury_account_identifier__beginning_period_of_availability', Value('/'),
+    #                             'treasury_account_identifier__ending_period_of_availability'),
+    #              output_field=CharField()),
+    #         Value('-'),
+    #         'treasury_account_identifier__main_account_code',
+    #         Value('-'),
+    #         'treasury_account_identifier__sub_account_code',
+    #         output_field=CharField()),
+    #     allocation_transfer_agency_name=Value(Subquery(ata_subquery.values('name')[:1]), output_field=CharField()),
+    #     agency_name=Value(Subquery(agency_name_subquery.values('name')[:1]), output_field=CharField())
+    # )
+
+    return queryset.filter(**query_filters)
