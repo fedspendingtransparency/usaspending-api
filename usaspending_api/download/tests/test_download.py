@@ -115,21 +115,12 @@ def account_data(db):
     tas2 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
     tas3 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-02')
 
-    # Create Toptier Agencies matching the TreasuryAppropriationAccount models
-    mommy.make('references.ToptierAgency', cgac_code='-01')
-    mommy.make('references.ToptierAgency', cgac_code='-02')
-    mommy.make('references.ToptierAgency', cgac_code=tas1.allocation_transfer_agency_id)
-    mommy.make('references.ToptierAgency', cgac_code=tas2.allocation_transfer_agency_id)
-    mommy.make('references.ToptierAgency', cgac_code=tas3.allocation_transfer_agency_id)
-
     # Create AppropriationAccountBalances models
-    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas3)
 
     # Create FinancialAccountsByProgramActivityObjectClass models
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas2)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas3)
