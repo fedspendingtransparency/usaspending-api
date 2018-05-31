@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, Value
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -7,6 +7,9 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from usaspending_api.references.models import GTASTotalObligation
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
+
+
+UNREPORTED_DATA_NAME = 'Unreported Data*'
 
 
 def type_filter(_type, filters, limit=None):
@@ -78,7 +81,7 @@ def type_filter(_type, filters, limit=None):
             alt_set = exp.award_category()
 
         # Total value of filtered results
-        total = 0
+        actual_total = 0
 
         results = alt_set.all()
         for award in results:
@@ -93,16 +96,26 @@ def type_filter(_type, filters, limit=None):
                 award["code"] = code
                 if _type == 'award':
                     award["name"] = code
-            total += award['total']
+            actual_total += award['total']
 
-        alt_set = results[:limit] if _type == 'award' else results
         expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
             values_list('total_obligation', flat=True). \
             first()
 
+        if actual_total is None or expected_total is None:
+            unreported_amount = None
+        else:
+            unreported_amount = expected_total - actual_total
+
+        unreported_obj = FinancialAccountsByAwards.objects.none().\
+            annotate(code=Value(None), type=Value(_type), name=Value(UNREPORTED_DATA_NAME),
+                     total=Value(unreported_amount))
+        results = results.union(unreported_obj).order_by('-total')
+        alt_set = results[:limit] if _type == 'award' else results
+
         results = {
-            'total': total,
-            'expected_total': expected_total,
+            'total': expected_total,
+            'unreported_amount': unreported_amount,
             'end_date': fiscal_date,
             'results': alt_set
         }
@@ -124,19 +137,28 @@ def type_filter(_type, filters, limit=None):
         if _type == 'agency':
             queryset = exp.agency()
 
-        # Total value of filtered results
-        total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
-        for key, value in total.items():
-            total = value
+        # Actual total value of filtered results
+        actual_total = queryset.aggregate(total=Sum('obligations_incurred_by_program_object_class_cpe'))['total']
 
-        queryset = queryset[:limit] if _type == 'award' else queryset
         expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
             values_list('total_obligation', flat=True). \
             first()
 
+        if actual_total is None or expected_total is None:
+            unreported_amount = None
+        else:
+            unreported_amount = expected_total - actual_total
+
+        unreported_obj = FinancialAccountsByProgramActivityObjectClass.objects.none().\
+            annotate(code=Value(None), type=Value(_type), name=Value(UNREPORTED_DATA_NAME),
+                     amount=Value(unreported_amount))
+        queryset = queryset.union(unreported_obj).order_by('-amount')
+
+        queryset = queryset[:limit] if _type == 'award' else queryset
+
         results = {
-            'total': total,
-            'expected_total': expected_total,
+            'total': expected_total,
+            'unreported_amount': unreported_amount,
             'end_date': fiscal_date,
             'results': queryset
         }
