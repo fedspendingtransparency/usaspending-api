@@ -115,6 +115,13 @@ def account_data(db):
     tas2 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
     tas3 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-02')
 
+    # Create Toptier Agencies matching the TreasuryAppropriationAccount models
+    mommy.make('references.ToptierAgency', cgac_code='-01')
+    mommy.make('references.ToptierAgency', cgac_code='-02')
+    mommy.make('references.ToptierAgency', cgac_code=tas1.allocation_transfer_agency_id)
+    mommy.make('references.ToptierAgency', cgac_code=tas2.allocation_transfer_agency_id)
+    mommy.make('references.ToptierAgency', cgac_code=tas3.allocation_transfer_agency_id)
+
     # Create AppropriationAccountBalances models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
@@ -163,7 +170,31 @@ def test_download_awards_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_v2_endpoint(client, account_data):
+def test_download_accounts_a_v2_endpoint(client, account_data):
+    """test the accounts endpoint."""
+    db = connection.cursor().db.settings_dict
+    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
+    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
+
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "treasury_account",
+            "filters": {
+                "submission_type": "account_balances",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_b_v2_endpoint(client, account_data):
     """test the accounts endpoint."""
     db = connection.cursor().db.settings_dict
     connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
@@ -176,6 +207,30 @@ def test_download_accounts_v2_endpoint(client, account_data):
             "account_level": "treasury_account",
             "filters": {
                 "submission_type": "object_class_program_activity",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_c_v2_endpoint(client, account_data):
+    """test the accounts endpoint."""
+    db = connection.cursor().db.settings_dict
+    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
+    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
+
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "treasury_account",
+            "filters": {
+                "submission_type": "award_financial",
                 "fy": "2017",
                 "quarter": "4"
             },
@@ -278,7 +333,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
                     'type': 'awarding',
                     'tier': 'toptier',
                     'name': "Bureau of Stuff"
-                }, ]
+                }]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -444,13 +499,11 @@ def test_download_transactions_count(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "agencies": [
-                    {
-                        "type": "awarding",
-                        "tier": "toptier",
-                        "name": "Bureau of Things"
-                    }
-                ]
+                "agencies": [{
+                    "type": "awarding",
+                    "tier": "toptier",
+                    "name": "Bureau of Things"
+                }]
             }
         }))
 
