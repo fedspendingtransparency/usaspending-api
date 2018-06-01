@@ -43,9 +43,7 @@
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "type",
-      "columns": [
-        {"name": "type"}
-      ]
+      "columns": [{"name": "type"}]
     }, {
       "name": "pulled_from",
       "where": "pulled_from IS NOT NULL",
