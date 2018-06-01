@@ -36,7 +36,7 @@ class Command(BaseCommand):
             date_range['end_date'] = end_date
         json_request = {
             'constraint_type': 'year',
-            'download_types': award_levels,
+            'award_levels': award_levels,
             'filters': {
                 'award_types': award_types,
                 'agency': str(agency),
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         }
         download_viewset = YearLimitedDownloadViewSet()
         download_viewset.process_filters(json_request)
-        validated_request = download_viewset.validate_request(json_request)
+        validated_request = download_viewset.validate_award_request(json_request)
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'], file_name=file_name,
                                                   json_request=json.dumps(order_nested_object(validated_request)),
                                                   monthly_download=True)
