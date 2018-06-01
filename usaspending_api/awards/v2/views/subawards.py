@@ -1,25 +1,21 @@
-from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.views import APIDocumentationView
-from rest_framework.response import Response
-from usaspending_api.awards.models import Subaward
-from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.core.validator.pagination import PAGINATION
 from copy import deepcopy
+
 from django.db.models import F
+from rest_framework.response import Response
+
+from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.views import APIDocumentationView
+from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class SubawardsViewSet(APIDocumentationView):
     """
     endpoint_doc: /subawards/last_updated.md
     """
-    SubAwardResult = {
-        "id": None,
-        "subaward_number": None,
-        "description": None,
-        "action_date": None,
-        "amount": None,
-        "recipient_name": None,
-    }
 
     subaward_lookup = {
         # "Display Name": "database_column"
@@ -28,55 +24,50 @@ class SubawardsViewSet(APIDocumentationView):
         "description": "description",
         "action_date": "action_date",
         "amount": "amount",
-        "recipient_name": "recipient__recipient_name",
+        "recipient_name": "recipient_name",
     }
 
     @cache_response()
     def post(self, request):
         models = deepcopy(PAGINATION)
-        models.append({'key': 'award_id', 'name': 'award_id', 'type': 'integer', 'optional': True})
+        models.append({"key": "award_id", "name": "award_id", "type": "integer",
+                      "optional": True, "default": None, "allow_nulls": True})
         for model in models:
             if model["name"] == "sort":
-                model["default"] = "id"
+                model["default"] = "subaward_number"
 
-        validated_params = TinyShield(models).block(request.data)
-        print('=' * 80)
-        print(request.path)
-        print(validated_params)
-        qs = Subaward.objects.all()
+        request_data = TinyShield(models).block(request.data)
+        lower_limit = (request_data["page"] - 1) * request_data["limit"]
+        upper_limit = request_data["page"] * request_data["limit"]
         values = list(self.subaward_lookup.values())
-        print(values)
-        print()
-        print(*values)
-        lower_limit = (validated_params["page"] - 1) * validated_params["limit"]
-        upper_limit = validated_params["page"] * validated_params["limit"]
+        if request_data["sort"] not in values:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(request_data["sort"]))
 
-        if validated_params["order"] == "desc":
-            qs = qs.order_by(F(validated_params["sort"]).desc(nulls_last=True))
+        queryset = SubawardView.objects.all().values(*values)
+
+        if request_data["award_id"] is not None:
+            queryset = queryset.filter(award_id=request_data["award_id"])
+
+        if request_data["order"] == "desc":
+            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
         else:
-            qs = qs.order_by(F(validated_params["sort"]).asc(nulls_last=True))
-
-        qs = qs.values(*values)[lower_limit:upper_limit + 1]
+            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
         print(request.path)
-        print(generate_raw_quoted_query(qs))
+        print(generate_raw_quoted_query(queryset))
 
-        has_next = len(qs) > validated_params["limit"]
+        rows = list(queryset[lower_limit:upper_limit + 1])
+        results = [
+            {k: row[v] for k, v in self.subaward_lookup.items()}
+            for row in rows]
 
-        results = []
-        for row in qs[:validated_params["limit"]]:
-            r = deepcopy(self.SubAwardResult)
-            for k, v in self.subaward_lookup.items():
-                r[k] = row[v]
-            results.append(r)
+        page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
 
         response = {
-            'limit': validated_params["limit"],
-            'hasNext': has_next,
-            'hasPrevious': validated_params["page"] > 0,
-            'results': results,
+            "page_metadata": page_metadata,
+            "results": results[:request_data["limit"]],
         }
 
         return Response(response)
