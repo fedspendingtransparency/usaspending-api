@@ -161,12 +161,9 @@ def test_download_awards_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_a_v2_endpoint(client, account_data):
+def test_download_accounts_a_success(client, account_data):
     """test the accounts endpoint."""
-    db = connection.cursor().db.settings_dict
-    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
-    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
-
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
     resp = client.post(
         '/api/v2/download/accounts',
         content_type='application/json',
@@ -185,12 +182,9 @@ def test_download_accounts_a_v2_endpoint(client, account_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_b_v2_endpoint(client, account_data):
+def test_download_accounts_b_failure(client, account_data):
     """test the accounts endpoint."""
-    db = connection.cursor().db.settings_dict
-    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
-    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
-
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
     resp = client.post(
         '/api/v2/download/accounts',
         content_type='application/json',
@@ -209,12 +203,9 @@ def test_download_accounts_b_v2_endpoint(client, account_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_c_v2_endpoint(client, account_data):
+def test_download_accounts_c_success(client, account_data):
     """test the accounts endpoint."""
-    db = connection.cursor().db.settings_dict
-    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
-    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
-
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
     resp = client.post(
         '/api/v2/download/accounts',
         content_type='application/json',
@@ -499,3 +490,8 @@ def test_download_transactions_count(client, award_data):
         }))
 
     assert resp.json()['transaction_rows_gt_limit'] is False
+
+
+def generate_test_db_connection_string(connection):
+    db = connection.cursor().db.settings_dict
+    return 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])

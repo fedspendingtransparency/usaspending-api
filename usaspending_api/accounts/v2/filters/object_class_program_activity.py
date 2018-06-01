@@ -20,6 +20,8 @@ def object_class_program_activity_filter(filters):
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters['agency']).first()
         if agency:
             query_filters['treasury_account__agency_id'] = agency.cgac_code
+        else:
+            raise InvalidParameterException('agency with that ID does not exist')
 
     # TODO: Filter by federal account
     # federal_account = filters.get('federal_account', False)
