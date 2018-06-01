@@ -1,6 +1,7 @@
 import pytest
 from usaspending_api.common.helpers.unit_test_helper import mappings_test
 
+
 @pytest.mark.django_db
 def test_award_mappings(refresh_matviews):
     """ Ensure the awards column-level mappings retrieve data from valid DB columns. """

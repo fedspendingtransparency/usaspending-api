@@ -2,9 +2,11 @@ from django.core.exceptions import FieldError
 from usaspending_api.download.v2 import download_column_historical_lookups as lookup_mapping
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
+
 def add_to_mock_objects(mock_obj, mock_models_list):
     for mock_model in mock_models_list:
         mock_obj.add(mock_model)
+
 
 def mappings_test(download_type, sublevel):
     download_mapping = VALUE_MAPPINGS[download_type]
