@@ -9,12 +9,12 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.common.exceptions import InvalidParameterException
+# from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class SubawardsViewSet(APIDocumentationView):
     """
-    endpoint_doc: /subawards/last_updated.md
+    endpoint_doc: /awards/subawards.md
     """
 
     subaward_lookup = {
@@ -27,42 +27,48 @@ class SubawardsViewSet(APIDocumentationView):
         "recipient_name": "recipient_name",
     }
 
-    @cache_response()
-    def post(self, request):
+    def _parse_and_validate_request(self, request_dict):
         models = deepcopy(PAGINATION)
         models.append({"key": "award_id", "name": "award_id", "type": "integer",
                       "optional": True, "default": None, "allow_nulls": True})
         for model in models:
+            # Change sort to an enum of the desired values
             if model["name"] == "sort":
+                model["type"] = "enum"
+                model["enum_values"] = list(self.subaward_lookup.values())
                 model["default"] = "subaward_number"
 
-        request_data = TinyShield(models).block(request.data)
+        validated_request_data = TinyShield(models).block(request_dict)
+        return validated_request_data
+
+    def _business_logic(self, request_data):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
-        values = list(self.subaward_lookup.values())
-        if request_data["sort"] not in values:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(request_data["sort"]))
 
-        queryset = SubawardView.objects.all().values(*values)
+        queryset = SubawardView.objects.all()
 
         if request_data["award_id"] is not None:
             queryset = queryset.filter(award_id=request_data["award_id"])
 
         if request_data["order"] == "desc":
-            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
+            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True)).values(*list(self.subaward_lookup.values()))
         else:
-            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
+            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True)).values(*list(self.subaward_lookup.values()))
 
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
+        # queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+        # from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        # print('=======================================')
+        # print(generate_raw_quoted_query(queryset))
 
         rows = list(queryset[lower_limit:upper_limit + 1])
-        results = [
+        return [
             {k: row[v] for k, v in self.subaward_lookup.items()}
             for row in rows]
 
+    @cache_response()
+    def post(self, request):
+        request_data = self._parse_and_validate_request(request.data)
+        results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
 
         response = {
