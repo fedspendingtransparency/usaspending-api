@@ -107,14 +107,12 @@ def test_unreported_data_actual_value_file_b(client):
 
     expected_results = {
         'total': -10,
-        'unreported_amount': 6,
-        'agencies': ['random_funding_name_2', 'random_funding_name_1'],
-        'amounts': [-1, -15]
+        'agencies': ['Unreported Data*', 'random_funding_name_2', 'random_funding_name_1'],
+        'amounts': [6, -1, -15]
     }
 
     actual_results = {
         'total': json_response['total'],
-        'unreported_amount': json_response['unreported_amount'],
         'agencies': [entry['name'] for entry in json_response['results']],
         'amounts': [entry['amount'] for entry in json_response['results']]
     }
@@ -220,15 +218,13 @@ def test_unreported_data_actual_value_file_c(client):
     json_response = response.json()
 
     expected_results = {
-        'total': -10,
-        'unreported_amount': 5,
+        'total': -15,
         'agencies': ['random_recipient_name_1', 'random_recipient_name_2'],
         'amounts': [-5, -10]
     }
 
     actual_results = {
         'total': json_response['total'],
-        'unreported_amount': json_response['unreported_amount'],
         'agencies': [entry['name'] for entry in json_response['results']],
         'amounts': [entry['amount'] for entry in json_response['results']]
     }
@@ -257,13 +253,11 @@ def test_unreported_data_no_data_available(client):
     json_response = response.json()
 
     expected_results = {
-        'total': None,
-        'unreported_amount': None
+        'total': None
     }
 
     actual_results = {
-        'total': json_response['total'],
-        'unreported_amount': json_response['unreported_amount']
+        'total': json_response['total']
     }
 
     assert expected_results == actual_results
