@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
-from django.db.models import Case, F, Sum, TextField, Value, When
+from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
