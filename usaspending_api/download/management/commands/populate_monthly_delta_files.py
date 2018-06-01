@@ -45,7 +45,7 @@ AWARD_MAPPINGS = {
         'column_headers': {
             0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
         },
-        'correction_delete_ind': 'transaction__assistance_data__correction_late_delete_ind',
+        'correction_delete_ind': 'transaction__assistance_data__correction_delete_indicatr',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
@@ -156,8 +156,9 @@ class Command(BaseCommand):
                                 values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
-        added_rows = False
         bucket = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
+
+        all_deletions = pd.DataFrame()
         for key in bucket.list():
             match_date = self.check_regex_match(award_type, key.name, generate_since)
             if match_date:
@@ -180,14 +181,16 @@ class Command(BaseCommand):
                     if len(df.index) == 0:
                         continue
 
-                # Reorder columns to make it CSV-ready and append records to the end of the Delta file
+                # Reorder columns to make it CSV-ready, and append
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
-                logger.info('Appending {} records to the end of the file'.format(len(df.index)))
-                df.to_csv(source_path, mode='a', header=False, index=False)
-                added_rows = True
+                logger.info('Found {} deletion records to include'.format(len(df.index)))
+                all_deletions = all_deletions.append(df, ignore_index=True)
 
-        if not added_rows:
+        # Only append to file if there are any records
+        if len(all_deletions.index) == 0:
             logger.info('No deletion records to append to file')
+        else:
+            self.add_deletions_to_file(all_deletions, award_type, source_path)
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
         """ Ensure that the dataframe has all necessary columns in the correct order """
@@ -210,6 +213,16 @@ class Command(BaseCommand):
         # Ensure columns are in correct order
         return dataframe[ordered_columns]
 
+    def add_deletions_to_file(self, df, award_type, source_path):
+        """ Append the deletion records to the end of the CSV file """
+        logger.info('Removing duplicates from deletion records')
+        df = df.sort_values(['last_modified_date'] + list(AWARD_MAPPINGS[award_type]['column_headers'].values()))
+        deduped_df = df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]['column_headers'].values()), keep='last')
+        logger.info('Removed {} duplicated deletion records'.format(len(df.index) - len(deduped_df.index)))
+
+        logger.info('Appending {} records to the end of the file'.format(len(deduped_df.index)))
+        deduped_df.to_csv(source_path, mode='a', header=False, index=False)
+
     def check_regex_match(self, award_type, file_name, generate_since):
         """ Create a date object from a regular expression match """
         re_match = re.match(AWARD_MAPPINGS[award_type]['match'], file_name)
@@ -220,7 +233,12 @@ class Command(BaseCommand):
         month = re_match.group('month')
         day = re_match.group('day')
 
-        if date(int(year), int(month), int(day)) <= datetime.strptime(generate_since, "%Y-%m-%d").date():
+        # Ignore files that are not within the script's time frame
+        # Note: Contract deletion files are made in the evening, Assistance files in the morning
+        file_date = date(int(year), int(month), int(day))
+        generate_since_date = datetime.strptime(generate_since, "%Y-%m-%d").date()
+        if (award_type == 'Assistance' and file_date <= generate_since_date) or \
+           (award_type == 'Contracts' and file_date < generate_since_date):
             return False
 
         return '{}-{}-{}'.format(year, month, day)

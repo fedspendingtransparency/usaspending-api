@@ -201,7 +201,6 @@
     }, {
       "name": "gin_recipient_name",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "recipient_name", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "recipient_name",
@@ -222,10 +221,6 @@
     }, {
       "name": "last_modified_date",
       "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "fiscal_year",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}],
-      "__comment": "CAN BE REMOVED AFTER SPRINT 65"
     }, {
       "name": "awarding_agency_id",
       "where": "awarding_agency_id IS NOT NULL AND action_date >= '2007-10-01'",
@@ -325,7 +320,6 @@
     }, {
       "name": "gin_product_or_service_description",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "(product_or_service_description)", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "naics",
@@ -334,45 +328,39 @@
     }, {
       "name": "gin_naics_code",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "naics_code", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "gin_naics_description",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "UPPER(naics_description)", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "gin_business_categories",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "business_categories"}]
     }, {
       "name": "keyword_ts_vector",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "keyword_ts_vector"}]
     }, {
       "name": "award_ts_vector",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "award_ts_vector"}]
     }, {
       "name": "recipient_name_ts_vector",
       "method": "GIN",
-      "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
-      "name": "compound_psc_fy",
+      "name": "compound_psc_action_date",
       "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "product_or_service_code"}, {"name": "fiscal_year"}]
+      "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
     }, {
-      "name": "compound_naics_fy",
+      "name": "compound_naics_action_date",
       "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "naics_code"}, {"name": "fiscal_year"}]
+      "columns": [{"name": "naics_code"}, {"name": "action_date"}]
     }, {
-      "name": "compound_cfda_fy",
+      "name": "compound_cfda_action_date",
       "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "cfda_number"}, {"name": "fiscal_year"}]
+      "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }, {
       "name": "awarding_toptier_agency_name_pre2008",
       "where": "awarding_toptier_agency_name IS NOT NULL AND action_date < '2007-10-01'",
