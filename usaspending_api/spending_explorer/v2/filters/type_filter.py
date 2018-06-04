@@ -1,6 +1,6 @@
 import operator
 
-from django.db.models import DecimalField, Sum, TextField, Value
+from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
