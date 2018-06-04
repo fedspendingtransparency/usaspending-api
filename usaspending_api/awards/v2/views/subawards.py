@@ -56,10 +56,6 @@ class SubawardsViewSet(APIDocumentationView):
         else:
             queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
-        # from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        # print('=======================================')
-        # print(generate_raw_quoted_query(queryset))
-
         rows = list(queryset[lower_limit:upper_limit + 1])
         return [
             {k: row[v] for k, v in self.subaward_lookup.items() if k != "award_id"}
