@@ -10,7 +10,6 @@ import time
 import zipfile
 import csv
 
-from collections import OrderedDict
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
@@ -316,7 +315,7 @@ def apply_annotations_to_sql(raw_query, aliases):
         deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
         aliases_copy.remove(alias)
 
-    # Validate we have an alias for each 
+    # Validate we have an alias for each value in the SELECT string
     if len(selects_list) != len(aliases_copy):
         raise Exception("Length of alises doesn't match the columns in selects")
 
