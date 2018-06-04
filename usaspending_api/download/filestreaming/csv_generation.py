@@ -297,31 +297,34 @@ def apply_annotations_to_sql(raw_query, aliases):
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
     aliases_copy = list(aliases)
-    select_string = re.findall('SELECT (.*?) (CASE|CONCAT|FROM)', raw_query)[0]
-    if select_string[1] in ('CASE', 'CONCAT'):
-        select_string = select_string[0].strip()[:-1]
-    else:
-        select_string = select_string[0].strip()
-    select_list = [select.strip() for select in select_string.split(',')]
 
-    sql_funcs = {}
-    all_selects_string = re.findall('SELECT (.*?)FROM', raw_query)[0]
-    all_selects_match = re.findall('(CONCAT|CASE)(.*?) AS (.*?) ', all_selects_string)
-    for re_match in all_selects_match:
-        value = re_match[2][:-1].strip() if re_match[2][-1:] == ',' else re_match[2].strip()
-        value = value[:-1] if (value[-1:] == "\"" or value[-1:] == "'") else value
-        value = value[1:] if (value[:1] == "\"" or value[:1] == "'") else value
-        sql_funcs[value] = '{}{}'.format(re_match[0], re_match[1])
-        aliases_copy.remove(value)
+    # Extract everything between the first SELECT and the last FROM
+    query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
 
-    if len(select_list) != len(aliases_copy):
+    # Create a list from the non-derived values between SELECT and FROM
+    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
+    just_selects = selects_str[0][:-1].strip() if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    selects_list = [select.strip() for select in just_selects.strip().split(',')]
+
+    # Create a list from the derived values between SELECT and FROM
+    deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    deriv_dict = {}
+    for str_match in deriv_str_lookup:
+        alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
+        alias = alias[:-1] if (alias[-1:] == "\"" or alias[-1:] == "'") else alias
+        alias = alias[1:] if (alias[:1] == "\"" or alias[:1] == "'") else alias
+        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
+        aliases_copy.remove(alias)
+
+    # Validate we have an alias for each 
+    if len(selects_list) != len(aliases_copy):
         raise Exception("Length of alises doesn't match the columns in selects")
 
-    selects_list = []
+    # Match aliases with their values
+    final_list = []
     for alias in aliases:
-        selects_list.append('{} AS {}'.format(sql_funcs[alias] if alias in sql_funcs else select_list.pop(0), alias))
-
-    return raw_query.replace(all_selects_string.strip(), ", ".join(selects_list))
+        final_list.append('{} AS {}'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias))
+    return raw_query.replace(query_before_from.strip(), ", ".join(final_list))
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
