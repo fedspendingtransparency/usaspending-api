@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 # from django.db.models import Case, CharField, When, Value
@@ -31,9 +32,10 @@ def award_financial_filter(filters):
 
     # Filter by Fiscal Year and Quarter
     if filters.get('fy', False) and filters.get('quarter', False):
-        start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
-        query_filters['reporting_period_start'] = start_date
-        query_filters['reporting_period_end'] = end_date
+        # For C files, we want all the data from Q1 through the quarter given in the filter
+        filter_dates = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
+        query_filters['reporting_period_start__gte'] = datetime.date(filters['fy']-1, 10, 1)
+        query_filters['reporting_period_end__lte'] = filter_dates[1]
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
