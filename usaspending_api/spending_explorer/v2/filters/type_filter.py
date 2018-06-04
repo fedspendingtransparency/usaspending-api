@@ -34,13 +34,22 @@ def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal
     """
 
     queryset = queryset[:limit] if type == 'award' else queryset
-    result_set = list(queryset.values('code', 'type', 'name', 'amount'))
+
+    result_set = []
+    result_keys = ['id', 'code', 'type', 'name', 'amount']
+    for entry in queryset:
+        condensed_entry = {}
+        for key in result_keys:
+            condensed_entry[key] = entry[key]
+        result_set.append(condensed_entry)
+
     expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
         values_list('total_obligation', flat=True). \
         first()
 
     if spending_type in VALID_UNREPORTED_DATA_TYPES:
         unreported_obj = {
+            'id': None,
             'code': None,
             'type': spending_type,
             'name': UNREPORTED_DATA_NAME,
@@ -150,7 +159,6 @@ def type_filter(_type, filters, limit=None):
                     award["name"] = code
             actual_total += award['total']
 
-        alt_set = alt_set.order_by('-total')
         alt_set = alt_set[:limit] if _type == 'award' else alt_set
 
         results = {
@@ -175,8 +183,6 @@ def type_filter(_type, filters, limit=None):
             queryset = exp.object_class()
         if _type == 'agency':
             queryset = exp.agency()
-
-        queryset = queryset.order_by('-amount')
 
         # Actual total value of filtered results
         actual_total = queryset.aggregate(total=Sum('obligations_incurred_by_program_object_class_cpe'))['total']

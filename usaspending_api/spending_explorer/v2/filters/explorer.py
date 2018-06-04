@@ -23,7 +23,7 @@ class Explorer(object):
             name=F('treasury_account__budget_function_title'),
             code=F('treasury_account__budget_function_code'),
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
-            total=Sum('obligations_incurred_by_program_object_class_cpe'))
+            total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset
 
@@ -35,7 +35,7 @@ class Explorer(object):
             name=F('treasury_account__budget_subfunction_title'),
             code=F('treasury_account__budget_subfunction_code')
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
-            total=Sum('obligations_incurred_by_program_object_class_cpe'))
+            total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset
 
@@ -48,7 +48,7 @@ class Explorer(object):
             code=F('treasury_account__federal_account__main_account_code')
         ).values(
             'id', 'type', 'name', 'code', 'amount').annotate(
-            total=Sum('obligations_incurred_by_program_object_class_cpe'))
+            total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset
 
@@ -61,7 +61,7 @@ class Explorer(object):
             code=F('program_activity__program_activity_code')
         ).values(
             'id', 'type', 'name', 'code', 'amount').annotate(
-            total=Sum('obligations_incurred_by_program_object_class_cpe'))
+            total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset
 
@@ -74,7 +74,7 @@ class Explorer(object):
             code=F('object_class__major_object_class')
         ).values(
             'id', 'type', 'name', 'code', 'amount').annotate(
-            total=Sum('obligations_incurred_by_program_object_class_cpe'))
+            total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset
 
@@ -84,7 +84,7 @@ class Explorer(object):
             annotate(id=F('award__recipient__recipient_name'), type=Value('recipient', output_field=CharField()),
                      name=F('award__recipient__recipient_name'), code=F('award__recipient__recipient_name')).\
             values('id', 'type', 'name', 'code', 'amount').\
-            annotate(total=Sum('transaction_obligated_amount'))
+            annotate(total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set
 
@@ -102,7 +102,7 @@ class Explorer(object):
                      then=Value(DOD_CGAC)),
                 default=F('treasury_account__funding_toptier_agency__cgac_code')
             )).values('type', 'name', 'code').annotate(
-            amount=Sum('obligations_incurred_by_program_object_class_cpe'))
+            amount=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-amount')
 
         for element in queryset:
             element['id'] = self.agency_ids[element['code']]
@@ -116,7 +116,7 @@ class Explorer(object):
             type=Value('award_category', output_field=CharField()),
             name=F('award__category')
         ).values('id', 'type', 'piid', 'fain', 'uri', 'name', 'amount').annotate(
-            total=Sum('transaction_obligated_amount'))
+            total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set
 
@@ -126,6 +126,6 @@ class Explorer(object):
             id=F('award__id'),
             type=Value('award', output_field=CharField())
         ).values('id', 'type', 'piid', 'fain', 'uri', 'amount').annotate(
-            total=Sum('transaction_obligated_amount'))
+            total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set
