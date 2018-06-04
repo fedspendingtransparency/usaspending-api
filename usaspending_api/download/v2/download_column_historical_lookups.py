@@ -910,7 +910,7 @@ query_paths = {
             # TODO: Derivations
             # ('treasury_account_symbol', 'treasury_account_symbol'),
             # ('agency_name', 'agency_name'),
-            # ('allocation_transfer_agency_name', 'treasury_account_identifier__awarding_toptier_agency__name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
             # ('budget_function', 'treasury_account_identifier__budget_function_code'),
             # ('budget_subfunction', 'treasury_account_identifier__budget_subfunction_code'),
             ('federal_account_code', 'treasury_account_identifier__federal_account__federal_account_code'),
@@ -945,7 +945,7 @@ query_paths = {
             # TODO: Derivations
             # ('treasury_account_symbol', 'treasury_account_symbol'),
             # ('agency_name', 'agency_name'),
-            # ('allocation_transfer_agency_name', 'treasury_account__awarding_toptier_agency__name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
             # ('budget_function', 'treasury_account__budget_function_code'),
             # ('budget_subfunction', 'treasury_account__budget_subfunction_code'),
             ('federal_account_code', 'treasury_account__federal_account__federal_account_code'),
@@ -975,7 +975,7 @@ query_paths = {
             # TODO: Derivations
             # ('treasury_account_symbol', 'treasury_account_symbol'),
             # ('agency_name', 'agency_name'),
-            # ('allocation_transfer_agency_name', 'treasury_account__awarding_toptier_agency__name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
             # ('budget_function', 'treasury_account__budget_function_title'),
             # ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
             ('federal_account_code', 'treasury_account__federal_account__federal_account_code'),
