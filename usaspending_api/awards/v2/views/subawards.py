@@ -25,6 +25,7 @@ class SubawardsViewSet(APIDocumentationView):
         "action_date": "action_date",
         "amount": "amount",
         "recipient_name": "recipient_name",
+        "award_id": "award_id",
     }
 
     def _parse_and_validate_request(self, request_dict):
@@ -45,24 +46,23 @@ class SubawardsViewSet(APIDocumentationView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = SubawardView.objects.all()
+        queryset = SubawardView.objects.all().values(*list(self.subaward_lookup.values()))
 
         if request_data["award_id"] is not None:
             queryset = queryset.filter(award_id=request_data["award_id"])
 
         if request_data["order"] == "desc":
-            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True)).values(*list(self.subaward_lookup.values()))
+            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
         else:
-            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True)).values(*list(self.subaward_lookup.values()))
+            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
-        # queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
         # from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         # print('=======================================')
         # print(generate_raw_quoted_query(queryset))
 
         rows = list(queryset[lower_limit:upper_limit + 1])
         return [
-            {k: row[v] for k, v in self.subaward_lookup.items()}
+            {k: row[v] for k, v in self.subaward_lookup.items() if k != "award_id"}
             for row in rows]
 
     @cache_response()
