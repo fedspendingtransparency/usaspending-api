@@ -179,6 +179,12 @@ class BusinessLogic:
         return results
 
     def funding_agency(self) -> list:
+        """
+        NOTICE: These categories were originally included for both Prime and Sub awards.
+        However, there are concerns with the data sparsity so it is unlikely to be used immediately.
+        So this category will be "dark" for now (removed from API doc). If undesired long-term they should be
+        removed from code and API contract.
+        """
         if self.category == 'funding_agency':
             filters = {'funding_toptier_agency_name__isnull': False}
             values = ['funding_agency_id', 'funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
@@ -224,7 +230,7 @@ class BusinessLogic:
             values = ['cfda_number']
         elif self.category == 'psc':
             if self.subawards:
-                # Not available until it's available in the broker
+                # N/A for subawards
                 self.raise_not_implemented()
             filters = {'product_or_service_code__isnull': False}
             values = ['product_or_service_code']
