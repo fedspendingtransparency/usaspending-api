@@ -278,7 +278,10 @@ class BusinessLogic:
 def fetch_agency_tier_id_by_agency(agency_name, is_subtier=False):
     agency_type = 'subtier_agency' if is_subtier else 'toptier_agency'
     columns = ['id']
-    filters = {'{}__name'.format(agency_type): agency_name, 'toptier_flag': not is_subtier}
+    filters = {'{}__name'.format(agency_type): agency_name}
+    if not is_subtier:
+        # Note: The awarded/funded subagency can be a toptier agency, so we don't filter only subtiers in that case.
+        filters['toptier_flag'] = True
     result = Agency.objects.filter(**filters).values(*columns).first()
     if not result:
         logger.warning('{} not found for agency_name: {}'.format(','.join(columns), agency_name))
