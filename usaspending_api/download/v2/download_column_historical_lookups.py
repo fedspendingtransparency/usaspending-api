@@ -992,8 +992,8 @@ query_paths = {
             ('transaction_obligated_amount', 'transaction_obligated_amount'),
             ('award_type_code', 'award__type'),
             ('award_type', 'award__type_description'),
-            ('idv_type_code', 'award__transactionnormalized__contract_data__idv_type'),
-            ('idv_type', 'award__transactionnormalized__contract_data__idv_type_description'),
+            ('idv_type_code', 'award__latest_transaction__contract_data__idv_type'),
+            ('idv_type', 'award__latest_transaction__contract_data__idv_type_description'),
             ('award_description', 'award__description'),
             ('awarding_agency_code', 'award__awarding_agency__toptier_agency__cgac_code'),
             ('awarding_agency_name', 'award__awarding_agency__toptier_agency__name'),
@@ -1016,10 +1016,10 @@ query_paths = {
             ('primary_place_of_performance_county', 'award__place_of_performance__county_name'),
             ('primary_place_of_performance_congressional_district', 'award__place_of_performance__congressional_code'),
             ('primary_place_of_performance_zip_4', 'award__place_of_performance__zip4'),
-            ('cfda_number', 'award__transactionnormalized__assistance_data__cfda_number'),
-            ('cfda_title', 'award__transactionnormalized__assistance_data__cfda_title'),
-            ('naics_code', 'award__transactionnormalized__contract_data__naics'),
-            ('naics_description', 'award__transactionnormalized__contract_data__naics_description')
+            ('cfda_number', 'award__latest_transaction__assistance_data__cfda_number'),
+            ('cfda_title', 'award__latest_transaction__assistance_data__cfda_title'),
+            ('naics_code', 'award__latest_transaction__contract_data__naics'),
+            ('naics_description', 'award__latest_transaction__contract_data__naics_description')
         ])
     }
 }
