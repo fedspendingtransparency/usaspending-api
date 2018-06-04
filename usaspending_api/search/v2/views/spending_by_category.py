@@ -202,7 +202,7 @@ class BusinessLogic:
 
     def recipient(self) -> list:
         if self.category == 'recipient_duns':
-            filters = {'recipient_unique_id__isnull': False}
+            filters = {}
             values = ['recipient_name', 'recipient_unique_id']
 
         elif self.category == 'recipient_parent_duns':
