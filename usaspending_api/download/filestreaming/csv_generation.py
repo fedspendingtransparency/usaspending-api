@@ -19,6 +19,7 @@ from usaspending_api.download.helpers import (verify_requested_columns_available
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
+from usaspending_api.references.models import ToptierAgency
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
@@ -30,12 +31,16 @@ logger = logging.getLogger('console')
 
 
 class CsvSource:
-    def __init__(self, model_type, file_type, source_type):
+    def __init__(self, model_type, file_type, source_type, agency_id):
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
         self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
         self.human_names = list(self.query_paths.keys())
+        if agency_id == 'all':
+            self.agency_code = 'all'
+        else:
+            self.agency_code = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first().cgac_code
         self.queryset = None
 
     def values(self, header):
@@ -124,6 +129,7 @@ def get_csv_sources(json_request):
     csv_sources = []
     for download_type in json_request['download_types']:
         queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
+        agency_id = json_request['filters'].get('agency', 'all')
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
@@ -134,14 +140,14 @@ def get_csv_sources(json_request):
 
             if award_type_codes & d1_award_type_codes:
                 # only generate d1 files if the user is asking for contract data
-                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type)
+                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
                 d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
 
             if award_type_codes & d2_award_type_codes:
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type)
+                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
                 d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
@@ -150,7 +156,7 @@ def get_csv_sources(json_request):
         elif VALUE_MAPPINGS[download_type]['source_type'] == 'account':
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
-                                       download_type)
+                                       download_type, agency_id)
             account_source.queryset = queryset
             csv_sources.append(account_source)
 
@@ -160,7 +166,8 @@ def get_csv_sources(json_request):
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account'}
-    source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
+    source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
+                                    VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 

@@ -69,7 +69,7 @@ VALUE_MAPPINGS = {
         'source_type': 'account',
         'table': FinancialAccountsByProgramActivityObjectClass,
         'table_name': 'object_class_program_activity',
-        'download_name': 'object_class_program_activity',
+        'download_name': 'account_breakdown_by_program_activity_object_class',
         'filter_function': object_class_program_activity_filter
     }
 }
