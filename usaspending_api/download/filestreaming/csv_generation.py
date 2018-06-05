@@ -10,7 +10,6 @@ import time
 import zipfile
 import csv
 
-from collections import OrderedDict
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
@@ -303,13 +302,34 @@ def apply_annotations_to_sql(raw_query, aliases):
     want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-    select_string = re.findall('SELECT (.*?) FROM', raw_query)[0]
-    selects = [select.strip() for select in select_string.split(',')]
-    if len(selects) != len(aliases):
+    aliases_copy = list(aliases)
+
+    # Extract everything between the first SELECT and the last FROM
+    query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
+
+    # Create a list from the non-derived values between SELECT and FROM
+    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
+    just_selects = selects_str[0][:-1].strip() if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    selects_list = [select.strip() for select in just_selects.strip().split(',')]
+
+    # Create a list from the derived values between SELECT and FROM
+    deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    deriv_dict = {}
+    for str_match in deriv_str_lookup:
+        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
+        alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
+        if (alias[-1:] == "\"" and alias[:1] == "\"") or (alias[-1:] == "'" and alias[:1] == "'"):
+            alias = alias[1:-1]
+        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
+        aliases_copy.remove(alias)
+
+    # Validate we have an alias for each value in the SELECT string
+    if len(selects_list) != len(aliases_copy):
         raise Exception("Length of alises doesn't match the columns in selects")
-    selects_mapping = OrderedDict(zip(aliases, selects))
-    new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias) for alias, select in selects_mapping.items()])
-    return raw_query.replace(select_string, new_select_string)
+
+    # Match aliases with their values
+    values_list = ['{} AS {}'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
+    return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
