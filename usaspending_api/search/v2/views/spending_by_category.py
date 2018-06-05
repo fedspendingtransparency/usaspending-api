@@ -257,6 +257,8 @@ class BusinessLogic:
         return results
 
     def location(self) -> list:
+        filters = {}
+        values = {}
         if self.category == 'county':
             filters = {'pop_county_code__isnull': False}
             values = ['pop_county_code', 'pop_county_name']
@@ -265,6 +267,7 @@ class BusinessLogic:
             values = ['pop_congressional_code', 'pop_state_code']
 
         self.queryset = self.common_db_query(filters, values)
+
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
 
@@ -272,7 +275,11 @@ class BusinessLogic:
         for row in results:
             row['id'] = None
             if self.category == 'district':
-                row['name'] = '{}-{}'.format(row['pop_state_code'], row['code'])
+                cd_code = row['code']
+                if cd_code == '90':  # 90 = multiple districts
+                    cd_code = 'MULTIPLE DISTRICTS'
+
+                row['name'] = '{}-{}'.format(row['pop_state_code'], cd_code)
                 del row['pop_state_code']
         return results
 
