@@ -1,10 +1,9 @@
 import logging
 
-# from django.db.models import Case, CharField, When, Value
-# from django.db.models.functions import Concat
+from django.db.models import Case, CharField, OuterRef, Subquery, When, Value
+from django.db.models.functions import Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
-# from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
@@ -36,26 +35,26 @@ def object_class_program_activity_filter(filters):
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
-    queryset = FinancialAccountsByProgramActivityObjectClass.objects
-
-    # TODO: Derivations
-    # ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__allocation_transfer_agency_id'))
-    # agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__agency_id'))
-    # queryset = queryset.annotate(
-    #     treasury_account_symbol=Concat(
-    #         'treasury_account__agency_id',
-    #         Value('-'),
-    #         Case(When(treasury_account__availability_type_code='X', then=Value('X')),
-    #              default=Concat('treasury_account__beginning_period_of_availability', Value('/'),
-    #                             'treasury_account__ending_period_of_availability'),
-    #              output_field=CharField()),
-    #         Value('-'),
-    #         'treasury_account__main_account_code',
-    #         Value('-'),
-    #         'treasury_account__sub_account_code',
-    #         output_field=CharField()),
-    #     allocation_transfer_agency_name=Value(Subquery(ata_subquery.values('name')[:1]), output_field=CharField()),
-    #     agency_name=Value(Subquery(agency_name_subquery.values('name')[:1]), output_field=CharField())
-    # )
+    # Derive treasury_account_symbol, allocation_transfer_agency_name, and agency_name
+    ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__allocation_transfer_agency_id'))
+    agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__agency_id'))
+    queryset = FinancialAccountsByProgramActivityObjectClass.objects.annotate(
+        treasury_account_symbol=Concat(
+            'treasury_account__agency_id',
+            Value('-'),
+            Case(When(treasury_account__availability_type_code='X', then=Value('X')),
+                 default=Concat('treasury_account__beginning_period_of_availability', Value('/'),
+                                'treasury_account__ending_period_of_availability'),
+                 output_field=CharField()),
+            Value('-'),
+            'treasury_account__main_account_code',
+            Value('-'),
+            'treasury_account__sub_account_code',
+            output_field=CharField()),
+        allocation_transfer_agency_name=Subquery(ata_subquery.values('name')[:1]),
+        agency_name=Subquery(agency_name_subquery.values('name')[:1]),
+        federal_account_code=Concat('treasury_account__federal_account__agency_identifier',
+                                    'treasury_account__federal_account__main_account_code')
+    )
 
     return queryset.filter(**query_filters)
