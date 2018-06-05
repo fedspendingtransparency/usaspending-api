@@ -117,12 +117,10 @@ def account_data(db):
 
     # Create AppropriationAccountBalances models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
-    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas3)
 
     # Create FinancialAccountsByProgramActivityObjectClass models
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas2)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas3)
@@ -163,12 +161,51 @@ def test_download_awards_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_v2_endpoint(client, account_data):
+def test_download_accounts_a_success(client, account_data):
     """test the accounts endpoint."""
-    db = connection.cursor().db.settings_dict
-    connection_string = 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
-    csv_generation.retrieve_db_string = Mock(return_value=connection_string)
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "treasury_account",
+            "filters": {
+                "submission_type": "account_balances",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
 
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_a_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "account_balances",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+    print(resp.status_code)
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_download_accounts_b_success(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
     resp = client.post(
         '/api/v2/download/accounts',
         content_type='application/json',
@@ -184,6 +221,67 @@ def test_download_accounts_v2_endpoint(client, account_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_b_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "object_class_program_activity",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_download_accounts_c_success(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "treasury_account",
+            "filters": {
+                "submission_type": "award_financial",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_c_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "award_financial",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
@@ -278,7 +376,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
                     'type': 'awarding',
                     'tier': 'toptier',
                     'name': "Bureau of Stuff"
-                }, ]
+                }]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -444,14 +542,17 @@ def test_download_transactions_count(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "agencies": [
-                    {
-                        "type": "awarding",
-                        "tier": "toptier",
-                        "name": "Bureau of Things"
-                    }
-                ]
+                "agencies": [{
+                    "type": "awarding",
+                    "tier": "toptier",
+                    "name": "Bureau of Things"
+                }]
             }
         }))
 
     assert resp.json()['transaction_rows_gt_limit'] is False
+
+
+def generate_test_db_connection_string(connection):
+    db = connection.cursor().db.settings_dict
+    return 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])

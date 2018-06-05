@@ -933,6 +933,12 @@ query_paths = {
             ('availability_type_code', 'treasury_account_identifier__availability_type_code'),
             ('main_account_code', 'treasury_account_identifier__main_account_code'),
             ('sub_account_code', 'treasury_account_identifier__sub_account_code'),
+            # TODO: Derivations
+            # ('treasury_account_symbol', 'treasury_account_symbol'),
+            # ('agency_name', 'agency_name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
+            # ('budget_function', 'treasury_account_identifier__budget_function_code'),
+            # ('budget_subfunction', 'treasury_account_identifier__budget_subfunction_code'),
             ('federal_account_code', 'treasury_account_identifier__federal_account__federal_account_code'),
             ('federal_account_name', 'treasury_account_identifier__federal_account__account_title'),
             ('budget_authority_unobligated_balance_brought_forward',
@@ -962,6 +968,12 @@ query_paths = {
             ('availability_type_code', 'treasury_account__availability_type_code'),
             ('main_account_code', 'treasury_account__main_account_code'),
             ('sub_account_code', 'treasury_account__sub_account_code'),
+            # TODO: Derivations
+            # ('treasury_account_symbol', 'treasury_account_symbol'),
+            # ('agency_name', 'agency_name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
+            # ('budget_function', 'treasury_account__budget_function_code'),
+            # ('budget_subfunction', 'treasury_account__budget_subfunction_code'),
             ('federal_account_code', 'treasury_account__federal_account__federal_account_code'),
             ('federal_account_name', 'treasury_account__federal_account__account_title'),
             ('program_activity_name', 'program_activity__program_activity_name'),
@@ -986,11 +998,12 @@ query_paths = {
             ('availability_type_code', 'treasury_account__availability_type_code'),
             ('main_account_code', 'treasury_account__main_account_code'),
             ('sub_account_code', 'treasury_account__sub_account_code'),
-            ('treasury_account_symbol', 'treasury_account__tas_rendering_label'),
-            ('agency_name', 'treasury_account__agency_id'),
-            ('allocation_transfer_agency_name', 'treasury_account__awarding_toptier_agency__name'),
-            ('budget_function', 'treasury_account__budget_function_title'),
-            ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
+            # TODO: Derivations
+            # ('treasury_account_symbol', 'treasury_account_symbol'),
+            # ('agency_name', 'agency_name'),
+            # ('allocation_transfer_agency_name', 'allocation_transfer_agency_name'),
+            # ('budget_function', 'treasury_account__budget_function_title'),
+            # ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
             ('federal_account_code', 'treasury_account__federal_account__federal_account_code'),
             ('federal_account_name', 'treasury_account__federal_account__account_title'),
             ('program_activity_code', 'program_activity__program_activity_code'),
@@ -1005,8 +1018,8 @@ query_paths = {
             ('transaction_obligated_amount', 'transaction_obligated_amount'),
             ('award_type_code', 'award__type'),
             ('award_type', 'award__type_description'),
-            ('idv_type_code', 'award__transactionnormalized__contract_data__idv_type'),
-            ('idv_type', 'award__transactionnormalized__contract_data__idv_type_description'),
+            ('idv_type_code', 'award__latest_transaction__contract_data__idv_type'),
+            ('idv_type', 'award__latest_transaction__contract_data__idv_type_description'),
             ('award_description', 'award__description'),
             ('awarding_agency_code', 'award__awarding_agency__toptier_agency__cgac_code'),
             ('awarding_agency_name', 'award__awarding_agency__toptier_agency__name'),
@@ -1015,7 +1028,7 @@ query_paths = {
             ('recipient_duns', 'award__recipient__recipient_unique_id'),
             ('recipient_name', 'award__recipient__recipient_name'),
             ('recipient_parent_duns', 'award__recipient__parent_recipient_unique_id'),
-            # TODO: Add column and derive based on whether latest_transaction is Contract or Assistance
+            # TODO: Derivations
             # ('recipient_parent_name',
             # 'award__latest_transaction__(contract|assistance)_data__ultimate_parent_legal_enti'),
             ('recipient_country', 'award__recipient__location__country_name'),
@@ -1029,10 +1042,10 @@ query_paths = {
             ('primary_place_of_performance_county', 'award__place_of_performance__county_name'),
             ('primary_place_of_performance_congressional_district', 'award__place_of_performance__congressional_code'),
             ('primary_place_of_performance_zip_4', 'award__place_of_performance__zip4'),
-            ('cfda_number', 'award__transactionnormalized__assistance_data__cfda_number'),
-            ('cfda_title', 'award__transactionnormalized__assistance_data__cfda_title'),
-            ('naics_code', 'award__transactionnormalized__contract_data__naics'),
-            ('naics_description', 'award__transactionnormalized__contract_data__naics_description')
+            ('cfda_number', 'award__latest_transaction__assistance_data__cfda_number'),
+            ('cfda_title', 'award__latest_transaction__assistance_data__cfda_title'),
+            ('naics_code', 'award__latest_transaction__contract_data__naics'),
+            ('naics_description', 'award__latest_transaction__contract_data__naics_description')
         ])
     }
 }
