@@ -11,7 +11,7 @@ from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
-UNREPORTED_DATA_NAME = 'Unreported Data*'
+UNREPORTED_DATA_NAME = 'Unreported Data'
 VALID_UNREPORTED_DATA_TYPES = ['agency', 'budget_function', 'object_class']
 
 
@@ -60,13 +60,8 @@ def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal
         if not (actual_total is None or expected_total is None):
             unreported_obj['amount'] = expected_total - actual_total
 
-            if len(result_set) == 0:
-                result_set.append(unreported_obj)
-            elif len(result_set) < limit:
-                result_set.append(unreported_obj)
-            else:
-                if unreported_obj['amount'] > result_set[-1]['amount']:
-                    result_set[-1] = unreported_obj
+            # Since the limit doesn't apply to anything except the awards category, always append the unreported object
+            result_set.append(unreported_obj)
 
         result_set.sort(key=operator.itemgetter('amount'), reverse=True)
 
