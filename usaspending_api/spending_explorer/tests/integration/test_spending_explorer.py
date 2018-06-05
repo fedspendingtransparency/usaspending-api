@@ -107,7 +107,7 @@ def test_unreported_data_actual_value_file_b(client):
 
     expected_results = {
         'total': -10,
-        'agencies': ['Unreported Data*', 'random_funding_name_2', 'random_funding_name_1'],
+        'agencies': ['Unreported Data', 'random_funding_name_2', 'random_funding_name_1'],
         'amounts': [6, -1, -15]
     }
 

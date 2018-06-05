@@ -63,7 +63,7 @@ def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal
             # Since the limit doesn't apply to anything except the awards category, always append the unreported object
             result_set.append(unreported_obj)
 
-        result_set.sort(key=operator.itemgetter('amount'), reverse=True)
+        result_set = sorted(result_set, key=lambda k: k['amount'], reverse=True)
 
     return result_set, expected_total
 
