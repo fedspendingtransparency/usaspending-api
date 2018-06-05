@@ -182,7 +182,28 @@ def test_download_accounts_a_success(client, account_data):
 
 
 @pytest.mark.django_db
-def test_download_accounts_b_failure(client, account_data):
+def test_download_accounts_a_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "account_balances",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+    print(resp.status_code)
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_download_accounts_b_success(client, account_data):
     """test the accounts endpoint."""
     csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
     resp = client.post(
@@ -200,6 +221,26 @@ def test_download_accounts_b_failure(client, account_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_b_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "object_class_program_activity",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
@@ -221,6 +262,26 @@ def test_download_accounts_c_success(client, account_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert '.zip' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_accounts_c_failure_account_level(client, account_data):
+    """test the accounts endpoint."""
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
+    resp = client.post(
+        '/api/v2/download/accounts',
+        content_type='application/json',
+        data=json.dumps({
+            "account_level": "something_wrong",
+            "filters": {
+                "submission_type": "award_financial",
+                "fy": "2017",
+                "quarter": "4"
+            },
+            "file_format": "csv"
+        }))
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
