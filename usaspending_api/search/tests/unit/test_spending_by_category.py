@@ -11,14 +11,17 @@ from usaspending_api.search.v2.views.spending_by_category import BusinessLogic
 
 
 def test_category_awarding_agency_awards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, toptier_agency_id=1)
+    mock_toptier = MockModel(toptier_agency_id=1, name='Department of Pizza', abbreviation='DOP')
+    mock_agency = MockModel(id=2, toptier_agency=mock_toptier, toptier_flag=True)
+    mock_agency_1 = MockModel(id=3, toptier_agency=mock_toptier, toptier_flag=False)
     mock_model_1 = MockModel(awarding_agency_id=2, awarding_toptier_agency_name='Department of Pizza',
                              awarding_toptier_agency_abbreviation='DOP', generated_pragmatic_obligation=5)
-    mock_model_2 = MockModel(awarding_agency_id=2, awarding_toptier_agency_name='Department of Pizza',
+    mock_model_2 = MockModel(awarding_agency_id=3, awarding_toptier_agency_name='Department of Pizza',
                              awarding_toptier_agency_abbreviation='DOP', generated_pragmatic_obligation=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
+    add_to_mock_objects(mock_agencies['toptier_agency'], [mock_toptier])
 
     test_payload = {
         'category': 'awarding_agency',
@@ -44,7 +47,7 @@ def test_category_awarding_agency_awards(mock_matviews_qs, mock_agencies):
                 'amount': 15,
                 'name': 'Department of Pizza',
                 'code': 'DOP',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -53,14 +56,16 @@ def test_category_awarding_agency_awards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_awarding_agency_subawards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, toptier_agency_id=1)
+    mock_toptier = MockModel(toptier_agency_id=1, name='Department of Pizza', abbreviation='DOP')
+    mock_agency = MockModel(id=2, toptier_agency=mock_toptier, toptier_flag=True)
+    mock_agency_1 = MockModel(id=3, toptier_agency=mock_toptier, toptier_flag=False)
     mock_model_1 = MockModel(awarding_agency_id=2, awarding_toptier_agency_name='Department of Pizza',
                              awarding_toptier_agency_abbreviation='DOP', amount=5)
-    mock_model_2 = MockModel(awarding_agency_id=2, awarding_toptier_agency_name='Department of Pizza',
+    mock_model_2 = MockModel(awarding_agency_id=3, awarding_toptier_agency_name='Department of Pizza',
                              awarding_toptier_agency_abbreviation='DOP', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'awarding_agency',
@@ -86,7 +91,7 @@ def test_category_awarding_agency_subawards(mock_matviews_qs, mock_agencies):
                 'amount': 15,
                 'name': 'Department of Pizza',
                 'code': 'DOP',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -95,14 +100,16 @@ def test_category_awarding_agency_subawards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_awarding_subagency_awards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, subtier_agency_id=1)
+    mock_subtier = MockModel(subtier_agency_id=1, name='Department of Sub-pizza', abbreviation='DOSP')
+    mock_agency = MockModel(id=2, subtier_agency=mock_subtier, toptier_flag=False)
+    mock_agency_1 = MockModel(id=3, subtier_agency=mock_subtier, toptier_flag=True)
     mock_model_1 = MockModel(awarding_agency_id=2, awarding_subtier_agency_name='Department of Sub-pizza',
                              awarding_subtier_agency_abbreviation='DOSP', generated_pragmatic_obligation=10)
-    mock_model_2 = MockModel(awarding_agency_id=2, awarding_subtier_agency_name='Department of Sub-pizza',
+    mock_model_2 = MockModel(awarding_agency_id=3, awarding_subtier_agency_name='Department of Sub-pizza',
                              awarding_subtier_agency_abbreviation='DOSP', generated_pragmatic_obligation=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'awarding_subagency',
@@ -128,7 +135,7 @@ def test_category_awarding_subagency_awards(mock_matviews_qs, mock_agencies):
                 'amount': 20,
                 'name': 'Department of Sub-pizza',
                 'code': 'DOSP',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -137,14 +144,16 @@ def test_category_awarding_subagency_awards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_awarding_subagency_subawards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, subtier_agency_id=1)
+    mock_subtier = MockModel(subtier_agency_id=1, name='Department of Sub-pizza', abbreviation='DOSP')
+    mock_agency = MockModel(id=2, subtier_agency=mock_subtier, toptier_flag=False)
+    mock_agency_1 = MockModel(id=3, subtier_agency=mock_subtier, toptier_flag=True)
     mock_model_1 = MockModel(awarding_agency_id=2, awarding_subtier_agency_name='Department of Sub-pizza',
                              awarding_subtier_agency_abbreviation='DOSP', amount=10)
-    mock_model_2 = MockModel(awarding_agency_id=2, awarding_subtier_agency_name='Department of Sub-pizza',
+    mock_model_2 = MockModel(awarding_agency_id=3, awarding_subtier_agency_name='Department of Sub-pizza',
                              awarding_subtier_agency_abbreviation='DOSP', amount=10)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'awarding_subagency',
@@ -170,7 +179,7 @@ def test_category_awarding_subagency_subawards(mock_matviews_qs, mock_agencies):
                 'amount': 20,
                 'name': 'Department of Sub-pizza',
                 'code': 'DOSP',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -179,14 +188,16 @@ def test_category_awarding_subagency_subawards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_funding_agency_awards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, toptier_agency_id=1)
+    mock_toptier = MockModel(toptier_agency_id=1, name='Department of Calzone', abbreviation='DOC')
+    mock_agency = MockModel(id=2, toptier_agency=mock_toptier, toptier_flag=True)
+    mock_agency_1 = MockModel(id=3, toptier_agency=mock_toptier, toptier_flag=False)
     mock_model_1 = MockModel(funding_agency_id=2, funding_toptier_agency_name='Department of Calzone',
                              funding_toptier_agency_abbreviation='DOC', generated_pragmatic_obligation=50)
-    mock_model_2 = MockModel(funding_agency_id=2, funding_toptier_agency_name='Department of Calzone',
+    mock_model_2 = MockModel(funding_agency_id=3, funding_toptier_agency_name='Department of Calzone',
                              funding_toptier_agency_abbreviation='DOC', generated_pragmatic_obligation=50)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'funding_agency',
@@ -212,7 +223,7 @@ def test_category_funding_agency_awards(mock_matviews_qs, mock_agencies):
                 'amount': 100,
                 'name': 'Department of Calzone',
                 'code': 'DOC',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -221,14 +232,16 @@ def test_category_funding_agency_awards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_funding_agency_subawards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, toptier_agency_id=1)
+    mock_toptier = MockModel(toptier_agency_id=1, name='Department of Calzone', abbreviation='DOC')
+    mock_agency = MockModel(id=2, toptier_agency=mock_toptier, toptier_flag=True)
+    mock_agency_1 = MockModel(id=3, toptier_agency=mock_toptier, toptier_flag=False)
     mock_model_1 = MockModel(funding_agency_id=2, funding_toptier_agency_name='Department of Calzone',
                              funding_toptier_agency_abbreviation='DOC', amount=50)
-    mock_model_2 = MockModel(funding_agency_id=2, funding_toptier_agency_name='Department of Calzone',
+    mock_model_2 = MockModel(funding_agency_id=3, funding_toptier_agency_name='Department of Calzone',
                              funding_toptier_agency_abbreviation='DOC', amount=50)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'funding_agency',
@@ -254,7 +267,7 @@ def test_category_funding_agency_subawards(mock_matviews_qs, mock_agencies):
                 'amount': 100,
                 'name': 'Department of Calzone',
                 'code': 'DOC',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -263,14 +276,16 @@ def test_category_funding_agency_subawards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_funding_subagency_awards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, subtier_agency_id=1)
+    mock_subtier = MockModel(subtier_agency_id=1, name='Department of Sub-calzone', abbreviation='DOSC')
+    mock_agency = MockModel(id=2, subtier_agency=mock_subtier, toptier_flag=False)
+    mock_agency_1 = MockModel(id=3, subtier_agency=mock_subtier, toptier_flag=True)
     mock_model_1 = MockModel(funding_agency_id=2, funding_subtier_agency_name='Department of Sub-calzone',
                              funding_subtier_agency_abbreviation='DOSC', generated_pragmatic_obligation=5)
-    mock_model_2 = MockModel(funding_agency_id=2, funding_subtier_agency_name='Department of Sub-calzone',
+    mock_model_2 = MockModel(funding_agency_id=3, funding_subtier_agency_name='Department of Sub-calzone',
                              funding_subtier_agency_abbreviation='DOSC', generated_pragmatic_obligation=-5)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'funding_subagency',
@@ -296,7 +311,7 @@ def test_category_funding_subagency_awards(mock_matviews_qs, mock_agencies):
                 'amount': 0,
                 'name': 'Department of Sub-calzone',
                 'code': 'DOSC',
-                'id': 1
+                'id': 2
             }
         ]
     }
@@ -305,14 +320,16 @@ def test_category_funding_subagency_awards(mock_matviews_qs, mock_agencies):
 
 
 def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
-    mock_agency = MockModel(id=2, subtier_agency_id=1)
+    mock_subtier = MockModel(subtier_agency_id=1, name='Department of Sub-calzone', abbreviation='DOSC')
+    mock_agency = MockModel(id=2, subtier_agency=mock_subtier, toptier_flag=False)
+    mock_agency_1 = MockModel(id=3, subtier_agency=mock_subtier, toptier_flag=True)
     mock_model_1 = MockModel(funding_agency_id=2, funding_subtier_agency_name='Department of Sub-calzone',
                              funding_subtier_agency_abbreviation='DOSC', amount=5)
-    mock_model_2 = MockModel(funding_agency_id=2, funding_subtier_agency_name='Department of Sub-calzone',
+    mock_model_2 = MockModel(funding_agency_id=3, funding_subtier_agency_name='Department of Sub-calzone',
                              funding_subtier_agency_abbreviation='DOSC', amount=-5)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
-    add_to_mock_objects(mock_agencies['agency'], [mock_agency])
+    add_to_mock_objects(mock_agencies['agency'], [mock_agency, mock_agency_1])
 
     test_payload = {
         'category': 'funding_subagency',
@@ -338,7 +355,7 @@ def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
                 'amount': 0,
                 'name': 'Department of Sub-calzone',
                 'code': 'DOSC',
-                'id': 1
+                'id': 2
             }
         ]
     }
