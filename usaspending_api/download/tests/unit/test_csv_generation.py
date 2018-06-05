@@ -155,7 +155,7 @@ def test_apply_annotations_to_sql_case_then_concat():
 
 def test_apply_annotations_to_sql_concat_then_case():
     sql_string = str("SELECT two, four, five, CONCAT(three, '-', not_three, '-', yes_three) AS alias_three, CASE WHEN "
-                     "one = TRUE THEN ‘1’ ELSE NULL END AS alias_one FROM table WHERE six = 'something'")
+                     "one = TRUE THEN ‘1’ ELSE NULL END AS \"alias_one\" FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
@@ -168,7 +168,7 @@ def test_apply_annotations_to_sql_concat_then_case():
 
 def test_apply_annotations_to_sql_subquery():
     sql_string = str("SELECT two, three, four, five, (SELECT table2.\"three\" FROM table_two table2 WHERE "
-                     "table2.\"code\" = table.\"othercode\") AS alias_one FROM table WHERE six = 'something'")
+                     "table2.\"code\" = table.\"othercode\") AS 'alias_one' FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)

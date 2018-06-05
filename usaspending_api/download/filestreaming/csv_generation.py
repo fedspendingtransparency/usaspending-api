@@ -309,9 +309,10 @@ def apply_annotations_to_sql(raw_query, aliases):
     deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
+        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
         alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
-        alias = alias[:-1] if (alias[-1:] == "\"" or alias[-1:] == "'") else alias
-        alias = alias[1:] if (alias[:1] == "\"" or alias[:1] == "'") else alias
+        if (alias[-1:] == "\"" and alias[:1] == "\"") or (alias[-1:] == "'" and alias[:1] == "'"):
+            alias = alias[1:-1]
         deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
         aliases_copy.remove(alias)
 
@@ -320,10 +321,8 @@ def apply_annotations_to_sql(raw_query, aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
 
     # Match aliases with their values
-    final_list = []
-    for alias in aliases:
-        final_list.append('{} AS {}'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias))
-    return raw_query.replace(query_before_from.strip(), ", ".join(final_list))
+    values_list = ['{} AS {}'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
+    return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
