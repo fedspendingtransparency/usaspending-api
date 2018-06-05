@@ -76,7 +76,7 @@ VALUE_MAPPINGS = {
         'source_type': 'account',
         'table': FinancialAccountsByAwards,
         'table_name': 'award_financial',
-        'download_name': 'award_financial',
+        'download_name': 'account_breakdown_by_award',
         'filter_function': award_financial.award_financial_filter
     }
 }
