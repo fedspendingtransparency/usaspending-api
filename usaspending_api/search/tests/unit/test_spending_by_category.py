@@ -349,6 +349,7 @@ def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
 def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
     mock_recipient_1 = MockModel(recipient_unique_id='00UOP00', legal_entity_id=1)
     mock_recipient_2 = MockModel(recipient_unique_id='1234JD4321', legal_entity_id=2)
+    mock_recipient_3 = MockModel(recipient_name='MULTIPLE RECIPIENTS', recipient_unique_id=None, legal_entity_id=3)
     mock_model_1 = MockModel(recipient_name='University of Pawnee',
                              recipient_unique_id='00UOP00', generated_pragmatic_obligation=1)
     mock_model_2 = MockModel(recipient_name='University of Pawnee',
@@ -357,9 +358,11 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
                              recipient_unique_id='1234JD4321', generated_pragmatic_obligation=1)
     mock_model_4 = MockModel(recipient_name='John Doe',
                              recipient_unique_id='1234JD4321', generated_pragmatic_obligation=10)
+    mock_model_5 = MockModel(recipient_name='MULTIPLE RECIPIENTS',
+                             recipient_unique_id=None, generated_pragmatic_obligation=15)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
-    add_to_mock_objects(mock_recipients, [mock_recipient_1, mock_recipient_2])
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4, mock_model_5])
+    add_to_mock_objects(mock_recipients, [mock_recipient_1, mock_recipient_2, mock_recipient_3])
 
     test_payload = {
         'category': 'recipient_duns',
@@ -382,6 +385,12 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
         },
         'results': [
             {
+                'amount': 15,
+                'name': 'MULTIPLE RECIPIENTS',
+                'code': None,
+                'id': 3
+            },
+            {
                 'amount': 11,
                 'name': 'John Doe',
                 'code': '1234JD4321',
@@ -402,6 +411,7 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
 def test_category_recipient_duns_subawards(mock_matviews_qs, mock_recipients):
     mock_recipient_1 = MockModel(recipient_unique_id='00UOP00', legal_entity_id=1)
     mock_recipient_2 = MockModel(recipient_unique_id='1234JD4321', legal_entity_id=2)
+    mock_recipient_3 = MockModel(recipient_name='MULTIPLE RECIPIENTS', recipient_unique_id=None, legal_entity_id=3)
     mock_model_1 = MockModel(recipient_name='University of Pawnee',
                              recipient_unique_id='00UOP00', amount=1)
     mock_model_2 = MockModel(recipient_name='University of Pawnee',
@@ -410,9 +420,11 @@ def test_category_recipient_duns_subawards(mock_matviews_qs, mock_recipients):
                              recipient_unique_id='1234JD4321', amount=1)
     mock_model_4 = MockModel(recipient_name='John Doe',
                              recipient_unique_id='1234JD4321', amount=10)
+    mock_model_5 = MockModel(recipient_name='MULTIPLE RECIPIENTS',
+                             recipient_unique_id=None, amount=15)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
-    add_to_mock_objects(mock_recipients, [mock_recipient_1, mock_recipient_2])
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4, mock_model_5])
+    add_to_mock_objects(mock_recipients, [mock_recipient_1, mock_recipient_2, mock_recipient_3])
 
     test_payload = {
         'category': 'recipient_duns',
@@ -434,6 +446,12 @@ def test_category_recipient_duns_subawards(mock_matviews_qs, mock_recipients):
             'hasPrevious': False
         },
         'results': [
+            {
+                'amount': 15,
+                'name': 'MULTIPLE RECIPIENTS',
+                'code': None,
+                'id': 3
+            },
             {
                 'amount': 11,
                 'name': 'John Doe',
