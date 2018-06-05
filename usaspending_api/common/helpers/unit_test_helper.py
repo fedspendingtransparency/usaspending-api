@@ -16,6 +16,6 @@ def mappings_test(download_type, sublevel):
     try:
         query_values = lookup_mapping.query_paths[table_name][sublevel].values()
         table.objects.values(*query_values)
-        assert True
     except FieldError:
-        assert False
+        return False
+    return True
