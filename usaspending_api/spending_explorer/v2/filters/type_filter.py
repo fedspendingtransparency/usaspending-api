@@ -1,5 +1,3 @@
-import operator
-
 from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
