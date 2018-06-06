@@ -58,8 +58,8 @@ def award_financial_filter(filters):
             output_field=CharField()),
         allocation_transfer_agency_name=Subquery(ata_subquery.values('name')[:1]),
         agency_name=Subquery(agency_name_subquery.values('name')[:1]),
-        federal_account_code=Concat('treasury_account__federal_account__agency_identifier', Value('-'),
-                                    'treasury_account__federal_account__main_account_code'),
+        federal_account_symbol=Concat('treasury_account__federal_account__agency_identifier', Value('-'),
+                                      'treasury_account__federal_account__main_account_code'),
         recipient_parent_name=Case(
             When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
                  then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),

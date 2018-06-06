@@ -53,8 +53,8 @@ def object_class_program_activity_filter(filters):
             output_field=CharField()),
         allocation_transfer_agency_name=Subquery(ata_subquery.values('name')[:1]),
         agency_name=Subquery(agency_name_subquery.values('name')[:1]),
-        federal_account_code=Concat('treasury_account__federal_account__agency_identifier', Value('-'),
-                                    'treasury_account__federal_account__main_account_code')
+        federal_account_symbol=Concat('treasury_account__federal_account__agency_identifier', Value('-'),
+                                      'treasury_account__federal_account__main_account_code')
     )
 
     return queryset.filter(**query_filters)
