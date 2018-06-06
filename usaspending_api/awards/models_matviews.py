@@ -64,7 +64,6 @@ class UniversalTransactionView(models.Model):
     extent_competed = models.TextField()
     cfda_number = models.TextField()
     cfda_title = models.TextField()
-    cfda_popular_name = models.TextField()
     recipient_id = models.IntegerField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
@@ -126,10 +125,12 @@ class SummaryTransactionView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
     cfda_number = models.TextField()
     cfda_title = models.TextField()
-    cfda_popular_name = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
     naics_code = models.TextField()
@@ -175,6 +176,7 @@ class UniversalAwardView(models.Model):
 
     period_of_performance_start_date = models.DateField()
     period_of_performance_current_end_date = models.DateField()
+    date_signed = models.DateField()
 
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
@@ -367,10 +369,12 @@ class SummaryTransactionMonthView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
     cfda_number = models.TextField(blank=True, null=True)
     cfda_title = models.TextField(blank=True, null=True)
-    cfda_popular_name = models.TextField(blank=True, null=True)
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
     naics_code = models.TextField(blank=True, null=True)
@@ -435,6 +439,27 @@ class SummaryTransactionGeoView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_transaction_geo_view'
+
+
+class SummaryStateView(models.Model):
+    action_date = models.DateField()
+    fiscal_year = models.IntegerField()
+    type = models.TextField()
+    pulled_from = models.TextField()
+    distinct_awards = ArrayField(models.TextField(), default=list)
+
+    pop_country_code = models.TextField()
+    pop_state_code = models.TextField()
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_state_view'
 
 
 class AwardMatview(models.Model):
@@ -737,6 +762,10 @@ class SubawardView(models.Model):
     awarding_subtier_agency_name = models.TextField()
     funding_toptier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
+    awarding_toptier_agency_abbreviation = models.TextField()
+    funding_toptier_agency_abbreviation = models.TextField()
+    awarding_subtier_agency_abbreviation = models.TextField()
+    funding_subtier_agency_abbreviation = models.TextField()
 
     place_of_performance = models.OneToOneField(Location, primary_key=True)
     recipient = models.OneToOneField(LegalEntity, primary_key=True)
@@ -760,6 +789,7 @@ class SubawardView(models.Model):
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
     cfda_number = models.TextField()
+    cfda_title = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
