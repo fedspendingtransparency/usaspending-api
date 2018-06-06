@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     break
             if days_to_search == 0:
                 logger.error('Could not find cfda file within the past {} days.'.format(days_to_search))
-                return None
+                latest_file = None
             return latest_file
 
     def file_exists(self, bucket, src):
