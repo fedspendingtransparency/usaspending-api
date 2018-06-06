@@ -52,9 +52,9 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Check if the same request has been called today
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
-        cached_download = DownloadJob.objects.filter(
-            json_request=ordered_json_request,
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('download_job_id', 'file_name')
+        cached_download = DownloadJob.objects. \
+            filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp). \
+            exclude(job_status_id=4).values('download_job_id', 'file_name')
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
             write_to_log(message='Generating file from cached download job ID: {}'
@@ -63,8 +63,11 @@ class BaseDownloadViewSet(APIDocumentationView):
             return self.get_download_response(file_name=cached_filename)
 
         # Create download name and timestamped name for uniqueness
-        download_name = '_'.join(VALUE_MAPPINGS[award_level]['download_name']
-                                 for award_level in json_request['download_types'])
+        toptier_agency_filter = ToptierAgency.objects.filter(
+            toptier_agency_id=json_request.get('filters', {}).get('agency', None)).first()
+        download_name = '{}_{}'.format(toptier_agency_filter.cgac_code if toptier_agency_filter else 'all',
+                                       '_'.join(VALUE_MAPPINGS[award_level]['download_name']
+                                                for award_level in json_request['download_types']))
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
 
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
