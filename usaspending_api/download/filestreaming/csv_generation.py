@@ -89,11 +89,13 @@ def generate_csvs(download_job, sqs_message=None):
 def get_csv_sources(json_request):
     csv_sources = []
     for download_type in json_request['download_types']:
-        queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
         agency_id = json_request['filters'].get('agency', 'all')
+        filter_function = VALUE_MAPPINGS[download_type]['filter_function']
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
+            queryset = filter_function(json_request['filters'])
+
             # Award downloads
             award_type_codes = set(json_request['filters']['award_type_codes'])
             d1_award_type_codes = set(contract_type_mapping.keys())
@@ -118,7 +120,7 @@ def get_csv_sources(json_request):
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
                                        download_type, agency_id)
-            account_source.queryset = queryset
+            account_source.queryset = filter_function(json_request['filters'], json_request['account_level'])
             csv_sources.append(account_source)
 
     return csv_sources

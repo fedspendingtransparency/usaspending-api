@@ -13,7 +13,7 @@ from usaspending_api.references.models import ToptierAgency
 logger = logging.getLogger(__name__)
 
 
-def award_financial_filter(filters):
+def award_financial_filter(filters, account_level='treasury_account'):
     query_filters = {}
 
     # Filter by agency if necessary

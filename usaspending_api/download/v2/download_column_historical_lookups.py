@@ -955,7 +955,28 @@ query_paths = {
             ('obligations_incurred', 'obligations_incurred_total_by_tas_cpe'),
             ('deobligations_or_recoveries_or_refunds_from_prior_year', 'deobligations_recoveries_refunds_by_tas_cpe'),
             ('unobligated_balance', 'unobligated_balance_cpe'),
-            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe'),
+            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe')
+        ]),
+        'federal_account': OrderedDict([
+            ('budget_function', 'treasury_account_identifier__budget_function_title'),
+            ('budget_subfunction', 'treasury_account_identifier__budget_subfunction_title'),
+            ('budget_authority_unobligated_balance_brought_forward',
+             'budget_authority_unobligated_balance_brought_forward'),
+            ('adjustments_to_unobligated_balance_brought_forward',
+             'adjustments_to_unobligated_balance_brought_forward'),
+            ('budget_authority_appropriated_amount', 'budget_authority_appropriated_amount'),
+            ('borrowing_authority_amount', 'borrowing_authority_amount'),
+            ('contract_authority_amount', 'contract_authority_amount'),
+            ('spending_authority_from_offsetting_collections_amount',
+             'spending_authority_from_offsetting_collections_amount'),
+            ('total_other_budgetary_resources_amount', 'total_other_budgetary_resources_amount'),
+            ('total_budgetary_resources', 'total_budgetary_resources'),
+            ('gross_outlay_amount', 'gross_outlay_amount'),
+            ('obligations_incurred', 'obligations_incurred'),
+            ('deobligations_or_recoveries_or_refunds_from_prior_year',
+             'deobligations_or_recoveries_or_refunds_from_prior_year'),
+            ('unobligated_balance', 'unobligated_balance'),
+            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total')
         ])
     },
     'object_class_program_activity': {
