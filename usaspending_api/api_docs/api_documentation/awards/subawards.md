@@ -1,7 +1,7 @@
 ## Subawards
 **Route:** `/api/v2/subawards`
 
-**Method:** `GET`
+**Method:** `POST`
 
 This route sends a request to the backend to retrieve subawards either related, optionally, to a specific parent 
 award, or for all parent awards if desired.
