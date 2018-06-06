@@ -128,7 +128,8 @@ def get_csv_sources(json_request):
 
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
-    d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account'}
+    d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
+             'federal_account': 'federal_account'}
     source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
                                     VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
@@ -272,12 +273,12 @@ def apply_annotations_to_sql(raw_query, aliases):
     query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
-    just_selects = selects_str[0][:-1] if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)', raw_query)[0]
+    just_selects = selects_str[0][:-1] if selects_str[1] in ('CASE', 'CONCAT', 'SUM', '(SELECT') else selects_str[0]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
-    deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    deriv_str_lookup = re.findall('(CASE|CONCAT|SUM|\(SELECT)(.*?) AS (.*?) ', query_before_from)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
