@@ -1,7 +1,266 @@
 import json
 
 import pytest
+from model_mommy import mommy
 from rest_framework import status
+
+from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass, \
+    SubmissionAttributes, TreasuryAppropriationAccount
+from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency
+
+
+ENDPOINT_URL = '/api/v2/spending/'
+CONTENT_TYPE = 'application/json'
+
+
+@pytest.mark.django_db
+def test_unreported_data_actual_value_file_b(client):
+    models_to_mock = [
+        {
+            'model': GTASTotalObligation,
+            'fiscal_year': 1600,
+            'fiscal_quarter': 1,
+            'total_obligation': -10
+        },
+        {
+            'model': SubmissionAttributes,
+            'submission_id': -1,
+            'reporting_fiscal_year': 1600,
+            'reporting_fiscal_quarter': 1
+        },
+        {
+            'model': ToptierAgency,
+            'toptier_agency_id': -1,
+            'name': 'random_funding_name_1',
+            'cgac_code': 'random_funding_code_1'
+        },
+        {
+            'model': ToptierAgency,
+            'toptier_agency_id': -2,
+            'name': 'random_funding_name_2',
+            'cgac_code': 'random_funding_code_2'
+        },
+        {
+            'model': Agency,
+            'toptier_agency_id': -1,
+            'toptier_flag': True
+        },
+        {
+            'model': Agency,
+            'toptier_agency_id': -2,
+            'toptier_flag': True
+        },
+        {
+            'model': TreasuryAppropriationAccount,
+            'treasury_account_identifier': -1,
+            'funding_toptier_agency_id': -1
+        },
+        {
+            'model': TreasuryAppropriationAccount,
+            'treasury_account_identifier': -2,
+            'funding_toptier_agency_id': -2
+        },
+        {
+            'model': FinancialAccountsByProgramActivityObjectClass,
+            'financial_accounts_by_program_activity_object_class_id': -1,
+            'submission_id': -1,
+            'treasury_account_id': -1,
+            'obligations_incurred_by_program_object_class_cpe': -5
+        },
+        {
+            'model': FinancialAccountsByProgramActivityObjectClass,
+            'financial_accounts_by_program_activity_object_class_id': -2,
+            'submission_id': -1,
+            'treasury_account_id': -1,
+            'obligations_incurred_by_program_object_class_cpe': -10
+        },
+        {
+            'model': FinancialAccountsByProgramActivityObjectClass,
+            'financial_accounts_by_program_activity_object_class_id': -3,
+            'submission_id': -1,
+            'treasury_account_id': -2,
+            'obligations_incurred_by_program_object_class_cpe': -1
+        }
+    ]
+
+    for entry in models_to_mock:
+        mommy.make(entry.pop('model'), **entry)
+
+    json_request = {
+        'type': 'agency',
+        'filters': {
+            'fy': '1600',
+            'quarter': '1'
+        }
+    }
+
+    response = client.post(
+        path=ENDPOINT_URL,
+        content_type=CONTENT_TYPE,
+        data=json.dumps(json_request)
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response = response.json()
+
+    expected_results = {
+        'total': -10,
+        'agencies': ['Unreported Data', 'random_funding_name_2', 'random_funding_name_1'],
+        'amounts': [6, -1, -15]
+    }
+
+    actual_results = {
+        'total': json_response['total'],
+        'agencies': [entry['name'] for entry in json_response['results']],
+        'amounts': [entry['amount'] for entry in json_response['results']]
+    }
+
+    assert expected_results == actual_results
+
+
+@pytest.mark.django_db
+def test_unreported_data_actual_value_file_c(client):
+    models_to_mock = [
+        {
+            'model': GTASTotalObligation,
+            'fiscal_year': 1600,
+            'fiscal_quarter': 1,
+            'total_obligation': -10
+        },
+        {
+            'model': SubmissionAttributes,
+            'submission_id': -1,
+            'reporting_fiscal_year': 1600,
+            'reporting_fiscal_quarter': 1
+        },
+        {
+            'model': ToptierAgency,
+            'toptier_agency_id': -1,
+            'name': 'random_funding_name_1',
+            'cgac_code': 'random_funding_code_1'
+        },
+        {
+            'model': ToptierAgency,
+            'toptier_agency_id': -2,
+            'name': 'random_funding_name_2',
+            'cgac_code': 'random_funding_code_2'
+        },
+        {
+            'model': Agency,
+            'id': -1,
+            'toptier_agency_id': -1,
+            'toptier_flag': True
+        },
+        {
+            'model': Agency,
+            'id': -2,
+            'toptier_agency_id': -2,
+            'toptier_flag': True
+        },
+        {
+            'model': TreasuryAppropriationAccount,
+            'treasury_account_identifier': -1,
+            'funding_toptier_agency_id': -1
+        },
+        {
+            'model': TreasuryAppropriationAccount,
+            'treasury_account_identifier': -2,
+            'funding_toptier_agency_id': -2
+        },
+        {
+            'model': FinancialAccountsByAwards,
+            'financial_accounts_by_awards_id': -1,
+            'submission_id': -1,
+            'award__recipient__recipient_name': 'random_recipient_name_1',
+            'treasury_account_id': -1,
+            'transaction_obligated_amount': -5
+        },
+        {
+            'model': FinancialAccountsByAwards,
+            'financial_accounts_by_awards_id': -2,
+            'submission_id': -1,
+            'award__recipient__recipient_name': 'random_recipient_name_2',
+            'treasury_account_id': -1,
+            'transaction_obligated_amount': -10
+        },
+        {
+            'model': FinancialAccountsByAwards,
+            'financial_accounts_by_awards_id': -3,
+            'submission_id': -1,
+            'award__recipient__recipient_name': 'random_recipient_name_1',
+            'treasury_account_id': -2,
+            'transaction_obligated_amount': -1
+        }
+    ]
+
+    for entry in models_to_mock:
+        mommy.make(entry.pop('model'), **entry)
+
+    json_request = {
+        'type': 'recipient',
+        'filters': {
+            'agency': '-1',
+            'fy': '1600',
+            'quarter': '1'
+        }
+    }
+
+    response = client.post(
+        path=ENDPOINT_URL,
+        content_type=CONTENT_TYPE,
+        data=json.dumps(json_request)
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response = response.json()
+
+    expected_results = {
+        'total': -15,
+        'agencies': ['random_recipient_name_1', 'random_recipient_name_2'],
+        'amounts': [-5, -10]
+    }
+
+    actual_results = {
+        'total': json_response['total'],
+        'agencies': [entry['name'] for entry in json_response['results']],
+        'amounts': [entry['amount'] for entry in json_response['results']]
+    }
+
+    assert expected_results == actual_results
+
+
+@pytest.mark.django_db
+def test_unreported_data_no_data_available(client):
+    json_request = {
+        'type': 'agency',
+        'filters': {
+            'fy': '1700',
+            'quarter': '1'
+        }
+    }
+
+    response = client.post(
+        path=ENDPOINT_URL,
+        content_type=CONTENT_TYPE,
+        data=json.dumps(json_request)
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response = response.json()
+
+    expected_results = {
+        'total': None
+    }
+
+    actual_results = {
+        'total': json_response['total']
+    }
+
+    assert expected_results == actual_results
 
 
 @pytest.mark.django_db
