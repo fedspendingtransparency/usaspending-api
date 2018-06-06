@@ -54,7 +54,7 @@ def account_balances_filter(filters):
             output_field=CharField()),
         allocation_transfer_agency_name=Subquery(ata_subquery.values('name')[:1]),
         agency_name=Subquery(agency_name_subquery.values('name')[:1]),
-        federal_account_code=Concat('treasury_account_identifier__federal_account__agency_identifier',
+        federal_account_code=Concat('treasury_account_identifier__federal_account__agency_identifier', Value('-')
                                     'treasury_account_identifier__federal_account__main_account_code')
     )
 
