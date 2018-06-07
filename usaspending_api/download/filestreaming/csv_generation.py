@@ -120,7 +120,8 @@ def get_csv_sources(json_request):
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
                                        download_type, agency_id)
-            account_source.queryset = filter_function(json_request['filters'], json_request['account_level'])
+            account_source.queryset = filter_function(download_type, VALUE_MAPPINGS[download_type]['table'],
+                                                      json_request['filters'], json_request['account_level'])
             csv_sources.append(account_source)
 
     return csv_sources
