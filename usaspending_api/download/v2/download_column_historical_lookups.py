@@ -951,10 +951,10 @@ query_paths = {
              'spending_authority_from_offsetting_collections_amount_cpe'),
             ('total_other_budgetary_resources_amount', 'other_budgetary_resources_amount_cpe'),
             ('total_budgetary_resources', 'total_budgetary_resources_amount_cpe'),
-            ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe'),
             ('obligations_incurred', 'obligations_incurred_total_by_tas_cpe'),
             ('deobligations_or_recoveries_or_refunds_from_prior_year', 'deobligations_recoveries_refunds_by_tas_cpe'),
             ('unobligated_balance', 'unobligated_balance_cpe'),
+            ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe'),
             ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe')
         ]),
         'federal_account': OrderedDict([
@@ -977,6 +977,7 @@ query_paths = {
             ('deobligations_or_recoveries_or_refunds_from_prior_year',
              'deobligations_or_recoveries_or_refunds_from_prior_year'),
             ('unobligated_balance', 'unobligated_balance'),
+            ('gross_outlay_amount', 'gross_outlay_amount'),
             ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total')
         ])
     },
