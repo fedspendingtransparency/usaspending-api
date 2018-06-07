@@ -1,7 +1,7 @@
 import logging
-import time
 import boto
 
+from datetime import datetime
 from django.conf import settings
 
 
@@ -38,5 +38,6 @@ class S3Handler:
         """
         Gets a Timestamped file name to prevent conflicts on S3 Uploading
         """
-        seconds = str(time.time() - 1500000000).replace('.', '_')
-        return '{}_{}'.format(seconds, filename)
+        sans_extension, extension = filename.split('.')
+        timestamp = datetime.strftime(datetime.now(), '%Y%m%d%H%M%S')
+        return '{}_{}.{}'.format(sans_extension, timestamp, extension)

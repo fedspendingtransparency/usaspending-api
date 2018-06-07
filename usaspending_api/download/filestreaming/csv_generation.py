@@ -10,55 +10,21 @@ import time
 import zipfile
 import csv
 
-from collections import OrderedDict
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
                                               write_to_download_log as write_to_log)
+from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
-from usaspending_api.download.v2 import download_column_historical_lookups
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
-BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
 logger = logging.getLogger('console')
-
-
-class CsvSource:
-    def __init__(self, model_type, file_type, source_type):
-        self.model_type = model_type
-        self.file_type = file_type
-        self.source_type = source_type
-        self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
-        self.human_names = list(self.query_paths.keys())
-        self.queryset = None
-
-    def values(self, header):
-        query_paths = [self.query_paths[hn] for hn in header]
-        return self.queryset.values_list(query_paths).iterator()
-
-    def columns(self, requested):
-        """Given a list of column names requested, returns the ones available in the source"""
-        result = self.human_names
-        if requested:
-            result = [header for header in requested if header in self.human_names]
-
-        # remove headers that we don't have a query path for
-        result = [header for header in result if header in self.query_paths]
-
-        return result
-
-    def row_emitter(self, headers_requested):
-        headers = self.columns(headers_requested)
-        # Not yielding headers as the files can be split
-        # yield headers
-        query_paths = [self.query_paths[hn] for hn in headers]
-        return self.queryset.values(*query_paths)
 
 
 def generate_csvs(download_job, sqs_message=None):
@@ -124,6 +90,7 @@ def get_csv_sources(json_request):
     csv_sources = []
     for download_type in json_request['download_types']:
         queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
+        agency_id = json_request['filters'].get('agency', 'all')
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
@@ -134,14 +101,14 @@ def get_csv_sources(json_request):
 
             if award_type_codes & d1_award_type_codes:
                 # only generate d1 files if the user is asking for contract data
-                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type)
+                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
                 d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
 
             if award_type_codes & d2_award_type_codes:
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type)
+                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
                 d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
@@ -150,7 +117,7 @@ def get_csv_sources(json_request):
         elif VALUE_MAPPINGS[download_type]['source_type'] == 'account':
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
-                                       download_type)
+                                       download_type, agency_id)
             account_source.queryset = queryset
             csv_sources.append(account_source)
 
@@ -160,7 +127,8 @@ def get_csv_sources(json_request):
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account'}
-    source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
+    source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
+                                    VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
@@ -296,13 +264,34 @@ def apply_annotations_to_sql(raw_query, aliases):
     want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-    select_string = re.findall('SELECT (.*?) FROM', raw_query)[0]
-    selects = [select.strip() for select in select_string.split(',')]
-    if len(selects) != len(aliases):
+    aliases_copy = list(aliases)
+
+    # Extract everything between the first SELECT and the last FROM
+    query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
+
+    # Create a list from the non-derived values between SELECT and FROM
+    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
+    just_selects = selects_str[0][:-1].strip() if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    selects_list = [select.strip() for select in just_selects.strip().split(',')]
+
+    # Create a list from the derived values between SELECT and FROM
+    deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    deriv_dict = {}
+    for str_match in deriv_str_lookup:
+        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
+        alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
+        if (alias[-1:] == "\"" and alias[:1] == "\"") or (alias[-1:] == "'" and alias[:1] == "'"):
+            alias = alias[1:-1]
+        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
+        aliases_copy.remove(alias)
+
+    # Validate we have an alias for each value in the SELECT string
+    if len(selects_list) != len(aliases_copy):
         raise Exception("Length of alises doesn't match the columns in selects")
-    selects_mapping = OrderedDict(zip(aliases, selects))
-    new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias) for alias, select in selects_mapping.items()])
-    return raw_query.replace(select_string, new_select_string)
+
+    # Match aliases with their values
+    values_list = ['{} AS {}'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
+    return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):

@@ -164,18 +164,17 @@ class BusinessLogic:
     def awarding_agency(self) -> list:
         if self.category == 'awarding_agency':
             filters = {'awarding_toptier_agency_name__isnull': False}
-            values = ['awarding_agency_id', 'awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
+            values = ['awarding_toptier_agency_name', 'awarding_toptier_agency_abbreviation']
         elif self.category == 'awarding_subagency':
             filters = {'awarding_subtier_agency_name__isnull': False}
-            values = ['awarding_agency_id', 'awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
+            values = ['awarding_subtier_agency_name', 'awarding_subtier_agency_abbreviation']
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            row['id'] = fetch_agency_tier_id_by_agency(row['awarding_agency_id'], self.category == 'awarding_subagency')
-            del row['awarding_agency_id']
+            row['id'] = fetch_agency_tier_id_by_agency(row['name'], self.category == 'awarding_subagency')
         return results
 
     def funding_agency(self) -> list:
@@ -187,10 +186,10 @@ class BusinessLogic:
         """
         if self.category == 'funding_agency':
             filters = {'funding_toptier_agency_name__isnull': False}
-            values = ['funding_agency_id', 'funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
+            values = ['funding_toptier_agency_name', 'funding_toptier_agency_abbreviation']
         elif self.category == 'funding_subagency':
             filters = {'funding_subtier_agency_name__isnull': False}
-            values = ['funding_agency_id', 'funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
+            values = ['funding_subtier_agency_name', 'funding_subtier_agency_abbreviation']
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
@@ -198,13 +197,12 @@ class BusinessLogic:
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            row['id'] = fetch_agency_tier_id_by_agency(row['funding_agency_id'], self.category == 'funding_subagency')
-            del row['funding_agency_id']
+            row['id'] = fetch_agency_tier_id_by_agency(row['name'], self.category == 'funding_subagency')
         return results
 
     def recipient(self) -> list:
         if self.category == 'recipient_duns':
-            filters = {'recipient_unique_id__isnull': False}
+            filters = {}
             values = ['recipient_name', 'recipient_unique_id']
 
         elif self.category == 'recipient_parent_duns':
@@ -257,6 +255,8 @@ class BusinessLogic:
         return results
 
     def location(self) -> list:
+        filters = {}
+        values = {}
         if self.category == 'county':
             filters = {'pop_county_code__isnull': False}
             values = ['pop_county_code', 'pop_county_name']
@@ -265,6 +265,7 @@ class BusinessLogic:
             values = ['pop_congressional_code', 'pop_state_code']
 
         self.queryset = self.common_db_query(filters, values)
+
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
 
@@ -272,19 +273,25 @@ class BusinessLogic:
         for row in results:
             row['id'] = None
             if self.category == 'district':
-                row['name'] = '{}-{}'.format(row['pop_state_code'], row['code'])
+                cd_code = row['code']
+                if cd_code == '90':  # 90 = multiple districts
+                    cd_code = 'MULTIPLE DISTRICTS'
+
+                row['name'] = '{}-{}'.format(row['pop_state_code'], cd_code)
                 del row['pop_state_code']
         return results
 
 
-def fetch_agency_tier_id_by_agency(agency_id, is_subtier=False):
-    columns = ['toptier_agency_id']
-    if is_subtier:
-        # filters = {'subtier_agency__isnull': False}
-        columns = ['subtier_agency_id']
-    result = Agency.objects.filter(id=agency_id).values(*columns).first()
+def fetch_agency_tier_id_by_agency(agency_name, is_subtier=False):
+    agency_type = 'subtier_agency' if is_subtier else 'toptier_agency'
+    columns = ['id']
+    filters = {'{}__name'.format(agency_type): agency_name}
+    if not is_subtier:
+        # Note: The awarded/funded subagency can be a toptier agency, so we don't filter only subtiers in that case.
+        filters['toptier_flag'] = True
+    result = Agency.objects.filter(**filters).values(*columns).first()
     if not result:
-        logger.warning('{} not found for agency_id: {}'.format(','.join(columns), agency_id))
+        logger.warning('{} not found for agency_name: {}'.format(','.join(columns), agency_name))
         return None
     return result[columns[0]]
 

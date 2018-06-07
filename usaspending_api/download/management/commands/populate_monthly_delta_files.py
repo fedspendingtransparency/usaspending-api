@@ -16,7 +16,8 @@ from django.db.models import Case, When, Value, CharField
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT, CsvSource
+from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT
+from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.etl.es_etl_helpers import csv_row_count
