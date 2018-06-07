@@ -271,7 +271,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     # Create a list from the non-derived values between SELECT and FROM
     selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
-    just_selects = selects_str[0][:-1].strip() if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    just_selects = selects_str[0][:-1] if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
