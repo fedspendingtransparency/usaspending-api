@@ -96,6 +96,7 @@ class TinyShield:
             object
             passthrough
             text
+            schema
         text_type:
             search
             raw
@@ -103,7 +104,11 @@ class TinyShield:
             url
             password
         default:
-            the default value
+            the default value if no key-value is provided for this param
+        allow_nulls:
+            if True, a value of None is allowed
+        optional:
+            If False, then key-value must be present. Overrides `default`
     }
 
     Validated data is stored in self.data, which is a flat dictionary
@@ -178,7 +183,9 @@ class TinyShield:
                 self.recurse_append(struct, self.data, self.apply_rule(item))
 
     def apply_rule(self, rule):
-        if rule['type'] not in ('array', 'object'):
+        if rule.get('allow_nulls', False) and rule['value'] is None:
+            return rule['value']
+        elif rule['type'] not in ('array', 'object'):
             if rule['type'] in VALIDATORS:
                 return VALIDATORS[rule['type']]['func'](rule)
             else:
