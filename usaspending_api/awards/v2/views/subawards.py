@@ -9,7 +9,6 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-# from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class SubawardsViewSet(APIDocumentationView):
@@ -36,7 +35,7 @@ class SubawardsViewSet(APIDocumentationView):
             # Change sort to an enum of the desired values
             if model["name"] == "sort":
                 model["type"] = "enum"
-                model["enum_values"] = list(self.subaward_lookup.values())
+                model["enum_values"] = list(self.subaward_lookup.keys())
                 model["default"] = "subaward_number"
 
         validated_request_data = TinyShield(models).block(request_dict)
