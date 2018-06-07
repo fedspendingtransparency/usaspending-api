@@ -1,17 +1,16 @@
 import datetime
 import logging
 
-# from django.db.models import Case, CharField, When, Value
-# from django.db.models.functions import Concat
+from django.db.models import Case, CharField, When
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
-# from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.accounts.v2.filters.account_download_derivations import base_treasury_account_derivations
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
-DERIVED_FIELDS = ['treasury_account_symbol', 'recipient_parent_name']
 
 
 def award_financial_filter(filters):
@@ -39,26 +38,12 @@ def award_financial_filter(filters):
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
-    queryset = FinancialAccountsByAwards.objects
+    # Retrieve base Account Download derived fields and add recipient_parent_name
+    derived_fields = base_treasury_account_derivations('treasury_account')
+    derived_fields['recipient_parent_name'] = Case(
+        When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
+             then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),
+        default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
+        output_field=CharField())
 
-    # TODO: Derivations
-    # queryset = queryset.annotate(
-    #     treasury_account_symbol=Concat(
-    #         'treasury_account__agency_id',
-    #         Value('-'),
-    #         Case(When(treasury_account__availability_type_code='X', then=Value('X')),
-    #              default=Concat('treasury_account__beginning_period_of_availability', Value('/'),
-    #                             'treasury_account__ending_period_of_availability'),
-    #              output_field=CharField()),
-    #         Value('-'),
-    #         'treasury_account__main_account_code',
-    #         Value('-'),
-    #         'treasury_account__sub_account_code',
-    #         output_field=CharField()),
-    #     recipient_parent_name=Case(
-    #         When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
-    #              then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),
-    #         default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
-    #         output_field=CharField()))
-
-    return queryset.filter(**query_filters)
+    return FinancialAccountsByAwards.objects.annotate(**derived_fields).filter(**query_filters)
