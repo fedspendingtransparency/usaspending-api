@@ -38,7 +38,7 @@ def account_balances_filter(filters, account_level='treasury_account'):
 
     queryset = AppropriationAccountBalances.objects
     if account_level == 'treasury_account':
-        # Derive treasury_account_symbol, allocation_transfer_agency_name, and agency_name
+        # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
         ata_subquery = ToptierAgency.objects.filter(
             cgac_code=OuterRef('treasury_account_identifier__allocation_transfer_agency_id'))
         agency_name_subquery = ToptierAgency.objects.filter(
@@ -63,8 +63,14 @@ def account_balances_filter(filters, account_level='treasury_account'):
         )
 
     elif account_level == 'federal_account':
-        # Group by budget_function and budget_subfunction
-        group_vals = ['treasury_account_identifier__budget_function_title',
+        # Derive the federal_account_symbol
+        queryset = queryset.annotate(
+            federal_account_symbol=Concat('treasury_account_identifier__federal_account__agency_identifier', Value('-'),
+                                          'treasury_account_identifier__federal_account__main_account_code')
+        )
+
+        # Group by budget_function, budget_subfunction, and federal_account_symbol
+        group_vals = ['federal_account_symbol', 'treasury_account_identifier__budget_function_title',
                       'treasury_account_identifier__budget_subfunction_title']
         queryset = queryset.values(*group_vals)
 

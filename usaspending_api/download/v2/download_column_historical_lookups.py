@@ -958,6 +958,7 @@ query_paths = {
             ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe')
         ]),
         'federal_account': OrderedDict([
+            ('federal_account_symbol', 'federal_account_symbol'),
             ('budget_function', 'treasury_account_identifier__budget_function_title'),
             ('budget_subfunction', 'treasury_account_identifier__budget_subfunction_title'),
             ('budget_authority_unobligated_balance_brought_forward',

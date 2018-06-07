@@ -40,7 +40,8 @@ def award_financial_filter(filters, account_level='treasury_account'):
 
     queryset = FinancialAccountsByAwards.objects
 
-    # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and recipient_parent_name
+    # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, federal_account_symbol,
+    # and recipient_parent_name
     ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__allocation_transfer_agency_id'))
     agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__agency_id'))
     queryset = queryset.annotate(
