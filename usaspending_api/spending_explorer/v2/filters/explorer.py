@@ -84,8 +84,7 @@ class Explorer(object):
             annotate(id=F('award__recipient__recipient_name'), type=Value('recipient', output_field=CharField()),
                      name=F('award__recipient__recipient_name'), code=F('award__recipient__recipient_name')).\
             values('id', 'type', 'name', 'code', 'amount').\
-            annotate(total=Sum('transaction_obligated_amount')).\
-            order_by('-total')
+            annotate(total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set
 
