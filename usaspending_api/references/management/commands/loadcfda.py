@@ -1,20 +1,65 @@
-from django.core.management.base import BaseCommand
-from usaspending_api.references.models import Cfda
-from datetime import datetime
 import os
 import csv
 import logging
-import django
-import ftplib
+from datetime import datetime, timedelta
+
+import boto3
+from botocore.handlers import disable_signing
+from botocore.exceptions import ClientError
+
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from usaspending_api.references.models import Cfda
 
 logger = logging.getLogger('console')
 cfda_relative_path = '/usaspending_api/references/management/commands/programs-full-usaspending.csv'
-cfda_abs_path = os.path.join(django.conf.settings.BASE_DIR + cfda_relative_path)
+cfda_abs_path = os.path.join(settings.BASE_DIR + cfda_relative_path)
+
+CFDA_FILE_FORMAT = settings.CFDA_FILE_PATH
+WEEKDAY_UPLOADED = 5  # datetime.weekday()'s integer representing the day it's usually uploaded (Saturday)
+DAYS_TO_SEARCH = 4 * 7  # 4 weeks
 
 
 class Command(BaseCommand):
 
     help = 'Loads program information obtained from csv file on ftp.cfda.gov'
+
+    def find_latest_file(self, bucket, days_to_search=DAYS_TO_SEARCH):
+        # TODO: If the bucket is public, simply use the folder structure to find the latest file instead of guessing
+        # Check for the latest Saturday upload, otherwise manually look it up
+        today = datetime.today()
+        if today.weekday() == WEEKDAY_UPLOADED:
+            logger.info('Checking today\'s entry')
+            latest_file = today.strftime(CFDA_FILE_FORMAT)
+            if self.file_exists(bucket, latest_file):
+                return latest_file
+
+        logger.info('Checking last week\'s entry')
+        last_week = today - timedelta(7 - abs(today.weekday() - WEEKDAY_UPLOADED))
+        latest_file = last_week.strftime(CFDA_FILE_FORMAT)
+        if self.file_exists(bucket, latest_file):
+            return latest_file
+        else:
+            logger.info('Looking within the past {} days'.format(days_to_search))
+            try_date = today
+            while days_to_search > 0:
+                latest_file = try_date.strftime(CFDA_FILE_FORMAT)
+                if not self.file_exists(bucket, latest_file):
+                    try_date = try_date - timedelta(1)
+                    days_to_search -= 1
+                else:
+                    break
+            if days_to_search == 0:
+                logger.error('Could not find cfda file within the past {} days.'.format(days_to_search))
+                latest_file = None
+            return latest_file
+
+    def file_exists(self, bucket, src):
+        try:
+            bucket.Object(src).load()
+            return True
+        except ClientError:
+            return False
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -28,15 +73,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         if options['update-file']:
+            gsa_connection = boto3.resource('s3', region_name=settings.CFDA_REGION)
+            # disregard aws credentials for public file
+            gsa_connection.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+            gsa_bucket = gsa_connection.Bucket(settings.CFDA_BUCKET_NAME)
 
-            ftp_conn = ftplib.FTP()
-            ftp_conn.connect("ftp.cfda.gov")
-            ftp_conn.login()
-            ftp_conn.cwd('usaspending')
-            most_recent = sorted(ftp_conn.nlst(), reverse=True)[0]
-
-            logger.info('Updating {} with new file {}...'.format(cfda_abs_path, most_recent))
-            ftp_conn.retrbinary("RETR " + most_recent, open(cfda_abs_path, 'wb').write)
+            latest_file = self.find_latest_file(gsa_bucket)
+            if not latest_file:
+                logger.error('Could not find cfda file. Local not updated.')
+            else:
+                logger.info('Updating {} with new file {}...'.format(cfda_abs_path, latest_file))
+                gsa_bucket.download_file(latest_file, cfda_abs_path)
 
         load_cfda(cfda_abs_path)
 
@@ -92,7 +139,7 @@ def load_cfda(abs_path):
                 cfda_program.program_accomplishments = row['Program Accomplishments (130)']
                 cfda_program.regulations_guidelines_and_literature = row['Regulations, Guidelines, '
                                                                          'and Literature (140)']
-                cfda_program.regional_or_local_office = row['Regional or Local Office (151) ']
+                cfda_program.regional_or_local_office = row['Regional or, Local Office (151)']
                 cfda_program.headquarters_office = row['Headquarters Office (152)']
                 cfda_program.website_address = row['Website Address (153)']
                 cfda_program.related_programs = row['Related Programs (160)']
@@ -103,9 +150,9 @@ def load_cfda(abs_path):
                 cfda_program.omb_agency_code = row['OMB Agency Code']
                 cfda_program.omb_bureau_code = row['OMB Bureau Code']
                 if row['Published Date']:
-                    cfda_program.published_date = datetime.strptime(row['Published Date'], '%b, %d %Y')
+                    cfda_program.published_date = datetime.strptime(row['Published Date'], '%b %d,%Y')
                 if row['Archived Date']:
-                    cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b, %d %Y')
+                    cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b %d,%Y')
 
                 # TODO: add way to check/print out any cfda codes that got updated (not just created)
                 if created:
