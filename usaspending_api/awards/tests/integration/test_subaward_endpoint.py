@@ -59,7 +59,7 @@ def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
                 "award_id": 99,
             })
     )
-    assert len(json.loads(resp.content)['results']) == 3
+    assert len(json.loads(str(resp.content))['results']) == 3
 
 
 @pytest.mark.django_db
@@ -77,4 +77,4 @@ def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
                 "award_id": 88,
             })
     )
-    assert json.loads(resp.content)['results'][0]['id'] == 12
+    assert json.loads(str(resp.content))['results'][0]['id'] == 12
