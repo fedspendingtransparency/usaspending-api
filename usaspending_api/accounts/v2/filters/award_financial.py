@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 # from django.db.models import Case, CharField, When, Value
@@ -6,13 +7,14 @@ import logging
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 # from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
+DERIVED_FIELDS = ['treasury_account_symbol', 'recipient_parent_name']
 
 
-def object_class_program_activity_filter(filters):
+def award_financial_filter(filters):
     query_filters = {}
 
     # Filter by agency if necessary
@@ -30,17 +32,16 @@ def object_class_program_activity_filter(filters):
 
     # Filter by Fiscal Year and Quarter
     if filters.get('fy', False) and filters.get('quarter', False):
-        start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
-        query_filters['reporting_period_start'] = start_date
-        query_filters['reporting_period_end'] = end_date
+        # For C files, we want all the data from Q1 through the quarter given in the filter
+        filter_dates = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
+        query_filters['reporting_period_start__gte'] = datetime.date(filters['fy']-1, 10, 1)
+        query_filters['reporting_period_end__lte'] = filter_dates[1]
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
-    queryset = FinancialAccountsByProgramActivityObjectClass.objects
+    queryset = FinancialAccountsByAwards.objects
 
     # TODO: Derivations
-    # ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__allocation_transfer_agency_id'))
-    # agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('treasury_account__agency_id'))
     # queryset = queryset.annotate(
     #     treasury_account_symbol=Concat(
     #         'treasury_account__agency_id',
@@ -54,8 +55,10 @@ def object_class_program_activity_filter(filters):
     #         Value('-'),
     #         'treasury_account__sub_account_code',
     #         output_field=CharField()),
-    #     allocation_transfer_agency_name=Value(Subquery(ata_subquery.values('name')[:1]), output_field=CharField()),
-    #     agency_name=Value(Subquery(agency_name_subquery.values('name')[:1]), output_field=CharField())
-    # )
+    #     recipient_parent_name=Case(
+    #         When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
+    #              then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),
+    #         default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
+    #         output_field=CharField()))
 
     return queryset.filter(**query_filters)

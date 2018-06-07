@@ -60,7 +60,7 @@ SELECT
   UTM.funding_subtier_agency_abbreviation,
 
   UTM.cfda_title,
-  UTM.cfda_popular_name,
+  '' AS cfda_popular_name,
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
   UTM.extent_competed,
