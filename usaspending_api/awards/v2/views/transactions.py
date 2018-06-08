@@ -17,7 +17,7 @@ class TransactionViewSet(APIDocumentationView):
     """
     transaction_lookup = {
         # "Display Name": "database_column"
-        "id": "id",
+        "id": "transaction_unique_id",
         "type": "type",
         "type_description": "type_description",
         "action_date": "action_date",
@@ -28,6 +28,9 @@ class TransactionViewSet(APIDocumentationView):
         "federal_action_obligation": "federal_action_obligation",
         "face_value_loan_guarantee": "face_value_loan_guarantee",
         "original_loan_subsidy_cost": "original_loan_subsidy_cost",
+        # necessary columns which are only present for Django Mock Queries
+        "award_id": "award_id",
+        "is_fpds": "is_fpds",
     }
 
     def _parse_and_validate_request(self, request_dict):
@@ -59,9 +62,18 @@ class TransactionViewSet(APIDocumentationView):
             queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
         rows = list(queryset[lower_limit:upper_limit + 1])
-        return [
-            {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
-            for row in rows]
+
+        results = []
+        for row in rows:
+            unique_prefix = 'ASST_TX'
+            result = {k: row[v] for k, v in self.transaction_lookup.items()}
+            if result['is_fpds']:
+                unique_prefix = 'CONT_TX'
+            result['id'] = '{}_{}'.format(unique_prefix, result['id'])
+            del result['is_fpds']
+            del result['award_id']
+            results.append(result)
+        return results
 
     @cache_response()
     def post(self, request):
