@@ -959,6 +959,7 @@ query_paths = {
         ]),
         'federal_account': OrderedDict([
             ('federal_account_symbol', 'federal_account_symbol'),
+            ('federal_account_name', 'treasury_account_identifier__federal_account__account_title'),
             ('budget_function', 'treasury_account_identifier__budget_function_title'),
             ('budget_subfunction', 'treasury_account_identifier__budget_subfunction_title'),
             ('budget_authority_unobligated_balance_brought_forward',
@@ -1006,6 +1007,16 @@ query_paths = {
             ('deobligations_or_recoveries_or_refunds_from_prior_year',
              'deobligations_recoveries_refund_pri_program_object_class_cpe'),
             ('gross_outlay_amount', 'gross_outlay_amount_by_program_object_class_cpe')
+        ]),
+        'federal_account': OrderedDict([
+            ('federal_account_symbol', 'federal_account_symbol'),
+            ('federal_account_name', 'treasury_account__federal_account__account_title'),
+            ('budget_function', 'treasury_account__budget_function_title'),
+            ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
+            ('obligations_incurred', 'obligations_incurred'),
+            ('deobligations_or_recoveries_or_refunds_from_prior_year',
+             'deobligations_or_recoveries_or_refunds_from_prior_year'),
+            ('gross_outlay_amount', 'gross_outlay_amount')
         ])
     },
     # Financial Accounts by Awards
@@ -1064,6 +1075,13 @@ query_paths = {
             ('cfda_title', 'award__latest_transaction__assistance_data__cfda_title'),
             ('naics_code', 'award__latest_transaction__contract_data__naics'),
             ('naics_description', 'award__latest_transaction__contract_data__naics_description')
+        ]),
+        'federal_account': OrderedDict([
+            ('federal_account_symbol', 'federal_account_symbol'),
+            ('federal_account_name', 'treasury_account__federal_account__account_title'),
+            ('budget_function', 'treasury_account__budget_function_title'),
+            ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
+            ('transaction_obligated_amount', 'transaction_obligated_amount')
         ])
     }
 }
