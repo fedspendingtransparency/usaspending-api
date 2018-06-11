@@ -1,5 +1,6 @@
 {
   "final_name": "summary_state_view",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
     "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' ')) AS pk,",
