@@ -1,5 +1,7 @@
-from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
-from django.db.models.functions import Concat
+import datetime
+
+from django.db.models import Case, CharField, DecimalField, OuterRef, Subquery, Sum, Value, When
+from django.db.models.functions import Coalesce, Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -28,8 +30,17 @@ def account_download_filter(account_type, download_table, filters, account_level
     # Filter by Fiscal Year and Quarter
     if filters.get('fy', False) and filters.get('quarter', False):
         start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
-        query_filters['reporting_period_start'] = start_date
-        query_filters['reporting_period_end'] = end_date
+
+        # C files need all data _up to and including_ the FYQ in the filter
+        reporting_period_start = 'reporting_period_start'
+        reporting_period_end = 'reporting_period_end'
+        if account_type == 'award_financial':
+            reporting_period_start = 'reporting_period_start__gte'
+            reporting_period_end = 'reporting_period_end__lte'
+            start_date = datetime.date(filters['fy']-1, 10, 1)
+
+        query_filters[reporting_period_start] = start_date
+        query_filters[reporting_period_end] = end_date
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
@@ -111,5 +122,12 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     q_path = query_paths[account_type]
     summed_cols = {i: Sum(q_path['treasury_account'][i]) for i in q_path['federal_account']
                    if q_path['treasury_account'][i] not in group_vals}
+
+    # Account for NaN bug in award_financial files
+    # TODO: Fix the data and get rid of this code
+    if account_type == 'award_financial':
+        summed_cols['transaction_obligated_amount'] = Sum(
+            Coalesce(Case(When(transaction_obligated_amount=Value('NaN')), then=Value(0.00),
+                          default='transaction_obligated_amount', output_field=DecimalField()), 0))
 
     return queryset.annotate(**summed_cols)
