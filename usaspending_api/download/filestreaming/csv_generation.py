@@ -223,10 +223,16 @@ def wait_for_process(process, start_time, download_job, message):
     log_time = time.time()
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
+    sleep_count = 0
     while process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-        time.sleep(WAIT_FOR_PROCESS_SLEEP)
+
+        if sleep_count < 10:
+            time.sleep(WAIT_FOR_PROCESS_SLEEP/5)
+        else:
+            time.sleep(WAIT_FOR_PROCESS_SLEEP)
+        sleep_count += 1
 
     if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
         if process.is_alive():
