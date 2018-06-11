@@ -290,7 +290,7 @@ def apply_annotations_to_sql(raw_query, aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
 
     # Match aliases with their values
-    values_list = ['{} AS {}'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
+    values_list = ['{} AS \"{}\"'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
     return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
 
 
