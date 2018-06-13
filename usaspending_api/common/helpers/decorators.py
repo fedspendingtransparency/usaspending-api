@@ -63,7 +63,7 @@ def set_db_timeout(timeout_in_seconds):
 
                     logger.warning(
                         'DB TIMEOUT DECORATOR: Setting Postgres statement_timeout to {0} on this connection'.
-                            format(prev_timeout))
+                        format(prev_timeout))
                     cursor.execute("set statement_timeout='{0}'".format(prev_timeout))
 
                     cursor.execute("show statement_timeout")
