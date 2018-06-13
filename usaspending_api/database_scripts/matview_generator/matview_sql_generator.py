@@ -157,7 +157,7 @@ def make_matview_create(final_matview_name, sql):
 def make_matview_refresh(matview_name):
     return [
         TEMPLATE['refresh_matview'].format(matview_name),
-        TEMPLATE['analyze'].format(matview_name)
+        TEMPLATE['vacuum'].format(matview_name)
     ]
 
 
