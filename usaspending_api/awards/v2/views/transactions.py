@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from django.db.models import F
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import TransactionNormalized
@@ -33,7 +34,7 @@ class TransactionViewSet(APIDocumentationView):
         "is_fpds": "is_fpds",
     }
 
-    def _parse_and_validate_request(self, request_dict):
+    def _parse_and_validate_request(self, request_dict: dict) -> dict:
         models = deepcopy(PAGINATION)
         models.append({"key": "award_id", "name": "award_id", "type": "integer",
                       "optional": True, "default": None, "allow_nulls": True})
@@ -47,7 +48,7 @@ class TransactionViewSet(APIDocumentationView):
         validated_request_data = TinyShield(models).block(request_dict)
         return validated_request_data
 
-    def _business_logic(self, request_data):
+    def _business_logic(self, request_data: dict) -> list:
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
@@ -76,7 +77,7 @@ class TransactionViewSet(APIDocumentationView):
         return results
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         request_data = self._parse_and_validate_request(request.data)
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
