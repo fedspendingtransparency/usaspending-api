@@ -23,7 +23,7 @@ class Command(BaseCommand):
     help = "Load new FSRS data from broker."
 
     @staticmethod
-    def get_award_data(db_cursor, award_type, max_id, ids=None):
+    def get_award_data(db_cursor, award_type, max_id, internal_ids=None):
         """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
@@ -37,9 +37,10 @@ class Command(BaseCommand):
             # TODO contracting_office_aid equivalent? Do we even need it?
             query_columns.extend(['fain'])
 
-        if isinstance(ids, list) and len(ids) > 0:
+        if isinstance(internal_ids, list) and len(internal_ids) > 0:
+            ids_string = ','.join([str(id).lower() for id in internal_ids])
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
-                    " WHERE id = ANY(\'{{{}}}\'::int[]) ORDER BY id".format(','.join([str(id) for id in ids]))
+                    " WHERE internal_id = ANY(\'{{{}}}\'::text[]) ORDER BY id".format(ids_string)
         else:
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + \
                     " WHERE id > " + str(max_id) + " ORDER BY id"
@@ -337,7 +338,7 @@ class Command(BaseCommand):
         # if this is not the initial load, delete all existing subawards with internal IDs matching the list of
         # new ones because they're all updated every time any change is made on broker
         if max_id > 0:
-            internal_ids = list(shared_award_mappings)
+            internal_ids = [internal_id.upper() for internal_id in shared_award_mappings]
             Subaward.objects.filter(internal_id__in=internal_ids, award_type=award_type).delete()
 
         self.process_subawards(db_cursor, shared_award_mappings, award_type, subaward_type, max_id)
@@ -350,8 +351,8 @@ class Command(BaseCommand):
             if not broken_subawards:
                 continue
             broken_links += len(broken_subawards)
-            broker_awards_ids = [broken_subaward.broker_award_id for broken_subaward in broken_subawards]
-            broker_award_data = self.get_award_data(db_cursor, award_type, None, ids=broker_awards_ids)
+            broker_internal_ids = [broken_subaward.internal_id for broken_subaward in broken_subawards]
+            broker_award_data = self.get_award_data(db_cursor, award_type, None, internal_ids=broker_internal_ids)
             broker_mappings = self.gather_shared_award_data(broker_award_data, award_type)
             for broken_subaward in broken_subawards:
                 award_data = broker_mappings.get(broken_subaward.internal_id.lower())
