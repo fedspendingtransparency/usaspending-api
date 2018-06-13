@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'^api/v2/autocomplete/', include('usaspending_api.references.v2.urls_autocomplete')),
     url(r'^api/v2/awards/', include('usaspending_api.awards.v2.urls_awards')),
     url(r'^api/v2/award_spending/', include('usaspending_api.awards.v2.urls_award_spending')),
+    url(r'^api/v2/subawards/', include('usaspending_api.awards.v2.urls_subawards')),
     url(r'^api/v2/budget_authority/', include('usaspending_api.accounts.urls_budget_authority')),
     url(r'^api/v2/download/', include('usaspending_api.download.v2.urls')),
     url(r'^api/v2/bulk_download/', include('usaspending_api.bulk_download.v2.urls')),
