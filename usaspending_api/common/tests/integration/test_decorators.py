@@ -6,7 +6,6 @@ from django.db import connection
 
 # Third-party app imports
 import pytest
-from django.test import override_settings
 
 # Imports from your apps
 from usaspending_api.common.helpers.decorators import set_db_timeout
