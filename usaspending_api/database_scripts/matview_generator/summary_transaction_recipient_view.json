@@ -91,9 +91,6 @@
         "name": "ordered_action_date",
         "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "ordered_fy",
-        "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
         "name": "action_date_and_type",
         "columns": [
           {"name": "action_date", "order": "DESC NULLS LAST"},
@@ -197,8 +194,8 @@
     }, {
         "name": "ordered_action_date_and_set_aside",
         "columns": [
-          {"name": "action_date", "order": "DESC NULLS LAST"},
-          {"name": "type_set_aside"}
+          {"name": "type_set_aside"},
+          {"name": "action_date", "order": "DESC NULLS LAST"}
         ]
     }, {
         "name": "extent_competed",

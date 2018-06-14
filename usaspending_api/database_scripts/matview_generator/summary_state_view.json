@@ -51,9 +51,6 @@
         "name": "ordered_action_date",
         "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "ordered_fy",
-        "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
         "name": "type",
         "where": "type IS NOT NULL",
         "columns": [{"name": "type"}]

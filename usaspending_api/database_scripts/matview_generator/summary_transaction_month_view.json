@@ -158,9 +158,6 @@
       "name": "date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "fy",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
       "name": "action_date_and_type",
       "columns": [
           {"name": "action_date", "order": "DESC NULLS LAST"},
@@ -262,18 +259,12 @@
       "name": "type_of_contract",
       "columns": [{"name": "type_of_contract_pricing"}]
     }, {
-      "name": "fy_set_aside",
-      "columns": [
-          {"name": "fiscal_year", "order": "DESC NULLS LAST"},
-          {"name": "type_set_aside"}
-      ]
+      "name": "type_set_aside",
+      "where": "type_set_aside IS NOT NULL",
+      "columns": [{"name": "type_set_aside"}, {"name": "action_date"}]
     }, {
       "name": "extent_competed",
       "columns": [{"name": "extent_competed"}]
-    }, {
-      "name": "type_set_aside",
-      "where": "type_set_aside IS NOT NULL",
-      "columns": [{"name": "type_set_aside"}]
     }, {
       "name": "business_categories",
       "method": "GIN",

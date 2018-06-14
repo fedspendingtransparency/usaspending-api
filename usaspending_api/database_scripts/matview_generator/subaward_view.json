@@ -300,10 +300,10 @@
       "method": "GIN",
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
-      "name": "compound_psc_fy",
+      "name": "compound_psc_action_date",
       "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
     }, {
-      "name": "compound_cfda_fy",
+      "name": "compound_cfda_action_date",
       "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }
   ]

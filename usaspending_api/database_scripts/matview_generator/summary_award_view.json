@@ -74,9 +74,6 @@
       "name": "type",
       "columns": [{"name": "type"}]
     }, {
-      "name": "fy",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
       "name": "pulled_from",
       "where": "pulled_from IS NOT NULL",
       "columns": [{"name": "pulled_from"}]

@@ -122,9 +122,6 @@
       "name": "date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "fy",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
       "name": "action_date_and_type",
       "columns": [
           {"name": "action_date", "order": "DESC NULLS LAST"},

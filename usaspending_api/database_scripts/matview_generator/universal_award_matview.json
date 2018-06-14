@@ -203,10 +203,6 @@
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "gin_recipient_name",
-      "method": "GIN",
-      "columns": [{"name": "recipient_name", "opclass": "gin_trgm_ops"}]
-    }, {
       "name": "recipient_name",
       "where": "recipient_name IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "recipient_name"}]
