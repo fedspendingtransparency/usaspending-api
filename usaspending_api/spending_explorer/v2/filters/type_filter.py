@@ -21,6 +21,7 @@ def get_unreported_data_obj(queryset, filters, limit, spending_type, actual_tota
 
         Args:
             queryset: Django queryset with all necessary filters, etc already applied
+            filters: filters provided in POST request to endpoint
             limit: number of results to limit to
             spending_type: spending explorer category
             actual_total: total calculated based on results in `queryset`
