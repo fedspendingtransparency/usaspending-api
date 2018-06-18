@@ -68,7 +68,6 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     # for all account types
     ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('{}__allocation_transfer_agency_id'.format(tas_id)))
     agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('{}__agency_id'.format(tas_id)))
-
     derived_fields = {
         # treasury_account_symbol: AID-BPOA/EPOA-MAC-SAC or AID-"X"-MAC-SAC
         'treasury_account_symbol': Concat(
@@ -103,6 +102,12 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
             output_field=CharField())
 
+        # Account for NaN bug in award_financial data
+        # TODO: Fix the data and get rid of this code
+        derived_fields['transaction_obligated_amount_'] = Case(
+            When(transaction_obligated_amount=Value('NaN')), then=Value(0.00), default='transaction_obligated_amount',
+            output_field=DecimalField())
+
     return queryset.annotate(**derived_fields)
 
 
@@ -123,7 +128,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     summed_cols = {i: Sum(q_path['treasury_account'][i]) for i in q_path['federal_account']
                    if q_path['treasury_account'][i] not in group_vals}
 
-    # Account for NaN bug in award_financial files
+    # Account for NaN bug in award_financial data
     # TODO: Fix the data and get rid of this code
     if account_type == 'award_financial':
         summed_cols['transaction_obligated_amount'] = Sum(

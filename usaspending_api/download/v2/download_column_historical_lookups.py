@@ -1046,7 +1046,7 @@ query_paths = {
             ('parent_award_piid', 'parent_award_id'),
             ('fain', 'fain'),
             ('uri', 'uri'),
-            ('transaction_obligated_amount', 'transaction_obligated_amount'),
+            ('transaction_obligated_amount_', 'transaction_obligated_amount_'),
             ('award_type_code', 'award__type'),
             ('award_type', 'award__type_description'),
             ('idv_type_code', 'award__latest_transaction__contract_data__idv_type'),
