@@ -34,7 +34,7 @@ CREATE TABLE duns_new AS (
 CREATE UNIQUE INDEX duns_awardee_idx_new ON duns_new USING btree (awardee_or_recipient_uniqu);
 
 BEGIN;
-ALTER TABLE duns RENAME TO duns_old;z
+ALTER TABLE duns RENAME TO duns_old;
 ALTER TABLE duns_new RENAME TO duns;
 ALTER INDEX duns_awardee_idx_new RENAME TO duns_awardee_idx;
 TRUNCATE duns_old CASCADE;
