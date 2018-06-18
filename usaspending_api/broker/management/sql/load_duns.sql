@@ -32,7 +32,9 @@ CREATE TABLE duns_new AS (
             )
 );
 
+BEGIN;
 ALTER TABLE duns RENAME TO duns_old;
 ALTER TABLE duns_new RENAME TO duns;
 TRUNCATE duns_old CASCADE;
 DROP TABLE duns_old CASCADE;
+COMMIT;
