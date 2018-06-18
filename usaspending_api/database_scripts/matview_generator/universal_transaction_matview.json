@@ -118,7 +118,7 @@
     "LEFT OUTER JOIN",
     "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
     "LEFT OUTER JOIN",
-    "  duns ON (legal_entity.recipient_unique_id = duns.duns)",
+    "  duns ON (legal_entity.recipient_unique_id = duns.awardee_or_recipient_uniqu)",
     "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",
     "LEFT OUTER JOIN",
