@@ -29,7 +29,7 @@ class StateData(models.Model):
 
 class DUNS(models.Model):
     """
-    Model representing State Data/Year
+    Model representing DUNS data (imported from the broker)
     """
     awardee_or_recipient_uniqu = models.TextField(primary_key=True)
     legal_business_name = models.TextField()
