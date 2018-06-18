@@ -1081,7 +1081,7 @@ query_paths = {
             ('federal_account_name', 'treasury_account__federal_account__account_title'),
             ('budget_function', 'treasury_account__budget_function_title'),
             ('budget_subfunction', 'treasury_account__budget_subfunction_title'),
-            ('transaction_obligated_amount', 'transaction_obligated_amount')
+            ('transaction_obligated_amount_', 'transaction_obligated_amount_')
         ])
     }
 }

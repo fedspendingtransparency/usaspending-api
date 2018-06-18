@@ -131,7 +131,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     # Account for NaN bug in award_financial data
     # TODO: Fix the data and get rid of this code
     if account_type == 'award_financial':
-        summed_cols['transaction_obligated_amount'] = Sum(
+        summed_cols['transaction_obligated_amount_'] = Sum(
             Coalesce(Case(When(transaction_obligated_amount=Value('NaN')), then=Value(0.00),
                           default='transaction_obligated_amount', output_field=DecimalField()), 0))
 
