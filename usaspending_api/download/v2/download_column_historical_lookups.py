@@ -955,7 +955,7 @@ query_paths = {
             ('deobligations_or_recoveries_or_refunds_from_prior_year', 'deobligations_recoveries_refunds_by_tas_cpe'),
             ('unobligated_balance', 'unobligated_balance_cpe'),
             ('gross_outlay_amount', 'gross_outlay_amount_by_tas_cpe'),
-            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe'),
+            ('status_of_budgetary_resources_total', 'status_of_budgetary_resources_total_cpe')
         ])
     },
     'object_class_program_activity': {
@@ -1012,7 +1012,7 @@ query_paths = {
             ('parent_award_piid', 'parent_award_id'),
             ('fain', 'fain'),
             ('uri', 'uri'),
-            ('transaction_obligated_amount', 'transaction_obligated_amount'),
+            ('transaction_obligated_amount_', 'transaction_obligated_amount_'),
             ('award_type_code', 'award__type'),
             ('award_type', 'award__type_description'),
             ('idv_type_code', 'award__latest_transaction__contract_data__idv_type'),
