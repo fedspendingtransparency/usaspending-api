@@ -40,4 +40,3 @@ class DUNS(models.Model):
 
     class Meta:
         db_table = 'duns'
-        managed = False
