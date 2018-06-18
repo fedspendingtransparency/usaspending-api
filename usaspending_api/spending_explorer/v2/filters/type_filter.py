@@ -47,7 +47,7 @@ def get_unreported_data_obj(queryset, filters, limit, spending_type, actual_tota
         values_list('total_obligation', flat=True). \
         first()
 
-    if spending_type in VALID_UNREPORTED_DATA_TYPES and list(filters.keys()).sort() == VALID_UNREPORTED_FILTERS.sort():
+    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
         unreported_obj = {
             'id': None,
             'code': None,
