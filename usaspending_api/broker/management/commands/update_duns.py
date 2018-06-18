@@ -18,18 +18,21 @@ class Command(BaseCommand):
         new_duns_query = "SELECT * FROM duns " \
                          "WHERE updated_at > \'" + str(update_date) + "\' AND " \
                          "duns_id > " + str(latest_broker_duns_id)
+        logger.info('Gathering duns created since last update')
         db_cursor.execute(new_duns_query)
         new_duns = dictfetchall(db_cursor)
 
         update_duns_query = "SELECT * FROM duns " \
                             "WHERE updated_at > \'" + str(update_date) + "\' AND " \
                             "duns_id <= " + str(latest_broker_duns_id)
+        logger.info('Gathering duns updated since last update')
         db_cursor.execute(update_duns_query)
         update_duns = dictfetchall(db_cursor)
 
         return new_duns, update_duns
 
     def add_duns(self, new_duns, update_date):
+        logger.info('Adding {} duns records'.format(len(new_duns)))
         new_records = []
         for row in new_duns:
             new_record = load_data_into_model(
@@ -48,10 +51,10 @@ class Command(BaseCommand):
                 as_dict=False,
                 save=False)
             new_records.append(new_record)
-            break
         DUNS.objects.bulk_create(new_records)
 
     def update_duns(self, update_duns, update_date):
+        logger.info('Updating {} duns records'.format(len(update_duns)))
         for row in update_duns:
             equivalent_duns = DUNS.objects.filter(broker_duns_id=row['duns_id'])[0]
             load_data_into_model(
