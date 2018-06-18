@@ -11,15 +11,17 @@ from usaspending_api.spending_explorer.v2.filters.spending_filter import spendin
 
 UNREPORTED_DATA_NAME = 'Unreported Data'
 VALID_UNREPORTED_DATA_TYPES = ['agency', 'budget_function', 'object_class']
+VALID_UNREPORTED_FILTERS = ['fy', 'quarter']
 
 
-def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal_year, fiscal_quarter) -> \
+def get_unreported_data_obj(queryset, filters, limit, spending_type, actual_total, fiscal_year, fiscal_quarter) -> \
         (list, float):
     """ Returns the modified list of result objects including the object corresponding to the unreported amount, only
         if applicable. If the unreported amount does not fit within the limit of results provided, it will not be added.
 
         Args:
             queryset: Django queryset with all necessary filters, etc already applied
+            filters: filters provided in POST request to endpoint
             limit: number of results to limit to
             spending_type: spending explorer category
             actual_total: total calculated based on results in `queryset`
@@ -45,7 +47,7 @@ def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal
         values_list('total_obligation', flat=True). \
         first()
 
-    if spending_type in VALID_UNREPORTED_DATA_TYPES:
+    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
         unreported_obj = {
             'id': None,
             'code': None,
@@ -62,6 +64,8 @@ def get_unreported_data_obj(queryset, limit, spending_type, actual_total, fiscal
             result_set.append(unreported_obj)
 
         result_set = sorted(result_set, key=lambda k: k['amount'], reverse=True)
+    else:
+        expected_total = actual_total
 
     return result_set, expected_total
 
@@ -180,9 +184,9 @@ def type_filter(_type, filters, limit=None):
         # Actual total value of filtered results
         actual_total = queryset.aggregate(total=Sum('obligations_incurred_by_program_object_class_cpe'))['total']
 
-        result_set, expected_total = get_unreported_data_obj(queryset=queryset, limit=limit, spending_type=_type,
-                                                             actual_total=actual_total, fiscal_year=fiscal_year,
-                                                             fiscal_quarter=fiscal_quarter)
+        result_set, expected_total = get_unreported_data_obj(queryset=queryset, filters=filters, limit=limit,
+                                                             spending_type=_type, actual_total=actual_total,
+                                                             fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter)
 
         results = {
             'total': expected_total,

@@ -25,3 +25,19 @@ class StateData(models.Model):
         self.pop_source = self.pop_source.strip() if self.pop_source else None
         self.mhi_source = self.mhi_source.strip() if self.mhi_source else None
         super().save(*args, **kwargs)
+
+
+class DUNS(models.Model):
+    """
+    Model representing DUNS data (imported from the broker)
+    """
+    awardee_or_recipient_uniqu = models.TextField(primary_key=True)
+    legal_business_name = models.TextField()
+    ultimate_parent_unique_ide = models.TextField()
+    ultimate_parent_legal_enti = models.TextField()
+    broker_duns_id = models.TextField()
+    update_date = models.DateField()
+
+    class Meta:
+        db_table = 'duns'
+        managed = False
