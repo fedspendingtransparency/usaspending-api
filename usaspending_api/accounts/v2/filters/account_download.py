@@ -30,7 +30,7 @@ def account_download_filter(account_type, download_table, filters, account_level
     #         raise InvalidParameterException('agency with that ID does not exist')
 
     # Filter by Fiscal Year and Quarter
-    reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(filters)
+    reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
     query_filters[reporting_period_start] = start_date
     query_filters[reporting_period_end] = end_date
 
@@ -98,7 +98,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     return queryset.annotate(**derived_fields)
 
 
-def retrieve_fyq_filters(filters):
+def retrieve_fyq_filters(account_type, filters):
     """ Apply a filter by Fiscal Year and Quarter """
     if filters.get('fy', False) and filters.get('quarter', False):
         start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
