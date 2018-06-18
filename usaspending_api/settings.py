@@ -20,6 +20,9 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
+# Default timeout for SQL statements in Django. Set to 5 min (in seconds).
+DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get('DEFAULT_DB_TIMEOUT_IN_SECONDS') or 300
+
 API_MAX_DATE = '2020-09-30'
 API_MIN_DATE = '2000-10-01'
 API_SEARCH_MIN_DATE = '2007-10-01'
@@ -143,7 +146,15 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=10)}
+DEFAULT_DB_OPTIONS = {
+    'OPTIONS': {
+        'options': '-c statement_timeout={0}'.format(DEFAULT_DB_TIMEOUT_IN_SECONDS*1000)
+    }
+}
+
+DATABASES = {
+    'default': {**dj_database_url.config(conn_max_age=10), **DEFAULT_DB_OPTIONS}
+}
 
 # read replica env vars... if not set, default DATABASE_URL will get used
 # if only one set, this will error out (single DB should use DATABASE_URL)

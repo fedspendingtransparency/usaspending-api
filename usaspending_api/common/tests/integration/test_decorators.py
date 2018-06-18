@@ -59,3 +59,25 @@ def test_statement_timeout_successfully_runs_within_timeout():
         assert False
     else:
         assert (timeit.default_timer() - start) >= pg_sleep_in_seconds
+
+
+@pytest.mark.django_db
+def test_statement_timeout_no_decorator():
+    """
+    Test the django statement timeout setting
+    """
+
+    pg_sleep_in_seconds = 5
+
+    def test_timeout_success():
+        with connection.cursor() as cursor:
+            # pg_sleep takes in a parameter corresponding to seconds
+            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
+
+    start = timeit.default_timer()
+    try:
+        test_timeout_success()
+    except Exception:
+        assert False
+    else:
+        assert (timeit.default_timer() - start) >= pg_sleep_in_seconds
