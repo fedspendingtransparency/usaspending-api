@@ -13,11 +13,6 @@ def account_download_filter(account_type, download_table, filters, account_level
     query_filters = {}
     tas_id = 'treasury_account_identifier' if account_type == 'account_balances' else 'treasury_account'
 
-    # Ensure are filters are legitimate
-    for filter_key in filters:
-        if filter_key not in ['agency', 'federal_account', 'fy', 'quarter', 'submission_type']:
-            raise InvalidParameterException('{} is not a valid filter'.format(filter_key))
-
     # Filter by Agency, if provided
     if filters.get('agency', False) and filters['agency'] != 'all':
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters['agency']).first()
@@ -35,21 +30,9 @@ def account_download_filter(account_type, download_table, filters, account_level
     #         raise InvalidParameterException('agency with that ID does not exist')
 
     # Filter by Fiscal Year and Quarter
-    if filters.get('fy', False) and filters.get('quarter', False):
-        start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
-
-        # C files need all data _up to and including_ the FYQ in the filter
-        reporting_period_start = 'reporting_period_start'
-        reporting_period_end = 'reporting_period_end'
-        if account_type == 'award_financial':
-            reporting_period_start = 'reporting_period_start__gte'
-            reporting_period_end = 'reporting_period_end__lte'
-            start_date = datetime.date(filters['fy']-1, 10, 1)
-
-        query_filters[reporting_period_start] = start_date
-        query_filters[reporting_period_end] = end_date
-    else:
-        raise InvalidParameterException('fy and quarter are required parameters')
+    reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(filters)
+    query_filters[reporting_period_start] = start_date
+    query_filters[reporting_period_end] = end_date
 
     # Create the base queryset
     queryset = download_table.objects
@@ -113,3 +96,22 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             output_field=DecimalField())
 
     return queryset.annotate(**derived_fields)
+
+
+def retrieve_fyq_filters(filters):
+    """ Apply a filter by Fiscal Year and Quarter """
+    if filters.get('fy', False) and filters.get('quarter', False):
+        start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
+
+        reporting_period_start = 'reporting_period_start'
+        reporting_period_end = 'reporting_period_end'
+
+        # C files need all data, up to and including the FYQ in the filter
+        if account_type == 'award_financial':
+            reporting_period_start = '{}__gte'.format(reporting_period_start)
+            reporting_period_end = '{}__lte'.format(reporting_period_end)
+            start_date = datetime.date(filters['fy']-1, 10, 1)
+    else:
+        raise InvalidParameterException('fy and quarter are required parameters')
+
+    return reporting_period_start, reporting_period_end, start_date, end_date
