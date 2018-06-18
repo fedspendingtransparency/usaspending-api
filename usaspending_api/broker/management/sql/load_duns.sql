@@ -24,7 +24,7 @@ CREATE TABLE duns_new AS (
                 duns.awardee_or_recipient_uniqu,
                 duns.activation_date DESC NULLS LAST)') AS broker_duns
             (
-            	awardee_or_recipient_uniqu text,
+                awardee_or_recipient_uniqu text,
                 legal_business_name text,
                 ultimate_parent_unique_ide text,
                 ultimate_parent_legal_enti text,
@@ -34,9 +34,8 @@ CREATE TABLE duns_new AS (
 CREATE UNIQUE INDEX duns_awardee_idx_new ON duns_new USING btree (awardee_or_recipient_uniqu);
 
 BEGIN;
-ALTER TABLE duns RENAME TO duns_old;
+ALTER TABLE IF EXISTS duns RENAME TO duns_old;
 ALTER TABLE duns_new RENAME TO duns;
 ALTER INDEX duns_awardee_idx_new RENAME TO duns_awardee_idx;
-TRUNCATE duns_old CASCADE;
-DROP TABLE duns_old CASCADE;
+DROP TABLE IF EXISTS duns_old CASCADE;
 COMMIT;
