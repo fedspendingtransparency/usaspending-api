@@ -89,7 +89,9 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 
         # Account for NaN bug in award_financial data
         # TODO: Fix the data and get rid of this code
-        derived_fields = award_financial_transaction_obligated_amount_derivation(derived_fields)
+        derived_fields['transaction_obligated_amount_'] = Case(
+            When(transaction_obligated_amount=Value('NaN')), then=Value(0.00), default='transaction_obligated_amount',
+            output_field=DecimalField())
 
     return queryset.annotate(**derived_fields)
 
@@ -110,7 +112,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
 
     # Derive recipient_parent_name for award_financial downloads
     if account_type == 'award_financial':
-        derived_fields['recipient_parent_name'] = award_financial_recipient_parent_derivation
+        derived_fields = award_financial_recipient_parent_derivation(derived_fields)
 
     queryset = queryset.annotate(**derived_fields)
 
@@ -136,7 +138,9 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     # Account for NaN bug in award_financial data
     # TODO: Fix the data and get rid of this code
     if account_type == 'award_financial':
-        derived_fields = award_financial_transaction_obligated_amount_derivation(derived_fields)
+        summed_cols['transaction_obligated_amount_'] = Sum(
+            Coalesce(Case(When(transaction_obligated_amount=Value('NaN')), then=Value(0.00),
+                          default='transaction_obligated_amount', output_field=DecimalField()), 0))
 
     return queryset.annotate(**summed_cols)
 
@@ -161,20 +165,10 @@ def retrieve_fyq_filters(account_type, filters):
 
 
 def award_financial_recipient_parent_derivation(derived_fields):
-    """ Add the recipient_parent_name derivation to the derived_fields parameter """
     derived_fields['recipient_parent_name'] = Case(
         When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
              then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),
         default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
         output_field=CharField()
     )
-    return derived_fields
-
-
-def award_financial_transaction_obligated_amount_derivation(derived_fields):
-    """ Add the transaction_obligated_amount derivation to the derived_fields parameter """
-    # TODO: Fix the data and get rid of this code
-    derived_fields['transaction_obligated_amount_'] = Case(
-        When(transaction_obligated_amount=Value('NaN')), then=Value(0.00), default='transaction_obligated_amount',
-        output_field=DecimalField())
     return derived_fields

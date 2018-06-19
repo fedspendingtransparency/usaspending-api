@@ -278,7 +278,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     aliases_copy = list(aliases)
 
     # Extract everything between the first SELECT and the last FROM
-    query_before_group_by = raw_query.split('GROUP_BY ')[0]
+    query_before_group_by = raw_query.split('GROUP BY ')[0]
     query_before_from = re.sub("SELECT ", "", ' FROM'.join(re.split(' FROM', query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
@@ -306,7 +306,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     values_list = ['{} AS \"{}\"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
                    for alias in aliases]
 
-    return raw_query.replace(query_before_from, ", ".join(values_list))
+    return raw_query.replace(query_before_from, ", ".join(values_list), 1)
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
