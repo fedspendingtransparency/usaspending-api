@@ -137,7 +137,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, source.source_type)
 
     start_time = time.time()
     try:
@@ -251,11 +251,11 @@ def wait_for_process(process, start_time, download_job, message):
     return time.time() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job):
+def generate_temp_query_file(source_query, limit, source, download_job, source_type):
     if limit:
         source_query = source_query[:limit]
     csv_query_raw = generate_raw_quoted_query(source_query)
-    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
+    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names, source_type)
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
@@ -268,7 +268,7 @@ def generate_temp_query_file(source_query, limit, source, download_job):
     return temp_sql_file, temp_sql_file_path
 
 
-def apply_annotations_to_sql(raw_query, aliases):
+def apply_annotations_to_sql(raw_query, aliases, source_type):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
     want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
@@ -277,7 +277,8 @@ def apply_annotations_to_sql(raw_query, aliases):
     aliases_copy = list(aliases)
 
     # Extract everything between the first SELECT and the last FROM
-    query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
+    table_name = VALUE_MAPPINGS[source_type]['table_name']
+    query_before_from = re.sub("SELECT ", "", re.split('FROM "{}"'.format(table_name), raw_query)[0], count=1).strip()
 
     # Create a list from the non-derived values between SELECT and FROM
     selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)', raw_query)[0]
@@ -302,7 +303,8 @@ def apply_annotations_to_sql(raw_query, aliases):
     # Match aliases with their values
     values_list = ['{} AS \"{}\"'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al)
                    for al in aliases]
-    return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
+
+    return re.sub(query_before_from, ", ".join(values_list), raw_query, count=1)
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
