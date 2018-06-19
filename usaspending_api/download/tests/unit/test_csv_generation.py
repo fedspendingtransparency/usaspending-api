@@ -98,71 +98,74 @@ def test_apply_annotations_to_sql_just_values():
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT one AS alias_one, two AS alias_two, three AS alias_three, four AS alias_four, "
-                           "five AS alias_five FROM table WHERE six = 'something'")
+    annotated_string = str("SELECT one AS \"alias_one\", two AS \"alias_two\", three AS \"alias_three\", four AS "
+                           "\"alias_four\", five AS \"alias_five\" FROM table WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
 def test_apply_annotations_to_sql_just_case():
-    sql_string = str("SELECT one, two, four, five, CASE WHEN three = TRUE THEN ‘3’ ELSE NULL END AS alias_three FROM "
-                     "table WHERE six = 'something'")
+    sql_string = str("SELECT one, two, four, five, CASE WHEN three = TRUE THEN '3' ELSE NULL END AS \"alias_three\" "
+                     "FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT one AS alias_one, two AS alias_two, CASE WHEN three = TRUE THEN ‘3’ ELSE NULL END "
-                           "AS alias_three, four AS alias_four, five AS alias_five FROM table WHERE six = 'something'")
+    annotated_string = str("SELECT one AS \"alias_one\", two AS \"alias_two\", CASE WHEN three = TRUE THEN '3' ELSE "
+                           "NULL END AS \"alias_three\", four AS \"alias_four\", five AS \"alias_five\" FROM table "
+                           "WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
 def test_apply_annotations_to_sql_just_concat():
-    sql_string = str("SELECT one, two, four, five, CONCAT(three, '-', not_three, '-', yes_three) AS alias_three FROM "
-                     "table WHERE six = 'something'")
+    sql_string = str("SELECT one, two, four, five, CONCAT(three, '-', not_three, '-', yes_three) AS \"alias_three\" "
+                     "FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT one AS alias_one, two AS alias_two, CONCAT(three, '-', not_three, '-', yes_three) "
-                           "AS alias_three, four AS alias_four, five AS alias_five FROM table WHERE six = 'something'")
+    annotated_string = str("SELECT one AS \"alias_one\", two AS \"alias_two\", CONCAT(three, '-', not_three, '-', "
+                           "yes_three) AS \"alias_three\", four AS \"alias_four\", five AS \"alias_five\" FROM table "
+                           "WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
 def test_apply_annotations_to_sql_multilevel_concat():
-    sql_string = str("SELECT one, two, four, five, CONCAT(three, '-', CONCAT(not_three, '-', yes_three)) AS alias_three"
-                     " FROM table WHERE six = 'something'")
+    sql_string = str("SELECT one, two, four, five, CONCAT(three, '-', CONCAT(not_three, '-', yes_three)) AS "
+                     "\"alias_three\" FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT one AS alias_one, two AS alias_two, CONCAT(three, '-', CONCAT(not_three, '-', "
-                           "yes_three)) AS alias_three, four AS alias_four, five AS alias_five FROM table WHERE six = "
-                           "'something'")
+    annotated_string = str("SELECT one AS \"alias_one\", two AS \"alias_two\", CONCAT(three, '-', CONCAT(not_three, "
+                           "'-', yes_three)) AS \"alias_three\", four AS \"alias_four\", five AS \"alias_five\" FROM "
+                           "table WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
 def test_apply_annotations_to_sql_case_then_concat():
-    sql_string = str("SELECT two, four, five, CASE WHEN one = TRUE THEN ‘1’ ELSE NULL END AS alias_one, CONCAT(three, "
-                     "'-', not_three, '-', yes_three) AS alias_three FROM table WHERE six = 'something'")
+    sql_string = str("SELECT two, four, five, CASE WHEN one = TRUE THEN '1' ELSE NULL END AS \"alias_one\", "
+                     "CONCAT(three, '-', not_three, '-', yes_three) AS \"alias_three\" FROM table WHERE six = "
+                     "'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT CASE WHEN one = TRUE THEN ‘1’ ELSE NULL END AS alias_one, two AS alias_two, "
-                           "CONCAT(three, '-', not_three, '-', yes_three) AS alias_three, four AS alias_four, five AS "
-                           "alias_five FROM table WHERE six = 'something'")
+    annotated_string = str("SELECT CASE WHEN one = TRUE THEN '1' ELSE NULL END AS \"alias_one\", two AS \"alias_two\", "
+                           "CONCAT(three, '-', not_three, '-', yes_three) AS \"alias_three\", four AS \"alias_four\", "
+                           "five AS \"alias_five\" FROM table WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
 def test_apply_annotations_to_sql_concat_then_case():
-    sql_string = str("SELECT two, four, five, CONCAT(three, '-', not_three, '-', yes_three) AS alias_three, CASE WHEN "
-                     "one = TRUE THEN ‘1’ ELSE NULL END AS \"alias_one\" FROM table WHERE six = 'something'")
+    sql_string = str("SELECT two, four, five, CONCAT(three, '-', not_three, '-', yes_three) AS \"alias_three\", CASE "
+                     "WHEN one = TRUE THEN '1' ELSE NULL END AS \"alias_one\" FROM table WHERE six = 'something'")
     aliases = ['alias_one', 'alias_two', 'alias_three', 'alias_four', 'alias_five']
 
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = str("SELECT CASE WHEN one = TRUE THEN ‘1’ ELSE NULL END AS alias_one, two AS alias_two, "
-                           "CONCAT(three, '-', not_three, '-', yes_three) AS alias_three, four AS alias_four, five AS "
-                           "alias_five FROM table WHERE six = 'something'")
+    annotated_string = str("SELECT CASE WHEN one = TRUE THEN '1' ELSE NULL END AS \"alias_one\", two AS \"alias_two\", "
+                           "CONCAT(three, '-', not_three, '-', yes_three) AS \"alias_three\", four AS \"alias_four\", "
+                           "five AS \"alias_five\" FROM table WHERE six = 'something'")
     assert annotated_sql == annotated_string
 
 
@@ -174,6 +177,6 @@ def test_apply_annotations_to_sql_subquery():
     annotated_sql = csv_generation.apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str("SELECT (SELECT table2.\"three\" FROM table_two table2 WHERE table2.\"code\" = "
-                           "table.\"othercode\") AS alias_one, two AS alias_two, three AS alias_three, four AS "
-                           "alias_four, five AS alias_five FROM table WHERE six = 'something'")
+                           "table.\"othercode\") AS \"alias_one\", two AS \"alias_two\", three AS \"alias_three\", "
+                           "four AS \"alias_four\", five AS \"alias_five\" FROM table WHERE six = 'something'")
     assert annotated_sql == annotated_string

@@ -6,7 +6,6 @@ from django.db import connection
 
 # Third-party app imports
 import pytest
-from django.test import override_settings
 
 # Imports from your apps
 from usaspending_api.common.helpers.decorators import set_db_timeout
@@ -60,32 +59,6 @@ def test_statement_timeout_successfully_runs_within_timeout():
         assert False
     else:
         assert (timeit.default_timer() - start) >= pg_sleep_in_seconds
-
-
-@override_settings(DEFAULT_DB_TIMEOUT_IN_SECONDS=1)
-@pytest.mark.django_db
-def test_statement_timeout_default_value_successfully_times_out(monkeypatch):
-    """
-    Test the django statement timeout setting
-    """
-
-    pg_sleep_in_seconds = 10
-
-    @set_db_timeout()
-    def test_timeout_success():
-        with connection.cursor() as cursor:
-            # pg_sleep takes in a parameter corresponding to seconds
-            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
-
-    start = timeit.default_timer()
-    try:
-        test_timeout_success()
-    except Exception:
-        # Can't test for the endpoint timeout error type here since the cursor.execute raises an internal error when it
-        # times out
-        assert (timeit.default_timer() - start) < pg_sleep_in_seconds
-    else:
-        assert False
 
 
 @pytest.mark.django_db

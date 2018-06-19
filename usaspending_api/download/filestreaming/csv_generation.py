@@ -89,12 +89,13 @@ def generate_csvs(download_job, sqs_message=None):
 def get_csv_sources(json_request):
     csv_sources = []
     for download_type in json_request['download_types']:
-        queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
         agency_id = json_request['filters'].get('agency', 'all')
+        filter_function = VALUE_MAPPINGS[download_type]['filter_function']
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
             # Award downloads
+            queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
             d1_award_type_codes = set(contract_type_mapping.keys())
             d2_award_type_codes = set(assistance_type_mapping.keys())
@@ -118,7 +119,8 @@ def get_csv_sources(json_request):
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
                                        download_type, agency_id)
-            account_source.queryset = queryset
+            account_source.queryset = filter_function(download_type, VALUE_MAPPINGS[download_type]['table'],
+                                                      json_request['filters'], json_request['account_level'])
             csv_sources.append(account_source)
 
     return csv_sources
@@ -290,7 +292,8 @@ def apply_annotations_to_sql(raw_query, aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
 
     # Match aliases with their values
-    values_list = ['{} AS {}'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al) for al in aliases]
+    values_list = ['{} AS \"{}\"'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al)
+                   for al in aliases]
     return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
 
 

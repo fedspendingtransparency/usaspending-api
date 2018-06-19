@@ -294,6 +294,38 @@
       "where": "pop_congressional_code IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "pop_congressional_code"}]
     }, {
+      "name": "simple_pop_geolocation",
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_pop_1",
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_pop_2",
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_pop_3",
+      "where": "pop_country_code = 'USA' AND pop_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_zip5"}, {"name": "action_date"}]
+    }, {
+      "name": "simple_recipient_location_geolocation",
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_rl_1",
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_rl_2",
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_geo_rl_3",
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_zip5"}, {"name": "action_date"}]
+    }, {
       "name": "cfda_number",
       "where": "cfda_number IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "cfda_number"}]
