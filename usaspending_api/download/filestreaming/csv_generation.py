@@ -138,7 +138,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, source.source_type)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
 
     start_time = time.time()
     try:
@@ -252,11 +252,11 @@ def wait_for_process(process, start_time, download_job, message):
     return time.time() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job, source_type):
+def generate_temp_query_file(source_query, limit, source, download_job):
     if limit:
         source_query = source_query[:limit]
     csv_query_raw = generate_raw_quoted_query(source_query)
-    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names, source_type)
+    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
@@ -269,7 +269,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, source_t
     return temp_sql_file, temp_sql_file_path
 
 
-def apply_annotations_to_sql(raw_query, aliases, source_type):
+def apply_annotations_to_sql(raw_query, aliases):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
     want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
@@ -278,23 +278,24 @@ def apply_annotations_to_sql(raw_query, aliases, source_type):
     aliases_copy = list(aliases)
 
     # Extract everything between the first SELECT and the last FROM
-    table_name = VALUE_MAPPINGS[source_type]['table_name']
-    query_before_from = re.sub("SELECT ", "", re.split('FROM "{}"'.format(table_name), raw_query)[0], count=1).strip()
+    query_before_group_by = raw_query.split('GROUP_BY ')[0]
+    query_before_from = re.sub("SELECT ", "", ' FROM'.join(re.split(' FROM', query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
     selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)', raw_query)[0]
-    just_selects = selects_str[0][:-1] if selects_str[1] in ('CASE', 'CONCAT', 'SUM', '(SELECT') else selects_str[0]
+    just_selects = selects_str[0] if selects_str[1] == 'FROM' else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
-    deriv_str_lookup = re.findall('(CASE|CONCAT|SUM|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    remove_selects = query_before_from.replace(selects_str[0], "")
+    deriv_str_lookup = re.findall('(CASE|CONCAT|SUM|\(SELECT|)(.*?) AS (.*?)( |$)', remove_selects)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
         alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
         if (alias[-1:] == "\"" and alias[:1] == "\"") or (alias[-1:] == "'" and alias[:1] == "'"):
             alias = alias[1:-1]
-        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
+        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1]).strip()
         aliases_copy.remove(alias)
 
     # Validate we have an alias for each value in the SELECT string
@@ -302,10 +303,10 @@ def apply_annotations_to_sql(raw_query, aliases, source_type):
         raise Exception("Length of alises doesn't match the columns in selects")
 
     # Match aliases with their values
-    values_list = ['{} AS \"{}\"'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al)
-                   for al in aliases]
+    values_list = ['{} AS \"{}\"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
+                   for alias in aliases]
 
-    return re.sub(query_before_from, ", ".join(values_list), raw_query, count=1)
+    return raw_query.replace(query_before_from, ", ".join(values_list))
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):

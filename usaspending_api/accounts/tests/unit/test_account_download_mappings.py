@@ -2,7 +2,6 @@ import pytest
 
 from django.core.exceptions import FieldError
 
-from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import FinancialAccountsByAwards
