@@ -97,6 +97,7 @@ def get_csv_sources(json_request):
             queryset = filter_function(json_request['filters'])
 
             # Award downloads
+            queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
             d1_award_type_codes = set(contract_type_mapping.keys())
             d2_award_type_codes = set(assistance_type_mapping.keys())
