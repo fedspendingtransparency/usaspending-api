@@ -10,7 +10,6 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 
@@ -104,28 +103,6 @@ def award_data(db):
     update_awards()
 
 
-@pytest.fixture
-def account_data(db):
-    # Populate job status lookup table
-    for js in JOB_STATUS:
-        mommy.make('download.JobStatus', job_status_id=js.id, name=js.name, description=js.desc)
-
-    # Create TreasuryAppropriationAccount models
-    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
-    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-01')
-    tas3 = mommy.make('accounts.TreasuryAppropriationAccount', agency_id='-02')
-
-    # Create AppropriationAccountBalances models
-    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1)
-    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2)
-    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas3)
-
-    # Create FinancialAccountsByProgramActivityObjectClass models
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas1)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas2)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas3)
-
-
 @pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
@@ -158,130 +135,6 @@ def test_download_awards_v2_endpoint(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert '.zip' in resp.json()['url']
-
-
-@pytest.mark.django_db
-def test_download_accounts_a_success(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "treasury_account",
-            "filters": {
-                "submission_type": "account_balances",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert '.zip' in resp.json()['url']
-
-
-@pytest.mark.django_db
-def test_download_accounts_a_failure_account_level(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "something_wrong",
-            "filters": {
-                "submission_type": "account_balances",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-    print(resp.status_code)
-
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db
-def test_download_accounts_b_success(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "treasury_account",
-            "filters": {
-                "submission_type": "object_class_program_activity",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert '.zip' in resp.json()['url']
-
-
-@pytest.mark.django_db
-def test_download_accounts_b_failure_account_level(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "something_wrong",
-            "filters": {
-                "submission_type": "object_class_program_activity",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db
-def test_download_accounts_c_success(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "treasury_account",
-            "filters": {
-                "submission_type": "award_financial",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert '.zip' in resp.json()['url']
-
-
-@pytest.mark.django_db
-def test_download_accounts_c_failure_account_level(client, account_data):
-    """test the accounts endpoint."""
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string(connection))
-    resp = client.post(
-        '/api/v2/download/accounts',
-        content_type='application/json',
-        data=json.dumps({
-            "account_level": "something_wrong",
-            "filters": {
-                "submission_type": "award_financial",
-                "fy": "2017",
-                "quarter": "4"
-            },
-            "file_format": "csv"
-        }))
-
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
@@ -551,8 +404,3 @@ def test_download_transactions_count(client, award_data):
         }))
 
     assert resp.json()['transaction_rows_gt_limit'] is False
-
-
-def generate_test_db_connection_string(connection):
-    db = connection.cursor().db.settings_dict
-    return 'postgres://{}:{}@{}:5432/{}'.format(db['USER'], db['PASSWORD'], db['HOST'], db['NAME'])
