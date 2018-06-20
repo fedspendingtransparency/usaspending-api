@@ -4,6 +4,7 @@ from django.db.models import Case, CharField, DecimalField, OuterRef, Subquery, 
 from django.db.models.functions import Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import ToptierAgency
@@ -19,15 +20,15 @@ def account_download_filter(account_type, download_table, filters, account_level
         if agency:
             query_filters['{}__agency_id'.format(tas_id)] = agency.cgac_code
         else:
-            raise InvalidParameterException('agency with that ID does not exist')
+            raise InvalidParameterException('Agency with that ID does not exist')
 
-    # TODO: Filter by Federal Account, if provided
-    # if filters.get('federal_account', False):
-    #     federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
-    #     if federal_account_obj:
-    #         query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
-    #     else:
-    #         raise InvalidParameterException('agency with that ID does not exist')
+    # Filter by Federal Account, if provided
+    if filters.get('federal_account', False):
+        federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
+        if federal_account_obj:
+            query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
+        else:
+            raise InvalidParameterException('Federal Account with that ID does not exist')
 
     # Filter by Fiscal Year and Quarter
     reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
