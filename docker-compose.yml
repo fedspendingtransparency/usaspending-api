@@ -16,7 +16,7 @@ services:
       - DDM_HOST_USER=usaspender
       - PYTHONUNBUFFERED=yup
   db:
-    image: postgres:9.4.9
+    image: postgres:10.3
     volumes:
       - pgdata:/var/lib/postgresql/data/
     environment:
