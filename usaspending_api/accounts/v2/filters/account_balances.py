@@ -2,6 +2,7 @@ import logging
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.v2.filters.account_download_derivations import base_treasury_account_derivations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import ToptierAgency
 
@@ -16,6 +17,8 @@ def account_balances_filter(filters):
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters['agency']).first()
         if agency:
             query_filters['treasury_account_identifier__agency_id'] = agency.cgac_code
+        else:
+            raise InvalidParameterException('agency with that ID does not exist')
 
     # TODO: Filter by federal account
     # federal_account = filters.get('federal_account', False)
@@ -30,4 +33,7 @@ def account_balances_filter(filters):
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
-    return AppropriationAccountBalances.objects.filter(**query_filters)
+    # Retrieve base Account Download derived fields
+    derived_fields = base_treasury_account_derivations('treasury_account_identifier')
+
+    return AppropriationAccountBalances.objects.annotate(**derived_fields).filter(**query_filters)

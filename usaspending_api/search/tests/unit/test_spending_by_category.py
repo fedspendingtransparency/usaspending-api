@@ -946,6 +946,46 @@ def test_category_district_awards(mock_matviews_qs):
     assert expected_response == spending_by_category_logic
 
 
+def test_category_district_awards_multiple_districts(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_congressional_code='90', pop_state_code='XY',
+                             generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_congressional_code='90', pop_state_code='XY',
+                             generated_pragmatic_obligation=1)
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'district',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'district',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': '90',
+                'name': 'XY-MULTIPLE DISTRICTS',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
 def test_category_district_subawards(mock_matviews_qs):
     mock_model_1 = MockModel(pop_congressional_code='06', pop_state_code='XY',
                              amount=1)

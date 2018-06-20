@@ -61,4 +61,8 @@ class Command(BaseCommand):
         self.logger.info("Loading PSC codes and descriptions")
         call_command('load_psc')
 
+        self.logger.info("Loading GTAS Total Obligation data")
+        self.logger.warning("GTAS Total Obligation loader requires access to a broker database with the relevant data")
+        call_command('load_gtas')
+
         self.logger.info("Reference data loaded.")

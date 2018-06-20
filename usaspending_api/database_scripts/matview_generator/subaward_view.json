@@ -137,6 +137,9 @@
       "where": "award_type IS NOT NULL",
       "columns": [{"name": "award_type"}]
     }, {
+      "name": "ordered_subaward_number",
+      "columns": [{"name": "subaward_number", "order": "DESC NULLS LAST"}]
+    }, {
       "name": "ordered_award_type",
       "columns": [{"name": "award_type", "order": "DESC NULLS LAST"}]
     }, {
