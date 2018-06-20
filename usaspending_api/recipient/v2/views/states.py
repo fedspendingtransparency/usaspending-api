@@ -26,8 +26,9 @@ def populate_fips():
     global VALID_FIPS
 
     if not VALID_FIPS:
-        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name} for fips_code, state_code, state_name
-                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name'))}
+        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name, 'type': state_type}
+                      for fips_code, state_code, state_name, state_type
+                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name', 'type'))}
 
 
 def validate_fips(fips):
@@ -214,6 +215,7 @@ class ListStates(APIDocumentationView):
                 'fips': fips,
                 'code': item['pop_state_code'],
                 'name': VALID_FIPS[fips]['name'],
+                'type': VALID_FIPS[fips]['type'],
                 'amount': item['total'],
                 'count': item['count'],
             })
