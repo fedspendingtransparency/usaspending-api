@@ -24,7 +24,6 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.decorators import set_db_timeout
 from usaspending_api.common.helpers.generic_helper import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
