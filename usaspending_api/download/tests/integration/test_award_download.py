@@ -3,10 +3,8 @@ import pytest
 import random
 
 from django.conf import settings
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
-from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
