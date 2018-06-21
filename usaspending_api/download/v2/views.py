@@ -258,7 +258,6 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc: /download/advanced_search_award_download.md
     """
 
-    @set_db_timeout(0)
     def post(self, request):
         request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
@@ -273,7 +272,6 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc: /download/advanced_search_transaction_download.md
     """
 
-    @set_db_timeout(0)
     def post(self, request):
         request.data['award_levels'] = ['transactions', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
@@ -287,7 +285,6 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc: /download/advanced_search_subaward_download.md
     """
 
-    @set_db_timeout(0)
     def post(self, request):
         request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
@@ -301,7 +298,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc: /download/custom_award_data_download.md
     """
 
-    @set_db_timeout(0)
     def post(self, request):
         request.data['constraint_type'] = 'year'
 
@@ -370,7 +366,6 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 class AccountDownloadViewSet(BaseDownloadViewSet):
     """This route sends a request to begin generating a zipfile of account data in CSV form for download."""
 
-    @set_db_timeout(0)
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
 
@@ -403,7 +398,6 @@ class DownloadTransactionCountViewSet(APIDocumentationView):
     endpoint_doc: /download/download_count.md
     """
     @cache_response()
-    @set_db_timeout(0)
     def post(self, request):
         """Returns boolean of whether a download request is greater than the max limit. """
         models = [
@@ -460,7 +454,6 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
             self.sub_agencies_map[row['SUBTIER CODE']] = row['FREC'] \
                 if row['IS_FREC'].upper() == 'TRUE' else row['CGAC AGENCY CODE']
 
-    @set_db_timeout(0)
     def post(self, request):
         """Return list of agencies if no POST data is provided.
         Otherwise, returns sub_agencies/federal_accounts associated with the agency provided"""
@@ -530,7 +523,6 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
     s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
-    @set_db_timeout(0)
     def post(self, request):
         """Return list of downloads that match the requested params"""
         agency_id = request.data.get('agency', None)
