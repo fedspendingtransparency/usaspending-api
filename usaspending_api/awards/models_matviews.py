@@ -64,7 +64,9 @@ class UniversalTransactionView(models.Model):
     extent_competed = models.TextField()
     cfda_number = models.TextField()
     cfda_title = models.TextField()
+
     recipient_id = models.IntegerField()
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
@@ -125,6 +127,7 @@ class SummaryTransactionView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
@@ -164,6 +167,7 @@ class UniversalAwardView(models.Model):
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_id = models.IntegerField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
@@ -369,6 +373,7 @@ class SummaryTransactionMonthView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()

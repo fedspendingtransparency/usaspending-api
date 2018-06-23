@@ -782,3 +782,14 @@ class PSC(models.Model):
     class Meta:
         managed = True
         db_table = 'psc'
+
+
+class RecipientLookup(models.Model):
+    """Materialized view used for looking up Recipient Names & DUNS"""
+    recipient_hash = models.UUIDField(primary_key=True)
+    legal_business_name = models.TextField(unique=True)
+    duns = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipient_lookup_view'

@@ -9,23 +9,13 @@
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
     "",
-    "  COALESCE(x.legal_entity_country_code, transaction_fabs.legal_entity_country_code) AS recipient_location_country_code,",
-    "  COALESCE(x.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,",
-    "  COALESCE(x.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,",
-    "  COALESCE(x.legal_entity_county_code, transaction_fabs.legal_entity_county_code) AS recipient_location_county_code,",
-    "  COALESCE(x.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,",
-    "  COALESCE(x.legal_entity_congressional, transaction_fabs.legal_entity_congressional) AS recipient_location_congressional_code,",
-    "  COALESCE(x.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,",
-    "",
-    "  place_of_performance.location_country_code AS pop_country_code,",
-    "  place_of_performance.country_name AS pop_country_name,",
-    "  place_of_performance.state_code AS pop_state_code,",
-    "  place_of_performance.county_code AS pop_county_code,",
-    "  place_of_performance.county_name AS pop_county_name,",
-    "  place_of_performance.congressional_code AS pop_congressional_code,",
-    "  place_of_performance.zip5 AS pop_zip5,",
-    "",
-    "  MD5(concat(legal_entity.recipient_unique_id, (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu))))::uuid as recipient_hash,",
+    "  MD5(CASE WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN '-1MULTIPLE RECIPIENTS' ELSE",
+    "    UPPER(CONCAT(legal_entity.recipient_unique_id, (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu))))",
+    "    END)::uuid as recipient_hash,",
+    "  CASE WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN 'MULTIPLE RECIPIENTS' ELSE",
+    "    (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)) END AS recipient_name,",
+    "  legal_entity.recipient_unique_id,",
+    "  legal_entity.parent_recipient_unique_id,",
     "",
     "  SUM(COALESCE(CASE",
     "    WHEN awards.category = 'loans' THEN awards.total_subsidy_cost",
@@ -43,20 +33,11 @@
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "LEFT OUTER JOIN",
     "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
-    "LEFT OUTER JOIN (SELECT",
+        "LEFT OUTER JOIN (SELECT",
     "  prex.transaction_id,",
-    "  prex.legal_entity_country_code AS legal_entity_country_code,",
-    "  prex.legal_entity_country_name AS legal_entity_country_name,",
-    "  prex.legal_entity_state_code AS legal_entity_state_code,",
-    "  prex.legal_entity_county_code AS legal_entity_county_code,",
-    "  prex.legal_entity_county_name AS legal_entity_county_name,",
-    "  prex.legal_entity_congressional AS legal_entity_congressional,",
-    "  prex.legal_entity_zip5 AS legal_entity_zip5,",
     "  prex.awardee_or_recipient_uniqu AS duns",
     "  FROM transaction_fpds AS prex",
     "  ) x ON transaction_normalized.id = x.transaction_id AND transaction_normalized.is_fpds = true",
-    "LEFT OUTER JOIN",
-    "  references_location AS place_of_performance ON (transaction_normalized.place_of_performance_id = place_of_performance.location_id)",
     "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",
     "WHERE",
@@ -67,24 +48,9 @@
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
     "",
-    "  COALESCE(x.legal_entity_country_code, transaction_fabs.legal_entity_country_code),",
-    "  COALESCE(x.legal_entity_country_name, transaction_fabs.legal_entity_country_name),",
-    "  COALESCE(x.legal_entity_state_code, transaction_fabs.legal_entity_state_code),",
-    "  COALESCE(x.legal_entity_county_code, transaction_fabs.legal_entity_county_code),",
-    "  COALESCE(x.legal_entity_county_name, transaction_fabs.legal_entity_county_name),",
-    "  COALESCE(x.legal_entity_congressional, transaction_fabs.legal_entity_congressional),",
-    "  COALESCE(x.legal_entity_zip5, transaction_fabs.legal_entity_zip5),",
-    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu),",
     "  (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)),",
-    "",
-    "  place_of_performance.location_country_code,",
-    "  place_of_performance.country_name,",
-    "  place_of_performance.state_code,",
-    "  place_of_performance.county_code,",
-    "  place_of_performance.county_name,",
-    "  place_of_performance.congressional_code,",
-    "  place_of_performance.zip5,",
-    "",
+    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu),",
+    "  legal_entity.recipient_name,",
     "  legal_entity.recipient_unique_id,",
     "  legal_entity.parent_recipient_unique_id"
   ],
@@ -110,78 +76,6 @@
         "name": "pulled_from",
         "where": "pulled_from IS NOT NULL",
         "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
-    }, {
-        "name": "recipient_country_code",
-        "where": "recipient_location_country_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_country_code"}]
-    }, {
-        "name": "recipient_state_code",
-        "where": "recipient_location_state_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_state_code"}]
-    }, {
-        "name": "recipient_county_code",
-        "where": "recipient_location_county_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_county_code"}]
-    }, {
-        "name": "recipient_zip",
-        "where": "recipient_location_zip5 IS NOT NULL",
-        "columns": [{"name": "recipient_location_zip5"}]
-    }, {
-        "name": "pop_country_code",
-        "where": "pop_country_code IS NOT NULL",
-        "columns": [{"name": "pop_country_code"}]
-    }, {
-        "name": "pop_state_code",
-        "where": "pop_state_code IS NOT NULL",
-        "columns": [{"name": "pop_state_code"}]
-    }, {
-        "name": "pop_county_code",
-        "where": "pop_county_code IS NOT NULL",
-        "columns": [{"name": "pop_county_code"}]
-    }, {
-        "name": "pop_zip",
-        "where": "pop_zip5 IS NOT NULL",
-        "columns": [{"name": "pop_zip5"}]
-    }, {
-      "name": "simple_pop_geolocation",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "pop_covering_geolocation",
-      "where": "pop_country_code = 'USA'",
-      "columns": [{"name": "pop_state_code"}, {"name": "fiscal_year"}, {"name": "generated_pragmatic_obligation"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_1",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_2",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_3",
-      "where": "pop_country_code = 'USA' AND pop_zip5 IS NOT NULL",
-      "columns": [{"name": "pop_zip5"}, {"name": "action_date"}]
-    }, {
-      "name": "simple_recipient_location_geolocation",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "recipient_covering_geolocation",
-      "where": "recipient_location_country_code = 'USA'",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "fiscal_year"}, {"name": "generated_pragmatic_obligation"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_1",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_2",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_3",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_zip5 IS NOT NULL",
-      "columns": [{"name": "recipient_location_zip5"}, {"name": "action_date"}]
     }
   ]
 }

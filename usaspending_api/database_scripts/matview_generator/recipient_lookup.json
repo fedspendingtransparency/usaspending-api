@@ -1,5 +1,5 @@
 {
-  "final_name": "recipient_lookup",
+  "final_name": "recipient_lookup_view",
   "refresh": true,
   "matview_sql": [
     "SELECT",
@@ -10,7 +10,7 @@
     "LEFT OUTER JOIN legal_entity ON duns.awardee_or_recipient_uniqu = legal_entity.recipient_unique_id",
     "GROUP BY duns.legal_business_name, duns.awardee_or_recipient_uniqu",
     "UNION",
-    "SELECT md5('-1MULTIPLE RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE RECIPIENTS' AS legal_business_name, '-1' AS duns"
+    "SELECT MD5('-1MULTIPLE RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE RECIPIENTS' AS legal_business_name, '-1' AS duns"
   ],
   "indexes": [
     {
