@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.db import connection
 from django.db.utils import OperationalError
 
@@ -9,11 +8,11 @@ from usaspending_api.common.exceptions import EndpointTimeoutException
 logger = logging.getLogger(__name__)
 
 
-def set_db_timeout(timeout_in_seconds=None):
+def set_db_timeout(timeout_in_seconds):
     """ Decorator used to set the database statement timeout within the Django app scope
 
         Args:
-            timeout_in_seconds: timeout value, in seconds
+            timeout_in_seconds (required): timeout value, in seconds
 
         NOTE:
             The statement_timeout is only set for this specific connection. The timeout is reset to 0 at the end of
@@ -31,22 +30,20 @@ def set_db_timeout(timeout_in_seconds=None):
             def func_running_db_call(...):
                 ...
     """
-
-    if not timeout_in_seconds:
-        timeout_in_seconds = settings.DEFAULT_DB_TIMEOUT_IN_SECONDS
-
     timeout_in_ms = int(timeout_in_seconds * 1000)
 
     def wrap(func):
         def wrapper(*args, **kwargs):
             with connection.cursor() as cursor:
                 cursor.execute("show statement_timeout")
+                prev_timeout = cursor.fetchall()[0][0]
+
                 logger.warning('DB TIMEOUT DECORATOR: Old Postgres statement_timeout value = %s on this connection' %
-                               str(cursor.fetchall()[0][0]))
+                               str(prev_timeout))
 
                 logger.warning(
-                    'DB TIMEOUT DECORATOR: Setting Postgres statement_timeout to %dms  on this connection' %
-                    timeout_in_ms)
+                    'DB TIMEOUT DECORATOR: Setting Postgres statement_timeout to %ds  on this connection' %
+                    timeout_in_seconds)
                 cursor.execute("set statement_timeout={0}".format(timeout_in_ms))
 
                 cursor.execute("show statement_timeout")
@@ -64,8 +61,9 @@ def set_db_timeout(timeout_in_seconds=None):
                                    % str(cursor.fetchall()[0][0]))
 
                     logger.warning(
-                        'DB TIMEOUT DECORATOR: Setting Postgres statement_timeout to 0 on this connection')
-                    cursor.execute("set statement_timeout=0")
+                        'DB TIMEOUT DECORATOR: Setting Postgres statement_timeout to {0} on this connection'.
+                        format(prev_timeout))
+                    cursor.execute("set statement_timeout='{0}'".format(prev_timeout))
 
                     cursor.execute("show statement_timeout")
                     logger.warning('DB TIMEOUT DECORATOR: New Postgres statement_timeout value = %s on this connection'
