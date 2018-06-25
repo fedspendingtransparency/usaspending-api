@@ -4,6 +4,7 @@ from django.db.models import Case, CharField, DecimalField, OuterRef, Subquery, 
 from django.db.models.functions import Coalesce, Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
@@ -20,15 +21,15 @@ def account_download_filter(account_type, download_table, filters, account_level
         if agency:
             query_filters['{}__agency_id'.format(tas_id)] = agency.cgac_code
         else:
-            raise InvalidParameterException('agency with that ID does not exist')
+            raise InvalidParameterException('Agency with that ID does not exist')
 
-    # TODO: Filter by Federal Account, if provided
-    # if filters.get('federal_account', False):
-    #     federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
-    #     if federal_account_obj:
-    #         query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
-    #     else:
-    #         raise InvalidParameterException('agency with that ID does not exist')
+    # Filter by Federal Account, if provided
+    if filters.get('federal_account', False):
+        federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
+        if federal_account_obj:
+            query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
+        else:
+            raise InvalidParameterException('Federal Account with that ID does not exist')
 
     # Filter by Fiscal Year and Quarter
     reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
@@ -157,7 +158,8 @@ def retrieve_fyq_filters(account_type, filters):
         if account_type == 'award_financial':
             reporting_period_start = '{}__gte'.format(reporting_period_start)
             reporting_period_end = '{}__lte'.format(reporting_period_end)
-            start_date = datetime.date(filters['fy']-1, 10, 1)
+            if str(filters['quarter']) != '1':
+                start_date = datetime.date(filters['fy']-1, 10, 1)
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 
