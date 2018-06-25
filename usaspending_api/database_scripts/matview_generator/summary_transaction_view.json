@@ -3,19 +3,19 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' ')) AS pk,",
+    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS pk,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
     "",
-    "  recipient_location.location_country_code AS recipient_location_country_code,",
-    "  recipient_location.country_name AS recipient_location_country_name,",
-    "  recipient_location.state_code AS recipient_location_state_code,",
-    "  recipient_location.county_code AS recipient_location_county_code,",
-    "  recipient_location.county_name AS recipient_location_county_name,",
-    "  recipient_location.congressional_code AS recipient_location_congressional_code,",
-    "  recipient_location.zip5 AS recipient_location_zip5,",
+    "  COALESCE(x.legal_entity_country_code, transaction_fabs.legal_entity_country_code) AS recipient_location_country_code,",
+    "  COALESCE(x.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,",
+    "  COALESCE(x.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,",
+    "  COALESCE(x.legal_entity_county_code, transaction_fabs.legal_entity_county_code) AS recipient_location_county_code,",
+    "  COALESCE(x.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,",
+    "  COALESCE(x.legal_entity_congressional, transaction_fabs.legal_entity_congressional) AS recipient_location_congressional_code,",
+    "  COALESCE(x.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,",
     "",
     "  place_of_performance.location_country_code AS pop_country_code,",
     "  place_of_performance.country_name AS pop_country_name,",
@@ -36,9 +36,14 @@
     "  SAA.abbreviation AS awarding_subtier_agency_abbreviation,",
     "  SFA.abbreviation AS funding_subtier_agency_abbreviation,",
     "",
-    "  UPPER(legal_entity.recipient_name) AS recipient_name,",
-    "  legal_entity.recipient_unique_id,",
+    "  MD5(CASE WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN '-1MULTIPLE RECIPIENTS' ELSE",
+    "    UPPER(CONCAT(legal_entity.recipient_unique_id, (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu))))",
+    "    END)::uuid as recipient_hash,",
+    "  CASE WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN 'MULTIPLE RECIPIENTS' ELSE",
+    "    (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)) END AS recipient_name,",
+    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,",
     "  legal_entity.parent_recipient_unique_id,",
+    "",
     "  legal_entity.business_categories,",
     "  transaction_fabs.cfda_number,",
     "  references_cfda.program_title AS cfda_title,",
@@ -70,8 +75,18 @@
     "  references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)",
     "LEFT OUTER JOIN",
     "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
-    "LEFT OUTER JOIN",
-    "  references_location AS recipient_location ON (legal_entity.location_id = recipient_location.location_id)",
+    "LEFT OUTER JOIN (SELECT",
+    "  prex.transaction_id,",
+    "  prex.legal_entity_country_code AS legal_entity_country_code,",
+    "  prex.legal_entity_country_name AS legal_entity_country_name,",
+    "  prex.legal_entity_state_code AS legal_entity_state_code,",
+    "  prex.legal_entity_county_code AS legal_entity_county_code,",
+    "  prex.legal_entity_county_name AS legal_entity_county_name,",
+    "  prex.legal_entity_congressional AS legal_entity_congressional,",
+    "  prex.legal_entity_zip5 AS legal_entity_zip5,",
+    "  prex.awardee_or_recipient_uniqu AS duns",
+    "  FROM transaction_fpds AS prex",
+    "  ) x ON transaction_normalized.id = x.transaction_id AND transaction_normalized.is_fpds = true",
     "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",
     "LEFT OUTER JOIN",
@@ -99,13 +114,16 @@
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
-    "  recipient_location.location_country_code,",
-    "  recipient_location.country_name,",
-    "  recipient_location.state_code,",
-    "  recipient_location.county_code,",
-    "  recipient_location.county_name,",
-    "  recipient_location.congressional_code,",
-    "  recipient_location.zip5,",
+    "",
+    "  COALESCE(x.legal_entity_country_code, transaction_fabs.legal_entity_country_code),",
+    "  COALESCE(x.legal_entity_country_name, transaction_fabs.legal_entity_country_name),",
+    "  COALESCE(x.legal_entity_state_code, transaction_fabs.legal_entity_state_code),",
+    "  COALESCE(x.legal_entity_county_code, transaction_fabs.legal_entity_county_code),",
+    "  COALESCE(x.legal_entity_county_name, transaction_fabs.legal_entity_county_name),",
+    "  COALESCE(x.legal_entity_congressional, transaction_fabs.legal_entity_congressional),",
+    "  COALESCE(x.legal_entity_zip5, transaction_fabs.legal_entity_zip5),",
+    "  (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)),",
+    "",
     "  place_of_performance.location_country_code,",
     "  place_of_performance.country_name,",
     "  place_of_performance.state_code,",
@@ -125,6 +143,7 @@
     "  SAA.abbreviation,",
     "  SFA.abbreviation,",
     "",
+    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu),",
     "  legal_entity.recipient_name,",
     "  legal_entity.recipient_unique_id,",
     "  legal_entity.parent_recipient_unique_id,",
@@ -146,25 +165,19 @@
       "unique": true,
       "columns": [{"name": "pk"}]
     }, {
-        "name": "ordered_action_date",
-        "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+      "name": "ordered_action_date",
+      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "ordered_fy",
-        "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
+      "name": "action_date_and_type",
+      "columns": [{"name": "type"}, {"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "action_date_and_type",
-        "columns": [
-          {"name": "action_date", "order": "DESC NULLS LAST"},
-          {"name": "type"}
-        ]
+      "name": "type",
+      "where": "type IS NOT NULL",
+      "columns": [{"name": "type"}]
     }, {
-        "name": "type",
-        "where": "type IS NOT NULL",
-        "columns": [{"name": "type"}]
-    }, {
-        "name": "pulled_from",
-        "where": "pulled_from IS NOT NULL",
-        "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
+      "name": "pulled_from",
+      "where": "pulled_from IS NOT NULL",
+      "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
     }, {
       "name": "recipient_unique_id",
       "where": "recipient_unique_id IS NOT NULL",
@@ -174,37 +187,37 @@
       "where": "parent_recipient_unique_id IS NOT NULL",
       "columns": [{"name": "parent_recipient_unique_id"}]
     }, {
-        "name": "recipient_country_code",
-        "where": "recipient_location_country_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_country_code"}]
+      "name": "recipient_country_code",
+      "where": "recipient_location_country_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_country_code"}]
     }, {
-        "name": "recipient_state_code",
-        "where": "recipient_location_state_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_state_code"}]
+      "name": "recipient_state_code",
+      "where": "recipient_location_state_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_state_code"}]
     }, {
-        "name": "recipient_county_code",
-        "where": "recipient_location_county_code IS NOT NULL",
-        "columns": [{"name": "recipient_location_county_code"}]
+      "name": "recipient_county_code",
+      "where": "recipient_location_county_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_county_code"}]
     }, {
-        "name": "recipient_zip",
-        "where": "recipient_location_zip5 IS NOT NULL",
-        "columns": [{"name": "recipient_location_zip5"}]
+      "name": "recipient_zip",
+      "where": "recipient_location_zip5 IS NOT NULL",
+      "columns": [{"name": "recipient_location_zip5"}]
     }, {
-        "name": "pop_country_code",
-        "where": "pop_country_code IS NOT NULL",
-        "columns": [{"name": "pop_country_code"}]
+      "name": "pop_country_code",
+      "where": "pop_country_code IS NOT NULL",
+      "columns": [{"name": "pop_country_code"}]
     }, {
-        "name": "pop_state_code",
-        "where": "pop_state_code IS NOT NULL",
-        "columns": [{"name": "pop_state_code"}]
+      "name": "pop_state_code",
+      "where": "pop_state_code IS NOT NULL",
+      "columns": [{"name": "pop_state_code"}]
     }, {
-        "name": "pop_county_code",
-        "where": "pop_county_code IS NOT NULL",
-        "columns": [{"name": "pop_county_code"}]
+      "name": "pop_county_code",
+      "where": "pop_county_code IS NOT NULL",
+      "columns": [{"name": "pop_county_code"}]
     }, {
-        "name": "pop_zip",
-        "where": "pop_zip5 IS NOT NULL",
-        "columns": [{"name": "pop_zip5"}]
+      "name": "pop_zip",
+      "where": "pop_zip5 IS NOT NULL",
+      "columns": [{"name": "pop_zip5"}]
     }, {
       "name": "awarding_agency_id",
       "where": "awarding_agency_id IS NOT NULL",
@@ -230,41 +243,38 @@
       "where": "funding_subtier_agency_name IS NOT NULL",
       "columns": [{"name": "funding_subtier_agency_name"}]
     }, {
-        "name": "cfda_num",
-        "where": "cfda_number IS NOT NULL",
-        "columns": [{"name": "cfda_number"}]
+      "name": "cfda_num",
+      "where": "cfda_number IS NOT NULL",
+      "columns": [{"name": "cfda_number"}]
     }, {
-        "name": "cfda_title",
-        "where": "cfda_title IS NOT NULL",
-        "columns": [{"name": "cfda_title"}]
+      "name": "cfda_title",
+      "where": "cfda_title IS NOT NULL",
+      "columns": [{"name": "cfda_title"}]
     }, {
-        "name": "psc",
-        "where": "product_or_service_code IS NOT NULL",
-        "columns": [{"name": "product_or_service_code"}]
+      "name": "psc",
+      "where": "product_or_service_code IS NOT NULL",
+      "columns": [{"name": "product_or_service_code"}]
     }, {
-        "name": "naics",
-        "where": "naics_code IS NOT NULL",
-        "columns": [{"name": "naics_code"}]
+      "name": "naics",
+      "where": "naics_code IS NOT NULL",
+      "columns": [{"name": "naics_code"}]
     }, {
-        "name": "total_obl_bin",
-        "where": "total_obl_bin IS NOT NULL",
-        "columns": [{"name": "total_obl_bin"}]
+      "name": "total_obl_bin",
+      "where": "total_obl_bin IS NOT NULL",
+      "columns": [{"name": "total_obl_bin"}]
     }, {
-        "name": "type_of_contract",
-        "columns": [{"name": "type_of_contract_pricing"}]
+      "name": "type_of_contract",
+      "columns": [{"name": "type_of_contract_pricing"}]
     }, {
-        "name": "ordered_action_date_and_set_aside",
-        "columns": [
-          {"name": "action_date", "order": "DESC NULLS LAST"},
-          {"name": "type_set_aside"}
-        ]
+      "name": "ordered_action_date_and_set_aside",
+      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}, {"name": "type_set_aside"}]
     }, {
-        "name": "extent_competed",
-        "columns": [{"name": "extent_competed"}]
+      "name": "extent_competed",
+      "columns": [{"name": "extent_competed"}]
     }, {
-        "name": "type_set_aside",
-        "where": "type_set_aside IS NOT NULL",
-        "columns": [{"name": "type_set_aside"}]
+      "name": "type_set_aside",
+      "where": "type_set_aside IS NOT NULL",
+      "columns": [{"name": "type_set_aside"}]
     }, {
       "name": "business_categories",
       "method": "GIN",

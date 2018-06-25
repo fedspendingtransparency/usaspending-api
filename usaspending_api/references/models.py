@@ -247,7 +247,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     state_description = models.TextField(blank=True, null=True, verbose_name="State Description")
     city_name = models.TextField(blank=True, null=True, verbose_name="City Name")
     city_code = models.TextField(blank=True, null=True)
-    county_name = models.TextField(blank=True, null=True, db_index=True)
+    county_name = models.TextField(blank=True, null=True, db_index=False)
     county_code = models.TextField(blank=True, null=True, db_index=True)
     address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1")
     address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2")
@@ -577,7 +577,7 @@ class LegalEntity(DataSourceTrackedModel):
     other_minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
     us_local_government = models.BooleanField(blank=False, null=False, default=False)
     undefinitized_action = models.TextField(blank=True, null=True)
-    domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=True)
+    domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=False)
     domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
     division_name = models.TextField(blank=True, null=True)
     division_number = models.TextField(blank=True, null=True)
@@ -782,3 +782,14 @@ class PSC(models.Model):
     class Meta:
         managed = True
         db_table = 'psc'
+
+
+class RecipientLookup(models.Model):
+    """Materialized view used for looking up Recipient Names & DUNS"""
+    recipient_hash = models.UUIDField(primary_key=True)
+    legal_business_name = models.TextField(unique=True)
+    duns = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipient_lookup_view'

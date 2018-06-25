@@ -190,7 +190,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             else:
                 try:
                     filters[required_filter] = int(filters[required_filter])
-                except TypeError:
+                except (TypeError, ValueError):
                     raise InvalidParameterException('{} filter not provided as an integer'.format(required_filter))
             json_request['filters'][required_filter] = filters[required_filter]
 

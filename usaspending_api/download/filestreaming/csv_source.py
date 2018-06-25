@@ -1,3 +1,4 @@
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2 import download_column_historical_lookups
 from usaspending_api.references.models import ToptierAgency
 
@@ -12,7 +13,11 @@ class CsvSource:
         if agency_id == 'all':
             self.agency_code = 'all'
         else:
-            self.agency_code = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first().cgac_code
+            agency = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first()
+            if agency:
+                self.agency_code = agency.cgac_code
+            else:
+                raise InvalidParameterException('Agency with that ID does not exist')
         self.queryset = None
 
     def values(self, header):

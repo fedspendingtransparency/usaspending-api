@@ -1,0 +1,29 @@
+{
+  "final_name": "recipient_lookup_view",
+  "refresh": true,
+  "matview_sql": [
+    "SELECT",
+    "  MD5(UPPER(CONCAT(duns.awardee_or_recipient_uniqu, duns.legal_business_name)))::uuid AS recipient_hash,",
+    "  duns.legal_business_name,",
+    "  duns.awardee_or_recipient_uniqu AS duns",
+    "FROM duns",
+    "LEFT OUTER JOIN legal_entity ON duns.awardee_or_recipient_uniqu = legal_entity.recipient_unique_id",
+    "GROUP BY duns.legal_business_name, duns.awardee_or_recipient_uniqu",
+    "UNION",
+    "SELECT MD5('-1MULTIPLE RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE RECIPIENTS' AS legal_business_name, '-1' AS duns"
+  ],
+  "indexes": [
+    {
+      "name": "unique_hash",
+      "unique": true,
+      "columns": [{"name": "recipient_hash"}]
+    }, {
+      "name": "unique_duns",
+      "unique": true,
+      "columns": [{"name": "duns"}]
+    }, {
+      "name": "recipient_name",
+      "columns": [{"name": "legal_business_name"}]
+    }
+  ]
+}

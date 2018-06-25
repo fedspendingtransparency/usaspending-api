@@ -1,0 +1,84 @@
+{
+  "final_name": "summary_transaction_recipient_view",
+  "refresh": true,
+  "matview_sql": [
+    "SELECT",
+    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS pk,",
+    "  transaction_normalized.action_date,",
+    "  transaction_normalized.fiscal_year,",
+    "  transaction_normalized.type,",
+    "  transaction_fpds.pulled_from,",
+    "",
+    "  MD5(CASE",
+    "      WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN '-1MULTIPLE RECIPIENTS'",
+    "      ELSE UPPER(CONCAT(legal_entity.recipient_unique_id, (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu))))",
+    "      END)::uuid AS recipient_hash,",
+    "  CASE",
+    "    WHEN legal_entity.recipient_name ILIKE 'multiple recipient%' THEN 'MULTIPLE RECIPIENTS'",
+    "    ELSE (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu))",
+    "  END AS recipient_name,",
+    "  legal_entity.recipient_unique_id,",
+    "  legal_entity.parent_recipient_unique_id,",
+    "",
+    "  SUM(COALESCE(CASE",
+    "      WHEN awards.category = 'loans' THEN awards.total_subsidy_cost",
+    "      ELSE transaction_normalized.federal_action_obligation",
+    "      END, 0)::NUMERIC(23, 2))::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
+    "  SUM(COALESCE(transaction_normalized.federal_action_obligation, 0))::NUMERIC(20, 2) AS federal_action_obligation,",
+    "  SUM(COALESCE(transaction_normalized.original_loan_subsidy_cost, 0))::NUMERIC(20, 2) AS original_loan_subsidy_cost,",
+    "  SUM(COALESCE(transaction_normalized.face_value_loan_guarantee, 0))::NUMERIC(23, 2) AS face_value_loan_guarantee,",
+    "  count(*) AS counts",
+    "FROM",
+    "  transaction_normalized",
+    "LEFT OUTER JOIN",
+    "  transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)",
+    "LEFT OUTER JOIN",
+    "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
+    "LEFT OUTER JOIN",
+    "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
+        "LEFT OUTER JOIN (SELECT",
+    "  prex.transaction_id,",
+    "  prex.awardee_or_recipient_uniqu AS duns",
+    "  FROM transaction_fpds AS prex",
+    "  ) x ON transaction_normalized.id = x.transaction_id AND transaction_normalized.is_fpds = true",
+    "LEFT OUTER JOIN",
+    "  awards ON (transaction_normalized.award_id = awards.id)",
+    "WHERE",
+    "  transaction_normalized.action_date >= '2007-10-01'",
+    "GROUP BY",
+    "  transaction_normalized.action_date,",
+    "  transaction_normalized.fiscal_year,",
+    "  transaction_normalized.type,",
+    "  transaction_fpds.pulled_from,",
+    "",
+    "  (SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)),",
+    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu),",
+    "  legal_entity.recipient_name,",
+    "  legal_entity.recipient_unique_id,",
+    "  legal_entity.parent_recipient_unique_id"
+  ],
+  "indexes": [
+    {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "pk"}]
+    }, {
+        "name": "ordered_action_date",
+        "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+    }, {
+        "name": "action_date_and_type",
+        "columns": [
+          {"name": "action_date", "order": "DESC NULLS LAST"},
+          {"name": "type"}
+        ]
+    }, {
+        "name": "type",
+        "where": "type IS NOT NULL",
+        "columns": [{"name": "type"}]
+    }, {
+        "name": "pulled_from",
+        "where": "pulled_from IS NOT NULL",
+        "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
+    }
+  ]
+}
