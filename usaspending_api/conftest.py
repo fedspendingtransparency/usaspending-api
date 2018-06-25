@@ -123,10 +123,10 @@ def mock_matviews_qs(monkeypatch):
 def mock_reference_matviews(monkeypatch):
     mock_qs = MockSet()
     monkeypatch.setattr('usaspending_api.references.models.RecipientLookup.objects', mock_qs)
+
     yield mock_qs
 
     mock_qs.delete()
-
 
 
 def pytest_configure():
