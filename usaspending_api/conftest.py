@@ -108,6 +108,7 @@ def mock_matviews_qs(monkeypatch):
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryStateView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects', mock_qs)
+    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionRecipientView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalAwardView.objects', mock_qs)
@@ -116,6 +117,16 @@ def mock_matviews_qs(monkeypatch):
     yield mock_qs
 
     mock_qs.delete()
+
+
+@pytest.fixture()
+def mock_reference_matviews(monkeypatch):
+    mock_qs = MockSet()
+    monkeypatch.setattr('usaspending_api.references.models.RecipientLookup.objects', mock_qs)
+    yield mock_qs
+
+    mock_qs.delete()
+
 
 
 def pytest_configure():

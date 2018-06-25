@@ -36,7 +36,7 @@
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "LEFT OUTER JOIN",
     "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
-        "LEFT OUTER JOIN (SELECT",
+    "LEFT OUTER JOIN (SELECT",
     "  prex.transaction_id,",
     "  prex.awardee_or_recipient_uniqu AS duns",
     "  FROM transaction_fpds AS prex",
