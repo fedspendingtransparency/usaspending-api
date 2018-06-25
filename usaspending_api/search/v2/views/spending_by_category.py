@@ -18,7 +18,6 @@ from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
 
-
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
@@ -218,30 +217,35 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        from time import perf_counter
         print('=======================================')
         print(generate_raw_quoted_query(self.queryset))
         # DB hit here
+        pre_sql = perf_counter()
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
-
-        if not self.subawards:
-            for row in query_results:
-
+        post_sql = perf_counter()
+        print(f'Time for SQL {post_sql - pre_sql}')
+        for row in query_results:
+            if self.subawards:
+                row['recipient_id'] = None
+            else:
                 lookup = RecipientLookup.objects \
                     .filter(recipient_hash=row['recipient_hash']) \
                     .values('legal_business_name', 'duns').first()
-                # from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-                # print('-------')
-                # print(generate_raw_quoted_query(lookup))
                 if lookup:
                     row['recipient_name'] = lookup.get('legal_business_name', None)
                     row['recipient_unique_id'] = lookup.get('duns', None)
                 else:
-                    row['recipient_name'] = row['recipient_unique_id'] = None
+                    row['recipient_name'] = 'DUNS not Provided'
+                    row['recipient_unique_id'] = None
+                row['recipient_id'] = None
+                del row['recipient_hash']
+                if row['recipient_name'].upper() == 'MULTIPLE RECIPIENTS':
+                    row['recipient_unique_id'] = None
+        post_hash_lookup = perf_counter()
+        print(f'Time for fetching Names {post_hash_lookup-post_sql}')
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row['id'] = fetch_recipient_id_by_duns(row['code'])
-            del row['recipient_hash']
         return results
 
     def industry_and_other_codes(self) -> list:

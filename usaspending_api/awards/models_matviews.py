@@ -89,6 +89,7 @@ class UniversalTransactionView(models.Model):
 
 
 class SummaryTransactionView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -232,6 +233,7 @@ class UniversalAwardView(models.Model):
 
 
 class SummaryAwardView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -259,6 +261,7 @@ class SummaryAwardView(models.Model):
 
 
 class SummaryView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -286,6 +289,7 @@ class SummaryView(models.Model):
 
 
 class SummaryNaicsCodesView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -305,6 +309,7 @@ class SummaryNaicsCodesView(models.Model):
 
 
 class SummaryPscCodesView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -322,6 +327,7 @@ class SummaryPscCodesView(models.Model):
 
 
 class SummaryCfdaNumbersView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -340,6 +346,7 @@ class SummaryCfdaNumbersView(models.Model):
 
 
 class SummaryTransactionMonthView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -402,6 +409,7 @@ class SummaryTransactionMonthView(models.Model):
 
 
 class SummaryTransactionGeoView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -447,6 +455,7 @@ class SummaryTransactionGeoView(models.Model):
 
 
 class SummaryStateView(models.Model):
+    pk = models.UUIDField(primary_key=True)
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -816,3 +825,26 @@ class SubawardView(models.Model):
     class Meta:
         managed = False
         db_table = 'subaward_view'
+
+
+class SummaryTransactionRecipientView(models.Model):
+    pk = models.UUIDField(primary_key=True)
+    action_date = models.DateField()
+    fiscal_year = models.IntegerField()
+    type = models.TextField()
+    pulled_from = models.TextField()
+
+    recipient_hash = models.UUIDField()
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_transaction_recipient_view'

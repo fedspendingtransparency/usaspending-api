@@ -3,7 +3,7 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  md5(concat(duns.awardee_or_recipient_uniqu, duns.legal_business_name))::uuid AS recipient_hash,",
+    "  MD5(UPPER(CONCAT(duns.awardee_or_recipient_uniqu, duns.legal_business_name)))::uuid AS recipient_hash,",
     "  duns.legal_business_name,",
     "  duns.awardee_or_recipient_uniqu AS duns",
     "FROM duns",
