@@ -216,15 +216,8 @@ class BusinessLogic:
             # values = ['recipient_name', 'parent_recipient_unique_id']
 
         self.queryset = self.common_db_query(filters, values)
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        from time import perf_counter
-        print('=======================================')
-        print(generate_raw_quoted_query(self.queryset))
         # DB hit here
-        pre_sql = perf_counter()
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
-        post_sql = perf_counter()
-        print(f'Time for SQL {post_sql - pre_sql}')
         for row in query_results:
             if self.subawards:
                 row['recipient_id'] = None
@@ -242,8 +235,6 @@ class BusinessLogic:
                 del row['recipient_hash']
                 if row['recipient_name'].upper() == 'MULTIPLE RECIPIENTS':
                     row['recipient_unique_id'] = None
-        post_hash_lookup = perf_counter()
-        print(f'Time for fetching Names {post_hash_lookup-post_sql}')
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         return results
