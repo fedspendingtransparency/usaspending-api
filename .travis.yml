@@ -6,6 +6,7 @@ python:
 services:
 - postgresql
 - elasticsearch
+- docker
 
 addons:
   postgresql: "9.6"
@@ -13,6 +14,7 @@ addons:
 env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
+  - DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:8000/data_broker
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
 
@@ -21,6 +23,8 @@ install:
 - pip install coveralls
 
 before_script:
+- git clone -b master git@github.com:fedspendingtransparency/data-act-broker-backend.git
+- docker-compose --file data-act-broker-backend/docker-compose.yml run --detach dataact-postgres
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
 - psql -c "CREATE USER readonly;"
 - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
