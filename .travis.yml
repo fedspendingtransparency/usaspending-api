@@ -9,7 +9,7 @@ services:
 - docker
 
 addons:
-  postgresql: "9.6"
+  postgresql: "10.3"
 
 env:
   global:
@@ -23,7 +23,7 @@ install:
 - pip install coveralls
 
 before_script:
-- git clone -b master https://github.com/fedspendingtransparency/data-act-broker-backend.git
+- git clone -b test/docker-postgres-version-update https://github.com/fedspendingtransparency/data-act-broker-backend.git
 - docker-compose --file data-act-broker-backend/docker-compose.yml run dataact-postgres
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
 - psql -c "CREATE USER readonly;"
