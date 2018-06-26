@@ -24,7 +24,7 @@ install:
 
 before_script:
 - git clone -b master https://github.com/fedspendingtransparency/data-act-broker-backend.git
-- docker-compose --file data-act-broker-backend/docker-compose.yml run --detach service dataact-postgres
+- docker-compose --file data-act-broker-backend/docker-compose.yml build --detach service dataact-postgres
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
 - psql -c "CREATE USER readonly;"
 - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
