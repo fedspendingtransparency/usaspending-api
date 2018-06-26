@@ -14,7 +14,7 @@ addons:
 env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
-  - DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:8000/data_broker
+  - DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:9999/data_broker
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
 
