@@ -3,7 +3,7 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' ')) AS pk,",
+    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS pk,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
@@ -73,9 +73,6 @@
     }, {
       "name": "type",
       "columns": [{"name": "type"}]
-    }, {
-      "name": "fy",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
     }, {
       "name": "pulled_from",
       "where": "pulled_from IS NOT NULL",
