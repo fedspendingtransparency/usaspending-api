@@ -26,3 +26,34 @@ CREATE OR REPLACE FUNCTION obligation_to_enum(award NUMERIC) RETURNS total_oblig
   RETURN result::total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION recipient_normalization(original_name TEXT, search_duns TEXT) RETURNS text AS $$
+  DECLARE
+    DECLARE result text;
+  BEGIN
+    IF original_name ILIKE 'multiple recipients' THEN result = 'MULTIPLE RECIPIENTS';
+    ELSIF original_name ILIKE 'redacted due to pii' THEN result = 'REDACTED DUE TO PII';
+    ELSIF original_name ILIKE 'multiple foreign recipients' THEN result = 'MULTIPLE FOREIGN RECIPIENTS';
+    ELSIF original_name ILIKE 'private individual' THEN result = 'PRIVATE INDIVIDUAL';
+    ELSIF original_name ILIKE 'individual recipient' THEN result = 'INDIVIDUAL RECIPIENT';
+    ELSE result=(SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = search_duns) ;
+    END IF;
+  RETURN COALESCE(result, ' ')::text;
+  END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
+  DECLARE
+    DECLARE result text[];
+  BEGIN
+    IF original_name ILIKE 'multiple recipients' THEN result = ARRAY['MULTIPLE RECIPIENTS', '-1'];
+    ELSIF original_name ILIKE 'redacted due to pii' THEN result = ARRAY['REDACTED DUE TO PII', '-2'];
+    ELSIF original_name ILIKE 'multiple foreign recipients' THEN result = ARRAY['MULTIPLE FOREIGN RECIPIENTS', '-3'];
+    ELSIF original_name ILIKE 'private individual' THEN result = ARRAY['PRIVATE INDIVIDUAL', '-4'];
+    ELSIF original_name ILIKE 'individual recipient' THEN result = ARRAY['INDIVIDUAL RECIPIENT', '-5'];
+    ELSE result = ARRAY[(SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
+    END IF;
+  RETURN (COALESCE(result[1], ' '), result[2])::RECORD;
+  END;
+$$ LANGUAGE plpgsql;

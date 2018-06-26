@@ -219,9 +219,8 @@ class BusinessLogic:
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
         for row in query_results:
-            if self.subawards:
-                row['recipient_id'] = None
-            else:
+            row['recipient_id'] = None
+            if not self.subawards:
                 lookup = RecipientLookup.objects \
                     .filter(recipient_hash=row['recipient_hash']) \
                     .values('legal_business_name', 'duns').first()
@@ -231,9 +230,12 @@ class BusinessLogic:
                 else:
                     row['recipient_name'] = 'DUNS not Provided'
                     row['recipient_unique_id'] = None
-                row['recipient_id'] = None
                 del row['recipient_hash']
-                if row['recipient_name'].upper() == 'MULTIPLE RECIPIENTS':
+                if row['recipient_name'].upper() in ('MULTIPLE RECIPIENTS',
+                                                     'REDACTED DUE TO PII',
+                                                     'MULTIPLE FOREIGN RECIPIENTS',
+                                                     'PRIVATE INDIVIDUAL',
+                                                     'INDIVIDUAL RECIPIENT'):
                     row['recipient_unique_id'] = None
 
         results = alias_response(ALIAS_DICT[self.category], query_results)

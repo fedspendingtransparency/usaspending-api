@@ -10,7 +10,15 @@
     "LEFT OUTER JOIN legal_entity ON duns.awardee_or_recipient_uniqu = legal_entity.recipient_unique_id",
     "GROUP BY duns.legal_business_name, duns.awardee_or_recipient_uniqu",
     "UNION",
-    "SELECT MD5('-1MULTIPLE RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE RECIPIENTS' AS legal_business_name, '-1' AS duns"
+    "SELECT MD5('-1MULTIPLE RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE RECIPIENTS' AS legal_business_name, '-1' AS duns",
+    "UNION",
+    "SELECT MD5('-2REDACTED DUE TO PII')::uuid AS recipient_hash, 'REDACTED DUE TO PII' AS legal_business_name, '-2' AS duns",
+    "UNION",
+    "SELECT MD5('-3MULTIPLE FOREIGN RECIPIENTS')::uuid AS recipient_hash, 'MULTIPLE FOREIGN RECIPIENTS' AS legal_business_name, '-3' AS duns",
+    "UNION",
+    "SELECT MD5('-4PRIVATE INDIVIDUAL')::uuid AS recipient_hash, 'PRIVATE INDIVIDUAL' AS legal_business_name, '-4' AS duns",
+    "UNION",
+    "SELECT MD5('-5INDIVIDUAL RECIPIENT')::uuid AS recipient_hash, 'INDIVIDUAL RECIPIENT' AS legal_business_name, '-5' AS duns"
   ],
   "indexes": [
     {
