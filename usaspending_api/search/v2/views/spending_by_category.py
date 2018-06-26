@@ -224,13 +224,21 @@ class BusinessLogic:
                 lookup = RecipientLookup.objects \
                     .filter(recipient_hash=row['recipient_hash']) \
                     .values('legal_business_name', 'duns').first()
+                del row['recipient_hash']
+
                 if lookup:
                     row['recipient_name'] = lookup.get('legal_business_name', None)
                     row['recipient_unique_id'] = lookup.get('duns', None)
                 else:
+                    # If the DUNS was not found in the Lookup view, provide this generic name
                     row['recipient_name'] = 'DUNS not Provided'
                     row['recipient_unique_id'] = None
-                del row['recipient_hash']
+
+                # Special Cases of valid Recipients which do not have an associated DUNS:
+                #    MULTIPLE RECIPIENTS, REDACTED DUE TO PII, MULTIPLE FOREIGN RECIPIENTS,
+                #    PRIVATE INDIVIDUAL,  INDIVIDUAL RECIPIENT
+                # Artificial "DUNS" values were given to these Recipients and must be removed
+
                 if row['recipient_name'].upper() in ('MULTIPLE RECIPIENTS',
                                                      'REDACTED DUE TO PII',
                                                      'MULTIPLE FOREIGN RECIPIENTS',
