@@ -1,8 +1,10 @@
 import argparse
 import glob
+import hashlib
 import json
 import os
 import subprocess
+
 from uuid import uuid4
 
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
@@ -190,8 +192,8 @@ def make_indexes_sql(sql_json, matview_name):
     indexes_and_msg = []
     for n, index in enumerate(create_indexes):
         if n % 10 == 0 and n > 0:
-            console_output = TEMPLATE['sql_print_output'].format('{} indexes created, {} remaining'.format(n, total - n))
-            indexes_and_msg.append(console_output)
+            console = TEMPLATE['sql_print_output'].format('{} indexes created, {} remaining'.format(n, total - n))
+            indexes_and_msg.append(console)
         indexes_and_msg.append(index)
 
     return indexes_and_msg, rename_old_indexes, rename_new_indexes
@@ -300,7 +302,7 @@ def main(source_file):
     global COMMIT_HASH
     global RANDOM_CHARS
     COMMIT_HASH = generate_uid(9, source_file)
-    RANDOM_CHARS = str(uuid4())[:3]
+    RANDOM_CHARS = hashlib.md5(source_file.encode('utf-8')).hexdigest()[:3]
 
     try:
         sql_json = ingest_json(source_file)
