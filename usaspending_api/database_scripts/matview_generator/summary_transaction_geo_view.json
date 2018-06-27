@@ -3,7 +3,8 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS pk,",
+    "  -- Deterministic Unique Hash (DUH) created for view concurrent refresh",
+    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS duh,",
     "  cast(date_trunc('month', transaction_normalized.action_date) as date) as action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
