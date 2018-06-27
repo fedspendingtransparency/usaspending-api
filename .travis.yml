@@ -25,8 +25,8 @@ install:
 before_script:
 - git clone -b test/docker-postgres-version-update https://github.com/fedspendingtransparency/data-act-broker-backend.git
 - docker-compose --file data-act-broker-backend/docker-compose.yml run -d dataact-postgres
-- psql postgres://postgres@localhost/usaspending_api -c "CREATE DATABASE usaspending_api;"
-- psql postgres://postgres@localhost/usaspending_api -c "CREATE USER readonly;"
+- psql -c "CREATE DATABASE usaspending_api;" -U postgres
+- psql -c "CREATE USER readonly;"
 - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
 
 script:
