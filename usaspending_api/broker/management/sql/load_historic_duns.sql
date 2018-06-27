@@ -28,13 +28,13 @@ CREATE TABLE historic_parent_duns_new AS (
                 year int
             )
 );
-CREATE INDEX duns_awardee_idx_new ON historic_parent_duns_new USING btree (awardee_or_recipient_uniqu);
-CREATE INDEX duns_year_idx_new ON historic_parent_duns_new USING btree (year);
+CREATE INDEX historic_parent_duns_awardee_idx_new ON historic_parent_duns_new USING btree (awardee_or_recipient_uniqu);
+CREATE INDEX historic_parent_duns_year_idx_new ON historic_parent_duns_new USING btree (year);
 
 BEGIN;
 ALTER TABLE IF EXISTS historic_parent_duns RENAME TO historic_parent_duns_old;
 ALTER TABLE historic_parent_duns_new RENAME TO historic_parent_duns;
-ALTER INDEX duns_awardee_idx_new RENAME TO duns_awardee_idx;
-ALTER INDEX duns_year_idx_new RENAME TO duns_year_idx;
+ALTER INDEX historic_parent_duns_awardee_idx_new RENAME TO historic_parent_duns_awardee_idx;
+ALTER INDEX historic_parent_duns_year_idx_new RENAME TO historic_parent_duns_year_idx;
 DROP TABLE IF EXISTS historic_parent_duns_old CASCADE;
 COMMIT;
