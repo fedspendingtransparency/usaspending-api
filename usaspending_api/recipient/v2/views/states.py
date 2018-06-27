@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.views import APIDocumentationView
@@ -143,6 +144,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         else:
             return state_data[latest]
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -185,6 +187,7 @@ class StateMetaDataViewSet(APIDocumentationView):
 
 class StateAwardBreakdownViewSet(APIDocumentationView):
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -203,6 +206,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
 class ListStates(APIDocumentationView):
 
+    @cache_response()
     def get(self, request):
         populate_fips()
         valid_states = {v['code']: k for k, v in VALID_FIPS.items()}
