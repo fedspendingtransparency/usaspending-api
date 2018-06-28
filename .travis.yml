@@ -27,7 +27,7 @@ before_script:
 - psql -c "CREATE USER readonly;"
 - psql -c "CREATE EXTENSION postgres_fdw; CREATE EXTENSION dblink;" -U postgres -d usaspending_api
 - psql -c "CREATE SERVER test_broker_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'localhost', port '5432', dbname 'data_broker');" -U postgres -d usaspending_api
-- psql -c "CREATE USER MAPPING FOR root SERVER test_broker_server OPTIONS (user 'postgres');" -U postgres -d usaspending_api
+- psql -c "CREATE USER MAPPING FOR postgres SERVER test_broker_server OPTIONS (user 'postgres');" -U postgres -d usaspending_api
 - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
 
 script:
