@@ -9,7 +9,7 @@ CREATE TABLE historic_parent_duns_new AS (
         broker_historic_duns.duns_id AS broker_historic_duns_id,
         broker_historic_duns.year AS year
     FROM
-        dblink ('broker_server_dev', '(
+        dblink ('broker_server', '(
             SELECT
                 hduns.awardee_or_recipient_uniqu,
                 hduns.legal_business_name,
