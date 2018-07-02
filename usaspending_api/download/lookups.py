@@ -5,7 +5,7 @@
 from collections import namedtuple, OrderedDict
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.accounts.v2.filters import account_balances, award_financial, object_class_program_activity
+from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
@@ -62,7 +62,7 @@ VALUE_MAPPINGS = {
         'table': AppropriationAccountBalances,
         'table_name': 'account_balances',
         'download_name': 'account_balances',
-        'filter_function': account_balances.account_balances_filter
+        'filter_function': account_download_filter
     },
     # Object Class Program Activity Account Data
     'object_class_program_activity': {
@@ -70,14 +70,14 @@ VALUE_MAPPINGS = {
         'table': FinancialAccountsByProgramActivityObjectClass,
         'table_name': 'object_class_program_activity',
         'download_name': 'account_breakdown_by_program_activity_object_class',
-        'filter_function': object_class_program_activity.object_class_program_activity_filter
+        'filter_function': account_download_filter
     },
     'award_financial': {
         'source_type': 'account',
         'table': FinancialAccountsByAwards,
         'table_name': 'award_financial',
         'download_name': 'account_breakdown_by_award',
-        'filter_function': award_financial.award_financial_filter
+        'filter_function': account_download_filter
     }
 }
 

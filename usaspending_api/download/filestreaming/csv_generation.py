@@ -55,9 +55,9 @@ def generate_csvs(download_job, sqs_message=None):
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
         # Set error message; job_status_id will be set in generate_zip.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(e)
+        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_message)
+        raise type(e)(download_job.error_message)
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -75,9 +75,9 @@ def generate_csvs(download_job, sqs_message=None):
                          download_job=download_job)
     except Exception as e:
         # Set error message; job_status_id will be set in generate_zip.handle()
-        download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(e)
+        download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_message)
+        raise type(e)(download_job.error_message)
     finally:
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(file_path):
@@ -89,12 +89,15 @@ def generate_csvs(download_job, sqs_message=None):
 def get_csv_sources(json_request):
     csv_sources = []
     for download_type in json_request['download_types']:
-        queryset = VALUE_MAPPINGS[download_type]['filter_function'](json_request['filters'])
         agency_id = json_request['filters'].get('agency', 'all')
+        filter_function = VALUE_MAPPINGS[download_type]['filter_function']
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
+            queryset = filter_function(json_request['filters'])
+
             # Award downloads
+            queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
             d1_award_type_codes = set(contract_type_mapping.keys())
             d2_award_type_codes = set(assistance_type_mapping.keys())
@@ -118,7 +121,8 @@ def get_csv_sources(json_request):
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
                                        download_type, agency_id)
-            account_source.queryset = queryset
+            account_source.queryset = filter_function(download_type, VALUE_MAPPINGS[download_type]['table'],
+                                                      json_request['filters'], json_request['account_level'])
             csv_sources.append(account_source)
 
     return csv_sources
@@ -126,7 +130,8 @@ def get_csv_sources(json_request):
 
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
-    d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account'}
+    d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
+             'federal_account': 'federal_account'}
     source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
                                     VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
@@ -219,10 +224,16 @@ def wait_for_process(process, start_time, download_job, message):
     log_time = time.time()
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
+    sleep_count = 0
     while process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-        time.sleep(WAIT_FOR_PROCESS_SLEEP)
+
+        if sleep_count < 10:
+            time.sleep(WAIT_FOR_PROCESS_SLEEP/5)
+        else:
+            time.sleep(WAIT_FOR_PROCESS_SLEEP)
+        sleep_count += 1
 
     if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
         if process.is_alive():
@@ -267,22 +278,24 @@ def apply_annotations_to_sql(raw_query, aliases):
     aliases_copy = list(aliases)
 
     # Extract everything between the first SELECT and the last FROM
-    query_before_from = re.sub("SELECT ", "", 'FROM'.join(re.split('FROM', raw_query)[:-1]), count=1)
+    query_before_group_by = raw_query.split('GROUP BY ')[0]
+    query_before_from = re.sub("SELECT ", "", ' FROM'.join(re.split(' FROM', query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|\(SELECT|FROM)', raw_query)[0]
-    just_selects = selects_str[0][:-1] if selects_str[1] in ('CASE', 'CONCAT', '(SELECT') else selects_str[0]
+    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)', raw_query)[0]
+    just_selects = selects_str[0] if selects_str[1] == 'FROM' else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
-    deriv_str_lookup = re.findall('(CASE|CONCAT|\(SELECT)(.*?) AS (.*?) ', query_before_from)
+    remove_selects = query_before_from.replace(selects_str[0], "")
+    deriv_str_lookup = re.findall('(CASE|CONCAT|SUM|\(SELECT|)(.*?) AS (.*?)( |$)', remove_selects)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
         alias = str_match[2][:-1].strip() if str_match[2][-1:] == ',' else str_match[2].strip()
         if (alias[-1:] == "\"" and alias[:1] == "\"") or (alias[-1:] == "'" and alias[:1] == "'"):
             alias = alias[1:-1]
-        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1])
+        deriv_dict[alias] = '{}{}'.format(str_match[0], str_match[1]).strip()
         aliases_copy.remove(alias)
 
     # Validate we have an alias for each value in the SELECT string
@@ -290,9 +303,10 @@ def apply_annotations_to_sql(raw_query, aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
 
     # Match aliases with their values
-    values_list = ['{} AS \"{}\"'.format(deriv_dict[al] if al in deriv_dict else selects_list.pop(0), al)
-                   for al in aliases]
-    return raw_query.replace(query_before_from.strip(), ", ".join(values_list))
+    values_list = ['{} AS \"{}\"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
+                   for alias in aliases]
+
+    return raw_query.replace(query_before_from, ", ".join(values_list), 1)
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):

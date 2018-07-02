@@ -166,7 +166,7 @@ class Award(DataSourceTrackedModel):
                                       "an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN "
                                       "stands for Federal Award Identification Number, though the digits are letters, "
                                       "not numbers.")
-    uri = models.TextField(db_index=True, blank=True, null=True, help_text="The uri of the award")
+    uri = models.TextField(db_index=False, blank=True, null=True, help_text="The uri of the award")
     total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
                                            verbose_name="Total Obligated",
                                            help_text="The amount of money the government is obligated to pay for the "
@@ -183,7 +183,7 @@ class Award(DataSourceTrackedModel):
                                         help_text="The awarding agency for the award", db_index=True)
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True,
                                        help_text="The funding agency for the award", db_index=True)
-    date_signed = models.DateField(null=True, db_index=True, verbose_name="Award Date",
+    date_signed = models.DateField(null=True, db_index=False, verbose_name="Award Date",
                                    help_text="The date the award was signed")
     recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award", db_index=True)
     description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award",
@@ -198,11 +198,11 @@ class Award(DataSourceTrackedModel):
                                                        "work is performed. For example, in a manufacturing contract, "
                                                        "this would be the main plant where items are produced.",
                                              db_index=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+    potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
                                                          null=True, verbose_name="Potential Total Value of Award",
                                                          help_text="The sum of the potential_value_of_award from "
                                                                    "associated transactions")
-    base_and_all_options_value = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+    base_and_all_options_value = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
                                                      null=True, verbose_name="Base and All Options Value",
                                                      help_text="The sum of the base_and_all_options_value from "
                                                                "associated transactions")
@@ -321,7 +321,7 @@ class TransactionNormalized(models.Model):
                                                          help_text="If this record is legacy USASpending data, this is "
                                                                    "the unique transaction identifier from that system")
     type = models.TextField(verbose_name="Action Type", null=True,
-                            help_text="The type for this transaction. For example, A, B, C, D", db_index=True)
+                            help_text="The type for this transaction. For example, A, B, C, D", db_index=False)
     type_description = models.TextField(blank=True, verbose_name="Action Type Description", null=True,
                                         help_text="The plain text description of the transaction type")
     period_of_performance_start_date = models.DateField(verbose_name="Period of Performance Start Date", null=True,
@@ -334,7 +334,7 @@ class TransactionNormalized(models.Model):
                                    db_index=True)
     action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
     action_type_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+    federal_action_obligation = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
                                                     null=True,
                                                     help_text="The obligation of the federal government for this "
                                                               "transaction")
@@ -755,12 +755,12 @@ class TransactionFABS(models.Model):
     business_funds_ind_desc = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True)
     business_types_desc = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, db_index=True)
+    cfda_number = models.TextField(blank=True, null=True, db_index=False)
     cfda_title = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    fain = models.TextField(blank=True, null=True, db_index=True)
+    fain = models.TextField(blank=True, null=True, db_index=False)
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     fiscal_year_and_quarter_co = models.TextField(blank=True, null=True)
     funding_agency_code = models.TextField(blank=True, null=True)
@@ -812,7 +812,7 @@ class TransactionFABS(models.Model):
     total_funding_amount = models.TextField(blank=True, null=True)
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
-    uri = models.TextField(blank=True, null=True, db_index=True)
+    uri = models.TextField(blank=True, null=True, db_index=False)
 
     # Timestamp field auto generated by broker
     created_at = models.DateTimeField(blank=True, null=True)

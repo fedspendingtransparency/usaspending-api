@@ -64,7 +64,9 @@ class UniversalTransactionView(models.Model):
     extent_competed = models.TextField()
     cfda_number = models.TextField()
     cfda_title = models.TextField()
+
     recipient_id = models.IntegerField()
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
@@ -125,6 +127,7 @@ class SummaryTransactionView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
@@ -164,6 +167,7 @@ class UniversalAwardView(models.Model):
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_id = models.IntegerField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
@@ -369,6 +373,7 @@ class SummaryTransactionMonthView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
@@ -811,3 +816,25 @@ class SubawardView(models.Model):
     class Meta:
         managed = False
         db_table = 'subaward_view'
+
+
+class SummaryTransactionRecipientView(models.Model):
+    action_date = models.DateField()
+    fiscal_year = models.IntegerField()
+    type = models.TextField()
+    pulled_from = models.TextField()
+
+    recipient_hash = models.UUIDField()
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_transaction_recipient_view'

@@ -206,7 +206,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
-            column_isnull = 'federal_action_obligation__isnull'
+            column_isnull = 'generated_pragmatic_obligation__isnull'
             if self.subawards:
                 column_isnull = 'amount__isnull'
             kwargs = {
@@ -234,7 +234,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
             kwargs = {
-                '{}__isnull'.format('amount' if self.subawards else 'federal_action_obligation'): False
+                '{}__isnull'.format('amount' if self.subawards else 'generated_pragmatic_obligation'): False
             }
 
             if self.geo_layer == 'county':
