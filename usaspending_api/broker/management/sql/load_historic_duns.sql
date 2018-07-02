@@ -32,6 +32,7 @@ CREATE INDEX historic_parent_duns_awardee_idx_new ON historic_parent_duns_new US
 CREATE INDEX historic_parent_duns_year_idx_new ON historic_parent_duns_new USING btree (year);
 
 BEGIN;
+DROP TABLE IF EXISTS historic_parent_duns_old;
 ALTER TABLE IF EXISTS historic_parent_duns RENAME TO historic_parent_duns_old;
 ALTER TABLE historic_parent_duns_new RENAME TO historic_parent_duns;
 ALTER INDEX historic_parent_duns_awardee_idx_new RENAME TO historic_parent_duns_awardee_idx;
