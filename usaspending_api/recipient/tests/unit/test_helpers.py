@@ -9,7 +9,7 @@ from django.conf import settings
 import pytest
 
 # Imports from your apps
-from usaspending_api.recipient.v2.views.states import validate_year, reshape_filters
+from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
