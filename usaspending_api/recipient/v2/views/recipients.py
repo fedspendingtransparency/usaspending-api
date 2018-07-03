@@ -102,25 +102,25 @@ class RecipientOverView(APIDocumentationView):
         duns = validate_duns(duns)
 
         # Gather general DUNS data
-
+        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns)
         location = extract_location(duns)
 
         # Gather totals
         recipient_totals = obtain_recipient_totals(duns, year=year)
-        recipient_sub_totals = obtain_recipient_totals(duns, year=year, subawards=True)
+        # recipient_sub_totals = obtain_recipient_totals(duns, year=year, subawards=True)
 
         result = {
-            'name': '',
+            'name': duns_obj.legal_business_name,
             'duns': duns,
             'recipient_level': '',
-            'parent_name': '',
-            'parent_duns': '',
+            'parent_name': duns_obj.ultimate_parent_legal_enti,
+            'parent_duns': duns_obj.ultimate_parent_unique_ide,
             'location': location,
             'business_types': '',
             'total_prime_amount': recipient_totals['total'],
             'total_prime_awards': recipient_totals['count'],
-            'total_sub_amount': recipient_sub_totals['total'],
-            'total_sub_awards': recipient_sub_totals['count']
+            # 'total_sub_amount': recipient_sub_totals['total'],
+            # 'total_sub_awards': recipient_sub_totals['count']
         }
 
         return Response(result)
