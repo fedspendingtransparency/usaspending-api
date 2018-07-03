@@ -1,10 +1,15 @@
 import logging
+import copy
 
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
+from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
 from usaspending_api.recipient.models import DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
@@ -17,7 +22,7 @@ def obtain_recipient_totals(duns, year=None, award_type_codes=None, subawards=Fa
 
     if not subawards:
         # TODO: calculate totals filtered by recipient
-        queryset = []
+        queryset = None
 
     try:
         row = list(queryset)[0]
@@ -33,12 +38,17 @@ def obtain_recipient_totals(duns, year=None, award_type_codes=None, subawards=Fa
     return {'count': 0, 'duns': None, 'total': 0}
 
 
-def get_all_recipients(year=None, award_type_codes=None, subawards=False, sort='duns', page=1):
+def get_all_recipients(year=None, award_type_codes=None, subawards=False, parent_duns=None, sort='desc', page=1,
+                       limit=None):
     filters = reshape_filters(year=year, award_type_codes=award_type_codes)
 
     if not subawards:
         # TODO: calculate totals filtered by recipient
-        queryset = []
+        queryset = None
+        if limit:
+            queryset = queryset[(page-1)*limit: page*limit]
+
+        total_count = queryset.count()
 
         results = [
             {
@@ -50,7 +60,9 @@ def get_all_recipients(year=None, award_type_codes=None, subawards=False, sort='
                 'count': len(set(row['distinct_awards'].split(','))),
             }
             for row in list(queryset)]
-    return results
+
+        page_metadata = get_simple_pagination_metadata(total_count, limit, page)
+    return results, page_metadata
 
 
 def validate_duns(duns):
@@ -114,19 +126,48 @@ class RecipientOverView(APIDocumentationView):
         return Response(result)
 
 
+# class ChildRecipients(APIDocumentationView):
+#
+#     @cache_response()
+#     def get(self, request, duns):
+#         get_request = request.query_params
+#         year = validate_year(get_request.get('year', 'latest'))
+#         duns = validate_duns(duns)
+#
+#         results = []
+#         recipients, page_metadata = get_all_recipients(year=year, parent_duns=duns)
+#         for item in recipients:
+#             results.append({
+#                 'name': item['name'],
+#                 'duns': item['duns'],
+#                 'state_province': item['state_province'],
+#                 'amount': item['amount'],
+#             })
+#         return Response(results)
+#
+#
 # class ListRecipients(APIDocumentationView):
 #
 #     @cache_response()
 #     def post(self, request):
-#         json_request = request.data
+#         models = [
+#             {'name': 'keyword', 'key': 'keyword', 'type': 'text'},
+#             {'name': 'award_type', 'key': 'award_type', 'default': 'all'},
+#         ]
+#         models.extend(copy.deepcopy(PAGINATION))
+#         validated_payload = TinyShield(models).block(request.data)
 #
-#         # retrieve search_text from request
-#         page = json_request.get('page', 1)
-#         sort = json_request.get('sort', 'duns')
-#         award_type_codes = json_request.get('award_type_codes', None)
+#         # convert award_type -> award_type_codes
+#         award_type_codes = None
+#         if validated_payload.get('award_type', 'all') != 'all':
+#             award_type_codes = all_award_types_mappings[validated_payload['award_type']]
 #
 #         results = []
-#         for item in get_all_recipients(year='latest', sort=sort, award_type_codes=award_type_codes, page=page):
+#         recipients, page_metadata = get_all_recipients(year='latest', sort=validated_payload['sort'],
+#                                                        award_type_codes=award_type_codes,
+#                                                        page=validated_payload['page'],
+#                                                        limit=validated_payload['limit'])
+#         for item in recipients:
 #             results.append({
 #                 'name': item['name'],
 #                 'duns': item['duns'],
@@ -134,58 +175,5 @@ class RecipientOverView(APIDocumentationView):
 #                 'state_province': item['state_province'],
 #                 'amount': item['amount'],
 #             })
-#         return Response(results)
 #
-# class ChildRecipients(APIDocumentationView):
-#
-#     @cache_response()
-#     def get(self, request):
-#         results = []
-#         for item in get_all_recipients(year='latest'):
-#             results.append({
-#                 'name': item['name'],
-#                 'duns': item['duns'],
-#                 'state_province': item['state_province'],
-#                 'amount': item['amount'],
-#             })
-#         return Response(results)
-#
-#
-# class RecipientSearch(APIDocumentationView):
-#
-#     @cache_response()
-#     def post(self, request):
-#         json_request = request.data
-#
-#         # retrieve search_text from request
-#         search_text = json_request.get('search_text', None)
-#
-#         results = []
-#         for item in get_all_recipients(year='latest', duns=search_text):
-#             results.append({
-#                 'name': item['name'],
-#                 'duns': item['duns'],
-#                 'state_province': item['state_province'],
-#                 'amount': item['amount'],
-#             })
-#         return Response(results)
-#
-#
-# class RecipientAwardsOverTime(APIDocumentationView):
-#
-#     @cache_response()
-#     def post(self, request):
-#         json_request = request.data
-#
-#         # retrieve search_text from request
-#         search_text = json_request.get('search_text', None)
-#
-#         results = []
-#         for item in get_all_recipients(year='latest', duns=search_text):
-#             results.append({
-#                 'name': item['name'],
-#                 'duns': item['duns'],
-#                 'state_province': item['state_province'],
-#                 'amount': item['amount'],
-#             })
-#         return Response(results)
+#         return Response({'page_metadata': page_metadata, 'results': results})
