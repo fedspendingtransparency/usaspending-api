@@ -2,6 +2,7 @@ import logging
 import copy
 
 from rest_framework.response import Response
+from django.db.models import Q
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -16,6 +17,13 @@ from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
 
+
+def validate_duns(duns):
+    # Since DUNS are more commonly added than states/fips, we can't rely on a cache
+    for type, field in {'duns': 'awardee_or_recipient_uniqu', 'name': 'legal_business_name'}.items():
+        if DUNS.objects.filter(**{field: duns}).count() > 0:
+            return duns, type
+    raise InvalidParameterException('DUNS not found: {}.'.format(duns))
 
 def obtain_recipient_totals(duns, year=None, award_type_codes=None, subawards=False):
     filters = reshape_filters(duns=duns, year=year, award_type_codes=award_type_codes)
@@ -63,16 +71,6 @@ def get_all_recipients(year=None, award_type_codes=None, subawards=False, parent
 
         page_metadata = get_simple_pagination_metadata(total_count, limit, page)
     return results, page_metadata
-
-
-def validate_duns(duns):
-    # Since DUNS are more commonly added than states/fips, we can't rely on a cache
-    available_duns_qs = DUNS.objects.values_list('awardee_or_recipient_uniqu').distinct()
-    available_duns = [result[0] for result in available_duns_qs]
-    if not (isinstance(duns, str) and len(duns) == 9):
-        raise InvalidParameterException('Invalid DUNS: {}.'.format(duns))
-    elif duns not in available_duns:
-        raise InvalidParameterException('DUNS not found: {}.'.format(duns))
 
 
 def extract_location(duns):

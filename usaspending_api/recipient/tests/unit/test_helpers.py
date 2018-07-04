@@ -74,3 +74,10 @@ def test_reshape_filters_award_type_codes():
     result = reshape_filters(award_type_codes=award_type_codes)
 
     assert result['award_type_codes'] == award_type_codes
+
+
+def test_reshape_filters_duns():
+    duns = '012345678'
+    result = reshape_filters(duns=duns)
+
+    assert result['recipient_search_text'] == duns
