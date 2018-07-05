@@ -97,7 +97,7 @@ class RecipientOverView(APIDocumentationView):
     def get(self, request, duns):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        duns = validate_duns(duns)
+        duns, type = validate_duns(duns)
 
         # Gather general DUNS data
         duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns)
@@ -130,7 +130,7 @@ class RecipientOverView(APIDocumentationView):
 #     def get(self, request, duns):
 #         get_request = request.query_params
 #         year = validate_year(get_request.get('year', 'latest'))
-#         duns = validate_duns(duns)
+#         duns, type = validate_duns(duns)
 #
 #         results = []
 #         recipients, page_metadata = get_all_recipients(year=year, parent_duns=duns)
