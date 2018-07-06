@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.views import APIDocumentationView
@@ -26,8 +27,9 @@ def populate_fips():
     global VALID_FIPS
 
     if not VALID_FIPS:
-        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name} for fips_code, state_code, state_name
-                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name'))}
+        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name, 'type': state_type}
+                      for fips_code, state_code, state_name, state_type
+                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name', 'type'))}
 
 
 def validate_fips(fips):
@@ -142,6 +144,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         else:
             return state_data[latest]
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -184,6 +187,7 @@ class StateMetaDataViewSet(APIDocumentationView):
 
 class StateAwardBreakdownViewSet(APIDocumentationView):
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -202,6 +206,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
 class ListStates(APIDocumentationView):
 
+    @cache_response()
     def get(self, request):
         populate_fips()
         valid_states = {v['code']: k for k, v in VALID_FIPS.items()}
@@ -214,6 +219,7 @@ class ListStates(APIDocumentationView):
                 'fips': fips,
                 'code': item['pop_state_code'],
                 'name': VALID_FIPS[fips]['name'],
+                'type': VALID_FIPS[fips]['type'],
                 'amount': item['total'],
                 'count': item['count'],
             })
