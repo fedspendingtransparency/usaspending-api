@@ -41,7 +41,7 @@ from usaspending_api.references.models import ToptierAgency
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
-    s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
+    s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
 
     def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
@@ -219,8 +219,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             # csv_generation.write_csvs(**kwargs) (see generate_zip.py)
             write_to_log(message='Passing download_job {} to SQS'.format(download_job.download_job_id),
                          download_job=download_job)
-            queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                              QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = sqs_queue(QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def get_download_response(self, file_name):
@@ -519,7 +518,7 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
 
     endpoint_doc: /download/list_downloads.md
     """
-    s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
+    s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME)
 
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
