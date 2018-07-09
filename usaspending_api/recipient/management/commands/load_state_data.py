@@ -43,8 +43,8 @@ class Command(BaseCommand):
             elif os.path.splitext(csv_file)[1] != '.csv':
                 raise Exception('Wrong filetype provided, expecting csv')
             file_path = csv_file
-        elif not settings.IS_LOCAL and os.environ.get('AWS_REGION') and os.environ.get('STATE_DATA_BUCKET'):
-            s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
+        elif not settings.IS_LOCAL and os.environ.get('USASPENDING_AWS_REGION') and os.environ.get('STATE_DATA_BUCKET'):
+            s3connection = boto.s3.connect_to_region(os.environ.get('USASPENDING_AWS_REGION'))
             s3bucket = s3connection.lookup(os.environ.get('STATE_DATA_BUCKET'))
             key = s3bucket.get_key(LOCAL_STATE_DATA_FILENAME)
             file_path = os.path.join('/', 'tmp', LOCAL_STATE_DATA_FILENAME)

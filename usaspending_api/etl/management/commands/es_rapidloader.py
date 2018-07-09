@@ -225,7 +225,7 @@ class Command(BaseCommand):
 
 def set_config():
     return {
-        'aws_region': os.environ.get('CSV_AWS_REGION'),
+        'aws_region': os.environ.get('USASPENDING_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'),
         'root_index': settings.TRANSACTIONS_INDEX_ROOT,
         'formatted_now': datetime.utcnow().strftime('%Y%m%dT%H%M%SZ'),  # ISO8601
