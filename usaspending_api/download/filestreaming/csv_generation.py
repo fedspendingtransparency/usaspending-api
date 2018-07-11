@@ -67,7 +67,7 @@ def generate_csvs(download_job, sqs_message=None):
         # push file to S3 bucket, if not local
         if not settings.IS_LOCAL:
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-            region = settings.BULK_DOWNLOAD_AWS_REGION
+            region = settings.USASPENDING_API_REGION
             start_uploading = time.time()
             multipart_upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
                              parallel_processes=multiprocessing.cpu_count())

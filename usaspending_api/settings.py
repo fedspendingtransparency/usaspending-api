@@ -41,16 +41,17 @@ ALLOWED_HOSTS = ['*']
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# AWS Region for USAspending Infrastructure
+USASPENDING_AWS_REGION = ""
+
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
-CSV_AWS_REGION = ""
 
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
-BULK_DOWNLOAD_AWS_REGION = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 BROKER_AGENCY_BUCKET_NAME = ""
 FPDS_BUCKET_NAME = ""

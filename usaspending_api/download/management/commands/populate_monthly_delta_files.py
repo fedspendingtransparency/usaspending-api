@@ -95,7 +95,7 @@ class Command(BaseCommand):
         elif not settings.IS_LOCAL:
             # Upload file to S3 and delete local version
             logger.info('Uploading file to S3 bucket and deleting local copy')
-            multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.BULK_DOWNLOAD_AWS_REGION, file_path,
+            multipart_upload(settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, settings.USASPENDING_AWS_REGION, file_path,
                              os.path.basename(file_path))
             os.remove(file_path)
 
@@ -157,7 +157,7 @@ class Command(BaseCommand):
                                 values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
-        bucket = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
+        bucket = boto.s3.connect_to_region(settings.USASPENDING_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
 
         all_deletions = pd.DataFrame()
         for key in bucket.list():

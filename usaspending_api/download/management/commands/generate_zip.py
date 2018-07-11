@@ -19,8 +19,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Run the application."""
-        queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                          QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+        queue = sqs_queue(QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
 
         write_to_log(message='Starting SQS polling')
         while True:

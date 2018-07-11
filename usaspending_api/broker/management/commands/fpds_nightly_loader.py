@@ -62,11 +62,11 @@ class Command(BaseCommand):
                         ids_to_delete += unique_key_list
         else:
             # Connect to AWS
-            aws_region = os.environ.get('AWS_REGION')
+            aws_region = os.environ.get('USASPENDING_AWS_REGION')
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
 
             if not (aws_region or fpds_bucket_name):
-                raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
+                raise Exception('Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME')
 
             s3client = boto3.client('s3', region_name=aws_region)
             s3resource = boto3.resource('s3', region_name=aws_region)

@@ -40,3 +40,18 @@ class DUNS(models.Model):
 
     class Meta:
         db_table = 'duns'
+
+
+class HistoricParentDUNS(models.Model):
+    """
+    Model representing DUNS data (imported from the broker)
+    """
+    awardee_or_recipient_uniqu = models.TextField(primary_key=True)
+    legal_business_name = models.TextField()
+    ultimate_parent_unique_ide = models.TextField()
+    ultimate_parent_legal_enti = models.TextField()
+    broker_historic_duns_id = models.TextField()
+    year = models.IntegerField()
+
+    class Meta:
+        db_table = 'historic_parent_duns'
