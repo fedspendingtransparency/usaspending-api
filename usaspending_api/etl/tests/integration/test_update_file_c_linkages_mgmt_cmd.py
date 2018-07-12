@@ -14,7 +14,7 @@ from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 @pytest.mark.django_db
 def test_update_contract_linkages_piid_with_no_parent_piid():
     """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
+    Test linkage management command for records with only a piid and no parent piid
     """
 
     models_to_mock = [
@@ -46,7 +46,7 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
 @pytest.mark.django_db
 def test_update_contract_linkages_piid_with_parent_piid():
     """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
+    Test linkage management command for records that have both a piid and parent piid
     """
 
     models_to_mock = [
@@ -101,7 +101,7 @@ def test_update_contract_linkages_piid_with_parent_piid():
 @pytest.mark.django_db
 def test_update_assistance_linkages_fain():
     """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
+    Test linkage management command for records that only have a fain
     """
 
     models_to_mock = [
@@ -133,7 +133,7 @@ def test_update_assistance_linkages_fain():
 @pytest.mark.django_db
 def test_update_assistance_linkages_uri():
     """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
+    Test linkage management command for records that only have a uri
     """
 
     models_to_mock = [
@@ -165,7 +165,7 @@ def test_update_assistance_linkages_uri():
 @pytest.mark.django_db
 def test_update_assistance_linkages_fain_and_uri():
     """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
+    Test linkage management command for records that have both a fain and uri
     """
 
     models_to_mock = [

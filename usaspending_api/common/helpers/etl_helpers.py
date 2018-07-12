@@ -27,14 +27,23 @@ def get_unlinked_count(file_name):
     return int(result)
 
 
-def update_assistance_c_to_d_linkages():
-    logger.info('Starting File C to D linkage updates for Assistance records')
-    file_names = ['update_file_c_linkages_fain.sql', 'update_file_c_linkages_uri.sql',
-                  'update_file_c_linkages_fain_and_uri.sql']
+def update_c_to_d_linkages(type):
+    logger.info('Starting File C to D linkage updates for %s records' % type)
+
+    if type.lower() == 'contract':
+        file_names = ['update_file_c_linkages_piid.sql']
+        unlinked_count_file_name = 'check_contract_file_c_linkages.sql'
+    elif type.lower() == 'assistance':
+        file_names = ['update_file_c_linkages_fain.sql', 'update_file_c_linkages_uri.sql',
+                      'update_file_c_linkages_fain_and_uri.sql']
+        unlinked_count_file_name = 'check_assistance_file_c_linkages.sql'
+    else:
+        raise InvalidParameterException('Invalid type provided to process C to D linkages.')
+
     file_paths = [ETL_SQL_FILE_PATH + file_name for file_name in file_names]
 
-    starting_unlinked_count = get_unlinked_count(file_name='check_assistance_file_c_linkages.sql')
-    logger.info('Current count of unlinked assistance records: %s' % str(starting_unlinked_count))
+    starting_unlinked_count = get_unlinked_count(file_name=unlinked_count_file_name)
+    logger.info('Current count of unlinked %s records: %s' % (type, str(starting_unlinked_count)))
 
     total_start = datetime.now()
     for file_name in file_paths:
@@ -46,29 +55,7 @@ def update_assistance_c_to_d_linkages():
                 cursor.execute(command)
         logger.info('Finished %s in %s seconds' % (file_name, str(datetime.now() - start)))
 
-    ending_unlinked_count = get_unlinked_count(file_name='check_assistance_file_c_linkages.sql')
-    logger.info('Count of unlinked assistance records after updates: %s' % str(ending_unlinked_count))
-
-    logger.info('Finished all queries in %s seconds' % str(datetime.now() - total_start))
-
-
-def update_contract_c_to_d_linkages():
-    logger.info('Starting File C to D linkage updates for Contract records')
-    file_name = ETL_SQL_FILE_PATH + 'update_file_c_linkages_piid.sql'
-
-    starting_unlinked_count = get_unlinked_count(file_name='check_contract_file_c_linkages.sql')
-    logger.info('Current count of unlinked contract records: %s' % str(starting_unlinked_count))
-
-    total_start = datetime.now()
-    start = datetime.now()
-    logger.info('Running %s' % file_name)
-    sql_commands = read_sql_file(file_path=file_name)
-    for command in sql_commands:
-        with connection.cursor() as cursor:
-            cursor.execute(command)
-    logger.info('Finished %s in %s seconds' % (file_name, str(datetime.now() - start)))
-
-    ending_unlinked_count = get_unlinked_count(file_name='check_contract_file_c_linkages.sql')
-    logger.info('Count of unlinked contract records after updates: %s' % str(ending_unlinked_count))
+    ending_unlinked_count = get_unlinked_count(file_name=unlinked_count_file_name)
+    logger.info('Count of unlinked %s records after updates: %s' % (type, str(ending_unlinked_count)))
 
     logger.info('Finished all queries in %s seconds' % str(datetime.now() - total_start))
