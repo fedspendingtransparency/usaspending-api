@@ -1,5 +1,5 @@
 -- When PIID is populated, update File C contract records to link to a corresponding award if there is an exact
--- match based on PIID.
+-- match based on PIID and where Parent PIID also matches using IS NOT DISTINCT FROM so it can match NULL values.
 UPDATE financial_accounts_by_awards AS faba
 SET
 	award_id = (
