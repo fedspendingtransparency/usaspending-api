@@ -1,8 +1,6 @@
 import os
 import logging
 
-from django.db import connection
-
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
