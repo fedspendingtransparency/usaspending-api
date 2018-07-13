@@ -65,7 +65,8 @@ class Command(BaseCommand):
         award_map = AWARD_MAPPINGS[award_type]
 
         # Create Source and update fields to include correction_delete_ind
-        source = CsvSource('transaction', award_map['letter_name'].lower(), 'transactions')
+        source = CsvSource('transaction', award_map['letter_name'].lower(), 'transactions',
+                           'all' if agency == 'all' else agency['toptier_agency_id'])
         source.query_paths.update({
             'correction_delete_ind': award_map['correction_delete_ind']
         })
