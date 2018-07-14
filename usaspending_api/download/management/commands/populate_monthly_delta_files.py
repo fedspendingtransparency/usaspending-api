@@ -3,7 +3,6 @@ import logging
 import os
 import pandas as pd
 import re
-import shutil
 import subprocess
 import tempfile
 
@@ -126,7 +125,7 @@ class Command(BaseCommand):
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
         # Append deleted rows to the end of the file
-        self.add_deletion_records(source_path, award_type, agency_code, source, generate_since)
+        self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
@@ -141,7 +140,7 @@ class Command(BaseCommand):
 
         return zipfile_path
 
-    def add_deletion_records(self, source_path, award_type, agency_code, source, generate_since):
+    def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
         """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
         logger.info('Retrieving deletion records from S3 files and appending to the CSV')
 
