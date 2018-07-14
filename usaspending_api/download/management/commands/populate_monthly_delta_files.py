@@ -130,6 +130,7 @@ class Command(BaseCommand):
             # Split the CSV into multiple files and zip it up
             zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
                                                          datetime.strftime(date.today(), '%Y%m%d'))
+            logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
             split_and_zip_csvs(zipfile_path, source_path, source_name)
         else:
             zipfile_path = None
