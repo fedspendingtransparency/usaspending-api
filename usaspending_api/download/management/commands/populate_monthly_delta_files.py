@@ -110,7 +110,8 @@ class Command(BaseCommand):
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
         source_name = '{}_{}_delta'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
-        source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
+        timestamp = datetime.strftime(datetime.now(), '%Y%m%d%H%M%S%f')
+        source_path = os.path.join(working_dir, '{}_{}.csv'.format(source_name, timestamp))
 
         # Create a unique temporary file with the raw query
         raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
