@@ -6,7 +6,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import zipfile
 
 from collections import OrderedDict
 from datetime import datetime, date
@@ -16,9 +15,9 @@ from django.db.models import Case, When, Value, CharField
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-from usaspending_api.download.filestreaming.csv_generation import EXCEL_ROW_LIMIT
+from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
 from usaspending_api.download.filestreaming.csv_source import CsvSource
-from usaspending_api.download.helpers import split_csv, pull_modified_agencies_cgacs, multipart_upload
+from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
@@ -108,7 +107,8 @@ class Command(BaseCommand):
         logger.info('Generating CSV file with creations and modifications')
 
         # Create file paths and working directory
-        working_dir = settings.CSV_LOCAL_PATH + 'delta_gen/'
+        timestamp = datetime.strftime(datetime.now(), '%Y%m%d%H%M%S%f')
+        working_dir = '{}_{}_delta_gen_{}/'.format(settings.CSV_LOCAL_PATH, agency_code, timestamp)
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
         source_name = '{}_{}_delta'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
@@ -129,17 +129,11 @@ class Command(BaseCommand):
         # Append deleted rows to the end of the file
         self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
-            # Split CSV into separate files
-            split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                                   output_name_template='{}_%s.csv'.format(source_name))
-
-            # Zip the split CSVs into one zipfile
+            # Split the CSV into multiple files and zip it up
             zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
                                                          datetime.strftime(date.today(), '%Y%m%d'))
             logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
-            zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
-            for split_csv_part in split_csvs:
-                zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+            split_and_zip_csvs(zipfile_path, source_path, source_name)
         else:
             zipfile_path = None
 

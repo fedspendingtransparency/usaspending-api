@@ -171,13 +171,15 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         os.remove(temp_file_path)
 
 
-def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
+def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None):
     try:
         # Split CSV into separate files
         log_time = time.time()
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
                                output_name_template='{}_%s.csv'.format(source_name))
-        write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time), download_job=download_job)
+        if download_job:
+            write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
+                         download_job=download_job)
 
         # Zip the split CSVs into one zipfile
         log_time = time.time()
@@ -185,8 +187,9 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
 
-        write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
-                     download_job=download_job)
+        if download_job:
+            write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
+                         download_job=download_job)
     except Exception as e:
         logger.error(e)
         raise e
