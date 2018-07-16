@@ -403,7 +403,7 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_reference_matview
             {
                 'amount': 15,
                 'name': 'MULTIPLE RECIPIENTS',
-                'code': '-1',
+                'code': None,
                 'id': None
             },
             {
