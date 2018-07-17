@@ -71,7 +71,8 @@ class Command(load_base.Command):
         submission_id = options['submission_id'][0]
 
         logger.info('Getting submission {} from broker...'.format(submission_id))
-        db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s', [submission_id])
+        db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s' % submission_id)
+
         submission_data = dictfetchall(db_cursor)
         logger.info('Finished getting submission {} from broker'.format(submission_id))
 
@@ -80,13 +81,13 @@ class Command(load_base.Command):
         elif len(submission_data) > 1:
             raise CommandError('Found multiple submissions with id ' + str(submission_id))
 
-        submission_data = submission_data[0]
+        submission_data = submission_data[0].copy()
         broker_submission_id = submission_data['submission_id']
         del submission_data['submission_id']  # We use broker_submission_id, submission_id is our own PK
         submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
         logger.info('Getting File A data')
-        db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
+        db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s' % submission_id)
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(
             len(appropriation_data)) + ' rows.')
@@ -108,11 +109,11 @@ class Command(load_base.Command):
         logger.info('Getting File C data')
         # we dont have sub-tier agency info, so we'll do our best
         # to match them to the more specific award records
-        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s'
+        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s' % submission_id
         if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
             award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
         else:  # real data
-            award_financial_frame = pd.read_sql(award_financial_query % submission_id,
+            award_financial_frame = pd.read_sql(award_financial_query,
                                                 connections['data_broker'])
         logger.info('Acquired File C (award financial) data for {}, there are {} rows.'
                     .format(submission_id, award_financial_frame.shape[0]))
@@ -250,7 +251,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
     db_cursor.execute("SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) "
-                      "AND account_num = %s", [tas_lookup_id])
+                      "AND account_num = %s" % tas_lookup_id)
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
@@ -414,12 +415,12 @@ def get_file_b(submission_attributes, db_cursor):
         'GROUP BY tas_id, program_activity_code, object_class '
         'HAVING COUNT(*) > 1'
     )
-    db_cursor.execute(check_dupe_oc, [submission_id])
+    db_cursor.execute(check_dupe_oc % submission_id)
     dupe_oc_count = len(dictfetchall(db_cursor))
 
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s' % submission_id)
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
@@ -499,7 +500,7 @@ def get_file_b(submission_attributes, db_cursor):
             'Found {} duplicated File B 4 digit object codes in submission {}. '
             'Aggregating financial values.'.format(dupe_oc_count, submission_id))
         # we have at least one instance of duplicated 4 digit object classes so aggregate the financial values together
-        db_cursor.execute(combine_dupe_oc, [submission_id])
+        db_cursor.execute(combine_dupe_oc % submission_id)
 
     data = dictfetchall(db_cursor)
     return data
@@ -565,94 +566,47 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     logger.info('Skipped a total of {} TAS rows for File B'.format(total_tas_skipped))
 
 
-def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
-                                uri=None, parent_award_id=None, save=True):
+def find_matching_award(piid=None, parent_piid=None, fain=None, uri=None):
     """
-    Given a set of award identifiers and awarding agency information,
-    find a corresponding Award record. If we can't find one, create it.
+        Check for a distinct award that matches based on the parameters provided
 
-    Returns:
-        created: a list of new awards created, used to enable bulk insert
-        summary_award: the summary award that the calling process can map to
+        :param piid: PIID associated with a contract
+        :param parent_piid: Parent Award ID associated with a contract
+        :param fain: FAIN associated with a financial assistance award
+        :param uri: URI associated with a financial assistancw award
+        :return: Award object containing an exact matched award OR None if no exact match found
     """
-    # If an award transaction's ID is a piid, it's contract data
-    # If the ID is fain or a uri, it's financial assistance. If the award transaction
-    # has both a fain and a uri, include both.
-    try:
-        # Look for an existing award record
+    filters = {'latest_transaction_id__isnull': False}
 
-        # Check individual FILE C D linkage first
-        lookup_kwargs = {'recipient_id__isnull': False}
-        if piid is not None:
-            lookup_kwargs['piid'] = piid
-        if parent_award_id is not None:
-            lookup_kwargs['parent_award__piid'] = parent_award_id
-        if fain is not None:
-            lookup_kwargs['fain'] = fain
-        if uri is not None:
-            lookup_kwargs['uri'] = uri
+    if not (piid or fain or uri):
+        return None
 
-        award_queryset = Award.objects.filter(**lookup_kwargs)[:2]
+    # check piid and parent_piid
+    if piid:
+        filters['piid'] = piid
+        filters['parent_award_piid'] = parent_piid
+    elif fain and not uri:
+            # if only the fain is populated, filter on that
+            filters['fain'] = fain
+    elif not fain and uri:
+        # if only the uri is populated, filter on that
+        filters['uri'] = uri
+    else:
+        # if both fain and uri are populated, filter on fain first for an exact match. if no exact match found,
+        # then try filtering on the uri
+        filters['fain'] = fain
+        fain_award_count = Award.objects.filter(**filters).count()
 
-        award_count = len(award_queryset)
+        if fain_award_count != 1:
+            del filters['fain']
+            filters['uri'] = uri
 
-        if award_count == 1:
-            summary_award = award_queryset[0]
-            return [], summary_award
+    awards = Award.objects.filter(**filters).all()
 
-        # if nothing found revert to looking for an award that this record could've already created
-        lookup_kwargs = {"awarding_agency": awarding_agency}
-        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-            lookup_kwargs[i[1]] = i[0]
-            if parent_award_id:
-                # parent_award__piid
-                lookup_kwargs["parent_award_piid"] = parent_award_id
-
-        # Look for an existing award record
-        summary_award = Award.objects \
-            .filter(Q(**lookup_kwargs)) \
-            .filter(awarding_agency=awarding_agency) \
-            .first()
-        if (summary_award is None and
-                awarding_agency is not None and
-                awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-            # No award match found when searching by award id info +
-            # awarding subtier agency. Relax the awarding agency
-            # critera to just the toptier agency instead of the subtier
-            # agency and try the search again.
-            awarding_agency_toptier = Agency.get_by_toptier(
-                awarding_agency.toptier_agency.cgac_code)
-
-            summary_award = Award.objects \
-                .filter(Q(**lookup_kwargs)) \
-                .filter(awarding_agency=awarding_agency_toptier) \
-                .first()
-
-        if summary_award:
-            return [], summary_award
-
-        parent_created, parent_award = [], None
-
-        # Now create the award record for this award transaction
-        create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award,
-                         "parent_award_piid": parent_award_id}
-        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-            create_kwargs[i[1]] = i[0]
-        summary_award = Award(**create_kwargs)
-        created = [summary_award, ]
-        created.extend(parent_created)
-
-        if save:
-            summary_award.save()
-
-        return created, summary_award
-
-    # Do not use bare except
-    except ValueError:
-        raise ValueError(
-            'Unable to find or create an award with the provided information: '
-            'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
-                piid, fain, uri, parent_award_id, awarding_agency))
+    if len(awards) == 1:
+        return awards[0]
+    else:
+        return None
 
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
@@ -707,14 +661,23 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         # Award record.
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        created, award = get_or_create_summary_award(
-            awarding_agency=row['awarding_agency'],
-            piid=row.get('piid'),
-            fain=row.get('fain'),
-            uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))
+        filters = {}
+        if row.get('piid'):
+            filters['piid'] = row.get('piid')
+            filters['parent_piid'] = row.get('parent_award_id')
+        else:
+            if row.get('fain') and not row.get('uri'):
+                filters['fain'] = row.get('fain')
+            elif row.get('uri') and not row.get('fain'):
+                filters['uri'] = row.get('uri')
+            else:
+                filters['fain'] = row.get('fain')
+                filters['uri'] = row.get('uri')
 
-        awards_touched += [award]
+        award = find_matching_award(**filters)
+
+        if award:
+            awards_touched += [award]
 
         award_financial_data = FinancialAccountsByAwards()
 
@@ -741,4 +704,5 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         total_tas_skipped += skipped_tas[key]['count']
 
     logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
-    return [id for award.id in awards_touched]
+
+    return [award.id for award in awards_touched if award]
