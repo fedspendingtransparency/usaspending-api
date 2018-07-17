@@ -13,16 +13,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         with transaction.atomic():
-
-            sql_commands = read_sql_file(file_path=self.ETL_SQL_FILE_PATH + 'create_linkage_indexes.sql')
-            for command in sql_commands:
-                with connection.cursor() as cursor:
-                    cursor.execute(command)
-
             for link_type in self.LINKAGE_TYPES:
                 update_c_to_d_linkages(type=link_type)
-
-            sql_commands = read_sql_file(file_path=self.ETL_SQL_FILE_PATH + 'drop_linkage_indexes.sql')
-            for command in sql_commands:
-                with connection.cursor() as cursor:
-                    cursor.execute(command)
