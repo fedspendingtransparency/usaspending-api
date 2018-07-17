@@ -8,9 +8,9 @@ SET
 		FROM
 			awards AS aw
 		WHERE
-			aw.piid = faba.piid
+			UPPER(aw.piid) = UPPER(faba.piid)
 			AND
-			aw.parent_award_piid IS NOT DISTINCT FROM faba.parent_award_id
+			UPPER(aw.parent_award_piid) IS NOT DISTINCT FROM UPPER(faba.parent_award_id)
 	)
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
@@ -27,8 +27,8 @@ WHERE
 				SELECT COUNT(*)
 				FROM awards AS aw_sub
 				WHERE
-					aw_sub.piid = faba_sub.piid
+					UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
 					AND
-					aw_sub.parent_award_piid IS NOT DISTINCT FROM faba_sub.parent_award_id
+					UPPER(aw_sub.parent_award_piid) IS NOT DISTINCT FROM UPPER(faba_sub.parent_award_id)
 			) = 1
 	);
