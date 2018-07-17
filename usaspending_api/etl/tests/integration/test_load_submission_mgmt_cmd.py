@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 # Imports from your apps
 from usaspending_api.awards.models import (Award, FinancialAccountsByAwards, TransactionNormalized,
                                            TreasuryAppropriationAccount)
-from usaspending_api.accounts.models import SubmissionAttributes
+
 
 DB_CURSOR_PARAMS = {
     'default': MagicMock(),
