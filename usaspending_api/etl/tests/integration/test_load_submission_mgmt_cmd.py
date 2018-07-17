@@ -30,7 +30,7 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -41,21 +41,21 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 999
+            'id': -999
         },
         {
             'model': Award,
-            'id': 999,
-            'piid': 'RANDOM_PIID',
-            'parent_award_piid': 'PARENT_PIID_DNE',
-            'latest_transaction_id': 999
+            'id': -999,
+            'piid': 'RANDOM_LOAD_SUB_PIID',
+            'parent_award_piid': 'PARENT_LOAD_SUB_PIID_DNE',
+            'latest_transaction_id': -999
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-    call_command('load_submission', '--noclean', '--nosubawards', '9999')
+    call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
         'award_ids': [],
@@ -79,7 +79,7 @@ def test_load_submission_file_c_piid_with_no_parent_piid(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -90,24 +90,24 @@ def test_load_submission_file_c_piid_with_no_parent_piid(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 998
+            'id': -998
         },
         {
             'model': Award,
-            'id': 998,
-            'piid': 'RANDOM_PIID',
+            'id': -998,
+            'piid': 'RANDOM_LOAD_SUB_PIID',
             'parent_award_piid': None,
-            'latest_transaction_id': 998
+            'latest_transaction_id': -998
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-        call_command('load_submission', '--noclean', '--nosubawards', '9999')
+        call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [998],
+        'award_ids': [-998],
     }
 
     actual_results = {
@@ -128,7 +128,7 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -139,24 +139,24 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 997
+            'id': -997
         },
         {
             'model': Award,
-            'id': 997,
-            'piid': 'RANDOM_PIID',
-            'parent_award_piid': 'RANDOM_PARENT_PIID',
-            'latest_transaction_id': 997
+            'id': -997,
+            'piid': 'RANDOM_LOAD_SUB_PIID',
+            'parent_award_piid': 'RANDOM_LOAD_SUB_PARENT_PIID',
+            'latest_transaction_id': -997
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-        call_command('load_submission', '--noclean', '--nosubawards', '9999')
+        call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [997],
+        'award_ids': [-997],
     }
 
     actual_results = {
@@ -177,7 +177,7 @@ def test_load_submission_file_c_fain(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -188,23 +188,23 @@ def test_load_submission_file_c_fain(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 997
+            'id': -997
         },
         {
             'model': Award,
-            'id': 997,
-            'fain': 'RANDOM_FAIN',
-            'latest_transaction_id': 997
+            'id': -997,
+            'fain': 'RANDOM_LOAD_SUB_FAIN',
+            'latest_transaction_id': -997
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-        call_command('load_submission', '--noclean', '--nosubawards', '9999')
+        call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [997],
+        'award_ids': [-997],
     }
 
     actual_results = {
@@ -225,7 +225,7 @@ def test_load_submission_file_c_uri(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -236,23 +236,23 @@ def test_load_submission_file_c_uri(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 997
+            'id': -997
         },
         {
             'model': Award,
-            'id': 997,
-            'uri': 'RANDOM_URI',
-            'latest_transaction_id': 997
+            'id': -997,
+            'uri': 'RANDOM_LOAD_SUB_URI',
+            'latest_transaction_id': -997
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-        call_command('load_submission', '--noclean', '--nosubawards', '9999')
+        call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [997],
+        'award_ids': [-997],
     }
 
     actual_results = {
@@ -273,7 +273,7 @@ def test_load_submission_file_c_fain_and_uri(mock_db_cursor):
     models_to_mock = [
         {
             'model': TreasuryAppropriationAccount,
-            'treasury_account_identifier': 1111,
+            'treasury_account_identifier': -1111,
             'allocation_transfer_agency_id': '999',
             'agency_id': '999',
             'beginning_period_of_availability': '1700-01-01',
@@ -284,35 +284,35 @@ def test_load_submission_file_c_fain_and_uri(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': 999
+            'id': -999
         },
         {
             'model': TransactionNormalized,
-            'id': 1999
+            'id': -1999
         },
         {
             'model': Award,
-            'id': 999,
-            'fain': 'RANDOM_FAIN_999',
-            'uri': 'RANDOM_URI_999',
-            'latest_transaction_id': 999
+            'id': -999,
+            'fain': 'RANDOM_LOAD_SUB_FAIN_999',
+            'uri': 'RANDOM_LOAD_SUB_URI_999',
+            'latest_transaction_id': -999
         },
         {
             'model': Award,
-            'id': 1999,
-            'fain': 'RANDOM_FAIN_1999',
-            'uri': 'RANDOM_URI_1999',
-            'latest_transaction_id': 1999
+            'id': -1999,
+            'fain': 'RANDOM_LOAD_SUB_FAIN_1999',
+            'uri': 'RANDOM_LOAD_SUB_URI_1999',
+            'latest_transaction_id': -1999
         }
     ]
 
     for entry in models_to_mock:
         mommy.make(entry.pop('model'), **entry)
 
-        call_command('load_submission', '--noclean', '--nosubawards', '9999')
+        call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [999, 1999],
+        'award_ids': [-1999, -999],
     }
 
     actual_results = {

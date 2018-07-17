@@ -1,7 +1,7 @@
 {
-  "SELECT * FROM submission WHERE submission_id = 9999": [
+  "SELECT * FROM submission WHERE submission_id = -9999": [
     {
-      "submission_id": 9999,
+      "submission_id": -9999,
       "publishable": true,
       "publish_status_id": 2,
       "cgac_code": 999,
@@ -13,7 +13,7 @@
       "updated_at": "1700-12-31"
     }
   ],
-  "SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) AND account_num = 99999": [
+  "SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) AND account_num = -99999": [
     {
       "allocation_transfer_agency": "999",
       "agency_identifier": "999",
@@ -23,15 +23,15 @@
       "main_account_code": "0000",
       "sub_account_code": "0000",
       "financial_indicator2": null,
-      "account_number": 99999
+      "account_number": -99999
     }
   ],
-  "SELECT * FROM award_financial WHERE submission_id = 9999": [
+  "SELECT * FROM award_financial WHERE submission_id = -9999": [
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -56,7 +56,7 @@
       "obligations_undelivered_or_cpe": null,
       "obligations_undelivered_or_fyb": null,
       "parent_award_id": null,
-      "piid": "RANDOM_PIID",
+      "piid": "RANDOM_LOAD_SUB_PIID",
       "program_activity_code": null,
       "program_activity_name": null,
       "sub_account_code": null,
@@ -83,13 +83,13 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     },
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -113,8 +113,8 @@
       "obligations_incurred_byawa_cpe": null,
       "obligations_undelivered_or_cpe": null,
       "obligations_undelivered_or_fyb": null,
-      "parent_award_id": "RANDOM_PARENT_PIID",
-      "piid": "RANDOM_PIID",
+      "parent_award_id": "RANDOM_LOAD_SUB_PARENT_PIID",
+      "piid": "RANDOM_LOAD_SUB_PIID",
       "program_activity_code": null,
       "program_activity_name": null,
       "sub_account_code": null,
@@ -141,13 +141,13 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     },
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -157,7 +157,7 @@
       "by_direct_reimbursable_fun": null,
       "deobligations_recov_by_awa_cpe": null,
       "ending_period_of_availabil": null,
-      "fain": "RANDOM_FAIN",
+      "fain": "RANDOM_LOAD_SUB_FAIN",
       "gross_outlay_amount_by_awa_cpe": null,
       "gross_outlay_amount_by_awa_fyb": null,
       "gross_outlays_delivered_or_cpe": null,
@@ -199,13 +199,13 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     },
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -235,7 +235,7 @@
       "program_activity_name": null,
       "sub_account_code": null,
       "transaction_obligated_amou": null,
-      "uri": "RANDOM_URI",
+      "uri": "RANDOM_LOAD_SUB_URI",
       "ussgl480100_undelivered_or_cpe": null,
       "ussgl480100_undelivered_or_fyb": null,
       "ussgl480200_undelivered_or_cpe": null,
@@ -257,13 +257,13 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     },
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -273,7 +273,7 @@
       "by_direct_reimbursable_fun": null,
       "deobligations_recov_by_awa_cpe": null,
       "ending_period_of_availabil": null,
-      "fain": "RANDOM_FAIN_999",
+      "fain": "RANDOM_LOAD_SUB_FAIN_999",
       "gross_outlay_amount_by_awa_cpe": null,
       "gross_outlay_amount_by_awa_fyb": null,
       "gross_outlays_delivered_or_cpe": null,
@@ -293,7 +293,7 @@
       "program_activity_name": null,
       "sub_account_code": null,
       "transaction_obligated_amou": null,
-      "uri": "RANDOM_URI_DNE",
+      "uri": "RANDOM_LOAD_SUB_URI_DNE",
       "ussgl480100_undelivered_or_cpe": null,
       "ussgl480100_undelivered_or_fyb": null,
       "ussgl480200_undelivered_or_cpe": null,
@@ -315,13 +315,13 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     },
     {
       "created_at": null,
       "updated_at": null,
       "award_financial_id": null,
-      "submission_id": 9999,
+      "submission_id": -9999,
       "job_id": null,
       "row_number": null,
       "agency_identifier": null,
@@ -331,7 +331,7 @@
       "by_direct_reimbursable_fun": null,
       "deobligations_recov_by_awa_cpe": null,
       "ending_period_of_availabil": null,
-      "fain": "RANDOM_FAIN_DNE",
+      "fain": "RANDOM_LOAD_SUB_FAIN_DNE",
       "gross_outlay_amount_by_awa_cpe": null,
       "gross_outlay_amount_by_awa_fyb": null,
       "gross_outlays_delivered_or_cpe": null,
@@ -351,7 +351,7 @@
       "program_activity_name": null,
       "sub_account_code": null,
       "transaction_obligated_amou": null,
-      "uri": "RANDOM_URI_1999",
+      "uri": "RANDOM_LOAD_SUB_URI_1999",
       "ussgl480100_undelivered_or_cpe": null,
       "ussgl480100_undelivered_or_fyb": null,
       "ussgl480200_undelivered_or_cpe": null,
@@ -373,7 +373,7 @@
       "ussgl498100_upward_adjustm_cpe": null,
       "ussgl498200_upward_adjustm_cpe": null,
       "tas": null,
-      "tas_id": 99999
+      "tas_id": -99999
     }
   ]
 }
