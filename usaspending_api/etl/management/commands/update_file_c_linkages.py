@@ -1,8 +1,7 @@
 from django.core.management.base import BaseCommand
-from django.db import connection, transaction
+from django.db import transaction
 
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.sql_helpers import read_sql_file
 
 
 class Command(BaseCommand):
