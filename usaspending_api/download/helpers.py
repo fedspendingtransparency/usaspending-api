@@ -129,7 +129,6 @@ def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, g
 
     if len(mp.get_all_parts()) == chunk_amount:
         mp.complete_upload()
-        key = bucket.get_key(keyname)
     else:
         mp.cancel_upload()
 
