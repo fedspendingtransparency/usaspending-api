@@ -84,15 +84,9 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
                                          '{}__federal_account__main_account_code'.format(tas_id))
     }
 
-    # Derive recipient_parent_name and transaction_obligated_amount_ for award_financial downloads
+    # Derive recipient_parent_name
     if account_type == 'award_financial':
         derived_fields = award_financial_recipient_parent_derivation(derived_fields)
-
-        # Account for NaN bug in award_financial data
-        # TODO: Fix the data and get rid of this code
-        derived_fields['transaction_obligated_amount_'] = Case(
-            When(transaction_obligated_amount=Value('NaN')), then=Value(0.00), default='transaction_obligated_amount',
-            output_field=DecimalField())
 
     return queryset.annotate(**derived_fields)
 
@@ -124,7 +118,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         'spending_authority_from_offsetting_collections_amount', 'total_other_budgetary_resources_amount',
         'total_budgetary_resources', 'obligations_incurred', 'deobligations_or_recoveries_or_refunds_from_prior_year',
         'unobligated_balance', 'gross_outlay_amount', 'status_of_budgetary_resources_total',
-        'transaction_obligated_amount_']  # TODO: remove trailing  "_" from transaction_obligated_amount_ after data fix
+        'transaction_obligated_amount']
 
     # Group by all columns within the file that can't be summed
     fed_acct_values_dict = query_paths[account_type]['federal_account']
@@ -135,13 +129,6 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     values_dict = query_paths[account_type]
     summed_cols = {val: Sum(values_dict['treasury_account'].get(val, None)) for val in values_dict['federal_account']
                    if val in all_summed_cols}
-
-    # Account for NaN bug in award_financial data
-    # TODO: Fix the data and get rid of this code
-    if account_type == 'award_financial':
-        summed_cols['transaction_obligated_amount_'] = Sum(
-            Coalesce(Case(When(transaction_obligated_amount=Value('NaN')), then=Value(0.00),
-                          default='transaction_obligated_amount', output_field=DecimalField()), 0))
 
     return queryset.annotate(**summed_cols)
 
