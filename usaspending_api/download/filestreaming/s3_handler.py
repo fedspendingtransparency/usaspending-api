@@ -13,7 +13,7 @@ class S3Handler:
     This class acts a wrapper for S3 URL Signing
     """
 
-    def __init__(self, name=settings.CSV_S3_BUCKET_NAME, region=settings.USASPENDING_AWS_REGION):
+    def __init__(self, name, region=settings.USASPENDING_AWS_REGION):
         """
         Creates the object for signing URLS
 
