@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.postgres.fields import ArrayField
 
 class StateData(models.Model):
     """
@@ -55,3 +55,19 @@ class HistoricParentDUNS(models.Model):
 
     class Meta:
         db_table = 'historic_parent_duns'
+
+
+class RecipientProfile(models.Model):
+    """Table used for speed improvements for the recipient profile listings"""
+    recipient_level = models.CharField(max_length=1)
+    recipient_hash = models.UUIDField()
+    recipient_unique_id = models.TextField()
+    legal_business_name = models.TextField()
+    recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None),
+    all_fiscal_years = models.DecimalField(max_digits=23, decimal_places=2),
+    last_12_months = models.DecimalField(max_digits=23, decimal_places=2)
+
+    class Meta:
+        managed = False
+        db_table = 'recipient_profile'
+        unique_together = ('recipient_level', 'recipient_hash')
