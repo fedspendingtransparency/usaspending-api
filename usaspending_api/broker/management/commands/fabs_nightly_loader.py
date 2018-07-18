@@ -304,7 +304,7 @@ class Command(BaseCommand):
                     writer.write(row + '\n')
         else:
             # Write to file in S3 bucket directly
-            aws_region = os.environ.get('AWS_REGION')
+            aws_region = os.environ.get('USASPENDING_AWS_REGION')
             elasticsearch_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
             s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(elasticsearch_bucket_name)
             conn = s3_bucket.new_key(file_name)
