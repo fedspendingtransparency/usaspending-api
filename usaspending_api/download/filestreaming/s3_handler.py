@@ -22,14 +22,14 @@ class S3Handler:
 
         """
         self.bucketRoute = name
-        S3Handler.REGION = region
+        self.region = region
 
     def get_simple_url(self, file_name):
         """
         Gets URL for read
         """
 
-        s3connection = boto.s3.connect_to_region(S3Handler.REGION)
+        s3connection = boto.s3.connect_to_region(self.region)
         generated = "https://{}/{}/{}".format(s3connection.server_name(), self.bucketRoute, file_name)
         return generated
 
