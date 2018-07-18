@@ -101,7 +101,7 @@ def verify_requested_columns_available(sources, requested):
 
 # Multipart upload functions copied from Fabian Topfstedt's solution
 # http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
-def multipart_upload(bucketname, regionname, source_path, keyname, acl='private', headers={}, guess_mimetype=True,
+def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, guess_mimetype=True,
                      parallel_processes=4):
     """Parallel multipart upload."""
     bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
@@ -130,7 +130,6 @@ def multipart_upload(bucketname, regionname, source_path, keyname, acl='private'
     if len(mp.get_all_parts()) == chunk_amount:
         mp.complete_upload()
         key = bucket.get_key(keyname)
-        key.set_acl(acl)
     else:
         mp.cancel_upload()
 
