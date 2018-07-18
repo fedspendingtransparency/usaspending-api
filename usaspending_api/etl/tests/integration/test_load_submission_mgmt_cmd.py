@@ -2,6 +2,7 @@
 
 # Core Django imports
 from django.core.management import call_command
+from django.db.models import Q
 
 # Third-party app imports
 import pytest
