@@ -224,27 +224,15 @@ class BusinessLogic:
                 lookup = RecipientLookup.objects \
                     .filter(recipient_hash=row['recipient_hash']) \
                     .values('legal_business_name', 'duns').first()
+
+                # The Recipient Name + DUNS should always be retrievable in RecipientLookup
+                # For odd edge cases or data sync issues, handle gracefully:
+                if lookup is None:
+                    lookup = {}
+
+                row['recipient_name'] = lookup.get('legal_business_name', None)
+                row['recipient_unique_id'] = lookup.get('duns', 'DUNS Number not provided')
                 del row['recipient_hash']
-
-                if lookup:
-                    row['recipient_name'] = lookup.get('legal_business_name', None)
-                    row['recipient_unique_id'] = lookup.get('duns', None)
-                else:
-                    # If the DUNS was not found in the Lookup view, provide this generic name
-                    row['recipient_name'] = 'DUNS not Provided'
-                    row['recipient_unique_id'] = None
-
-                # Special Cases of valid Recipients which do not have an associated DUNS:
-                #    MULTIPLE RECIPIENTS, REDACTED DUE TO PII, MULTIPLE FOREIGN RECIPIENTS,
-                #    PRIVATE INDIVIDUAL,  INDIVIDUAL RECIPIENT
-                # Artificial "DUNS" values were given to these Recipients and must be removed
-
-                if row['recipient_name'].upper() in ('MULTIPLE RECIPIENTS',
-                                                     'REDACTED DUE TO PII',
-                                                     'MULTIPLE FOREIGN RECIPIENTS',
-                                                     'PRIVATE INDIVIDUAL',
-                                                     'INDIVIDUAL RECIPIENT'):
-                    row['recipient_unique_id'] = None
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         return results
