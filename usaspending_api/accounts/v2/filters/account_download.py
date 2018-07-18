@@ -1,7 +1,7 @@
 import datetime
 
-from django.db.models import Case, CharField, DecimalField, OuterRef, Subquery, Sum, Value, When
-from django.db.models.functions import Coalesce, Concat
+from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
+from django.db.models.functions import Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount

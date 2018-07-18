@@ -347,4 +347,4 @@ def test_load_submission_transaction_obligated_amount(mock_db_cursor):
     actual_results = FinancialAccountsByAwards.objects.\
         filter(Q(transaction_obligated_amount='NaN') | Q(transaction_obligated_amount=None)).count()
 
-    assert expected_results == actual_results   
+    assert expected_results == actual_results
