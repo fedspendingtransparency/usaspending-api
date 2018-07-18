@@ -19,7 +19,7 @@
     "  UPPER((",
     "    SELECT name FROM recipient_normalization_pair(",
     "      legal_entity.recipient_name, legal_entity.recipient_unique_id",
-    "      )) AS (name text, duns text)",
+    "      ) AS (name text, duns text)",
     "  ))::text AS recipient_name,",
     "  legal_entity.recipient_unique_id AS recipient_unique_id,",
     "  legal_entity.parent_recipient_unique_id,",
