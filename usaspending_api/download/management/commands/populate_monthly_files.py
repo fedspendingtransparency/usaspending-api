@@ -70,17 +70,15 @@ class Command(BaseCommand):
         else:
             # Send a SQS message that will be processed by another server, which will eventually run
             # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
-            queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                              QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = sqs_queue(QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):
         bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-        region = settings.BULK_DOWNLOAD_AWS_REGION
+        region = settings.USASPENDING_AWS_REGION
 
         logger.info('Uploading {}'.format(file_name))
-        multipart_upload(bucket, region, empty_file, file_name, acl='public-read',
-                         parallel_processes=multiprocessing.cpu_count())
+        multipart_upload(bucket, region, empty_file, file_name, parallel_processes=multiprocessing.cpu_count())
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -164,7 +162,7 @@ class Command(BaseCommand):
         # Make sure
         #   settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         #   settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
-        #   settings.BULK_DOWNLOAD_AWS_REGION
+        #   settings.USASPENDING_AWS_REGION
         # are properly configured!
 
         local = options['local']
@@ -206,7 +204,7 @@ class Command(BaseCommand):
 
         # moving it to self.bucket as it may be used in different cases
         bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-        region_name = settings.BULK_DOWNLOAD_AWS_REGION
+        region_name = settings.USASPENDING_AWS_REGION
         self.bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
 
         if not clobber:

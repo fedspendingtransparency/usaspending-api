@@ -8,6 +8,7 @@ from django.db import connections, transaction
 from django.db.models import Count
 from django.conf import settings
 
+from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
@@ -304,7 +305,7 @@ class Command(BaseCommand):
                     writer.write(row + '\n')
         else:
             # Write to file in S3 bucket directly
-            aws_region = os.environ.get('AWS_REGION')
+            aws_region = os.environ.get('USASPENDING_AWS_REGION')
             elasticsearch_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
             s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(elasticsearch_bucket_name)
             conn = s3_bucket.new_key(file_name)
@@ -367,6 +368,10 @@ class Command(BaseCommand):
             # Update AwardCategories based on changed FABS records
             with timer('updating award category variables', logger.info):
                 update_award_categories(tuple(award_update_id_list))
+
+            # Check the linkages from file C to FABS records and update any that are missing
+            with timer('updating C->D linkages', logger.info):
+                update_c_to_d_linkages('assistance')
         else:
             logger.info('Nothing to insert...')
 
