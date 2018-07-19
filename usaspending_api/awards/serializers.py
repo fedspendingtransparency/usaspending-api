@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from usaspending_api.accounts.serializers import TasSerializer
+from usaspending_api.accounts.serializers import SubmissionAttributesSerializer, TasSerializer
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
 from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.common.helpers.generic_helper import fy
@@ -17,6 +17,7 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         fields = '__all__'
         default_fields = [
             "financial_accounts_by_awards_id",
+            "submission",
             "award",
             "treasury_account",
             "transaction_obligated_amount",
@@ -55,6 +56,10 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "class": ObjectClassSerializer,
                 "kwargs": {"read_only": True}
             },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True}
+            }
         }
 
 
