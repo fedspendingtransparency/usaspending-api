@@ -63,8 +63,7 @@ class RecipientProfile(models.Model):
     recipient_hash = models.UUIDField()
     recipient_unique_id = models.TextField()
     legal_business_name = models.TextField()
-    recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None),
-    all_fiscal_years = models.DecimalField(max_digits=23, decimal_places=2),
+    recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
     last_12_months = models.DecimalField(max_digits=23, decimal_places=2)
 
     class Meta:
