@@ -73,6 +73,8 @@ class ListRecipients(APIDocumentationView):
                 model['type'] = 'enum'
                 model['enum_values'] = ['name', 'duns', 'amount']
                 model['default'] = 'amount'
+            if model['name'] == 'limit':
+                model['default'] = 50
         validated_payload = TinyShield(models).block(request.data)
 
         # convert award_type -> award_type_codes
