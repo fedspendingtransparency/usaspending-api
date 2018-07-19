@@ -12,11 +12,11 @@ INSERT INTO duns (
         broker_duns.address_line_1 AS address_line_1,
         broker_duns.address_line_2 AS address_line_2,
         broker_duns.city AS city,
+        broker_duns.congressional_district AS congressional_district,
+        broker_duns.country_code AS country_code,
         broker_duns.state AS state,
         broker_duns.zip AS zip,
         broker_duns.zip4 AS zip4,
-        broker_duns.country_code AS country_code,
-        broker_duns.congressional_district AS congressional_district,
         broker_duns.business_types_codes AS business_types_codes
     FROM
         dblink ('broker_server', '(
