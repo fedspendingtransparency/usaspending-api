@@ -552,7 +552,7 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
         delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
         # Retrieve and filter the files we need
-        bucket = boto.s3.connect_to_region(S3Handler.REGION).get_bucket(self.s3_handler.bucketRoute)
+        bucket = boto.s3.connect_to_region(self.s3_handler.region).get_bucket(self.s3_handler.bucketRoute)
         monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
                                              [key.name for key in bucket.list(prefix=monthly_download_prefixes)]))
         delta_download_names = list(filter(re.compile(delta_download_regex).search,
