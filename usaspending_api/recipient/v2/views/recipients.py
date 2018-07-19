@@ -20,10 +20,19 @@ from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
 
+RECIPIENT_TYPES = ['C', 'R', 'P']
+
 
 def validate_hash(hash):
-    if not RecipientLookup.objects.filter(recipient_hash=hash).count() > 0:
-        raise InvalidParameterException('Recipient ID not found: {}.'.format(hash))
+    if '-' not in hash:
+        raise InvalidParameterException('ID doesn\'t include Recipient-Type: {}'.format(hash))
+    recipient_type = hash[hash.rfind('-')+1:]
+    if recipient_type not in RECIPIENT_TYPES:
+        raise InvalidParameterException('Invalid Recipient-Type: {}'.format(hash))
+    recipient_hash = hash[:hash.rfind('-')]
+    if not RecipientLookup.objects.filter(recipient_hash=recipient_hash).count() > 0:
+        raise InvalidParameterException('Recipient ID not found: {}.'.format(recipient_hash))
+    return recipient_hash, recipient_type
 
 
 def validate_duns(duns):
@@ -107,7 +116,7 @@ class RecipientOverView(APIDocumentationView):
     def get(self, request, recipient_hash):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        recipient_hash = validate_hash(recipient_hash)
+        recipient_hash, recipient_type = validate_hash(recipient_hash)
 
         # Gather DUNS object via the hash
         location = extract_location(recipient_hash)
