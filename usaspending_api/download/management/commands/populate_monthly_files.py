@@ -78,8 +78,7 @@ class Command(BaseCommand):
         region = settings.USASPENDING_AWS_REGION
 
         logger.info('Uploading {}'.format(file_name))
-        multipart_upload(bucket, region, empty_file, file_name, acl='public-read',
-                         parallel_processes=multiprocessing.cpu_count())
+        multipart_upload(bucket, region, empty_file, file_name, parallel_processes=multiprocessing.cpu_count())
 
     def add_arguments(self, parser):
         parser.add_argument(
