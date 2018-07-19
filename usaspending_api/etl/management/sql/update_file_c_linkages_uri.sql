@@ -8,7 +8,7 @@ SET
 		FROM
 			awards AS aw
 		WHERE
-			aw.uri = faba.uri
+			UPPER(aw.uri) = UPPER(faba.uri)
 	)
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
@@ -26,6 +26,6 @@ WHERE
 			(
 				SELECT COUNT(*)
 				FROM awards AS aw_sub
-				WHERE aw_sub.uri = faba_sub.uri
+				WHERE UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
 			) = 1
 	);
