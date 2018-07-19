@@ -179,6 +179,17 @@ def matview_search_filter(filters, model, for_downloads=False):
                 all_filters_obj |= filter_obj
             queryset &= model.objects.filter(all_filters_obj)
 
+
+        elif key == "internal_recipient_ids":
+            all_filters_obj = Q()
+            for recip in value:
+                hash = recip['hash']
+                parent = recip['parent']
+                # TODO: Filter parent logic
+                filter_obj = Q(recipient_hash=hash)
+                all_filters_obj |= filter_obj
+            queryset &= model.objects.filter(all_filters_obj)
+
         elif key == "recipient_scope":
             if value == "domestic":
                 queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
