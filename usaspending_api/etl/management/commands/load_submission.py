@@ -71,7 +71,7 @@ class Command(load_base.Command):
         submission_id = options['submission_id'][0]
 
         logger.info('Getting submission {} from broker...'.format(submission_id))
-        db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s' % submission_id)
+        db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s', [submission_id])
 
         submission_data = dictfetchall(db_cursor)
         logger.info('Finished getting submission {} from broker'.format(submission_id))
@@ -87,7 +87,7 @@ class Command(load_base.Command):
         submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
         logger.info('Getting File A data')
-        db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s' % submission_id)
+        db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(
             len(appropriation_data)) + ' rows.')
@@ -415,12 +415,12 @@ def get_file_b(submission_attributes, db_cursor):
         'GROUP BY tas_id, program_activity_code, object_class '
         'HAVING COUNT(*) > 1'
     )
-    db_cursor.execute(check_dupe_oc % submission_id)
+    db_cursor.execute(check_dupe_oc, [submission_id])
     dupe_oc_count = len(dictfetchall(db_cursor))
 
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s' % submission_id)
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
@@ -500,7 +500,7 @@ def get_file_b(submission_attributes, db_cursor):
             'Found {} duplicated File B 4 digit object codes in submission {}. '
             'Aggregating financial values.'.format(dupe_oc_count, submission_id))
         # we have at least one instance of duplicated 4 digit object classes so aggregate the financial values together
-        db_cursor.execute(combine_dupe_oc % submission_id)
+        db_cursor.execute(combine_dupe_oc, [submission_id])
 
     data = dictfetchall(db_cursor)
     return data
