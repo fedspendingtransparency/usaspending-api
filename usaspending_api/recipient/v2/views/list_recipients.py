@@ -3,7 +3,7 @@ import copy
 from time import perf_counter
 
 from rest_framework.response import Response
-from django.db.models import F
+from django.db.models import F, Q
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
@@ -17,18 +17,21 @@ logger = logging.getLogger(__name__)
 
 
 API_TO_DB_MAPPER = {
-    'amount': 'total',
+    'amount': 'last_12_months',
     'duns': 'recipient_unique_id',
     'name': 'recipient_name'
 }
 
 
 def get_recipients(year=None, award_type_codes=None, filters={}):
+    qs_filter = Q()
+    if 'keyword' in filters:
+        qs_filter |= Q(recipient_name__contains=filters['keyword'].upper())
+        qs_filter |= Q(recipient_unique_id__contains=filters['keyword'])
     if year == 'latest' or year is None:
-        total_field = 'last_12_months'
         queryset = RecipientProfile.objects \
-            .annotate(total=F(total_field)) \
-            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
+            .filter(qs_filter) \
+            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'last_12_months')
 
         if filters['order'] == "desc":
             queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).desc(nulls_last=True))
@@ -56,7 +59,7 @@ def get_recipients(year=None, award_type_codes=None, filters={}):
                 'duns': row['recipient_unique_id'],
                 'name': row['recipient_name'],
                 'recipient_level': row['recipient_level'],
-                'total': row['total']
+                'total': row['last_12_months']
             }
         )
 
