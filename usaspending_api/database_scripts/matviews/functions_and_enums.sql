@@ -28,7 +28,7 @@ CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEX
     DECLARE result text;
   BEGIN
     IF search_duns IS NULL THEN result = original_name;
-    ELSE result = (SELECT legal_business_name FROM recipient_lookup_view WHERE duns = search_duns);
+    ELSE result = (SELECT legal_business_name FROM public.recipient_lookup_view WHERE duns = search_duns);
     END IF;
   RETURN (result, search_duns)::RECORD;
   END;

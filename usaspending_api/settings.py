@@ -46,8 +46,6 @@ USASPENDING_AWS_REGION = ""
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
-CSV_S3_BUCKET_NAME = ""
-CSV_SQS_QUEUE_NAME = ""
 
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
