@@ -5,10 +5,10 @@ CREATE EXTENSION IF NOT EXISTS intarray;
 
 -- The function(s) and enum(s) below were originally created for the materialized views
 
-CREATE TYPE total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
+CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
 
 
-CREATE OR REPLACE FUNCTION obligation_to_enum(award NUMERIC) RETURNS total_obligation_bins AS $$
+CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC) RETURNS public.total_obligation_bins AS $$
   DECLARE
     DECLARE result text;
   BEGIN
@@ -18,12 +18,12 @@ CREATE OR REPLACE FUNCTION obligation_to_enum(award NUMERIC) RETURNS total_oblig
     ELSIF award < 500000000.0 THEN result='100M..500M';  -- under $500 million
     ELSE result='>500M';                                 --  over $500 million
     END IF;
-  RETURN result::total_obligation_bins;
+  RETURN result::public.total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
+CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
   DECLARE
     DECLARE result text[];
   BEGIN

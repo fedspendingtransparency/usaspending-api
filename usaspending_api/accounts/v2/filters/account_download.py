@@ -19,7 +19,9 @@ def account_download_filter(account_type, download_table, filters, account_level
     if filters.get('agency', False) and filters['agency'] != 'all':
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters['agency']).first()
         if agency:
-            query_filters['{}__agency_id'.format(tas_id)] = agency.cgac_code
+            # Agency is FREC if the cgac_code is 4 digits, CGAC otherwise
+            agency_filter_type = "fr_entity_code" if len(agency.cgac_code) == 4 else "agency_id"
+            query_filters['{}__{}'.format(tas_id, agency_filter_type)] = agency.cgac_code
         else:
             raise InvalidParameterException('Agency with that ID does not exist')
 
