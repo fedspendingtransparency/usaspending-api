@@ -77,7 +77,7 @@ def test_budget_function_filter():
 
 
 @pytest.mark.django_db
-def test_budget_function_filter():
+def test_budget_subfunction_filter():
     """ Ensure the Budget Subfunction filter is working """
     # Create TAS models
     tas1 = mommy.make('accounts.TreasuryAppropriationAccount', budget_subfunction_code='SUB')
