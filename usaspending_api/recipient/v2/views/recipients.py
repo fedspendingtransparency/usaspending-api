@@ -1,25 +1,25 @@
 import logging
-import copy
 
 from rest_framework.response import Response
 from django.db.models import Q, F, Sum, Count
 
+from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import RecipientLookup
-from usaspending_api.recipient.models_matviews import RecipientProfile
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 
 from usaspending_api.recipient.models import DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
+
 
 def validate_hash(hash):
     if not RecipientLookup.objects.filter(recipient_hash=hash).count() > 0:
@@ -27,10 +27,11 @@ def validate_hash(hash):
 
 
 def validate_duns(duns):
-    if not (isinstance(duns, str) and len(duns)==9):
+    if not (isinstance(duns, str) and len(duns) == 9):
         raise InvalidParameterException('Invalid DUNS: {}.'.format(duns))
     elif not DUNS.objects.filter(awardee_or_recipient_unique=duns).count() > 0:
         raise InvalidParameterException('DUNS not found: {}.'.format(duns))
+
 
 def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None, parent_duns=None, sort='desc', page=1,
                    limit=None):
@@ -41,9 +42,9 @@ def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None,
         # TODO: Generate list of children via recipient profile table
         duns_list = []
 
-    if year == 'latest' or year == None:
+    if year == 'latest' or year is None:
         # Use the Recipient Profile View
-        filters = Q() # recipient_profile_filters()
+        filters = Q()  # recipient_profile_filters()
         total_field = 'last_12_months' if year == 'latest' else 'all_fiscal_years'
         queryset = RecipientProfile.objects.filter(filters).annotate(total=F(total_field)) \
             .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
@@ -57,7 +58,7 @@ def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None,
     queryset = queryset.order_by('-total' if sort == 'desc' else 'total')
     total_count = queryset.count()
     if limit:
-        queryset = queryset[(page-1)*limit: page*limit]
+        queryset = queryset[(page - 1) * limit: page * limit]
 
     results = []
     for row in list(queryset):
@@ -95,41 +96,9 @@ def extract_location(recipient_hash):
         'congressional_code': duns_obj.congressional_district
     }
 
+
 def extract_business_types(recipient_hash):
     return SummaryTransactionView.objects.filter(recipient_hash=recipient_hash).values('business_categories')
-
-
-# class ListRecipients(APIDocumentationView):
-#
-#     @cache_response()
-#     def post(self, request):
-#         models = [
-#             {'name': 'keyword', 'key': 'keyword', 'type': 'text', 'text_type': 'search'},
-#             {'name': 'award_type', 'key': 'award_type', 'type': 'enum',
-#              'enum_values': list(all_award_types_mappings.keys()) + ['all'],'default': 'all'},
-#         ]
-#         models.extend(copy.deepcopy(PAGINATION))
-#         validated_payload = TinyShield(models).block(request.data)
-#
-#         # convert award_type -> award_type_codes
-#         award_type_codes = None
-#         if validated_payload.get('award_type', 'all') != 'all':
-#             award_type_codes = all_award_types_mappings[validated_payload['award_type']]
-#
-#         results = []
-#         recipients, page_metadata = get_recipients(year='latest', sort=validated_payload['order'],
-#                                                    award_type_codes=award_type_codes, page=validated_payload['page'],
-#                                                    limit=validated_payload['limit'])
-#         for item in recipients:
-#             results.append({
-#                 'id': item['id'],
-#                 'duns': item['duns'],
-#                 'name': item['name'],
-#                 'recipient_level': item['recipient_level'],
-#                 'amount': item['total']
-#             })
-#
-#         return Response({'page_metadata': page_metadata, 'results': results})
 
 
 class RecipientOverView(APIDocumentationView):
