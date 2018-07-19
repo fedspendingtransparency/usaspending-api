@@ -12,6 +12,7 @@ This route sends a request to the backend to begin generating a zipfile of accou
     "account_level": "treasury_account",
     "filters": {
         "agency": "3",
+        "federal_account": "15",
         "submission_type": "object_class_program_activity",
         "fy": "2018",
         "quarter": "2"
@@ -21,14 +22,14 @@ This route sends a request to the backend to begin generating a zipfile of accou
 ```
 
 ### Request Parameters Description
-* `account_level` - *required* - the account level: `tresury_account` or `federal_account` (must be `treasury_account` for Beta)
+* `account_level` - *required* - the account level: `tresury_account` or `federal_account`
 * `filters` - *required* - a JSON filter object with the following fields
-        * `agency` - *optional* - agency database id to include, `all` is also an option to include all agencies
-        * `federal_account` - *optional* - federal account id to include (based on the agency filter), out of scope for Beta
-        * `submission_type` - *required* - the file type requested: `account_balances` (File A) or `program_activity_object_class` (File B)
+        * `agency` - *optional* - agency database id, `all` is also an option to include all agencies
+        * `federal_account` - *optional* - federal account id
+        * `submission_type` - *required* - the file type requested: `account_balances` (File A), `program_activity_object_class` (File B), or `award_financial` (File C)
         * `fy` - *required* - fiscal year
         * `quarter` - *required*
-* `file_format` - *optional* - must be `csv` for Beta
+* `file_format` - *optional* - must be `csv`
 
 ### Response (JSON)
 
