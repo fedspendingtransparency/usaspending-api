@@ -10,6 +10,7 @@ from django.db import connections, transaction
 from django.db.models import Count
 from django.conf import settings
 
+from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
@@ -352,17 +353,25 @@ class Command(BaseCommand):
             logger.info('Nothing to delete...')
 
         if total_rows > 0:
+            # Add FPDS records
             with timer('inserting new FPDS data', logger.info):
                 self.insert_new_fpds(to_insert=to_insert, total_rows=total_rows)
 
+            # Update Awards based on changed FPDS records
             with timer('updating awards to reflect their latest associated transaction info', logger.info):
                 update_awards(tuple(award_update_id_list))
 
+            # Update FPDS-specific Awards based on the info in child transactions
             with timer('updating contract-specific awards to reflect their latest transaction info', logger.info):
                 update_contract_awards(tuple(award_update_id_list))
 
+            # Update AwardCategories based on changed FPDS records
             with timer('updating award category variables', logger.info):
                 update_award_categories(tuple(award_update_id_list))
+
+            # Check the linkages from file C to FPDS records and update any that are missing
+            with timer('updating C->D linkages', logger.info):
+                update_c_to_d_linkages('contract')
         else:
             logger.info('Nothing to insert...')
 
