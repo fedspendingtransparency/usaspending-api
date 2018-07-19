@@ -7,6 +7,8 @@ INSERT INTO duns (
         broker_duns.legal_business_name AS legal_business_name,
         broker_duns.ultimate_parent_unique_ide AS ultimate_parent_unique_ide,
         broker_duns.ultimate_parent_legal_enti AS ultimate_parent_legal_enti,
+        broker_duns.duns_id AS broker_duns_id,
+        NOW()::DATE AS update_date,
         broker_duns.address_line_1 AS address_line_1,
         broker_duns.address_line_2 AS address_line_2,
         broker_duns.city AS city,
@@ -15,9 +17,7 @@ INSERT INTO duns (
         broker_duns.zip4 AS zip4,
         broker_duns.country_code AS country_code,
         broker_duns.congressional_district AS congressional_district,
-        broker_duns.business_types_codes AS business_types_codes,
-        broker_duns.duns_id AS broker_duns_id,
-        NOW()::DATE AS update_date
+        broker_duns.business_types_codes AS business_types_codes
     FROM
         dblink ('broker_server', '(
             SELECT
