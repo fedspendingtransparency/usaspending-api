@@ -30,7 +30,7 @@ CREATE MATERIALIZED VIEW temporary_recipients_from_transactions_view AS (
 );
 
 CREATE INDEX idx_recipients_from_transactions_view_1 ON temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
-CREATE INDEX idx_recipients_from_transactions_view_2 ON temporary_recipients_from_transactions_view USING BTREE(recipient_unique_id, parent_recipient_unique_id, action_date);
+-- CREATE INDEX idx_recipients_from_transactions_view_2 ON temporary_recipients_from_transactions_view USING BTREE(recipient_unique_id, parent_recipient_unique_id, action_date);
 
 --------------------------------------------------------------------------------
 -- Step 2, Create the new table and populate with 100% of combinations
@@ -97,7 +97,32 @@ WHERE
   trft.action_date >= now() - INTERVAL '1 year';
 
 --------------------------------------------------------------------------------
--- Step 4, Populating children list in parents
+-- Step 4, Populate the Parent Obligation for past 12 months
+--------------------------------------------------------------------------------
+WITH grouped_by_parent AS (
+  SELECT
+   parent_recipient_unique_id AS duns,
+   SUM(generated_pragmatic_obligation) AS amount
+  FROM
+    temporary_recipients_from_transactions_view AS trft
+  WHERE
+    trft.action_date >= now() - INTERVAL '1 year' AND
+    parent_recipient_unique_id IS NOT NULL
+  GROUP BY parent_recipient_unique_id
+)
+
+UPDATE recipient_profile_new AS rpv
+SET
+  last_12_months = rpv.last_12_months + gbp.amount,
+  unused = false
+FROM
+  grouped_by_parent AS gbp
+WHERE
+  rpv.recipient_unique_id = gbp.duns AND
+  rpv.recipient_level = 'P';
+
+--------------------------------------------------------------------------------
+-- Step 5, Populating children list in parents
 --------------------------------------------------------------------------------
 WITH parent_recipients AS (
   SELECT
@@ -118,7 +143,7 @@ FROM parent_recipients AS pr
 WHERE rpv.recipient_unique_id = pr.parent_recipient_unique_id and rpv.recipient_level = 'P';
 
 --------------------------------------------------------------------------------
--- Step 5, Populate parent DUNS in children
+-- Step 6, Populate parent DUNS in children
 --------------------------------------------------------------------------------
 WITH all_recipients AS (
   SELECT
@@ -142,7 +167,7 @@ WHERE
   rpv.recipient_level = 'C';
 
 --------------------------------------------------------------------------------
--- Step 6, Finalize new table
+-- Step 7, Finalize new table
 --------------------------------------------------------------------------------
 ANALYZE VERBOSE recipient_profile_new;
 
@@ -152,7 +177,7 @@ ALTER TABLE recipient_profile_new DROP COLUMN unused;
 VACUUM ANALYZE VERBOSE recipient_profile_new;
 
 --------------------------------------------------------------------------------
--- Step 7, Drop unnecessary relations and standup new table as final
+-- Step 8, Drop unnecessary relations and standup new table as final
 --------------------------------------------------------------------------------
 BEGIN;
 DROP MATERIALIZED VIEW temporary_recipients_from_transactions_view;
@@ -162,7 +187,7 @@ ALTER INDEX idx_recipient_profile_uniq_new RENAME TO idx_recipient_profile_uniq;
 COMMIT;
 
 --------------------------------------------------------------------------------
--- Step 8, Create indexes useful for API
+-- Step 9, Create indexes useful for API
 --------------------------------------------------------------------------------
 CREATE INDEX idx_recipient_profile_name ON recipient_profile USING GIN(recipient_name gin_trgm_ops);
 CREATE INDEX idx_recipient_profile_unique_id ON recipient_profile USING BTREE(recipient_unique_id);
