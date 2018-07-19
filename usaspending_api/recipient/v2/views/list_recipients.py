@@ -3,64 +3,52 @@ import copy
 from time import perf_counter
 
 from rest_framework.response import Response
-from django.db.models import Q, F, Sum, Count
+from django.db.models import F
 
-from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import RecipientLookup
-
-from usaspending_api.recipient.models import DUNS
 
 logger = logging.getLogger(__name__)
 
 
-def validate_hash(hash):
-    if not RecipientLookup.objects.filter(recipient_hash=hash).count() > 0:
-        raise InvalidParameterException('Recipient ID not found: {}.'.format(hash))
-
-
-def validate_duns(duns):
-    if not (isinstance(duns, str) and len(duns) == 9):
-        raise InvalidParameterException('Invalid DUNS: {}.'.format(duns))
-    elif not DUNS.objects.filter(awardee_or_recipient_unique=duns).count() > 0:
-        raise InvalidParameterException('DUNS not found: {}.'.format(duns))
+API_TO_DB_MAPPER = {
+    'amount': 'total',
+    'duns': 'recipient_unique_id',
+    'name': 'recipient_name'
+}
 
 
 def get_recipients(year=None, award_type_codes=None, filters={}):
-    start_db = perf_counter()
     if year == 'latest' or year is None:
-        # Use the Recipient Profile View
-        filters = Q()  # recipient_profile_filters()
-        total_field = 'last_12_months' if year == 'latest' else 'all_fiscal_years'
+        total_field = 'last_12_months'
         queryset = RecipientProfile.objects \
-            .filter(filters) \
             .annotate(total=F(total_field)) \
             .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
 
         if filters['order'] == "desc":
-            queryset = queryset.order_by(F(filters['sort']).desc(nulls_last=True))
+            queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).desc(nulls_last=True))
         else:
-            queryset = queryset.order_by(F(filters['sort']).asc(nulls_last=True))
+            queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).asc(nulls_last=True))
     else:
         raise Exception('Date Range Unsuported!!!!!!!!!!!')
+
+    from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+    print('=======================================')
+    print(generate_raw_quoted_query(queryset))
 
     lower_limit = (filters['page'] - 1) * filters['limit']
     upper_limit = filters['page'] * filters['limit']
 
+    count = queryset.count()
+
     results = []
-    count_start = perf_counter()
-    print(f'Time to create Queryset: {count_start - start_db}')
-    page_metadata = get_pagination_metadata(queryset.count('*'), filters['limit'], filters['page'])
-    count_end = perf_counter()
-    print(f'Time to get count: {count_end - count_start}')
+    page_metadata = get_pagination_metadata(count, filters['limit'], filters['page'])
+
     for row in queryset[lower_limit:upper_limit + 1]:
         results.append(
             {
@@ -72,7 +60,6 @@ def get_recipients(year=None, award_type_codes=None, filters={}):
             }
         )
 
-    # page_metadata = get_simple_pagination_metadata(results, filters['limit'], filters['page'])
     return results, page_metadata
 
 
