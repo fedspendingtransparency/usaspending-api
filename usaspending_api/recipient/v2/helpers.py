@@ -22,7 +22,7 @@ def reshape_filters(duns_search_texts=[], duns_hashes=[], state_code=None, year=
         filters['recipient_search_text'] = duns_search_texts
 
     if duns_hashes:
-        filters['internal_recipient_ids'] = duns_hashes
+        filters['internal_recipient_id'] = duns_hashes
 
     if state_code:
         filters['place_of_performance_locations'] = [{'country': 'USA', 'state': state_code}]

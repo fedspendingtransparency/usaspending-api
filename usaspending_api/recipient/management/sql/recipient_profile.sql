@@ -30,7 +30,6 @@ CREATE MATERIALIZED VIEW temporary_recipients_from_transactions_view AS (
 );
 
 CREATE INDEX idx_recipients_from_transactions_view_1 ON temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
--- CREATE INDEX idx_recipients_from_transactions_view_2 ON temporary_recipients_from_transactions_view USING BTREE(recipient_unique_id, parent_recipient_unique_id, action_date);
 
 --------------------------------------------------------------------------------
 -- Step 2, Create the new table and populate with 100% of combinations

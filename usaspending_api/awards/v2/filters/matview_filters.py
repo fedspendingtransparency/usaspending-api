@@ -179,16 +179,16 @@ def matview_search_filter(filters, model, for_downloads=False):
                 all_filters_obj |= filter_obj
             queryset &= model.objects.filter(all_filters_obj)
 
+        elif key == "internal_recipient_id":
+            filter_obj = Q()
+            recipient_hash = value[:-2]
 
-        elif key == "internal_recipient_ids":
-            all_filters_obj = Q()
-            for recip in value:
-                hash = recip['hash']
-                parent = recip['parent']
+            if value.endswith('P'):
                 # TODO: Filter parent logic
-                filter_obj = Q(recipient_hash=hash)
-                all_filters_obj |= filter_obj
-            queryset &= model.objects.filter(all_filters_obj)
+                pass
+            else:
+                filter_obj = Q(recipient_hash=recipient_hash)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":

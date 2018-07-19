@@ -1,12 +1,10 @@
 # Stdlib imports
 import datetime
-import decimal
 
 # Core Django imports
 
 # Third-party app imports
 from rest_framework import status
-from model_mommy import mommy
 import pytest
 
 # Imports from your apps
@@ -165,7 +163,7 @@ def test_validate_duns_success_latest():
     assert validate_duns(duns) == duns
 
 
-def test_validate_duns_success_latest():
+def test_validate_dunsless_success_latest():
     duns = 'Dunsless Child'
     assert validate_duns(duns) == duns
 
@@ -192,6 +190,7 @@ def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch
 
     assert result == expected
 
+
 @pytest.mark.django_db
 def test_recipient_overview_success(client, state_data, refresh_matviews):
     # test small request - state
@@ -213,6 +212,7 @@ def test_recipient_overview_success(client, state_data, refresh_matviews):
     resp = client.get(recipient_overview_endpoint('Dunsless Child'))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == DUNSLESS_CHILD
+
 
 @pytest.mark.django_db
 def test_state_metadata_failure(client, state_data, refresh_matviews):
