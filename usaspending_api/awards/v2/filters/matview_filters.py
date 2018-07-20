@@ -11,7 +11,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
-
+from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             'award_type_codes',
             'agencies',
             'legal_entities',
+            'recipient_id',
             'recipient_search_text',
             'recipient_scope',
             'recipient_locations',
@@ -179,13 +180,15 @@ def matview_search_filter(filters, model, for_downloads=False):
                 all_filters_obj |= filter_obj
             queryset &= model.objects.filter(all_filters_obj)
 
-        elif key == "internal_recipient_id":
+        elif key == "recipient_id":
             filter_obj = Q()
             recipient_hash = value[:-2]
 
-            if value.endswith('P'):
-                # TODO: Filter parent logic
-                pass
+            if value.endswith('P'):  # For parent types, gather all of the children's transactions
+                children_duns_list = RecipientProfile.objects \
+                    .filter(recipient_hash=recipient_hash, recipient_level='P') \
+                    .values('recipient_affiliations')
+                filter_obj = Q(recipient_unique_id__in=list(children_duns_list)[0]['recipient_affiliations'])
             else:
                 filter_obj = Q(recipient_hash=recipient_hash)
             queryset &= model.objects.filter(filter_obj)
