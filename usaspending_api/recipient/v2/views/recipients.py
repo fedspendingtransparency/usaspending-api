@@ -156,41 +156,23 @@ def extract_business_types(recipient_name, recipient_duns):
     """
     business_categories = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)\
         .order_by('-update_date').values('business_categories').first()
-    return business_categories
+    return business_categories if business_categories is not None else []
 
 
-def obtain_recipient_totals(recipient_hash, recipient_level, year='latest', subawards=False):
+def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
     """ Extract the total amount and transaction count for the recipient_hash given the timeframe
 
         Args:
-            recipient_hash: uuid of the hash+duns to look up
+            recipient_id: string of hash(duns, name)-[recipient-level]
 
         Returns:
-            dict of the corresponding name and duns
+            total transactions, total amount
     """
     # Note: We could use the RecipientProfile to get the totals for last 12 months, thought we still need the count.
-
-    recipient_hashes = []
-
-    if recipient_level == 'P':
-        # Add only the children recipients
-        qs_affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')\
-            .values('recipient_affiliations')
-        affiliations = qs_affiliations[0]['recipient_affiliations']
-        qs_children = RecipientLookup.objects.filter(duns__in=affiliations).values('recipient_hash')
-        child_hashes = [result['recipient_hash'] for result in qs_children]
-        recipient_hashes.extend(child_hashes)
-    else:
-        # Child or recipient level
-        recipient_hashes.append(recipient_hash)
-
-    filters = reshape_filters(recipient_hash=recipient_hashes, year=year)
-    queryset = matview_search_filter(filters, UniversalTransactionView) \
-        .values('recipient_level', 'recipient_hash') \
-        .annotate(total=Sum('generated_pragmatic_obligation'), count=Count('recipient_hash')) \
-        .values('recipient_level', 'recipient_hash', 'total', 'count').first()
-
-    return queryset['total'], queryset['count']
+    filters = reshape_filters(recipient_id=recipient_id, year=year)
+    queryset = matview_search_filter(filters, UniversalTransactionView)
+    aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Count('transaction_id'))
+    return aggregates['total'], aggregates['count']
 
 class RecipientOverView(APIDocumentationView):
 
@@ -204,8 +186,7 @@ class RecipientOverView(APIDocumentationView):
         parent_name, parent_duns = extract_parent_from_hash(recipient_hash)
         location = extract_location(recipient_hash)
         business_types = extract_business_types(recipient_name, recipient_duns)
-        total, count = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
-        return Response({'total': total, 'count': count})
+        total, count = obtain_recipient_totals(id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
         result = {
