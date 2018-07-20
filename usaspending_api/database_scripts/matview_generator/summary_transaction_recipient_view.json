@@ -84,6 +84,9 @@
       "where": "pulled_from IS NOT NULL",
       "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
     }, {
+      "name": "recipient_unique_id",
+      "columns": [{"name": "recipient_unique_id"}]
+    }, {
       "name": "recipient_hash",
       "columns": [{"name": "recipient_hash"}]
     }
