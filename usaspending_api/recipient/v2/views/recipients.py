@@ -7,7 +7,6 @@ from usaspending_api.awards.models_matviews import SummaryTransactionView, Unive
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import RecipientLookup
@@ -16,6 +15,10 @@ from usaspending_api.recipient.models import DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
+
+
+def obtain_recipient_totals():
+    raise NotImplementedError('yee')
 
 
 def validate_hash(hash):
@@ -30,8 +33,7 @@ def validate_duns(duns):
         raise InvalidParameterException('DUNS not found: {}.'.format(duns))
 
 
-def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None, parent_duns=None, sort='desc', page=1,
-                   limit=None):
+def get_recipients(year=None, hash=None, duns=None, parent_duns=None, subawards=None):
     duns_list = []
     if duns:
         duns_list.append()
@@ -53,11 +55,6 @@ def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None,
             .annotate(total=Sum('generated_pragmatic_obligation'), count=Count()) \
             .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
 
-    queryset = queryset.order_by('-total' if sort == 'desc' else 'total')
-    total_count = queryset.count()
-    if limit:
-        queryset = queryset[(page - 1) * limit: page * limit]
-
     results = []
     for row in list(queryset):
         results.append(
@@ -70,8 +67,7 @@ def get_recipients(year=None, award_type_codes=None, subawards=False, duns=None,
             }
         )
 
-    page_metadata = get_simple_pagination_metadata(total_count, limit, page)
-    return results, page_metadata
+    return results
 
 
 def extract_location(recipient_hash):
