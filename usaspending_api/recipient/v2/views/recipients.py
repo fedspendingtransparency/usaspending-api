@@ -4,22 +4,12 @@ import uuid
 from rest_framework.response import Response
 from django.db.models import Q, F, Sum, Count
 
-<<<<<<< HEAD
-=======
-from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
->>>>>>> feature-recipient-profile-list-recipients
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
-<<<<<<< HEAD
-=======
-from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import RecipientLookup
->>>>>>> feature-recipient-profile-list-recipients
 
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
-from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.recipient.models import RecipientProfile, DUNS
 from usaspending_api.references.models import RecipientLookup, RefCountryCode, LegalEntity
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
