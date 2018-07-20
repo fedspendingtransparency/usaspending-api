@@ -24,7 +24,7 @@ def list_recipients_endpoint():
 
 
 @pytest.mark.django_db
-def test_state_metadata_failure(db):
+def test_state_metadata_failure():
     """Verify error on bad autocomplete request for budget function."""
     mommy.make(
         RecipientProfile,
@@ -35,6 +35,6 @@ def test_state_metadata_failure(db):
         last_12_months=-29470313.00,
     ),
 
-    filters = {'limit': 10}
-    meta, results = get_recipients(filters)
-    assert meta['count'] == 1
+    filters = {"limit": 10, "page": 1, "order": "desc", "sort": "amount"}
+    results, meta = get_recipients(filters=filters)
+    assert meta["total"] == 1
