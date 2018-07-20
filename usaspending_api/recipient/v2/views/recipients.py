@@ -95,6 +95,7 @@ def get_recipients(filters=None, sort='desc', page=1, limit=None):
 
     return results
 
+
 def extract_from_hash(recipient_hash):
     """ Extract the name and duns from the recipient hash
 
