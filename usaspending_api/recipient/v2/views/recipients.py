@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 RECIPIENT_TYPES = ['C', 'R', 'P']
 
 
-def obtain_recipient_totals():
-    raise NotImplementedError('yee')
-
-
 def validate_hash(hash):
     """ Validate [duns+name]-[recipient_type] hash
 
@@ -51,52 +47,7 @@ def validate_hash(hash):
     return uuid_hash, recipient_type
 
 
-def validate_duns(duns):
-    if not (isinstance(duns, str) and len(duns) == 9):
-        raise InvalidParameterException('Invalid DUNS: {}.'.format(duns))
-    elif not DUNS.objects.filter(awardee_or_recipient_unique=duns).count() > 0:
-        raise InvalidParameterException('DUNS not found: {}.'.format(duns))
-
-
-def get_recipients(filters=None, sort='desc', page=1, limit=None):
-    duns_list = []
-    if filters['duns']:
-        duns_list.append()
-    if filters['parent_duns']:
-        # TODO: Generate list of children via recipient profile table
-        duns_list = []
-
-    if filters['year'] == 'latest' or filters['year'] is None:
-        # Use the Recipient Profile View
-        year = filters['year']
-        filters = Q()  # recipient_profile_filters()
-        total_field = 'last_12_months' if year == 'latest' else 'all_fiscal_years'
-        queryset = RecipientProfile.objects.filter(filters).annotate(total=F(total_field)) \
-            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
-    else:
-        # Use the Universal Transaction Matview for specific years
-        filters = reshape_filters(**filters)
-        queryset = matview_search_filter(filters, UniversalTransactionView) \
-            .values('recipient_level', 'recipient_hash') \
-            .annotate(total=Sum('generated_pragmatic_obligation'), count=Count()) \
-            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
-
-    results = []
-    for row in list(queryset):
-        results.append(
-            {
-                'id': '{}-{}'.format(row['recipient_hash'], row['recipient_level']),
-                'duns': row['recipient_unique_id'],
-                'name': row['recipient_name'],
-                'recipient_level': row['recipient_level'],
-                'total': row['total']
-            }
-        )
-
-    return results
-
-
-def extract_from_hash(recipient_hash):
+def extract_name_duns_from_hash(recipient_hash):
     """ Extract the name and duns from the recipient hash
 
         Args:
@@ -107,6 +58,25 @@ def extract_from_hash(recipient_hash):
     """
     return RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name').first()
 
+
+def extract_parent_from_hash(recipient_hash):
+    """ Extract the parent name and parent duns from the recipient hash
+
+        Args:
+            recipient_hash: uuid of the hash+duns to look up
+
+        Returns:
+            parent_duns, parent_name
+    """
+    affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
+        .values('recipient_affiliations')
+    if not affiliations:
+        return None, None
+    else:
+        duns = affiliations[0]['recipient_affiliations'][0]
+        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns).values('legal_business_name').first()
+        name = duns_obj['legal_business_name']
+        return duns, name
 
 def extract_location(recipient_hash):
     """ Extract the location data via the recipient hash
@@ -150,7 +120,7 @@ def extract_location(recipient_hash):
         })
     else:
         # Extract the location from the latest legal entity
-        re_details = extract_from_hash(recipient_hash)
+        re_details = extract_name_duns_from_hash(recipient_hash)
         legal_entity = LegalEntity.objects.filter(recipient_name=re_details['legal_business_name'],
                                                   recipient_unique_id=re_details['duns']).\
             order_by('-update_date')\
@@ -174,14 +144,53 @@ def extract_location(recipient_hash):
     return location
 
 
-def extract_business_types(recipient_hash):
-    """ Extract the location from the latest legal entity """
-    re_details = extract_from_hash(recipient_hash)
-    business_categories = LegalEntity.objects.filter(recipient_name=re_details['legal_business_name'],
-                                                     recipient_unique_id=re_details['duns'])\
+def extract_business_types(recipient_name, recipient_duns):
+    """ Extract the location data via the recipient hash
+
+        Args:
+            recipient_name: name of the recipient
+            recipient_duns: duns of the recipient
+
+        Returns:
+            dict of business types info
+    """
+    business_categories = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)\
         .order_by('-update_date').values('business_categories').first()
     return business_categories
 
+
+def obtain_recipient_totals(recipient_hash, recipient_level, year='latest', subawards=False):
+    """ Extract the total amount and transaction count for the recipient_hash given the timeframe
+
+        Args:
+            recipient_hash: uuid of the hash+duns to look up
+
+        Returns:
+            dict of the corresponding name and duns
+    """
+    # Note: We could use the RecipientProfile to get the totals for last 12 months, thought we still need the count.
+
+    recipient_hashes = []
+
+    if recipient_level == 'P':
+        # Add only the children recipients
+        qs_affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')\
+            .values('recipient_affiliations')
+        affiliations = qs_affiliations[0]['recipient_affiliations']
+        qs_children = RecipientLookup.objects.filter(duns__in=affiliations).values('recipient_hash')
+        child_hashes = [result['recipient_hash'] for result in qs_children]
+        recipient_hashes.extend(child_hashes)
+    else:
+        # Child or recipient level
+        recipient_hashes.append(recipient_hash)
+
+    filters = reshape_filters(recipient_hash=recipient_hashes, year=year)
+    queryset = matview_search_filter(filters, UniversalTransactionView) \
+        .values('recipient_level', 'recipient_hash') \
+        .annotate(total=Sum('generated_pragmatic_obligation'), count=Count('recipient_hash')) \
+        .values('recipient_level', 'recipient_hash', 'total', 'count').first()
+
+    return queryset['total'], queryset['count']
 
 class RecipientOverView(APIDocumentationView):
 
@@ -189,33 +198,30 @@ class RecipientOverView(APIDocumentationView):
     def get(self, request, id):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        recipient_hash, recipient_type = validate_hash(id)
+        recipient_hash, recipient_level = validate_hash(id)
+        recipient_name, recipient_duns = extract_name_duns_from_hash(recipient_hash)
 
-        # Gather DUNS object via the hash
+        parent_name, parent_duns = extract_parent_from_hash(recipient_hash)
         location = extract_location(recipient_hash)
-        business_types = extract_business_types(recipient_hash)
+        business_types = extract_business_types(recipient_name, recipient_duns)
+        total, count = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
+        return Response({'total': total, 'count': count})
+        # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
-        # Gather totals
-        recipients, page_metadata = get_recipients(recipient_hash, year=year)
-        # sub_recipients, page_metadata = get_recipients(recipient_hash, year=year, subawards=True)
-
-        item = recipients[0]
-        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=item['recipient_unique_id'])
         result = {
-            'name': item['name'],
-            'duns': item['recipient_unique_id'],
-            'id': item['id'],
-            'recipient_level': item['recipient_level'],
-            'parent_name': duns_obj.ultimate_parent_legal_enti,
-            'parent_duns': duns_obj.ultimate_parent_unique_ide,
+            'name': recipient_name,
+            'duns': recipient_duns,
+            'id': id,
+            'recipient_level': recipient_level,
+            'parent_name': parent_name,
+            'parent_duns': parent_duns,
             'business_types': business_types,
             'location': location,
-            'total_prime_amount': item['total'],
-            # 'total_prime_awards': recipient_totals['count'],
-            # 'total_sub_amount': recipient_sub_totals['total'],
-            # 'total_sub_awards': recipient_sub_totals['count']
+            'total_transaction_amount': total,
+            'total_transactions': count,
+            # 'total_sub_transaction_amount': subtotal,
+            # 'total_sub_transaction_total': subcount
         }
-
         return Response(result)
 
 
