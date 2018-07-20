@@ -58,6 +58,10 @@ def get_recipients(award_type_codes=None, filters={}):
 
 
 class ListRecipients(APIDocumentationView):
+    """
+    This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+    endpoint_doc: /recipient/list_recipients.md
+    """
 
     @cache_response()
     def post(self, request):

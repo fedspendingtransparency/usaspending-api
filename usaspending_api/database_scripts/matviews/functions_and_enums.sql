@@ -9,7 +9,7 @@ CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M',
 
 
 CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC)
-RETURNS total_obligation_bins
+RETURNS public.total_obligation_bins
 IMMUTABLE PARALLEL SAFE
 AS $$
   DECLARE
