@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 RECIPIENT_TYPES = ['C', 'R', 'P']
 
 
-def validate_hash(hash):
+def validate_hash(recipient_id):
     """ Validate [duns+name]-[recipient_type] hash
 
         Args:
@@ -32,12 +32,12 @@ def validate_hash(hash):
         Raises:
             InvalidParameterException for invalid hashes
     """
-    if '-' not in hash:
+    if '-' not in recipient_id:
         raise InvalidParameterException('ID (\'{}\') doesn\'t include Recipient-Type'.format(hash))
-    recipient_type = hash[hash.rfind('-')+1:]
+    recipient_type = recipient_id[recipient_id.rfind('-')+1:]
     if recipient_type not in RECIPIENT_TYPES:
         raise InvalidParameterException('Invalid Recipient-Type: \'{}\''.format(recipient_type))
-    recipient_hash = hash[:hash.rfind('-')]
+    recipient_hash = recipient_id[:recipient_id.rfind('-')]
     try:
         uuid_hash = uuid.UUID(recipient_hash)
     except ValueError:
@@ -177,22 +177,25 @@ def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
 class RecipientOverView(APIDocumentationView):
 
     @cache_response()
-    def get(self, request, id):
+    def get(self, request, recipient_id):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        recipient_hash, recipient_level = validate_hash(id)
+        recipient_hash, recipient_level = validate_hash(recipient_id)
         recipient_name, recipient_duns = extract_name_duns_from_hash(recipient_hash)
 
-        parent_name, parent_duns = extract_parent_from_hash(recipient_hash)
+        if recipient_level != 'R':
+            parent_name, parent_duns = extract_parent_from_hash(recipient_hash)
+        else:
+            parent_name, parent_duns = None, None
         location = extract_location(recipient_hash)
         business_types = extract_business_types(recipient_name, recipient_duns)
-        total, count = obtain_recipient_totals(id, year=year, subawards=False)
+        total, count = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
         result = {
             'name': recipient_name,
             'duns': recipient_duns,
-            'id': id,
+            'id': recipient_id,
             'recipient_level': recipient_level,
             'parent_name': parent_name,
             'parent_duns': parent_duns,
