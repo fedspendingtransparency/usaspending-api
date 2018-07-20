@@ -179,7 +179,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 all_filters_obj |= filter_obj
             queryset &= model.objects.filter(all_filters_obj)
 
-        elif key == "internal_recipient_id":
+        elif key == "recipient_id":
             filter_obj = Q()
             recipient_hash = value[:-2]
 
