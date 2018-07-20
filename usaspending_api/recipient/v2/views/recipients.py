@@ -4,10 +4,19 @@ import uuid
 from rest_framework.response import Response
 from django.db.models import Q, F, Sum, Count
 
+<<<<<<< HEAD
+=======
+from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+>>>>>>> feature-recipient-profile-list-recipients
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
+<<<<<<< HEAD
+=======
+from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.references.models import RecipientLookup
+>>>>>>> feature-recipient-profile-list-recipients
 
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
@@ -18,6 +27,10 @@ from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 logger = logging.getLogger(__name__)
 
 RECIPIENT_TYPES = ['C', 'R', 'P']
+
+
+def obtain_recipient_totals():
+    raise NotImplementedError('yee')
 
 
 def validate_hash(hash):
@@ -74,13 +87,9 @@ def get_recipients(filters=None, sort='desc', page=1, limit=None):
         # Use the Universal Transaction Matview for specific years
         filters = reshape_filters(**filters)
         queryset = matview_search_filter(filters, UniversalTransactionView) \
-            .values('recipient_level', 'recipient_hash').annotate(total=Sum('generated_pragmatic_obligation'), count=Count()) \
+            .values('recipient_level', 'recipient_hash') \
+            .annotate(total=Sum('generated_pragmatic_obligation'), count=Count()) \
             .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
-
-    queryset = queryset.order_by('-total' if sort == 'desc' else 'total')
-    total_count = queryset.count()
-    if limit:
-        queryset = queryset[(page - 1) * limit: page * limit]
 
     results = []
     for row in list(queryset):
@@ -94,8 +103,7 @@ def get_recipients(filters=None, sort='desc', page=1, limit=None):
             }
         )
 
-    page_metadata = get_simple_pagination_metadata(total_count, limit, page)
-    return results, page_metadata
+    return results
 
 def extract_from_hash(recipient_hash):
     """ Extract the name and duns from the recipient hash
@@ -201,6 +209,7 @@ class RecipientOverView(APIDocumentationView):
         # sub_recipients, page_metadata = get_recipients(recipient_hash, year=year, subawards=True)
 
         item = recipients[0]
+        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=item['recipient_unique_id'])
         result = {
             'name': item['name'],
             'duns': item['recipient_unique_id'],
@@ -210,9 +219,8 @@ class RecipientOverView(APIDocumentationView):
             'parent_duns': duns_obj.ultimate_parent_unique_ide,
             'business_types': business_types,
             'location': location,
-            'business_types': '',
             'total_prime_amount': item['total'],
-            'total_prime_awards': recipient_totals['count'],
+            # 'total_prime_awards': recipient_totals['count'],
             # 'total_sub_amount': recipient_sub_totals['total'],
             # 'total_sub_awards': recipient_sub_totals['count']
         }

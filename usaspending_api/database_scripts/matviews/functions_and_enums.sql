@@ -8,8 +8,8 @@ CREATE EXTENSION IF NOT EXISTS intarray;
 CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
 
 
-CREATE OR REPLACE FUNCTION obligation_to_enum(award NUMERIC)
-RETURNS total_obligation_bins
+CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC)
+RETURNS public.total_obligation_bins
 IMMUTABLE PARALLEL SAFE
 AS $$
   DECLARE
@@ -26,11 +26,10 @@ AS $$
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION recipient_normalization_pair(original_name TEXT, search_duns TEXT)
+CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT)
 RETURNS RECORD
 STABLE
 AS $$
-CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
   DECLARE
     DECLARE result text;
   BEGIN

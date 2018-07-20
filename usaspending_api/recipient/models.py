@@ -70,13 +70,13 @@ class HistoricParentDUNS(models.Model):
 class RecipientProfile(models.Model):
     """Table used for speed improvements for the recipient profile listings"""
     recipient_level = models.CharField(max_length=1)
-    recipient_hash = models.UUIDField()
-    recipient_unique_id = models.TextField()
-    recipient_name = models.TextField()
+    recipient_hash = models.UUIDField(null=True)
+    recipient_unique_id = models.TextField(null=True)
+    recipient_name = models.TextField(null=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
-    last_12_months = models.DecimalField(max_digits=23, decimal_places=2)
+    last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'recipient_profile'
         unique_together = ('recipient_level', 'recipient_hash')
