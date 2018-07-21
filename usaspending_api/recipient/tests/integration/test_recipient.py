@@ -1,238 +1,384 @@
 # Stdlib imports
 import datetime
+import pytest
+import uuid
 
 # Core Django imports
 
 # Third-party app imports
-from rest_framework import status
-import pytest
+from model_mommy import mommy
+from django_mock_queries.query import MockModel
 
 # Imports from your apps
+from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
-from usaspending_api.recipient.v2.views.recipients import validate_duns, obtain_recipient_totals
+from usaspending_api.recipient.v2.views import recipients
+from usaspending_api.recipient.models import RecipientProfile, DUNS
+from usaspending_api.references.models import RefCountryCode, Location, LegalEntity
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
+INSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 - 2))
 OUTSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 + 2))
 CURRENT_FISCAL_YEAR = generate_fiscal_year(TODAY)
 
-
-EXPECTED_PARENT = {
-    'name': 'Test Parent',
-    'duns': '123456789',
-    'parent_name': None,
-    'parent_duns': None,
-    'location': {
-        'address_line1': '123 Sesame St',
-        'address_line2': '',
-        'address_line3': '',
-        'foreign_province': '',
-        'city_name': '',
-        'county_name': '',
-        'state_code': 'VA',
-        'zip': '22102',
-        'zip4': '',
-        'foreign_postal_code': '',
-        'country_name': '',
-        'country_code': 'USA',
-        'congressional_code': '05'
+TEST_REF_COUNTRY_CODE = {
+    'PARENT COUNTRY CODE': {
+        'country_code': 'PARENT COUNTRY CODE',
+        'country_name': 'PARENT COUNTRY NAME'
     },
-    'business_types': [
-        'Corporate Entity',
-        'For Profit Organization'
-    ],
-    'total_prime_amount': 100000,
-    'total_prime_awards': 1,
-    # 'total_sub_amount': 1,
-    # 'total_sub_awards': 100000,
-    'recipient_level': 'P'
+    'CHILD COUNTRY CODE': {
+        'country_code': 'CHILD COUNTRY CODE',
+        'country_name': 'CHILD COUNTRY NAME'
+    }
 }
-EXPECTED_CHILD = {
-    'name': 'Test Child',
-    'duns': '987654321',
-    'parent_name': 'Test Parent',
-    'parent_duns': '123456789',
-    'location': {
-        'address_line1': '124 Sesame St',
-        'address_line2': '',
-        'address_line3': '',
-        'foreign_province': '',
-        'city_name': '',
-        'county_name': '',
-        'state_code': 'VA',
-        'zip': '22105',
-        'zip4': '',
-        'foreign_postal_code': '',
-        'country_name': '',
-        'country_code': 'USA',
-        'congressional_code': '05'
+TEST_LOCATIONS = {
+    '00077a9a-5a70-8919-fd19-330762af6b84': {
+        'address_line1': 'PARENT ADDRESS LINE 1',
+        'address_line2': 'PARENT ADDRESS LINE 2',
+        'address_line3': 'PARENT ADDRESS LINE 3',
+        'county_name': 'PARENT COUNTY',
+        'city_name': 'PARENT CITY',
+        'congressional_code': 'PARENT CONGRESSIONAL DISTRICT',
+        'location_country_code': 'PARENT COUNTRY CODE',
+        'country_name': 'PARENT COUNTRY NAME',
+        'state_code': 'PARENT STATE',
+        'zip4': 'PARENT ZIP',
+        'zip_4a': 'PARENT ZIP4',
+        'foreign_province': 'PARENT FOREIGN PROVINCE',
+        'foreign_postal_code': 'PARENT FOREIGN POSTAL CODE'
     },
-    'business_types': [
-        'Corporate Entity',
-        'For Profit Organization'
-    ],
-    'total_prime_amount': 100000,
-    'total_prime_awards': 1,
-    # 'total_sub_amount': 1,
-    # 'total_sub_awards': 100000,
-    'recipient_level': 'C'
+    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
+        'address_line1': 'CHILD ADDRESS LINE 1',
+        'address_line2': 'CHILD ADDRESS LINE 2',
+        'address_line3': 'CHILD ADDRESS LINE 3',
+        'county_name': 'CHILD COUNTY',
+        'city_name': 'CHILD CITY',
+        'congressional_code': 'CHILD CONGRESSIONAL DISTRICT',
+        'location_country_code': 'CHILD COUNTRY CODE',
+        'country_name': 'CHILD COUNTRY NAME',
+        'state_code': 'CHILD STATE',
+        'zip4': 'CHILD ZIP',
+        'zip_4a': 'CHILD ZIP4',
+        'foreign_province': 'CHILD FOREIGN PROVINCE',
+        'foreign_postal_code': 'CHILD FOREIGN POSTAL CODE'
+    }
 }
-EXPECTED_RECIPIENT = {
-    'name': 'Test Recipient',
-    'duns': '456789123',
-    'parent_name': None,
-    'parent_duns': None,
-    'location': {
-        'address_line1': '125 Sesame St',
-        'address_line2': '',
-        'address_line3': '',
-        'foreign_province': '',
-        'city_name': '',
-        'county_name': '',
-        'state_code': 'VA',
-        'zip': '22105',
-        'zip4': '',
-        'foreign_postal_code': '',
-        'country_name': '',
-        'country_code': 'USA',
-        'congressional_code': '05'
-    },
-    'business_types': [
-        'Corporate Entity',
-        'For Profit Organization'
-    ],
-    'total_prime_amount': 100000,
-    'total_prime_awards': 1,
-    # 'total_sub_amount': 1,
-    # 'total_sub_awards': 100000,
-    'recipient_level': 'R'
+MAP_DUNS_TO_CONTRACT = {
+    'address_line_1': 'address_line1',
+    'address_line_2': 'address_line2',
+    'city': 'city_name',
+    'congressional_district': 'congressional_code',
+    'state': 'state_code'
 }
-DUNSLESS_CHILD = {
-    'name': 'Dunsless Child',
-    'duns': None,
-    'parent_name': 'Test Parent',
-    'parent_duns': '789123456',
-    'location': {
-        'address_line1': '124 Sesame St',
-        'address_line2': '',
-        'address_line3': '',
-        'foreign_province': '',
-        'city_name': '',
-        'county_name': '',
-        'state_code': 'VA',
-        'zip': '22105',
-        'zip4': '',
-        'foreign_postal_code': '',
-        'country_name': '',
-        'country_code': 'USA',
-        'congressional_code': '05'
-    },
-    'business_types': [
-        'Corporate Entity',
-        'For Profit Organization'
-    ],
-    'total_prime_amount': 100000,
-    'total_prime_awards': 1,
-    # 'total_sub_amount': 1,
-    # 'total_sub_awards': 100000,
-    'recipient_level': 'C'
+MAP_LOCATION_TO_CONTRACT = {
+    'zip4': 'zip',
+    'zip_4a': 'zip4',
+    'location_country_code': 'country_code'
 }
 
+TEST_DUNS = {
+    '000000001': {
+        'awardee_or_recipient_uniqu': '000000001',
+        'legal_business_name': 'PARENT RECIPIENT',
+        'address_line_1': 'PARENT ADDRESS LINE 1',
+        'address_line_2': 'PARENT ADDRESS LINE 2',
+        'city': 'PARENT CITY',
+        'congressional_district': 'PARENT CONGRESSIONAL DISTRICT',
+        'country_code': 'PARENT COUNTRY CODE',
+        'state': 'PARENT STATE',
+        'zip': 'PARENT ZIP',
+        'zip4': 'PARENT ZIP4',
+        'business_types_codes': ['PARENT BUSINESS TYPES CODES']
+    },
+    '000000002': {
+        'awardee_or_recipient_uniqu': '000000002',
+        'legal_business_name': 'CHILD RECIPIENT',
+        'address_line_1': 'CHILD ADDRESS LINE 1',
+        'address_line_2': 'CHILD ADDRESS LINE 2',
+        'city': 'CHILD CITY',
+        'congressional_district': 'CHILD CONGRESSIONAL DISTRICT',
+        'country_code': 'CHILD COUNTRY CODE',
+        'state': 'CHILD STATE',
+        'zip': 'CHILD ZIP',
+        'zip4': 'CHILD ZIP4',
+        'business_types_codes': ['CHILD BUSINESS TYPES CODES']
+    }
+}
+TEST_RECIPIENT_LOOKUPS = {
+    '00077a9a-5a70-8919-fd19-330762af6b84': {
+        'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
+        'duns': '000000001',
+        'legal_business_name': 'PARENT RECIPIENT'
+    },
+    '392052ae-92ab-f3f4-d9fa-b57f45b7750b': {
+        'recipient_hash': '392052ae-92ab-f3f4-d9fa-b57f45b7750b',
+        'duns': '000000002',
+        'legal_business_name': 'CHILD RECIPIENT'
+    },
+    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
+        'recipient_hash': '00002940-fdbe-3fc5-9252-d46c0ae8758c',
+        'duns': None,
+        'legal_business_name': 'OTHER RECIPIENT'
+    }
+}
+TEST_RECIPIENT_PROFILES = {
+    # Parent Recipient
+    '00077a9a-5a70-8919-fd19-330762af6b84-P':{
+        'recipient_level': 'P',
+        'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
+        'recipient_unique_id': '000000001',
+        'recipient_name': 'PARENT RECIPIENT',
+        'recipient_affiliations': ['000000001', '000000002']
+    },
+    # Child Recipient 1 - lists itself as both parent and child
+    '00077a9a-5a70-8919-fd19-330762af6b84-C': {
+        'recipient_level': 'C',
+        'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
+        'recipient_unique_id': '000000001',
+        'recipient_name': 'PARENT RECIPIENT',
+        'recipient_affiliations': ['000000001']
+    },
+    # Child Recipient 2 - different from parent duns
+    '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C': {
+        'recipient_level': 'C',
+        'recipient_hash': '392052ae-92ab-f3f4-d9fa-b57f45b7750b',
+        'recipient_unique_id': '000000002',
+        'recipient_name': 'CHILD RECIPIENT',
+        'recipient_affiliations': ['000000001']
+    },
+    # Other Recipient
+    '00002940-fdbe-3fc5-9252-d46c0ae8758c-R': {
+        'recipient_level': 'R',
+        'recipient_hash': '00002940-fdbe-3fc5-9252-d46c0ae8758c',
+        'recipient_unique_id': None,
+        'recipient_name': 'OTHER RECIPIENT',
+        'recipient_affiliations': []
+    }
+}
+TEST_UNIVERSAL_TRANSACTIONS = {
+    'latest': {
+        'transaction_id': '1',
+        'action_date': INSIDE_OF_LATEST,
+        'generated_pragmatic_obligation': 100
+    },
+    'FY2016': {
+        'transaction_id': '2',
+        'action_date': datetime.datetime(2016, 10, 1),
+        'generated_pragmatic_obligation': 50
+    }
+}
 
-def list_recipients_endpoint():
-    return '/api/v2/recipient/duns/'
+
+@pytest.mark.django_db
+def test_validate_recipient_id_success():
+    """ Testing a run of a valid recipient id """
+    recipient_id = list(TEST_RECIPIENT_PROFILES.keys())[0]
+    mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
+
+    expected_hash = uuid.UUID(recipient_id[:-1])
+    expected_level = recipient_id[-1]
+    try:
+        recipient_hash, recipient_level = recipients.validate_recipient_id(recipient_id)
+        assert recipient_hash == expected_hash
+        assert recipient_level == expected_level
+    except InvalidParameterException:
+        assert False
 
 
-def recipient_overview_endpoint(duns, year=None):
-    url = '/api/v2/recipient/duns/{}/'.format(duns)
-    if year:
-        url = '{}?year={}'.format(url, year)
-    return url
+@pytest.mark.django_db
+def test_validate_recipient_id_failures():
+    """ Testing a run of invalid recipient ids """
+    recipient_id = list(TEST_RECIPIENT_PROFILES.keys())[0]
+    mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
+
+    def call_validate_recipient_id(recipient_id):
+        try:
+            recipients.validate_recipient_id(recipient_id)
+            return False
+        except InvalidParameterException:
+            return True
+
+    # Test with no dashes
+    recipient_id = 'broken_recipient_id'
+    assert call_validate_recipient_id(recipient_id) == True
+
+    # Test with invalid recipient level
+    recipient_id = 'broken_recipient-id'
+    assert call_validate_recipient_id(recipient_id) == True
+
+    # Test with invalid hash
+    recipient_id = 'broken_recipient-R'
+    assert call_validate_recipient_id(recipient_id) == True
+
+    # Test with id not available
+    recipient_id = '00002940-fdbe-3fc5-9252-000000-R'
+    assert call_validate_recipient_id(recipient_id) == True
 
 
-def recipient_childen_endpoint(duns, year=None):
-    url = '/api/v2/recipient/children/{}/'.format(duns)
-    if year:
-        url = '{}?year={}'.format(url, year)
-    return url
+@pytest.mark.django_db
+def test_extract_name_duns_from_hash(mock_reference_matviews):
+    """ Testing extracting name and duns from the recipient hash """
+    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
 
+    expected_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
+    expected_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
+    duns, name = recipients.extract_name_duns_from_hash(recipient_hash)
+    assert duns == expected_duns
+    assert name == expected_name
+
+
+@pytest.mark.django_db
+def test_extract_parent_from_hash():
+    """ Testing extracting parent duns/name from recipient hash"""
+    # This one specifically has to be a child
+    recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_hash']
+    parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_affiliations'][0]
+    mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
+    # Model Mommy doesn't like ArrayFields
+    test_duns_model = TEST_DUNS[parent_duns].copy()
+    test_duns_model.pop('business_types_codes')
+    mommy.make(DUNS, **test_duns_model)
+
+    expected_name = test_duns_model['legal_business_name']
+    expected_duns = parent_duns
+    parent_duns, parent_name = recipients.extract_parent_from_hash(recipient_hash)
+    assert parent_duns == expected_duns
+    assert parent_name == expected_name
+
+
+@pytest.mark.django_db
+def test_extract_location_duns(mock_reference_matviews):
+    """ Testing extracting location data from recipient hash using the DUNS table """
+    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    # Model Mommy doesn't like ArrayFields
+    test_duns_model = TEST_DUNS[recipient_duns].copy()
+    test_duns_model.pop('business_types_codes')
+    country_code = test_duns_model['country_code']
+    mommy.make(DUNS, **test_duns_model)
+    mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
+
+    non_location_fields = ['awardee_or_recipient_uniqu', 'legal_business_name']
+    additional_blank_fields = ['address_line3', 'foreign_province', 'county_name', 'foreign_postal_code']
+    expected_location = test_duns_model.copy()
+    for non_location_field in non_location_fields:
+        del expected_location[non_location_field]
+    expected_location['country_name'] = TEST_REF_COUNTRY_CODE[country_code]['country_name']
+    for additional_blank_field in additional_blank_fields:
+        expected_location[additional_blank_field] = None
+    for k in MAP_DUNS_TO_CONTRACT:
+        value = expected_location[k]
+        del expected_location[k]
+        expected_location[MAP_DUNS_TO_CONTRACT[k]] = value
+    location = recipients.extract_location(recipient_hash)
+    assert location == expected_location
+
+
+@pytest.mark.django_db
+def test_extract_location_le(mock_reference_matviews):
+    """ Testing extracting location data from recipient hash using the Legal Entity table """
+    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
+    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    location = TEST_LOCATIONS[recipient_hash]
+    mock_location = mommy.make(Location, **TEST_LOCATIONS[recipient_hash])
+    mommy.make(LegalEntity, location=mock_location, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
+
+    expected_location = location.copy()
+    for k in MAP_LOCATION_TO_CONTRACT:
+        value = expected_location[k]
+        del expected_location[k]
+        expected_location[MAP_LOCATION_TO_CONTRACT[k]] = value
+    location = recipients.extract_location(recipient_hash)
+    assert location == expected_location
+
+
+@pytest.mark.django_db
+def test_extract_business_categories(mock_reference_matviews):
+    """ Testing extracting business categories from the recipient name/duns """
+    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
+    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
+    expected_business_cat = ['expected', 'business', 'cat']
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name=recipient_name,
+               recipient_unique_id=recipient_duns)
+
+    business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
+    assert business_cat == expected_business_cat
 
 @pytest.mark.skip
-def test_validate_duns_success_latest():
-    duns = '123456789'
-    assert validate_duns(duns) == duns
+@pytest.mark.django_db
+def test_obtain_recipient_totals_year(mock_matviews_qs):
+    """ Testing recipient totals with the latest 12 months """
+    # Testing with specific child
+    recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    recipient_hash = recipient_id[:-2]
+    # load all of the transactions
+    mock_transactions = []
+    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+        transaction['recipient_hash'] = recipient_hash
+        mock_transactions.append(MockModel(**transaction))
+    add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
+    # Latest
+    expected_total = 100
+    expected_count = 1
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='latest', subawards=False)
+    assert total == expected_total
+    assert count == expected_count
+
+    # All
+    expected_total = 150
+    expected_count = 2
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='all', subawards=False)
+    assert total == expected_total
+    assert count == expected_count
+
+    # FY2015
+    expected_total = 50
+    expected_count = 1
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='2017', subawards=False)
+    assert total == expected_total
+    assert count == expected_count
 
 @pytest.mark.skip
-def test_validate_dunsless_success_latest():
-    duns = 'Dunsless Child'
-    assert validate_duns(duns) == duns
-
-
-@pytest.mark.skip
-def test_validate_duns_failure():
-    duns = 'duns not found'
-
-    with pytest.raises(InvalidParameterException):
-        validate_duns(duns)
+@pytest.mark.django_db
+def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
+    """ Testing recipient totals with the latest 12 months """
+    pass
 
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_obtain_state_totals(state_view_data, refresh_matviews):
-    result = obtain_recipient_totals('01', str(generate_fiscal_year(OUTSIDE_OF_LATEST)), ['A'])
-    expected = {'pop_state_code': 'AB', 'total': 10, 'count': 1}
-    assert result == expected
-
+def test_recipient_overview():
+    """ Testing the overall functionality of the recipient overview endpoint """
+    pass
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch):
-    monkeypatch.setattr('usaspending_api.recipient.v2.views.states.VALID_FIPS', {'02': {'code': 'No State'}})
-    result = obtain_recipient_totals('02')
-    expected = {'pop_state_code': None, 'total': 0, 'count': 0}
-
-    assert result == expected
-
+def test_extract_hash_name_from_duns():
+    """ Testing extracting the hash/name from a DUNS """
+    pass
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_recipient_overview_success(client, state_data, refresh_matviews):
-    # test small request - state
-    resp = client.get(recipient_overview_endpoint('123456789'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == EXPECTED_PARENT
-
-    # test small request - district
-    resp = client.get(recipient_overview_endpoint('987654321'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == EXPECTED_CHILD
-
-    # test small request - territory
-    resp = client.get(recipient_overview_endpoint('456789123'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == EXPECTED_RECIPIENT
-
-    # test small request - territory
-    resp = client.get(recipient_overview_endpoint('Dunsless Child'))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == DUNSLESS_CHILD
-
+def test_child_recipient_success():
+    """ Testing successfull child recipient calls """
+    pass
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_state_metadata_failure(client, state_data, refresh_matviews):
-    """Verify error on bad autocomplete request for budget function."""
-
-    # There is no DUNS with 999999
-    resp = client.get(recipient_overview_endpoint('999999999'))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-    # There is no FIPS with 03
-    resp = client.get(recipient_overview_endpoint('123456789', 'break'))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-    # test
-    resp = client.get(recipient_overview_endpoint('duns not found'))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+def test_child_recipient_failures():
+    """ Testing failed child recipient calls """
+    pass

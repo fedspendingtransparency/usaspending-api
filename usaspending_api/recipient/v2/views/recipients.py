@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from rest_framework.response import Response
-from django.db.models import Q, F, Sum, Count
+from django.db.models import F, Sum, Count
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -16,7 +16,11 @@ from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
 
-RECIPIENT_LEVELS = ['C', 'R', 'P']
+# Recipient Levels
+#   - P = Parent Recipient, There is at least one child recipient that lists this recipient as a parent
+#   - C = Child Recipient, References a parent recipient
+#   - R = Recipient, No parent info provided
+RECIPIENT_LEVELS = ['P', 'C', 'R']
 
 
 def validate_recipient_id(recipient_id):
@@ -82,6 +86,7 @@ def extract_parent_from_hash(recipient_hash):
         duns = affiliations[0]['recipient_affiliations'][0]
         duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns).values('legal_business_name').first()
         return duns, duns_obj['legal_business_name']
+
 
 def extract_location(recipient_hash):
     """ Extract the location data via the recipient hash
@@ -181,6 +186,7 @@ def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
     total = aggregates['total'] if aggregates['total'] else 0
     count = aggregates['count'] if aggregates['count'] else 0
     return total, count
+
 
 class RecipientOverView(APIDocumentationView):
 
