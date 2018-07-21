@@ -14,7 +14,7 @@ git+https://github.com/nmonga91/django-mock-queries#egg=django-mock-queries
 django-queryset-csv==1.0.0
 django-simple-history==1.8.2
 django-spaghetti-and-meatballs==0.2.2
-Django==1.11.4
+Django==2.0.7
 djangorestframework==3.4.6
 drf-extensions==0.3.1
 drf-tracking==1.1.0
