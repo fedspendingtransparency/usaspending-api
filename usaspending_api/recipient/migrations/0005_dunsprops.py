@@ -9,7 +9,7 @@ from django.contrib.postgres.fields import ArrayField
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recipient', '0003_historicparentduns'),
+        ('recipient', '0004_auto_20180719_2100'),
     ]
 
     operations = [
