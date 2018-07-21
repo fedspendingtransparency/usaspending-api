@@ -45,23 +45,27 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
     endpoint_doc: /advanced_award_search/spending_over_time.md
     """
+
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        groupings = {
-            "quarter": "q", "q": "q",
-            "fiscal_year": "fy", "fy": "fy",
-            "month": "m", "m": "m",
-        }
+        groupings = {"quarter": "q", "q": "q", "fiscal_year": "fy", "fy": "fy", "month": "m", "m": "m"}
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {"name": "group", "key": "group", "type": "enum", "enum_values": list(groupings.keys()), "default": "fy"},
-            {"name": "recipient_id", "key": "filters|recipient_id", "type": "text", "text_type": "search",
-                "optional": False},
+            {
+                "name": "recipient_id",
+                "key": "filters|recipient_id",
+                "type": "text",
+                "text_type": "search",
+                "optional": False,
+            },
         ]
         advanced_search_filters = [
             # add "recipient_id" once another PR is merged
-            model for model in copy.deepcopy(AWARD_FILTER) if model["name"] in ("time_period", "award_type_codes")
+            model
+            for model in copy.deepcopy(AWARD_FILTER)
+            if model["name"] in ("time_period", "award_type_codes")
         ]
         models.extend(advanced_search_filters)
         json_request = TinyShield(models).block(request.data)
@@ -74,33 +78,27 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             raise NotImplementedError("subawards are not implemented yet")
 
         queryset = combine_date_range_queryset(
-            filters["time_period"],
-            UniversalTransactionView,
-            API_SEARCH_MIN_DATE,
-            API_MAX_DATE
+            filters["time_period"], UniversalTransactionView, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
         queryset = queryset.filter(recipient_hash=filters["recipient_id"][:-2])
 
         values = ["year"]
         if groupings[json_request["group"]] == "m":
-            queryset = queryset.annotate(
-                month=Month("action_date"),
-                year=FiscalYear("action_date"))
+            queryset = queryset.annotate(month=Month("action_date"), year=FiscalYear("action_date"))
             values.append("month")
 
         elif groupings[json_request["group"]] == "q":
-            queryset = queryset.annotate(
-                quarter=FiscalQuarter("action_date"),
-                year=FiscalYear("action_date"))
+            queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), year=FiscalYear("action_date"))
             values.append("quarter")
 
         elif groupings[json_request["group"]] == "fy":
             queryset = queryset.annotate(year=FiscalYear("action_date"))
 
-        queryset = queryset \
-            .values(*values) \
-            .annotate(award_ids=ArrayAgg("award_id")) \
+        queryset = (
+            queryset.values(*values)
+            .annotate(award_ids=ArrayAgg("award_id"))
             .order_by(*["-{}".format(value) for value in values])
+        )
 
         results = []
         previous_awards = set()
