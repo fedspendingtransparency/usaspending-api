@@ -89,6 +89,7 @@ class UniversalTransactionView(models.Model):
 
 
 class SummaryTransactionView(models.Model):
+    award_ids = ArrayField(models.IntegerField(), default=list)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -340,6 +341,7 @@ class SummaryCfdaNumbersView(models.Model):
 
 
 class SummaryTransactionMonthView(models.Model):
+    award_ids = ArrayField(models.IntegerField(), default=list)
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()

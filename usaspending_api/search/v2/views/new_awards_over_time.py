@@ -3,24 +3,34 @@ import logging
 
 from django.conf import settings
 from django.contrib.postgres.aggregates.general import ArrayAgg
+from django.db.models.aggregates import Aggregate
 from django.db.models import Func, IntegerField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import new_awards_summary
-from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
+# from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
+# from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
+
+
+class ArrayCat(Aggregate):
+    function = 'ARRAY_CAT'
+
+    def convert_value(self, value, expression, connection, context):
+        if not value:
+            return []
+        return value
 
 
 class Month(Func):
@@ -84,9 +94,6 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         queryset, model = new_awards_summary(filters)
 
-        queryset = combine_date_range_queryset(
-            filters["time_period"], model, API_SEARCH_MIN_DATE, API_MAX_DATE
-        )
         if is_parent:
             # there is only one record with that hash and recipient_level = 'P'
             parent_duns_rows = (RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
@@ -111,16 +118,18 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         elif groupings[json_request["group"]] == "fy":
             queryset = queryset.annotate(year=FiscalYear("action_date"))
 
-        print('------------------------------')
-        print(model.__dict__)
-        print(str(model))
-        return Response()
-        # if model == 'UniversalTransactionView'
-        queryset = (
-            queryset.values(*values)
-            .annotate(award_ids=ArrayAgg("award_id"))
-            .order_by(*["-{}".format(value) for value in values])
-        )
+        if model == 'UniversalTransactionView':
+            queryset = (
+                queryset.values(*values)
+                .annotate(award_ids=ArrayAgg("award_id"))
+                .order_by(*["-{}".format(value) for value in values])
+            )
+        else:
+            queryset = (
+                queryset.values(*values)
+                .annotate(award_ids=ArrayCat("award_ids"))
+                .order_by(*["-{}".format(value) for value in values])
+            )
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
