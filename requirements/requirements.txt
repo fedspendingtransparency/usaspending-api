@@ -4,7 +4,7 @@ bidict==0.13.1
 boto3==1.4.4
 botocore==1.5.46
 codeclimate-test-reporter==0.1.2
-coverage==4.2
+coverage==4.5.1
 dj-database-url==0.4.1
 django-cors-headers==1.2.2
 django-debug-toolbar==1.7
