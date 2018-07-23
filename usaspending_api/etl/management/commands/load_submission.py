@@ -641,8 +641,12 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     start_time = datetime.now()
     awards_touched = []
 
-    # for row in award_financial_data:
-    for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
+    # format award_financial_frame
+    float_cols = ['transaction_obligated_amou']
+    award_financial_frame[float_cols] = award_financial_frame[float_cols].fillna(0)
+    award_financial_frame = award_financial_frame.replace({np.nan: None})
+
+    for index, row in enumerate(award_financial_frame.to_dict(orient='records'), 1):
         if not (index % 100):
             logger.info('C File Load: Loading row {} of {} ({})'.format(str(index),
                                                                         str(total_rows),
