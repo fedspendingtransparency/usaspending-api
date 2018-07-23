@@ -185,10 +185,14 @@ def matview_search_filter(filters, model, for_downloads=False):
             recipient_hash = value[:-2]
 
             if value.endswith('P'):  # For parent types, gather all of the children's transactions
-                children_duns_list = RecipientProfile.objects \
-                    .filter(recipient_hash=recipient_hash, recipient_level='P') \
-                    .values('recipient_affiliations')
-                filter_obj = Q(recipient_unique_id__in=list(children_duns_list)[0]['recipient_affiliations'])
+                parent_duns_rows = (RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
+                    .values('recipient_unique_id')
+                )
+                if len(parent_duns_rows) == 1:
+                    parent_duns = parent_duns_rows[0]['recipient_unique_id']
+                    filter_obj = Q(parent_recipient_unique_id=parent_duns)
+                elif len(parent_duns_rows) > 2:
+                    raise InvalidParameterException('Non-unique Record in ')
             else:
                 filter_obj = Q(recipient_hash=recipient_hash)
             queryset &= model.objects.filter(filter_obj)
