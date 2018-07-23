@@ -268,7 +268,8 @@ def get_pagination(results, limit, page, benchmarks=False):
 def get_pagination_metadata(total_return_count, limit, page):
     page_metadata = {
         "page": page,
-        "count": total_return_count,
+        "total": total_return_count,
+        "limit": limit,
         "next": None,
         "previous": None,
         "hasNext": False,
