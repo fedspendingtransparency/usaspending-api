@@ -185,7 +185,8 @@ def matview_search_filter(filters, model, for_downloads=False):
             recipient_hash = value[:-2]
 
             if value.endswith('P'):  # For parent types, gather all of the children's transactions
-                parent_duns_rows = (RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
+                parent_duns_rows = (
+                    RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
                     .values('recipient_unique_id')
                 )
                 if len(parent_duns_rows) == 1:
