@@ -11,7 +11,7 @@
     "",
     "  MD5(",
     "    UPPER((",
-    "      SELECT duns::text || name::text FROM recipient_normalization_pair(",
+    "      SELECT CONCAT(duns::text, name::text) FROM recipient_normalization_pair(",
     "        legal_entity.recipient_name, COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)",
     "      ) AS (name text, duns text)",
     "    ))",
