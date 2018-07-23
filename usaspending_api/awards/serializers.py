@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from usaspending_api.accounts.serializers import SubmissionAttributesSerializer, TasSerializer
+from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
 from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.common.helpers.generic_helper import fy
@@ -8,6 +8,7 @@ from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, \
     CfdaSerializer
 from usaspending_api.references.v1.serializers import ProgramActivitySerializer, ObjectClassSerializer
+from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
 class FinancialAccountsByAwardsSerializer(LimitableSerializer):
