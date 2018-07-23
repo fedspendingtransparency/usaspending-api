@@ -15,6 +15,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
+from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +78,23 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         if json_request["subawards"]:
             raise NotImplementedError("subawards are not implemented yet")
 
+        recipient_hash = filters["recipient_id"][:-2]
+        is_parent = True if filters["recipient_id"][-1] == 'P' else False
+
         queryset = combine_date_range_queryset(
             filters["time_period"], UniversalTransactionView, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
-        queryset = queryset.filter(recipient_hash=filters["recipient_id"][:-2])
+        if is_parent:
+            # there is only one record with that hash and recipient_level = 'P'
+            parent_duns_rows = (RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
+                .values('recipient_unique_id')
+            )
+            if len(parent_duns_rows) != 1:
+                raise InvalidParameterException('Provided recipient_id has no parent records')
+            parent_duns = parent_duns_rows[0]['recipient_unique_id']
+            queryset = queryset.filter(parent_recipient_unique_id=parent_duns)
+        else:
+            queryset = queryset.filter(recipient_hash=recipient_hash)
 
         values = ["year"]
         if groupings[json_request["group"]] == "m":
@@ -99,6 +113,11 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             .annotate(award_ids=ArrayAgg("award_id"))
             .order_by(*["-{}".format(value) for value in values])
         )
+
+        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(queryset))
 
         results = []
         previous_awards = set()
