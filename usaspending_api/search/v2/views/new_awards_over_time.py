@@ -7,7 +7,8 @@ from django.db.models import Func, IntegerField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+# from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.v2.filters.view_selector import new_awards_summary
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
@@ -81,8 +82,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         recipient_hash = filters["recipient_id"][:-2]
         is_parent = True if filters["recipient_id"][-1] == 'P' else False
 
+        queryset, model = new_awards_summary(filters)
+
         queryset = combine_date_range_queryset(
-            filters["time_period"], UniversalTransactionView, API_SEARCH_MIN_DATE, API_MAX_DATE
+            filters["time_period"], model, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
         if is_parent:
             # there is only one record with that hash and recipient_level = 'P'
@@ -108,6 +111,11 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         elif groupings[json_request["group"]] == "fy":
             queryset = queryset.annotate(year=FiscalYear("action_date"))
 
+        print('------------------------------')
+        print(model.__dict__)
+        print(str(model))
+        return Response()
+        # if model == 'UniversalTransactionView'
         queryset = (
             queryset.values(*values)
             .annotate(award_ids=ArrayAgg("award_id"))
