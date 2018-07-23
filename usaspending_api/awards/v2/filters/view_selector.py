@@ -80,6 +80,7 @@ MATVIEW_SELECTOR = {
             'time_period',
             'award_type_codes',
             'agencies',
+            'recipient_id',
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
@@ -105,6 +106,7 @@ MATVIEW_SELECTOR = {
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
+            'recipient_id',
             'place_of_performance_scope',
             'place_of_performance_locations',
             'award_amounts',
@@ -124,6 +126,7 @@ MATVIEW_SELECTOR = {
         'allowed_filters': [
             'time_period',
             'award_type_codes',
+            'recipient_id',
         ],
         'prevent_values': {},
         'examine_values': {
@@ -137,6 +140,7 @@ MATVIEW_SELECTOR = {
             'award_type_codes',
             'agencies',
             'legal_entities',
+            'recipient_id',
             'recipient_search_text',
             'recipient_scope',
             'recipient_locations',
