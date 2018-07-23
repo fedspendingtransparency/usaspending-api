@@ -5,6 +5,7 @@
     "SELECT",
     "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS pk,",
     "  array_agg(DISTINCT transaction_normalized.award_id) AS award_ids,",
+    "  array_to_string(array_agg(DISTINCT transaction_normalized.award_id), ' ') AS award_ids_string,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
