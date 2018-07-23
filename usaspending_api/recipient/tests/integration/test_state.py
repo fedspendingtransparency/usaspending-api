@@ -326,11 +326,11 @@ def test_state_current_fy_capita_success(client, state_data, refresh_matviews):
 def test_state_metadata_failure(client, state_data, refresh_matviews):
     """Verify error on bad autocomplete request for budget function."""
 
-    # There is no FIPS with 03
+    # There is no FIPS with 04
     resp = client.get(state_metadata_endpoint('04'))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    # There is no FIPS with 03
+    # There is no break year
     resp = client.get(state_metadata_endpoint('01', 'break'))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
