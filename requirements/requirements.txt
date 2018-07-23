@@ -42,7 +42,7 @@ sqlparse==0.2.1
 unicodecsv==0.14.1
 urllib3==1.18
 xlrd==1.0.0
-boto==2.48.0
+boto==2.49.0
 zipstream==1.1.4
 jsonpickle==0.9.5
 filechunkio==1.8
