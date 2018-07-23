@@ -21,12 +21,14 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
         {
             'model': Award,
             'id': 999,
-            'piid': 'RANDOM_PIID'
+            'piid': 'RANDOM_PIID',
+            'parent_award_id': None
         },
         {
             'model': FinancialAccountsByAwards,
             'financial_accounts_by_awards_id': 777,
-            'piid': 'RANDOM_PIID'
+            'piid': 'RANDOM_PIID',
+            'parent_award_id': None
         }
     ]
 
