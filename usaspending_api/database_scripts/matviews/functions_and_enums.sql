@@ -33,12 +33,8 @@ AS $$
   DECLARE
     DECLARE result text;
   BEGIN
-    IF original_name ILIKE 'multiple recipients' THEN result = ARRAY['MULTIPLE RECIPIENTS', '-1'];
-    ELSIF original_name ILIKE 'redacted due to pii' THEN result = ARRAY['REDACTED DUE TO PII', '-2'];
-    ELSIF original_name ILIKE 'multiple foreign recipients' THEN result = ARRAY['MULTIPLE FOREIGN RECIPIENTS', '-3'];
-    ELSIF original_name ILIKE 'private individual' THEN result = ARRAY['PRIVATE INDIVIDUAL', '-4'];
-    ELSIF original_name ILIKE 'individual recipient' THEN result = ARRAY['INDIVIDUAL RECIPIENT', '-5'];
-    ELSE result = ARRAY[(SELECT legal_business_name FROM public.duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
+    IF search_duns IS NULL THEN result = original_name;
+    ELSE result = (SELECT legal_business_name FROM public.recipient_lookup_view WHERE duns = search_duns);
     END IF;
   RETURN (result, search_duns)::RECORD;
   END;
