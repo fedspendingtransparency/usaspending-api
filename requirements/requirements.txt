@@ -30,7 +30,7 @@ py-gfm==0.1.3
 py==1.4.31
 pytest-cov==2.3.1
 pytest-django==3.0.0
-pytest==3.0.2
+pytest==3.6.3
 python-dateutil==2.6.0
 python-json-logger==0.1.6
 pytz==2016.6.1
