@@ -8,7 +8,7 @@ coverage==4.2
 dj-database-url==0.4.1
 django-cors-headers==1.2.2
 django-debug-toolbar==1.7
-django-extensions==1.7.5
+django-extensions==2.1.0
 django-filter==0.14.0
 git+https://github.com/nmonga91/django-mock-queries#egg=django-mock-queries
 django-queryset-csv==1.0.0
