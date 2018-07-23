@@ -23,7 +23,7 @@ fiscalyear==0.1.0
 flake8==3.5.0
 Markdown==2.6.6
 model-mommy==1.5.1
-openpyxl==2.4.7
+openpyxl==2.5.4
 pandas==0.18.1
 psycopg2==2.7.3
 py-gfm==0.1.3
