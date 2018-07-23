@@ -21,7 +21,7 @@ drf-tracking==1.1.0
 elasticsearch==6.1.1
 fiscalyear==0.1.0
 flake8==3.5.0
-Markdown==2.6.6
+Markdown==2.6.11
 model-mommy==1.5.1
 openpyxl==2.4.7
 pandas==0.18.1
