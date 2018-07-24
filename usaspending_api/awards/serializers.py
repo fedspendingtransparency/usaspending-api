@@ -8,6 +8,7 @@ from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, \
     CfdaSerializer
 from usaspending_api.references.v1.serializers import ProgramActivitySerializer, ObjectClassSerializer
+from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
 class FinancialAccountsByAwardsSerializer(LimitableSerializer):
@@ -17,6 +18,7 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         fields = '__all__'
         default_fields = [
             "financial_accounts_by_awards_id",
+            "submission",
             "award",
             "treasury_account",
             "transaction_obligated_amount",
@@ -55,6 +57,10 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "class": ObjectClassSerializer,
                 "kwargs": {"read_only": True}
             },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True}
+            }
         }
 
 
