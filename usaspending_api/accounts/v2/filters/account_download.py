@@ -26,12 +26,20 @@ def account_download_filter(account_type, download_table, filters, account_level
             raise InvalidParameterException('Agency with that ID does not exist')
 
     # Filter by Federal Account, if provided
-    if filters.get('federal_account', False):
+    if filters.get('federal_account', False) and filters['federal_account'] != 'all':
         federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
         if federal_account_obj:
             query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
         else:
             raise InvalidParameterException('Federal Account with that ID does not exist')
+
+    # Filter by Budget Function, if provided
+    if filters.get('budget_function', False) and filters['budget_function'] != 'all':
+        query_filters['{}__budget_function_code'.format(tas_id)] = filters['budget_function']
+
+    # Filter by Budget SubFunction, if provided
+    if filters.get('budget_subfunction', False) and filters['budget_subfunction'] != 'all':
+        query_filters['{}__budget_subfunction_code'.format(tas_id)] = filters['budget_subfunction']
 
     # Filter by Fiscal Year and Quarter
     reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
