@@ -115,7 +115,7 @@ ACCOUNT_FILTER_DEFAULTS = {
     'agency': 'all',
     'federal_account': 'all',
     'budget_function': 'all',
-    'budget_subfunction': ''
+    'budget_subfunction': 'all'
 }
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference

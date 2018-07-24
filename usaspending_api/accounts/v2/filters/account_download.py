@@ -38,7 +38,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters['{}__budget_function_code'.format(tas_id)] = filters['budget_function']
 
     # Filter by Budget SubFunction, if provided
-    if filters.get('budget_subfunction', False):
+    if filters.get('budget_subfunction', False) and filters['budget_subfunction'] != 'all':
         query_filters['{}__budget_subfunction_code'.format(tas_id)] = filters['budget_subfunction']
 
     # Filter by Fiscal Year and Quarter
