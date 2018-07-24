@@ -67,22 +67,28 @@
       "unique": true,
       "columns": [{"name": "pk"}]
     }, {
-        "name": "ordered_action_date",
-        "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+      "name": "ordered_action_date",
+      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "action_date_and_type",
-        "columns": [
-          {"name": "action_date", "order": "DESC NULLS LAST"},
-          {"name": "type"}
-        ]
+      "name": "action_date_and_type",
+      "columns": [
+        {"name": "action_date", "order": "DESC NULLS LAST"},
+        {"name": "type"}
+      ]
     }, {
-        "name": "type",
-        "where": "type IS NOT NULL",
-        "columns": [{"name": "type"}]
+      "name": "type",
+      "where": "type IS NOT NULL",
+      "columns": [{"name": "type"}]
     }, {
-        "name": "pulled_from",
-        "where": "pulled_from IS NOT NULL",
-        "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
+      "name": "pulled_from",
+      "where": "pulled_from IS NOT NULL",
+      "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "recipient_unique_id",
+      "columns": [{"name": "recipient_unique_id"}]
+    }, {
+      "name": "recipient_hash",
+      "columns": [{"name": "recipient_hash"}]
     }
   ]
 }
