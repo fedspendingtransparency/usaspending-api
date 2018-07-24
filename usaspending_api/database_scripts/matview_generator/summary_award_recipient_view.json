@@ -31,7 +31,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
-    "  transaction_fpds.pulled_from,",
     "  awards.category,",
     "  legal_entity.recipient_name,",
     "  legal_entity.recipient_unique_id"
