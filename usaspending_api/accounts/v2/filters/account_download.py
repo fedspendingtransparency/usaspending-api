@@ -1,7 +1,7 @@
 import datetime
 
-from django.db.models import Case, CharField, DecimalField, OuterRef, Subquery, Sum, Value, When
-from django.db.models.functions import Coalesce, Concat
+from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
+from django.db.models.functions import Concat
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
@@ -26,12 +26,20 @@ def account_download_filter(account_type, download_table, filters, account_level
             raise InvalidParameterException('Agency with that ID does not exist')
 
     # Filter by Federal Account, if provided
-    if filters.get('federal_account', False):
+    if filters.get('federal_account', False) and filters['federal_account'] != 'all':
         federal_account_obj = FederalAccount.objects.filter(id=filters['federal_account']).first()
         if federal_account_obj:
             query_filters['{}__federal_account__id'.format(tas_id)] = filters['federal_account']
         else:
             raise InvalidParameterException('Federal Account with that ID does not exist')
+
+    # Filter by Budget Function, if provided
+    if filters.get('budget_function', False) and filters['budget_function'] != 'all':
+        query_filters['{}__budget_function_code'.format(tas_id)] = filters['budget_function']
+
+    # Filter by Budget SubFunction, if provided
+    if filters.get('budget_subfunction', False) and filters['budget_subfunction'] != 'all':
+        query_filters['{}__budget_subfunction_code'.format(tas_id)] = filters['budget_subfunction']
 
     # Filter by Fiscal Year and Quarter
     reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
@@ -86,15 +94,9 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
                                          '{}__federal_account__main_account_code'.format(tas_id))
     }
 
-    # Derive recipient_parent_name and transaction_obligated_amount_ for award_financial downloads
+    # Derive recipient_parent_name
     if account_type == 'award_financial':
         derived_fields = award_financial_recipient_parent_derivation(derived_fields)
-
-        # Account for NaN bug in award_financial data
-        # TODO: Fix the data and get rid of this code
-        derived_fields['transaction_obligated_amount_'] = Case(
-            When(transaction_obligated_amount=Value('NaN')), then=Value(0.00), default='transaction_obligated_amount',
-            output_field=DecimalField())
 
     return queryset.annotate(**derived_fields)
 
@@ -126,7 +128,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         'spending_authority_from_offsetting_collections_amount', 'total_other_budgetary_resources_amount',
         'total_budgetary_resources', 'obligations_incurred', 'deobligations_or_recoveries_or_refunds_from_prior_year',
         'unobligated_balance', 'gross_outlay_amount', 'status_of_budgetary_resources_total',
-        'transaction_obligated_amount_']  # TODO: remove trailing  "_" from transaction_obligated_amount_ after data fix
+        'transaction_obligated_amount']
 
     # Group by all columns within the file that can't be summed
     fed_acct_values_dict = query_paths[account_type]['federal_account']
@@ -137,13 +139,6 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     values_dict = query_paths[account_type]
     summed_cols = {val: Sum(values_dict['treasury_account'].get(val, None)) for val in values_dict['federal_account']
                    if val in all_summed_cols}
-
-    # Account for NaN bug in award_financial data
-    # TODO: Fix the data and get rid of this code
-    if account_type == 'award_financial':
-        summed_cols['transaction_obligated_amount_'] = Sum(
-            Coalesce(Case(When(transaction_obligated_amount=Value('NaN')), then=Value(0.00),
-                          default='transaction_obligated_amount', output_field=DecimalField()), 0))
 
     return queryset.annotate(**summed_cols)
 
