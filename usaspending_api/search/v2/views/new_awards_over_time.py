@@ -1,5 +1,6 @@
 import copy
 import logging
+from fiscalyear import FiscalDate
 
 from django.conf import settings
 from django.contrib.postgres.aggregates.general import ArrayAgg, StringAgg
@@ -110,18 +111,14 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         elif groupings[json_request["group"]] == "fiscal_year":
             queryset = queryset.annotate(year=FiscalYear("action_date"))
 
-        if model == 'UniversalTransactionView':
-            queryset = (
-                queryset.values(*values)
-                .annotate(award_ids=ArrayAgg("award_id"))
-                .order_by(*["-{}".format(value) for value in values])
-            )
-        else:
-            queryset = (
-                queryset.values(*values)
-                .annotate(award_ids=StringAgg("award_ids_string", delimiter=" "), transaction_count=Sum("counts"))
-                .order_by(*["-{}".format(value) for value in values])
-            )
+        queryset = (
+            queryset.values(*values)
+            .annotate(
+                award_ids=StringAgg("award_ids_string", delimiter=" "),
+                award_creations=ArrayAgg("date_signed", delimiter=" "),
+                transaction_count=Sum("counts"))
+            .order_by(*["-{}".format(value) for value in values])
+        )
 
         from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
         print('=======================================')
@@ -130,30 +127,40 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         results = []
         previous_awards = set()
+        from time import perf_counter
+        start = perf_counter()
         for row in queryset:
-            if model == 'UniversalTransactionView':
-                awards = set(row["award_ids"])
-                new_awards = awards - previous_awards
-            else:
-                awards = [int(x) for x in row["award_ids"].split(' ')]
-                new_awards = set(awards) - previous_awards
-
             result = {
-                "time_period": {},
-                "award_ids_in_period": set(awards),
-                "new_award_count_in_period": len(new_awards),
+                "time_period": {}
             }
-
-            if model == 'UniversalTransactionView':
-                result["transaction_count_in_period"] = len(row["award_ids"]),
-            else:
-                result["transaction_count_in_period"] = row["transaction_count"]
-
             for period in values:
                 result["time_period"]["fiscal_{}".format(period)] = row[period]
 
+            all_dates_signed = [FiscalDate(awd_dt.year, awd_dt.month, awd_dt.day) for awd_dt in row["award_creations"]]
+            new_award_count = 0
+            for d in all_dates_signed:
+                # print(f'Fiscal Year: {d.year} Fiscal Quarter: {d.quarter}')
+                # print(row['year'], row['quarter'])
+                if d.year == row['year']:
+                    if 'quarter' in values:
+                        if d.quarter == row['quarter']:
+                            new_award_count += 1
+                    elif 'month' in values:
+                        if d.month == row['month']:
+                            new_award_count += 1
+                    else:
+                        new_award_count += 1
+
+            awards = [int(x) for x in row["award_ids"].split(' ')]
+            new_awards = set(awards) - previous_awards
+
+            result["award_ids_in_period"] = set(awards)
+            result["new_award_count_in_period"] = new_award_count
+            result["transaction_count_in_period"] = row["transaction_count"]
             results.append(result)
             previous_awards.update(new_awards)
+        end = perf_counter()
+        print(f"bl took {end-start}s")
         response_dict = {"group": groupings[json_request["group"]], "results": results}
 
         return Response(response_dict)

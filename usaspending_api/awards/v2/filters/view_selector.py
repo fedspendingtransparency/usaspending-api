@@ -370,7 +370,7 @@ def new_awards_summary(filters):
     view_chain = [
         'SummaryTransactionMonthView',
         'SummaryTransactionView',
-        'UniversalTransactionView'
+        # 'UniversalTransactionView'
     ]
     model = None
     for view in view_chain:
