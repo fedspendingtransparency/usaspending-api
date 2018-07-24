@@ -165,7 +165,7 @@ TEST_UNIVERSAL_TRANSACTIONS = {
     },
     'FY2016': {
         'transaction_id': '2',
-        'action_date': datetime.datetime(2016, 10, 1),
+        'action_date': datetime.datetime(2015, 10, 1),
         'generated_pragmatic_obligation': 50
     }
 }
@@ -317,7 +317,6 @@ def test_extract_business_categories(mock_reference_matviews):
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
     assert business_cat == expected_business_cat
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_obtain_recipient_totals_year(mock_matviews_qs):
     """ Testing recipient totals with the latest 12 months """
@@ -345,10 +344,10 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
     assert total == expected_total
     assert count == expected_count
 
-    # FY2015
+    # FY2016
     expected_total = 50
     expected_count = 1
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='2017', subawards=False)
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='2016', subawards=False)
     assert total == expected_total
     assert count == expected_count
 
