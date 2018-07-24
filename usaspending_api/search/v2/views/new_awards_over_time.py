@@ -1,22 +1,20 @@
 import copy
 import logging
-from fiscalyear import FiscalDate
 
 from django.conf import settings
-from django.contrib.postgres.aggregates.general import ArrayAgg, StringAgg
 from django.db.models import Func, IntegerField, Sum
 from django.db.models.aggregates import Aggregate
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
+from usaspending_api.awards.models_matviews import SummaryAwardRecipientView
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.awards.models_matviews import SummaryAwardRecipientView
-from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
+from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +82,17 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         recipient_hash = filters["recipient_id"][:-2]
         is_parent = True if filters["recipient_id"][-1] == 'P' else False
-
+        time_ranges = []
+        for t in filters['time_period']:
+            t['date_type'] = 'date_signed'
+            time_ranges.append(t)
         queryset = SummaryAwardRecipientView.objects.filter()
-
-        queryset &= combine_date_range_queryset(filter['time_period'], SummaryAwardRecipientView, API_SEARCH_MIN_DATE, API_MAX_DATE)
+        queryset &= combine_date_range_queryset(
+            time_ranges,
+            SummaryAwardRecipientView,
+            API_SEARCH_MIN_DATE,
+            API_MAX_DATE
+        )
 
         if is_parent:
             # there *should* only one record with that hash and recipient_level = 'P'
@@ -116,7 +121,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         queryset = (
             queryset.values(*values)
-            .annotate(counts=Sum('count'))
+            .annotate(count=Sum('counts'))
             .order_by(*["-{}".format(value) for value in values])
         )
 
@@ -126,41 +131,16 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         print(generate_raw_quoted_query(queryset))
 
         results = []
-        previous_awards = set()
-        from time import perf_counter
-        start = perf_counter()
         for row in queryset:
             result = {
                 "time_period": {}
             }
             for period in values:
                 result["time_period"]["fiscal_{}".format(period)] = row[period]
+            result["new_award_count_in_period"] = row['count']
 
-            # all_dates_signed = [FiscalDate(awd_dt.year, awd_dt.month, awd_dt.day) for awd_dt in row["award_creations"]]
-            # new_award_count = 0
-            # for d in all_dates_signed:
-            #     # print(f'Fiscal Year: {d.year} Fiscal Quarter: {d.quarter}')
-            #     # print(row['year'], row['quarter'])
-            #     if d.year == row['year']:
-            #         if 'quarter' in values:
-            #             if d.quarter == row['quarter']:
-            #                 new_award_count += 1
-            #         elif 'month' in values:
-            #             if d.month == row['month']:
-            #                 new_award_count += 1
-            #         else:
-            #             new_award_count += 1
-
-            # awards = [int(x) for x in row["award_ids"].split(' ')]
-            # new_awards = set(awards) - previous_awards
-
-            # result["award_ids_in_period"] = set(awards)
-            result["new_award_count_in_period"] = row['counts']
-            # result["transaction_count_in_period"] = row["transaction_count"]
             results.append(result)
-            # previous_awards.update(new_awards)
-        end = perf_counter()
-        print(f"bl took {end-start}s")
+
         response_dict = {"group": groupings[json_request["group"]], "results": results}
 
         return Response(response_dict)

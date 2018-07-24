@@ -40,9 +40,9 @@
   ],
   "indexes": [
     {
-      "name": "unique_pk",
+      "name": "deterministic_unique_hash",
       "unique": true,
-      "columns": [{"name": "pk"}]
+      "columns": [{"name": "duh"}]
     }, {
       "name": "date_signed",
       "columns": [{"name": "date_signed", "order": "DESC NULLS LAST"}]
