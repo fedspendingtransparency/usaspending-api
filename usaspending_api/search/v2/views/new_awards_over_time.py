@@ -2,21 +2,18 @@ import copy
 import logging
 
 from django.conf import settings
-from django.contrib.postgres.aggregates.general import ArrayAgg
+from django.contrib.postgres.aggregates.general import ArrayAgg, StringAgg
+from django.db.models import Func, IntegerField, Sum
 from django.db.models.aggregates import Aggregate
-from django.db.models import Func, IntegerField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import new_awards_summary
-# from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
-# from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
@@ -33,21 +30,21 @@ class ArrayCat(Aggregate):
         return value
 
 
-class Month(Func):
+class FiscalMonth(Func):
     function = "EXTRACT"
-    template = "%(function)s(MONTH from %(expressions)s)"
+    template = "%(function)s(MONTH from (%(expressions)s) + INTERVAL '3 months')"
     output_field = IntegerField()
 
 
 class FiscalQuarter(Func):
     function = "EXTRACT"
-    template = "%(function)s(QUARTER from (%(expressions)s) - INTERVAL '3 months')"
+    template = "%(function)s(QUARTER from (%(expressions)s) + INTERVAL '3 months')"
     output_field = IntegerField()
 
 
 class FiscalYear(Func):
     function = "EXTRACT"
-    template = "%(function)s(YEAR from (%(expressions)s) - INTERVAL '3 months')"
+    template = "%(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months')"
     output_field = IntegerField()
 
 
@@ -61,23 +58,17 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        groupings = {"quarter": "q", "q": "q", "fiscal_year": "fy", "fy": "fy", "month": "m", "m": "m"}
+        groupings = {
+            "quarter": "quarter", "q": "quarter",
+            "fiscal_year": "fiscal_year", "fy": "fiscal_year",
+            "month": "month", "m": "month"}
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {"name": "group", "key": "group", "type": "enum", "enum_values": list(groupings.keys()), "default": "fy"},
-            {
-                "name": "recipient_id",
-                "key": "filters|recipient_id",
-                "type": "text",
-                "text_type": "search",
-                "optional": False,
-            },
         ]
         advanced_search_filters = [
-            # add "recipient_id" once another PR is merged
-            model
-            for model in copy.deepcopy(AWARD_FILTER)
-            if model["name"] in ("time_period", "award_type_codes")
+            model for model in copy.deepcopy(AWARD_FILTER)
+            if model["name"] in ("time_period", "award_type_codes", "recipient_id")
         ]
         models.extend(advanced_search_filters)
         json_request = TinyShield(models).block(request.data)
@@ -95,8 +86,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         queryset, model = new_awards_summary(filters)
 
         if is_parent:
-            # there is only one record with that hash and recipient_level = 'P'
-            parent_duns_rows = (RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
+            # there *should* only one record with that hash and recipient_level = 'P'
+            parent_duns_rows = (
+                RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
                 .values('recipient_unique_id')
             )
             if len(parent_duns_rows) != 1:
@@ -107,15 +99,15 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             queryset = queryset.filter(recipient_hash=recipient_hash)
 
         values = ["year"]
-        if groupings[json_request["group"]] == "m":
-            queryset = queryset.annotate(month=Month("action_date"), year=FiscalYear("action_date"))
+        if groupings[json_request["group"]] == "month":
+            queryset = queryset.annotate(month=FiscalMonth("action_date"), year=FiscalYear("action_date"))
             values.append("month")
 
-        elif groupings[json_request["group"]] == "q":
+        elif groupings[json_request["group"]] == "quarter":
             queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), year=FiscalYear("action_date"))
             values.append("quarter")
 
-        elif groupings[json_request["group"]] == "fy":
+        elif groupings[json_request["group"]] == "fiscal_year":
             queryset = queryset.annotate(year=FiscalYear("action_date"))
 
         if model == 'UniversalTransactionView':
@@ -127,7 +119,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         else:
             queryset = (
                 queryset.values(*values)
-                .annotate(award_ids=ArrayCat("award_ids"))
+                .annotate(award_ids=StringAgg("award_ids_string", delimiter=" "), transaction_count=Sum("counts"))
                 .order_by(*["-{}".format(value) for value in values])
             )
 
@@ -139,17 +131,29 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         results = []
         previous_awards = set()
         for row in queryset:
-            new_awards = set(row["award_ids"]) - previous_awards
+            if model == 'UniversalTransactionView':
+                awards = set(row["award_ids"])
+                new_awards = awards - previous_awards
+            else:
+                awards = [int(x) for x in row["award_ids"].split(' ')]
+                new_awards = set(awards) - previous_awards
+
             result = {
                 "time_period": {},
-                "award_ids_in_period": set(row["award_ids"]),
-                "transaction_count_in_period": len(row["award_ids"]),
+                "award_ids_in_period": set(awards),
                 "new_award_count_in_period": len(new_awards),
             }
+
+            if model == 'UniversalTransactionView':
+                result["transaction_count_in_period"] = len(row["award_ids"]),
+            else:
+                result["transaction_count_in_period"] = row["transaction_count"]
+
             for period in values:
                 result["time_period"]["fiscal_{}".format(period)] = row[period]
+
             results.append(result)
-            previous_awards.update(row["award_ids"])
+            previous_awards.update(new_awards)
         response_dict = {"group": groupings[json_request["group"]], "results": results}
 
         return Response(response_dict)

@@ -17,6 +17,7 @@
     "  transaction_normalized.id AS transaction_id,",
     "  transaction_normalized.action_date::date,",
     "  transaction_normalized.last_modified_date::date,",
+    "  awards.date_signed,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_normalized.action_type,",
@@ -140,7 +141,7 @@
     "LEFT OUTER JOIN",
     "  psc ON (transaction_fpds.product_or_service_code = psc.code)",
     "WHERE",
-    "  transaction_normalized.action_date >= '2000-10-01'",
+    "  transaction_normalized.action_date >= '2017-10-01'",
     "ORDER BY",
     "  transaction_normalized.action_date DESC"
   ],
