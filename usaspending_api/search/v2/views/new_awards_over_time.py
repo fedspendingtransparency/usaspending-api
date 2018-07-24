@@ -22,7 +22,7 @@ API_VERSION = settings.API_VERSION
 
 
 class ArrayCat(Aggregate):
-    function = 'ARRAY_CAT'
+    function = "ARRAY_CAT"
 
     def convert_value(self, value, expression, connection, context):
         if not value:
@@ -59,15 +59,20 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         groupings = {
-            "quarter": "quarter", "q": "quarter",
-            "fiscal_year": "fiscal_year", "fy": "fiscal_year",
-            "month": "month", "m": "month"}
+            "quarter": "quarter",
+            "q": "quarter",
+            "fiscal_year": "fiscal_year",
+            "fy": "fiscal_year",
+            "month": "month",
+            "m": "month",
+        }
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {"name": "group", "key": "group", "type": "enum", "enum_values": list(groupings.keys()), "default": "fy"},
         ]
         advanced_search_filters = [
-            model for model in copy.deepcopy(AWARD_FILTER)
+            model
+            for model in copy.deepcopy(AWARD_FILTER)
             if model["name"] in ("time_period", "award_type_codes", "recipient_id")
         ]
         models.extend(advanced_search_filters)
@@ -81,28 +86,24 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             raise NotImplementedError("subawards are not implemented yet")
 
         recipient_hash = filters["recipient_id"][:-2]
-        is_parent = True if filters["recipient_id"][-1] == 'P' else False
+        is_parent = True if filters["recipient_id"][-1] == "P" else False
         time_ranges = []
-        for t in filters['time_period']:
-            t['date_type'] = 'date_signed'
+        for t in filters["time_period"]:
+            t["date_type"] = "date_signed"
             time_ranges.append(t)
         queryset = SummaryAwardRecipientView.objects.filter()
         queryset &= combine_date_range_queryset(
-            time_ranges,
-            SummaryAwardRecipientView,
-            API_SEARCH_MIN_DATE,
-            API_MAX_DATE
+            time_ranges, SummaryAwardRecipientView, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
 
         if is_parent:
             # there *should* only one record with that hash and recipient_level = 'P'
-            parent_duns_rows = (
-                RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
-                .values('recipient_unique_id')
-            )
+            parent_duns_rows = RecipientProfile.objects.filter(
+                recipient_hash=recipient_hash, recipient_level="P"
+            ).values("recipient_unique_id")
             if len(parent_duns_rows) != 1:
-                raise InvalidParameterException('Provided recipient_id has no parent records')
-            parent_duns = parent_duns_rows[0]['recipient_unique_id']
+                raise InvalidParameterException("Provided recipient_id has no parent records")
+            parent_duns = parent_duns_rows[0]["recipient_unique_id"]
             queryset = queryset.filter(parent_recipient_unique_id=parent_duns)
         else:
             queryset = queryset.filter(recipient_hash=recipient_hash)
@@ -120,24 +121,15 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             queryset = queryset.annotate(year=FiscalYear("date_signed"))
 
         queryset = (
-            queryset.values(*values)
-            .annotate(count=Sum('counts'))
-            .order_by(*["-{}".format(value) for value in values])
+            queryset.values(*values).annotate(count=Sum("counts")).order_by(*["-{}".format(value) for value in values])
         )
-
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
 
         results = []
         for row in queryset:
-            result = {
-                "time_period": {}
-            }
+            result = {"time_period": {}}
             for period in values:
                 result["time_period"]["fiscal_{}".format(period)] = row[period]
-            result["new_award_count_in_period"] = row['count']
+            result["new_award_count_in_period"] = row["count"]
 
             results.append(result)
 
