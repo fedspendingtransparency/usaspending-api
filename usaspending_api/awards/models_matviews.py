@@ -845,3 +845,18 @@ class SummaryTransactionRecipientView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_transaction_recipient_view'
+
+
+class SummaryAwardRecipientView(models.Model):
+    duh = models.UUIDField(primary_key=True)
+    date_signed = models.DateField(blank=False)
+    action_date = models.DateField(blank=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    recipient_hash = models.UUIDField(null=True)
+    parent_recipient_unique_id = models.TextField(blank=True, null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_award_recipient_view'

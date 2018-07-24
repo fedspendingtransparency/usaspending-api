@@ -3,7 +3,7 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS pk,",
+    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS duh,",
     "  awards.date_signed,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
@@ -17,6 +17,8 @@
     "      ) AS (name text, duns text)",
     "    ))",
     "  )::uuid AS recipient_hash,",
+    "  legal_entity.parent_recipient_unique_id,",
+    "",
     "  COUNT(*) counts",
     "FROM",
     "  awards",
@@ -33,7 +35,8 @@
     "  awards.type,",
     "  awards.category,",
     "  legal_entity.recipient_name,",
-    "  legal_entity.recipient_unique_id"
+    "  legal_entity.recipient_unique_id,",
+    "  legal_entity.parent_recipient_unique_id"
   ],
   "indexes": [
     {
@@ -47,13 +50,11 @@
       "name": "type",
       "columns": [{"name": "type"}]
     }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
-    }, {
       "name": "recipient_hash",
-      "where": "recipient_hash",
       "columns": [{"name": "recipient_hash"}]
+    }, {
+      "name": "parent_recipient_unique_id",
+      "columns": [{"name": "parent_recipient_unique_id"}]
     }
   ]
 }
