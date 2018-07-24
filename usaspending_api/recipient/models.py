@@ -44,7 +44,7 @@ class DUNS(models.Model):
     zip4 = models.TextField(null=True, blank=True)
     country_code = models.TextField(null=True, blank=True)
     congressional_district = models.TextField(null=True, blank=True)
-    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None),
+    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None)
     broker_duns_id = models.TextField()
     update_date = models.DateField()
 
