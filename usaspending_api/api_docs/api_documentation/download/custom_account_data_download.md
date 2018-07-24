@@ -26,16 +26,16 @@ This route sends a request to the backend to begin generating a zipfile of accou
 ### Request Parameters Description
 * `account_level` - *required* - the account level: `treasury_account` or `federal_account`
 * `filters` - *required* - a JSON filter object with the following fields
-        * `agency` - *optional* - agency database id, `all` is also an option to include all agencies
-        * `federal_account` - *optional* - federal account id, `all` is also an option to include all federal_accounts
-        * `budget_function` - *optional* - budget function code, `all` is also an option to include all budget functions
-        * `budget_subfunction` - *optional* - budget subfunction code, `all` is also an option to include all budget subfunctions
-        * `submission_type` - *required* - the file type requested. Possible values are:
-                * `account_balances` - Account Balances
-                * `program_activity_object_class` - Account Breakdown by Program Activity & Object Class
-                * `award_financial` - Account Breakdown by Award
-        * `fy` - *required* - fiscal year
-        * `quarter` - *required* - fiscal quarter
+    * `agency` - *optional* - agency database id, `all` is also an option to include all agencies
+    * `federal_account` - *optional* - federal account id, `all` is also an option to include all federal_accounts
+    * `budget_function` - *optional* - budget function code, `all` is also an option to include all budget functions
+    * `budget_subfunction` - *optional* - budget subfunction code, `all` is also an option to include all budget subfunctions
+    * `submission_type` - *required* - the file type requested. Possible values are:
+        * `account_balances` - Account Balances
+        * `program_activity_object_class` - Account Breakdown by Program Activity & Object Class
+        * `award_financial` - Account Breakdown by Award
+    * `fy` - *required* - fiscal year
+    * `quarter` - *required* - fiscal quarter
 * `file_format` - *optional* - must be `csv`
 
 ### Response (JSON)
@@ -57,12 +57,12 @@ This route sends a request to the backend to begin generating a zipfile of accou
 * `total_columns` - number of columns in the file, or `null` if not finished
 * `total_rows` - number of rows in the file, or `null` if not finished
 * `file_name` - name of the zipfile containing files that will be generated
-        * File name is a concatenation of the `agency_code`, `account_level`, and `file_type`, followed by the `file_format`
+    * File name is a concatenation of the `agency_code`, `account_level`, and `file_type`, followed by the `file_format`
 * `status` - a string representing the current state of the file generation request. Possible values are:
-        * `ready` - job is ready to be run
-        * `running` - job is currently in progress
-        * `finished` - job is complete
-        * `failed` - job failed to complete
+    * `ready` - job is ready to be run
+    * `running` - job is currently in progress
+    * `finished` - job is complete
+    * `failed` - job failed to complete
 
     For this endpoint, `status` will always be `ready`, since the response is returned before generation begins
 * `url` - the URL for the file
