@@ -57,13 +57,11 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             {"name": "group", "key": "group", "type": "enum", "enum_values": list(groupings.keys()), "default": "fy"},
         ]
         advanced_search_filters = [
-            model
-            for model in copy.deepcopy(AWARD_FILTER)
-            if model["name"] in ("time_period", "recipient_id")
+            model for model in copy.deepcopy(AWARD_FILTER) if model["name"] in ("time_period", "recipient_id")
         ]
 
         for model in advanced_search_filters:
-            if model['name'] in ("time_period", "recipient_id"):
+            if model["name"] in ("time_period", "recipient_id"):
                 model["optional"] = False
         models.extend(advanced_search_filters)
         json_request = TinyShield(models).block(request.data)
