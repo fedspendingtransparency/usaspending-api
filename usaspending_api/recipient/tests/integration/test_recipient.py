@@ -1,10 +1,10 @@
 # Stdlib imports
 import datetime
-import pytest
 
 # Core Django imports
 
 # Third-party app imports
+import pytest
 from rest_framework import status
 from model_mommy import mommy
 from django_mock_queries.query import MockModel
@@ -12,7 +12,6 @@ from django_mock_queries.query import MockModel
 # Imports from your apps
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.recipient.v2.views import recipients
 from usaspending_api.recipient.models import RecipientProfile, DUNS
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity
@@ -20,8 +19,6 @@ from usaspending_api.references.models import RefCountryCode, Location, LegalEnt
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
 INSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 - 2))
-OUTSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 + 2))
-CURRENT_FISCAL_YEAR = generate_fiscal_year(TODAY)
 
 TEST_REF_COUNTRY_CODE = {
     'PARENT COUNTRY CODE': {
