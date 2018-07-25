@@ -23,13 +23,14 @@ fiscalyear==0.1.0
 flake8==3.5.0
 Markdown==2.6.6
 model-mommy==1.6.0
+numpy==1.9.0
 openpyxl==2.4.7
 pandas==0.23.3
 psycopg2-binary==2.7.5
 py-gfm==0.1.3
 py==1.5.4
 pytest-cov==2.5.1
-pytest-django==3.3.2
+pytest-django==3.2.1
 pytest==3.6.3
 python-dateutil==2.7.3
 python-json-logger==0.1.9
