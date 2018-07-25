@@ -17,7 +17,6 @@ class UniversalTransactionView(models.Model):
     transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     last_modified_date = models.DateField(blank=True, null=False)
-    date_signed = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     action_type = models.TextField()
@@ -90,10 +89,7 @@ class UniversalTransactionView(models.Model):
 
 
 class SummaryTransactionView(models.Model):
-    award_ids = ArrayField(models.IntegerField(), default=list)
-    award_ids_string = models.TextField()
     action_date = models.DateField(blank=True, null=False)
-    date_signed = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
@@ -344,10 +340,7 @@ class SummaryCfdaNumbersView(models.Model):
 
 
 class SummaryTransactionMonthView(models.Model):
-    award_ids = ArrayField(models.IntegerField(), default=list)
-    award_ids_string = models.TextField()
     action_date = models.DateField()
-    date_signed = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
     pulled_from = models.TextField()
