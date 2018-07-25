@@ -25,7 +25,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
   DECLARE
-    DECLARE result text;
+    DECLARE result text[];
   BEGIN
     IF original_name ILIKE 'multiple recipients' THEN result = ARRAY['MULTIPLE RECIPIENTS', '-1'];
     ELSIF original_name ILIKE 'redacted due to pii' THEN result = ARRAY['REDACTED DUE TO PII', '-2'];
@@ -34,6 +34,6 @@ CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEX
     ELSIF original_name ILIKE 'individual recipient' THEN result = ARRAY['INDIVIDUAL RECIPIENT', '-5'];
     ELSE result = ARRAY[(SELECT legal_business_name FROM public.duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
     END IF;
-  RETURN (result, search_duns)::RECORD;
+  RETURN (COALESCE(result[1], ' '), result[2])::RECORD;
   END;
 $$ LANGUAGE plpgsql;
