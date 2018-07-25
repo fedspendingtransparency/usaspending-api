@@ -17,6 +17,7 @@ from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
+from usaspending_api.recipient.models import StateData
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,10 @@ ALIAS_DICT = {
     },
     'district': {
         'pop_congressional_code': 'code',
+    },
+    'country': {
+        'pop_country_code': 'code',
+        'pop_country_name': 'name'
     }
 
 }
@@ -146,7 +151,7 @@ class BusinessLogic:
             results = self.recipient()
         elif self.category in ('cfda', 'psc', 'naics'):
             results = self.industry_and_other_codes()
-        elif self.category in ('county', 'district'):
+        elif self.category in ('county', 'district', 'state/territory', 'country'):
             results = self.location()
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
@@ -278,6 +283,12 @@ class BusinessLogic:
         elif self.category == 'district':
             filters = {'pop_congressional_code__isnull': False}
             values = ['pop_congressional_code', 'pop_state_code']
+        elif self.category == 'country':
+            filters = {'pop_country_code__isnull': False}
+            values = ['pop_country_code', 'pop_country_name']
+        elif self.category == 'state/territory':
+            filters = {'pop_state_code__isnull': False}
+            values = ['pop_state_code']
 
         self.queryset = self.common_db_query(filters, values)
 
@@ -294,6 +305,8 @@ class BusinessLogic:
 
                 row['name'] = '{}-{}'.format(row['pop_state_code'], cd_code)
                 del row['pop_state_code']
+            if self.category == 'state/territory':
+                row['name'] = fetch_state_name_from_code(row['code'])
         return results
 
 
@@ -334,5 +347,14 @@ def fetch_psc_description_by_code(psc_code):
     result = PSC.objects.filter(code=psc_code).values(*columns).first()
     if not result:
         logger.warning('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
+        return None
+    return result[columns[0]]
+
+
+def fetch_state_name_from_code(state_code):
+    columns = ['name']
+    result = StateData.objects.filter(code=state_code).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for state_code: {}'.format(','.join(columns), state_code))
         return None
     return result[columns[0]]
