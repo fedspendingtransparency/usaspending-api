@@ -601,6 +601,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
+        index_together = ['recipient_unique_id', 'recipient_name', 'update_date']
 
 
 class LegalEntityOfficers(models.Model):
@@ -787,8 +788,8 @@ class PSC(models.Model):
 class RecipientLookup(models.Model):
     """Materialized view used for looking up Recipient Names & DUNS"""
     recipient_hash = models.UUIDField(primary_key=True)
-    legal_business_name = models.TextField(unique=True)
-    duns = models.TextField()
+    legal_business_name = models.TextField(null=True)
+    duns = models.TextField(null=True)
 
     class Meta:
         managed = False
