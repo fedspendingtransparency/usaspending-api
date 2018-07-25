@@ -1,11 +1,16 @@
--- Postgres Extensions necessary for some views
+-- Postgres extensions, functions, and enums necessary for some views 
 
 CREATE EXTENSION IF NOT EXISTS intarray;
 
 
--- The function(s) and enum(s) below were originally created for the materialized views
-
-CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'total_obligation_bins') THEN
+    CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
+  ELSE
+    RAISE NOTICE 'TYPE total_obligation_bins already exists, skipping creation...';
+  END IF;
+END$$;
 
 
 CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC) RETURNS public.total_obligation_bins AS $$
@@ -32,7 +37,7 @@ CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEX
     ELSIF original_name ILIKE 'multiple foreign recipients' THEN result = ARRAY['MULTIPLE FOREIGN RECIPIENTS', '-3'];
     ELSIF original_name ILIKE 'private individual' THEN result = ARRAY['PRIVATE INDIVIDUAL', '-4'];
     ELSIF original_name ILIKE 'individual recipient' THEN result = ARRAY['INDIVIDUAL RECIPIENT', '-5'];
-    ELSE result = ARRAY[(SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
+    ELSE result = ARRAY[(SELECT legal_business_name FROM public.duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
     END IF;
   RETURN (COALESCE(result[1], ' '), result[2])::RECORD;
   END;

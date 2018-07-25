@@ -376,7 +376,7 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_reference_matview
     mock_recipients_2 = MockModel(recipient_hash='59f9a646-cd1c-cbdc-63dd-1020fac59336',
                                   legal_business_name='University of Pawnee', duns='00UOP00')
     mock_recipients_3 = MockModel(recipient_hash='18569a71-3b0a-1586-50a9-cbb8bb070136',
-                                  legal_business_name='MULTIPLE RECIPIENTS', duns='-1')
+                                  legal_business_name='MULTIPLE RECIPIENTS', duns=None)
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4, mock_model_5])
     add_to_mock_objects(mock_reference_matviews, [mock_recipients_1, mock_recipients_2, mock_recipients_3])
 
