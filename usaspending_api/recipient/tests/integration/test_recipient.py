@@ -483,20 +483,140 @@ def test_recipient_overview(client, mock_matviews_qs, mock_reference_matviews):
     }
     assert resp.data == expected
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
-def test_extract_hash_name_from_duns():
+def test_extract_hash_name_from_duns(mock_reference_matviews):
     """ Testing extracting the hash/name from a DUNS """
-    pass
+    example_duns = '000000001'
+    expected_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
+    expected_name = 'PARENT RECIPIENT'
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[expected_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
 
-@pytest.mark.skip
+    recipient_hash, recipient_name = recipients.extract_hash_name_from_duns(example_duns)
+    assert expected_hash == recipient_hash
+    assert expected_name == recipient_name
+
+
+def recipient_children_endpoint(duns, year='latest'):
+    endpoint = '/api/v2/recipient/children/{}/'.format(duns)
+    if year:
+        endpoint = '{}?year={}'.format(endpoint, year)
+    return endpoint
+
+
 @pytest.mark.django_db
-def test_child_recipient_success():
+def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_qs):
     """ Testing successfull child recipient calls """
-    pass
+    child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
+    child1_hash = child1_id[:-2]
+    parent_child1_duns = '000000001'
+    child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    child2_hash = child2_id[:-2]
+    child2_duns = '000000002'
+    other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
+    transaction_hash_map = {
+        '1': {
+            'hash': child1_hash,
+            'duns': parent_child1_duns
+        },
+        '2': {
+            'hash': child2_hash,
+            'duns': child2_duns,
+        },
+        '3': {
+            'hash': other_id,
+            'duns': None
+        }
+    }
 
-@pytest.mark.skip
+    # Mock Recipient Profiles
+    for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
+        mommy.make(RecipientProfile, **recipient_profile)
+
+    # Mock Recipient Lookups
+    mock_lookups = []
+    for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
+        mock_lookups.append(MockModel(**recipient_lookup))
+    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+
+    # load transactions for each child and parent (making sure it's excluded)
+    mock_transactions = []
+    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
+        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+        mock_transactions.append(MockModel(**transaction))
+    add_to_mock_objects(mock_matviews_qs, mock_transactions)
+
+    child1_object = {
+        'recipient_id': child1_id,
+        'name': 'PARENT RECIPIENT',
+        'duns': parent_child1_duns,
+        'amount': 100
+    }
+    child2_object = {
+        'recipient_id': child2_id,
+        'name': 'CHILD RECIPIENT',
+        'duns': child2_duns,
+        'amount': 50
+    }
+    expected = [child1_object, child2_object]
+    resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == sorted(expected, key=lambda key: key['recipient_id'])
+
+
 @pytest.mark.django_db
-def test_child_recipient_failures():
+def test_child_recipient_failures(client, mock_reference_matviews, mock_matviews_qs):
     """ Testing failed child recipient calls """
-    pass
+
+    child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
+    child1_hash = child1_id[:-2]
+    parent_child1_duns = '000000001'
+    child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    child2_hash = child2_id[:-2]
+    child2_duns = '000000002'
+    other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
+    transaction_hash_map = {
+        '1': {
+            'hash': child1_hash,
+            'duns': parent_child1_duns
+        },
+        '2': {
+            'hash': child2_hash,
+            'duns': child2_duns,
+        },
+        '3': {
+            'hash': other_id,
+            'duns': None
+        }
+    }
+
+    # Mock Recipient Profiles
+    for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
+        mommy.make(RecipientProfile, **recipient_profile)
+
+    # Mock Recipient Lookups
+    mock_lookups = []
+    for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
+        mock_lookups.append(MockModel(**recipient_lookup))
+    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+
+    # load transactions for each child and parent (making sure it's excluded)
+    mock_transactions = []
+    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
+        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+        mock_transactions.append(MockModel(**transaction))
+    add_to_mock_objects(mock_matviews_qs, mock_transactions)
+
+    # Testing for child DUNS
+    resp = client.get(recipient_children_endpoint(child2_duns, 'all'))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data['detail'] == 'DUNS is not listed as a parent: \'{}\'.'.format(child2_duns)
+
+    # Testing for non-existent DUNS
+    non_existent_duns = '000000003'
+    resp = client.get(recipient_children_endpoint(non_existent_duns, 'all'))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data['detail'] == 'DUNS not found: \'{}\'.'.format(non_existent_duns)
