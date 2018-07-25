@@ -6,6 +6,7 @@ import uuid
 # Core Django imports
 
 # Third-party app imports
+from rest_framework import status
 from model_mommy import mommy
 from django_mock_queries.query import MockModel
 
@@ -167,6 +168,11 @@ TEST_UNIVERSAL_TRANSACTIONS = {
         'transaction_id': '2',
         'action_date': datetime.datetime(2015, 10, 1),
         'generated_pragmatic_obligation': 50
+    },
+    'FY2008': {
+        'transaction_id': '3',
+        'action_date': datetime.datetime(2007, 10, 1),
+        'generated_pragmatic_obligation': 200
     }
 }
 
@@ -177,7 +183,7 @@ def test_validate_recipient_id_success():
     recipient_id = list(TEST_RECIPIENT_PROFILES.keys())[0]
     mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
 
-    expected_hash = uuid.UUID(recipient_id[:-1])
+    expected_hash = recipient_id[:-2]
     expected_level = recipient_id[-1]
     try:
         recipient_hash, recipient_level = recipients.validate_recipient_id(recipient_id)
@@ -232,23 +238,28 @@ def test_extract_name_duns_from_hash(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_parent_from_hash():
+def test_extract_parent_from_hash(mock_reference_matviews):
     """ Testing extracting parent duns/name from recipient hash"""
     # This one specifically has to be a child
     recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
     recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_hash']
     parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_affiliations'][0]
     mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
-    # Model Mommy doesn't like ArrayFields
-    test_duns_model = TEST_DUNS[parent_duns].copy()
-    test_duns_model.pop('business_types_codes')
+
+    expected_parent_id = '00077a9a-5a70-8919-fd19-330762af6b84-P'
+    parent_hash = expected_parent_id[:-2]
+    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[parent_hash])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+
+    test_duns_model = TEST_DUNS[parent_duns]
     mommy.make(DUNS, **test_duns_model)
 
     expected_name = test_duns_model['legal_business_name']
     expected_duns = parent_duns
-    parent_duns, parent_name = recipients.extract_parent_from_hash(recipient_hash)
+    parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
     assert parent_duns == expected_duns
     assert parent_name == expected_name
+    assert parent_id == expected_parent_id
 
 
 @pytest.mark.django_db
@@ -258,9 +269,7 @@ def test_extract_location_duns(mock_reference_matviews):
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
     add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
-    # Model Mommy doesn't like ArrayFields
-    test_duns_model = TEST_DUNS[recipient_duns].copy()
-    test_duns_model.pop('business_types_codes')
+    test_duns_model = TEST_DUNS[recipient_duns]
     country_code = test_duns_model['country_code']
     mommy.make(DUNS, **test_duns_model)
     mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
@@ -268,6 +277,7 @@ def test_extract_location_duns(mock_reference_matviews):
     non_location_fields = ['awardee_or_recipient_uniqu', 'legal_business_name']
     additional_blank_fields = ['address_line3', 'foreign_province', 'county_name', 'foreign_postal_code']
     expected_location = test_duns_model.copy()
+    expected_location.pop('business_types_codes')
     for non_location_field in non_location_fields:
         del expected_location[non_location_field]
     expected_location['country_name'] = TEST_REF_COUNTRY_CODE[country_code]['country_name']
@@ -317,9 +327,10 @@ def test_extract_business_categories(mock_reference_matviews):
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
     assert business_cat == expected_business_cat
 
+
 @pytest.mark.django_db
 def test_obtain_recipient_totals_year(mock_matviews_qs):
-    """ Testing recipient totals with the latest 12 months """
+    """ Testing recipient totals with different year values """
     # Testing with specific child
     recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
     recipient_hash = recipient_id[:-2]
@@ -338,8 +349,8 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
     assert count == expected_count
 
     # All
-    expected_total = 150
-    expected_count = 2
+    expected_total = 350
+    expected_count = 3
     total, count = recipients.obtain_recipient_totals(recipient_id, year='all', subawards=False)
     assert total == expected_total
     assert count == expected_count
@@ -351,18 +362,126 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
     assert total == expected_total
     assert count == expected_count
 
-@pytest.mark.skip
+
 @pytest.mark.django_db
 def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
-    """ Testing recipient totals with the latest 12 months """
-    pass
+    """ Testing recipient totals with parent child relationships """
+    # Testing with specific parent/child ids
+    parent_id = '00077a9a-5a70-8919-fd19-330762af6b84-P'
+    child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
+    child1_hash = child1_id[:-2]
+    parent_child1_duns = '000000001'
+    child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    child2_hash = child2_id[:-2]
+    child2_duns = '000000002'
+    other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
+    transaction_hash_map = {
+        '1': {
+            'hash': child1_hash,
+            'duns': parent_child1_duns
+        },
+        '2': {
+            'hash': child2_hash,
+            'duns': child2_duns,
+        },
+        '3': {
+            'hash': other_id,
+            'duns': None
+        }
+    }
+
+    # load recipient profiles
+    for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
+        mommy.make(RecipientProfile, **recipient_profile)
+
+    # load transactions for each child and parent (making sure it's excluded)
+    mock_transactions = []
+    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
+        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+        mock_transactions.append(MockModel(**transaction))
+    add_to_mock_objects(mock_matviews_qs, mock_transactions)
+
+    expected_total = 150
+    expected_count = 2
+    total, count = recipients.obtain_recipient_totals(parent_id, year='all', subawards=False)
+    assert total == expected_total
+    assert count == expected_count
 
 
-@pytest.mark.skip
+def recipient_overview_endpoint(id, year='latest'):
+    endpoint = '/api/v2/recipient/duns/{}/'.format(id)
+    if year:
+        endpoint = '{}?year={}'.format(endpoint, year)
+    return endpoint
+
+
 @pytest.mark.django_db
-def test_recipient_overview():
-    """ Testing the overall functionality of the recipient overview endpoint """
-    pass
+def test_recipient_overview(client, mock_matviews_qs, mock_reference_matviews):
+    """ Testing a simple example of the endpoint as a whole """
+    r_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
+    recipient_hash = r_id[:-2]
+
+    # Mock Transactions
+    mock_transactions = []
+    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+        transaction['recipient_hash'] = recipient_hash
+        mock_transactions.append(MockModel(**transaction))
+    add_to_mock_objects(mock_matviews_qs, mock_transactions)
+
+    # Mock Recipient Profiles
+    for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
+        mommy.make(RecipientProfile, **recipient_profile)
+
+    # Mock Recipient Lookups
+    mock_lookups = []
+    for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
+        mock_lookups.append(MockModel(**recipient_lookup))
+    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+
+    # Mock DUNS
+    for duns, duns_dict in TEST_DUNS.items():
+        test_duns_model = duns_dict.copy()
+        test_duns_model.pop('business_types_codes')
+        country_code = test_duns_model['country_code']
+        mommy.make(DUNS, **test_duns_model)
+        mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
+
+    # Mock Legal Entity
+    expected_business_cat = ['expected', 'business', 'cat']
+    mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name='PARENT RECIPIENT',
+               recipient_unique_id='000000001')
+
+    resp = client.get(recipient_overview_endpoint(r_id))
+    assert resp.status_code == status.HTTP_200_OK
+    expected = {
+        'name': 'PARENT RECIPIENT',
+        'duns': '000000001',
+        'recipient_id': '00077a9a-5a70-8919-fd19-330762af6b84-C',
+        'recipient_level': 'C',
+        'parent_name': 'PARENT RECIPIENT',
+        'parent_duns': '000000001',
+        'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
+        'business_types': ['expected', 'business', 'cat'],
+        'location': {
+            'address_line1': 'PARENT ADDRESS LINE 1',
+            'address_line2': 'PARENT ADDRESS LINE 2',
+            'address_line3': None,
+            'county_name': None,
+            'city_name': 'PARENT CITY',
+            'congressional_code': 'PARENT CONGRESSIONAL DISTRICT',
+            'country_code': 'PARENT COUNTRY CODE',
+            'country_name': 'PARENT COUNTRY NAME',
+            'state_code': 'PARENT STATE',
+            'zip': 'PARENT ZIP',
+            'zip4': 'PARENT ZIP4',
+            'foreign_province': None,
+            'foreign_postal_code': None
+        },
+        'total_transaction_amount': 100,
+        'total_transactions': 1
+    }
+    assert resp.data == expected
 
 @pytest.mark.skip
 @pytest.mark.django_db

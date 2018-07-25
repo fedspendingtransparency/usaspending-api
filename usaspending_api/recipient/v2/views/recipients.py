@@ -43,12 +43,12 @@ def validate_recipient_id(recipient_id):
         raise InvalidParameterException('Invalid Recipient-Level: \'{}\''.format(recipient_level))
     recipient_hash = recipient_id[:recipient_id.rfind('-')]
     try:
-        uuid_hash = uuid.UUID(recipient_hash)
+        uuid.UUID(recipient_hash)
     except ValueError:
         raise InvalidParameterException('Recipient Hash not valid UUID: \'{}\'.'.format(recipient_hash))
-    if not RecipientProfile.objects.filter(recipient_hash=uuid_hash, recipient_level=recipient_level).count():
+    if not RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).count():
         raise InvalidParameterException('Recipient ID not found: \'{}\'.'.format(recipient_id))
-    return uuid_hash, recipient_level
+    return recipient_hash, recipient_level
 
 
 def extract_name_duns_from_hash(recipient_hash):
@@ -85,7 +85,11 @@ def extract_parent_from_hash(recipient_hash):
     else:
         duns = affiliations[0]['recipient_affiliations'][0]
         duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns).values('legal_business_name').first()
-        return duns, duns_obj['legal_business_name']
+        name = duns_obj['legal_business_name'] if duns_obj else None
+        parent_hash = (RecipientLookup.objects.filter(legal_business_name=name, duns=duns)
+                       .values('recipient_hash').first()['recipient_hash'])
+        parent_id = '{}-P'.format(parent_hash)
+        return duns, name, parent_id
 
 
 def extract_location(recipient_hash):
@@ -198,9 +202,9 @@ class RecipientOverView(APIDocumentationView):
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
 
         if recipient_level != 'R':
-            parent_name, parent_duns = extract_parent_from_hash(recipient_hash)
+            parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
         else:
-            parent_name, parent_duns = None, None
+            parent_duns, parent_name = None, None
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns)
         total, count = obtain_recipient_totals(recipient_id, year=year, subawards=False)
@@ -209,8 +213,9 @@ class RecipientOverView(APIDocumentationView):
         result = {
             'name': recipient_name,
             'duns': recipient_duns,
-            'id': recipient_id,
+            'recipient_id': recipient_id,
             'recipient_level': recipient_level,
+            'parent_id': parent_id,
             'parent_name': parent_name,
             'parent_duns': parent_duns,
             'business_types': business_types,
