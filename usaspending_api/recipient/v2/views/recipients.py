@@ -204,7 +204,7 @@ class RecipientOverView(APIDocumentationView):
         if recipient_level != 'R':
             parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
         else:
-            parent_duns, parent_name = None, None
+            parent_duns, parent_name, parent_id = None, None, None
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns)
         total, count = obtain_recipient_totals(recipient_id, year=year, subawards=False)
