@@ -69,7 +69,7 @@ def generate_csvs(download_job, sqs_message=None):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
             start_uploading = time.time()
-            multipart_upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
+            multipart_upload(bucket, region, file_path, os.path.basename(file_path),
                              parallel_processes=multiprocessing.cpu_count())
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
