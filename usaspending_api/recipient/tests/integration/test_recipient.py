@@ -1,7 +1,6 @@
 # Stdlib imports
 import datetime
 import pytest
-import uuid
 
 # Core Django imports
 
@@ -126,7 +125,7 @@ TEST_RECIPIENT_LOOKUPS = {
 }
 TEST_RECIPIENT_PROFILES = {
     # Parent Recipient
-    '00077a9a-5a70-8919-fd19-330762af6b84-P':{
+    '00077a9a-5a70-8919-fd19-330762af6b84-P': {
         'recipient_level': 'P',
         'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
         'recipient_unique_id': '000000001',
@@ -208,19 +207,19 @@ def test_validate_recipient_id_failures():
 
     # Test with no dashes
     recipient_id = 'broken_recipient_id'
-    assert call_validate_recipient_id(recipient_id) == True
+    assert call_validate_recipient_id(recipient_id) is True
 
     # Test with invalid recipient level
     recipient_id = 'broken_recipient-id'
-    assert call_validate_recipient_id(recipient_id) == True
+    assert call_validate_recipient_id(recipient_id) is True
 
     # Test with invalid hash
     recipient_id = 'broken_recipient-R'
-    assert call_validate_recipient_id(recipient_id) == True
+    assert call_validate_recipient_id(recipient_id) is True
 
     # Test with id not available
     recipient_id = '00002940-fdbe-3fc5-9252-000000-R'
-    assert call_validate_recipient_id(recipient_id) == True
+    assert call_validate_recipient_id(recipient_id) is True
 
 
 @pytest.mark.django_db
