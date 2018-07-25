@@ -13,8 +13,8 @@ group (**REQUIRED**): String value. Parameter indicating the time period type ( 
 * `month`
 
 filters (**REQUIRED**): accepts a subset of the Advanced Search Filter. See [Filter Object](../search_filters.md) on these two fields:
-* `recipient_id`
-* `time_period`
+* `recipient_id` (**REQUIRED**)
+* `time_period` (**REQUIRED**)
 
 
 ## Response Example

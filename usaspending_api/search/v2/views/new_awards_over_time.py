@@ -3,7 +3,6 @@ import logging
 
 from django.conf import settings
 from django.db.models import Func, IntegerField, Sum
-from django.db.models.aggregates import Aggregate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,15 +18,6 @@ from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
-
-
-class ArrayCat(Aggregate):
-    function = "ARRAY_CAT"
-
-    def convert_value(self, value, expression, connection, context):
-        if not value:
-            return []
-        return value
 
 
 class FiscalMonth(Func):
@@ -71,6 +61,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             for model in copy.deepcopy(AWARD_FILTER)
             if model["name"] in ("time_period", "recipient_id")
         ]
+
+        for model in advanced_search_filters:
+            if model['name'] in ("time_period", "recipient_id"):
+                model["optional"] = False
         models.extend(advanced_search_filters)
         json_request = TinyShield(models).block(request.data)
         filters = json_request.get("filters", None)
