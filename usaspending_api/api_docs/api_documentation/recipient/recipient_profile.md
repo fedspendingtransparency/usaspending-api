@@ -14,7 +14,7 @@ These endpoints support the individual Recipient Profile pages that display data
 This endpoint returns a high-level overview of a specific recipient, given its id.
 
 + Parameters
-    + `recipient_id`: `abc123-P` (required, string)
+    + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
         A unique identifier for the recipient at a specific level (parent, child, or neither).
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
@@ -29,7 +29,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
 
 + Parameters
-    + duns: `0123456` (required, string)
+    + duns: `001006360` (required, string)
         Parent recipient's DUNS.
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
@@ -71,29 +71,29 @@ This endpoint returns a list of child recipients belonging to the given parent r
 ## RecipientLocation (object)
 + address_line1: 123 Sesame St (required, string, nullable)
     The first line of the recipient's street address. 
-+ address_line2: (optional, string)
++ address_line2: (optional, string, nullable)
     Second line of the recipient's street address. 
-+ address_line3: (optional, string)
++ address_line3: (optional, string, nullable)
     Third line of the recipient's street address. 
-+ foreign_province: (optional, string)
++ foreign_province: (optional, string, nullable)
     Name of the province in which the recipient is located, if it is outside the United States.
 + city_name: McLean (required, string, nullable)
     Name of the city in which the recipient is located.
-+ county_name: (optional, string)
++ county_name: (optional, string, nullable)
     Name of the county in which the recipient is located.
-+ state_code: VA (optional, string)
++ state_code: VA (optional, string, nullable)
     Code for the state in which the recipient is located. 
-+ zip: `22102` (optional, string)
++ zip: `22102` (optional, string, nullable)
     Recipient's zip code (5 digits)
-+ zip4: (optional, string)
++ zip4: (optional, string, nullable)
     Recipient's zip code (4 digits)
-+ foreign_postal_code: (optional, string)
++ foreign_postal_code: (optional, string, nullable)
     Recipient's postal code, if it is outside the United States.
 + country_name: (required, string, nullable)
      Name of the country in which the recipient is located.
 + country_code: USA (required, string, nullable)
      Code for the country in which the recipient is located.
-+ congressional_code: `05` (optional, string)
++ congressional_code: `05` (optional, string, nullable)
     Number for the recipient's congressional district. 
  
 ## ChildRecipient (object)
