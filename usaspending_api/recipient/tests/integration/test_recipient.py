@@ -369,20 +369,19 @@ def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
     parent_child1_duns = '000000001'
     child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
     child2_hash = child2_id[:-2]
-    child2_duns = '000000002'
     other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
     transaction_hash_map = {
         '1': {
             'hash': child1_hash,
-            'duns': parent_child1_duns
+            'parent_duns': parent_child1_duns
         },
         '2': {
             'hash': child2_hash,
-            'duns': child2_duns,
+            'parent_duns': parent_child1_duns,
         },
         '3': {
             'hash': other_id,
-            'duns': None
+            'parent_duns': None
         }
     }
 
@@ -394,7 +393,7 @@ def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
     mock_transactions = []
     for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
         transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
-        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+        transaction['parent_recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['parent_duns']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
