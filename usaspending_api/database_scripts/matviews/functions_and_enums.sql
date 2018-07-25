@@ -1,11 +1,16 @@
--- Postgres Extensions necessary for some views
+-- Postgres extensions, functions, and enums necessary for some views 
 
 CREATE EXTENSION IF NOT EXISTS intarray;
 
 
--- The function(s) and enum(s) below were originally created for the materialized views
-
-CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'total_obligation_bins') THEN
+    CREATE TYPE public.total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');
+  ELSE
+    RAISE NOTICE 'TYPE total_obligation_bins already exists, skipping creation...';
+  END IF;
+END$$;
 
 
 CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC)
