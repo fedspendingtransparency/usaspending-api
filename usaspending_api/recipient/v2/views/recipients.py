@@ -268,10 +268,12 @@ class ChildRecipients(APIDocumentationView):
             child_hash, child_name = extract_hash_name_from_duns(child_duns)
             child_recipient_id = '{}-{}'.format(child_hash, recipient_level)
             total, count = obtain_recipient_totals(child_recipient_id, year=year, subawards=False)
+            location = extract_location(child_hash)
             results.append({
                 'recipient_id': child_recipient_id,
                 'name': child_name,
                 'duns': child_duns,
-                'amount': total
+                'amount': total,
+                'state_province': location['state_code']
             })
         return Response(results)

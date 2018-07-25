@@ -536,6 +536,13 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
         mock_lookups.append(MockModel(**recipient_lookup))
     add_to_mock_objects(mock_reference_matviews, mock_lookups)
 
+    # Mock DUNS
+    for duns, duns_dict in TEST_DUNS.items():
+        test_duns_model = duns_dict.copy()
+        country_code = test_duns_model['country_code']
+        mommy.make(DUNS, **test_duns_model)
+        mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
+
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
     for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
@@ -548,13 +555,15 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
         'recipient_id': child1_id,
         'name': 'PARENT RECIPIENT',
         'duns': parent_child1_duns,
-        'amount': 100
+        'amount': 100,
+        'state_province': 'PARENT STATE'
     }
     child2_object = {
         'recipient_id': child2_id,
         'name': 'CHILD RECIPIENT',
         'duns': child2_duns,
-        'amount': 50
+        'amount': 50,
+        'state_province': 'CHILD STATE'
     }
     expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
