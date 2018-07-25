@@ -71,7 +71,6 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing request parameters: filters")
 
         recipient_hash = filters["recipient_id"][:-2]
-        is_parent = True if filters["recipient_id"][-1] == "P" else False
         time_ranges = []
         for t in filters["time_period"]:
             t["date_type"] = "date_signed"
@@ -81,7 +80,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             time_ranges, SummaryAwardRecipientView, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
 
-        if is_parent:
+        if filters["recipient_id"][-1] == "P":
             # there *should* only one record with that hash and recipient_level = 'P'
             parent_duns_rows = RecipientProfile.objects.filter(
                 recipient_hash=recipient_hash, recipient_level="P"
@@ -90,8 +89,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 raise InvalidParameterException("Provided recipient_id has no parent records")
             parent_duns = parent_duns_rows[0]["recipient_unique_id"]
             queryset = queryset.filter(parent_recipient_unique_id=parent_duns)
+        elif filters["recipient_id"][-1] == "R":
+            queryset = queryset.filter(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
         else:
-            queryset = queryset.filter(recipient_hash=recipient_hash)
+            queryset = queryset.filter(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
 
         values = ["year"]
         if groupings[json_request["group"]] == "month":
