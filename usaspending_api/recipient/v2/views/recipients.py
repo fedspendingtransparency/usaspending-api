@@ -81,7 +81,7 @@ def extract_parent_from_hash(recipient_hash):
     affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
         .values('recipient_affiliations')
     if not affiliations:
-        return None, None
+        return None, None, None
     else:
         duns = affiliations[0]['recipient_affiliations'][0]
         duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns).values('legal_business_name').first()
