@@ -1112,3 +1112,79 @@ def test_category_state_territory_subawards(mock_matviews_qs):
     }
 
     assert expected_response == spending_by_category_logic
+
+
+def test_category_country(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', generated_pragmatic_obligation=1)
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'country',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'country',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'US',
+                'name': 'UNITED STATES',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+def test_category_country_subawards(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', amount=1)
+    mock_model_2 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', amount=1)
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'country',
+        'subawards': True,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'country',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'US',
+                'name': 'UNITED STATES',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
