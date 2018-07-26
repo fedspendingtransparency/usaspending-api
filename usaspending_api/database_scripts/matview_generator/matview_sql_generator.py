@@ -141,6 +141,17 @@ def create_index_string(matview_name, index_name, idx):
     return idx_str
 
 
+def split_indexes_chunks(index_list):
+    new_indexes = []
+    for index in index_list:
+        if index.startswith('DO'):
+            yield new_indexes
+            new_indexes = list()
+        else:
+            new_indexes.append(index)
+    yield new_indexes
+
+
 def make_matview_drops(final_matview_name):
     matview_temp_name = final_matview_name + '_temp'
     matview_archive_name = final_matview_name + '_old'
@@ -266,6 +277,9 @@ def write_sql_file(str_list, filename):
 
 def create_componentized_files(sql_json):
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json['final_name'])
+    index_dir_path = os.path.join(filename_base, 'batch_indexes/')
+    if not os.path.exists(index_dir_path):
+        os.makedirs(index_dir_path)
 
     matview_name = sql_json['final_name']
     matview_temp_name = matview_name + '_temp'
@@ -278,8 +292,10 @@ def create_componentized_files(sql_json):
     sql_strings = make_matview_create(matview_name, sql_json['matview_sql'])
     write_sql_file(sql_strings, filename_base + '__matview')
 
-    sql_strings = create_indexes
-    write_sql_file(sql_strings, filename_base + '__indexes')
+    write_sql_file(create_indexes, filename_base + '__indexes')
+
+    for i, index_block in enumerate(split_indexes_chunks(create_indexes)):
+        write_sql_file(index_block, index_dir_path + 'group_{}'.format(i))
 
     sql_strings = make_modification_sql(matview_name)
     write_sql_file(sql_strings, filename_base + '__mods')

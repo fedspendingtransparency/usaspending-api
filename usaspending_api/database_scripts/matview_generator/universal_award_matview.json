@@ -11,7 +11,7 @@
     "    ' ', (SELECT string_agg(tn.description, ' ') FROM transaction_normalized AS tn WHERE tn.award_id = awards.id GROUP BY tn.award_id)",
     "  )) AS keyword_ts_vector,",
     "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,",
-    "  to_tsvector(COALESCE((SELECT name FROM recipient_normalization_pair(legal_entity.recipient_name, legal_entity.recipient_unique_id) AS (name text, duns text)), '')) AS recipient_name_ts_vector,",
+    "  to_tsvector(COALESCE(recipient_lookup.recipient_name, legal_entity.recipient_name, '')) AS recipient_name_ts_vector,",
     "",
     "  awards.id AS award_id,",
     "  awards.category,",
