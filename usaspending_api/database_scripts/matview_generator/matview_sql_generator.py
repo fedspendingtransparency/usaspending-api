@@ -141,15 +141,25 @@ def create_index_string(matview_name, index_name, idx):
     return idx_str
 
 
-def split_indexes_chunks(index_list):
-    new_indexes = []
-    for index in index_list:
-        if index.startswith('DO'):
-            yield new_indexes
-            new_indexes = list()
-        else:
-            new_indexes.append(index)
-    yield new_indexes
+def split_indexes_chunks(index_list, size):
+    # return (index_list[i: i + size] for i in range(0, len(index_list), size))
+    indexes = [index for index in index_list if index[0] != 'D']
+    bin_size = round(len(indexes) / float(size))
+    # for i in range(0, len(indexes), bin_size):
+    #     yield indexes[i: i + bin_size]
+
+    for i in range(size - 1):
+        yield indexes[i: i + bin_size]
+    yield indexes[size + bin_size:]
+
+    # new_indexes = []
+    # for index in index_list:
+    #     if index.startswith('DO'):
+    #         yield new_indexes
+    #         new_indexes = list()
+    #     else:
+    #         new_indexes.append(index)
+    # yield new_indexes
 
 
 def make_matview_drops(final_matview_name):
@@ -294,8 +304,9 @@ def create_componentized_files(sql_json):
 
     write_sql_file(create_indexes, filename_base + '__indexes')
 
-    for i, index_block in enumerate(split_indexes_chunks(create_indexes)):
-        write_sql_file(index_block, index_dir_path + 'group_{}'.format(i))
+    if args.batch_indexes > 1:
+        for i, index_block in enumerate(split_indexes_chunks(create_indexes, args.batch_indexes)):
+            write_sql_file(index_block, index_dir_path + 'group_{}'.format(i))
 
     sql_strings = make_modification_sql(matview_name)
     write_sql_file(sql_strings, filename_base + '__mods')
@@ -354,6 +365,12 @@ if __name__ == '__main__':
         '-q', '--quiet',
         action='store_true',
         help='Flag to suppress stdout when there are no errors')
+    arg_parser.add_argument(
+        '-b', '--batch_indexes',
+        type=int,
+        choices=range(1, 8),
+        default=1,
+        help='When value >=2, distribute the index SQL across that file count')
     args = arg_parser.parse_args()
 
     DEST_FOLDER = args.dest
