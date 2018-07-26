@@ -9,6 +9,7 @@ import pytest
 from django_mock_queries.query import MockModel
 
 # Imports from your apps
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.v2.views.new_awards_over_time import NewAwardsOverTimeVisualizationViewSet
@@ -16,6 +17,26 @@ from usaspending_api.search.v2.views.new_awards_over_time import NewAwardsOverTi
 
 def get_new_awards_over_time_url():
     return "/api/v2/search/new_awards_over_time/"
+
+
+def catch_filter_errors(viewset, filters, expected_exception):
+    try:
+        viewset.validate_api_request(filters)
+    except UnprocessableEntityException:
+        if expected_exception == "UnprocessableEntityException":
+            assert True
+        else:
+            assert False, "UnprocessableEntityException error unexpected"
+    except InvalidParameterException:
+        if expected_exception == "InvalidParameterException":
+            assert True
+        else:
+            assert False, "InvalidParameterException error unexpected"
+    except Exception as e:
+        print(e)
+        assert False, "Incorrect Exception raised"
+    else:
+        assert False, "Filters should have produced an exception and didn't"
 
 
 @pytest.fixture
@@ -37,7 +58,6 @@ def add_award_recipients(mock_matviews_qs, refresh_matviews):
     add_to_mock_objects(mock_matviews_qs, [mock_awards_1, mock_awards_2])
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_new_awards_simple_case(add_award_recipients, client):
     test_payload = {
@@ -63,11 +83,10 @@ def test_new_awards_simple_case(add_award_recipients, client):
 def test_new_awards():
     A = NewAwardsOverTimeVisualizationViewSet()
     filters = {"group": "baseball"}
-    try:
-        A.validate_api_request(filters)
-    except UnprocessableEntityException as e:
-        assert True
-    except Exception:
-        assert False, "Incorrect Exception raised"
-    else:
-        assert False, "Filters should have produced an exception and didn't"
+    catch_filter_errors(A, filters, "UnprocessableEntityException")
+    filters = {"group": "baseball", "filters": {"recipient_id": "", "time_period": []}}
+    catch_filter_errors(A, filters, "InvalidParameterException")
+    filters = {"group": "month", "filters": {"recipient_id": "", "time_period": []}}
+    catch_filter_errors(A, filters, "UnprocessableEntityException")
+    filters = {"group": "month", "filters": {"recipient_id": "", "time_period": [{"start_date": ""}]}}
+    catch_filter_errors(A, filters, "UnprocessableEntityException")
