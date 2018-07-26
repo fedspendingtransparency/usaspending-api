@@ -4,6 +4,7 @@ import pytest
 
 # Third-party app imports
 from django_mock_queries.query import MockModel
+from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
@@ -1017,6 +1018,94 @@ def test_category_district_subawards(mock_matviews_qs):
                 'amount': 2,
                 'code': '06',
                 'name': 'XY-06',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_state_territory(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_state_code='XY', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_state_code='XY', generated_pragmatic_obligation=1)
+    mommy.make(
+        'recipient.StateData',
+        name='Test State',
+        code='XY',
+    )
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'state/territory',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'state/territory',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'XY',
+                'name': 'Test State',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_state_territory_subawards(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_state_code='XY', amount=1)
+    mock_model_2 = MockModel(pop_state_code='XY', amount=1)
+    mommy.make(
+        'recipient.StateData',
+        name='Test State',
+        code='XY',
+    )
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'state/territory',
+        'subawards': True,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'state/territory',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'XY',
+                'name': 'Test State',
                 'id': None
             }
         ]

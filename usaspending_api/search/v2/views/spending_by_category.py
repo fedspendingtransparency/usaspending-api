@@ -60,6 +60,9 @@ ALIAS_DICT = {
     'district': {
         'pop_congressional_code': 'code',
     },
+    'state/territory': {
+        'pop_state_code': 'code'
+    },
     'country': {
         'pop_country_code': 'code',
         'pop_country_name': 'name'
