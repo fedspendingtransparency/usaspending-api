@@ -156,6 +156,8 @@ class BusinessLogic:
             results = self.industry_and_other_codes()
         elif self.category in ('county', 'district', 'state/territory', 'country'):
             results = self.location()
+        elif self.category in ('federal_account'):
+            results = self.federal_account()
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
 
@@ -310,6 +312,21 @@ class BusinessLogic:
                 del row['pop_state_code']
             if self.category == 'state/territory':
                 row['name'] = fetch_state_name_from_code(row['code'])
+        return results
+
+    def federal_account(self) -> list:
+        filters = {}
+        values = {}
+
+        self.queryset = self.common_db_query(filters, values)
+
+        # DB hit here
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            row['id'] = None
+
         return results
 
 
