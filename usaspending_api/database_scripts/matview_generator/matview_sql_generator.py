@@ -142,10 +142,16 @@ def create_index_string(matview_name, index_name, idx):
 
 
 def split_indexes_chunks(index_list, file_count):
-    indexes = [index for index in index_list if index[0] != 'D']
-    bin_size = round(len(indexes) / float(file_count))
-    for i in range(file_count):
-        yield indexes[bin_size * i: (i + 1) * bin_size]
+    """
+        loop through all index strings (only the lines which start with "CREATE") and populate
+        sublists with the full-set in a round-robin ordering to spread-out similar indexes
+        to different workers as a poorman's averaging of the execution times
+    """
+    results = [list() for _ in range(file_count)]  # create empty lists for the index SQL strings
+    for i, index in enumerate([index for index in index_list if index.startswith('CREATE')]):
+        results[i % file_count].append(index)
+    for result in results:
+        yield result
 
 
 def make_matview_drops(final_matview_name):
