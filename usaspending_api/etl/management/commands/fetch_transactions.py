@@ -158,8 +158,8 @@ class Command(BaseCommand):
 
 def set_config():
 
-    if not os.environ.get('CSV_AWS_REGION'):
-        print('Missing environment variable `CSV_AWS_REGION`')
+    if not os.environ.get('USASPENDING_AWS_REGION'):
+        print('Missing environment variable `USASPENDING_AWS_REGION`')
         raise SystemExit
 
     if not os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'):
@@ -171,7 +171,7 @@ def set_config():
         raise SystemExit
 
     config = {
-        'aws_region': os.environ.get('CSV_AWS_REGION'),
+        'aws_region': os.environ.get('USASPENDING_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME')
     }
 

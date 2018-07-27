@@ -16,8 +16,7 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity
-
+from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +202,10 @@ class BusinessLogic:
     def recipient(self) -> list:
         if self.category == 'recipient_duns':
             filters = {}
-            values = ['recipient_name', 'recipient_unique_id']
+            if self.subawards:
+                values = ['recipient_name', 'recipient_unique_id']
+            else:
+                values = ['recipient_hash']
 
         elif self.category == 'recipient_parent_duns':
             # TODO: check if we can aggregate on recipient name and parent duns,
@@ -216,10 +218,23 @@ class BusinessLogic:
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        for row in query_results:
+            row['recipient_id'] = None
+            if not self.subawards:
+                lookup = RecipientLookup.objects \
+                    .filter(recipient_hash=row['recipient_hash']) \
+                    .values('legal_business_name', 'duns').first()
+
+                # The Recipient Name + DUNS should always be retrievable in RecipientLookup
+                # For odd edge cases or data sync issues, handle gracefully:
+                if lookup is None:
+                    lookup = {}
+
+                row['recipient_name'] = lookup.get('legal_business_name', None)
+                row['recipient_unique_id'] = lookup.get('duns', 'DUNS Number not provided')
+                del row['recipient_hash']
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row['id'] = fetch_recipient_id_by_duns(row['code'])
         return results
 
     def industry_and_other_codes(self) -> list:

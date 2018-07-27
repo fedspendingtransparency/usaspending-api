@@ -363,23 +363,22 @@ def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
     assert expected_response == spending_by_category_logic
 
 
-def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
-    mock_recipient_1 = MockModel(recipient_unique_id='00UOP00', legal_entity_id=1)
-    mock_recipient_2 = MockModel(recipient_unique_id='1234JD4321', legal_entity_id=2)
-    mock_recipient_3 = MockModel(recipient_name='MULTIPLE RECIPIENTS', recipient_unique_id=None, legal_entity_id=3)
-    mock_model_1 = MockModel(recipient_name='University of Pawnee',
-                             recipient_unique_id='00UOP00', generated_pragmatic_obligation=1)
-    mock_model_2 = MockModel(recipient_name='University of Pawnee',
-                             recipient_unique_id='00UOP00', generated_pragmatic_obligation=1)
-    mock_model_3 = MockModel(recipient_name='John Doe',
-                             recipient_unique_id='1234JD4321', generated_pragmatic_obligation=1)
-    mock_model_4 = MockModel(recipient_name='John Doe',
-                             recipient_unique_id='1234JD4321', generated_pragmatic_obligation=10)
-    mock_model_5 = MockModel(recipient_name='MULTIPLE RECIPIENTS',
-                             recipient_unique_id=None, generated_pragmatic_obligation=15)
+def test_category_recipient_duns_awards(mock_matviews_qs, mock_reference_matviews):
+    # recipient_hash = SELECT MD5(UPPER(CONCAT('<duns>','<recipient_name>')))::uuid;
+    mock_model_1 = MockModel(recipient_hash='59f9a646-cd1c-cbdc-63dd-1020fac59336', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(recipient_hash='59f9a646-cd1c-cbdc-63dd-1020fac59336', generated_pragmatic_obligation=1)
+    mock_model_3 = MockModel(recipient_hash='3725ba78-a607-7ab4-1cf6-2a08207bac3c', generated_pragmatic_obligation=1)
+    mock_model_4 = MockModel(recipient_hash='3725ba78-a607-7ab4-1cf6-2a08207bac3c', generated_pragmatic_obligation=10)
+    mock_model_5 = MockModel(recipient_hash='18569a71-3b0a-1586-50a9-cbb8bb070136', generated_pragmatic_obligation=15)
 
+    mock_recipients_1 = MockModel(recipient_hash='3725ba78-a607-7ab4-1cf6-2a08207bac3c',
+                                  legal_business_name='John Doe', duns='1234JD4321')
+    mock_recipients_2 = MockModel(recipient_hash='59f9a646-cd1c-cbdc-63dd-1020fac59336',
+                                  legal_business_name='University of Pawnee', duns='00UOP00')
+    mock_recipients_3 = MockModel(recipient_hash='18569a71-3b0a-1586-50a9-cbb8bb070136',
+                                  legal_business_name='MULTIPLE RECIPIENTS', duns=None)
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4, mock_model_5])
-    add_to_mock_objects(mock_recipients, [mock_recipient_1, mock_recipient_2, mock_recipient_3])
+    add_to_mock_objects(mock_reference_matviews, [mock_recipients_1, mock_recipients_2, mock_recipients_3])
 
     test_payload = {
         'category': 'recipient_duns',
@@ -405,19 +404,19 @@ def test_category_recipient_duns_awards(mock_matviews_qs, mock_recipients):
                 'amount': 15,
                 'name': 'MULTIPLE RECIPIENTS',
                 'code': None,
-                'id': 3
+                'id': None
             },
             {
                 'amount': 11,
                 'name': 'John Doe',
                 'code': '1234JD4321',
-                'id': 2
+                'id': None
             },
             {
                 'amount': 2,
                 'name': 'University of Pawnee',
                 'code': '00UOP00',
-                'id': 1
+                'id': None
             }
         ]
     }
@@ -467,19 +466,19 @@ def test_category_recipient_duns_subawards(mock_matviews_qs, mock_recipients):
                 'amount': 15,
                 'name': 'MULTIPLE RECIPIENTS',
                 'code': None,
-                'id': 3
+                'id': None
             },
             {
                 'amount': 11,
                 'name': 'John Doe',
                 'code': '1234JD4321',
-                'id': 2
+                'id': None
             },
             {
                 'amount': 2,
                 'name': 'University of Pawnee',
                 'code': '00UOP00',
-                'id': 1
+                'id': None
             }
         ]
     }

@@ -1,8 +1,10 @@
 import argparse
 import glob
+import hashlib
 import json
 import os
 import subprocess
+
 from uuid import uuid4
 
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
@@ -21,18 +23,18 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
 {   "final_name": "example_matview",
     "matview_sql": [
     "SELECT",
-    "  \"transaction_normalized\".\"action_date\",",
-    "  \"transaction_normalized\".\"fiscal_year\",",
-    "  \"awards\".\"type\",",
-    "  \"awards\".\"category\",",
+    "  action_date,",
+    "  fiscal_year,",
+    "  awards.type,",
+    "  awards.category,",
     "FROM",
-    "  \"awards\"",
+    "  awards",
     "LEFT OUTER JOIN",
-    "  \"transaction_normalized\" ON (\"awards\".\"latest_transaction_id\" = \"transaction_normalized\".\"id\")",
+    "  transaction_normalized ON (awards.latest_transaction_id = id)",
     "WHERE",
-    "  \"transaction_normalized\".action_date >= '2000-10-01'",
+    "  action_date >= '2000-10-01'",
     "ORDER BY",
-    "  \"action_date\" DESC"
+    "  action_date DESC"
 
     ],
     "index": {
@@ -63,6 +65,7 @@ TEMPLATE = {
     'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
     'grant_select': 'GRANT SELECT ON {} TO {};',
+    'sql_print_output': 'DO $$ BEGIN RAISE NOTICE \'{}\'; END $$;',
 }
 
 CLUSTERING_INDEX = None
@@ -157,7 +160,7 @@ def make_matview_create(final_matview_name, sql):
 def make_matview_refresh(matview_name):
     return [
         TEMPLATE['refresh_matview'].format(matview_name),
-        TEMPLATE['analyze'].format(matview_name)
+        TEMPLATE['vacuum'].format(matview_name)
     ]
 
 
@@ -184,9 +187,16 @@ def make_indexes_sql(sql_json, matview_name):
 
     if len(unique_name_list) != len(set(unique_name_list)):
         raise Exception('Name collision detected. Examine JSON file')
-    print_debug('There are {} index creations'.format(len(create_indexes)))
+    total = len(create_indexes)
+    print_debug('There are {} index creations'.format(total))
+    indexes_and_msg = []
+    for n, index in enumerate(create_indexes):
+        if n % 10 == 0 and n > 0:
+            console = TEMPLATE['sql_print_output'].format('{} indexes created, {} remaining'.format(n, total - n))
+            indexes_and_msg.append(console)
+        indexes_and_msg.append(index)
 
-    return create_indexes, rename_old_indexes, rename_new_indexes
+    return indexes_and_msg, rename_old_indexes, rename_new_indexes
 
 
 def make_modification_sql(matview_name):
@@ -292,7 +302,7 @@ def main(source_file):
     global COMMIT_HASH
     global RANDOM_CHARS
     COMMIT_HASH = generate_uid(9, source_file)
-    RANDOM_CHARS = str(uuid4())[:3]
+    RANDOM_CHARS = hashlib.md5(source_file.encode('utf-8')).hexdigest()[:3]
 
     try:
         sql_json = ingest_json(source_file)

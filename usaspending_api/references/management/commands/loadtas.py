@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         is_remote_file = len(options['location'][0].split('.')) == 1
         if is_remote_file:
-            s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
+            s3connection = boto.s3.connect_to_region(os.environ.get('USASPENDING_AWS_REGION'))
             s3bucket = s3connection.lookup(options['location'][0])
             file_path = s3bucket.get_key('cars_tas.csv')
         else:

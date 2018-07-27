@@ -1,9 +1,10 @@
+from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SummaryPscCodesView
-from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryTransactionGeoView
 from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
+from usaspending_api.awards.models_matviews import SummaryTransactionRecipientView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
@@ -79,6 +80,7 @@ MATVIEW_SELECTOR = {
             'time_period',
             'award_type_codes',
             'agencies',
+            'recipient_id',
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
@@ -104,6 +106,7 @@ MATVIEW_SELECTOR = {
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
+            'recipient_id',
             'place_of_performance_scope',
             'place_of_performance_locations',
             'award_amounts',
@@ -119,6 +122,17 @@ MATVIEW_SELECTOR = {
             'award_amounts': [can_use_total_obligation_enum]},
         'model': SummaryTransactionMonthView,
     },
+    'SummaryTransactionRecipientView': {
+        'allowed_filters': [
+            'time_period',
+            'award_type_codes',
+            'recipient_id',
+        ],
+        'prevent_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]},
+        'model': SummaryTransactionRecipientView,
+    },
     'UniversalTransactionView': {
         'allowed_filters': [
             'keywords',
@@ -126,6 +140,7 @@ MATVIEW_SELECTOR = {
             'award_type_codes',
             'agencies',
             'legal_entities',
+            'recipient_id',
             'recipient_search_text',
             'recipient_scope',
             'recipient_locations',
@@ -331,6 +346,8 @@ def spending_by_category(category, filters):
         view_chain = ['SummaryCfdaNumbersView']
     elif category in ['county', 'district']:
         view_chain = ['SummaryTransactionGeoView']
+    elif category in ['recipient_duns']:
+        view_chain = ['SummaryTransactionRecipientView']
 
     # All of these category/scope combinations can use the following:
     view_chain.extend([

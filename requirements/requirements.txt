@@ -10,7 +10,7 @@ django-cors-headers==1.2.2
 django-debug-toolbar==1.7
 django-extensions==1.7.5
 django-filter==0.14.0
-git+https://github.com/nmonga91/django-mock-queries#egg=django-mock-queries
+git+https://github.com/fedspendingtransparency/django-mock-queries#egg=django-mock-queries
 django-queryset-csv==1.0.0
 django-simple-history==1.8.2
 django-spaghetti-and-meatballs==0.2.2
@@ -22,7 +22,7 @@ elasticsearch==6.1.1
 fiscalyear==0.1.0
 flake8==3.5.0
 Markdown==2.6.6
-model-mommy==1.5.1
+model-mommy==1.6.0
 openpyxl==2.4.7
 pandas==0.18.1
 psycopg2==2.7.3
@@ -44,5 +44,5 @@ urllib3==1.18
 xlrd==1.0.0
 boto==2.48.0
 zipstream==1.1.4
-jsonpickle==0.9.5
+jsonpickle==0.9.6
 filechunkio==1.8

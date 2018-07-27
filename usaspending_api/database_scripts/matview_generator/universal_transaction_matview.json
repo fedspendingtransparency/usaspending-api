@@ -4,13 +4,15 @@
   "matview_sql": [
     "SELECT",
     "  to_tsvector(CONCAT(",
-    "    legal_entity.recipient_name,",
+    "    (SELECT name FROM recipient_normalization_pair(legal_entity.recipient_name, COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)) AS (name text, duns text)),",
     "    ' ', transaction_fpds.naics,",
     "    ' ', naics.description,",
     "    ' ', psc.description,",
-    "    ' ', transaction_normalized.description)) AS keyword_ts_vector,",
+    "    ' ', transaction_normalized.description)",
+    "  ) AS keyword_ts_vector,",
     "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,",
-    "  to_tsvector(coalesce(legal_entity.recipient_name, '')) AS recipient_name_ts_vector,",
+    "  to_tsvector((SELECT name FROM recipient_normalization_pair(legal_entity.recipient_name, COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)) AS (name text, duns text)",
+    "  )) AS recipient_name_ts_vector,",
     "",
     "  transaction_normalized.id AS transaction_id,",
     "  transaction_normalized.action_date::date,",
@@ -46,13 +48,13 @@
     "  place_of_performance.zip5 AS pop_zip5,",
     "  place_of_performance.congressional_code AS pop_congressional_code,",
     "",
-    "  recipient_location.location_country_code AS recipient_location_country_code,",
-    "  recipient_location.country_name AS recipient_location_country_name,",
-    "  recipient_location.state_code AS recipient_location_state_code,",
-    "  recipient_location.county_code AS recipient_location_county_code,",
-    "  recipient_location.county_name AS recipient_location_county_name,",
-    "  recipient_location.zip5 AS recipient_location_zip5,",
-    "  recipient_location.congressional_code AS recipient_location_congressional_code,",
+    "  COALESCE(x.legal_entity_country_code, transaction_fabs.legal_entity_country_code) AS recipient_location_country_code,",
+    "  COALESCE(x.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,",
+    "  COALESCE(x.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,",
+    "  COALESCE(x.legal_entity_county_code, transaction_fabs.legal_entity_county_code) AS recipient_location_county_code,",
+    "  COALESCE(x.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,",
+    "  COALESCE(x.legal_entity_congressional, transaction_fabs.legal_entity_congressional) AS recipient_location_congressional_code,",
+    "  COALESCE(x.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,",
     "",
     "  transaction_fpds.naics AS naics_code,",
     "  naics.description AS naics_description,",
@@ -64,9 +66,22 @@
     "  transaction_fpds.extent_competed,",
     "  transaction_fabs.cfda_number,",
     "  references_cfda.program_title AS cfda_title,",
+    "",
     "  transaction_normalized.recipient_id,",
-    "  UPPER(legal_entity.recipient_name) AS recipient_name,",
-    "  legal_entity.recipient_unique_id,",
+    "  MD5(",
+    "    UPPER((",
+    "      SELECT CONCAT(duns::text, name::text) FROM recipient_normalization_pair(",
+    "        legal_entity.recipient_name, COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu)",
+    "      ) AS (name text, duns text)",
+    "    ))",
+    "  )::uuid AS recipient_hash,",
+    "  UPPER((",
+    "    SELECT name FROM recipient_normalization_pair(",
+    "      legal_entity.recipient_name, COALESCE(",
+    "        x.duns, transaction_fabs.awardee_or_recipient_uniqu)",
+    "      ) AS (name text, duns text)",
+    "  ))::text AS recipient_name,",
+    "  COALESCE(x.duns, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,",
     "  legal_entity.parent_recipient_unique_id,",
     "  legal_entity.business_categories,",
     "",
@@ -91,7 +106,19 @@
     "LEFT OUTER JOIN",
     "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
     "LEFT OUTER JOIN",
-    "  references_location AS recipient_location ON (legal_entity.location_id = recipient_location.location_id)",
+    "  duns ON (legal_entity.recipient_unique_id = duns.awardee_or_recipient_uniqu)",
+    "LEFT OUTER JOIN (SELECT",
+    "  prex.transaction_id,",
+    "  prex.legal_entity_country_code AS legal_entity_country_code,",
+    "  prex.legal_entity_country_name AS legal_entity_country_name,",
+    "  prex.legal_entity_state_code AS legal_entity_state_code,",
+    "  prex.legal_entity_county_code AS legal_entity_county_code,",
+    "  prex.legal_entity_county_name AS legal_entity_county_name,",
+    "  prex.legal_entity_congressional AS legal_entity_congressional,",
+    "  prex.legal_entity_zip5 AS legal_entity_zip5,",
+    "  prex.awardee_or_recipient_uniqu AS duns",
+    "  FROM transaction_fpds AS prex",
+    "  ) x ON transaction_normalized.id = x.transaction_id AND transaction_normalized.is_fpds = true",
     "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",
     "LEFT OUTER JOIN",
@@ -201,10 +228,6 @@
       "name": "pop_congressional_code",
       "where": "pop_congressional_code IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "pop_congressional_code"}]
-    }, {
-      "name": "gin_recipient_name",
-      "method": "GIN",
-      "columns": [{"name": "recipient_name", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "gin_recipient_unique_id",
       "method": "GIN",
@@ -321,29 +344,41 @@
       "method": "GIN",
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
+      "name": "simple_pop_geolocation",
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
+    }, {
       "name": "compound_geo_pop_1",
-      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_country_code"}, {"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "action_date"}]
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_geo_pop_2",
-      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_country_code"}, {"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "action_date"}]
+      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_geo_pop_3",
-      "where": "pop_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_country_code"}, {"name": "pop_zip5"}, {"name": "action_date"}]
+      "where": "pop_country_code = 'USA' AND pop_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "pop_zip5"}, {"name": "action_date"}]
+    }, {
+      "name": "simple_recipient_location_geolocation",
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_geo_rl_1",
-      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "action_date"}]
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_geo_rl_2",
-      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "action_date"}]
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_geo_rl_3",
-      "where": "recipient_location_country_code = 'USA' AND action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_location_country_code"}, {"name": "recipient_location_zip5"}, {"name": "action_date"}]
+      "where": "recipient_location_country_code = 'USA' AND recipient_location_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_location_zip5"}, {"name": "action_date"}]
+    }, {
+      "name": "recipient_hash",
+      "where": "action_date >= '2007-10-01'",
+      "columns": [{"name": "recipient_hash"}]
     }, {
       "name": "type_pre2008",
       "where": "type IS NOT NULL AND action_date < '2007-10-01'",

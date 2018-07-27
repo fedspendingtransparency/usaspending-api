@@ -326,11 +326,11 @@ def test_state_current_fy_capita_success(client, state_data, refresh_matviews):
 def test_state_metadata_failure(client, state_data, refresh_matviews):
     """Verify error on bad autocomplete request for budget function."""
 
-    # There is no FIPS with 03
+    # There is no FIPS with 04
     resp = client.get(state_metadata_endpoint('04'))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    # There is no FIPS with 03
+    # There is no break year
     resp = client.get(state_metadata_endpoint('01', 'break'))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -403,9 +403,9 @@ def test_state_list_success_state(client, state_data, refresh_matviews):
     sorted_resp = sort_states_response(resp.data)
 
     expected = [
-        {'name': 'Test State', 'code': 'TS', 'fips': '01', 'amount': 100000.00, 'count': 1},
-        {'name': 'Test District', 'code': 'TD', 'fips': '02', 'amount': 1000.00, 'count': 1},
-        {'name': 'Test Territory', 'code': 'TT', 'fips': '03', 'amount': 1000.00, 'count': 1}
+        {'name': 'Test State', 'code': 'TS', 'fips': '01', 'type': 'state', 'amount': 100000.00, 'count': 1},
+        {'name': 'Test District', 'code': 'TD', 'fips': '02', 'type': 'district', 'amount': 1000.00, 'count': 1},
+        {'name': 'Test Territory', 'code': 'TT', 'fips': '03', 'type': 'territory', 'amount': 1000.00, 'count': 1}
     ]
 
     assert resp.status_code == status.HTTP_200_OK

@@ -16,11 +16,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # User-specified limit on downloads should not be permitted beyond this
 MAX_DOWNLOAD_LIMIT = 500000
+
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Default timeout for SQL statements in Django. Set to 5 min (in seconds).
-DEFAULT_DB_TIMEOUT_IN_SECONDS = 300
+DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get('DEFAULT_DB_TIMEOUT_IN_SECONDS') or 0
 
 API_MAX_DATE = '2020-09-30'
 API_MIN_DATE = '2000-10-01'
@@ -40,16 +41,15 @@ ALLOWED_HOSTS = ['*']
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# AWS Region for USAspending Infrastructure
+USASPENDING_AWS_REGION = ""
+
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
-CSV_S3_BUCKET_NAME = ""
-CSV_SQS_QUEUE_NAME = ""
-CSV_AWS_REGION = ""
 
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
-BULK_DOWNLOAD_AWS_REGION = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 BROKER_AGENCY_BUCKET_NAME = ""
 FPDS_BUCKET_NAME = ""
@@ -145,7 +145,15 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=10)}
+DEFAULT_DB_OPTIONS = {
+    'OPTIONS': {
+        'options': '-c statement_timeout={0}'.format(DEFAULT_DB_TIMEOUT_IN_SECONDS*1000)
+    }
+}
+
+DATABASES = {
+    'default': {**dj_database_url.config(conn_max_age=10), **DEFAULT_DB_OPTIONS}
+}
 
 # read replica env vars... if not set, default DATABASE_URL will get used
 # if only one set, this will error out (single DB should use DATABASE_URL)

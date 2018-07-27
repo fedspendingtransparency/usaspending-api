@@ -1,9 +1,7 @@
 import logging
 from collections import OrderedDict
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
-from django.conf import settings
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Sum
 from rest_framework.response import Response
@@ -11,10 +9,12 @@ from rest_framework.response import Response
 from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.recipient.models import StateData
+from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,9 @@ def populate_fips():
     global VALID_FIPS
 
     if not VALID_FIPS:
-        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name} for fips_code, state_code, state_name
-                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name'))}
+        VALID_FIPS = {fips_code: {'code': state_code, 'name': state_name, 'type': state_type}
+                      for fips_code, state_code, state_name, state_type
+                      in list(StateData.objects.distinct('fips').values_list('fips', 'code', 'name', 'type'))}
 
 
 def validate_fips(fips):
@@ -38,45 +39,6 @@ def validate_fips(fips):
         raise InvalidParameterException('Invalid fips: {}.'.format(fips))
 
     return fips
-
-
-def validate_year(year=None):
-    if year and not (year.isdigit() or year in ['all', 'latest']):
-        raise InvalidParameterException('Invalid year: {}.'.format(year))
-    return year
-
-
-def reshape_filters(state_code=None, year=None, award_type_codes=None):
-    # recreate filters
-    filters = {}
-
-    if state_code:
-        filters['place_of_performance_locations'] = [{'country': 'USA', 'state': state_code}]
-
-    if year:
-        today = datetime.now()
-        if year and year.isdigit():
-            time_period = [{
-                'start_date': '{}-10-01'.format(int(year) - 1),
-                'end_date': '{}-09-30'.format(year)
-            }]
-        elif year == 'all':
-            time_period = [{
-                'start_date': settings.API_SEARCH_MIN_DATE,
-                'end_date': datetime.strftime(today, '%Y-%m-%d')
-            }]
-        else:
-            last_year = today - relativedelta(years=1)
-            time_period = [{
-                'start_date': datetime.strftime(last_year, '%Y-%m-%d'),
-                'end_date': datetime.strftime(today, '%Y-%m-%d')
-            }]
-        filters['time_period'] = time_period
-
-    if award_type_codes:
-        filters['award_type_codes'] = award_type_codes
-
-    return filters
 
 
 def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False):
@@ -142,6 +104,7 @@ class StateMetaDataViewSet(APIDocumentationView):
         else:
             return state_data[latest]
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -184,6 +147,7 @@ class StateMetaDataViewSet(APIDocumentationView):
 
 class StateAwardBreakdownViewSet(APIDocumentationView):
 
+    @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
@@ -202,6 +166,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
 
 class ListStates(APIDocumentationView):
 
+    @cache_response()
     def get(self, request):
         populate_fips()
         valid_states = {v['code']: k for k, v in VALID_FIPS.items()}
@@ -214,6 +179,7 @@ class ListStates(APIDocumentationView):
                 'fips': fips,
                 'code': item['pop_state_code'],
                 'name': VALID_FIPS[fips]['name'],
+                'type': VALID_FIPS[fips]['type'],
                 'amount': item['total'],
                 'count': item['count'],
             })
