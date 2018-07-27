@@ -268,8 +268,6 @@ def write_sql_file(str_list, filename):
 def create_componentized_files(sql_json):
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
     index_dir_path = os.path.join(filename_base, "batch_indexes/")
-    if not os.path.exists(index_dir_path):
-        os.makedirs(index_dir_path)
 
     matview_name = sql_json["final_name"]
     matview_temp_name = matview_name + "_temp"
@@ -285,6 +283,8 @@ def create_componentized_files(sql_json):
     write_sql_file(create_indexes, filename_base + "__indexes")
 
     if args.batch_indexes > 1:
+        if not os.path.exists(index_dir_path):
+            os.makedirs(index_dir_path)
         for i, index_block in enumerate(split_indexes_chunks(create_indexes, args.batch_indexes)):
             write_sql_file(index_block, index_dir_path + "group_{}".format(i))
 
