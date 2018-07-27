@@ -37,7 +37,7 @@
     "    recipient_hash,",
     "    legal_business_name AS recipient_name,",
     "    duns",
-    "  FROM recipient_lookup_view AS rlv",
+    "  FROM recipient_lookup AS rlv",
     "  ) recipient_lookup ON recipient_lookup.duns = legal_entity.recipient_unique_id AND legal_entity.recipient_unique_id IS NOT NULL",
     "LEFT OUTER JOIN",
     "  awards ON (transaction_normalized.award_id = awards.id)",

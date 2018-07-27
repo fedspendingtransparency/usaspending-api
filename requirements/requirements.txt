@@ -18,6 +18,7 @@ Django==1.11.4
 djangorestframework==3.4.6
 drf-extensions==0.3.1
 drf-tracking==1.1.0
+django-partial-index==0.5.2
 elasticsearch==6.1.1
 fiscalyear==0.1.0
 flake8==3.5.0
