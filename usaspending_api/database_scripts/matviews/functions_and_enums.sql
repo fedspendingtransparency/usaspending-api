@@ -24,18 +24,3 @@ AS $$
   RETURN result::public.total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT)
-RETURNS RECORD
-STABLE
-AS $$
-  DECLARE
-    DECLARE result text;
-  BEGIN
-    IF search_duns IS NULL THEN result = original_name;
-    ELSE result = (SELECT legal_business_name FROM recipient_lookup_view WHERE duns = search_duns);
-    END IF;
-  RETURN (result, search_duns)::RECORD;
-  END;
-$$ LANGUAGE plpgsql;
