@@ -1113,11 +1113,15 @@ def test_category_state_territory_subawards(mock_matviews_qs):
 
     assert expected_response == spending_by_category_logic
 
-
+@pytest.mark.django_db
 def test_category_country(mock_matviews_qs):
-    mock_model_1 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', generated_pragmatic_obligation=1)
-    mock_model_2 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', generated_pragmatic_obligation=1)
-
+    mock_model_1 = MockModel(pop_country_code='US', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_country_code='US', generated_pragmatic_obligation=1)
+    mommy.make(
+        'references.RefCountryCode',
+        country_name='UNITED STATES',
+        country_code='US',
+    )
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
     test_payload = {
@@ -1151,11 +1155,15 @@ def test_category_country(mock_matviews_qs):
 
     assert expected_response == spending_by_category_logic
 
-
+@pytest.mark.django_db
 def test_category_country_subawards(mock_matviews_qs):
-    mock_model_1 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', amount=1)
-    mock_model_2 = MockModel(pop_country_code='US', pop_country_name='UNITED STATES', amount=1)
-
+    mock_model_1 = MockModel(pop_country_code='US', amount=1)
+    mock_model_2 = MockModel(pop_country_code='US', amount=1)
+    mommy.make(
+        'references.RefCountryCode',
+        country_name='UNITED STATES',
+        country_code='US',
+    )
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
     test_payload = {

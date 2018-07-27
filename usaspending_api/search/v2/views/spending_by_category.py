@@ -16,7 +16,7 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
+from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup, RefCountryCode
 from usaspending_api.recipient.models import StateData
 
 logger = logging.getLogger(__name__)
@@ -64,8 +64,7 @@ ALIAS_DICT = {
         'pop_state_code': 'code'
     },
     'country': {
-        'pop_country_code': 'code',
-        'pop_country_name': 'name'
+        'pop_country_code': 'code'
     }
 
 }
@@ -88,7 +87,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         categories = [
             'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
             'recipient_duns', 'recipient_parent_duns',
-            'cfda', 'psc', 'naics', 'county', 'district']
+            'cfda', 'psc', 'naics', 'county', 'district', 'country', 'state/territory', 'federal_account']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
@@ -290,7 +289,7 @@ class BusinessLogic:
             values = ['pop_congressional_code', 'pop_state_code']
         elif self.category == 'country':
             filters = {'pop_country_code__isnull': False}
-            values = ['pop_country_code', 'pop_country_name']
+            values = ['pop_country_code']
         elif self.category == 'state/territory':
             filters = {'pop_state_code__isnull': False}
             values = ['pop_state_code']
@@ -310,6 +309,8 @@ class BusinessLogic:
 
                 row['name'] = '{}-{}'.format(row['pop_state_code'], cd_code)
                 del row['pop_state_code']
+            if self.category == 'country':
+                row['name'] = fetch_country_name_from_code(row['code'])
             if self.category == 'state/territory':
                 row['name'] = fetch_state_name_from_code(row['code'])
         return results
@@ -367,6 +368,15 @@ def fetch_psc_description_by_code(psc_code):
     result = PSC.objects.filter(code=psc_code).values(*columns).first()
     if not result:
         logger.warning('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
+        return None
+    return result[columns[0]]
+
+
+def fetch_country_name_from_code(country_code):
+    columns = ['country_name']
+    result = RefCountryCode.objects.filter(country_code=country_code).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for country_code: {}'.format(','.join(columns), country_code))
         return None
     return result[columns[0]]
 
