@@ -2,10 +2,13 @@
   "final_name": "quick_test_0",
   "refresh": true,
   "matview_sql": [
+    "WITH sleepy AS (SELECT pg_sleep(10), '-'::text AS wake)",
     "SELECT",
     "  ''::text AS recipient_hash,",
     "  '------'::text AS duns,",
-    "  ''::text AS legal_business_name"
+    "  ''::text AS legal_business_name",
+    "UNION",
+    "SELECT wake, wake, wake from sleepy"
   ],
   "indexes": [
     {
