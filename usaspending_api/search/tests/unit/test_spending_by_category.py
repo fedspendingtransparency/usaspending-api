@@ -1113,6 +1113,7 @@ def test_category_state_territory_subawards(mock_matviews_qs):
 
     assert expected_response == spending_by_category_logic
 
+
 @pytest.mark.django_db
 def test_category_country(mock_matviews_qs):
     mock_model_1 = MockModel(pop_country_code='US', generated_pragmatic_obligation=1)
@@ -1154,6 +1155,7 @@ def test_category_country(mock_matviews_qs):
     }
 
     assert expected_response == spending_by_category_logic
+
 
 @pytest.mark.django_db
 def test_category_country_subawards(mock_matviews_qs):
