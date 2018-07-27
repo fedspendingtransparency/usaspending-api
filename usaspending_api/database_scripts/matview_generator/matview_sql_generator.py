@@ -10,7 +10,7 @@ from uuid import uuid4
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
 #        ^--- Will clobber files in usaspending_api/database_scripts/matviews
 
-'''
+"""
 POSTGRES INDEX FORMAT
     CREATE [ UNIQUE ] INDEX [ name ] ON table_name [ USING method ]
     ( { column_name | ( expression ) } [ COLLATE collation ]
@@ -52,29 +52,29 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
         "method": "<method>"
     }
 }
-'''
+"""
 
 TEMPLATE = {
-    'create_matview': 'CREATE MATERIALIZED VIEW {} AS\n{};',
-    'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;',
-    'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
-    'cluster_matview': 'CLUSTER VERBOSE {} USING {};',
-    'refresh_matview': 'REFRESH MATERIALIZED VIEW CONCURRENTLY {} WITH DATA;',
-    'analyze': 'ANALYZE VERBOSE {};',
-    'vacuum': 'VACUUM ANALYZE VERBOSE {};',
-    'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
-    'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
-    'grant_select': 'GRANT SELECT ON {} TO {};',
-    'sql_print_output': 'DO $$ BEGIN RAISE NOTICE \'{}\'; END $$;',
+    "create_matview": "CREATE MATERIALIZED VIEW {} AS\n{};",
+    "drop_matview": "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;",
+    "rename_matview": "ALTER MATERIALIZED VIEW {}{} RENAME TO {};",
+    "cluster_matview": "CLUSTER VERBOSE {} USING {};",
+    "refresh_matview": "REFRESH MATERIALIZED VIEW CONCURRENTLY {} WITH DATA;",
+    "analyze": "ANALYZE VERBOSE {};",
+    "vacuum": "VACUUM ANALYZE VERBOSE {};",
+    "create_index": "CREATE {}INDEX {} ON {} USING {}({}){}{};",
+    "rename_index": "ALTER INDEX {}{} RENAME TO {};",
+    "grant_select": "GRANT SELECT ON {} TO {};",
+    "sql_print_output": "DO $$ BEGIN RAISE NOTICE '{}'; END $$;",
 }
 
 CLUSTERING_INDEX = None
-COMMIT_HASH = ''
-DEST_FOLDER = '../matviews/'
-COMPONENT_DIR = 'componentized/'
+COMMIT_HASH = ""
+DEST_FOLDER = "../matviews/"
+COMPONENT_DIR = "componentized/"
 HERE = os.path.abspath(os.path.dirname(__file__))
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
-RANDOM_CHARS = ''
+RANDOM_CHARS = ""
 
 
 def ingest_json(path):
@@ -88,16 +88,16 @@ def generate_uid(characters=8, filename=None):
     try:
         git_hash = get_git_commit(characters - 1, filename)
     except Exception as e:
-        print('Error: [{}]. Continuing...'.format(e))
+        print("Error: [{}]. Continuing...".format(e))
     if git_hash is None:
         return str(uuid4())[:characters]
     else:
-        return git_hash + '$'
+        return git_hash + "$"
 
 
 def get_git_commit(characters=8, filename=None):
     cmd = 'git log -n 1 --pretty=format:"%H"'
-    args = cmd.split(' ')
+    args = cmd.split(" ")
     if filename and os.path.isfile(filename):
         args.append(filename)
 
@@ -109,34 +109,28 @@ def get_git_commit(characters=8, filename=None):
 
 
 def create_index_string(matview_name, index_name, idx):
-    if idx.get('cluster_on_this', False):
+    if idx.get("cluster_on_this", False):
         global CLUSTERING_INDEX
         CLUSTERING_INDEX = index_name
-    idx_method = idx.get('method', 'BTREE')  # if missing, defaults to BTREE
-    idx_unique = 'UNIQUE ' if idx.get('unique', False) else ''
-    idx_where = ' WHERE ' + idx['where'] if idx.get('where', None) else ''
-    idx_with = ''
-    if idx_method.upper() == 'BTREE':
-        idx_with = ' WITH (fillfactor = 97)'  # reduce btree index size by 7% from the default 10% free-space
+    idx_method = idx.get("method", "BTREE")  # if missing, defaults to BTREE
+    idx_unique = "UNIQUE " if idx.get("unique", False) else ""
+    idx_where = " WHERE " + idx["where"] if idx.get("where", None) else ""
+    idx_with = ""
+    if idx_method.upper() == "BTREE":
+        idx_with = " WITH (fillfactor = 97)"  # reduce btree index size by 7% from the default 10% free-space
 
     idx_cols = []
-    for col in idx['columns']:
+    for col in idx["columns"]:
         index_def = [col["name"]]  # Critial to have col or expression. Exception if missing
-        if col.get('order', None):  # if missing, skip and let postgres default to ASC
-            index_def.append(col['order'])
-        if col.get('collation', None):  # if missing, skip and let postgres use default
-            index_def.append('COLLATE ' + col['collation'])
-        if col.get('opclass', None):  # if missing, skip and let postgres choose
-            index_def.append(col['opclass'])
-        idx_cols.append(' '.join(index_def))
-    idx_str = TEMPLATE['create_index'].format(
-        idx_unique,
-        index_name,
-        matview_name,
-        idx_method,
-        ', '.join(idx_cols),
-        idx_with,
-        idx_where,
+        if col.get("order", None):  # if missing, skip and let postgres default to ASC
+            index_def.append(col["order"])
+        if col.get("collation", None):  # if missing, skip and let postgres use default
+            index_def.append("COLLATE " + col["collation"])
+        if col.get("opclass", None):  # if missing, skip and let postgres choose
+            index_def.append(col["opclass"])
+        idx_cols.append(" ".join(index_def))
+    idx_str = TEMPLATE["create_index"].format(
+        idx_unique, index_name, matview_name, idx_method, ", ".join(idx_cols), idx_with, idx_where
     )
     return idx_str
 
@@ -148,33 +142,27 @@ def split_indexes_chunks(index_list, file_count):
         to different workers as a poorman's averaging of the execution times
     """
     results = [list() for _ in range(file_count)]  # create empty lists for the index SQL strings
-    for i, index in enumerate([index for index in index_list if index.startswith('CREATE')]):
+    for i, index in enumerate([index for index in index_list if index.startswith("CREATE")]):
         results[i % file_count].append(index)
     for result in results:
         yield result
 
 
 def make_matview_drops(final_matview_name):
-    matview_temp_name = final_matview_name + '_temp'
-    matview_archive_name = final_matview_name + '_old'
+    matview_temp_name = final_matview_name + "_temp"
+    matview_archive_name = final_matview_name + "_old"
 
-    return [
-        TEMPLATE['drop_matview'].format(matview_temp_name),
-        TEMPLATE['drop_matview'].format(matview_archive_name)
-    ]
+    return [TEMPLATE["drop_matview"].format(matview_temp_name), TEMPLATE["drop_matview"].format(matview_archive_name)]
 
 
 def make_matview_create(final_matview_name, sql):
-    matview_sql = '\n'.join(sql)
-    matview_temp_name = final_matview_name + '_temp'
-    return [TEMPLATE['create_matview'].format(matview_temp_name, matview_sql)]
+    matview_sql = "\n".join(sql)
+    matview_temp_name = final_matview_name + "_temp"
+    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql)]
 
 
 def make_matview_refresh(matview_name):
-    return [
-        TEMPLATE['refresh_matview'].format(matview_name),
-        TEMPLATE['vacuum'].format(matview_name)
-    ]
+    return [TEMPLATE["refresh_matview"].format(matview_name), TEMPLATE["vacuum"].format(matview_name)]
 
 
 def make_indexes_sql(sql_json, matview_name):
@@ -182,30 +170,30 @@ def make_indexes_sql(sql_json, matview_name):
     create_indexes = []
     rename_old_indexes = []
     rename_new_indexes = []
-    for idx in sql_json['indexes']:
-        if len(idx['name']) > MAX_NAME_LENGTH:
-            raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
+    for idx in sql_json["indexes"]:
+        if len(idx["name"]) > MAX_NAME_LENGTH:
+            raise Exception("Desired index name is too long. Keep under {} chars".format(MAX_NAME_LENGTH))
 
-        final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '_' + idx['name']
-        final_index = final_index.replace('-', '')
+        final_index = "idx_" + COMMIT_HASH + RANDOM_CHARS + "_" + idx["name"]
+        final_index = final_index.replace("-", "")
         unique_name_list.append(final_index)
-        tmp_index = final_index + '_temp'
-        old_index = final_index + '_old'
+        tmp_index = final_index + "_temp"
+        old_index = final_index + "_old"
 
         idx_str = create_index_string(matview_name, tmp_index, idx)
 
         create_indexes.append(idx_str)
-        rename_old_indexes.append(TEMPLATE['rename_index'].format('IF EXISTS ', final_index, old_index))
-        rename_new_indexes.append(TEMPLATE['rename_index'].format('', tmp_index, final_index))
+        rename_old_indexes.append(TEMPLATE["rename_index"].format("IF EXISTS ", final_index, old_index))
+        rename_new_indexes.append(TEMPLATE["rename_index"].format("", tmp_index, final_index))
 
     if len(unique_name_list) != len(set(unique_name_list)):
-        raise Exception('Name collision detected. Examine JSON file')
+        raise Exception("Name collision detected. Examine JSON file")
     total = len(create_indexes)
-    print_debug('There are {} index creations'.format(total))
+    print_debug("There are {} index creations".format(total))
     indexes_and_msg = []
     for n, index in enumerate(create_indexes):
         if n % 10 == 0 and n > 0:
-            console = TEMPLATE['sql_print_output'].format('{} indexes created, {} remaining'.format(n, total - n))
+            console = TEMPLATE["sql_print_output"].format("{} indexes created, {} remaining".format(n, total - n))
             indexes_and_msg.append(console)
         indexes_and_msg.append(index)
 
@@ -216,27 +204,27 @@ def make_modification_sql(matview_name):
     global CLUSTERING_INDEX
     sql_strings = []
     if CLUSTERING_INDEX:
-        print_debug('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
-        sql_strings.append(TEMPLATE['cluster_matview'].format(matview_name, CLUSTERING_INDEX))
-    sql_strings.append(TEMPLATE['analyze'].format(matview_name))
-    sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
+        print_debug("*** This matview will be clustered on {} ***".format(CLUSTERING_INDEX))
+        sql_strings.append(TEMPLATE["cluster_matview"].format(matview_name, CLUSTERING_INDEX))
+    sql_strings.append(TEMPLATE["analyze"].format(matview_name))
+    sql_strings.append(TEMPLATE["grant_select"].format(matview_name, "readonly"))
     return sql_strings
 
 
 def make_rename_sql(matview_name, old_indexes, new_indexes):
-    matview_temp_name = matview_name + '_temp'
-    matview_archive_name = matview_name + '_old'
+    matview_temp_name = matview_name + "_temp"
+    matview_archive_name = matview_name + "_old"
     sql_strings = []
-    sql_strings.append(TEMPLATE['rename_matview'].format('IF EXISTS ', matview_name, matview_archive_name))
+    sql_strings.append(TEMPLATE["rename_matview"].format("IF EXISTS ", matview_name, matview_archive_name))
     sql_strings += old_indexes
-    sql_strings.append('')
-    sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
+    sql_strings.append("")
+    sql_strings.append(TEMPLATE["rename_matview"].format("", matview_temp_name, matview_name))
     sql_strings += new_indexes
     return sql_strings
 
 
 def create_all_sql_strings(sql_json):
-    ''' Desired ordering of steps for final SQL:
+    """ Desired ordering of steps for final SQL:
         1. Drop existing "_temp" and "_old" matviews
         2. Create new matview
         3. Create indexes for new matview
@@ -246,92 +234,92 @@ def create_all_sql_strings(sql_json):
         7. Rename all existing matview indexes to avoid name collisions
         8. Rename new matview
         9. Rename new matview indexes
-    '''
+    """
     final_sql_strings = []
 
-    matview_name = sql_json['final_name']
-    matview_temp_name = matview_name + '_temp'
+    matview_name = sql_json["final_name"]
+    matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
     final_sql_strings.extend(make_matview_drops(matview_name))
-    final_sql_strings.append('')
-    final_sql_strings.extend(make_matview_create(matview_name, sql_json['matview_sql']))
+    final_sql_strings.append("")
+    final_sql_strings.extend(make_matview_create(matview_name, sql_json["matview_sql"]))
 
-    final_sql_strings.append('')
+    final_sql_strings.append("")
     final_sql_strings += create_indexes
-    final_sql_strings.append('')
+    final_sql_strings.append("")
     final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
-    final_sql_strings.append('')
+    final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name))
     return final_sql_strings
 
 
 def write_sql_file(str_list, filename):
-    fname = filename + '.sql'
+    fname = filename + ".sql"
 
-    print_debug('Creating file: {}'.format(fname))
-    with open(fname, 'w') as f:
-        fstring = '\n'.join(str_list)
+    print_debug("Creating file: {}".format(fname))
+    with open(fname, "w") as f:
+        fstring = "\n".join(str_list)
         f.write(fstring)
-        f.write('\n')
+        f.write("\n")
 
 
 def create_componentized_files(sql_json):
-    filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json['final_name'])
-    index_dir_path = os.path.join(filename_base, 'batch_indexes/')
+    filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
+    index_dir_path = os.path.join(filename_base, "batch_indexes/")
     if not os.path.exists(index_dir_path):
         os.makedirs(index_dir_path)
 
-    matview_name = sql_json['final_name']
-    matview_temp_name = matview_name + '_temp'
+    matview_name = sql_json["final_name"]
+    matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
     sql_strings = make_matview_drops(matview_name)
-    write_sql_file(sql_strings, filename_base + '__drops')
+    write_sql_file(sql_strings, filename_base + "__drops")
 
-    sql_strings = make_matview_create(matview_name, sql_json['matview_sql'])
-    write_sql_file(sql_strings, filename_base + '__matview')
+    sql_strings = make_matview_create(matview_name, sql_json["matview_sql"])
+    write_sql_file(sql_strings, filename_base + "__matview")
 
-    write_sql_file(create_indexes, filename_base + '__indexes')
+    write_sql_file(create_indexes, filename_base + "__indexes")
 
     if args.batch_indexes > 1:
         for i, index_block in enumerate(split_indexes_chunks(create_indexes, args.batch_indexes)):
-            write_sql_file(index_block, index_dir_path + 'group_{}'.format(i))
+            write_sql_file(index_block, index_dir_path + "group_{}".format(i))
 
     sql_strings = make_modification_sql(matview_name)
-    write_sql_file(sql_strings, filename_base + '__mods')
+    write_sql_file(sql_strings, filename_base + "__mods")
 
     sql_strings = make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
-    write_sql_file(sql_strings, filename_base + '__renames')
+    write_sql_file(sql_strings, filename_base + "__renames")
 
-    if 'refresh' in sql_json and sql_json['refresh'] is True:
+    if "refresh" in sql_json and sql_json["refresh"] is True:
         sql_strings = make_matview_refresh(matview_name)
-        write_sql_file(sql_strings, filename_base + '__refresh')
+        write_sql_file(sql_strings, filename_base + "__refresh")
 
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
-    print_debug('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
-    write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json['final_name']))
+    print_debug('Preparing to store "{}" in sql file'.format(sql_json["final_name"]))
+    write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json["final_name"]))
 
 
 def main(source_file):
     global COMMIT_HASH
     global RANDOM_CHARS
     COMMIT_HASH = generate_uid(9, source_file)
-    RANDOM_CHARS = hashlib.md5(source_file.encode('utf-8')).hexdigest()[:3]
+    RANDOM_CHARS = hashlib.md5(source_file.encode("utf-8")).hexdigest()[:3]
 
     try:
         sql_json = ingest_json(source_file)
     except Exception as e:
-        print('Error on Matview source JSON file: {}'.format(source_file))
+        print("Error on Matview source JSON file: {}".format(source_file))
         print(e)
         raise SystemExit(1)
     create_monolith_file(sql_json)
     create_componentized_files(sql_json)
-    print_debug('Done')
+    print_debug("Done")
 
 
 def print_debug(msg):
@@ -339,30 +327,27 @@ def print_debug(msg):
         print(msg)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(
-        prog='matview_sql_generator.py',
-        description='Generates all of the necessary SQL files for jenkins scripts')
+        prog="matview_sql_generator.py", description="Generates all of the necessary SQL files for jenkins scripts"
+    )
     arg_parser.add_argument(
-        '--dest',
-        type=str,
-        default='../matviews/',
-        help='Destination folder for all generated sql files')
+        "--dest", type=str, default="../matviews/", help="Destination folder for all generated sql files"
+    )
     arg_parser.add_argument(
-        '--file',
-        type=str,
-        default=None,
-        help='filepath to the json file containing the sql description')
+        "--file", type=str, default=None, help="filepath to the json file containing the sql description"
+    )
     arg_parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='Flag to suppress stdout when there are no errors')
+        "-q", "--quiet", action="store_true", help="Flag to suppress stdout when there are no errors"
+    )
     arg_parser.add_argument(
-        '-b', '--batch_indexes',
+        "-b",
+        "--batch_indexes",
         type=int,
         choices=range(1, 8),
         default=1,
-        help='When value >=2, distribute the index SQL across that file count')
+        help="When value >=2, distribute the index SQL across that file count",
+    )
     args = arg_parser.parse_args()
 
     DEST_FOLDER = args.dest
@@ -371,10 +356,10 @@ if __name__ == '__main__':
 
     if args.file is not None:
         if os.path.isfile(args.file):
-            print_debug('Creating matview SQL using {}'.format(args.file))
+            print_debug("Creating matview SQL using {}".format(args.file))
             main(args.file)
     else:
-        all_files = glob.glob(os.path.join(HERE, '*.json'))
+        all_files = glob.glob(os.path.join(HERE, "*.json"))
         for f in all_files:
-            print_debug('\n==== {}'.format(f))
+            print_debug("\n==== {}".format(f))
             main(f)
