@@ -141,25 +141,11 @@ def create_index_string(matview_name, index_name, idx):
     return idx_str
 
 
-def split_indexes_chunks(index_list, size):
-    # return (index_list[i: i + size] for i in range(0, len(index_list), size))
+def split_indexes_chunks(index_list, file_count):
     indexes = [index for index in index_list if index[0] != 'D']
-    bin_size = round(len(indexes) / float(size))
-    # for i in range(0, len(indexes), bin_size):
-    #     yield indexes[i: i + bin_size]
-
-    for i in range(size - 1):
-        yield indexes[i: i + bin_size]
-    yield indexes[size + bin_size:]
-
-    # new_indexes = []
-    # for index in index_list:
-    #     if index.startswith('DO'):
-    #         yield new_indexes
-    #         new_indexes = list()
-    #     else:
-    #         new_indexes.append(index)
-    # yield new_indexes
+    bin_size = round(len(indexes) / float(file_count))
+    for i in range(file_count):
+        yield indexes[bin_size * i: (i + 1) * bin_size]
 
 
 def make_matview_drops(final_matview_name):
