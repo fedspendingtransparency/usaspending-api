@@ -1,0 +1,25 @@
+{
+  "final_name": "quick_test_0",
+  "refresh": true,
+  "matview_sql": [
+    "SELECT",
+    "  ''::text AS recipient_hash,",
+    "  '------'::text AS duns,",
+    "  ''::text AS legal_business_name"
+  ],
+  "indexes": [
+    {
+      "name": "unique_hash",
+      "unique": true,
+      "columns": [{"name": "recipient_hash"}]
+    }, {
+      "name": "unique_duns",
+      "unique": true,
+      "where": "duns IS NOT NULL",
+      "columns": [{"name": "duns"}]
+    }, {
+      "name": "recipient_name",
+      "columns": [{"name": "legal_business_name"}]
+    }
+  ]
+}
