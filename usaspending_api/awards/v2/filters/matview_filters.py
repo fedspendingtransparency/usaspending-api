@@ -194,6 +194,8 @@ def matview_search_filter(filters, model, for_downloads=False):
                     filter_obj = Q(parent_recipient_unique_id=parent_duns)
                 elif len(parent_duns_rows) > 2:
                     raise InvalidParameterException('Non-unique Record in ')
+                else:
+                    raise InvalidParameterException('Parent Recipient ID ({}) not found'.format(recipient_hash))
             else:
                 filter_obj = Q(recipient_hash=recipient_hash)
             queryset &= model.objects.filter(filter_obj)
