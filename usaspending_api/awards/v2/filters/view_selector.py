@@ -348,6 +348,8 @@ def spending_by_category(category, filters):
         view_chain = ['SummaryTransactionGeoView']
     elif category in ['recipient_duns']:
         view_chain = ['SummaryTransactionRecipientView']
+    elif category in ['federal_account']:
+        view_chain = ['UniversalTransactionView']
 
     # All of these category/scope combinations can use the following:
     view_chain.extend([

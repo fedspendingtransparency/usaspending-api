@@ -18,6 +18,7 @@ from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup, RefCountryCode
 from usaspending_api.recipient.models import StateData
+from usaspending_api.accounts.models import FederalAccount
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,9 @@ ALIAS_DICT = {
     },
     'country': {
         'pop_country_code': 'code'
+    },
+    'federal_account': {
+        'transaction__award__financial_set__treasury_account__federal_account_id': 'id'
     }
 
 }
@@ -316,8 +320,13 @@ class BusinessLogic:
         return results
 
     def federal_account(self) -> list:
-        filters = {}
-        values = {}
+        filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False,
+                   'action_date__gte': '2007-10-01'}
+        values = {'transaction__award__financial_set__treasury_account__federal_account_id'}
+
+        # Note: Purely for performance reasons, can be removed if still performant
+        if 'recipient_id' not in self.filters:
+            raise InvalidParameterException('Federal Account Category requires recipient ID filter')
 
         self.queryset = self.common_db_query(filters, values)
 
@@ -326,8 +335,9 @@ class BusinessLogic:
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            row['id'] = None
-
+            agency_identifier, main_account_code, federal_account_name = fetch_federal_account_from_id(row['id'])
+            row['code'] = '-'.join([agency_identifier, main_account_code])
+            row['name']= federal_account_name
         return results
 
 
@@ -388,3 +398,12 @@ def fetch_state_name_from_code(state_code):
         logger.warning('{} not found for state_code: {}'.format(','.join(columns), state_code))
         return None
     return result[columns[0]]
+
+
+def fetch_federal_account_from_id(federal_account_id):
+    columns = ['agency_identifier', 'main_account_code', 'account_title']
+    result = FederalAccount.objects.filter(id=federal_account_id).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for federal_account_id: {}'.format(','.join(columns), federal_account_id))
+        return None
+    return result[columns[0]], result[columns[1]], result[columns[2]]
