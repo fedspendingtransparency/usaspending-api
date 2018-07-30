@@ -60,7 +60,7 @@ ALIAS_DICT = {
     'district': {
         'pop_congressional_code': 'code',
     },
-    'state/territory': {
+    'state_territory': {
         'pop_state_code': 'code'
     },
     'country': {
@@ -87,7 +87,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         categories = [
             'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
             'recipient_duns', 'recipient_parent_duns',
-            'cfda', 'psc', 'naics', 'county', 'district', 'country', 'state/territory', 'federal_account']
+            'cfda', 'psc', 'naics', 'county', 'district', 'country', 'state_territory', 'federal_account']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
@@ -153,7 +153,7 @@ class BusinessLogic:
             results = self.recipient()
         elif self.category in ('cfda', 'psc', 'naics'):
             results = self.industry_and_other_codes()
-        elif self.category in ('county', 'district', 'state/territory', 'country'):
+        elif self.category in ('county', 'district', 'state_territory', 'country'):
             results = self.location()
         elif self.category in ('federal_account'):
             results = self.federal_account()
@@ -290,7 +290,7 @@ class BusinessLogic:
         elif self.category == 'country':
             filters = {'pop_country_code__isnull': False}
             values = ['pop_country_code']
-        elif self.category == 'state/territory':
+        elif self.category == 'state_territory':
             filters = {'pop_state_code__isnull': False}
             values = ['pop_state_code']
 
@@ -311,7 +311,7 @@ class BusinessLogic:
                 del row['pop_state_code']
             if self.category == 'country':
                 row['name'] = fetch_country_name_from_code(row['code'])
-            if self.category == 'state/territory':
+            if self.category == 'state_territory':
                 row['name'] = fetch_state_name_from_code(row['code'])
         return results
 

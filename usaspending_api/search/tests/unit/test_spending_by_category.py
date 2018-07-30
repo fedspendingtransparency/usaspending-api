@@ -1039,7 +1039,7 @@ def test_category_state_territory(mock_matviews_qs):
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
     test_payload = {
-        'category': 'state/territory',
+        'category': 'state_territory',
         'subawards': False,
         'page': 1,
         'limit': 50
@@ -1048,7 +1048,7 @@ def test_category_state_territory(mock_matviews_qs):
     spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
-        'category': 'state/territory',
+        'category': 'state_territory',
         'limit': 50,
         'page_metadata': {
             'page': 1,
@@ -1083,7 +1083,7 @@ def test_category_state_territory_subawards(mock_matviews_qs):
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
     test_payload = {
-        'category': 'state/territory',
+        'category': 'state_territory',
         'subawards': True,
         'page': 1,
         'limit': 50
@@ -1092,7 +1092,7 @@ def test_category_state_territory_subawards(mock_matviews_qs):
     spending_by_category_logic = BusinessLogic(test_payload).results()
 
     expected_response = {
-        'category': 'state/territory',
+        'category': 'state_territory',
         'limit': 50,
         'page_metadata': {
             'page': 1,
