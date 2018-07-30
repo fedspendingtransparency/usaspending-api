@@ -320,8 +320,7 @@ class BusinessLogic:
         return results
 
     def federal_account(self) -> list:
-        filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False,
-                   'action_date__gte': '2007-10-01'}
+        filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False}
         values = {'transaction__award__financial_set__treasury_account__federal_account_id'}
 
         # Note: Purely for performance reasons, can be removed if still performant
