@@ -193,9 +193,13 @@ def matview_search_filter(filters, model, for_downloads=False):
                     parent_duns = parent_duns_rows[0]['recipient_unique_id']
                     filter_obj = Q(parent_recipient_unique_id=parent_duns)
                 elif len(parent_duns_rows) > 2:
-                    raise InvalidParameterException('Non-unique Record in ')
+                    # shouldn't occur
+                    raise InvalidParameterException('Non-unique parent record found in RecipientProfile')
+            elif value.endswith('C'):
+                filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
             else:
-                filter_obj = Q(recipient_hash=recipient_hash)
+                # "R" recipient level
+                filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
             queryset &= model.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
