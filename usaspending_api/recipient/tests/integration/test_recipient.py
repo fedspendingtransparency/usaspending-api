@@ -1,5 +1,6 @@
 # Stdlib imports
 import datetime
+from collections import OrderedDict
 
 # Core Django imports
 
@@ -69,11 +70,11 @@ MAP_DUNS_TO_CONTRACT = {
     'congressional_district': 'congressional_code',
     'state': 'state_code'
 }
-MAP_LOCATION_TO_CONTRACT = {
-    'zip4': 'zip',
-    'zip_4a': 'zip4',
-    'location_country_code': 'country_code'
-}
+MAP_LOCATION_TO_CONTRACT = OrderedDict([
+    ('zip4', 'zip'),
+    ('zip_4a', 'zip4'),
+    ('location_country_code', 'country_code')
+])
 
 TEST_DUNS = {
     '000000001': {
@@ -280,9 +281,8 @@ def test_extract_location_duns(mock_reference_matviews):
     for additional_blank_field in additional_blank_fields:
         expected_location[additional_blank_field] = None
     for k in MAP_DUNS_TO_CONTRACT:
-        value = expected_location[k]
+        expected_location[MAP_DUNS_TO_CONTRACT[k]] = expected_location[k]
         del expected_location[k]
-        expected_location[MAP_DUNS_TO_CONTRACT[k]] = value
     location = recipients.extract_location(recipient_hash)
     assert location == expected_location
 
@@ -301,9 +301,8 @@ def test_extract_location_le(mock_reference_matviews):
 
     expected_location = location.copy()
     for k in MAP_LOCATION_TO_CONTRACT:
-        value = expected_location[k]
+        expected_location[MAP_LOCATION_TO_CONTRACT[k]] = expected_location[k]
         del expected_location[k]
-        expected_location[MAP_LOCATION_TO_CONTRACT[k]] = value
     location = recipients.extract_location(recipient_hash)
     assert location == expected_location
 
