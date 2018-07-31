@@ -841,7 +841,7 @@ class SummaryTransactionRecipientView(models.Model):
 
 
 class SummaryAwardRecipientView(models.Model):
-    duh = models.UUIDField(primary_key=True)
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     date_signed = models.DateField(blank=False)
     action_date = models.DateField(blank=True)
     fiscal_year = models.IntegerField()
