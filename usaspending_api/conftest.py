@@ -73,6 +73,66 @@ def mock_recipients(monkeypatch):
 
 
 @pytest.fixture()
+def mock_federal_account(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_federal_accounts_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.accounts.models.FederalAccount.objects', mock_federal_accounts_qs)
+
+    yield mock_federal_accounts_qs
+
+    mock_federal_accounts_qs.delete()
+
+
+@pytest.fixture()
+def mock_tas(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_tas_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.accounts.models.TreasuryAppropriationAccount.objects', mock_tas_qs)
+
+    yield mock_tas_qs
+
+    mock_tas_qs.delete()
+
+
+@pytest.fixture()
+def mock_award(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_award_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.awards.models.Award.objects', mock_award_qs)
+
+    yield mock_award_qs
+
+    mock_award_qs.delete()
+
+
+@pytest.fixture()
+def mock_financial_account(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_financial_accounts_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.awards.models.FinancialAccountsByAwards.objects', mock_financial_accounts_qs)
+
+    yield mock_financial_accounts_qs
+
+    mock_financial_accounts_qs.delete()
+
+
+@pytest.fixture()
+def mock_transaction(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_transaciton_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.awards.models.TransactionNormalized.objects', mock_transaciton_qs)
+
+    yield mock_transaciton_qs
+
+    mock_transaciton_qs.delete()
+
+
+@pytest.fixture()
 def mock_agencies(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_agency_qs = MockSet()

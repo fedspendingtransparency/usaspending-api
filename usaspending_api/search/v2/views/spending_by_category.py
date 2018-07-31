@@ -336,7 +336,7 @@ class BusinessLogic:
         for row in results:
             agency_identifier, main_account_code, federal_account_name = fetch_federal_account_from_id(row['id'])
             row['code'] = '-'.join([agency_identifier, main_account_code])
-            row['name']= federal_account_name
+            row['name'] = federal_account_name
         return results
 
 
