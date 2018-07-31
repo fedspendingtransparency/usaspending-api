@@ -50,7 +50,7 @@ def date_list_to_queryset(date_list, table):
         # Modified May 2018 so that there will always be a start and end value from combine_date_range_queryset()
 
         date_type = v.get("date_type", "action_date")
-        if date_type not in ["action_date", "last_modified_date"]:
+        if date_type not in ["action_date", "last_modified_date", "date_signed"]:
             raise InvalidParameterException('Invalid date_type: {}'.format(date_type))
 
         kwargs = {

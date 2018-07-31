@@ -24,6 +24,7 @@ TEMP_SQL_FILES = [
     '../matviews/summary_transaction_month_view.sql',
     '../matviews/summary_transaction_geo_view.sql',
     '../matviews/summary_state_view.sql',
+    '../matviews/summary_award_recipient_view.sql',
     '../matviews/summary_award_view.sql',
     '../matviews/summary_view_cfda_number.sql',
     '../matviews/summary_view_naics_codes.sql',
@@ -181,7 +182,7 @@ def generate_matviews():
     with connection.cursor() as c:
         c.execute(CREATE_READONLY_SQL)
         c.execute(get_sql(ENUM_FILE)[0])
-        subprocess.call("python  " + MATVIEW_GENERATOR_FILE, shell=True)
+        subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             c.execute(file)
 
