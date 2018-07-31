@@ -176,7 +176,7 @@ TEST_UNIVERSAL_TRANSACTIONS = {
 @pytest.mark.django_db
 def test_validate_recipient_id_success():
     """ Testing a run of a valid recipient id """
-    recipient_id = list(TEST_RECIPIENT_PROFILES.keys())[0]
+    recipient_id = '00077a9a-5a70-8919-fd19-330762af6b84-P'
     mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
 
     expected_hash = recipient_id[:-2]
@@ -192,7 +192,7 @@ def test_validate_recipient_id_success():
 @pytest.mark.django_db
 def test_validate_recipient_id_failures():
     """ Testing a run of invalid recipient ids """
-    recipient_id = list(TEST_RECIPIENT_PROFILES.keys())[0]
+    recipient_id = '00077a9a-5a70-8919-fd19-330762af6b84-P'
     mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
 
     def call_validate_recipient_id(recipient_id):
@@ -222,7 +222,7 @@ def test_validate_recipient_id_failures():
 @pytest.mark.django_db
 def test_extract_name_duns_from_hash(mock_reference_matviews):
     """ Testing extracting name and duns from the recipient hash """
-    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
     add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
 
@@ -261,7 +261,7 @@ def test_extract_parent_from_hash(mock_reference_matviews):
 @pytest.mark.django_db
 def test_extract_location_duns(mock_reference_matviews):
     """ Testing extracting location data from recipient hash using the DUNS table """
-    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
     add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
@@ -290,7 +290,7 @@ def test_extract_location_duns(mock_reference_matviews):
 @pytest.mark.django_db
 def test_extract_location_le(mock_reference_matviews):
     """ Testing extracting location data from recipient hash using the Legal Entity table """
-    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
@@ -311,7 +311,7 @@ def test_extract_location_le(mock_reference_matviews):
 @pytest.mark.django_db
 def test_extract_business_categories(mock_reference_matviews):
     """ Testing extracting business categories from the recipient name/duns """
-    recipient_hash = list(TEST_RECIPIENT_LOOKUPS.keys())[0]
+    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     expected_business_cat = ['expected', 'business', 'cat']
