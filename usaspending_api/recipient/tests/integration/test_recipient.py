@@ -333,6 +333,7 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
     mock_transactions = []
     for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
         transaction['recipient_hash'] = recipient_hash
+        transaction['parent_recipient_unique_id'] = '000000009'
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
