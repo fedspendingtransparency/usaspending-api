@@ -1242,8 +1242,10 @@ def test_category_federal_accounts(mock_matviews_qs, mock_federal_account, mock_
     add_to_mock_objects(mock_transaction, [t1, t2])
 
     mock_model_1 = MockModel(transaction=t1, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
                              generated_pragmatic_obligation=1)
     mock_model_2 = MockModel(transaction=t2, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
                              generated_pragmatic_obligation=1)
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
@@ -1325,8 +1327,10 @@ def test_category_federal_accounts_subawards(mock_matviews_qs, mock_federal_acco
     add_to_mock_objects(mock_transaction, [t1, t2])
 
     mock_model_1 = MockModel(transaction=t1, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
                              amount=1)
     mock_model_2 = MockModel(transaction=t2, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
                              amount=1)
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
