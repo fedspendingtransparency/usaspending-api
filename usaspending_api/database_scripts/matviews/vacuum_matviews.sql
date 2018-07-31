@@ -1,4 +1,3 @@
-VACUUM ANALYZE VERBOSE recipient_lookup_view;
 VACUUM ANALYZE VERBOSE summary_award_view;
 VACUUM ANALYZE VERBOSE summary_transaction_geo_view;
 VACUUM ANALYZE VERBOSE summary_transaction_month_view;

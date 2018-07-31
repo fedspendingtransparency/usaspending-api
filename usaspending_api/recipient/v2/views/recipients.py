@@ -8,8 +8,7 @@ from usaspending_api.awards.v2.filters.matview_filters import matview_search_fil
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import RecipientLookup
+from usaspending_api.recipient.models import RecipientProfile, RecipientLookup
 
 from usaspending_api.recipient.models import DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters

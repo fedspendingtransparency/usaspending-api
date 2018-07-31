@@ -16,7 +16,8 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
+from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity
 
 logger = logging.getLogger(__name__)
 
