@@ -15,7 +15,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 
 + Parameters
     + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
-        A unique identifier for the recipient at a specific level (parent, child, or neither). Note that the `recipient_id` mut include a `recipient_level` suffix (i.e. `-C`, `-P`, `-R`)
+        A unique identifier for the recipient at a specific level (parent, child, or neither). Note that the `recipient_id` must include a `recipient_level` suffix (i.e. `-C`, `-P`, `-R`)
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
