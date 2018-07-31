@@ -63,16 +63,17 @@ class TransactionViewSet(APIDocumentationView):
             queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
         rows = list(queryset[lower_limit:upper_limit + 1])
+        return self._format_results(rows)
 
+    def _format_results(self, rows):
         results = []
         for row in rows:
             unique_prefix = 'ASST_TX'
-            result = {k: row[v] for k, v in self.transaction_lookup.items()}
+            result = {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
             if result['is_fpds']:
                 unique_prefix = 'CONT_TX'
             result['id'] = '{}_{}'.format(unique_prefix, result['id'])
             del result['is_fpds']
-            del result['award_id']
             results.append(result)
         return results
 
