@@ -348,8 +348,6 @@ def spending_by_category(category, filters):
         view_chain = ['SummaryTransactionGeoView']
     elif category in ['recipient_duns']:
         view_chain = ['SummaryTransactionRecipientView']
-    elif category in ['federal_account']:
-        view_chain = ['UniversalTransactionView']
 
     # All of these category/scope combinations can use the following:
     view_chain.extend([
@@ -357,6 +355,9 @@ def spending_by_category(category, filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ])
+
+    if category in ['federal_account']:
+        view_chain = ['UniversalTransactionView']
 
     for view in view_chain:
         if can_use_view(filters, view):
