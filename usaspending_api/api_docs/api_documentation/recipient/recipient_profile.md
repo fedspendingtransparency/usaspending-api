@@ -15,11 +15,13 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 
 + Parameters
     + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
-        A unique identifier for the recipient at a specific level (parent, child, or neither).
+        A unique identifier for the recipient at a specific level (parent, child, or neither). Note that the `recipient_id` mut include a `recipient_level` suffix (ex `-C`)
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
 ### Get Recipient Overview [GET]
+
++ Sample Request: `/api/v2/recipient/duns/543ee6af-9096-f32a-abaa-834106bead6a-P/?year=latest`
 
 + Response 200 (application/json)
     + Attributes (RecipientOverview)
@@ -35,6 +37,8 @@ This endpoint returns a list of child recipients belonging to the given parent r
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
 ### Get Recipient Children [GET]
+
++ Sample Request: `/api/v2/recipient/children/004027553/?year=all`
 
 + Response 200 (application/json)
     + Attributes (array[ChildRecipient], fixed-type)
