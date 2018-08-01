@@ -1,4 +1,4 @@
-# State Data
+# List Recipients
 
 **Route:** /api/v2/recipient/duns/
 
