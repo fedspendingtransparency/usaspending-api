@@ -1,6 +1,5 @@
 import logging
 import uuid
-from collections import OrderedDict
 
 from rest_framework.response import Response
 from django.db.models import F, Sum, Count
