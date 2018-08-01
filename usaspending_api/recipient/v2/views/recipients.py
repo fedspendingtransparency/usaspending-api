@@ -2,14 +2,13 @@ import logging
 import uuid
 
 from rest_framework.response import Response
-from django.db.models import F, Sum, Count
+from django.db.models import F, Sum
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.recipient.models import DUNS, RecipientProfile, RecipientLookup
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 from usaspending_api.references.models import RefCountryCode, LegalEntity
@@ -187,8 +186,8 @@ def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
     """
     # Note: We could use the RecipientProfile to get the totals for last 12 months, thought we still need the count.
     filters = reshape_filters(recipient_id=recipient_id, year=year)
-    queryset = matview_search_filter(filters, UniversalTransactionView)
-    aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Count('transaction_id'))
+    queryset, model = recipient_totals(filters)
+    aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts'))
     total = aggregates['total'] if aggregates['total'] else 0
     count = aggregates['count'] if aggregates['count'] else 0
     return total, count
