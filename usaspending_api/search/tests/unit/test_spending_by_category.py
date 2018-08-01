@@ -3,7 +3,8 @@ import pytest
 # Core Django imports
 
 # Third-party app imports
-from django_mock_queries.query import MockModel
+from django_mock_queries.query import MockModel, MockSet
+from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
@@ -1018,6 +1019,349 @@ def test_category_district_subawards(mock_matviews_qs):
                 'code': '06',
                 'name': 'XY-06',
                 'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_state_territory(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_state_code='XY', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_state_code='XY', generated_pragmatic_obligation=1)
+    mommy.make(
+        'recipient.StateData',
+        name='Test State',
+        code='XY',
+    )
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'state_territory',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'state_territory',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'XY',
+                'name': 'Test State',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_state_territory_subawards(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_state_code='XY', amount=1)
+    mock_model_2 = MockModel(pop_state_code='XY', amount=1)
+    mommy.make(
+        'recipient.StateData',
+        name='Test State',
+        code='XY',
+    )
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'state_territory',
+        'subawards': True,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'state_territory',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'XY',
+                'name': 'Test State',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_country(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_country_code='US', generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(pop_country_code='US', generated_pragmatic_obligation=1)
+    mommy.make(
+        'references.RefCountryCode',
+        country_name='UNITED STATES',
+        country_code='US',
+    )
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'country',
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'country',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'US',
+                'name': 'UNITED STATES',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_country_subawards(mock_matviews_qs):
+    mock_model_1 = MockModel(pop_country_code='US', amount=1)
+    mock_model_2 = MockModel(pop_country_code='US', amount=1)
+    mommy.make(
+        'references.RefCountryCode',
+        country_name='UNITED STATES',
+        country_code='US',
+    )
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'country',
+        'subawards': True,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'country',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': 'US',
+                'name': 'UNITED STATES',
+                'id': None
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_federal_accounts(mock_matviews_qs, mock_federal_account, mock_tas, mock_award,
+                                   mock_financial_account, mock_transaction):
+    fa = MockModel(
+        id=10,
+        agency_identifier='020',
+        main_account_code='0001',
+        account_title='Test Federal Account'
+    )
+    add_to_mock_objects(mock_federal_account, [fa])
+
+    tas = MockModel(
+        treasury_account_identifier=2,
+        federal_account_id=10
+    )
+    add_to_mock_objects(mock_tas, [tas])
+
+    award = MockModel(
+        id=3
+    )
+    add_to_mock_objects(mock_award, [award])
+
+    fs = MockModel(
+        financial_accounts_by_awards_id=4,
+        submission_id=3,
+        treasury_account=tas,
+        award=award
+    )
+    add_to_mock_objects(mock_financial_account, [fs])
+
+    award.financial_set = MockSet(fs)
+    t1 = MockModel(
+        award=award,
+        id=5
+    )
+    t2 = MockModel(
+        award=award,
+        id=6
+    )
+    add_to_mock_objects(mock_transaction, [t1, t2])
+
+    mock_model_1 = MockModel(transaction=t1, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
+                             generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(transaction=t2, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
+                             generated_pragmatic_obligation=1)
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'federal_account',
+        'filters': {
+            'recipient_id': '00000-00000-00000-00000-00000-C',
+        },
+        'subawards': False,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'federal_account',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': '020-0001',
+                'name': 'Test Federal Account',
+                'id': 10
+            }
+        ]
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+# Keeping this skipped until Recipient Hash gets included in the Subaward View
+@pytest.mark.skip
+def test_category_federal_accounts_subawards(mock_matviews_qs, mock_federal_account, mock_tas, mock_award,
+                                             mock_financial_account, mock_transaction):
+    fa = MockModel(
+        id=10,
+        agency_identifier='020',
+        main_account_code='0001',
+        account_title='Test Federal Account'
+    )
+    add_to_mock_objects(mock_federal_account, [fa])
+
+    tas = MockModel(
+        treasury_account_identifier=2,
+        federal_account_id=10
+    )
+    add_to_mock_objects(mock_tas, [tas])
+
+    award = MockModel(
+        id=3
+    )
+    add_to_mock_objects(mock_award, [award])
+
+    fs = MockModel(
+        financial_accounts_by_awards_id=4,
+        submission_id=3,
+        treasury_account=tas,
+        award=award
+    )
+    add_to_mock_objects(mock_financial_account, [fs])
+
+    award.financial_set = MockSet(fs)
+    t1 = MockModel(
+        award=award,
+        id=5
+    )
+    t2 = MockModel(
+        award=award,
+        id=6
+    )
+    add_to_mock_objects(mock_transaction, [t1, t2])
+
+    mock_model_1 = MockModel(transaction=t1, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
+                             amount=1)
+    mock_model_2 = MockModel(transaction=t2, recipient_hash='00000-00000-00000-00000-00000',
+                             parent_recipient_unique_id='000000',
+                             amount=1)
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
+
+    test_payload = {
+        'category': 'federal_account',
+        'filters': {
+            'recipient_id': '00000-00000-00000-00000-00000-C',
+        },
+        'subawards': True,
+        'page': 1,
+        'limit': 50
+    }
+
+    spending_by_category_logic = BusinessLogic(test_payload).results()
+
+    expected_response = {
+        'category': 'federal_account',
+        'limit': 50,
+        'page_metadata': {
+            'page': 1,
+            'next': None,
+            'previous': None,
+            'hasNext': False,
+            'hasPrevious': False
+        },
+        'results': [
+            {
+                'amount': 2,
+                'code': '020-0001',
+                'name': 'Test Federal Account',
+                'id': 10
             }
         ]
     }
