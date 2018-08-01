@@ -78,18 +78,20 @@ def extract_parent_from_hash(recipient_hash):
             parent_duns
             parent_name
     """
+    duns = None
+    name = None
+    parent_id = None
     affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
         .values('recipient_affiliations')
     if not affiliations:
-        return None, None, None
-    else:
-        duns = affiliations[0]['recipient_affiliations'][0]
-        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns).values('legal_business_name').first()
-        name = duns_obj['legal_business_name'] if duns_obj else None
-        parent_hash = (RecipientLookup.objects.filter(legal_business_name=name, duns=duns)
-                       .values('recipient_hash').first()['recipient_hash'])
-        parent_id = '{}-P'.format(parent_hash)
         return duns, name, parent_id
+    duns = affiliations[0]['recipient_affiliations'][0]
+
+    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    if parent:
+        name = parent['legal_business_name']
+        parent_id = '{}-P'.format(parent['recipient_hash'])
+    return duns, name, parent_id
 
 
 def extract_location(recipient_hash):
@@ -266,6 +268,9 @@ class ChildRecipients(APIDocumentationView):
         recipient_level = 'C'
         for child_duns in children:
             child_hash, child_name = extract_hash_name_from_duns(child_duns)
+            if not child_hash:
+                logger.warning('Child Duns Not Found in Recipient Lookup, skipping: {}'.format(child_duns))
+                continue
             child_recipient_id = '{}-{}'.format(child_hash, recipient_level)
             total, count = obtain_recipient_totals(child_recipient_id, year=year, subawards=False)
             location = extract_location(child_hash)

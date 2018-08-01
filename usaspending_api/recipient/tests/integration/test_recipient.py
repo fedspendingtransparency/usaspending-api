@@ -122,13 +122,13 @@ TEST_RECIPIENT_LOOKUPS = {
     }
 }
 TEST_RECIPIENT_PROFILES = {
-    # Parent Recipient
+    # Parent Recipient, including non-existent child duns
     '00077a9a-5a70-8919-fd19-330762af6b84-P': {
         'recipient_level': 'P',
         'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
         'recipient_unique_id': '000000001',
         'recipient_name': 'PARENT RECIPIENT',
-        'recipient_affiliations': ['000000001', '000000002']
+        'recipient_affiliations': ['000000001', '000000002', '000000005']
     },
     # Child Recipient 1 - lists itself as both parent and child
     '00077a9a-5a70-8919-fd19-330762af6b84-C': {
@@ -248,11 +248,28 @@ def test_extract_parent_from_hash(mock_reference_matviews):
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[parent_hash])
     add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
 
-    test_duns_model = TEST_DUNS[parent_duns]
-    mommy.make(DUNS, **test_duns_model)
-
-    expected_name = test_duns_model['legal_business_name']
+    expected_name = TEST_RECIPIENT_LOOKUPS[parent_hash]['legal_business_name']
     expected_duns = parent_duns
+    parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
+    assert parent_duns == expected_duns
+    assert parent_name == expected_name
+    assert parent_id == expected_parent_id
+
+
+@pytest.mark.django_db
+def test_extract_parent_from_hash_failure(mock_reference_matviews):
+    """ Testing extracting parent duns/name from recipient hash but with recipient lookup removed
+        as there may be cases where the parent recipient is not found/listed
+    """
+    # This one specifically has to be a child
+    recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
+    recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_hash']
+    parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_affiliations'][0]
+    mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
+
+    expected_name = None
+    expected_duns = parent_duns
+    expected_parent_id = None
     parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
     assert parent_duns == expected_duns
     assert parent_name == expected_name
@@ -513,15 +530,18 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
     transaction_hash_map = {
         '1': {
             'hash': child1_hash,
-            'duns': parent_child1_duns
+            'duns': parent_child1_duns,
+            'parent_duns': parent_child1_duns
         },
         '2': {
             'hash': child2_hash,
             'duns': child2_duns,
+            'parent_duns': parent_child1_duns
         },
         '3': {
             'hash': other_id,
-            'duns': None
+            'duns': None,
+            'parent_duns': None
         }
     }
 
@@ -547,9 +567,11 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
     for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
         transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
         transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+        transaction['parent_recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['parent_duns']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
+    # Ignoring nonexistent child duns - 000000005
     child1_object = {
         'recipient_id': child1_id,
         'name': 'PARENT RECIPIENT',
