@@ -109,7 +109,7 @@ class Command(load_base.Command):
         logger.info('Getting File C data')
         # we dont have sub-tier agency info, so we'll do our best
         # to match them to the more specific award records
-        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s' % submission_id
+        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = {0}'.format(submission_id)
         if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
             award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
         else:  # real data
