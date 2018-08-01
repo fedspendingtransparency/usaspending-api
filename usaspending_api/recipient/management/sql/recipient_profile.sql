@@ -2,6 +2,7 @@
 -- Step 1, create the temporary matview of recipients from transactions
 --------------------------------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
+DROP TABLE IF EXISTS public.recipient_profile_new;
 
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
   WITH all_transactions AS (
