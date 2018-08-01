@@ -14,15 +14,15 @@ def validate_year(year=None):
     return year
 
 
-def reshape_filters(duns_search_texts=[], duns_hashes=[], state_code=None, year=None, award_type_codes=None):
+def reshape_filters(duns_search_texts=[], recipient_id=None, state_code=None, year=None, award_type_codes=None):
     # recreate filters for spending over time/category
     filters = {}
 
     if duns_search_texts:
         filters['recipient_search_text'] = duns_search_texts
 
-    if duns_hashes:
-        filters['recipient_id'] = duns_hashes
+    if recipient_id:
+        filters['recipient_id'] = recipient_id
 
     if state_code:
         filters['place_of_performance_locations'] = [{'country': 'USA', 'state': state_code}]
