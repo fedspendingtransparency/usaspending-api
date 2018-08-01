@@ -6,6 +6,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
@@ -16,9 +17,9 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup, RefCountryCode
-from usaspending_api.recipient.models import StateData
-from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.recipient.models import RecipientLookup, StateData
+from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RefCountryCode
+
 
 logger = logging.getLogger(__name__)
 

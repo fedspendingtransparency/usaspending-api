@@ -180,16 +180,6 @@ def mock_matviews_qs(monkeypatch):
     mock_qs.delete()
 
 
-@pytest.fixture()
-def mock_reference_matviews(monkeypatch):
-    mock_qs = MockSet()
-    monkeypatch.setattr('usaspending_api.references.models.RecipientLookup.objects', mock_qs)
-
-    yield mock_qs
-
-    mock_qs.delete()
-
-
 def pytest_configure():
     # To make sure the test setup process doesn't try
     # to set up another test db, remove everything but the default

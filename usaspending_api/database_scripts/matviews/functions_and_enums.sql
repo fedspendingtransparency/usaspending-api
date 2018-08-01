@@ -1,4 +1,4 @@
--- Postgres extensions, functions, and enums necessary for some views 
+-- Postgres extensions, functions, and enums necessary for some views
 
 CREATE EXTENSION IF NOT EXISTS intarray;
 
@@ -27,20 +27,5 @@ AS $$
     ELSE result='>500M';                                 --  over $500 million
     END IF;
   RETURN result::public.total_obligation_bins;
-  END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT)
-RETURNS RECORD
-STABLE
-AS $$
-  DECLARE
-    DECLARE result text[];
-  BEGIN
-    IF search_duns IS NULL THEN result = original_name;
-    ELSE result = (SELECT legal_business_name FROM public.recipient_lookup_view WHERE duns = search_duns);
-    END IF;
-  RETURN (COALESCE(result[1], ' '), result[2])::RECORD;
   END;
 $$ LANGUAGE plpgsql;

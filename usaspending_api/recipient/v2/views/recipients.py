@@ -8,11 +8,11 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.recipient.models import RecipientProfile, DUNS
-from usaspending_api.references.models import RecipientLookup, RefCountryCode, LegalEntity
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.recipient.models import DUNS, RecipientProfile, RecipientLookup
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def validate_recipient_id(recipient_id):
     """
     if '-' not in recipient_id:
         raise InvalidParameterException('ID (\'{}\') doesn\'t include Recipient-Level'.format(hash))
-    recipient_level = recipient_id[recipient_id.rfind('-')+1:]
+    recipient_level = recipient_id[recipient_id.rfind('-') + 1:]
     if recipient_level not in RECIPIENT_LEVELS:
         raise InvalidParameterException('Invalid Recipient-Level: \'{}\''.format(recipient_level))
     recipient_hash = recipient_id[:recipient_id.rfind('-')]

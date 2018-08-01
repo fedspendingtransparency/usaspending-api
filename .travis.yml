@@ -31,7 +31,6 @@ script:
 - python manage.py migrate
 - psql $DATABASE_URL -f usaspending_api/database_scripts/matviews/functions_and_enums.sql -v ON_ERROR_STOP=1 --quiet
 - python usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest='temp_sql/' --quiet
-- psql $DATABASE_URL -f temp_sql/recipient_lookup_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/subaward_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_award_recipient_view.sql  -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_award_view.sql -v ON_ERROR_STOP=1 --quiet

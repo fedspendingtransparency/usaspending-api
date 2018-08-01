@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from partial_index import PartialIndex, PQ
 
 
 class StateData(models.Model):
@@ -80,3 +81,15 @@ class RecipientProfile(models.Model):
         managed = True
         db_table = 'recipient_profile'
         unique_together = ('recipient_level', 'recipient_hash')
+
+
+class RecipientLookup(models.Model):
+    recipient_hash = models.UUIDField(unique=True, null=True)
+    legal_business_name = models.TextField(null=True, db_index=True)
+    duns = models.TextField(null=True)
+
+    class Meta:
+        db_table = 'recipient_lookup'
+        indexes = [
+            PartialIndex(fields=['duns'], unique=True, where=PQ(duns__isnull=False)),
+        ]

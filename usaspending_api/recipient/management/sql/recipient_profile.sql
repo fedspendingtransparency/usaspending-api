@@ -2,6 +2,7 @@
 -- Step 1, create the temporary matview of recipients from transactions
 --------------------------------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
+DROP TABLE IF EXISTS public.recipient_profile_new;
 
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
   WITH all_transactions AS (
@@ -56,9 +57,9 @@ SELECT
   duns AS recipient_unique_id,
   legal_business_name AS recipient_name
 FROM
-  public.recipient_lookup_view
+  public.recipient_lookup
 WHERE
-  recipient_lookup_view.duns IS NOT NULL
+  recipient_lookup.duns IS NOT NULL
 UNION ALL
 SELECT
   'C' as recipient_level,
@@ -66,7 +67,7 @@ SELECT
   duns AS recipient_unique_id,
   legal_business_name AS recipient_name
 FROM
-  public.recipient_lookup_view
+  public.recipient_lookup
 UNION ALL
 SELECT
   'R' as recipient_level,
@@ -74,9 +75,9 @@ SELECT
   duns AS recipient_unique_id,
   legal_business_name AS recipient_name
 FROM
-  public.recipient_lookup_view
+  public.recipient_lookup
 WHERE
-  recipient_lookup_view.duns IS NULL;
+  recipient_lookup.duns IS NULL;
 
 
 CREATE UNIQUE INDEX idx_recipient_profile_uniq_new ON public.recipient_profile_new USING BTREE(recipient_hash, recipient_level);

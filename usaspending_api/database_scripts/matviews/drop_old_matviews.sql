@@ -1,4 +1,3 @@
-DROP MATERIALIZED VIEW IF EXISTS recipient_lookup_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_award_recipient_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_award_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_transaction_geo_view_old;
