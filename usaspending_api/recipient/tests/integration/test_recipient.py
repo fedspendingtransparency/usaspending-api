@@ -1,6 +1,7 @@
 # Stdlib imports
 import datetime
 from collections import OrderedDict
+from uuid import UUID
 
 # Core Django imports
 
@@ -14,7 +15,7 @@ from django_mock_queries.query import MockModel
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
-from usaspending_api.recipient.models import RecipientProfile, DUNS
+from usaspending_api.recipient.models import RecipientProfile, DUNS, RecipientLookup
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
@@ -221,11 +222,10 @@ def test_validate_recipient_id_failures():
 
 
 @pytest.mark.django_db
-def test_extract_name_duns_from_hash(mock_reference_matviews):
+def test_extract_name_duns_from_hash():
     """ Testing extracting name and duns from the recipient hash """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
 
     expected_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     expected_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
@@ -235,7 +235,7 @@ def test_extract_name_duns_from_hash(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_parent_from_hash(mock_reference_matviews):
+def test_extract_parent_from_hash():
     """ Testing extracting parent duns/name from recipient hash"""
     # This one specifically has to be a child
     recipient_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
@@ -245,8 +245,7 @@ def test_extract_parent_from_hash(mock_reference_matviews):
 
     expected_parent_id = '00077a9a-5a70-8919-fd19-330762af6b84-P'
     parent_hash = expected_parent_id[:-2]
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[parent_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[parent_hash])
 
     expected_name = TEST_RECIPIENT_LOOKUPS[parent_hash]['legal_business_name']
     expected_duns = parent_duns
@@ -257,7 +256,7 @@ def test_extract_parent_from_hash(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_parent_from_hash_failure(mock_reference_matviews):
+def test_extract_parent_from_hash_failure():
     """ Testing extracting parent duns/name from recipient hash but with recipient lookup removed
         as there may be cases where the parent recipient is not found/listed
     """
@@ -277,12 +276,12 @@ def test_extract_parent_from_hash_failure(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_location_duns(mock_reference_matviews):
+def test_extract_location_duns():
     """ Testing extracting location data from recipient hash using the DUNS table """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
+
     test_duns_model = TEST_DUNS[recipient_duns]
     country_code = test_duns_model['country_code']
     mommy.make(DUNS, **test_duns_model)
@@ -305,13 +304,12 @@ def test_extract_location_duns(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_location_le(mock_reference_matviews):
+def test_extract_location_le():
     """ Testing extracting location data from recipient hash using the Legal Entity table """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
     location = TEST_LOCATIONS[recipient_hash]
     mock_location = mommy.make(Location, **TEST_LOCATIONS[recipient_hash])
     mommy.make(LegalEntity, location=mock_location, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
@@ -325,14 +323,13 @@ def test_extract_location_le(mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_business_categories(mock_reference_matviews):
+def test_extract_business_categories():
     """ Testing extracting business categories from the recipient name/duns """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     expected_business_cat = ['expected', 'business', 'cat']
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
     mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name=recipient_name,
                recipient_unique_id=recipient_duns)
 
@@ -429,7 +426,7 @@ def recipient_overview_endpoint(id, year='latest'):
 
 
 @pytest.mark.django_db
-def test_recipient_overview(client, mock_matviews_qs, mock_reference_matviews):
+def test_recipient_overview(client, mock_matviews_qs):
     """ Testing a simple example of the endpoint as a whole """
     r_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
     recipient_hash = r_id[:-2]
@@ -446,10 +443,8 @@ def test_recipient_overview(client, mock_matviews_qs, mock_reference_matviews):
         mommy.make(RecipientProfile, **recipient_profile)
 
     # Mock Recipient Lookups
-    mock_lookups = []
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
-        mock_lookups.append(MockModel(**recipient_lookup))
-    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+        mommy.make(RecipientLookup, **recipient_lookup)
 
     # Mock DUNS
     for duns, duns_dict in TEST_DUNS.items():
@@ -497,16 +492,15 @@ def test_recipient_overview(client, mock_matviews_qs, mock_reference_matviews):
 
 
 @pytest.mark.django_db
-def test_extract_hash_name_from_duns(mock_reference_matviews):
+def test_extract_hash_name_from_duns():
     """ Testing extracting the hash/name from a DUNS """
     example_duns = '000000001'
     expected_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     expected_name = 'PARENT RECIPIENT'
-    mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[expected_hash])
-    add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
+    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[expected_hash])
 
     recipient_hash, recipient_name = recipients.extract_hash_name_from_duns(example_duns)
-    assert expected_hash == recipient_hash
+    assert UUID(expected_hash) == recipient_hash
     assert expected_name == recipient_name
 
 
@@ -518,7 +512,7 @@ def recipient_children_endpoint(duns, year='latest'):
 
 
 @pytest.mark.django_db
-def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_qs):
+def test_child_recipient_success(client, mock_matviews_qs):
     """ Testing successfull child recipient calls """
     child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
     child1_hash = child1_id[:-2]
@@ -550,10 +544,8 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
         mommy.make(RecipientProfile, **recipient_profile)
 
     # Mock Recipient Lookups
-    mock_lookups = []
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
-        mock_lookups.append(MockModel(**recipient_lookup))
-    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+        mommy.make(RecipientLookup, **recipient_lookup)
 
     # Mock DUNS
     for duns, duns_dict in TEST_DUNS.items():
@@ -593,7 +585,7 @@ def test_child_recipient_success(client, mock_reference_matviews, mock_matviews_
 
 
 @pytest.mark.django_db
-def test_child_recipient_failures(client, mock_reference_matviews, mock_matviews_qs):
+def test_child_recipient_failures(client, mock_matviews_qs):
     """ Testing failed child recipient calls """
 
     child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
@@ -623,10 +615,8 @@ def test_child_recipient_failures(client, mock_reference_matviews, mock_matviews
         mommy.make(RecipientProfile, **recipient_profile)
 
     # Mock Recipient Lookups
-    mock_lookups = []
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
-        mock_lookups.append(MockModel(**recipient_lookup))
-    add_to_mock_objects(mock_reference_matviews, mock_lookups)
+        mommy.make(RecipientLookup, **recipient_lookup)
 
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
