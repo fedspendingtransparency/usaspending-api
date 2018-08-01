@@ -12,13 +12,13 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 def test_transaction_endpoint(client):
     """Test the transaction endpoint."""
 
-    resp = client.get('/api/v1/transactions/')
+    resp = client.post('/api/v2/transactions/', {"award_id":1})
     assert resp.status_code == 200
     assert len(resp.data) > 1
 
     assert client.post(
-        '/api/v1/transactions/?page=1&limit=4',
-        content_type='application/json').status_code == 200
+        '/api/v2/transactions/',
+        {"page":"1", "limit":"10", "order":"asc"},).status_code == 200
 
 
 @pytest.mark.django_db
@@ -31,7 +31,7 @@ def test_transaction_endpoint_award_fk(client):
         award=awd)
 
     assert client.post(
-        '/api/v1/transactions/',
+        '/api/v2/transactions/',
         content_type='application/json',
         data=json.dumps({
             "filters": [{
