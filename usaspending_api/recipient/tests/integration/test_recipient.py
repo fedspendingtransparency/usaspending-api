@@ -248,10 +248,7 @@ def test_extract_parent_from_hash(mock_reference_matviews):
     mock_recipient_lookup = MockModel(**TEST_RECIPIENT_LOOKUPS[parent_hash])
     add_to_mock_objects(mock_reference_matviews, [mock_recipient_lookup])
 
-    test_duns_model = TEST_DUNS[parent_duns]
-    mommy.make(DUNS, **test_duns_model)
-
-    expected_name = test_duns_model['legal_business_name']
+    expected_name = TEST_RECIPIENT_LOOKUPS[parent_hash]['legal_business_name']
     expected_duns = parent_duns
     parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
     assert parent_duns == expected_duns
@@ -269,11 +266,6 @@ def test_extract_parent_from_hash_failure(mock_reference_matviews):
     recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_hash']
     parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]['recipient_affiliations'][0]
     mommy.make(RecipientProfile, **TEST_RECIPIENT_PROFILES[recipient_id])
-
-    #
-
-    test_duns_model = TEST_DUNS[parent_duns]
-    mommy.make(DUNS, **test_duns_model)
 
     expected_name = None
     expected_duns = parent_duns

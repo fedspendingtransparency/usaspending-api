@@ -85,34 +85,12 @@ def extract_parent_from_hash(recipient_hash):
         .values('recipient_affiliations')
     if not affiliations:
         return duns, name, parent_id
-    else:
-        duns = affiliations[0]['recipient_affiliations'][0]
+    duns = affiliations[0]['recipient_affiliations'][0]
 
-    column_mappings = [
-        {
-            'table': DUNS,
-            'duns': 'awardee_or_recipient_uniqu',
-            'name': 'legal_business_name'
-        },
-        {
-            'table': LegalEntity,
-            'duns': 'recipient_unique_id',
-            'name': 'recipient_name'
-        }
-    ]
-
-    for column_mapping in column_mappings:
-        obj = column_mapping['table'].objects.filter(**{column_mapping['duns']: duns}).values(column_mapping['name'])\
-            .first()
-        if not obj:
-            continue
-        parent = RecipientLookup.objects.filter(legal_business_name=obj[column_mapping['name']], duns=duns)\
-            .values('recipient_hash').first()
-        if not parent:
-            continue
-        name = obj[column_mapping['name']]
+    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    if parent:
+        name = parent['legal_business_name']
         parent_id = '{}-P'.format(parent['recipient_hash'])
-        break
     return duns, name, parent_id
 
 
