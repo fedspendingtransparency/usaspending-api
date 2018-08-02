@@ -31,7 +31,8 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_name TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
-  last_12_months NUMERIC(23,2) DEFAULT 0.00
+  last_12_months NUMERIC(23,2) DEFAULT 0.00,
+  last_12_months_count INT DEFAULT 0
 );
 
 INSERT INTO public.temporary_restock_recipient_profile (
@@ -77,6 +78,7 @@ CREATE UNIQUE INDEX idx_recipient_profile_uniq_new ON public.temporary_restock_r
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   last_12_months = rpv.last_12_months + trft.generated_pragmatic_obligation,
+  last_12_months_count = rpv.last_12_months_count + 1,
   unused = false
 FROM
   public.temporary_recipients_from_transactions_view AS trft
@@ -91,7 +93,8 @@ WHERE
 WITH grouped_by_parent AS (
   SELECT
    parent_recipient_unique_id AS duns,
-   SUM(generated_pragmatic_obligation) AS amount
+   SUM(generated_pragmatic_obligation) AS amount,
+   COUNT(*) AS count
   FROM
     public.temporary_recipients_from_transactions_view AS trft
   WHERE
@@ -103,6 +106,7 @@ WITH grouped_by_parent AS (
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   last_12_months = rpv.last_12_months + gbp.amount,
+  last_12_months_count = rpv.last_12_months_count + gbp.count,
   unused = false
 FROM
   grouped_by_parent AS gbp
@@ -170,7 +174,11 @@ ALTER TABLE public.temporary_restock_recipient_profile DROP COLUMN unused;
 
 BEGIN;
 TRUNCATE TABLE public.recipient_profile RESTART IDENTITY;
-INSERT INTO public.recipient_profile SELECT * FROM public.temporary_restock_recipient_profile;
+INSERT INTO public.recipient_profile (
+    recipient_level, recipient_hash, recipient_unique_id,
+    recipient_name, recipient_affiliations, last_12_months,
+    last_12_months_count
+    ) SELECT * FROM public.temporary_restock_recipient_profile;
 DROP TABLE public.temporary_restock_recipient_profile;
 DROP MATERIALIZED VIEW public.temporary_recipients_from_transactions_view;
 COMMIT;

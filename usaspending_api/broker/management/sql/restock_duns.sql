@@ -62,6 +62,6 @@ CREATE TABLE public.temporary_restock_duns AS (
 BEGIN;
 TRUNCATE TABLE public.duns RESTART IDENTITY;
 INSERT INTO public.duns SELECT * FROM public.temporary_restock_duns;
-DROP TABLE public.temporary_restock_duns
+DROP TABLE public.temporary_restock_duns;
 COMMIT;
 VACUUM ANALYZE public.duns;
