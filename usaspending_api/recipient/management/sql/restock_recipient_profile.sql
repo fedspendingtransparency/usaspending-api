@@ -2,32 +2,21 @@
 -- Step 1, create the temporary matview of recipients from transactions
 --------------------------------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
-DROP TABLE IF EXISTS public.recipient_profile_new;
+DROP TABLE IF EXISTS public.temporary_restock_recipient_profile;
 
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
-  WITH all_transactions AS (
-    SELECT
-      parent_recipient_unique_id,
-      recipient_unique_id,
-      action_date,
-      CASE
-        WHEN parent_recipient_unique_id IS NOT NULL THEN 'C'
-      ELSE 'R' END AS recipient_level,
-      recipient_hash,
-      generated_pragmatic_obligation
-    FROM
-      universal_transaction_matview
-    WHERE action_date >= '2007-10-01'
-  )
   SELECT
     recipient_hash,
     recipient_unique_id,
     parent_recipient_unique_id,
-    recipient_level,
+    CASE
+      WHEN parent_recipient_unique_id IS NOT NULL THEN 'C'
+    ELSE 'R' END AS recipient_level,
     action_date,
     generated_pragmatic_obligation
   FROM
-    all_transactions
+    universal_transaction_matview
+  WHERE action_date >= '2007-10-01'
 );
 
 CREATE INDEX idx_recipients_from_transactions_view_1 ON public.temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
@@ -35,7 +24,7 @@ CREATE INDEX idx_recipients_from_transactions_view_1 ON public.temporary_recipie
 --------------------------------------------------------------------------------
 -- Step 2, Create the new table and populate with 100% of combinations
 --------------------------------------------------------------------------------
-CREATE TABLE public.recipient_profile_new (
+CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_level character(1) NOT NULL,
   recipient_hash UUID,
   recipient_unique_id TEXT,
@@ -45,7 +34,7 @@ CREATE TABLE public.recipient_profile_new (
   last_12_months NUMERIC(23,2) DEFAULT 0.00
 );
 
-INSERT INTO public.recipient_profile_new (
+INSERT INTO public.temporary_restock_recipient_profile (
   recipient_level,
   recipient_hash,
   recipient_unique_id,
@@ -80,12 +69,12 @@ WHERE
   recipient_lookup.duns IS NULL;
 
 
-CREATE UNIQUE INDEX idx_recipient_profile_uniq_new ON public.recipient_profile_new USING BTREE(recipient_hash, recipient_level);
+CREATE UNIQUE INDEX idx_recipient_profile_uniq_new ON public.temporary_restock_recipient_profile USING BTREE(recipient_hash, recipient_level);
 
 --------------------------------------------------------------------------------
 -- Step 3, Obligation for past 12 months
 --------------------------------------------------------------------------------
-UPDATE public.recipient_profile_new AS rpv
+UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   last_12_months = rpv.last_12_months + trft.generated_pragmatic_obligation,
   unused = false
@@ -111,7 +100,7 @@ WITH grouped_by_parent AS (
   GROUP BY parent_recipient_unique_id
 )
 
-UPDATE public.recipient_profile_new AS rpv
+UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   last_12_months = rpv.last_12_months + gbp.amount,
   unused = false
@@ -135,7 +124,7 @@ WITH parent_recipients AS (
   GROUP BY
     parent_recipient_unique_id
 )
-UPDATE public.recipient_profile_new AS rpv
+UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   recipient_affiliations = pr.duns_list,
   unused = false
@@ -158,7 +147,7 @@ WITH all_recipients AS (
     parent_recipient_unique_id IS NOT NULL
   ORDER BY action_date DESC
 )
-UPDATE public.recipient_profile_new AS rpv
+UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   recipient_affiliations = ARRAY[ar.parent_recipient_unique_id],
   unused = false
@@ -170,25 +159,25 @@ WHERE
 --------------------------------------------------------------------------------
 -- Step 7, Finalize new table
 --------------------------------------------------------------------------------
-ANALYZE VERBOSE public.recipient_profile_new;
+ANALYZE VERBOSE public.temporary_restock_recipient_profile;
 
-DELETE FROM public.recipient_profile_new WHERE unused = true;
-ALTER TABLE public.recipient_profile_new DROP COLUMN unused;
-
-VACUUM ANALYZE VERBOSE public.recipient_profile_new;
+DELETE FROM public.temporary_restock_recipient_profile WHERE unused = true;
+ALTER TABLE public.temporary_restock_recipient_profile DROP COLUMN unused;
 
 --------------------------------------------------------------------------------
 -- Step 8, Drop unnecessary relations and standup new table as final
 --------------------------------------------------------------------------------
-BEGIN;
-DROP MATERIALIZED VIEW public.temporary_recipients_from_transactions_view;
-DROP TABLE IF EXISTS public.recipient_profile;
-ALTER TABLE public.recipient_profile_new RENAME TO recipient_profile;
-ALTER INDEX public.idx_recipient_profile_uniq_new RENAME TO idx_recipient_profile_uniq;
-COMMIT;
 
+BEGIN;
+TRUNCATE TABLE public.recipient_profile RESTART IDENTITY;
+INSERT INTO public.recipient_profile SELECT * FROM public.temporary_restock_recipient_profile;
+DROP TABLE public.temporary_restock_recipient_profile;
+DROP MATERIALIZED VIEW public.temporary_recipients_from_transactions_view;
+COMMIT;
+VACUUM ANALYZE public.duns;
 --------------------------------------------------------------------------------
 -- Step 9, Create indexes useful for API
 --------------------------------------------------------------------------------
-CREATE INDEX idx_recipient_profile_name ON public.recipient_profile USING GIN(recipient_name gin_trgm_ops);
-CREATE INDEX idx_recipient_profile_unique_id ON public.recipient_profile USING BTREE(recipient_unique_id);
+-- CREATE INDEX idx_recipient_profile_name ON public.recipient_profile USING GIN(recipient_name gin_trgm_ops);
+-- CREATE INDEX idx_recipient_profile_unique_id ON public.recipient_profile USING BTREE(recipient_unique_id);
+-- ALTER INDEX public.idx_recipient_profile_uniq_new RENAME TO idx_recipient_profile_uniq;
