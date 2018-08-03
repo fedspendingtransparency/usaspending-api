@@ -120,6 +120,11 @@ TEST_RECIPIENT_LOOKUPS = {
         'recipient_hash': '00002940-fdbe-3fc5-9252-d46c0ae8758c',
         'duns': None,
         'legal_business_name': 'OTHER RECIPIENT'
+    },
+    '6dffe44a-554c-26b4-b7ef-44db50083732': {
+        'recipient_hash': '6dffe44a-554c-26b4-b7ef-44db50083732',
+        'duns': None,
+        'legal_business_name': 'MULTIPLE RECIPIENTS'
     }
 }
 TEST_RECIPIENT_PROFILES = {
@@ -304,6 +309,29 @@ def test_extract_location_duns():
 
 
 @pytest.mark.django_db
+def test_extract_location_special():
+    """ Tesing extracting the location for a special case  """
+    recipient_hash = '6dffe44a-554c-26b4-b7ef-44db50083732'
+    expected_location = {
+        'address_line1': None,
+        'address_line2': None,
+        'address_line3': None,
+        'foreign_province': None,
+        'city_name': None,
+        'county_name': None,
+        'state_code': None,
+        'zip': None,
+        'zip4': None,
+        'foreign_postal_code': None,
+        'country_name': None,
+        'country_code': None,
+        'congressional_code': None
+    }
+    location = recipients.extract_location(recipient_hash)
+    assert location == expected_location
+
+
+@pytest.mark.django_db
 def test_extract_location_le():
     """ Testing extracting location data from recipient hash using the Legal Entity table """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
@@ -335,6 +363,15 @@ def test_extract_business_categories():
 
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
     assert business_cat == expected_business_cat
+
+
+@pytest.mark.django_db
+def test_extract_business_categories_special():
+    """ Tesing extracting the business categories for a special case  """
+    recipient_name = 'MULTIPLE RECIPIENTS'
+    recipient_duns = None
+    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns)
+    assert business_categories == []
 
 
 @pytest.mark.django_db

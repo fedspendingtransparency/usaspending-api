@@ -146,6 +146,8 @@ def extract_location(recipient_hash, extract_country_name=True):
     else:
         # Extract the location from the latest legal entity
         duns, name = extract_name_duns_from_hash(recipient_hash)
+        if name in SPECIAL_CASES and duns is None:
+            return location
         legal_entity = LegalEntity.objects.filter(recipient_name=name,
                                                   recipient_unique_id=duns).\
             order_by('-update_date')\
@@ -179,6 +181,8 @@ def extract_business_categories(recipient_name, recipient_duns):
         Returns:
             list of business categories
     """
+    if recipient_name in SPECIAL_CASES and recipient_duns is None:
+        return []
     qs_business_cat = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)\
         .order_by('-update_date').values('business_categories').first()
     return qs_business_cat['business_categories'] if qs_business_cat is not None else []
@@ -231,14 +235,13 @@ class RecipientOverView(APIDocumentationView):
         year = validate_year(get_request.get('year', 'latest'))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
-        special_case = (recipient_name in SPECIAL_CASES and recipient_duns is None)
 
         if recipient_level != 'R':
             parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
         else:
             parent_duns, parent_name, parent_id = None, None, None
-        location = extract_location(recipient_hash) if not special_case else {}
-        business_types = extract_business_categories(recipient_name, recipient_duns) if not special_case else []
+        location = extract_location(recipient_hash)
+        business_types = extract_business_categories(recipient_name, recipient_duns)
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
