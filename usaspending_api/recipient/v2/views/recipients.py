@@ -124,7 +124,6 @@ def extract_location(recipient_hash, extract_country_name=True):
         'country_code': None,
         'congressional_code': None
     }
-    start = time.time()
     duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns')
     duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns[0]['duns']) if duns else None
     if duns_obj:
@@ -144,11 +143,9 @@ def extract_location(recipient_hash, extract_country_name=True):
             'country_code': duns_obj.country_code,
             'congressional_code': duns_obj.congressional_district
         })
-        print('{} took {} seconds'.format('duns_obj', time.time() - start))
     else:
         # Extract the location from the latest legal entity
         duns, name = extract_name_duns_from_hash(recipient_hash)
-        print(duns, name)
         legal_entity = LegalEntity.objects.filter(recipient_name=name,
                                                   recipient_unique_id=duns).\
             order_by('-update_date')\
@@ -169,7 +166,6 @@ def extract_location(recipient_hash, extract_country_name=True):
         )
         if legal_entity:
             location.update(legal_entity[0])
-        print('{} took {} seconds'.format('legal entity location', time.time() - start))
     return location
 
 
@@ -233,29 +229,17 @@ class RecipientOverView(APIDocumentationView):
     def get(self, request, recipient_id):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        start = time.time()
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
-        print('{} took {} seconds'.format('validation recipient id', time.time()-start))
-        start = time.time()
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
-        print('{} took {} seconds'.format('extract name_duns_from_hash', time.time()-start))
         special_case = (recipient_name in SPECIAL_CASES and recipient_duns is None)
 
-        start = time.time()
         if recipient_level != 'R':
             parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
         else:
             parent_duns, parent_name, parent_id = None, None, None
-        print('{} took {} seconds'.format('extract parent from hash', time.time()-start))
-        start = time.time()
         location = extract_location(recipient_hash) if not special_case else {}
-        print('{} took {} seconds'.format('location', time.time()-start))
-        start = time.time()
         business_types = extract_business_categories(recipient_name, recipient_duns) if not special_case else []
-        print('{} took {} seconds'.format('extract business categories', time.time()-start))
-        start = time.time()
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
-        print('{} took {} seconds'.format('totals', time.time()-start))
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
         result = {
