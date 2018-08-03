@@ -1,5 +1,6 @@
 import logging
 import uuid
+import time
 
 from rest_framework.response import Response
 from django.db.models import F, Sum
@@ -20,6 +21,15 @@ logger = logging.getLogger(__name__)
 #   - C = Child Recipient, References a parent recipient
 #   - R = Recipient, No parent info provided
 RECIPIENT_LEVELS = ['P', 'C', 'R']
+
+# Special Cases - Recipients that cover a group of recipients
+SPECIAL_CASES = [
+    'MULTIPLE RECIPIENTS',
+    'REDACTED DUE TO PII',
+    'MULTIPLE FOREIGN RECIPIENTS',
+    'PRIVATE INDIVIDUAL',
+    'INDIVIDUAL RECIPIENT'
+]
 
 
 def validate_recipient_id(recipient_id):
@@ -45,8 +55,6 @@ def validate_recipient_id(recipient_id):
         uuid.UUID(recipient_hash)
     except ValueError:
         raise InvalidParameterException('Recipient Hash not valid UUID: \'{}\'.'.format(recipient_hash))
-    if not RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).count():
-        raise InvalidParameterException('Recipient ID not found: \'{}\'.'.format(recipient_id))
     return recipient_hash, recipient_level
 
 
@@ -59,12 +67,11 @@ def extract_name_duns_from_hash(recipient_hash):
         Returns:
             duns and name
     """
-    name_duns_qs = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name')\
-        .first()
+    name_duns_qs = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name')
     if not name_duns_qs:
         return None, None
     else:
-        return name_duns_qs['duns'], name_duns_qs['legal_business_name']
+        return name_duns_qs[0]['duns'], name_duns_qs[0]['legal_business_name']
 
 
 def extract_parent_from_hash(recipient_hash):
@@ -86,10 +93,10 @@ def extract_parent_from_hash(recipient_hash):
         return duns, name, parent_id
     duns = affiliations[0]['recipient_affiliations'][0]
 
-    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name')
     if parent:
-        name = parent['legal_business_name']
-        parent_id = '{}-P'.format(parent['recipient_hash'])
+        name = parent[0]['legal_business_name']
+        parent_id = '{}-P'.format(parent[0]['recipient_hash'])
     return duns, name, parent_id
 
 
@@ -117,12 +124,13 @@ def extract_location(recipient_hash, extract_country_name=True):
         'country_code': None,
         'congressional_code': None
     }
-    duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns').first()
-    duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns['duns']).first() if duns else None
+    start = time.time()
+    duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns')
+    duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns[0]['duns']) if duns else None
     if duns_obj:
+        duns_obj = duns_obj[0]
         if extract_country_name:
-            country_name = RefCountryCode.objects.filter(country_code=duns_obj.country_code).values('country_name')\
-                .first()
+            country_name = RefCountryCode.objects.filter(country_code=duns_obj.country_code).values('country_name')
         else:
             country_name = None
         location.update({
@@ -132,13 +140,15 @@ def extract_location(recipient_hash, extract_country_name=True):
             'state_code': duns_obj.state,
             'zip': duns_obj.zip,
             'zip4': duns_obj.zip4,
-            'country_name': country_name['country_name'] if country_name else None,
+            'country_name': country_name[0]['country_name'] if country_name else None,
             'country_code': duns_obj.country_code,
             'congressional_code': duns_obj.congressional_district
         })
+        print('{} took {} seconds'.format('duns_obj', time.time() - start))
     else:
         # Extract the location from the latest legal entity
         duns, name = extract_name_duns_from_hash(recipient_hash)
+        print(duns, name)
         legal_entity = LegalEntity.objects.filter(recipient_name=name,
                                                   recipient_unique_id=duns).\
             order_by('-update_date')\
@@ -156,9 +166,10 @@ def extract_location(recipient_hash, extract_country_name=True):
                 country_name=F('location__country_name'),
                 country_code=F('location__location_country_code'),
                 congressional_code=F('location__congressional_code')
-        ).first()
+        )
         if legal_entity:
-            location.update(legal_entity)
+            location.update(legal_entity[0])
+        print('{} took {} seconds'.format('legal entity location', time.time() - start))
     return location
 
 
@@ -190,10 +201,12 @@ def obtain_recipient_totals(recipient_id, children=False, year='latest', subawar
     """
     if year == 'latest' and children is False:
         # Simply pull the total and count from RecipientProfile
-        parent_recipient_hash = recipient_id[:-2]
-        results = list(RecipientProfile.objects.filter(recipient_hash=parent_recipient_hash, recipient_level='P') \
+        recipient_hash = recipient_id[:-2]
+        recipient_level = recipient_id[-1]
+        results = list(RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level) \
                        .annotate(total=F('last_12_months'), count=F('last_12_months_count')) \
                        .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count'))
+
     else:
         filters = reshape_filters(recipient_id=recipient_id, year=year)
         queryset, model = recipient_totals(filters)
@@ -208,6 +221,9 @@ def obtain_recipient_totals(recipient_id, children=False, year='latest', subawar
             aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts'))
             aggregates.update({'recipient_hash': recipient_id[:-2]})
             results = [aggregates]
+    for result in results:
+        result['count'] = result['count'] if result['count'] else 0
+        result['total'] = result['total'] if result['total'] else 0
     return results
 
 
@@ -217,16 +233,29 @@ class RecipientOverView(APIDocumentationView):
     def get(self, request, recipient_id):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
+        start = time.time()
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
+        print('{} took {} seconds'.format('validation recipient id', time.time()-start))
+        start = time.time()
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
+        print('{} took {} seconds'.format('extract name_duns_from_hash', time.time()-start))
+        special_case = (recipient_name in SPECIAL_CASES and recipient_duns is None)
 
+        start = time.time()
         if recipient_level != 'R':
             parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
         else:
             parent_duns, parent_name, parent_id = None, None, None
-        location = extract_location(recipient_hash)
-        business_types = extract_business_categories(recipient_name, recipient_duns)
+        print('{} took {} seconds'.format('extract parent from hash', time.time()-start))
+        start = time.time()
+        location = extract_location(recipient_hash) if not special_case else {}
+        print('{} took {} seconds'.format('location', time.time()-start))
+        start = time.time()
+        business_types = extract_business_categories(recipient_name, recipient_duns) if not special_case else []
+        print('{} took {} seconds'.format('extract business categories', time.time()-start))
+        start = time.time()
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
+        print('{} took {} seconds'.format('totals', time.time()-start))
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
         result = {
@@ -239,8 +268,8 @@ class RecipientOverView(APIDocumentationView):
             'parent_duns': parent_duns,
             'business_types': business_types,
             'location': location,
-            'total_transaction_amount': results[0]['total'],
-            'total_transactions': results[0]['count'],
+            'total_transaction_amount': results[0]['total'] if results else 0,
+            'total_transactions': results[0]['count'] if results else 0,
             # 'total_sub_transaction_amount': subtotal,
             # 'total_sub_transaction_total': subcount
         }
@@ -256,11 +285,11 @@ def extract_hash_name_from_duns(duns):
         Returns:
             list of dictionaries containing hashes and names
     """
-    qs_hash = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    qs_hash = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name')
     if not qs_hash:
         return None, None
     else:
-        return qs_hash['recipient_hash'], qs_hash['legal_business_name']
+        return qs_hash[0]['recipient_hash'], qs_hash[0]['legal_business_name']
 
 
 class ChildRecipients(APIDocumentationView):
