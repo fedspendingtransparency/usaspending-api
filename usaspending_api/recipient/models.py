@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
+from partial_index import PartialIndex, PQ
 
 
 class StateData(models.Model):
@@ -32,9 +34,18 @@ class DUNS(models.Model):
     Model representing DUNS data (imported from the broker)
     """
     awardee_or_recipient_uniqu = models.TextField(primary_key=True)
-    legal_business_name = models.TextField()
-    ultimate_parent_unique_ide = models.TextField()
-    ultimate_parent_legal_enti = models.TextField()
+    legal_business_name = models.TextField(null=True, blank=True)
+    ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
+    ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
+    address_line_1 = models.TextField(null=True, blank=True)
+    address_line_2 = models.TextField(null=True, blank=True)
+    city = models.TextField(null=True, blank=True)
+    state = models.TextField(null=True, blank=True)
+    zip = models.TextField(null=True, blank=True)
+    zip4 = models.TextField(null=True, blank=True)
+    country_code = models.TextField(null=True, blank=True)
+    congressional_district = models.TextField(null=True, blank=True)
+    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None)
     broker_duns_id = models.TextField()
     update_date = models.DateField()
 
@@ -55,3 +66,30 @@ class HistoricParentDUNS(models.Model):
 
     class Meta:
         db_table = 'historic_parent_duns'
+
+
+class RecipientProfile(models.Model):
+    """Table used for speed improvements for the recipient profile listings"""
+    recipient_level = models.CharField(max_length=1)
+    recipient_hash = models.UUIDField(null=True)
+    recipient_unique_id = models.TextField(null=True)
+    recipient_name = models.TextField(null=True)
+    recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
+    last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0)
+
+    class Meta:
+        managed = True
+        db_table = 'recipient_profile'
+        unique_together = ('recipient_level', 'recipient_hash')
+
+
+class RecipientLookup(models.Model):
+    recipient_hash = models.UUIDField(unique=True, null=True)
+    legal_business_name = models.TextField(null=True, db_index=True)
+    duns = models.TextField(null=True)
+
+    class Meta:
+        db_table = 'recipient_lookup'
+        indexes = [
+            PartialIndex(fields=['duns'], unique=True, where=PQ(duns__isnull=False)),
+        ]

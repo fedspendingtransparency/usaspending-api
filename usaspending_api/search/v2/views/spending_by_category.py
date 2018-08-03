@@ -6,6 +6,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
@@ -16,7 +17,9 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RecipientLookup
+from usaspending_api.recipient.models import RecipientLookup, StateData
+from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RefCountryCode
+
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +61,15 @@ ALIAS_DICT = {
     },
     'district': {
         'pop_congressional_code': 'code',
+    },
+    'state_territory': {
+        'pop_state_code': 'code'
+    },
+    'country': {
+        'pop_country_code': 'code'
+    },
+    'federal_account': {
+        'transaction__award__financial_set__treasury_account__federal_account_id': 'id'
     }
 
 }
@@ -80,7 +92,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         categories = [
             'awarding_agency', 'awarding_subagency', 'funding_agency', 'funding_subagency',
             'recipient_duns', 'recipient_parent_duns',
-            'cfda', 'psc', 'naics', 'county', 'district']
+            'cfda', 'psc', 'naics', 'county', 'district', 'country', 'state_territory', 'federal_account']
         models = [
             {'name': 'category', 'key': 'category', 'type': 'enum', 'enum_values': categories, 'optional': False},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False, 'optional': True}
@@ -146,8 +158,10 @@ class BusinessLogic:
             results = self.recipient()
         elif self.category in ('cfda', 'psc', 'naics'):
             results = self.industry_and_other_codes()
-        elif self.category in ('county', 'district'):
+        elif self.category in ('county', 'district', 'state_territory', 'country'):
             results = self.location()
+        elif self.category in ('federal_account'):
+            results = self.federal_account()
 
         page_metadata = get_simple_pagination_metadata(len(results), self.limit, self.page)
 
@@ -278,6 +292,12 @@ class BusinessLogic:
         elif self.category == 'district':
             filters = {'pop_congressional_code__isnull': False}
             values = ['pop_congressional_code', 'pop_state_code']
+        elif self.category == 'country':
+            filters = {'pop_country_code__isnull': False}
+            values = ['pop_country_code']
+        elif self.category == 'state_territory':
+            filters = {'pop_state_code__isnull': False}
+            values = ['pop_state_code']
 
         self.queryset = self.common_db_query(filters, values)
 
@@ -294,6 +314,30 @@ class BusinessLogic:
 
                 row['name'] = '{}-{}'.format(row['pop_state_code'], cd_code)
                 del row['pop_state_code']
+            if self.category == 'country':
+                row['name'] = fetch_country_name_from_code(row['code'])
+            if self.category == 'state_territory':
+                row['name'] = fetch_state_name_from_code(row['code'])
+        return results
+
+    def federal_account(self) -> list:
+        filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False}
+        values = {'transaction__award__financial_set__treasury_account__federal_account_id'}
+
+        # Note: Purely for performance reasons, can be removed if still performant
+        if 'recipient_id' not in self.filters:
+            raise InvalidParameterException('Federal Account Category requires recipient ID filter')
+
+        self.queryset = self.common_db_query(filters, values)
+
+        # DB hit here
+        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+
+        results = alias_response(ALIAS_DICT[self.category], query_results)
+        for row in results:
+            agency_identifier, main_account_code, federal_account_name = fetch_federal_account_from_id(row['id'])
+            row['code'] = '-'.join([agency_identifier, main_account_code])
+            row['name'] = federal_account_name
         return results
 
 
@@ -336,3 +380,30 @@ def fetch_psc_description_by_code(psc_code):
         logger.warning('{} not found for psc_code: {}'.format(','.join(columns), psc_code))
         return None
     return result[columns[0]]
+
+
+def fetch_country_name_from_code(country_code):
+    columns = ['country_name']
+    result = RefCountryCode.objects.filter(country_code=country_code).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for country_code: {}'.format(','.join(columns), country_code))
+        return None
+    return result[columns[0]]
+
+
+def fetch_state_name_from_code(state_code):
+    columns = ['name']
+    result = StateData.objects.filter(code=state_code).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for state_code: {}'.format(','.join(columns), state_code))
+        return None
+    return result[columns[0]]
+
+
+def fetch_federal_account_from_id(federal_account_id):
+    columns = ['agency_identifier', 'main_account_code', 'account_title']
+    result = FederalAccount.objects.filter(id=federal_account_id).values(*columns).first()
+    if not result:
+        logger.warning('{} not found for federal_account_id: {}'.format(','.join(columns), federal_account_id))
+        return None
+    return result[columns[0]], result[columns[1]], result[columns[2]]

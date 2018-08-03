@@ -16,6 +16,7 @@ AWARD_FILTER = [
     {'name': 'place_of_performance_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
     {'name': 'program_numbers', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'psc_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+    {'name': 'recipient_id', 'type': 'text', 'text_type': 'search'},
     {'name': 'recipient_scope', 'type': 'enum', 'enum_values': ('domestic', 'foreign')},
     {'name': 'recipient_search_text', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'recipient_type_names', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
