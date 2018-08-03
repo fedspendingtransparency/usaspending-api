@@ -93,7 +93,7 @@ def extract_parent_from_hash(recipient_hash):
     return duns, name, parent_id
 
 
-def extract_location(recipient_hash):
+def extract_location(recipient_hash, extract_country_name=True):
     """ Extract the location data via the recipient hash
 
         Args:
@@ -120,8 +120,11 @@ def extract_location(recipient_hash):
     duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns').first()
     duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns['duns']).first() if duns else None
     if duns_obj:
-        country_name = (RefCountryCode.objects.filter(country_code=duns_obj.country_code).values('country_name').first()
-                        if duns_obj else None)
+        if extract_country_name:
+            country_name = RefCountryCode.objects.filter(country_code=duns_obj.country_code).values('country_name')\
+                .first()
+        else:
+            country_name = None
         location.update({
             'address_line1': duns_obj.address_line_1,
             'address_line2': duns_obj.address_line_2,
@@ -174,23 +177,38 @@ def extract_business_categories(recipient_name, recipient_duns):
     return qs_business_cat['business_categories'] if qs_business_cat is not None else []
 
 
-def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
+def obtain_recipient_totals(recipient_id, children=False, year='latest', subawards=False):
     """ Extract the total amount and transaction count for the recipient_hash given the timeframe
 
         Args:
             recipient_id: string of hash(duns, name)-[recipient-level]
-
+            children: whether or not to group by children
+            year: the year the totals/counts are based on
+            subawards: whether to total based on subawards
         Returns:
-            total transactions
-            total amount
+            list of dictionaries representing hashes and their totals/counts
     """
-    # Note: We could use the RecipientProfile to get the totals for last 12 months, thought we still need the count.
-    filters = reshape_filters(recipient_id=recipient_id, year=year)
-    queryset, model = recipient_totals(filters)
-    aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts'))
-    total = aggregates['total'] if aggregates['total'] else 0
-    count = aggregates['count'] if aggregates['count'] else 0
-    return total, count
+    if year == 'latest' and children is False:
+        # Simply pull the total and count from RecipientProfile
+        parent_recipient_hash = recipient_id[:-2]
+        results = list(RecipientProfile.objects.filter(recipient_hash=parent_recipient_hash, recipient_level='P') \
+                       .annotate(total=F('last_12_months'), count=F('last_12_months_count')) \
+                       .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count'))
+    else:
+        filters = reshape_filters(recipient_id=recipient_id, year=year)
+        queryset, model = recipient_totals(filters)
+        if children:
+            # Group by the child recipients
+            queryset = queryset.values('recipient_hash', 'recipient_unique_id', 'recipient_name') \
+                .annotate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts')) \
+                .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count')
+            results = list(queryset)
+        else:
+            # Calculate the overall totals
+            aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts'))
+            aggregates.update({'recipient_hash': recipient_id[:-2]})
+            results = [aggregates]
+    return results
 
 
 class RecipientOverView(APIDocumentationView):
@@ -208,7 +226,7 @@ class RecipientOverView(APIDocumentationView):
             parent_duns, parent_name, parent_id = None, None, None
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns)
-        total, count = obtain_recipient_totals(recipient_id, year=year, subawards=False)
+        results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
         result = {
@@ -221,8 +239,8 @@ class RecipientOverView(APIDocumentationView):
             'parent_duns': parent_duns,
             'business_types': business_types,
             'location': location,
-            'total_transaction_amount': total,
-            'total_transactions': count,
+            'total_transaction_amount': results[0]['total'],
+            'total_transactions': results[0]['count'],
             # 'total_sub_transaction_amount': subtotal,
             # 'total_sub_transaction_total': subcount
         }
@@ -255,29 +273,17 @@ class ChildRecipients(APIDocumentationView):
         if not parent_hash:
             raise InvalidParameterException('DUNS not found: \'{}\'.'.format(duns))
 
-        # Get all possible child duns
-        children_duns = RecipientProfile.objects.filter(recipient_hash=parent_hash, recipient_level='P').values(
-            'recipient_affiliations')
-        if not children_duns:
-            raise InvalidParameterException('DUNS is not listed as a parent: \'{}\'.'.format(duns))
-        children = children_duns[0]['recipient_affiliations']
+        totals = list(obtain_recipient_totals('{}-P'.format(parent_hash), children=True, year=year, subawards=False))
 
         # Get child info for each child DUNS
         results = []
-        recipient_level = 'C'
-        for child_duns in children:
-            child_hash, child_name = extract_hash_name_from_duns(child_duns)
-            if not child_hash:
-                logger.warning('Child Duns Not Found in Recipient Lookup, skipping: {}'.format(child_duns))
-                continue
-            child_recipient_id = '{}-{}'.format(child_hash, recipient_level)
-            total, count = obtain_recipient_totals(child_recipient_id, year=year, subawards=False)
-            location = extract_location(child_hash)
+        for total in totals:
             results.append({
-                'recipient_id': child_recipient_id,
-                'name': child_name,
-                'duns': child_duns,
-                'amount': total,
-                'state_province': location['state_code']
+                'recipient_id': '{}-C'.format(total['recipient_hash']),
+                'name': total['recipient_name'],
+                'duns': total['recipient_unique_id'],
+                'amount': total['total'],
+                # Commenting out until location data is included in a quick matview
+                # 'state_province': total['state_province']
             })
         return Response(results)
