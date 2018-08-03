@@ -76,6 +76,11 @@ class RecipientProfile(models.Model):
     recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
     last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_contracts = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_grants = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_direct_payments = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_loans = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_other = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_months_count = models.IntegerField(null=False, default=0)
 
     class Meta:
