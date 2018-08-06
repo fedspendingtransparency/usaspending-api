@@ -221,6 +221,8 @@ class RecipientOverView(APIDocumentationView):
         year = validate_year(get_request.get('year', 'latest'))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
+        if not (recipient_name or recipient_duns):
+            raise InvalidParameterException('Recipient Hash not found: \'{}\'.'.format(recipient_hash))
 
         if recipient_level != 'R':
             parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
