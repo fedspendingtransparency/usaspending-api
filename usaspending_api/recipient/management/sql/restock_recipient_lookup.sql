@@ -13,7 +13,7 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
     UPPER(COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) AS awardee_or_recipient_legal,
     COALESCE(fpds.legal_entity_city_name, fabs.legal_entity_city_name) AS city,
     COALESCE(fpds.legal_entity_state_code, fabs.legal_entity_state_code) AS state,
-    COALESCE(fpds.legal_entity_zip4, fabs.legal_entity_zip5) AS zip,
+    COALESCE(fpds.legal_entity_zip5, fabs.legal_entity_zip5) AS zip,
     COALESCE(fpds.legal_entity_congressional, fabs.legal_entity_congressional) AS congressional,
     COALESCE(fpds.legal_entity_address_line1, fabs.legal_entity_address_line1) AS address_line1,
     COALESCE(fpds.legal_entity_address_line2, fabs.legal_entity_address_line1) AS address_line2,
@@ -41,7 +41,6 @@ CREATE TABLE public.temporary_restock_recipient_lookup (
     city text,
     state text,
     zip text,
-    zip4 text,
     country_code text,
     congressional_district text,
     business_types_codes text[]
@@ -82,7 +81,7 @@ DO $$ BEGIN RAISE NOTICE 'Step 3: Adding/updating records from SAM'; END $$;
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash, legal_business_name, duns,
   parent_duns, parent_legal_business_name, address_line_1,
-  address_line_2, city, state, zip, zip4, country_code,
+  address_line_2, city, state, zip, country_code,
   congressional_district, business_types_codes
   )
   SELECT
@@ -97,7 +96,6 @@ INSERT INTO public.temporary_restock_recipient_lookup (
     city,
     state,
     zip,
-    zip4,
     country_code,
     congressional_district,
     business_types_codes
@@ -110,7 +108,6 @@ ON CONFLICT (duns) DO UPDATE SET
     city = excluded.city,
     state = excluded.state,
     zip = excluded.zip,
-    zip4 = excluded.zip4,
     country_code = excluded.country_code,
     congressional_district = excluded.congressional_district,
     business_types_codes = excluded.business_types_codes;
@@ -169,7 +166,8 @@ SELECT
 FROM transaction_recipients
 ON CONFLICT (duns) DO NOTHING;
 
-
+DROP INDEX idx_temporary_duns_unique_duns;
+CREATE UNIQUE INDEX idx_temporary_recipient_hash ON public.temporary_restock_recipient_lookup (recipient_hash);
 --------------------------------------------------------------------------------
 -- Step 5, Adding duns-less records from FPDS and FABS
 --------------------------------------------------------------------------------
@@ -221,7 +219,8 @@ SELECT
     parent_legal_business_name, address_line_1, address_line_2, city,
     state, zip, country_code,
     congressional_district
-FROM transaction_recipients;
+FROM transaction_recipients
+ON CONFLICT (recipient_hash) DO NOTHING;
 
 
 --------------------------------------------------------------------------------
@@ -230,9 +229,25 @@ FROM transaction_recipients;
 DO $$ BEGIN RAISE NOTICE 'Step 6: restocking destination table'; END $$;
 BEGIN;
 TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
-INSERT INTO public.recipient_lookup (recipient_hash, legal_business_name, duns) SELECT * FROM public.temporary_restock_recipient_lookup;
+INSERT INTO public.recipient_lookup (
+    recipient_hash, legal_business_name, duns, address_line_1, address_line_2, city,
+     state, zip, country_code,
+    congressional_district, business_types_codes)
+  SELECT
+    recipient_hash,
+    legal_business_name,
+    duns,
+    address_line_1,
+    address_line_2,
+    city,
+    state,
+    zip,
+    country_code,
+    congressional_district,
+    business_types_codes
+ FROM public.temporary_restock_recipient_lookup;
 DROP TABLE public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
-ROLLBACK;
+COMMIT;
 
 VACUUM ANALYZE VERBOSE public.recipient_lookup;

@@ -100,7 +100,6 @@ class RecipientLookup(models.Model):
     city = models.TextField(null=True)
     state = models.TextField(null=True)
     zip = models.TextField(null=True)
-    zip4 = models.TextField(null=True)
     country_code = models.TextField(null=True)
     congressional_district = models.TextField(null=True)
     business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
