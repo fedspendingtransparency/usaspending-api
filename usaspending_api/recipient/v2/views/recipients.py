@@ -12,24 +12,10 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.recipient.models import DUNS, RecipientProfile, RecipientLookup
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 logger = logging.getLogger(__name__)
-
-# Recipient Levels
-#   - P = Parent Recipient, There is at least one child recipient that lists this recipient as a parent
-#   - C = Child Recipient, References a parent recipient
-#   - R = Recipient, No parent info provided
-RECIPIENT_LEVELS = ['P', 'C', 'R']
-
-# Special Cases - Recipients that cover a group of recipients
-SPECIAL_CASES = [
-    'MULTIPLE RECIPIENTS',
-    'REDACTED DUE TO PII',
-    'MULTIPLE FOREIGN RECIPIENTS',
-    'PRIVATE INDIVIDUAL',
-    'INDIVIDUAL RECIPIENT'
-]
 
 
 def validate_recipient_id(recipient_id):
