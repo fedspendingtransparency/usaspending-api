@@ -93,9 +93,21 @@ class RecipientLookup(models.Model):
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(null=True)
+    parent_duns = models.TextField(null=True)
+    parent_legal_business_name = models.TextField(null=True)
+    address_line_1 = models.TextField(null=True)
+    address_line_2 = models.TextField(null=True)
+    city = models.TextField(null=True)
+    state = models.TextField(null=True)
+    zip = models.TextField(null=True)
+    zip4 = models.TextField(null=True)
+    country_code = models.TextField(null=True)
+    congressional_district = models.TextField(null=True)
+    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
 
     class Meta:
         db_table = 'recipient_lookup'
         indexes = [
             PartialIndex(fields=['duns'], unique=True, where=PQ(duns__isnull=False)),
+            PartialIndex(fields=['parent_duns'], unique=True, where=PQ(parent_duns__isnull=False)),
         ]
