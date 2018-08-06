@@ -1,6 +1,5 @@
 import logging
 import uuid
-import time
 
 from rest_framework.response import Response
 from django.db.models import F, Sum
@@ -189,8 +188,8 @@ def obtain_recipient_totals(recipient_id, children=False, year='latest', subawar
         # Simply pull the total and count from RecipientProfile
         recipient_hash = recipient_id[:-2]
         recipient_level = recipient_id[-1]
-        results = list(RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level) \
-                       .annotate(total=F('last_12_months'), count=F('last_12_months_count')) \
+        results = list(RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level)
+                       .annotate(total=F('last_12_months'), count=F('last_12_months_count'))
                        .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count'))
 
     else:
