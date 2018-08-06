@@ -1,10 +1,35 @@
-
 DROP TABLE IF EXISTS public.temporary_restock_recipient_lookup;
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 
 --------------------------------------------------------------------------------
--- Step 1, Create temporary table
+-- Step 1, Create temporary table and materialized view
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temporary table and unique index'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temporary table and materialized view'; END $$;
+CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
+  SELECT
+    COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS awardee_or_recipient_uniqu,
+    UPPER(COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) AS ultimate_parent_legal_enti,
+    COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS ultimate_parent_unique_ide,
+    UPPER(COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) AS awardee_or_recipient_legal,
+    COALESCE(fpds.legal_entity_city_name, fabs.legal_entity_city_name) AS city,
+    COALESCE(fpds.legal_entity_state_code, fabs.legal_entity_state_code) AS state,
+    COALESCE(fpds.legal_entity_zip4, fabs.legal_entity_zip5) AS zip,
+    COALESCE(fpds.legal_entity_congressional, fabs.legal_entity_congressional) AS congressional,
+    COALESCE(fpds.legal_entity_address_line1, fabs.legal_entity_address_line1) AS address_line1,
+    COALESCE(fpds.legal_entity_address_line2, fabs.legal_entity_address_line1) AS address_line2,
+    COALESCE(fpds.legal_entity_country_code, fabs.legal_entity_country_code) AS country_code,
+    tn.action_date
+  FROM
+    transaction_normalized AS tn
+  LEFT OUTER JOIN transaction_fpds AS fpds ON
+    (tn.id = fpds.transaction_id AND tn.is_fpds = TRUE)
+  LEFT OUTER JOIN transaction_fabs AS fabs ON
+    (tn.id = fabs.transaction_id AND tn.is_fpds = FALSE)
+);
+
+VACUUM ANALYZE VERBOSE public.temporary_transaction_recipients_view;
+
+
 CREATE TABLE public.temporary_restock_recipient_lookup (
     recipient_hash uuid,
     legal_business_name text,
@@ -24,9 +49,9 @@ CREATE TABLE public.temporary_restock_recipient_lookup (
 
 CREATE UNIQUE INDEX idx_temporary_duns_unique_duns ON public.temporary_restock_recipient_lookup (duns);
 
--- --------------------------------------------------------------------------------
--- -- Step 2, Create rows with Parent DUNS + Parent Recipient Names from SAM
--- --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Step 2, Create rows with Parent DUNS + Parent Recipient Names from SAM
+--------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 2: Creating records from SAM parent data'; END $$;
 WITH grouped_parent_recipients AS (
     SELECT
@@ -49,9 +74,9 @@ FROM grouped_parent_recipients AS gpr
 ON CONFLICT (duns) DO NOTHING;
 
 
--- --------------------------------------------------------------------------------
--- -- Step 3, Upsert rows with DUNS + Recipient Names from SAM
--- --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Step 3, Upsert rows with DUNS + Recipient Names from SAM
+--------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 3: Adding/updating records from SAM'; END $$;
 
 INSERT INTO public.temporary_restock_recipient_lookup (
@@ -90,10 +115,12 @@ ON CONFLICT (duns) DO UPDATE SET
     congressional_district = excluded.congressional_district,
     business_types_codes = excluded.business_types_codes;
 
--- --------------------------------------------------------------------------------
--- -- Step 4, Get other recipients from FPDS (20 minutes)
--- --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4: Adding missing DUNS records from FPDS'; END $$;
+VACUUM ANALYZE public.temporary_restock_recipient_lookup;
+
+--------------------------------------------------------------------------------
+-- Step 4, Create rows with Parent DUNS + Parent Recipient Names from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4: Adding missing DUNS records from FPDS and FABS'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
@@ -101,14 +128,14 @@ WITH transaction_recipients AS (
         tf.ultimate_parent_legal_enti,
         tf.ultimate_parent_unique_ide,
         tf.awardee_or_recipient_legal,
-        tf.legal_entity_city_name,
-        tf.legal_entity_state_code,
-        tf.legal_entity_zip4,
-        tf.legal_entity_congressional,
-        tf.legal_entity_address_line1,
-        tf.legal_entity_address_line2,
-        tf.legal_entity_country_code
-      FROM transaction_fpds AS tf
+        tf.city,
+        tf.state,
+        tf.zip,
+        tf.congressional,
+        tf.address_line1,
+        tf.address_line2,
+        tf.country_code
+      FROM public.temporary_transaction_recipients_view AS tf
       WHERE tf.awardee_or_recipient_uniqu IS NOT NULL
       ORDER BY tf.action_date DESC
     )
@@ -119,66 +146,13 @@ WITH transaction_recipients AS (
       ultimate_parent_legal_enti AS parent_duns,
       ultimate_parent_unique_ide AS parent_legal_business_name,
       awardee_or_recipient_legal AS legal_business_name,
-      legal_entity_city_name AS city,
-      legal_entity_state_code AS state,
-      legal_entity_zip4 AS zip4,
-      legal_entity_congressional AS congressional_district,
-      legal_entity_address_line1 AS address_line_1,
-      legal_entity_address_line2 AS address_line_2,
-      legal_entity_country_code AS country_code
-    FROM transaction_recipients_inner
-)
-
-INSERT INTO public.temporary_restock_recipient_lookup (
-    recipient_hash, legal_business_name, duns, parent_duns,
-    parent_legal_business_name, address_line_1, address_line_2, city,
-     state, zip4, country_code,
-    congressional_district)
-SELECT
-    recipient_hash, legal_business_name, duns, parent_duns,
-    parent_legal_business_name, address_line_1, address_line_2, city,
-    state, zip4, country_code,
-    congressional_district
-FROM transaction_recipients
-ON CONFLICT (duns) DO NOTHING;
-
-
--- -- --------------------------------------------------------------------------------
--- -- -- Step 5, Get other recipients from FABS
--- -- --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: Adding missing DUNS records from FABS'; END $$;
-WITH transaction_recipients AS (
-    WITH transaction_recipients_inner AS (
-      SELECT
-        tf.awardee_or_recipient_uniqu,
-        tf.ultimate_parent_legal_enti,
-        tf.ultimate_parent_unique_ide,
-        tf.awardee_or_recipient_legal,
-        tf.legal_entity_city_name,
-        tf.legal_entity_state_code,
-        tf.legal_entity_zip5,
-        tf.legal_entity_congressional,
-        tf.legal_entity_address_line1,
-        tf.legal_entity_address_line2,
-        tf.legal_entity_country_code
-      FROM transaction_fabs AS tf
-      WHERE tf.awardee_or_recipient_uniqu IS NOT NULL
-      ORDER BY tf.action_date DESC
-    )
-    SELECT
-      DISTINCT awardee_or_recipient_uniqu,
-      MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, awardee_or_recipient_legal)))::uuid AS recipient_hash,
-      awardee_or_recipient_uniqu AS duns,
-      ultimate_parent_legal_enti AS parent_duns,
-      ultimate_parent_unique_ide AS parent_legal_business_name,
-      awardee_or_recipient_legal AS legal_business_name,
-      legal_entity_city_name AS city,
-      legal_entity_state_code AS state,
-      legal_entity_zip5 AS zip,
-      legal_entity_congressional AS congressional_district,
-      legal_entity_address_line1 AS address_line_1,
-      legal_entity_address_line2 AS address_line_2,
-      legal_entity_country_code AS country_code
+      city,
+      state,
+      zip,
+      congressional AS congressional_district,
+      address_line1 AS address_line_1,
+      address_line2 AS address_line_2,
+      country_code
     FROM transaction_recipients_inner
 )
 
@@ -196,62 +170,44 @@ FROM transaction_recipients
 ON CONFLICT (duns) DO NOTHING;
 
 
+--------------------------------------------------------------------------------
+-- Step 5, Adding duns-less records from FPDS and FABS
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 5: Adding duns-less records from FPDS and FABS'; END $$;
 
--- --------------------------------------------------------------------------------
--- -- Step 6, Get all recipients without DUNS from transactions (fabs/fpds) 12 minutes
--- --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 6: Get all recipients without DUNS from transactions (fabs/fpds)'; END $$;
-
-DROP INDEX IF EXISTS idx_temporary_duns_unique_duns;
-
-WITH transactions AS (
-    WITH transactions_inner AS (
-      (SELECT
+WITH transaction_recipients AS (
+    WITH transaction_recipients_inner AS (
+      SELECT
         tf.awardee_or_recipient_uniqu,
-        UPPER(tf.ultimate_parent_legal_enti) AS ultimate_parent_legal_enti,
+        tf.ultimate_parent_legal_enti,
         tf.ultimate_parent_unique_ide,
-        UPPER(tf.awardee_or_recipient_legal) AS awardee_or_recipient_legal,
-        tf.legal_entity_city_name,
-        tf.legal_entity_state_code,
-        tf.legal_entity_zip5 AS zip,
-        tf.legal_entity_congressional,
-        tf.legal_entity_address_line1,
-        tf.legal_entity_address_line2,
-        tf.legal_entity_country_code
-      FROM transaction_fabs AS tf
+        tf.awardee_or_recipient_legal,
+        tf.city,
+        tf.state,
+        tf.zip,
+        tf.congressional,
+        tf.address_line1,
+        tf.address_line2,
+        tf.country_code
+      FROM public.temporary_transaction_recipients_view AS tf
       WHERE tf.awardee_or_recipient_uniqu IS NULL
-      ORDER BY tf.action_date DESC)
-    UNION
-    (SELECT
-        tf.awardee_or_recipient_uniqu,
-        UPPER(tf.ultimate_parent_legal_enti) AS ultimate_parent_legal_enti,
-        tf.ultimate_parent_unique_ide,
-        UPPER(tf.awardee_or_recipient_legal) AS awardee_or_recipient_legal,
-        tf.legal_entity_city_name,
-        tf.legal_entity_state_code,
-        tf.legal_entity_zip4 AS zip,
-        tf.legal_entity_congressional,
-        tf.legal_entity_address_line1,
-        tf.legal_entity_address_line2,
-        tf.legal_entity_country_code
-      FROM transaction_fpds AS tf
-      WHERE tf.awardee_or_recipient_uniqu IS NULL
-      ORDER BY tf.action_date DESC)
+      ORDER BY tf.action_date DESC
   )
-  SELECT
-    DISTINCT awardee_or_recipient_legal,
-    awardee_or_recipient_uniqu AS duns,
-    ultimate_parent_legal_enti AS parent_duns,
-    ultimate_parent_unique_ide AS parent_legal_business_name,
-    awardee_or_recipient_legal AS legal_business_name,
-    legal_entity_city_name AS city,
-    legal_entity_state_code AS state,
-    zip,
-    legal_entity_congressional AS congressional_district,
-    legal_entity_address_line1 AS address_line_1,
-    legal_entity_address_line2 AS address_line_2,
-    legal_entity_country_code AS country_code
-  FROM transactions_inner
+    SELECT
+      DISTINCT awardee_or_recipient_legal,
+      MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, awardee_or_recipient_legal)))::uuid AS recipient_hash,
+      awardee_or_recipient_uniqu AS duns,
+      ultimate_parent_legal_enti AS parent_duns,
+      ultimate_parent_unique_ide AS parent_legal_business_name,
+      awardee_or_recipient_legal AS legal_business_name,
+      city,
+      state,
+      zip,
+      congressional AS congressional_district,
+      address_line1 AS address_line_1,
+      address_line2 AS address_line_2,
+      country_code
+    FROM transaction_recipients_inner
 )
 
 INSERT INTO public.temporary_restock_recipient_lookup (
@@ -265,14 +221,18 @@ SELECT
     parent_legal_business_name, address_line_1, address_line_2, city,
     state, zip, country_code,
     congressional_district
-FROM transactions;
+FROM transaction_recipients;
 
 
-DO $$ BEGIN RAISE NOTICE 'Step 5: restocking destination table'; END $$;
+--------------------------------------------------------------------------------
+-- Step 6, Finalizing
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 6: restocking destination table'; END $$;
 BEGIN;
 TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
 INSERT INTO public.recipient_lookup (recipient_hash, legal_business_name, duns) SELECT * FROM public.temporary_restock_recipient_lookup;
 DROP TABLE public.temporary_restock_recipient_lookup;
-COMMIT;
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+ROLLBACK;
 
 VACUUM ANALYZE VERBOSE public.recipient_lookup;
