@@ -39,6 +39,22 @@ def test_one_recipient():
     results, meta = get_recipients(filters=filters)
     assert meta["total"] == 1
 
+@pytest.mark.django_db
+def test_ignore_special_case():
+    """Verify error on bad autocomplete request for budget function."""
+    mommy.make(
+        RecipientProfile,
+        recipient_level="R",
+        recipient_hash="00077a9a-5a70-8919-fd19-330762af6b85",
+        recipient_unique_id=None,
+        recipient_name="MULTIPLE RECIPIENTS",
+        last_12_months=-29470313.00,
+    )
+
+    filters = {"limit": 10, "page": 1, "order": "desc", "sort": "amount"}
+    results, meta = get_recipients(filters=filters)
+    assert meta["total"] == 0
+
 
 @pytest.mark.django_db
 def test_filters_with_two_recipients():
