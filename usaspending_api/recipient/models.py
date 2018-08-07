@@ -45,7 +45,7 @@ class DUNS(models.Model):
     zip4 = models.TextField(null=True, blank=True)
     country_code = models.TextField(null=True, blank=True)
     congressional_district = models.TextField(null=True, blank=True)
-    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None)
+    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
     broker_duns_id = models.TextField()
     update_date = models.DateField()
 
@@ -71,11 +71,17 @@ class HistoricParentDUNS(models.Model):
 class RecipientProfile(models.Model):
     """Table used for speed improvements for the recipient profile listings"""
     recipient_level = models.CharField(max_length=1)
-    recipient_hash = models.UUIDField(null=True)
-    recipient_unique_id = models.TextField(null=True)
-    recipient_name = models.TextField(null=True)
+    recipient_hash = models.UUIDField(null=True, db_index=True)
+    recipient_unique_id = models.TextField(null=True, db_index=True)
+    recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
-    last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0)
+    last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_contracts = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_grants = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_direct_payments = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_loans = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_other = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
+    last_12_months_count = models.IntegerField(null=False, default=0)
 
     class Meta:
         managed = True
@@ -87,9 +93,21 @@ class RecipientLookup(models.Model):
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(null=True)
+    parent_duns = models.TextField(null=True)
+    parent_legal_business_name = models.TextField(null=True)
+    address_line_1 = models.TextField(null=True)
+    address_line_2 = models.TextField(null=True)
+    city = models.TextField(null=True)
+    state = models.TextField(null=True)
+    zip5 = models.TextField(null=True)
+    zip4 = models.TextField(null=True)
+    country_code = models.TextField(null=True)
+    congressional_district = models.TextField(null=True)
+    business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
 
     class Meta:
         db_table = 'recipient_lookup'
         indexes = [
             PartialIndex(fields=['duns'], unique=True, where=PQ(duns__isnull=False)),
+            PartialIndex(fields=['parent_duns'], unique=True, where=PQ(parent_duns__isnull=False)),
         ]
