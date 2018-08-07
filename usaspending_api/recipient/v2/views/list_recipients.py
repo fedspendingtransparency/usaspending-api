@@ -15,14 +15,16 @@ from usaspending_api.recipient.models import RecipientProfile
 logger = logging.getLogger(__name__)
 
 
-API_TO_DB_MAPPER = {
-    'amount': 'last_12_months',
-    'duns': 'recipient_unique_id',
-    'name': 'recipient_name'
+AWARD_TYPES = {
+    'contracts': {"amount": "last_12_contracts", "filter": "contract"},
+    'grants': {"amount": "last_12_grants", "filter": "grant"},
+    'direct_payments': {"amount": "last_12_direct_payments", "filter": "direct payment"},
+    'loans': {"amount": "last_12_loans", "filter": "loans"},
+    'other_financial_assistance': {"amount": "last_12_other", "filter": "other"},
 }
 
 
-def get_recipients(award_type_codes=None, filters={}):
+def get_recipients(filters={}):
     lower_limit = (filters['page'] - 1) * filters['limit']
     upper_limit = filters['page'] * filters['limit']
 
@@ -31,15 +33,29 @@ def get_recipients(award_type_codes=None, filters={}):
         qs_filter |= Q(recipient_name__contains=filters['keyword'].upper())
         qs_filter |= Q(recipient_unique_id__contains=filters['keyword'])
 
+    amount_column = "last_12_months"
+    if filters["award_type"] != "all":
+        amount_column = AWARD_TYPES[filters["award_type"]]["amount"]
+        qs_filter |= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
+
     queryset = RecipientProfile.objects \
         .filter(qs_filter) \
-        .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'last_12_months')
+        .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', amount_column)
+
+    API_TO_DB_MAPPER = {
+        'amount': amount_column,
+        'duns': 'recipient_unique_id',
+        'name': 'recipient_name'
+    }
 
     if filters['order'] == "desc":
         queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).desc(nulls_last=True))
     else:
         queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).asc(nulls_last=True))
 
+    from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+    print('=======================================')
+    print(generate_raw_quoted_query(queryset))
     count = queryset.count()
     page_metadata = get_pagination_metadata(count, filters['limit'], filters['page'])
 
@@ -51,7 +67,7 @@ def get_recipients(award_type_codes=None, filters={}):
                 'duns': row['recipient_unique_id'],
                 'name': row['recipient_name'],
                 'recipient_level': row['recipient_level'],
-                'amount': row['last_12_months']
+                'amount': row[amount_column]
             }
         )
     return results, page_metadata
@@ -81,10 +97,5 @@ class ListRecipients(APIDocumentationView):
                 model['default'] = 50
         validated_payload = TinyShield(models).block(request.data)
 
-        # convert award_type -> award_type_codes
-        award_type_codes = None
-        if validated_payload['award_type'] != 'all':
-            award_type_codes = all_award_types_mappings[validated_payload['award_type']]
-
-        results, page_metadata = get_recipients(filters=validated_payload, award_type_codes=award_type_codes)
+        results, page_metadata = get_recipients(filters=validated_payload)
         return Response({'page_metadata': page_metadata, 'results': results})

@@ -35,13 +35,16 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_name TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
+  award_types TEXT[] DEFAULT '{}'::text[],
   last_12_months NUMERIC(23,2) DEFAULT 0.00,
   last_12_contracts NUMERIC(23,2) DEFAULT 0.00,
   last_12_grants NUMERIC(23,2) DEFAULT 0.00,
   last_12_direct_payments NUMERIC(23,2) DEFAULT 0.00,
   last_12_loans NUMERIC(23,2) DEFAULT 0.00,
   last_12_other NUMERIC(23,2) DEFAULT 0.00,
-  last_12_months_count INT DEFAULT 0
+  last_12_months_count INT DEFAULT 0,
+
+  CHECK (award_types <@ ARRAY['contract', 'loans', 'grant', 'direct payment', 'other']::text[])
 );
 
 INSERT INTO public.temporary_restock_recipient_profile (
@@ -91,6 +94,8 @@ WITH grouped_by_category AS (
     SELECT
       recipient_hash,
       recipient_level,
+      CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+      THEN 'other' ELSE award_category END AS award_category,
       CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_contracts,
       CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_grants,
       CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_direct_payments,
@@ -107,6 +112,7 @@ WITH grouped_by_category AS (
   SELECT
     recipient_hash,
     recipient_level,
+    array_agg(award_category) AS award_types,
     SUM(inner_contracts) AS last_12_contracts,
     SUM(inner_grants) AS last_12_grants,
     SUM(inner_direct_payments) AS last_12_direct_payments,
@@ -120,6 +126,7 @@ WITH grouped_by_category AS (
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
+  award_types = gbc.award_types || rpv.award_types,
   last_12_months = rpv.last_12_months + gbc.amount,
   last_12_contracts = rpv.last_12_contracts + gbc.last_12_contracts,
   last_12_grants = rpv.last_12_grants + gbc.last_12_grants,
@@ -262,12 +269,12 @@ BEGIN;
 TRUNCATE TABLE public.recipient_profile RESTART IDENTITY;
 INSERT INTO public.recipient_profile (
     recipient_level, recipient_hash, recipient_unique_id,
-    recipient_name, recipient_affiliations, last_12_months,
+    recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
     )
   SELECT recipient_level, recipient_hash, recipient_unique_id,
-    recipient_name, recipient_affiliations, last_12_months,
+    recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
   FROM public.temporary_restock_recipient_profile;
