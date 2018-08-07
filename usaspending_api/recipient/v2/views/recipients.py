@@ -289,4 +289,30 @@ class ChildRecipients(APIDocumentationView):
                 # Commenting out until location data is included in a quick matview
                 # 'state_province': total['state_province']
             })
+        # Add children recipients without totals in this time period (if we already got all, ignore)
+        if year != 'all':
+            # Get all possible child duns
+            children_duns = RecipientProfile.objects.filter(recipient_hash=parent_hash, recipient_level='P').values(
+                'recipient_affiliations')
+            if not children_duns:
+                raise InvalidParameterException('DUNS is not listed as a parent: \'{}\'.'.format(duns))
+            children = children_duns[0]['recipient_affiliations']
+
+            # Gather their data points with Recipient Profile
+            found_duns = [result['duns'] for result in results]
+            missing_duns = [duns for duns in children if duns not in found_duns]
+            missing_duns_qs = RecipientProfile.objects.filter(recipient_unique_id__in=missing_duns,
+                                                              recipient_level='C').values('recipient_hash',
+                                                                                          'recipient_name',
+                                                                                          'recipient_unique_id')
+            for child_duns in list(missing_duns_qs):
+                results.append({
+                    'recipient_id': '{}-C'.format(child_duns['recipient_hash']),
+                    'name': child_duns['recipient_name'],
+                    'duns': child_duns['recipient_unique_id'],
+                    'amount': 0,
+                    # Commenting out until location data is included in a quick matview
+                    # 'state_province': total['state_province']
+                })
+
         return Response(results)
