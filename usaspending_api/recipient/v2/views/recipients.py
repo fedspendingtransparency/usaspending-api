@@ -111,6 +111,7 @@ def cleanup_location(location):
         if len(congressional_code) == 4:
             congressional_code = congressional_code[2:]
         location['congressional_code'] = congressional_code
+    return location
 
 
 def extract_location(recipient_hash):
@@ -151,7 +152,7 @@ def extract_location(recipient_hash):
         .values(*values)
     if found_location:
         location.update(found_location[0])
-        cleanup_location(location)
+        location = cleanup_location(location)
     return location
 
 

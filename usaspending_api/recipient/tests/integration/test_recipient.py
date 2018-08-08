@@ -309,6 +309,34 @@ def test_extract_location_success():
 
 
 @pytest.mark.django_db
+def test_cleanup_location():
+    """ Testing cleaning up the location data """
+
+    # Test United States fix
+    test_location = {
+        'country_code': 'UNITED STATES'
+    }
+    assert {'country_code': 'USA', 'country_name': None} == recipients.cleanup_location(test_location)
+
+    # Test Country_Code
+    mommy.make(RefCountryCode, country_code='USA', country_name='UNITED STATES')
+    test_location = {
+        'country_code': 'USA'
+    }
+    assert {'country_code': 'USA', 'country_name': 'UNITED STATES'} == recipients.cleanup_location(test_location)
+
+    # Test Congressional Codes
+    test_location = {
+        'congressional_code': 'CA13'
+    }
+    assert {'congressional_code': '13'} == recipients.cleanup_location(test_location)
+    test_location = {
+        'congressional_code': '13.0'
+    }
+    assert {'congressional_code': '13'} == recipients.cleanup_location(test_location)
+
+
+@pytest.mark.django_db
 def test_extract_business_categories():
     """ Testing extracting business categories from the recipient name/duns """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
