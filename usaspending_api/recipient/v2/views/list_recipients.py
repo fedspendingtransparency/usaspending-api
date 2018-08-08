@@ -35,7 +35,7 @@ def get_recipients(award_type_codes=None, filters={}):
     queryset = RecipientProfile.objects \
         .filter(qs_filter) \
         .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'last_12_months') \
-        .exclude(recipient_name__in=SPECIAL_CASES, recipient_unique_id__isnull=True)
+        .exclude(recipient_name__in=SPECIAL_CASES)
 
     if filters['order'] == "desc":
         queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).desc(nulls_last=True))
