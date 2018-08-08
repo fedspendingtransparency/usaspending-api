@@ -61,7 +61,7 @@ WITH grouped_parent_recipients AS (
       ultimate_parent_unique_ide AS duns,
       ultimate_parent_legal_enti AS legal_business_name
     FROM duns
-    WHERE ultimate_parent_unique_ide IS NOT NULL
+    WHERE ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
     ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, broker_duns_id DESC
 )
 INSERT INTO public.temporary_restock_recipient_lookup (
@@ -121,7 +121,7 @@ VACUUM ANALYZE public.temporary_restock_recipient_lookup;
 
 
 --------------------------------------------------------------------------------
--- Step 3a, Create rows with Parent DUNS + Parent Recipient Names from FPDS/FABS
+-- Step 3a, Create rows with data from FPDS/FABS
 --------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 3a: Adding missing DUNS records from FPDS and FABS'; END $$;
 WITH transaction_recipients AS (
@@ -185,7 +185,7 @@ WITH transaction_recipients AS (
         tf.ultimate_parent_legal_enti,
         tf.ultimate_parent_unique_ide
       FROM public.temporary_transaction_recipients_view AS tf
-      WHERE tf.ultimate_parent_unique_ide IS NOT NULL
+      WHERE tf.ultimate_parent_unique_ide IS NOT NULL AND tf.ultimate_parent_legal_enti IS NOT NULL
       ORDER BY tf.action_date DESC
     )
     SELECT
