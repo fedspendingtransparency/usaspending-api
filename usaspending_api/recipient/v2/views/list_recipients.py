@@ -11,6 +11,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,8 @@ def get_recipients(award_type_codes=None, filters={}):
 
     queryset = RecipientProfile.objects \
         .filter(qs_filter) \
-        .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'last_12_months')
+        .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'last_12_months') \
+        .exclude(recipient_name__in=SPECIAL_CASES)
 
     if filters['order'] == "desc":
         queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters['sort']]).desc(nulls_last=True))
