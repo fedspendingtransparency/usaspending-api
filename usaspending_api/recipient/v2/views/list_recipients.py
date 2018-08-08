@@ -11,6 +11,7 @@ from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.core.validator.utils import update_model_in_list
 from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,10 @@ def get_recipients(filters={}):
         amount_column = AWARD_TYPES[filters["award_type"]]["amount"]
         qs_filter |= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
 
-    queryset = RecipientProfile.objects.filter(qs_filter).values(
-        "recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column
+    queryset = (
+        RecipientProfile.objects.filter(qs_filter)
+        .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column)
+        .exclude(recipient_name__in=SPECIAL_CASES)
     )
 
     API_TO_DB_MAPPER = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
