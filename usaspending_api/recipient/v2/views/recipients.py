@@ -40,6 +40,8 @@ def validate_recipient_id(recipient_id):
         uuid.UUID(recipient_hash)
     except ValueError:
         raise InvalidParameterException('Recipient Hash not valid UUID: \'{}\'.'.format(recipient_hash))
+    if not RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).count():
+        raise InvalidParameterException('Recipient ID not found: \'{}\'.'.format(recipient_id))
     return recipient_hash, recipient_level
 
 
@@ -52,11 +54,12 @@ def extract_name_duns_from_hash(recipient_hash):
         Returns:
             duns and name
     """
-    name_duns_qs = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name')
+    name_duns_qs = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name')\
+        .first()
     if not name_duns_qs:
         return None, None
     else:
-        return name_duns_qs[0]['duns'], name_duns_qs[0]['legal_business_name']
+        return name_duns_qs['duns'], name_duns_qs['legal_business_name']
 
 
 def extract_parent_from_hash(recipient_hash):
@@ -73,15 +76,15 @@ def extract_parent_from_hash(recipient_hash):
     name = None
     parent_id = None
     affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
-        .values('recipient_affiliations')
+        .values('recipient_affiliations').first()
     if not affiliations:
         return duns, name, parent_id
-    duns = affiliations[0]['recipient_affiliations'][0]
+    duns = affiliations['recipient_affiliations'][0]
 
-    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name')
+    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
     if parent:
-        name = parent[0]['legal_business_name']
-        parent_id = '{}-P'.format(parent[0]['recipient_hash'])
+        name = parent['legal_business_name']
+        parent_id = '{}-P'.format(parent['recipient_hash'])
     return duns, name, parent_id
 
 
@@ -149,9 +152,9 @@ def extract_location(recipient_hash):
     values = ['address_line1', 'address_line2', 'city_name', 'state_code', 'zip', 'zip4', 'country_code',
               'congressional_code']
     found_location = RecipientLookup.objects.filter(recipient_hash=recipient_hash).annotate(**annotations)\
-        .values(*values)
+        .values(*values).first()
     if found_location:
-        location.update(found_location[0])
+        location.update(found_location)
         location = cleanup_location(location)
     return location
 
@@ -259,11 +262,11 @@ def extract_hash_name_from_duns(duns):
         Returns:
             list of dictionaries containing hashes and names
     """
-    qs_hash = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name')
+    qs_hash = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
     if not qs_hash:
         return None, None
     else:
-        return qs_hash[0]['recipient_hash'], qs_hash[0]['legal_business_name']
+        return qs_hash['recipient_hash'], qs_hash['legal_business_name']
 
 
 class ChildRecipients(APIDocumentationView):
