@@ -1,6 +1,5 @@
 # Stdlib imports
 import datetime
-from collections import OrderedDict
 from uuid import UUID
 
 # Core Django imports
@@ -16,7 +15,7 @@ from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
 from usaspending_api.recipient.models import RecipientProfile, DUNS, RecipientLookup
-from usaspending_api.references.models import RefCountryCode, Location, LegalEntity
+from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
@@ -517,7 +516,7 @@ def recipient_children_endpoint(duns, year='latest'):
     return endpoint
 
 
-@pytest.mark.skip
+@pytest.mark.django_db
 def test_child_recipient_success(client, mock_matviews_qs):
     """ Testing successfull child recipient calls """
     child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
@@ -528,22 +527,26 @@ def test_child_recipient_success(client, mock_matviews_qs):
     child2_hash = child2_id[:-2]
     child2_name = 'CHILD RECIPIENT'
     child2_duns = '000000002'
-    other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
     transaction_hash_map = {
         'latest': {
             'hash': child1_hash,
             'duns': parent_child1_duns,
-            'name': parent_child1_name
+            'name': parent_child1_name,
+            'parent_duns': parent_child1_duns
         },
+        'FY2016': {
+            'hash': child2_hash,
+            'duns': child2_duns,
+            'name': child2_name,
+            'parent_duns': parent_child1_duns
+        },
+        # Making sure the children total only applies to transactions where it listed the parent
+        # Not all transactions of that child in general
         'FY2008': {
             'hash': child2_hash,
             'duns': child2_duns,
-            'name': parent_child1_name
-        },
-        'FY2016': {
-            'hash': other_id,
-            'duns': None,
-            'name': child2_name
+            'name': child2_name,
+            'parent_duns': '000000009'
         }
     }
 
@@ -555,19 +558,13 @@ def test_child_recipient_success(client, mock_matviews_qs):
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
         mommy.make(RecipientLookup, **recipient_lookup)
 
-    # Mock DUNS
-    for duns, duns_dict in TEST_DUNS.items():
-        test_duns_model = duns_dict.copy()
-        country_code = test_duns_model['country_code']
-        mommy.make(DUNS, **test_duns_model)
-        mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
-
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
     for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
         transaction['recipient_hash'] = transaction_hash_map[category]['hash']
         transaction['recipient_unique_id'] = transaction_hash_map[category]['duns']
         transaction['recipient_name'] = transaction_hash_map[category]['name']
+        transaction['parent_recipient_unique_id'] = transaction_hash_map[category]['parent_duns']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
@@ -589,7 +586,7 @@ def test_child_recipient_success(client, mock_matviews_qs):
     expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == sorted(expected, key=lambda key: key['recipient_id'])
+    assert sorted(resp.data, key=lambda key: key['recipient_id']) == expected
 
 
 @pytest.mark.django_db

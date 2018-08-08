@@ -39,6 +39,7 @@ def test_one_recipient():
     results, meta = get_recipients(filters=filters)
     assert meta["total"] == 1
 
+
 @pytest.mark.django_db
 def test_ignore_special_case():
     """Verify error on bad autocomplete request for budget function."""

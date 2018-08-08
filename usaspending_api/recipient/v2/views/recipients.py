@@ -9,7 +9,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
-from usaspending_api.recipient.models import DUNS, RecipientProfile, RecipientLookup
+from usaspending_api.recipient.models import RecipientProfile, RecipientLookup
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode, LegalEntity
@@ -284,9 +284,7 @@ class ChildRecipients(APIDocumentationView):
                 'recipient_id': '{}-C'.format(total['recipient_hash']),
                 'name': total['recipient_name'],
                 'duns': total['recipient_unique_id'],
-                'amount': total['total'],
-                # Commenting out until location data is included in a quick matview
-                # 'state_province': total['state_province']
+                'amount': total['total']
             })
         # Add children recipients without totals in this time period (if we already got all, ignore)
         if year != 'all':
@@ -309,9 +307,18 @@ class ChildRecipients(APIDocumentationView):
                     'recipient_id': '{}-C'.format(child_duns['recipient_hash']),
                     'name': child_duns['recipient_name'],
                     'duns': child_duns['recipient_unique_id'],
-                    'amount': 0,
-                    # Commenting out until location data is included in a quick matview
-                    # 'state_province': total['state_province']
+                    'amount': 0
                 })
+
+        # Add state/provinces to each result
+        child_hashes = [result['recipient_id'][:-2] for result in results]
+        states_qs = RecipientLookup.objects.filter(recipient_hash__in=child_hashes).values('recipient_hash', 'state')
+        state_map = {str(state_result['recipient_hash']): state_result['state'] for state_result in list(states_qs)}
+        for result in results:
+            recipient_hash = result['recipient_id'][:-2]
+            if recipient_hash not in state_map:
+                logger.warning('Recipient Hash not in state map: {}'.format(recipient_hash))
+            else:
+                result['state_province'] = state_map[recipient_hash]
 
         return Response(results)
