@@ -4,17 +4,18 @@ import copy
 from rest_framework.response import Response
 from django.db.models import F, Q
 
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.core.validator.utils import update_model_in_list
 from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
 
 
+# based from all_award_types_mappings in usaspending_api.awards.v2.lookups.lookups
 AWARD_TYPES = {
     "contracts": {"amount": "last_12_contracts", "filter": "contract"},
     "grants": {"amount": "last_12_grants", "filter": "grant"},
@@ -52,17 +53,17 @@ def get_recipients(filters={}):
     count = queryset.count()
     page_metadata = get_pagination_metadata(count, filters["limit"], filters["page"])
 
-    results = []
-    for row in queryset[lower_limit:upper_limit]:
-        results.append(
-            {
-                "id": "{}-{}".format(row["recipient_hash"], row["recipient_level"]),
-                "duns": row["recipient_unique_id"],
-                "name": row["recipient_name"],
-                "recipient_level": row["recipient_level"],
-                "amount": row[amount_column],
-            }
-        )
+    results = [
+        {
+            "id": "{}-{}".format(row["recipient_hash"], row["recipient_level"]),
+            "duns": row["recipient_unique_id"],
+            "name": row["recipient_name"],
+            "recipient_level": row["recipient_level"],
+            "amount": row[amount_column],
+        }
+        for row in queryset[lower_limit:upper_limit]
+    ]
+
     return results, page_metadata
 
 
@@ -74,20 +75,16 @@ class ListRecipients(APIDocumentationView):
 
     @cache_response()
     def post(self, request):
-        award_types = list(all_award_types_mappings.keys()) + ["all"]
+        award_types = list(AWARD_TYPES.keys()) + ["all"]
         models = [
             {"name": "keyword", "key": "keyword", "type": "text", "text_type": "search"},
             {"name": "award_type", "key": "award_type", "type": "enum", "enum_values": award_types, "default": "all"},
         ]
         models.extend(copy.deepcopy(PAGINATION))  # page, limit, sort, order
 
-        for model in models:
-            if model["name"] == "sort":
-                model["type"] = "enum"
-                model["enum_values"] = ["name", "duns", "amount"]
-                model["default"] = "amount"
-            if model["name"] == "limit":
-                model["default"] = 50
+        new_sort = {"type": "enum", "enum_values": ["name", "duns", "amount"], "default": "amount"}
+        models = update_model_in_list(models, "sort", new_sort)
+        models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)
 
         results, page_metadata = get_recipients(filters=validated_payload)
