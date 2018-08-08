@@ -85,7 +85,35 @@ def extract_parent_from_hash(recipient_hash):
     return duns, name, parent_id
 
 
-def extract_location(recipient_hash, extract_country_name=True):
+def cleanup_location(location):
+    """ Various little fixes to cleanup the location object, given bad data from transactions
+
+        Args:
+            location: dictionary object representing the location
+
+        Returns:
+            dict of cleaned location info
+    """
+    # Older transactions mix country code and country name
+    if location.get('country_code', None) == 'UNITED STATES':
+        location['country_code'] = 'USA'
+    # Country name generally isn't available with SAM data
+    if location.get('country_code', None) and not location.get('country_name', None):
+        country_name = RefCountryCode.objects.filter(country_code=location['country_code']).values('country_name')
+        location['country_name'] = country_name[0]['country_name'] if country_name else None
+    # Older transactions have various formats for congressional code (13.0, 13, CA13)
+    if location.get('congressional_code', None):
+        congressional_code = location['congressional_code']
+        # remove post dot if that exists
+        if '.' in congressional_code:
+            congressional_code = congressional_code[:congressional_code.rindex('.')]
+        # [state abbr]-[congressional code]
+        if len(congressional_code) == 4:
+            congressional_code = congressional_code[2:]
+        location['congressional_code'] = congressional_code
+
+
+def extract_location(recipient_hash):
     """ Extract the location data via the recipient hash
 
         Args:
@@ -109,50 +137,21 @@ def extract_location(recipient_hash, extract_country_name=True):
         'country_code': None,
         'congressional_code': None
     }
-    duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns')
-    duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns[0]['duns']) if duns else None
-    if duns_obj:
-        duns_obj = duns_obj[0]
-        if extract_country_name:
-            country_name = RefCountryCode.objects.filter(country_code=duns_obj.country_code).values('country_name')
-        else:
-            country_name = None
-        location.update({
-            'address_line1': duns_obj.address_line_1,
-            'address_line2': duns_obj.address_line_2,
-            'city_name': duns_obj.city,
-            'state_code': duns_obj.state,
-            'zip': duns_obj.zip,
-            'zip4': duns_obj.zip4,
-            'country_name': country_name[0]['country_name'] if country_name else None,
-            'country_code': duns_obj.country_code,
-            'congressional_code': duns_obj.congressional_district
-        })
-    else:
-        # Extract the location from the latest legal entity
-        duns, name = extract_name_duns_from_hash(recipient_hash)
-        if name in SPECIAL_CASES and duns is None:
-            return location
-        legal_entity = LegalEntity.objects.filter(recipient_name=name,
-                                                  recipient_unique_id=duns).\
-            order_by('-update_date')\
-            .values(
-                address_line1=F('location__address_line1'),
-                address_line2=F('location__address_line2'),
-                address_line3=F('location__address_line3'),
-                foreign_province=F('location__foreign_province'),
-                city_name=F('location__city_name'),
-                county_name=F('location__county_name'),
-                state_code=F('location__state_code'),
-                zip=F('location__zip4'),
-                zip4=F('location__zip_4a'),
-                foreign_postal_code=F('location__foreign_postal_code'),
-                country_name=F('location__country_name'),
-                country_code=F('location__location_country_code'),
-                congressional_code=F('location__congressional_code')
-        )
-        if legal_entity:
-            location.update(legal_entity[0])
+    annotations = {
+        'address_line1': F('address_line_1'),
+        'address_line2': F('address_line_2'),
+        'city_name': F('city'),
+        'state_code': F('state'),
+        'zip': F('zip5'),
+        'congressional_code': F('congressional_district')
+    }
+    values = ['address_line1', 'address_line2', 'city_name', 'state_code', 'zip', 'zip4', 'country_code',
+              'congressional_code']
+    found_location = RecipientLookup.objects.filter(recipient_hash=recipient_hash).annotate(**annotations)\
+        .values(*values)
+    if found_location:
+        location.update(found_location[0])
+        cleanup_location(location)
     return location
 
 

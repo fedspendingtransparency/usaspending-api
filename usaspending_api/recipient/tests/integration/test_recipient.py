@@ -32,50 +32,14 @@ TEST_REF_COUNTRY_CODE = {
         'country_name': 'CHILD COUNTRY NAME'
     }
 }
-TEST_LOCATIONS = {
-    '00077a9a-5a70-8919-fd19-330762af6b84': {
-        'address_line1': 'PARENT ADDRESS LINE 1',
-        'address_line2': 'PARENT ADDRESS LINE 2',
-        'address_line3': 'PARENT ADDRESS LINE 3',
-        'county_name': 'PARENT COUNTY',
-        'city_name': 'PARENT CITY',
-        'congressional_code': 'PARENT CONGRESSIONAL DISTRICT',
-        'location_country_code': 'PARENT COUNTRY CODE',
-        'country_name': 'PARENT COUNTRY NAME',
-        'state_code': 'PARENT STATE',
-        'zip4': 'PARENT ZIP',
-        'zip_4a': 'PARENT ZIP4',
-        'foreign_province': 'PARENT FOREIGN PROVINCE',
-        'foreign_postal_code': 'PARENT FOREIGN POSTAL CODE'
-    },
-    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
-        'address_line1': 'CHILD ADDRESS LINE 1',
-        'address_line2': 'CHILD ADDRESS LINE 2',
-        'address_line3': 'CHILD ADDRESS LINE 3',
-        'county_name': 'CHILD COUNTY',
-        'city_name': 'CHILD CITY',
-        'congressional_code': 'CHILD CONGRESSIONAL DISTRICT',
-        'location_country_code': 'CHILD COUNTRY CODE',
-        'country_name': 'CHILD COUNTRY NAME',
-        'state_code': 'CHILD STATE',
-        'zip4': 'CHILD ZIP',
-        'zip_4a': 'CHILD ZIP4',
-        'foreign_province': 'CHILD FOREIGN PROVINCE',
-        'foreign_postal_code': 'CHILD FOREIGN POSTAL CODE'
-    }
-}
 MAP_DUNS_TO_CONTRACT = {
     'address_line_1': 'address_line1',
     'address_line_2': 'address_line2',
     'city': 'city_name',
     'congressional_district': 'congressional_code',
-    'state': 'state_code'
+    'state': 'state_code',
+    'zip5': 'zip'
 }
-MAP_LOCATION_TO_CONTRACT = OrderedDict([
-    ('zip4', 'zip'),
-    ('zip_4a', 'zip4'),
-    ('location_country_code', 'country_code')
-])
 
 TEST_DUNS = {
     '000000001': {
@@ -105,6 +69,48 @@ TEST_DUNS = {
         'business_types_codes': ['CHILD BUSINESS TYPES CODES']
     }
 }
+TEST_RECIPIENT_LOCATIONS = {
+    '00077a9a-5a70-8919-fd19-330762af6b84': {
+        'address_line_1': 'PARENT ADDRESS LINE 1',
+        'address_line_2': 'PARENT ADDRESS LINE 2',
+        'city': 'PARENT CITY',
+        'congressional_district': 'PARENT CONGRESSIONAL DISTRICT',
+        'country_code': 'PARENT COUNTRY CODE',
+        'state': 'PARENT STATE',
+        'zip5': 'PARENT ZIP',
+        'zip4': 'PARENT ZIP4'
+    },
+    '392052ae-92ab-f3f4-d9fa-b57f45b7750b': {
+        'address_line_1': 'CHILD ADDRESS LINE 1',
+        'address_line_2': 'CHILD ADDRESS LINE 2',
+        'city': 'CHILD CITY',
+        'congressional_district': 'CHILD CONGRESSIONAL DISTRICT',
+        'country_code': 'CHILD COUNTRY CODE',
+        'state': 'CHILD STATE',
+        'zip5': 'CHILD ZIP',
+        'zip4': 'CHILD ZIP4'
+    },
+    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
+        'address_line_1': 'OTHER ADDRESS LINE 1',
+        'address_line_2': 'OTHER ADDRESS LINE 2',
+        'city': 'OTHER CITY',
+        'congressional_district': 'OTHER CONGRESSIONAL DISTRICT',
+        'country_code': 'OTHER COUNTRY CODE',
+        'state': 'OTHER STATE',
+        'zip5': 'OTHER ZIP',
+        'zip4': 'OTHER ZIP4'
+    },
+    '6dffe44a-554c-26b4-b7ef-44db50083732': {
+        'address_line_1': None,
+        'address_line_2': None,
+        'city': None,
+        'congressional_district': None,
+        'country_code': None,
+        'state': None,
+        'zip5': None,
+        'zip4': None
+    }
+}
 TEST_RECIPIENT_LOOKUPS = {
     '00077a9a-5a70-8919-fd19-330762af6b84': {
         'recipient_hash': '00077a9a-5a70-8919-fd19-330762af6b84',
@@ -127,6 +133,9 @@ TEST_RECIPIENT_LOOKUPS = {
         'legal_business_name': 'MULTIPLE RECIPIENTS'
     }
 }
+for hash, recipient in TEST_RECIPIENT_LOOKUPS.items():
+    recipient.update(TEST_RECIPIENT_LOCATIONS[hash])
+
 TEST_RECIPIENT_PROFILES = {
     # Parent Recipient, including non-existent child duns
     '00077a9a-5a70-8919-fd19-330762af6b84-P': {
@@ -281,70 +290,20 @@ def test_extract_parent_from_hash_failure():
 
 
 @pytest.mark.django_db
-def test_extract_location_duns():
+def test_extract_location_success():
     """ Testing extracting location data from recipient hash using the DUNS table """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-
-    test_duns_model = TEST_DUNS[recipient_duns]
-    country_code = test_duns_model['country_code']
-    mommy.make(DUNS, **test_duns_model)
+    country_code = TEST_RECIPIENT_LOCATIONS[recipient_hash]['country_code']
     mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
 
-    non_location_fields = ['awardee_or_recipient_uniqu', 'legal_business_name']
     additional_blank_fields = ['address_line3', 'foreign_province', 'county_name', 'foreign_postal_code']
-    expected_location = test_duns_model.copy()
-    expected_location.pop('business_types_codes')
-    for non_location_field in non_location_fields:
-        del expected_location[non_location_field]
+    expected_location = TEST_RECIPIENT_LOCATIONS[recipient_hash].copy()
     expected_location['country_name'] = TEST_REF_COUNTRY_CODE[country_code]['country_name']
     for additional_blank_field in additional_blank_fields:
         expected_location[additional_blank_field] = None
     for k in MAP_DUNS_TO_CONTRACT:
         expected_location[MAP_DUNS_TO_CONTRACT[k]] = expected_location[k]
-        del expected_location[k]
-    location = recipients.extract_location(recipient_hash)
-    assert location == expected_location
-
-
-@pytest.mark.django_db
-def test_extract_location_special():
-    """ Tesing extracting the location for a special case  """
-    recipient_hash = '6dffe44a-554c-26b4-b7ef-44db50083732'
-    expected_location = {
-        'address_line1': None,
-        'address_line2': None,
-        'address_line3': None,
-        'foreign_province': None,
-        'city_name': None,
-        'county_name': None,
-        'state_code': None,
-        'zip': None,
-        'zip4': None,
-        'foreign_postal_code': None,
-        'country_name': None,
-        'country_code': None,
-        'congressional_code': None
-    }
-    location = recipients.extract_location(recipient_hash)
-    assert location == expected_location
-
-
-@pytest.mark.django_db
-def test_extract_location_le():
-    """ Testing extracting location data from recipient hash using the Legal Entity table """
-    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
-    recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    location = TEST_LOCATIONS[recipient_hash]
-    mock_location = mommy.make(Location, **TEST_LOCATIONS[recipient_hash])
-    mommy.make(LegalEntity, location=mock_location, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
-
-    expected_location = location.copy()
-    for k in MAP_LOCATION_TO_CONTRACT:
-        expected_location[MAP_LOCATION_TO_CONTRACT[k]] = expected_location[k]
         del expected_location[k]
     location = recipients.extract_location(recipient_hash)
     assert location == expected_location
