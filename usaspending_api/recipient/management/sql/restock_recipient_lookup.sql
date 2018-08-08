@@ -23,9 +23,10 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   FROM
     transaction_normalized AS tn
   LEFT OUTER JOIN transaction_fpds AS fpds ON
-    (tn.id = fpds.transaction_id AND tn.is_fpds = TRUE)
+    (tn.id = fpds.transaction_id)
   LEFT OUTER JOIN transaction_fabs AS fabs ON
-    (tn.id = fabs.transaction_id AND tn.is_fpds = FALSE)
+    (tn.id = fabs.transaction_id)
+  ORDER BY tn.action_date DESC
 );
 
 VACUUM ANALYZE public.temporary_transaction_recipients_view;
@@ -271,29 +272,29 @@ ON CONFLICT (recipient_hash) DO NOTHING;
 --------------------------------------------------------------------------------
 -- Step 5, Finalizing
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: restocking destination table'; END $$;
-BEGIN;
-TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
-INSERT INTO public.recipient_lookup (
-    recipient_hash, legal_business_name, duns, address_line_1, address_line_2, city,
-     state, zip5, zip4, country_code,
-    congressional_district, business_types_codes)
-  SELECT
-    recipient_hash,
-    legal_business_name,
-    duns,
-    address_line_1,
-    address_line_2,
-    city,
-    state,
-    zip5,
-    zip4,
-    country_code,
-    congressional_district,
-    business_types_codes
- FROM public.temporary_restock_recipient_lookup;
-DROP TABLE public.temporary_restock_recipient_lookup;
-DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
-COMMIT;
+-- DO $$ BEGIN RAISE NOTICE 'Step 5: restocking destination table'; END $$;
+-- BEGIN;
+-- TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
+-- INSERT INTO public.recipient_lookup (
+--     recipient_hash, legal_business_name, duns, address_line_1, address_line_2, city,
+--      state, zip5, zip4, country_code,
+--     congressional_district, business_types_codes)
+--   SELECT
+--     recipient_hash,
+--     legal_business_name,
+--     duns,
+--     address_line_1,
+--     address_line_2,
+--     city,
+--     state,
+--     zip5,
+--     zip4,
+--     country_code,
+--     congressional_district,
+--     business_types_codes
+--  FROM public.temporary_restock_recipient_lookup;
+-- DROP TABLE public.temporary_restock_recipient_lookup;
+-- DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+-- COMMIT;
 
-VACUUM ANALYZE public.recipient_lookup;
+-- VACUUM ANALYZE public.recipient_lookup;
