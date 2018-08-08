@@ -10,7 +10,7 @@ SET
 		WHERE
 			UPPER(aw.piid) = UPPER(faba.piid)
 			AND
-			UPPER(aw_sub.parent_award_id) = UPPER(faba_sub.parent_award_id)
+			UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
 	)
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
@@ -31,7 +31,7 @@ WHERE
 				WHERE
 					UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
 					AND
-					UPPER(aw_sub.parent_award_id) = UPPER(faba_sub.parent_award_id)
+					UPPER(aw_sub.parent_award_piid) = UPPER(faba_sub.parent_award_id)
 			) = 1
 	);
 
