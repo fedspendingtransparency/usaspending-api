@@ -1,4 +1,6 @@
 import logging
+import os
+import csv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -6,6 +8,11 @@ from django.conf import settings
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
+
+# Based on SAM Functional Data Dictionary
+SAM_FUNCTIONAL_DATA_DICTIONARY_CSV = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
+                                                  'sam_functional_data_dictionary.csv')
+DUNS_BUSINESS_TYPES_MAPPING = {}
 
 
 def validate_year(year=None):
@@ -51,3 +58,16 @@ def reshape_filters(duns_search_texts=[], recipient_id=None, state_code=None, ye
         filters['award_type_codes'] = award_type_codes
 
     return filters
+
+
+def get_duns_business_types_mapping():
+    if not DUNS_BUSINESS_TYPES_MAPPING:
+        if not os.path.exists(SAM_FUNCTIONAL_DATA_DICTIONARY_CSV):
+            logger.warning('SAM Functional Data Dictionary CSV not found. DUNS business types not loaded.')
+            return {}
+        with open(SAM_FUNCTIONAL_DATA_DICTIONARY_CSV, 'r') as sam_data_dict_csv:
+            reader = csv.DictReader(sam_data_dict_csv, delimiter=',')
+            rows = list(reader)
+            for index, row in enumerate(rows, 1):
+                DUNS_BUSINESS_TYPES_MAPPING[row['code']] = row['terse_label']
+    return DUNS_BUSINESS_TYPES_MAPPING

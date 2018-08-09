@@ -10,9 +10,9 @@ from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
-from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.broker.helpers import get_business_categories
-from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES, DUNS_BUSINESS_TYPES_MAPPING
+from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 logger = logging.getLogger(__name__)
@@ -178,8 +178,9 @@ def extract_business_categories(recipient_name, recipient_duns):
     d_business_cat = DUNS.objects.filter(legal_business_name=recipient_name, awardee_or_recipient_uniqu=recipient_duns)\
         .order_by('-update_date').values('business_types_codes').first()
     if d_business_cat:
-        business_types = {DUNS_BUSINESS_TYPES_MAPPING[type]: 'true' for type in d_business_cat['business_types_codes']
-                          if type in DUNS_BUSINESS_TYPES_MAPPING}
+        duns_types_mapping = get_duns_business_types_mapping()
+        business_types = {duns_types_mapping[type]: 'true' for type in d_business_cat['business_types_codes']
+                          if type in duns_types_mapping}
         business_categories |= set(get_business_categories(business_types, data_type='fpds'))
 
     # combine with latest transaction's business categories
