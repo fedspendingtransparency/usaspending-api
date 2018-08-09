@@ -485,10 +485,9 @@ def test_recipient_overview(client, mock_matviews_qs):
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
         mommy.make(RecipientLookup, **recipient_lookup)
 
-    # Mock DUNS
+    # Mock DUNS - should add `category-business`
     for duns, duns_dict in TEST_DUNS.items():
         test_duns_model = duns_dict.copy()
-        test_duns_model.pop('business_types_codes')
         country_code = test_duns_model['country_code']
         mommy.make(DUNS, **test_duns_model)
         mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
@@ -508,7 +507,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'parent_name': 'PARENT RECIPIENT',
         'parent_duns': '000000001',
         'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
-        'business_types': sorted(['expected', 'business', 'cat']),
+        'business_types': sorted(['expected', 'business', 'cat'] + ['category_business']),
         'location': {
             'address_line1': 'PARENT ADDRESS LINE 1',
             'address_line2': 'PARENT ADDRESS LINE 2',
