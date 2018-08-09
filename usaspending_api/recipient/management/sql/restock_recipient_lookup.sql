@@ -126,7 +126,7 @@ VACUUM ANALYZE public.temporary_restock_recipient_lookup;
 --------------------------------------------------------------------------------
 -- Step 3a, Create rows with data from FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 3a: Adding missing DUNS records from FPDS and FABS'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 3a: Adding DUNS records from FPDS and FABS'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
@@ -183,7 +183,7 @@ ON CONFLICT (duns) DO NOTHING;
 --------------------------------------------------------------------------------
 -- Step 3b, Create rows with Parent DUNS + Parent Recipient Names from FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 3b: Adding missing DUNS records from FPDS and FABS (parents)'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 3b: Adding DUNS records from FPDS and FABS parents'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
@@ -218,7 +218,7 @@ ON CONFLICT (duns) DO NOTHING;
 --------------------------------------------------------------------------------
 -- Step 4a, Create rows with Parent DUNS from SAM
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4a: Creating records from SAM parent data with no name'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4a: Adding records from SAM parent data with no name'; END $$;
 WITH grouped_parent_recipients AS (
     SELECT
     DISTINCT ON (ultimate_parent_unique_ide)
@@ -243,7 +243,7 @@ ON CONFLICT (duns) DO NOTHING;
 --------------------------------------------------------------------------------
 -- Step 4b, Create rows with Parent DUNS and no namefrom FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding missing DUNS records from FPDS and FABS (parent) no name'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding DUNS records from FPDS and FABS parents with no name'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
@@ -301,10 +301,9 @@ WITH transaction_recipients AS (
         tf.country_code
       FROM public.temporary_transaction_recipients_view AS tf
       WHERE tf.awardee_or_recipient_uniqu IS NULL
-      ORDER BY tf.action_date DESC
   )
     SELECT
-      DISTINCT awardee_or_recipient_legal,
+      DISTINCT ON (awardee_or_recipient_legal)
       MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, awardee_or_recipient_legal)))::uuid AS recipient_hash,
       awardee_or_recipient_uniqu AS duns,
       ultimate_parent_legal_enti AS parent_duns,
@@ -319,6 +318,7 @@ WITH transaction_recipients AS (
       address_line2 AS address_line_2,
       country_code
     FROM transaction_recipients_inner
+    ORDER BY awardee_or_recipient_legal DESC NULLS LAST
 )
 
 INSERT INTO public.temporary_restock_recipient_lookup (
