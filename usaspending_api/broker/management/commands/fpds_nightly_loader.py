@@ -160,7 +160,7 @@ class Command(BaseCommand):
                  'SET "award_id" = null '\
                  'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
             # Subawards
-            sub = 'UPDATE "awards_subaward" ' \
+            sub = 'UPDATE "subaward" ' \
                   'SET "award_id" = null ' \
                   'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
             # Delete Subawards

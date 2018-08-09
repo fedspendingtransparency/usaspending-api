@@ -3,7 +3,7 @@ import logging
 
 from django.db.models import Q
 
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.awards.models import Subaward
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -22,7 +22,7 @@ def subaward_download(filters):
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters, for_downloads=False):
 
-    queryset = SubawardView.objects.all()
+    queryset = Subaward.objects.all()
     for key, value in filters.items():
 
         if value is None:
@@ -93,7 +93,7 @@ def subaward_filter(filters, for_downloads=False):
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
+            queryset &= combine_date_range_queryset(value, Subaward, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
             idv_flag = all(i in value for i in contract_type_mapping.keys())
@@ -102,7 +102,7 @@ def subaward_filter(filters, for_downloads=False):
                 filter_obj = Q(prime_award_type__in=value)
                 if idv_flag:
                     filter_obj |= Q(pulled_from='IDV')
-                queryset &= SubawardView.objects.filter(filter_obj)
+                queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -167,7 +167,7 @@ def subaward_filter(filters, for_downloads=False):
             filter_obj = Q()
             for recipient in value:
                 filter_obj |= recip_string_parse(recipient)
-            queryset &= SubawardView.objects.filter(filter_obj)
+            queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -179,13 +179,13 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, SubawardView, True
+                'recipient_location', value, Subaward, True
             )
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= SubawardView.objects.filter(business_categories__overlap=value)
+                queryset &= Subaward.objects.filter(business_categories__overlap=value)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -197,11 +197,11 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "place_of_performance_locations":
             queryset &= geocode_filter_locations(
-                'pop', value, SubawardView, True
+                'pop', value, Subaward, True
             )
 
         elif key == "award_amounts":
-            queryset &= total_obligation_queryset(value, SubawardView, filters)
+            queryset &= total_obligation_queryset(value, Subaward, filters)
 
         elif key == "award_ids":
             filter_obj = Q()
@@ -209,7 +209,7 @@ def subaward_filter(filters, for_downloads=False):
                 # award_id_string is a Postgres TS_vector
                 # award_id_string = piid + fain + uri + subaward_number
                 filter_obj |= Q(award_ts_vector=val)
-            queryset &= SubawardView.objects.filter(filter_obj)
+            queryset &= Subaward.objects.filter(filter_obj)
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
@@ -220,7 +220,7 @@ def subaward_filter(filters, for_downloads=False):
             }
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= SubawardView.objects.filter(**{'{}__in'.format(filter_to_col[key]): in_query})
+                queryset &= Subaward.objects.filter(**{'{}__in'.format(filter_to_col[key]): in_query})
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()

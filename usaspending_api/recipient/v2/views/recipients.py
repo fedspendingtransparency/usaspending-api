@@ -175,7 +175,7 @@ def extract_business_categories(recipient_name, recipient_duns):
     return qs_business_cat['business_categories'] if qs_business_cat is not None else []
 
 
-def obtain_recipient_totals(recipient_id, year='latest', subawards=False):
+def obtain_recipient_totals(recipient_id, year='latest'):
     """ Extract the total amount and transaction count for the recipient_hash given the timeframe
 
         Args:

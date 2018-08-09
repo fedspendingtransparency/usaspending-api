@@ -109,6 +109,18 @@ def mock_award(monkeypatch):
 
 
 @pytest.fixture()
+def mock_subaward(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_subaward_qs = MockSet()
+
+    monkeypatch.setattr('usaspending_api.awards.models.Subaward.objects', mock_subaward_qs)
+
+    yield mock_subaward_qs
+
+    mock_subaward_qs.delete()
+
+
+@pytest.fixture()
 def mock_financial_account(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_financial_accounts_qs = MockSet()
@@ -160,7 +172,6 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SubawardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardRecipientView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects', mock_qs)

@@ -30,7 +30,6 @@ TEMP_SQL_FILES = [
     '../matviews/summary_view_naics_codes.sql',
     '../matviews/summary_view_psc_codes.sql',
     '../matviews/summary_view.sql',
-    '../matviews/subaward_view.sql',
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
 ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']

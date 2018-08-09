@@ -6,8 +6,7 @@ import logging
 from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
 
-from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.awards.models import TransactionNormalized, Subaward
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -113,7 +112,7 @@ def get_total_transaction_columns(filters, model):
     rows can be award type loan and/or all other award types
     """
     total_transaction_columns = []
-    if model == SubawardView:
+    if model == Subaward:
         total_transaction_columns.append('amount')
     else:
         award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
