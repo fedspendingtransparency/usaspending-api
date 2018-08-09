@@ -1,4 +1,4 @@
--- Postgres extensions, functions, and enums necessary for some views 
+-- Postgres extensions, functions, and enums necessary for some views
 
 CREATE EXTENSION IF NOT EXISTS intarray;
 
@@ -13,7 +13,10 @@ BEGIN
 END$$;
 
 
-CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC) RETURNS public.total_obligation_bins AS $$
+CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC)
+RETURNS public.total_obligation_bins
+IMMUTABLE PARALLEL SAFE
+AS $$
   DECLARE
     DECLARE result text;
   BEGIN
@@ -24,21 +27,5 @@ CREATE OR REPLACE FUNCTION public.obligation_to_enum(award NUMERIC) RETURNS publ
     ELSE result='>500M';                                 --  over $500 million
     END IF;
   RETURN result::public.total_obligation_bins;
-  END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION public.recipient_normalization_pair(original_name TEXT, search_duns TEXT) RETURNS RECORD AS $$
-  DECLARE
-    DECLARE result text[];
-  BEGIN
-    IF original_name ILIKE 'multiple recipients' THEN result = ARRAY['MULTIPLE RECIPIENTS', '-1'];
-    ELSIF original_name ILIKE 'redacted due to pii' THEN result = ARRAY['REDACTED DUE TO PII', '-2'];
-    ELSIF original_name ILIKE 'multiple foreign recipients' THEN result = ARRAY['MULTIPLE FOREIGN RECIPIENTS', '-3'];
-    ELSIF original_name ILIKE 'private individual' THEN result = ARRAY['PRIVATE INDIVIDUAL', '-4'];
-    ELSIF original_name ILIKE 'individual recipient' THEN result = ARRAY['INDIVIDUAL RECIPIENT', '-5'];
-    ELSE result = ARRAY[(SELECT legal_business_name FROM duns WHERE awardee_or_recipient_uniqu = search_duns), search_duns];
-    END IF;
-  RETURN (COALESCE(result[1], ' '), result[2])::RECORD;
   END;
 $$ LANGUAGE plpgsql;
