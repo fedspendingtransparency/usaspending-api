@@ -22,7 +22,7 @@ File C records should be a subset of the Awards data ingested from FPDS/FABS. Th
 
 ## Linkage Logic
 
-If PIID is not null, assume it's a contract and look for an award with a matching PIID and Parent PIID
+If PIID is not null, assume it's a contract and look for an award with either a matching PIID, or a matching PIID and Parent PIID if and only if a Parent PIID is present in the File C record.
 1. if 0 awards found, no link is made
     * if > 1 awards found, no link is made
     * if exactly 1 award is found, the row is linked to the award
