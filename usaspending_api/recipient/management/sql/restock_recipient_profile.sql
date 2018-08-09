@@ -3,6 +3,8 @@
 --------------------------------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
 DROP TABLE IF EXISTS public.temporary_restock_recipient_profile;
+DROP INDEX IF EXISTS public.idx_recipient_profile_uniq_new;
+
 
 DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temp materialized view'; END $$;
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
