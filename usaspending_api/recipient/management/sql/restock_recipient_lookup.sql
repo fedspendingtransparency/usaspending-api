@@ -1,5 +1,7 @@
 DROP TABLE IF EXISTS public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+DROP INDEX IF EXISTS public.idx_temporary_restock_recipient_lookup_unique_duns;
+DROP INDEX IF EXISTS public.idx_temporary_restock_recipient_lookup_hash;
 
 --------------------------------------------------------------------------------
 -- Step 1, Create temporary table and materialized view
@@ -139,13 +141,14 @@ WITH transaction_recipients AS (
         tf.congressional,
         tf.address_line1,
         tf.address_line2,
-        tf.country_code
+        tf.country_code,
+        tf.action_date
       FROM public.temporary_transaction_recipients_view AS tf
       WHERE tf.awardee_or_recipient_uniqu IS NOT NULL
       ORDER BY tf.action_date DESC
     )
     SELECT
-      DISTINCT awardee_or_recipient_uniqu,
+      DISTINCT ON (awardee_or_recipient_uniqu)
       MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, awardee_or_recipient_legal)))::uuid AS recipient_hash,
       awardee_or_recipient_uniqu AS duns,
       ultimate_parent_unique_ide AS parent_duns,
@@ -160,6 +163,7 @@ WITH transaction_recipients AS (
       address_line2 AS address_line_2,
       country_code
     FROM transaction_recipients_inner
+    ORDER BY awardee_or_recipient_uniqu, action_date DESC
 )
 
 INSERT INTO public.temporary_restock_recipient_lookup (
@@ -184,19 +188,21 @@ WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
         tf.ultimate_parent_legal_enti,
-        tf.ultimate_parent_unique_ide
+        tf.ultimate_parent_unique_ide,
+        tf.action_date
       FROM public.temporary_transaction_recipients_view AS tf
       WHERE tf.ultimate_parent_unique_ide IS NOT NULL AND tf.ultimate_parent_legal_enti IS NOT NULL
       ORDER BY tf.action_date DESC
     )
     SELECT
-      DISTINCT ultimate_parent_unique_ide,
+      DISTINCT ON (ultimate_parent_unique_ide)
       MD5(UPPER(CONCAT(ultimate_parent_unique_ide, ultimate_parent_legal_enti)))::uuid AS recipient_hash,
       ultimate_parent_unique_ide AS parent_duns,
       ultimate_parent_legal_enti AS parent_legal_business_name,
       ultimate_parent_unique_ide AS duns,
       ultimate_parent_legal_enti AS legal_business_name
     FROM transaction_recipients_inner
+    ORDER BY ultimate_parent_unique_ide, action_date DESC
 )
 
 INSERT INTO public.temporary_restock_recipient_lookup (
@@ -208,14 +214,75 @@ SELECT
 FROM transaction_recipients
 ON CONFLICT (duns) DO NOTHING;
 
+
+--------------------------------------------------------------------------------
+-- Step 4a, Create rows with Parent DUNS from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4a: Creating records from SAM parent data with no name'; END $$;
+WITH grouped_parent_recipients AS (
+    SELECT
+    DISTINCT ON (ultimate_parent_unique_ide)
+      ultimate_parent_unique_ide AS duns,
+      ultimate_parent_legal_enti AS legal_business_name
+    FROM duns
+    WHERE ultimate_parent_unique_ide IS NOT NULL
+    ORDER BY ultimate_parent_unique_ide DESC
+)
+INSERT INTO public.temporary_restock_recipient_lookup (
+    recipient_hash, legal_business_name, duns, parent_duns, parent_legal_business_name)
+SELECT
+    MD5(UPPER(CONCAT(gpr.duns, gpr.legal_business_name)))::uuid AS recipient_hash,
+    UPPER(gpr.legal_business_name) AS legal_business_name,
+    gpr.duns AS duns,
+    gpr.duns AS parent_duns,
+    UPPER(gpr.legal_business_name) AS parent_legal_business_name
+FROM grouped_parent_recipients AS gpr
+ON CONFLICT (duns) DO NOTHING;
+
+
+--------------------------------------------------------------------------------
+-- Step 4b, Create rows with Parent DUNS and no namefrom FPDS/FABS
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding missing DUNS records from FPDS and FABS (parent) no name'; END $$;
+WITH transaction_recipients AS (
+    WITH transaction_recipients_inner AS (
+      SELECT
+        tf.ultimate_parent_legal_enti,
+        tf.ultimate_parent_unique_ide,
+        tf.action_date
+      FROM public.temporary_transaction_recipients_view AS tf
+      WHERE tf.ultimate_parent_unique_ide IS NOT NULL
+      ORDER BY tf.action_date DESC
+    )
+    SELECT
+      DISTINCT ON (ultimate_parent_unique_ide)
+      MD5(UPPER(CONCAT(ultimate_parent_unique_ide, ultimate_parent_legal_enti)))::uuid AS recipient_hash,
+      ultimate_parent_unique_ide AS parent_duns,
+      ultimate_parent_legal_enti AS parent_legal_business_name,
+      ultimate_parent_unique_ide AS duns,
+      ultimate_parent_legal_enti AS legal_business_name
+    FROM transaction_recipients_inner
+    ORDER BY ultimate_parent_unique_ide, action_date DESC
+)
+
+INSERT INTO public.temporary_restock_recipient_lookup (
+    recipient_hash, legal_business_name, duns, parent_duns,
+    parent_legal_business_name)
+SELECT
+    recipient_hash, legal_business_name, duns, parent_duns,
+    parent_legal_business_name
+FROM transaction_recipients
+ON CONFLICT (duns) DO NOTHING;
+
+--------------------------------------------------------------------------------
 DROP INDEX idx_temporary_restock_recipient_lookup_unique_duns;
 CREATE UNIQUE INDEX idx_temporary_restock_recipient_lookup_hash ON public.temporary_restock_recipient_lookup (recipient_hash);
 
 
 --------------------------------------------------------------------------------
--- Step 4, Adding duns-less records from FPDS and FABS
+-- Step 5, Adding duns-less records from FPDS and FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4: Adding duns-less records from FPDS and FABS'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 5: Adding duns-less records from FPDS and FABS'; END $$;
 
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
@@ -270,31 +337,22 @@ ON CONFLICT (recipient_hash) DO NOTHING;
 
 
 --------------------------------------------------------------------------------
--- Step 5, Finalizing
+-- Step 6, Finalizing
 --------------------------------------------------------------------------------
--- DO $$ BEGIN RAISE NOTICE 'Step 5: restocking destination table'; END $$;
--- BEGIN;
--- TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
--- INSERT INTO public.recipient_lookup (
---     recipient_hash, legal_business_name, duns, address_line_1, address_line_2, city,
---      state, zip5, zip4, country_code,
---     congressional_district, business_types_codes)
---   SELECT
---     recipient_hash,
---     legal_business_name,
---     duns,
---     address_line_1,
---     address_line_2,
---     city,
---     state,
---     zip5,
---     zip4,
---     country_code,
---     congressional_district,
---     business_types_codes
---  FROM public.temporary_restock_recipient_lookup;
--- DROP TABLE public.temporary_restock_recipient_lookup;
--- DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
--- COMMIT;
+DO $$ BEGIN RAISE NOTICE 'Step 6: restocking destination table'; END $$;
+BEGIN;
+TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
+INSERT INTO public.recipient_lookup (
+    recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
+    city, state, zip5, zip4, country_code,
+    congressional_district, business_types_codes)
+  SELECT
+    recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
+    city, state, zip5, zip4, country_code,
+    congressional_district, business_types_codes
+ FROM public.temporary_restock_recipient_lookup;
+DROP TABLE public.temporary_restock_recipient_lookup;
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+COMMIT;
 
--- VACUUM ANALYZE public.recipient_lookup;
+VACUUM ANALYZE public.recipient_lookup;
