@@ -52,7 +52,7 @@ TEST_DUNS = {
         'state': 'PARENT STATE',
         'zip': 'PARENT ZIP',
         'zip4': 'PARENT ZIP4',
-        'business_types_codes': ['PARENT BUSINESS TYPES CODES']
+        'business_types_codes': ['2X']
     },
     '000000002': {
         'awardee_or_recipient_uniqu': '000000002',
@@ -65,7 +65,7 @@ TEST_DUNS = {
         'state': 'CHILD STATE',
         'zip': 'CHILD ZIP',
         'zip4': 'CHILD ZIP4',
-        'business_types_codes': ['CHILD BUSINESS TYPES CODES']
+        'business_types_codes': ['A8']
     }
 }
 TEST_RECIPIENT_LOCATIONS = {
@@ -342,13 +342,19 @@ def test_extract_business_categories():
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    expected_business_cat = ['expected', 'business', 'cat']
+    le_business_cat = ['le', 'business', 'cat']
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name=recipient_name,
+    mommy.make(LegalEntity, business_categories=le_business_cat, recipient_name=recipient_name,
                recipient_unique_id=recipient_duns)
 
+    # Mock DUNS
+    # Should add 'category_business'
+    mommy.make(DUNS, **TEST_DUNS[recipient_duns])
+
+    expected_business_cat = le_business_cat + ['category_business']
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
-    assert business_cat == expected_business_cat
+    print(business_cat)
+    assert sorted(business_cat) == sorted(expected_business_cat)
 
 
 @pytest.mark.django_db
@@ -502,7 +508,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'parent_name': 'PARENT RECIPIENT',
         'parent_duns': '000000001',
         'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
-        'business_types': ['expected', 'business', 'cat'],
+        'business_types': sorted(['expected', 'business', 'cat']),
         'location': {
             'address_line1': 'PARENT ADDRESS LINE 1',
             'address_line2': 'PARENT ADDRESS LINE 2',
@@ -521,6 +527,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'total_transaction_amount': 100,
         'total_transactions': 1
     }
+    resp.data['business_types'] = sorted(resp.data['business_types'])
     assert resp.data == expected
 
 
