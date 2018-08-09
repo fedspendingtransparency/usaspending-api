@@ -353,7 +353,6 @@ def test_extract_business_categories():
 
     expected_business_cat = le_business_cat + ['category_business']
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
-    print(business_cat)
     assert sorted(business_cat) == sorted(expected_business_cat)
 
 
