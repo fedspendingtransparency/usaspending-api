@@ -15,12 +15,12 @@ def strip_award_id(api_dict):
     return {k: v for k, v in api_dict.items() if k != 'award_id'}
 
 
-def test_all_subawards(mock_matviews_qs):
+def test_all_subawards(mock_subaward):
     mock_model_1 = MockModel(**subaward_1)
     mock_model_2 = MockModel(**subaward_2)
     mock_model_3 = MockModel(**subaward_3)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
+    add_to_mock_objects(mock_subaward, [mock_model_1, mock_model_2, mock_model_3])
 
     test_payload = {
         "page": 1,
@@ -48,12 +48,12 @@ def test_all_subawards(mock_matviews_qs):
     assert [strip_award_id(subaward_3), strip_award_id(subaward_2), strip_award_id(subaward_1)] == subawards_logic
 
 
-def test_specific_award(mock_matviews_qs):
+def test_specific_award(mock_subaward):
     mock_model_1 = MockModel(**subaward_10)
     mock_model_2 = MockModel(**subaward_11)
     mock_model_3 = MockModel(**subaward_12)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
+    add_to_mock_objects(mock_subaward, [mock_model_1, mock_model_2, mock_model_3])
 
     test_payload = {
         "award_id": 99

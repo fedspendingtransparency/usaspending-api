@@ -2,17 +2,14 @@ import json
 import pytest
 from rest_framework import status
 
-# Core Django imports
 from django_mock_queries.query import MockModel
 
-
-# Imports from your apps
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.awards.tests.unit.test_subawards import subaward_1, subaward_2, subaward_3, subaward_12
+from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 
 
 @pytest.mark.django_db
-def test_subaward_success(client, refresh_matviews):
+def test_subaward_success(client):
 
     resp = client.post(
         '/api/v2/subawards/',
@@ -27,7 +24,7 @@ def test_subaward_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_subaward_failure(client, refresh_matviews):
+def test_subaward_failure(client):
 
     resp = client.post(
         '/api/v2/subawards/',
@@ -43,12 +40,12 @@ def test_subaward_failure(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_1(client, mock_subaward):
     mock_model_1 = MockModel(**subaward_1)
     mock_model_2 = MockModel(**subaward_2)
     mock_model_3 = MockModel(**subaward_3)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
+    add_to_mock_objects(mock_subaward, [mock_model_1, mock_model_2, mock_model_3])
     resp = client.post(
         '/api/v2/subawards/',
         content_type='application/json',
@@ -63,10 +60,10 @@ def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_2(client, mock_subaward):
     mock_model_4 = MockModel(**subaward_12)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_model_4])
+    add_to_mock_objects(mock_subaward, [mock_model_4])
     resp = client.post(
         '/api/v2/subawards/',
         content_type='application/json',
