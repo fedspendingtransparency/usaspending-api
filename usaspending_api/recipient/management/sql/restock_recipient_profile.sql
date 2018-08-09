@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
 DROP TABLE IF EXISTS public.temporary_restock_recipient_profile;
+DROP INDEX IF EXISTS public.idx_recipients_in_transactions_view;
 DROP INDEX IF EXISTS public.idx_recipient_profile_uniq_new;
-
 
 DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temp materialized view'; END $$;
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
@@ -24,7 +24,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     (award_category IS NOT NULL OR award_category IS NULL AND pulled_from = 'IDV')
 );
 
-CREATE INDEX idx_recipients_from_transactions_view_1 ON public.temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
+CREATE INDEX idx_recipients_in_transactions_view ON public.temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
 
 --------------------------------------------------------------------------------
 -- Step 2, Create the new table and populate with 100% of combinations
@@ -255,17 +255,69 @@ WHERE
   rpv.recipient_unique_id = ar.recipient_unique_id AND
   rpv.recipient_level = 'C';
 
+
 --------------------------------------------------------------------------------
--- Step 7, Finalize new table
+-- Step 7, Mark recipient profile rows older than 12 months  as valid
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 7: almost done'; END $$;
-ANALYZE VERBOSE public.temporary_restock_recipient_profile;
+DO $$ BEGIN RAISE NOTICE 'Step 7: R & C Recipient profiles older than 12 months'; END $$;
+
+WITH grouped_by_old_recipients AS (
+  SELECT
+    recipient_hash,
+    recipient_level
+  FROM
+    public.temporary_recipients_from_transactions_view AS trft
+  GROUP BY recipient_hash, recipient_level
+)
+
+UPDATE public.temporary_restock_recipient_profile AS rpv
+SET
+  unused = false
+FROM
+  grouped_by_old_recipients AS gbc
+WHERE
+  gbc.recipient_hash = rpv.recipient_hash AND
+  gbc.recipient_level = rpv.recipient_level AND
+  rpv.unused = true;
+
+
+--------------------------------------------------------------------------------
+-- Step 8, Mark Parent recipient profile rows older than 12 months  as valid
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 8: Parent Recipient profiles older than 12 months'; END $$;
+
+WITH grouped_by_parent_old AS (
+  SELECT
+    parent_recipient_unique_id
+  FROM
+    public.temporary_recipients_from_transactions_view AS trft
+  WHERE
+    parent_recipient_unique_id IS NOT NULL
+  GROUP BY parent_recipient_unique_id
+)
+
+UPDATE public.temporary_restock_recipient_profile AS rpv
+SET
+  unused = false
+FROM
+  grouped_by_parent_old AS gbp
+WHERE
+  rpv.recipient_unique_id = gbp.parent_recipient_unique_id AND
+  rpv.recipient_level = 'P' AND
+  rpv.unused = true;
+
+
+--------------------------------------------------------------------------------
+-- Step 9, Finalize new table
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 9: almost done'; END $$;
+ANALYZE public.temporary_restock_recipient_profile;
 DELETE FROM public.temporary_restock_recipient_profile WHERE unused = true;
 
 --------------------------------------------------------------------------------
--- Step 8, Drop unnecessary relations and standup new table as final
+-- Step 10, Drop unnecessary relations and standup new table as final
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 8: restocking destination table'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 10: restocking destination table'; END $$;
 
 BEGIN;
 TRUNCATE TABLE public.recipient_profile RESTART IDENTITY;
