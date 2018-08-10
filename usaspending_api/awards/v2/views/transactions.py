@@ -54,8 +54,7 @@ class TransactionViewSet(APIDocumentationView):
 
         queryset = (TransactionNormalized.objects.all()
                     .values(*list(self.transaction_lookup.values()))
-                    .filter(award_id=request_data["award_id"])
-                   )
+                    .filter(award_id=request_data["award_id"]))
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))

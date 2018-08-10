@@ -1,18 +1,16 @@
 # Stdlib imports
 import pytest
 import datetime
-from decimal import *
+from decimal import Decimal
 # Core Django imports
 
 # Third-party app imports
-from django_mock_queries.query import MockModel
-from  model_mommy import mommy
-
+from model_mommy import mommy
 
 # Imports from your apps
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.awards.v2.views.transactions import TransactionViewSet
 from usaspending_api.awards.models import Award
+
 
 def format_response(api_dict):
     svs = TransactionViewSet()
@@ -45,19 +43,13 @@ def test_all_transactions():
 
     expected_response = [format_response(transaction_3), format_response(transaction_1), format_response(transaction_2)]
     assert expected_response == subawards_logic
-    
+
     test_payload['page'] = 2
     test_params = svs._parse_and_validate_request(test_payload)
     subawards_logic = svs._business_logic(test_params)
     assert [] == subawards_logic
-'''
-    test_payload = {
-        "order": "desc",
-    }
-    test_params = svs._parse_and_validate_request(test_payload)
-    subawards_logic = svs._business_logic(test_params)
-    assert [format_response(transaction_1), format_response(transaction_2), format_response(transaction_3)] == subawards_logic
-'''
+
+
 @pytest.mark.django_db
 def test_specific_award():
     create_dummy_awards()
@@ -75,20 +67,22 @@ def test_specific_award():
 
     assert expected_response == subawards_logic
 
+
 @pytest.mark.django_db
 def create_dummy_awards():
-    mommy.make('awards.Award', **{"id":1})
+    mommy.make('awards.Award', **{"id": 1})
     dummy_award_1 = Award.objects.get(id=1)
-    mommy.make('awards.Award', **{"id":2})
+    mommy.make('awards.Award', **{"id": 2})
     dummy_award_2 = Award.objects.get(id=2)
-    mommy.make('awards.Award', **{"id":3})
+    mommy.make('awards.Award', **{"id": 3})
     dummy_award_3 = Award.objects.get(id=3)
     transaction_1['award'] = dummy_award_1
     transaction_2['award'] = dummy_award_2
     transaction_3['award'] = dummy_award_3
 
+
 transaction_1 = {
-    "is_fpds":False,
+    "is_fpds": False,
     "transaction_unique_id": "R02L2A1XL2",
     "type": "A",
     "type_description": "Mauv",
@@ -96,14 +90,14 @@ transaction_1 = {
     "action_type": None,
     "action_type_description": "lobortis",
     "modification_number": '7',
-    "description": "duis aliquam convallis nunc proin at turpis a pede posuere nonummy integer non velit donec diam neque vestibulum eget",
+    "description": "duis aliquam convallis nunc proin at turpis a pede posuere nonummy",
     "federal_action_obligation": '624678.18',
     "face_value_loan_guarantee": '118692.20',
     "original_loan_subsidy_cost": '801283.57'
 }
 
 transaction_2 = {
-    "is_fpds":True,
+    "is_fpds": True,
     "transaction_unique_id": "O21E7S1PT6",
     "type": None,
     "type_description": "Crimson",
@@ -117,17 +111,16 @@ transaction_2 = {
     "original_loan_subsidy_cost": '414172.86'
 }
 transaction_3 = {
-    "is_fpds":False,
+    "is_fpds": False,
     "transaction_unique_id": "Q25B9A1MQ0",
     "type": "D",
     "type_description": "Green",
-    "action_date": datetime.date(2008,11,22),
+    "action_date": datetime.date(2008, 11, 22),
     "action_type": None,
     "action_type_description": "consequat",
     "modification_number": '4',
-    "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris ullamcorper purus sit amet nulla",
+    "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
     "federal_action_obligation": '177682.30',
     "face_value_loan_guarantee": '418263.20',
     "original_loan_subsidy_cost": '279682.36'
 }
-
