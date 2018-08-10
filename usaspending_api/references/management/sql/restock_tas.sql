@@ -1,3 +1,5 @@
+-- WARNING: This script is not meant to be run directly. Please use the "load_tas" management command as there are
+-- post-sql functions that run to handle federal account relationships
 CREATE OR REPLACE FUNCTION generate_tas_rendering_label(
     ata TEXT,
     aid TEXT,
@@ -9,7 +11,6 @@ CREATE OR REPLACE FUNCTION generate_tas_rendering_label(
 ) RETURNS TEXT AS $$
 DECLARE
     result TEXT;
-    poa TEXT;
 BEGIN
     result := CONCAT_WS('-', ata, aid);
 
@@ -142,8 +143,6 @@ FROM
         )
 );
 
-
-BEGIN;
 INSERT INTO public.treasury_appropriation_account
 (
     data_source,
@@ -235,5 +234,4 @@ FROM public.temp_restock_tas ON CONFLICT (treasury_account_identifier) DO UPDATE
     update_date = excluded.update_date
 ;
 DROP TABLE public.temp_restock_tas;
-COMMIT;
 DROP FUNCTION generate_tas_rendering_label (TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
