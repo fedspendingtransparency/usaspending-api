@@ -3,12 +3,12 @@
 
 **Method** `POST`
 
-This route sends a request to the backend to retrieve transactions either related, optionally, to a specific parent 
-award, or for all parent awards if desired.
+This route sends a request to the backend to retrieve transactions related to a specific parent 
+award.
 
 ## Request Parameters
 
-- award_id: (optional) id of parent award to retrieve related transactions
+- award_id: (required) id of parent award to retrieve related transactions
 - sort : (optional) parameter to determine order of sorted results.
 
 ## Response (JSON)

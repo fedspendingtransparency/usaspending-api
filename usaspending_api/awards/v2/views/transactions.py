@@ -37,7 +37,7 @@ class TransactionViewSet(APIDocumentationView):
     def _parse_and_validate_request(self, request_dict: dict) -> dict:
         models = deepcopy(PAGINATION)
         models.append({"key": "award_id", "name": "award_id", "type": "integer",
-                      "optional": True, "default": None, "allow_nulls": True})
+                      "optional": False, "default": None, "allow_nulls": True})
         for model in models:
             # Change sort to an enum of the desired values
             if model["name"] == "sort":
@@ -52,10 +52,10 @@ class TransactionViewSet(APIDocumentationView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = TransactionNormalized.objects.all().values(*list(self.transaction_lookup.values()))
-
-        if request_data["award_id"] is not None:
-            queryset = queryset.filter(award_id=request_data["award_id"])
+        queryset = (TransactionNormalized.objects.all()
+                    .values(*list(self.transaction_lookup.values()))
+                    .filter(award_id=request_data["award_id"])
+                   )
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
