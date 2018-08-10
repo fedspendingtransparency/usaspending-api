@@ -1,151 +1,328 @@
 import logging
+import uuid
 
 from rest_framework.response import Response
-from django.db.models import Q, F, Sum, Count
+from django.db.models import F, Sum
 
-from usaspending_api.awards.models_matviews import SummaryTransactionView, UniversalTransactionView
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import RecipientLookup
 
-from usaspending_api.recipient.models import DUNS
+from usaspending_api.awards.v2.filters.view_selector import recipient_totals
+from usaspending_api.recipient.models import RecipientProfile, RecipientLookup
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
+from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 logger = logging.getLogger(__name__)
 
 
-def obtain_recipient_totals():
-    raise NotImplementedError('yee')
+def validate_recipient_id(recipient_id):
+    """ Validate [duns+name]-[recipient_type] hash
+
+        Args:
+            hash: str of the hash+duns to look up
+
+        Returns:
+            uuid of hash
+            recipient level
+
+        Raises:
+            InvalidParameterException for invalid hashes
+    """
+    if '-' not in recipient_id:
+        raise InvalidParameterException('ID (\'{}\') doesn\'t include Recipient-Level'.format(hash))
+    recipient_level = recipient_id[recipient_id.rfind('-') + 1:]
+    if recipient_level not in RECIPIENT_LEVELS:
+        raise InvalidParameterException('Invalid Recipient-Level: \'{}\''.format(recipient_level))
+    recipient_hash = recipient_id[:recipient_id.rfind('-')]
+    try:
+        uuid.UUID(recipient_hash)
+    except ValueError:
+        raise InvalidParameterException('Recipient Hash not valid UUID: \'{}\'.'.format(recipient_hash))
+    if not RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).count():
+        raise InvalidParameterException('Recipient ID not found: \'{}\'.'.format(recipient_id))
+    return recipient_hash, recipient_level
 
 
-def validate_hash(hash):
-    if not RecipientLookup.objects.filter(recipient_hash=hash).count() > 0:
-        raise InvalidParameterException('Recipient ID not found: {}.'.format(hash))
+def extract_name_duns_from_hash(recipient_hash):
+    """ Extract the name and duns from the recipient hash
 
+        Args:
+            recipient_hash: uuid of the hash+duns to look up
 
-def validate_duns(duns):
-    if not (isinstance(duns, str) and len(duns) == 9):
-        raise InvalidParameterException('Invalid DUNS: {}.'.format(duns))
-    elif not DUNS.objects.filter(awardee_or_recipient_unique=duns).count() > 0:
-        raise InvalidParameterException('DUNS not found: {}.'.format(duns))
-
-
-def get_recipients(year=None, hash=None, duns=None, parent_duns=None, subawards=None):
-    duns_list = []
-    if duns:
-        duns_list.append()
-    if parent_duns:
-        # TODO: Generate list of children via recipient profile table
-        duns_list = []
-
-    if year == 'latest' or year is None:
-        # Use the Recipient Profile View
-        filters = Q()  # recipient_profile_filters()
-        total_field = 'last_12_months' if year == 'latest' else 'all_fiscal_years'
-        queryset = RecipientProfile.objects.filter(filters).annotate(total=F(total_field)) \
-            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
+        Returns:
+            duns and name
+    """
+    name_duns_qs = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns', 'legal_business_name')\
+        .first()
+    if not name_duns_qs:
+        return None, None
     else:
-        # Use the Universal Transaction Matview for specific years
-        filters = reshape_filters(year=year, subawards=subawards)
-        queryset = matview_search_filter(filters, UniversalTransactionView) \
-            .values('recipient_level', 'recipient_hash') \
-            .annotate(total=Sum('generated_pragmatic_obligation'), count=Count()) \
-            .values('recipient_level', 'recipient_hash', 'recipient_unique_id', 'recipient_name', 'total')
+        return name_duns_qs['duns'], name_duns_qs['legal_business_name']
 
-    results = []
-    for row in list(queryset):
-        results.append(
-            {
-                'id': '{}-{}'.format(row['recipient_hash'], row['recipient_level']),
-                'duns': row['recipient_unique_id'],
-                'name': row['recipient_name'],
-                'recipient_level': row['recipient_level'],
-                'total': row['total']
-            }
-        )
 
-    return results
+def extract_parent_from_hash(recipient_hash):
+    """ Extract the parent name and parent duns from the recipient hash
+
+        Args:
+            recipient_hash: uuid of the hash+duns to look up
+
+        Returns:
+            parent_duns
+            parent_name
+    """
+    duns = None
+    name = None
+    parent_id = None
+    affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
+        .values('recipient_affiliations').first()
+    if not affiliations:
+        return duns, name, parent_id
+    duns = affiliations['recipient_affiliations'][0]
+
+    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    if parent:
+        name = parent['legal_business_name']
+        parent_id = '{}-P'.format(parent['recipient_hash'])
+    return duns, name, parent_id
+
+
+def cleanup_location(location):
+    """ Various little fixes to cleanup the location object, given bad data from transactions
+
+        Args:
+            location: dictionary object representing the location
+
+        Returns:
+            dict of cleaned location info
+    """
+    # Older transactions mix country code and country name
+    if location.get('country_code', None) == 'UNITED STATES':
+        location['country_code'] = 'USA'
+    # Country name generally isn't available with SAM data
+    if location.get('country_code', None) and not location.get('country_name', None):
+        country_name = RefCountryCode.objects.filter(country_code=location['country_code']).values('country_name')
+        location['country_name'] = country_name[0]['country_name'] if country_name else None
+    # Older transactions have various formats for congressional code (13.0, 13, CA13)
+    if location.get('congressional_code', None):
+        congressional_code = location['congressional_code']
+        # remove post dot if that exists
+        if '.' in congressional_code:
+            congressional_code = congressional_code[:congressional_code.rindex('.')]
+        # [state abbr]-[congressional code]
+        if len(congressional_code) == 4:
+            congressional_code = congressional_code[2:]
+        location['congressional_code'] = congressional_code
+    return location
 
 
 def extract_location(recipient_hash):
-    duns = RecipientLookup.objects.filter(recipient_hash=recipient_hash).values('duns').one()
-    duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=duns)
+    """ Extract the location data via the recipient hash
 
-    return {
-        'address_line1': duns_obj.address_line_1,
-        'address_line2': duns_obj.address_line_2,
+        Args:
+            recipient_hash: uuid of the hash+duns to look up
+
+        Returns:
+            dict of location info
+    """
+    location = {
+        'address_line1': None,
+        'address_line2': None,
         'address_line3': None,
         'foreign_province': None,
-        'city_name': duns_obj.city,
+        'city_name': None,
         'county_name': None,
-        'state_code': duns_obj.state,
-        'zip': duns_obj.zip,
-        'zip4': duns_obj.zip4,
+        'state_code': None,
+        'zip': None,
+        'zip4': None,
         'foreign_postal_code': None,
         'country_name': None,
-        'country_code': duns_obj.country_code,
-        'congressional_code': duns_obj.congressional_district
+        'country_code': None,
+        'congressional_code': None
     }
+    annotations = {
+        'address_line1': F('address_line_1'),
+        'address_line2': F('address_line_2'),
+        'city_name': F('city'),
+        'state_code': F('state'),
+        'zip': F('zip5'),
+        'congressional_code': F('congressional_district')
+    }
+    values = ['address_line1', 'address_line2', 'city_name', 'state_code', 'zip', 'zip4', 'country_code',
+              'congressional_code']
+    found_location = RecipientLookup.objects.filter(recipient_hash=recipient_hash).annotate(**annotations)\
+        .values(*values).first()
+    if found_location:
+        location.update(found_location)
+        location = cleanup_location(location)
+    return location
 
 
-def extract_business_types(recipient_hash):
-    return SummaryTransactionView.objects.filter(recipient_hash=recipient_hash).values('business_categories')
+def extract_business_categories(recipient_name, recipient_duns):
+    """ Extract the business categories via the recipient hash
+
+        Args:
+            recipient_name: name of the recipient
+            recipient_duns: duns of the recipient
+
+        Returns:
+            list of business categories
+    """
+    if recipient_name in SPECIAL_CASES and recipient_duns is None:
+        return []
+    qs_business_cat = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)\
+        .order_by('-update_date').values('business_categories').first()
+    return qs_business_cat['business_categories'] if qs_business_cat is not None else []
+
+
+def obtain_recipient_totals(recipient_id, children=False, year='latest', subawards=False):
+    """ Extract the total amount and transaction count for the recipient_hash given the timeframe
+
+        Args:
+            recipient_id: string of hash(duns, name)-[recipient-level]
+            children: whether or not to group by children
+            year: the year the totals/counts are based on
+            subawards: whether to total based on subawards
+        Returns:
+            list of dictionaries representing hashes and their totals/counts
+    """
+    if year == 'latest' and children is False:
+        # Simply pull the total and count from RecipientProfile
+        recipient_hash = recipient_id[:-2]
+        recipient_level = recipient_id[-1]
+        results = list(RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level)
+                       .annotate(total=F('last_12_months'), count=F('last_12_months_count'))
+                       .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count'))
+
+    else:
+        filters = reshape_filters(recipient_id=recipient_id, year=year)
+        queryset, model = recipient_totals(filters)
+        if children:
+            # Group by the child recipients
+            queryset = queryset.values('recipient_hash', 'recipient_unique_id', 'recipient_name') \
+                .annotate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts')) \
+                .values('recipient_hash', 'recipient_unique_id', 'recipient_name', 'total', 'count')
+            results = list(queryset)
+        else:
+            # Calculate the overall totals
+            aggregates = queryset.aggregate(total=Sum('generated_pragmatic_obligation'), count=Sum('counts'))
+            aggregates.update({'recipient_hash': recipient_id[:-2]})
+            results = [aggregates]
+    for result in results:
+        result['count'] = result['count'] if result['count'] else 0
+        result['total'] = result['total'] if result['total'] else 0
+    return results
 
 
 class RecipientOverView(APIDocumentationView):
 
     @cache_response()
-    def get(self, request, recipient_hash):
+    def get(self, request, recipient_id):
         get_request = request.query_params
         year = validate_year(get_request.get('year', 'latest'))
-        recipient_hash = validate_hash(recipient_hash)
+        recipient_hash, recipient_level = validate_recipient_id(recipient_id)
+        recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
+        if not (recipient_name or recipient_duns):
+            raise InvalidParameterException('Recipient Hash not found: \'{}\'.'.format(recipient_hash))
 
-        # Gather DUNS object via the hash
+        if recipient_level != 'R':
+            parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
+        else:
+            parent_duns, parent_name, parent_id = None, None, None
         location = extract_location(recipient_hash)
-        business_types = extract_business_types()  # TODO: CONVERT CODES TO READABLE NAMES
+        business_types = extract_business_categories(recipient_name, recipient_duns)
+        results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
+        # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
-        # Gather totals
-        recipients, page_metadata = get_recipients(recipient_hash, year=year)
-        # sub_recipients, page_metadata = get_recipients(recipient_hash, year=year, subawards=True)
-
-        item = recipients[0]
-        duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=item['recipient_unique_id'])
         result = {
-            'name': item['name'],
-            'duns': item['recipient_unique_id'],
-            'id': item['id'],
-            'recipient_level': item['recipient_level'],
-            'parent_name': duns_obj.ultimate_parent_legal_enti,
-            'parent_duns': duns_obj.ultimate_parent_unique_ide,
+            'name': recipient_name,
+            'duns': recipient_duns,
+            'recipient_id': recipient_id,
+            'recipient_level': recipient_level,
+            'parent_id': parent_id,
+            'parent_name': parent_name,
+            'parent_duns': parent_duns,
             'business_types': business_types,
             'location': location,
-            'total_prime_amount': item['total'],
-            # 'total_prime_awards': recipient_totals['count'],
-            # 'total_sub_amount': recipient_sub_totals['total'],
-            # 'total_sub_awards': recipient_sub_totals['count']
+            'total_transaction_amount': results[0]['total'] if results else 0,
+            'total_transactions': results[0]['count'] if results else 0,
+            # 'total_sub_transaction_amount': subtotal,
+            # 'total_sub_transaction_total': subcount
         }
-
         return Response(result)
 
 
-# class ChildRecipients(APIDocumentationView):
-#
-#     @cache_response()
-#     def get(self, request, duns):
-#         get_request = request.query_params
-#         year = validate_year(get_request.get('year', 'latest'))
-#         duns = validate_duns(duns)
-#
-#         results = []
-#         recipients, page_metadata = get_recipients(year=year, parent_duns=duns)
-#         for item in recipients:
-#             results.append({
-#                 'id': item['hash'],
-#                 'name': item['name'],
-#                 'duns': item['duns'],
-#                 'amount': item['amount'],
-#             })
-#         return Response(results)
+def extract_hash_name_from_duns(duns):
+    """ Extract the all the names and hashes associated with the DUNS provided
+
+        Args:
+            duns: duns to find the equivalent hash and name
+
+        Returns:
+            list of dictionaries containing hashes and names
+    """
+    qs_hash = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+    if not qs_hash:
+        return None, None
+    else:
+        return qs_hash['recipient_hash'], qs_hash['legal_business_name']
+
+
+class ChildRecipients(APIDocumentationView):
+
+    @cache_response()
+    def get(self, request, duns):
+        get_request = request.query_params
+        year = validate_year(get_request.get('year', 'latest'))
+        parent_hash, parent_name = extract_hash_name_from_duns(duns)
+        if not parent_hash:
+            raise InvalidParameterException('DUNS not found: \'{}\'.'.format(duns))
+
+        totals = list(obtain_recipient_totals('{}-P'.format(parent_hash), children=True, year=year, subawards=False))
+
+        # Get child info for each child DUNS
+        results = []
+        for total in totals:
+            results.append({
+                'recipient_id': '{}-C'.format(total['recipient_hash']),
+                'name': total['recipient_name'],
+                'duns': total['recipient_unique_id'],
+                'amount': total['total']
+            })
+        # Add children recipients without totals in this time period (if we already got all, ignore)
+        if year != 'all':
+            # Get all possible child duns
+            children_duns = RecipientProfile.objects.filter(recipient_hash=parent_hash, recipient_level='P').values(
+                'recipient_affiliations')
+            if not children_duns:
+                raise InvalidParameterException('DUNS is not listed as a parent: \'{}\'.'.format(duns))
+            children = children_duns[0]['recipient_affiliations']
+
+            # Gather their data points with Recipient Profile
+            found_duns = [result['duns'] for result in results]
+            missing_duns = [duns for duns in children if duns not in found_duns]
+            missing_duns_qs = RecipientProfile.objects.filter(recipient_unique_id__in=missing_duns,
+                                                              recipient_level='C').values('recipient_hash',
+                                                                                          'recipient_name',
+                                                                                          'recipient_unique_id')
+            for child_duns in list(missing_duns_qs):
+                results.append({
+                    'recipient_id': '{}-C'.format(child_duns['recipient_hash']),
+                    'name': child_duns['recipient_name'],
+                    'duns': child_duns['recipient_unique_id'],
+                    'amount': 0
+                })
+
+        # Add state/provinces to each result
+        child_hashes = [result['recipient_id'][:-2] for result in results]
+        states_qs = RecipientLookup.objects.filter(recipient_hash__in=child_hashes).values('recipient_hash', 'state')
+        state_map = {str(state_result['recipient_hash']): state_result['state'] for state_result in list(states_qs)}
+        for result in results:
+            recipient_hash = result['recipient_id'][:-2]
+            if recipient_hash not in state_map:
+                logger.warning('Recipient Hash not in state map: {}'.format(recipient_hash))
+            else:
+                result['state_province'] = state_map[recipient_hash]
+
+        return Response(results)

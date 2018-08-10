@@ -81,3 +81,10 @@ def test_reshape_filters_duns():
     result = reshape_filters(duns_search_texts=duns)
 
     assert result['recipient_search_text'] == duns
+
+
+def test_reshape_filters_recipient_id():
+    recipient_id = '00000-fddfdbe-3fcsss5-9d252-d436c0ae8758c-R'
+    result = reshape_filters(recipient_id=recipient_id)
+
+    assert result['recipient_id'] == recipient_id
