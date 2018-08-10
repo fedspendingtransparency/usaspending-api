@@ -12,13 +12,9 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 def test_transaction_endpoint(client):
     """Test the transaction endpoint."""
 
-    resp = client.post('/api/v2/transactions/', {"award_id": 1})
-    assert resp.status_code == 200
+    resp = client.post('/api/v2/transactions/', {"award_id": 1, "page": "1", "limit": "10", "order": "asc"})
+    assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data) > 1
-
-    assert client.post(
-        '/api/v2/transactions/',
-        {"page": "1", "limit": "10", "order": "asc"},).status_code == 200
 
 
 @pytest.mark.django_db
@@ -28,18 +24,13 @@ def test_transaction_endpoint_award_fk(client):
     awd = mommy.make('awards.Award', id=10, total_obligation="2000", _fill_optional=True)
     mommy.make(
         'awards.TransactionNormalized',
+        description="this should match",
+        _fill_optional=True,
         award=awd)
 
-    assert client.post(
-        '/api/v2/transactions/',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": [{
-                "field": "award",
-                "operation": "equals",
-                "value": "10"
-            }]
-        })).status_code == status.HTTP_200_OK
+    resp = client.post('/api/v2/transactions/', {"award_id": 10})
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode('utf-8'))['results'][0]["description"] == "this should match"
 
 
 @pytest.mark.django_db

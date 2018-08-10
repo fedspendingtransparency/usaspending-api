@@ -10,6 +10,7 @@ from model_mommy import mommy
 # Imports from your apps
 from usaspending_api.awards.v2.views.transactions import TransactionViewSet
 from usaspending_api.awards.models import Award
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 def format_response(api_dict):
@@ -26,28 +27,18 @@ def format_response(api_dict):
 
 
 @pytest.mark.django_db
-def test_all_transactions():
+def test_no_award_id():
     test_payload = {
         "page": 1,
         "limit": 10,
         "order": "asc",
     }
-    create_dummy_awards()
-    mommy.make('awards.TransactionNormalized', **transaction_1)
-    mommy.make('awards.TransactionNormalized', **transaction_2)
-    mommy.make('awards.TransactionNormalized', **transaction_3)
 
     svs = TransactionViewSet()
-    test_params = svs._parse_and_validate_request(test_payload)
-    subawards_logic = svs._business_logic(test_params)
+    parse = svs._parse_and_validate_request
 
-    expected_response = [format_response(transaction_3), format_response(transaction_1), format_response(transaction_2)]
-    assert expected_response == subawards_logic
-
-    test_payload['page'] = 2
-    test_params = svs._parse_and_validate_request(test_payload)
-    subawards_logic = svs._business_logic(test_params)
-    assert [] == subawards_logic
+    with pytest.raises(UnprocessableEntityException):
+        parse(test_payload)
 
 
 @pytest.mark.django_db
@@ -64,8 +55,12 @@ def test_specific_award():
     subawards_logic = svs._business_logic(test_params)
 
     expected_response = [format_response(transaction_2)]
-
     assert expected_response == subawards_logic
+
+    test_payload['page'] = 2
+    test_params = svs._parse_and_validate_request(test_payload)
+    subawards_logic = svs._business_logic(test_params)
+    assert [] == subawards_logic
 
 
 @pytest.mark.django_db
