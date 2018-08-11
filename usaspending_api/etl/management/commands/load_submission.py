@@ -7,7 +7,6 @@ from django.core.management.base import CommandError
 from django.core.management import call_command
 from django.db import connections, transaction
 from django.db.models import Q
-from django.core.cache import caches
 import pandas as pd
 import numpy as np
 
@@ -22,7 +21,6 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
-from usaspending_api.etl.subaward_etl import load_subawards
 
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.load_base import load_data_into_model
