@@ -10,8 +10,7 @@ from model_mommy import mommy
 from unittest.mock import MagicMock
 
 # Imports from your apps
-from usaspending_api.awards.models import (Award, FinancialAccountsByAwards, TransactionNormalized,
-                                           TreasuryAppropriationAccount)
+from usaspending_api.awards.models import FinancialAccountsByAwards, TreasuryAppropriationAccount
 
 
 DB_CURSOR_PARAMS = {
