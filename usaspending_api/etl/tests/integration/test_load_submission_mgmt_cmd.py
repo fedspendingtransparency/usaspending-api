@@ -15,7 +15,6 @@ from usaspending_api.awards.models import (Award, FinancialAccountsByAwards, Tra
 
 
 DB_CURSOR_PARAMS = {
-    'default': MagicMock(),
     'data_broker': MagicMock(),
     'data_broker_data_file': 'usaspending_api/etl/tests/data/submission_data.json'
 }
