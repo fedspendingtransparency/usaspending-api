@@ -88,9 +88,15 @@ class Command(BaseCommand):
         # Stuff happens here, if you don't flag '--safe'
         # The submission loader is atomic, so one of these failing should not affect subsequent submissions
         if not options["safe"]:
+            load_executed_flag = False
             for next_missing_sub in missing_submissions:
                 try:
                     call_command('load_submission', '--noclean', '--nosubawards', next_missing_sub[0])
+                    load_executed_flag = True
                 except CommandError:
                     logger.info('Skipping submission ID {} due to CommandError (bad ID)'.format(next_missing_sub[0]))
                     continue
+
+            if load_executed_flag:
+                # update C to D linkage using SQL scripts
+                call_command('update_file_c_linkages')

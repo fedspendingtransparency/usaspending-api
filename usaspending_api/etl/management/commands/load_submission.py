@@ -119,9 +119,6 @@ class Command(load_base.Command):
         load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
-        # update C to D linkage using SQL scripts
-        call_command('update_file_c_linkages')
-
         if not options['nosubawards']:
             logger.warning("Loading subaward during a submission load is no longer supported")
         else:
