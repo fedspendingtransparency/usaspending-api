@@ -4,7 +4,6 @@ import logging
 
 # Core Django imports
 from django.conf import settings
-from django.db import connections
 
 # Third-party app imports
 import pytest
@@ -20,7 +19,6 @@ VALID_DB_CURSORS = ['default', 'data_broker']
 
 
 @pytest.fixture()
-@pytest.mark.django_db
 def mock_db_cursor(monkeypatch, request):
     db_cursor_dict = request.param
 
@@ -34,8 +32,6 @@ def mock_db_cursor(monkeypatch, request):
 
             db_cursor_dict[cursor].cursor.return_value = PhonyCursor(db_cursor_dict[data_file_key])
             del db_cursor_dict[data_file_key]
-        else:
-            db_cursor_dict[cursor] = connections[cursor]
 
     monkeypatch.setattr('django.db.connections', db_cursor_dict)
 
