@@ -70,7 +70,6 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
     assert expected_results == actual_results
 
 
-
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
