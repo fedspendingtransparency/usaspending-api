@@ -2,184 +2,96 @@ from distutils.util import strtobool
 
 
 def build_legal_entity_booleans_dict(row):
-    bool_dict = \
-        {
-            'small_business_competitive': bool(strtobool(row['small_business_competitive']))
-            if row.get('small_business_competitive') else False,
-            'city_local_government': bool(strtobool(row['city_local_government']))
-            if row.get('city_local_government') else False,
-            'county_local_government': bool(strtobool(row['county_local_government']))
-            if row.get('county_local_government') else False,
-            'inter_municipal_local_gove': bool(strtobool(row['inter_municipal_local_gove']))
-            if row.get('inter_municipal_local_gove') else False,
-            'local_government_owned': bool(strtobool(row['local_government_owned']))
-            if row.get('local_government_owned') else False,
-            'municipality_local_governm': bool(strtobool(row['municipality_local_governm']))
-            if row.get('municipality_local_governm') else False,
-            'school_district_local_gove': bool(strtobool(row['school_district_local_gove']))
-            if row.get('school_district_local_gove') else False,
-            'township_local_government': bool(strtobool(row['township_local_government']))
-            if row.get('township_local_government') else False,
-            'us_state_government': bool(strtobool(row['us_state_government']))
-            if row.get('us_state_government') else False,
-            'us_federal_government': bool(strtobool(row['us_federal_government']))
-            if row.get('us_federal_government') else False,
-            'federal_agency': bool(strtobool(row['federal_agency']))
-            if row.get('federal_agency') else False,
-            'federally_funded_research': bool(strtobool(row['federally_funded_research']))
-            if row.get('federally_funded_research') else False,
-            'us_tribal_government': bool(strtobool(row['us_tribal_government']))
-            if row.get('us_tribal_government') else False,
-            'foreign_government': bool(strtobool(row['foreign_government']))
-            if row.get('foreign_government') else False,
-            'community_developed_corpor': bool(strtobool(row['community_developed_corpor']))
-            if row.get('community_developed_corpor') else False,
-            'labor_surplus_area_firm': bool(strtobool(row['labor_surplus_area_firm']))
-            if row.get('labor_surplus_area_firm') else False,
-            'corporate_entity_not_tax_e': bool(strtobool(row['corporate_entity_not_tax_e']))
-            if row.get('corporate_entity_not_tax_e') else False,
-            'corporate_entity_tax_exemp': bool(strtobool(row['corporate_entity_tax_exemp']))
-            if row.get('corporate_entity_tax_exemp') else False,
-            'partnership_or_limited_lia': bool(strtobool(row['partnership_or_limited_lia']))
-            if row.get('partnership_or_limited_lia') else False,
-            'sole_proprietorship': bool(strtobool(row['sole_proprietorship']))
-            if row.get('sole_proprietorship') else False,
-            'small_agricultural_coopera': bool(strtobool(row['small_agricultural_coopera']))
-            if row.get('small_agricultural_coopera') else False,
-            'international_organization': bool(strtobool(row['international_organization']))
-            if row.get('international_organization') else False,
-            'us_government_entity': bool(strtobool(row['us_government_entity']))
-            if row.get('us_government_entity') else False,
-            'emerging_small_business': bool(strtobool(row['emerging_small_business']))
-            if row.get('emerging_small_business') else False,
-            'c8a_program_participant': bool(strtobool(row['c8a_program_participant']))
-            if row.get('c8a_program_participant') else False,
-            'sba_certified_8_a_joint_ve': bool(strtobool(row['sba_certified_8_a_joint_ve']))
-            if row.get('sba_certified_8_a_joint_ve') else False,
-            'dot_certified_disadvantage': bool(strtobool(row['dot_certified_disadvantage']))
-            if row.get('dot_certified_disadvantage') else False,
-            'self_certified_small_disad': bool(strtobool(row['self_certified_small_disad']))
-            if row.get('self_certified_small_disad') else False,
-            'historically_underutilized': bool(strtobool(row['historically_underutilized']))
-            if row.get('historically_underutilized') else False,
-            'small_disadvantaged_busine': bool(strtobool(row['small_disadvantaged_busine']))
-            if row.get('small_disadvantaged_busine') else False,
-            'the_ability_one_program': bool(strtobool(row['the_ability_one_program']))
-            if row.get('the_ability_one_program') else False,
-            'historically_black_college': bool(strtobool(row['historically_black_college']))
-            if row.get('historically_black_college') else False,
-            'c1862_land_grant_college': bool(strtobool(row['c1862_land_grant_college']))
-            if row.get('c1862_land_grant_college') else False,
-            'c1890_land_grant_college': bool(strtobool(row['c1890_land_grant_college']))
-            if row.get('c1890_land_grant_college') else False,
-            'c1994_land_grant_college': bool(strtobool(row['c1994_land_grant_college']))
-            if row.get('c1994_land_grant_college') else False,
-            'minority_institution': bool(strtobool(row['minority_institution']))
-            if row.get('minority_institution') else False,
-            'private_university_or_coll': bool(strtobool(row['private_university_or_coll']))
-            if row.get('private_university_or_coll') else False,
-            'school_of_forestry': bool(strtobool(row['school_of_forestry']))
-            if row.get('school_of_forestry') else False,
-            'state_controlled_instituti': bool(strtobool(row['state_controlled_instituti']))
-            if row.get('state_controlled_instituti') else False,
-            'tribal_college': bool(strtobool(row['tribal_college']))
-            if row.get('tribal_college') else False,
-            'veterinary_college': bool(strtobool(row['veterinary_college']))
-            if row.get('veterinary_college') else False,
-            'educational_institution': bool(strtobool(row['educational_institution']))
-            if row.get('educational_institution') else False,
-            'alaskan_native_servicing_i': bool(strtobool(row['alaskan_native_servicing_i']))
-            if row.get('alaskan_native_servicing_i') else False,
-            'community_development_corp': bool(strtobool(row['community_development_corp']))
-            if row.get('community_development_corp') else False,
-            'native_hawaiian_servicing': bool(strtobool(row['native_hawaiian_servicing']))
-            if row.get('native_hawaiian_servicing') else False,
-            'domestic_shelter': bool(strtobool(row['domestic_shelter']))
-            if row.get('domestic_shelter') else False,
-            'manufacturer_of_goods': bool(strtobool(row['manufacturer_of_goods']))
-            if row.get('manufacturer_of_goods') else False,
-            'hospital_flag': bool(strtobool(row['hospital_flag']))
-            if row.get('hospital_flag') else False,
-            'veterinary_hospital': bool(strtobool(row['veterinary_hospital']))
-            if row.get('veterinary_hospital') else False,
-            'hispanic_servicing_institu': bool(strtobool(row['hispanic_servicing_institu']))
-            if row.get('hispanic_servicing_institu') else False,
-            'foundation': bool(strtobool(row['foundation']))
-            if row.get('foundation') else False,
-            'woman_owned_business': bool(strtobool(row['woman_owned_business']))
-            if row.get('woman_owned_business') else False,
-            'minority_owned_business': bool(strtobool(row['minority_owned_business']))
-            if row.get('minority_owned_business') else False,
-            'women_owned_small_business': bool(strtobool(row['women_owned_small_business']))
-            if row.get('women_owned_small_business') else False,
-            'economically_disadvantaged': bool(strtobool(row['economically_disadvantaged']))
-            if row.get('economically_disadvantaged') else False,
-            'joint_venture_women_owned': bool(strtobool(row['joint_venture_women_owned']))
-            if row.get('joint_venture_women_owned') else False,
-            'joint_venture_economically': bool(strtobool(row['joint_venture_economically']))
-            if row.get('joint_venture_economically') else False,
-            'veteran_owned_business': bool(strtobool(row['veteran_owned_business']))
-            if row.get('veteran_owned_business') else False,
-            'service_disabled_veteran_o': bool(strtobool(row['service_disabled_veteran_o']))
-            if row.get('service_disabled_veteran_o') else False,
-            'contracts': bool(strtobool(row['contracts']))
-            if row.get('contracts') else False,
-            'grants': bool(strtobool(row['grants']))
-            if row.get('grants') else False,
-            'receives_contracts_and_gra': bool(strtobool(row['receives_contracts_and_gra']))
-            if row.get('receives_contracts_and_gra') else False,
-            'airport_authority': bool(strtobool(row['airport_authority']))
-            if row.get('airport_authority') else False,
-            'council_of_governments': bool(strtobool(row['council_of_governments']))
-            if row.get('council_of_governments') else False,
-            'housing_authorities_public': bool(strtobool(row['housing_authorities_public']))
-            if row.get('housing_authorities_public') else False,
-            'interstate_entity': bool(strtobool(row['interstate_entity']))
-            if row.get('interstate_entity') else False,
-            'planning_commission': bool(strtobool(row['planning_commission']))
-            if row.get('planning_commission') else False,
-            'port_authority': bool(strtobool(row['port_authority']))
-            if row.get('port_authority') else False,
-            'transit_authority': bool(strtobool(row['transit_authority']))
-            if row.get('transit_authority') else False,
-            'subchapter_s_corporation': bool(strtobool(row['subchapter_s_corporation']))
-            if row.get('subchapter_s_corporation') else False,
-            'limited_liability_corporat': bool(strtobool(row['limited_liability_corporat']))
-            if row.get('limited_liability_corporat') else False,
-            'foreign_owned_and_located': bool(strtobool(row['foreign_owned_and_located']))
-            if row.get('foreign_owned_and_located') else False,
-            'american_indian_owned_busi': bool(strtobool(row['american_indian_owned_busi']))
-            if row.get('american_indian_owned_busi') else False,
-            'alaskan_native_owned_corpo': bool(strtobool(row['alaskan_native_owned_corpo']))
-            if row.get('alaskan_native_owned_corpo') else False,
-            'indian_tribe_federally_rec': bool(strtobool(row['indian_tribe_federally_rec']))
-            if row.get('indian_tribe_federally_rec') else False,
-            'native_hawaiian_owned_busi': bool(strtobool(row['native_hawaiian_owned_busi']))
-            if row.get('native_hawaiian_owned_busi') else False,
-            'tribally_owned_business': bool(strtobool(row['tribally_owned_business']))
-            if row.get('tribally_owned_business') else False,
-            'asian_pacific_american_own': bool(strtobool(row['asian_pacific_american_own']))
-            if row.get('asian_pacific_american_own') else False,
-            'black_american_owned_busin': bool(strtobool(row['black_american_owned_busin']))
-            if row.get('black_american_owned_busin') else False,
-            'hispanic_american_owned_bu': bool(strtobool(row['hispanic_american_owned_bu']))
-            if row.get('hispanic_american_owned_bu') else False,
-            'native_american_owned_busi': bool(strtobool(row['native_american_owned_busi']))
-            if row.get('native_american_owned_busi') else False,
-            'subcontinent_asian_asian_i': bool(strtobool(row['subcontinent_asian_asian_i']))
-            if row.get('subcontinent_asian_asian_i') else False,
-            'other_minority_owned_busin': bool(strtobool(row['other_minority_owned_busin']))
-            if row.get('other_minority_owned_busin') else False,
-            'for_profit_organization': bool(strtobool(row['for_profit_organization']))
-            if row.get('for_profit_organization') else False,
-            'nonprofit_organization': bool(strtobool(row['nonprofit_organization']))
-            if row.get('nonprofit_organization') else False,
-            'other_not_for_profit_organ': bool(strtobool(row['other_not_for_profit_organ']))
-            if row.get('other_not_for_profit_organ') else False,
-            'us_local_government': bool(strtobool(row['us_local_government']))
-            if row.get('us_local_government') else False
-        }
-    return bool_dict
+    le_cols = [
+        'small_business_competitive',
+        'city_local_government',
+        'county_local_government',
+        'inter_municipal_local_gove',
+        'local_government_owned',
+        'municipality_local_governm',
+        'school_district_local_gove',
+        'township_local_government',
+        'us_state_government',
+        'us_federal_government',
+        'federal_agency',
+        'federally_funded_research',
+        'us_tribal_government',
+        'foreign_government',
+        'community_developed_corpor',
+        'labor_surplus_area_firm',
+        'corporate_entity_not_tax_e',
+        'corporate_entity_tax_exemp',
+        'partnership_or_limited_lia',
+        'sole_proprietorship',
+        'small_agricultural_coopera',
+        'international_organization',
+        'us_government_entity',
+        'emerging_small_business',
+        'c8a_program_participant',
+        'sba_certified_8_a_joint_ve',
+        'dot_certified_disadvantage',
+        'self_certified_small_disad',
+        'historically_underutilized',
+        'small_disadvantaged_busine',
+        'the_ability_one_program',
+        'historically_black_college',
+        'c1862_land_grant_college',
+        'c1890_land_grant_college',
+        'c1994_land_grant_college',
+        'minority_institution',
+        'private_university_or_coll',
+        'school_of_forestry',
+        'state_controlled_instituti',
+        'tribal_college',
+        'veterinary_college',
+        'educational_institution',
+        'alaskan_native_servicing_i',
+        'community_development_corp',
+        'native_hawaiian_servicing',
+        'domestic_shelter',
+        'manufacturer_of_goods',
+        'hospital_flag',
+        'veterinary_hospital',
+        'hispanic_servicing_institu',
+        'foundation',
+        'woman_owned_business',
+        'minority_owned_business',
+        'women_owned_small_business',
+        'economically_disadvantaged',
+        'joint_venture_women_owned',
+        'joint_venture_economically',
+        'veteran_owned_business',
+        'service_disabled_veteran_o',
+        'contracts',
+        'grants',
+        'receives_contracts_and_gra',
+        'airport_authority',
+        'council_of_governments',
+        'housing_authorities_public',
+        'interstate_entity',
+        'planning_commission',
+        'port_authority',
+        'transit_authority',
+        'subchapter_s_corporation',
+        'limited_liability_corporat',
+        'foreign_owned_and_located',
+        'american_indian_owned_busi',
+        'alaskan_native_owned_corpo',
+        'indian_tribe_federally_rec',
+        'native_hawaiian_owned_busi',
+        'tribally_owned_business',
+        'asian_pacific_american_own',
+        'black_american_owned_busin',
+        'hispanic_american_owned_bu',
+        'native_american_owned_busi',
+        'subcontinent_asian_asian_i',
+        'other_minority_owned_busin',
+        'for_profit_organization',
+        'nonprofit_organization',
+        'other_not_for_profit_organ',
+        'us_local_government'
+    ]
+    return {le_col: bool(strtobool(row.get(le_col, 'false'))) for le_col in le_cols}
 
 
 def get_award_category(award_type_code):
