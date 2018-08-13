@@ -1,0 +1,78 @@
+code,readable_name,terse_label
+A6,SBA Certified 8(a) Program Participant,
+JT,SBA Certified 8(a) Joint Venture,sba_certified_8_a_joint_ve
+XX,SBA Certified HUBZone Small Business Concern,
+A7,AbilityOne Non Profit Agency,the_ability_one_program
+2R,U.S Federal Government,us_federal_government
+2F,U.S. State Government,us_state_government
+12,U.S. Local Government,us_local_government
+3I,Tribal Government,us_tribal_government
+CY,Foreign Government,foreign_government
+20,Foreign Owned,foreign_owned_and_located
+1D,Small Agricultural Cooperative,small_agricultural_coopera
+LJ,Limited Liability Company,limited_liability_corporat
+XS,Subchapter S Corporation,subchapter_s_corporation
+MF,Manufacturer of Goods,manufacturer_of_goods
+2X,For Profit Organization,for_profit_organization
+A8,Non-Profit Organization,nonprofit_organization
+2U,Other Not For Profit Organization,other_not_for_profit_organ
+HK,Community Development Corporation Owned Firm,community_developed_corpor
+A3,Labor Surplus Area Firm,labor_surplus_area_firm
+A5,Veteran Owned Business,veteran_owned_business
+QF,Service Disabled Veteran Owned Business,service_disabled_veteran_o
+A2,Woman Owned Business,woman_owned_business
+23,Minority Owned Business,minority_owned_business
+FR,Asian-Pacific American Owned,asian_pacific_american_own
+QZ,Subcontinent Asian (Asian-Indian) American Owned,subcontinent_asian_asian_i
+OY,Black American Owned,black_american_owned_busin
+PI,Hispanic American Owned,hispanic_american_owned_bu
+NB,Native American Owned,native_american_owned_busi
+ZZ,Other,other_minority_owned_busin
+8W,Woman Owned Small Business,women_owned_small_business
+27,Self Certified Small Disadvantaged Business,self_certified_small_disad
+JX,Self Certified HUBZone Joint Venture,
+8E,Economically Disadvantaged Women-Owned Small Business,economically_disadvantaged
+8C,Joint Venture Women-Owned Small Business,joint_venture_women_owned
+8D,Economically Disadvantaged Joint Venture Women-Owned Small Business,joint_venture_economically
+NG,Federal Agency,federal_agency
+QW,Federally Funded Research and Development Center,federally_funded_research
+C8,City,city_local_government
+C7,County,county_local_government
+ZR,Inter-municipal,inter_municipal_local_gove
+MG,Local Government Owned,local_government_owned
+C6,Municipality,municipality_local_governm
+H6,School District,school_district_local_gove
+TW,Transit Authority,transit_authority
+UD,Council of Governments,council_of_governments
+8B,Housing Authorities Public/Tribal,housing_authorities_public
+86,Interstate Entity,interstate_entity
+KM,Planning Commission,planning_commission
+T4,Port Authority,port_authority
+H2,Community Development Corporation,community_development_corp
+6D,Domestic Shelter,domestic_shelter
+M8,Educational Institution,educational_institution
+G6,1862 Land Grant College,c1862_land_grant_college
+G7,1890 Land Grant College,c1890_land_grant_college
+G8,1994 Land Grant College,c1994_land_grant_college
+HB,Historically Black College or University,historically_black_college
+1A,Minority Institution,minority_institution
+1R,Private University or College,private_university_or_coll
+ZW,School of Forestry,school_of_forestry
+GW,Hispanic Servicing Institution,hispanic_servicing_institu
+OH,State Controlled Institution of Higher Learning,state_controlled_instituti
+HS,Tribal College,tribal_college
+QU,Veterinary College,veterinary_college
+G3,Alaskan Native Servicing Institution,alaskan_native_servicing_i
+G5,Native Hawaiian Servicing Institution,native_hawaiian_servicing
+BZ,Foundation,foundation
+80,Hospital,hospital_flag
+FY,Veterinary Hospital,veterinary_hospital
+HQ,DOT Certified DBE,dot_certified_disadvantage
+05,Alaskan Native Corporation Owned Firm,alaskan_native_owned_corpo
+OW,American Indian Owned,american_indian_owned_busi
+XY,Indian Tribe (Federally Recognized),indian_tribe_federally_rec
+8U,Native Hawaiian Organization Owned Firm,native_hawaiian_owned_busi
+1B,Tribally Owned Firm,tribally_owned_business
+FO,Township,township_local_government
+TR,Airport Authority,airport_authority
+G9,Other Than One of the Proceeding,
