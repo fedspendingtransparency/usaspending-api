@@ -353,6 +353,7 @@ def test_extract_business_categories():
 
     expected_business_cat = le_business_cat + ['category_business']
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
+    # testing for equality-only, order unnecessary
     assert sorted(business_cat) == sorted(expected_business_cat)
 
 
@@ -525,6 +526,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'total_transaction_amount': 100,
         'total_transactions': 1
     }
+    # testing for equality-only, order unnecessary
     resp.data['business_types'] = sorted(resp.data['business_types'])
     assert resp.data == expected
 
@@ -619,6 +621,7 @@ def test_child_recipient_success(client, mock_matviews_qs):
     expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
     assert resp.status_code == status.HTTP_200_OK
+    # testing for equality-only, order unnecessary
     assert sorted(resp.data, key=lambda key: key['recipient_id']) == expected
 
 
