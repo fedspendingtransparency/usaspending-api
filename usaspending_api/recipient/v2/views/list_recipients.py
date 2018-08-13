@@ -38,7 +38,7 @@ def get_recipients(filters={}):
     amount_column = "last_12_months"
     if filters["award_type"] != "all":
         amount_column = AWARD_TYPES[filters["award_type"]]["amount"]
-        qs_filter |= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
+        qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
