@@ -1,0 +1,310 @@
+{
+  "final_name": "subaward_view",
+  "refresh": true,
+  "matview_sql": [
+    "SELECT",
+    "  sub.id,",
+    "  to_tsvector(CONCAT(",
+    "    recipient.recipient_name,",
+    "    ' ', psc.description,",
+    "    ' ', sub.description",
+    "  )) AS keyword_ts_vector,",
+    "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri, ' ', sub.subaward_number)) AS award_ts_vector,",
+    "  to_tsvector(COALESCE(recipient.recipient_name, '')) AS recipient_name_ts_vector,",
+    "",
+    "  latest_transaction.id AS latest_transaction_id,",
+    "  latest_transaction.last_modified_date,",
+    "  sub.subaward_number,",
+    "  sub.amount AS amount,",
+    "  obligation_to_enum(sub.amount) AS total_obl_bin,",
+    "  sub.description,",
+    "  fy(sub.action_date) AS fiscal_year,",
+    "  sub.action_date,",
+    "  sub.award_report_fy_month,",
+    "  sub.award_report_fy_year,",
+    "",
+    "  sub.award_id,",
+    "  sub.awarding_agency_id,",
+    "  sub.funding_agency_id,",
+    "  TAA.name AS awarding_toptier_agency_name,",
+    "  SAA.name AS awarding_subtier_agency_name,",
+    "  TFA.name AS funding_toptier_agency_name,",
+    "  SFA.name AS funding_subtier_agency_name,",
+    "  TAA.abbreviation AS awarding_toptier_agency_abbreviation,",
+    "  TFA.abbreviation AS funding_toptier_agency_abbreviation,",
+    "  SAA.abbreviation AS awarding_subtier_agency_abbreviation,",
+    "  SFA.abbreviation AS funding_subtier_agency_abbreviation,",
+    "",
+    "  sub.place_of_performance_id,",
+    "  sub.recipient_id,",
+    "  sub.award_type,",
+    "  awards.type AS prime_award_type,",
+    "",
+    "  sub.cfda_id,",
+    "  awards.piid,",
+    "  awards.fain,",
+    "",
+    "  recipient.business_categories,",
+    "  UPPER(recipient.recipient_name) AS recipient_name,",
+    "  UPPER(prime_recipient.recipient_name) AS prime_recipient_name,",
+    "  recipient.recipient_unique_id,",
+    "  recipient.parent_recipient_unique_id,",
+    "",
+    "  contract_data.pulled_from,",
+    "  contract_data.type_of_contract_pricing,",
+    "  contract_data.extent_competed,",
+    "  contract_data.type_set_aside,",
+    "  contract_data.product_or_service_code,",
+    "  psc.description AS product_or_service_description,",
+    "  assistance_data.cfda_number,",
+    "  references_cfda.program_title AS cfda_title,",
+    "",
+    "  recipient_location.country_name AS recipient_location_country_name,",
+    "  recipient_location.location_country_code AS recipient_location_country_code,",
+    "  recipient_location.state_code AS recipient_location_state_code,",
+    "  recipient_location.county_code AS recipient_location_county_code,",
+    "  recipient_location.county_name AS recipient_location_county_name,",
+    "  recipient_location.zip5 AS recipient_location_zip5,",
+    "  recipient_location.congressional_code AS recipient_location_congressional_code,",
+    "",
+    "  place_of_performance.country_name AS pop_country_name,",
+    "  place_of_performance.location_country_code AS pop_country_code,",
+    "  place_of_performance.state_code AS pop_state_code,",
+    "  place_of_performance.county_code AS pop_county_code,",
+    "  place_of_performance.county_name AS pop_county_name,",
+    "  place_of_performance.city_code AS pop_city_code,",
+    "  place_of_performance.zip5 AS pop_zip5,",
+    "  place_of_performance.congressional_code AS pop_congressional_code",
+    "FROM",
+    "  awards_subaward AS sub",
+    "INNER JOIN",
+    "  awards ON (sub.award_id = awards.id)",
+    "LEFT OUTER JOIN",
+    "  legal_entity AS recipient",
+    "    ON (sub.recipient_id = recipient.legal_entity_id)",
+    "LEFT OUTER JOIN",
+    "  transaction_normalized AS latest_transaction",
+    "    ON (awards.latest_transaction_id = latest_transaction.id)",
+    "LEFT OUTER JOIN",
+    "  transaction_fabs AS assistance_data",
+    "    ON (latest_transaction.id = assistance_data.transaction_id)",
+    "LEFT OUTER JOIN",
+    "  transaction_fpds AS contract_data",
+    "    ON (latest_transaction.id = contract_data.transaction_id)",
+    "LEFT OUTER JOIN",
+    "  references_cfda ON (assistance_data.cfda_number = references_cfda.program_number)",
+    "LEFT OUTER JOIN",
+    "  references_location AS recipient_location",
+    "    ON (recipient.location_id = recipient_location.location_id)",
+    "LEFT OUTER JOIN",
+    "  legal_entity AS prime_recipient",
+    "    ON (awards.recipient_id = prime_recipient.legal_entity_id)",
+    "LEFT OUTER JOIN",
+    "  references_location AS place_of_performance",
+    "    ON (awards.place_of_performance_id = place_of_performance.location_id)",
+    "LEFT OUTER JOIN",
+    "  psc ON (contract_data.product_or_service_code = psc.code)",
+    "LEFT OUTER JOIN",
+    "  agency AS AA",
+    "    ON (sub.awarding_agency_id = AA.id)",
+    "LEFT OUTER JOIN",
+    "  toptier_agency AS TAA",
+    "    ON (AA.toptier_agency_id = TAA.toptier_agency_id)",
+    "LEFT OUTER JOIN",
+    "  subtier_agency AS SAA",
+    "    ON (AA.subtier_agency_id = SAA.subtier_agency_id)",
+    "LEFT OUTER JOIN",
+    "  agency AS FA ON (sub.funding_agency_id = FA.id)",
+    "LEFT OUTER JOIN",
+    "  toptier_agency AS TFA",
+    "    ON (FA.toptier_agency_id = TFA.toptier_agency_id)",
+    "LEFT OUTER JOIN",
+    "  subtier_agency AS SFA",
+    "    ON (FA.subtier_agency_id = SFA.subtier_agency_id)",
+    "WHERE",
+    "  sub.award_id IS NOT NULL AND",
+    "  awards.latest_transaction_id IS NOT NULL",
+    "ORDER BY",
+    "  amount DESC NULLS LAST"
+  ],
+  "indexes": [
+    {
+      "name": "id",
+      "unique": true,
+      "columns": [{"name": "id"}]
+    }, {
+      "name": "award_type",
+      "where": "award_type IS NOT NULL",
+      "columns": [{"name": "award_type"}]
+    }, {
+      "name": "ordered_subaward_number",
+      "columns": [{"name": "subaward_number", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_award_type",
+      "columns": [{"name": "award_type", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_fain",
+      "where": "fain IS NOT NULL",
+      "columns": [{"name": "UPPER(fain)", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_piid",
+      "where": "piid IS NOT NULL",
+      "columns": [{"name": "UPPER(piid)", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "amount",
+      "where": "amount IS NOT NULL",
+      "columns": [{"name": "amount"}]
+    }, {
+      "name": "ordered_amount",
+      "columns": [{"name": "amount", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "total_obl_bin",
+      "columns": [{"name": "total_obl_bin"}]
+    }, {
+      "name": "gin_recipient_name",
+      "method": "GIN",
+      "columns": [{"name": "recipient_name", "opclass": "gin_trgm_ops"}]
+    }, {
+      "name": "recipient_name",
+      "where": "recipient_name IS NOT NULL",
+      "columns": [{"name": "recipient_name"}]
+    }, {
+      "name": "recipient_unique_id",
+      "where": "recipient_unique_id IS NOT NULL",
+      "columns": [{"name": "recipient_unique_id"}]
+    }, {
+      "name": "parent_recipient_unique_id",
+      "where": "parent_recipient_unique_id IS NOT NULL",
+      "columns": [{"name": "parent_recipient_unique_id"}]
+    }, {
+      "name": "action_date",
+      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "last_modified_date",
+      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "fiscal_year",
+      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "awarding_agency_id",
+      "where": "awarding_agency_id IS NOT NULL",
+      "columns": [{"name": "awarding_agency_id", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "funding_agency_id",
+      "where": "funding_agency_id IS NOT NULL",
+      "columns": [{"name": "funding_agency_id", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "ordered_awarding_toptier_agency_name",
+      "columns": [{"name": "awarding_toptier_agency_name", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_awarding_subtier_agency_name",
+      "columns": [{"name": "awarding_subtier_agency_name", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "awarding_toptier_agency_name",
+      "where": "awarding_toptier_agency_name IS NOT NULL",
+      "columns": [{"name": "awarding_toptier_agency_name"}]
+    }, {
+      "name": "awarding_subtier_agency_name",
+      "where": "awarding_subtier_agency_name IS NOT NULL",
+      "columns": [{"name": "awarding_subtier_agency_name"}]
+    }, {
+      "name": "funding_toptier_agency_name",
+      "where": "funding_toptier_agency_name IS NOT NULL",
+      "columns": [{"name": "funding_toptier_agency_name"}]
+    }, {
+      "name": "funding_subtier_agency_name",
+      "where": "funding_subtier_agency_name IS NOT NULL",
+      "columns": [{"name": "funding_subtier_agency_name"}]
+    }, {
+      "name": "recipient_location_country_code",
+      "where": "recipient_location_country_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_country_code"}]
+    }, {
+      "name": "recipient_location_state_code",
+      "where": "recipient_location_state_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_state_code"}]
+    }, {
+      "name": "recipient_location_county_code",
+      "where": "recipient_location_county_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_county_code"}]
+    }, {
+      "name": "recipient_location_zip5",
+      "where": "recipient_location_zip5 IS NOT NULL",
+      "columns": [{"name": "recipient_location_zip5"}]
+    }, {
+      "name": "recipient_location_cong_code",
+      "where": "recipient_location_congressional_code IS NOT NULL",
+      "columns": [{"name": "recipient_location_congressional_code"}]
+    }, {
+      "name": "pop_country_code",
+      "where": "pop_country_code IS NOT NULL",
+      "columns": [{"name": "pop_country_code"}]
+    }, {
+      "name": "pop_state_code",
+      "where": "pop_state_code IS NOT NULL",
+      "columns": [{"name": "pop_state_code"}]
+    }, {
+      "name": "pop_county_code",
+      "where": "pop_county_code IS NOT NULL",
+      "columns": [{"name": "pop_county_code"}]
+    }, {
+      "name": "pop_zip5",
+      "where": "pop_zip5 IS NOT NULL",
+      "columns": [{"name": "pop_zip5"}]
+    }, {
+      "name": "pop_congressional_code",
+      "where": "pop_congressional_code IS NOT NULL",
+      "columns": [{"name": "pop_congressional_code"}]
+    }, {
+      "name": "cfda_number",
+      "where": "cfda_number IS NOT NULL",
+      "columns": [{"name": "cfda_number"}]
+    }, {
+      "name": "pulled_from",
+      "where": "pulled_from IS NOT NULL",
+      "columns": [{"name": "pulled_from"}]
+    }, {
+      "name": "type_of_contract_pricing",
+      "where": "type_of_contract_pricing IS NOT NULL",
+      "columns": [{"name": "type_of_contract_pricing"}]
+    }, {
+      "name": "extent_competed",
+      "where": "extent_competed IS NOT NULL",
+      "columns": [{"name": "extent_competed"}]
+    }, {
+      "name": "type_set_aside",
+      "where": "type_set_aside IS NOT NULL",
+      "columns": [{"name": "type_set_aside"}]
+    }, {
+      "name": "product_or_service_code",
+      "where": "product_or_service_code IS NOT NULL",
+      "columns": [{"name": "product_or_service_code"}]
+    }, {
+      "name": "gin_product_or_service_description",
+      "method": "GIN",
+      "columns": [{"name": "(product_or_service_description)", "opclass": "gin_trgm_ops"}]
+    }, {
+      "name": "gin_business_categories",
+      "method": "GIN",
+      "columns": [{"name": "business_categories"}]
+    }, {
+      "name": "keyword_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "keyword_ts_vector"}]
+    }, {
+      "name": "award_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "award_ts_vector"}]
+    }, {
+      "name": "recipient_name_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "recipient_name_ts_vector"}]
+    }, {
+      "name": "compound_psc_action_date",
+      "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
+    }, {
+      "name": "compound_cfda_action_date",
+      "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
+    }
+  ]
+}
