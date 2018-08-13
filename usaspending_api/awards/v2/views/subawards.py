@@ -3,7 +3,7 @@ from copy import deepcopy
 from django.db.models import F
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import Subaward
+from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
@@ -45,7 +45,7 @@ class SubawardsViewSet(APIDocumentationView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = Subaward.objects.all().values(*list(self.subaward_lookup.values()))
+        queryset = SubawardView.objects.all().values(*list(self.subaward_lookup.values()))
 
         if request_data["award_id"] is not None:
             queryset = queryset.filter(award_id=request_data["award_id"])
