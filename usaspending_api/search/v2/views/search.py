@@ -11,8 +11,7 @@ from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import Cast, Coalesce
 from django.conf import settings
 
-from usaspending_api.awards.models import Subaward
-from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalAwardView, SubawardView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -95,7 +94,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if self.subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.queryset = subaward_filter(self.filters)
-            self.model_name = Subaward
+            self.model_name = SubawardView
         else:
             self.queryset, self.model_name = spending_by_geography(self.filters)
 
@@ -559,7 +558,6 @@ class TransactionSummaryVisualizationViewSet(APIView):
                 Desired values:
                     total number of transactions `award_count`
                     The federal_action_obligation sum of all those transactions `award_spending`
-
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
@@ -578,7 +576,6 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
         endpoint_doc: /advanced_award_search/spending_by_transaction_count.md
-
     """
     @cache_response()
     def post(self, request):

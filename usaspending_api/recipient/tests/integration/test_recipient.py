@@ -12,7 +12,6 @@ from model_mommy import mommy
 from django_mock_queries.query import MockModel
 
 # Imports from your apps
-from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
@@ -352,27 +351,24 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
-    for item in UniversalTransactionView.objects.all():
-        print(item)
-
     # Latest
     expected_total = 100
     expected_count = 1
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='latest')
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='latest', subawards=False)
     assert total == expected_total
     assert count == expected_count
 
     # All
     expected_total = 350
     expected_count = 3
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='all')
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='all', subawards=False)
     assert total == expected_total
     assert count == expected_count
 
     # FY2016
     expected_total = 50
     expected_count = 1
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='2016')
+    total, count = recipients.obtain_recipient_totals(recipient_id, year='2016', subawards=False)
     assert total == expected_total
     assert count == expected_count
 

@@ -4,7 +4,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import CacheKeyWarning
 from django.db import models
+
 from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.references.models import LegalEntity, Location
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
