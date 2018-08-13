@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.sql_helpers import read_sql_file
 
 
 logger = logging.getLogger('console')
-ETL_SQL_FILE_PATH = 'usaspending_api/etl/management/sql/'
+ETL_SQL_FILE_PATH = 'usaspending_api/etl/management/sql/c_file_linkage/'
 
 
 def get_unlinked_count(file_name):
