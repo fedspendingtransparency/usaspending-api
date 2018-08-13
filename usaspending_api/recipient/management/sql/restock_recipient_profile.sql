@@ -96,8 +96,10 @@ WITH grouped_by_category AS (
     SELECT
       recipient_hash,
       recipient_level,
-      CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
-      THEN 'other' ELSE award_category END AS award_category,
+      CASE
+        WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+        THEN 'other' ELSE award_category
+      END AS award_category,
       CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_contracts,
       CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_grants,
       CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_direct_payments,
@@ -152,6 +154,10 @@ WITH grouped_by_parent AS (
   WITH grouped_by_parent_inner AS (
     SELECT
       parent_recipient_unique_id,
+      CASE
+        WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+        THEN 'other' ELSE award_category
+      END AS award_category,
       CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_contracts,
       CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_grants,
       CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_direct_payments,
@@ -168,6 +174,7 @@ WITH grouped_by_parent AS (
   )
   SELECT
     parent_recipient_unique_id AS duns,
+    array_agg(award_category) AS award_types,
     SUM(inner_contracts) AS last_12_contracts,
     SUM(inner_grants) AS last_12_grants,
     SUM(inner_direct_payments) AS last_12_direct_payments,
@@ -182,6 +189,7 @@ WITH grouped_by_parent AS (
 
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
+  award_types = gbp.award_types || rpv.award_types,
   last_12_months = rpv.last_12_months + gbp.amount,
   last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
   last_12_grants = rpv.last_12_grants + gbp.last_12_grants,
@@ -311,7 +319,6 @@ WHERE
 -- Step 9, Finalize new table
 --------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 9: almost done'; END $$;
-ANALYZE public.temporary_restock_recipient_profile;
 DELETE FROM public.temporary_restock_recipient_profile WHERE unused = true;
 
 --------------------------------------------------------------------------------
