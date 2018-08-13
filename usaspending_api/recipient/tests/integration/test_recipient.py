@@ -52,7 +52,7 @@ TEST_DUNS = {
         'state': 'PARENT STATE',
         'zip': 'PARENT ZIP',
         'zip4': 'PARENT ZIP4',
-        'business_types_codes': ['PARENT BUSINESS TYPES CODES']
+        'business_types_codes': ['2X']
     },
     '000000002': {
         'awardee_or_recipient_uniqu': '000000002',
@@ -65,7 +65,7 @@ TEST_DUNS = {
         'state': 'CHILD STATE',
         'zip': 'CHILD ZIP',
         'zip4': 'CHILD ZIP4',
-        'business_types_codes': ['CHILD BUSINESS TYPES CODES']
+        'business_types_codes': ['A8']
     }
 }
 TEST_RECIPIENT_LOCATIONS = {
@@ -342,13 +342,19 @@ def test_extract_business_categories():
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    expected_business_cat = ['expected', 'business', 'cat']
+    le_business_cat = ['le', 'business', 'cat']
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name=recipient_name,
+    mommy.make(LegalEntity, business_categories=le_business_cat, recipient_name=recipient_name,
                recipient_unique_id=recipient_duns)
 
+    # Mock DUNS
+    # Should add 'category_business'
+    mommy.make(DUNS, **TEST_DUNS[recipient_duns])
+
+    expected_business_cat = le_business_cat + ['category_business']
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
-    assert business_cat == expected_business_cat
+    # testing for equality-only, order unnecessary
+    assert sorted(business_cat) == sorted(expected_business_cat)
 
 
 @pytest.mark.django_db
@@ -479,10 +485,9 @@ def test_recipient_overview(client, mock_matviews_qs):
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
         mommy.make(RecipientLookup, **recipient_lookup)
 
-    # Mock DUNS
+    # Mock DUNS - should add `category-business`
     for duns, duns_dict in TEST_DUNS.items():
         test_duns_model = duns_dict.copy()
-        test_duns_model.pop('business_types_codes')
         country_code = test_duns_model['country_code']
         mommy.make(DUNS, **test_duns_model)
         mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
@@ -502,7 +507,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'parent_name': 'PARENT RECIPIENT',
         'parent_duns': '000000001',
         'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
-        'business_types': ['expected', 'business', 'cat'],
+        'business_types': sorted(['expected', 'business', 'cat'] + ['category_business']),
         'location': {
             'address_line1': 'PARENT ADDRESS LINE 1',
             'address_line2': 'PARENT ADDRESS LINE 2',
@@ -521,6 +526,8 @@ def test_recipient_overview(client, mock_matviews_qs):
         'total_transaction_amount': 100,
         'total_transactions': 1
     }
+    # testing for equality-only, order unnecessary
+    resp.data['business_types'] = sorted(resp.data['business_types'])
     assert resp.data == expected
 
 
@@ -614,6 +621,7 @@ def test_child_recipient_success(client, mock_matviews_qs):
     expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
     assert resp.status_code == status.HTTP_200_OK
+    # testing for equality-only, order unnecessary
     assert sorted(resp.data, key=lambda key: key['recipient_id']) == expected
 
 
