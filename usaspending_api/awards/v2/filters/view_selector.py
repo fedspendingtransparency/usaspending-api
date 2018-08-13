@@ -328,6 +328,23 @@ def transaction_spending_summary(filters):
     return queryset, model
 
 
+def recipient_totals(filters):
+    view_chain = [
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
 def spending_by_category(category, filters):
     # category is a string of <category>.
     view_chain = []
