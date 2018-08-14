@@ -98,7 +98,7 @@ def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
             'id': -1001,
             'piid': 'RANDOM_LOAD_SUB_PIID',
             'parent_award_piid': 'PARENT_LOAD_SUB_PIID_DNE',
-            'latest_transaction_id': -1001
+            'latest_transaction_id': -1234
         }
     ]
 
