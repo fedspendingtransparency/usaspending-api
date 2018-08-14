@@ -91,7 +91,7 @@ def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
         },
         {
             'model': TransactionNormalized,
-            'id': -1001
+            'id': -1234
         },
         {
             'model': Award,
