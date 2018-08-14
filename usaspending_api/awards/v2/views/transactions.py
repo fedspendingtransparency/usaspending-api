@@ -37,7 +37,7 @@ class TransactionViewSet(APIDocumentationView):
     def _parse_and_validate_request(self, request_dict: dict) -> dict:
         models = deepcopy(PAGINATION)
         models.append({"key": "award_id", "name": "award_id", "type": "integer",
-                      "optional": False, "default": None, "allow_nulls": True})
+                      "optional": False})
         for model in models:
             # Change sort to an enum of the desired values
             if model["name"] == "sort":
