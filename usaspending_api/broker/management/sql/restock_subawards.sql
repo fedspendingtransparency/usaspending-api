@@ -330,5 +330,17 @@ INSERT INTO public.subaward
            recipient_location_zip5, recipient_location_congressional_code, pop_country_name, pop_country_code,
            pop_state_code, pop_county_name, pop_county_code, pop_city_code, pop_zip5, pop_congressional_code
     FROM public.temporary_restock_subaward;
+
+WITH subaward_totals AS (
+    SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count
+    FROM subaward
+    GROUP BY award_id
+)
+UPDATE awards
+SET total_subaward_amount = subaward_totals.total_subaward_amount,
+    subaward_count = subaward_totals.subaward_count
+FROM subaward_totals
+WHERE subaward_totals.award_id = id;
+
 DROP TABLE public.temporary_restock_subaward;
 COMMIT;
