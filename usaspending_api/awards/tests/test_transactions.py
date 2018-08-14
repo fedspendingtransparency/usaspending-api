@@ -9,7 +9,7 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 
 
 @pytest.mark.django_db
-def test_transaction_endpoint(client):
+def test_transaction_endpoint_v2(client):
     """Test the transaction endpoint."""
 
     resp = client.post('/api/v2/transactions/', {"award_id": 1, "page": "1", "limit": "10", "order": "asc"})
@@ -18,7 +18,7 @@ def test_transaction_endpoint(client):
 
 
 @pytest.mark.django_db
-def test_transaction_endpoint_award_fk(client):
+def test_transaction_endpoint_v2_award_fk(client):
     """Test the transaction endpoint."""
 
     awd = mommy.make('awards.Award', id=10, total_obligation="2000", _fill_optional=True)
