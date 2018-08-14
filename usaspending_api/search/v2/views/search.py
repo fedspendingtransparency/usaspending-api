@@ -558,6 +558,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
                 Desired values:
                     total number of transactions `award_count`
                     The federal_action_obligation sum of all those transactions `award_spending`
+
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
@@ -576,6 +577,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
         endpoint_doc: /advanced_award_search/spending_by_transaction_count.md
+
     """
     @cache_response()
     def post(self, request):

@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0035_summaryawardrecipientview'),
+        ('awards', '0036_auto_20180812_1529'),
     ]
 
     operations = [

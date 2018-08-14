@@ -923,23 +923,6 @@ class Subaward(DataSourceTrackedModel):
     pop_zip5 = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
 
-    """
-    Duplicates from combining the Subaward and SubawardView models:
-        subaward_number = models.TextField()
-        amount = models.DecimalField(max_digits=20, decimal_places=2)
-        description = models.TextField(null=True, blank=True)
-        action_date = models.DateField()
-        award_report_fy_month = models.IntegerField()
-        award_report_fy_year = models.IntegerField()
-        award = models.OneToOneField(Award, primary_key=True)
-        awarding_agency_id = models.IntegerField()
-        funding_agency_id = models.IntegerField()
-        cfda_id = models.IntegerField()
-        place_of_performance = models.OneToOneField(Location, primary_key=True)
-        recipient = models.OneToOneField(LegalEntity, primary_key=True)
-        award_type = models.TextField()
-    """
-
     class Meta:
         managed = True
         db_table = 'subaward'
