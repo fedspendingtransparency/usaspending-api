@@ -9,8 +9,9 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
-from usaspending_api.recipient.models import RecipientProfile, RecipientLookup
-from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
+from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
+from usaspending_api.broker.helpers import get_business_categories
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode, LegalEntity
 
@@ -169,11 +170,26 @@ def extract_business_categories(recipient_name, recipient_duns):
         Returns:
             list of business categories
     """
-    if recipient_name in SPECIAL_CASES and recipient_duns is None:
-        return []
-    qs_business_cat = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)\
+    business_categories = set()
+    if recipient_name in SPECIAL_CASES:
+        return list(business_categories)
+
+    # Go through DUNS first
+    d_business_cat = DUNS.objects.filter(legal_business_name=recipient_name, awardee_or_recipient_uniqu=recipient_duns)\
+        .order_by('-update_date').values('business_types_codes').first()
+    if d_business_cat:
+        duns_types_mapping = get_duns_business_types_mapping()
+        business_types = {duns_types_mapping[type]: 'true' for type in d_business_cat['business_types_codes']
+                          if type in duns_types_mapping}
+        business_categories |= set(get_business_categories(business_types, data_type='fpds'))
+
+    # combine with latest transaction's business categories
+    le_business_cat = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns) \
         .order_by('-update_date').values('business_categories').first()
-    return qs_business_cat['business_categories'] if qs_business_cat is not None else []
+    if le_business_cat:
+        business_categories |= set(le_business_cat['business_categories'])
+
+    return list(business_categories)
 
 
 def obtain_recipient_totals(recipient_id, children=False, year='latest', subawards=False):
