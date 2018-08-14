@@ -42,7 +42,6 @@ def test_transaction_endpoint_v1_award_fk(client):
         })).status_code == status.HTTP_200_OK
 
 
-
 @pytest.mark.django_db
 def test_transaction_endpoint_v2(client):
     """Test the transaction endpoint."""
