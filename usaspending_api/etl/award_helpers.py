@@ -143,7 +143,7 @@ def update_award_subawards(award_tuple=None):
     sql_sub_totals = (
         'subaward_totals AS ('
         'SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count '
-        'FROM awards_subaward ')
+        'FROM subaward ')
     if award_tuple:
         sql_sub_totals += 'WHERE award_id IN %s '
     sql_sub_totals += 'GROUP BY award_id) '
