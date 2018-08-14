@@ -59,15 +59,15 @@ CREATE TABLE public.temporary_restock_subaward AS (
         sfa.abbreviation AS funding_subtier_agency_abbreviation,
 
         (
-            SELECT country_name 
-            FROM ref_country_code 
+            SELECT country_name
+            FROM ref_country_code
             WHERE country_code = broker_subawards.recipient_location_country_code
         ) AS recipient_location_country_name,
         broker_subawards.recipient_location_country_code,
         broker_subawards.recipient_location_state_code,
         (
-            SELECT county_name 
-            FROM ref_city_county_code 
+            SELECT county_name
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.recipient_location_state_code
                 AND
@@ -75,8 +75,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
             LIMIT 1
         ) AS recipient_location_county_name,
         (
-            SELECT county_code 
-            FROM ref_city_county_code 
+            SELECT county_code
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.recipient_location_state_code
                 AND
@@ -85,8 +85,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
         ) AS recipient_location_county_code,
         broker_subawards.recipient_location_city_name,
         (
-            SELECT city_code 
-            FROM ref_city_county_code 
+            SELECT city_code
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.recipient_location_state_code
                 AND
@@ -97,15 +97,15 @@ CREATE TABLE public.temporary_restock_subaward AS (
         broker_subawards.recipient_location_congressional_code,
 
         (
-            SELECT country_name 
-            FROM ref_country_code 
+            SELECT country_name
+            FROM ref_country_code
             WHERE country_code = broker_subawards.pop_country_code
         ) AS pop_country_name,
         broker_subawards.pop_country_code,
         broker_subawards.pop_state_code,
         (
-            SELECT county_name 
-            FROM ref_city_county_code 
+            SELECT county_name
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.pop_state_code
                 AND
@@ -113,8 +113,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
             LIMIT 1
         ) AS pop_county_name,
         (
-            SELECT county_code 
-            FROM ref_city_county_code 
+            SELECT county_code
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.pop_state_code
                 AND
@@ -123,8 +123,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
         ) AS pop_county_code,
         broker_subawards.pop_city_name,
         (
-            SELECT city_code 
-            FROM ref_city_county_code 
+            SELECT city_code
+            FROM ref_city_county_code
             WHERE
                 state_code = broker_subawards.pop_state_code
                 AND
@@ -299,7 +299,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
     LEFT OUTER JOIN references_cfda AS cfda ON assistance_data.cfda_number = cfda.program_number
     WHERE broker_subawards.subaward_number IS NOT NULL
 );
-COMMIT;
 
 BEGIN;
 TRUNCATE TABLE public.subaward RESTART IDENTITY;
