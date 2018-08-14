@@ -47,7 +47,7 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
         {
             'model': Award,
             'id': -999,
-            'piid': 'RANDOM_LOAD_SUB_PIID',
+            'piid': 'RANDOM_LOAD_SUB_PIID_DNE',
             'parent_award_piid': 'PARENT_LOAD_SUB_PIID_DNE',
             'latest_transaction_id': -999
         }
@@ -60,6 +60,55 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
 
     expected_results = {
         'award_ids': [],
+    }
+
+    actual_results = {
+        'award_ids': list(FinancialAccountsByAwards.objects.
+                          filter(award_id__isnull=False).values_list('award_id', flat=True))
+    }
+
+    assert expected_results == actual_results
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
+def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
+    """
+    Test load submission management command for File C records that are not expected to be linked to Award data
+    """
+
+    models_to_mock = [
+        {
+            'model': TreasuryAppropriationAccount,
+            'treasury_account_identifier': -1111,
+            'allocation_transfer_agency_id': '999',
+            'agency_id': '999',
+            'beginning_period_of_availability': '1700-01-01',
+            'ending_period_of_availability': '1700-12-31',
+            'availability_type_code': '000',
+            'main_account_code': '0000',
+            'sub_account_code': '0000'
+        },
+        {
+            'model': TransactionNormalized,
+            'id': -1234
+        },
+        {
+            'model': Award,
+            'id': -1001,
+            'piid': 'RANDOM_LOAD_SUB_PIID',
+            'parent_award_piid': 'PARENT_LOAD_SUB_PIID_DNE',
+            'latest_transaction_id': -1234
+        }
+    ]
+
+    for entry in models_to_mock:
+        mommy.make(entry.pop('model'), **entry)
+
+    call_command('load_submission', '--noclean', '--nosubawards', '-9999')
+
+    expected_results = {
+        'award_ids': [-1001],
     }
 
     actual_results = {
@@ -157,7 +206,7 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
         call_command('load_submission', '--noclean', '--nosubawards', '-9999')
 
     expected_results = {
-        'award_ids': [-997],
+        'award_ids': [-997, -997],
     }
 
     actual_results = {
