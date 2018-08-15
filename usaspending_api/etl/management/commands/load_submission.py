@@ -257,18 +257,21 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_data is None or len(tas_data) == 0:
         return None
 
-    # These or "" convert from none to a blank string, which is how the TAS table stores nulls
-    q_kwargs = {
-        "allocation_transfer_agency_id": tas_data[0]["allocation_transfer_agency"] or "",
-        "agency_id": tas_data[0]["agency_identifier"] or "",
-        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availa"] or "",
-        "ending_period_of_availability": tas_data[0]["ending_period_of_availabil"] or "",
-        "availability_type_code": tas_data[0]["availability_type_code"] or "",
-        "main_account_code": tas_data[0]["main_account_code"] or "",
-        "sub_account_code": tas_data[0]["sub_account_code"] or ""
-    }
+    tas_rendering_label = '-'.join(filter(None, (tas_data[0]["allocation_transfer_agency"],
+                                                 tas_data[0]["agency_identifier"])))
 
-    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+    if tas_data[0]["availability_type_code"] is not None and tas_data[0]["availability_type_code"] != '':
+        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_data[0]["availability_type_code"])))
+    else:
+        poa = '/'.join(filter(None, (tas_data[0]["beginning_period_of_availa"],
+                                     tas_data[0]["ending_period_of_availabil"])))
+        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
+
+    tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_data[0]["main_account_code"],
+                                                 tas_data[0]["sub_account_code"])))
+
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.\
+        filter(tas_rendering_label=tas_rendering_label).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
