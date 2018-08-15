@@ -7,6 +7,7 @@ from django.core.management.base import CommandError
 from django.core.management import call_command
 from django.db import connections, transaction
 from django.db.models import Q
+from django.core.cache import caches
 import pandas as pd
 import numpy as np
 
@@ -21,6 +22,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.subaward_etl import load_subawards
 
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.load_base import load_data_into_model
@@ -32,6 +34,7 @@ TAS_ID_TO_ACCOUNT = {}
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
 
+awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
@@ -116,11 +119,17 @@ class Command(load_base.Command):
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
         start_time = datetime.now()
-        load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
         if not options['nosubawards']:
-            logger.warning("Loading subaward during a submission load is no longer supported")
+            try:
+                start_time = datetime.now()
+                logger.info('Loading subaward data...')
+                load_subawards(submission_attributes, awards_touched, db_cursor)
+                logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+            except Exception:
+                logger.warning("Error loading subawards for this submission")
         else:
             logger.info('Skipping subawards due to flags...')
 
@@ -575,7 +584,8 @@ def find_matching_award(piid=None, parent_piid=None, fain=None, uri=None):
     # check piid and parent_piid
     if piid:
         filters['piid'] = piid
-        filters['parent_award_piid'] = parent_piid
+        if parent_piid:
+            filters['parent_award_piid'] = parent_piid
     elif fain and not uri:
             # if only the fain is populated, filter on that
             filters['fain'] = fain
@@ -630,6 +640,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
+    awards_touched = []
 
     # format award_financial_frame
     float_cols = ['transaction_obligated_amou']
@@ -651,10 +662,32 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             update_skipped_tas(row, skipped_tas)
             continue
 
+        # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
+        # Award record.
+
+        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+        filters = {}
+        if row.get('piid'):
+            filters['piid'] = row.get('piid')
+            filters['parent_piid'] = row.get('parent_award_id')
+        else:
+            if row.get('fain') and not row.get('uri'):
+                filters['fain'] = row.get('fain')
+            elif row.get('uri') and not row.get('fain'):
+                filters['uri'] = row.get('uri')
+            else:
+                filters['fain'] = row.get('fain')
+                filters['uri'] = row.get('uri')
+
+        award = find_matching_award(**filters)
+
+        if award:
+            awards_touched += [award]
+
         award_financial_data = FinancialAccountsByAwards()
 
         value_map_faba = {
-            'award': None,
+            'award': award,
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
@@ -666,6 +699,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
+    awards_cache.clear()
+
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
 
@@ -674,3 +709,5 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         total_tas_skipped += skipped_tas[key]['count']
 
     logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
+
+    return [award.id for award in awards_touched if award]

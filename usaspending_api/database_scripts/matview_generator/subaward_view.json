@@ -76,7 +76,7 @@
     "  place_of_performance.zip5 AS pop_zip5,",
     "  place_of_performance.congressional_code AS pop_congressional_code",
     "FROM",
-    "  awards_subaward AS sub",
+    "  subaward AS sub",
     "INNER JOIN",
     "  awards ON (sub.award_id = awards.id)",
     "LEFT OUTER JOIN",
