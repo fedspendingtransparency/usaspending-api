@@ -167,7 +167,7 @@ class Award(DataSourceTrackedModel):
                                       "an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN "
                                       "stands for Federal Award Identification Number, though the digits are letters, "
                                       "not numbers.")
-    uri = models.TextField(db_index=False, blank=True, null=True, help_text="The uri of the award")
+    uri = models.TextField(db_index=True, blank=True, null=True, help_text="The uri of the award")
     total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
                                            verbose_name="Total Obligated",
                                            help_text="The amount of money the government is obligated to pay for the "
