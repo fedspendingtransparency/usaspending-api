@@ -652,7 +652,7 @@ class ObjectClass(models.Model):
 class RefProgramActivity(models.Model):
     id = models.AutoField(primary_key=True)
     program_activity_code = models.TextField()
-    program_activity_name = models.TextField()
+    program_activity_name = models.TextField(blank=True, null=True)
     budget_year = models.TextField(blank=True, null=True)
     responsible_agency_id = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
