@@ -411,8 +411,7 @@ class FederalAccountsViewSet(APIDocumentationView):
                      budgetary_resources=Sum(
                          'treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe'),
                      managing_agency=Subquery(agency_subquery.values('name')[:1]),
-                     managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
-                     )
+                     managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]))
 
         # add keyword filter, if it exists
         if keyword:
