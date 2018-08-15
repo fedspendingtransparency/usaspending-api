@@ -6,7 +6,6 @@ import signal
 from django.core.management.base import CommandError
 from django.core.management import call_command
 from django.db import connections, transaction
-from django.db.models import Q
 from django.core.cache import caches
 import pandas as pd
 import numpy as np
