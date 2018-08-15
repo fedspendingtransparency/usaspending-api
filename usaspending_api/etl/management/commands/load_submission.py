@@ -256,18 +256,15 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_data is None or len(tas_data) == 0:
         return None
 
-    tas_rendering_label = '-'.join(filter(None, (tas_data[0]["allocation_transfer_agency"],
-                                                 tas_data[0]["agency_identifier"])))
-
-    if tas_data[0]["availability_type_code"] is not None and tas_data[0]["availability_type_code"] != '':
-        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_data[0]["availability_type_code"])))
-    else:
-        poa = '/'.join(filter(None, (tas_data[0]["beginning_period_of_availa"],
-                                     tas_data[0]["ending_period_of_availabil"])))
-        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
-
-    tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_data[0]["main_account_code"],
-                                                 tas_data[0]["sub_account_code"])))
+    tas_rendering_label = TreasuryAppropriationAccount.generate_tas_rendering_label(
+        ata=tas_data[0]["allocation_transfer_agency"],
+        aid=tas_data[0]["agency_identifier"],
+        typecode=tas_data[0]["availability_type_code"],
+        bpoa=tas_data[0]["beginning_period_of_availa"],
+        epoa=tas_data[0]["ending_period_of_availabil"],
+        mac=tas_data[0]["main_account_code"],
+        sub=tas_data[0]["sub_account_code"]
+    )
 
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.\
         filter(tas_rendering_label=tas_rendering_label).first()
