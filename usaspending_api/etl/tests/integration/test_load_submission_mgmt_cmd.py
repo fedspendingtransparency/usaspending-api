@@ -38,7 +38,8 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -87,7 +88,8 @@ def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -136,7 +138,8 @@ def test_load_submission_file_c_piid_with_no_parent_piid(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -185,7 +188,8 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -234,7 +238,8 @@ def test_load_submission_file_c_fain(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -282,7 +287,8 @@ def test_load_submission_file_c_uri(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -330,7 +336,8 @@ def test_load_submission_file_c_fain_and_uri(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         },
         {
             'model': TransactionNormalized,
@@ -387,7 +394,8 @@ def test_load_submission_transaction_obligated_amount(mock_db_cursor):
             'ending_period_of_availability': '1700-12-31',
             'availability_type_code': '000',
             'main_account_code': '0000',
-            'sub_account_code': '0000'
+            'sub_account_code': '0000',
+            'tas_rendering_label': '999-999-000-0000-0000'
         }
     )
     call_command('load_submission', '--noclean', '--nosubawards', '-9999')
