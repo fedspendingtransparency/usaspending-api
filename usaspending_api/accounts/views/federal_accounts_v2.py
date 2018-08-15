@@ -394,6 +394,7 @@ class FederalAccountsViewSet(APIDocumentationView):
         sort_field = sorting.get('field', 'budgetary_resources')
         sort_direction = sorting.get('direction', 'asc')
         filters = request.data.get('filters', {})
+        keyword = request.data.get('keyword', None)
         fy = filters.get('fy') or SubmissionAttributes.last_certified_fy()
 
         lower_limit = (page - 1) * limit
@@ -413,12 +414,19 @@ class FederalAccountsViewSet(APIDocumentationView):
                      managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
                      )
 
+        # add keyword filter, if it exists
+        if keyword:
+            queryset = queryset.filter(Q(account_name__icontains=keyword) |
+                                       Q(account_number__icontains=keyword) |
+                                       Q(managing_agency__icontains=keyword) |
+                                       Q(managing_agency_acronym__icontains=keyword))
+
         if sort_direction == 'desc':
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
         else:
             queryset = queryset.order_by(F(sort_field).asc())
 
-        result = {'count': queryset.count(), 'limit': limit, 'page': page, 'fy': fy}
+        result = {'count': queryset.count(), 'limit': limit, 'page': page, 'fy': fy, 'keyword': keyword}
         resultset = queryset.values('account_id', 'account_number', 'account_name', 'budgetary_resources',
                                     'agency_identifier', 'managing_agency', 'managing_agency_acronym')
         resultset = resultset[lower_limit:upper_limit + 1]
