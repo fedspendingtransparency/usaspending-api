@@ -4,10 +4,18 @@
 
 **Method:** POST
 
-This route returns a list of all recipients in USAspending DB. A "Recipient" is defined by the unique combination of DUNS + Recipient Name (with minor normalization performed on Recipient Name)
+This route returns a list of all recipients in USAspending DB. A "Recipient" is defined by the unique combination of DUNS + Recipient Name (with minor "normalization" performed on Recipient Name using either SAM data or the data from the latest transaction for each DUNS)
 ### Request
 
 keyword (**OPTIONAL**): String value. Parameter will search both DUNS and Recipient Name with value
+
+award_type (**OPTIONAL**): String value. Parameter indicating which award type to filter results and displays totals of only this type. Below are the following values available. Default is `all`
+* `all`
+* `contracts`
+* `direct_payments`
+* `grants`
+* `loans`
+* `other_financial_assistance`
 
 sort (**OPTIONAL**): String value. Parameter indicating which column to sort results. Below are the following values available. Default is `amount`
 * `name`
