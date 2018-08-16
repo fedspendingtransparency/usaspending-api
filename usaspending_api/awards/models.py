@@ -917,10 +917,13 @@ class Subaward(DataSourceTrackedModel):
     pop_country_code = models.TextField(null=True, blank=True)
     pop_country_name = models.TextField(null=True, blank=True)
     pop_state_code = models.TextField(null=True, blank=True)
+    pop_state_name = models.TextField(null=True, blank=True)
     pop_county_code = models.TextField(null=True, blank=True)
     pop_county_name = models.TextField(null=True, blank=True)
     pop_city_code = models.TextField(null=True, blank=True)
-    pop_zip5 = models.TextField(null=True, blank=True)
+    pop_city_name = models.TextField(null=True, blank=True)
+    pop_zip4 = models.TextField(null=True, blank=True)
+    pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
 
     class Meta:

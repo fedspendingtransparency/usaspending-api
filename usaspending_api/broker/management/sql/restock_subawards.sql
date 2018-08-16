@@ -8,6 +8,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
         to_tsvector(CONCAT(aw.piid, ' ', aw.fain, ' ', aw.uri, ' ', broker_subawards.subaward_number)) AS award_ts_vector,
         to_tsvector(COALESCE(broker_subawards.recipient_name, '')) AS recipient_name_ts_vector,
 
+        "DBR" AS data_source,
         aw.recipient_id,
         cfda.id AS cfda_id,
 
@@ -131,7 +132,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 city_name = broker_subawards.pop_city_name
             LIMIT 1
         ) AS pop_city_code,
-        broker_subawards.pop_zip5,
+        broker_subawards.pop_zip4,
         broker_subawards.pop_congressional_code
 
     FROM
@@ -168,7 +169,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 UPPER(fsc.principle_place_city) AS pop_city_name,
                 UPPER(fsc.principle_place_district) AS pop_congressional_code,
                 UPPER(fsc.principle_place_street) AS pop_street_address,
-                UPPER(fsc.principle_place_zip) AS pop_zip5,
+                UPPER(fsc.principle_place_zip) AS pop_zip4,
 
                 UPPER(fsc.duns) AS duns,
                 UPPER(fsc.company_name) AS recipient_name,
@@ -219,7 +220,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 UPPER(fsg.principle_place_city) AS pop_city_name,
                 UPPER(fsg.principle_place_district) AS pop_congressional_code,
                 UPPER(fsg.principle_place_street) AS pop_street_address,
-                UPPER(fsg.principle_place_zip) AS pop_zip5,
+                UPPER(fsg.principle_place_zip) AS pop_zip4,
 
                 UPPER(fsg.duns) AS duns,
                 UPPER(fsg.awardee_name) AS recipient_name,
@@ -266,7 +267,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
             pop_city_name TEXT,
             pop_congressional_code TEXT,
             pop_street_address TEXT,
-            pop_zip5 TEXT,
+            pop_zip4 TEXT,
 
             duns TEXT,
             recipient_name TEXT,
@@ -303,9 +304,9 @@ CREATE TABLE public.temporary_restock_subaward AS (
 BEGIN;
 TRUNCATE TABLE public.subaward RESTART IDENTITY;
 INSERT INTO public.subaward
-    (keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, recipient_id, cfda_id,
-     latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
-     action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
+    (keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, place_of_performance_id, data_source, recipient_id, 
+     cfda_id, latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description,
+     fiscal_year, action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
      prime_award_type, award_id, piid, fain, business_categories, recipient_name, prime_recipient_name,
      recipient_unique_id, parent_recipient_unique_id, pulled_from, type_of_contract_pricing, extent_competed,
      type_set_aside, product_or_service_code, product_or_service_description, cfda_number, cfda_title,
@@ -314,21 +315,23 @@ INSERT INTO public.subaward
      funding_toptier_agency_abbreviation, awarding_subtier_agency_abbreviation, funding_subtier_agency_abbreviation,
      recipient_location_country_name, recipient_location_country_code, recipient_location_state_code,
      recipient_location_county_name, recipient_location_county_code, recipient_location_zip5,
-     recipient_location_congressional_code, pop_country_name, pop_country_code, pop_state_code, pop_county_name,
-     pop_county_code, pop_city_code, pop_zip5, pop_congressional_code)
-    SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, recipient_id, cfda_id,
-           latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
-           action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
-           prime_award_type, award_id, piid, fain, business_categories, recipient_name, prime_recipient_name,
-           recipient_unique_id, parent_recipient_unique_id, pulled_from, type_of_contract_pricing, extent_competed,
-           type_set_aside, product_or_service_code, product_or_service_description, cfda_number, cfda_title,
-           awarding_agency_id, funding_agency_id, awarding_toptier_agency_name, awarding_subtier_agency_name,
-           funding_toptier_agency_name, funding_subtier_agency_name, awarding_toptier_agency_abbreviation,
-           funding_toptier_agency_abbreviation, awarding_subtier_agency_abbreviation,
-           funding_subtier_agency_abbreviation, recipient_location_country_name, recipient_location_country_code,
-           recipient_location_state_code, recipient_location_county_name, recipient_location_county_code,
-           recipient_location_zip5, recipient_location_congressional_code, pop_country_name, pop_country_code,
-           pop_state_code, pop_county_name, pop_county_code, pop_city_code, pop_zip5, pop_congressional_code
+     recipient_location_congressional_code, pop_country_name, pop_country_code, pop_state_code, pop_state_name,
+     pop_county_name, pop_county_code, pop_city_code, pop_city_name, pop_street_address, pop_zip4,
+     pop_congressional_code)
+    SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, place_of_performance_id, data_source,
+           recipient_id, cfda_id, latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin,
+           description, fiscal_year, action_date, award_report_fy_month, award_report_fy_year, broker_award_id,
+           internal_id, award_type, prime_award_type, award_id, piid, fain, business_categories, recipient_name,
+           prime_recipient_name, recipient_unique_id, parent_recipient_unique_id, pulled_from, type_of_contract_pricing,
+           extent_competed, type_set_aside, product_or_service_code, product_or_service_description, cfda_number,
+           cfda_title, awarding_agency_id, funding_agency_id, awarding_toptier_agency_name,
+           awarding_subtier_agency_name, funding_toptier_agency_name, funding_subtier_agency_name,
+           awarding_toptier_agency_abbreviation, funding_toptier_agency_abbreviation,
+           awarding_subtier_agency_abbreviation, funding_subtier_agency_abbreviation, recipient_location_country_name,
+           recipient_location_country_code, recipient_location_state_code, recipient_location_county_name,
+           recipient_location_county_code, recipient_location_zip5, recipient_location_congressional_code,
+           pop_country_name, pop_country_code, pop_state_code, pop_state_name, pop_county_name, pop_county_code,
+           pop_city_code, pop_city_name, pop_street_address, pop_zip4, pop_congressional_code
     FROM public.temporary_restock_subaward;
 
 WITH subaward_totals AS (
