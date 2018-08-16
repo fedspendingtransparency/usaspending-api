@@ -83,31 +83,17 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
     @staticmethod
     def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
-        ata = ata.strip()
-        aid = aid.strip()
-        typecode = typecode.strip()
-        bpoa = bpoa.strip()
-        epoa = epoa.strip()
-        mac = mac.strip()
-        sub = sub.strip().lstrip("0")
+        tas_rendering_label = '-'.join(filter(None, (ata, aid)))
 
-        # Attach hyphen to ata if it exists
-        if ata:
-            ata = ata + "-"
+        if typecode is not None and typecode != '':
+            tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, typecode)))
+        else:
+            poa = '/'.join(filter(None, (bpoa, epoa)))
+            tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
 
-        poaphrase = bpoa
-        # If we have BOTH bpoa and epoa
-        if bpoa and epoa:
-            # And they're equal
-            if not bpoa == epoa:
-                poaphrase = bpoa + "/" + epoa
+        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, mac, sub)))
 
-        acctphrase = mac
-        if sub:
-            acctphrase = acctphrase + "." + sub
-
-        concatenated_tas = ata + aid + typecode + poaphrase + acctphrase
-        return concatenated_tas
+        return tas_rendering_label
 
     @property
     def program_activities(self):
