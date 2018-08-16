@@ -4,7 +4,7 @@ CREATE MATERIALIZED VIEW le_subaward AS (
     FROM legal_entity AS le
     WHERE EXISTS (
         SELECT 1
-        FROM awards_subaward AS asub
+        FROM subaward AS asub
         WHERE asub.recipient_id = le.legal_entity_id
     )
 );
@@ -17,7 +17,7 @@ CREATE MATERIALIZED VIEW sub_location AS (
             FROM references_location AS rl
             WHERE EXISTS (
                     SELECT 1
-                    FROM awards_subaward AS asub
+                    FROM subaward AS asub
                     WHERE asub.place_of_performance_id = rl.location_id
                 )
         )
@@ -35,7 +35,7 @@ CREATE MATERIALIZED VIEW sub_location AS (
 );
 
 -- Remove the subawards
-DELETE FROM awards_subaward;
+DELETE FROM subaward;
 
 -- Remove the legal entities
 DELETE FROM legal_entity AS le

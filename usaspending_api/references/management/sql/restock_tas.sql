@@ -14,7 +14,7 @@ DECLARE
 BEGIN
     result := CONCAT_WS('-', ata, aid);
 
-    IF typecode IS NOT NULL THEN
+    IF typecode NOT IN (NULL, '') THEN
         result := CONCAT_WS('-', result, typecode);
     ELSE
         result := CONCAT_WS('-', result, CONCAT_WS('/', bpoa, epoa));
