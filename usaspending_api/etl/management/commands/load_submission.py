@@ -266,8 +266,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         sub=tas_data[0]["sub_account_code"]
     )
 
-    TAS_ID_TO_ACCOUNT[tas_lookup_id] = (TreasuryAppropriationAccount.objects.\
-        filter(tas_rendering_label=tas_rendering_label).first(), tas_rendering_label)
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = (TreasuryAppropriationAccount.objects.
+                                        filter(tas_rendering_label=tas_rendering_label).first(), tas_rendering_label)
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
