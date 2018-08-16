@@ -1,26 +1,26 @@
 -- WARNING: This script is not meant to be run directly. Please use the "load_tas" management command as there are
 -- post-sql functions that run to handle federal account relationships
 CREATE OR REPLACE FUNCTION generate_tas_rendering_label( 
-    ata TEXT, 
-    aid TEXT, 
-    typecode TEXT, 
-    bpoa TEXT, 
-    epoa TEXT, 
-    mac TEXT, 
-    sub TEXT 
-) RETURNS TEXT AS $$ 
-DECLARE 
-    result TEXT; 
-BEGIN 
-    result := CONCAT_WS('-', ata, aid);  
-    IF typecode IS NOT NULL AND typecode != '' THEN 
-        result := CONCAT_WS('-', result, typecode); 
-    ELSE 
-        result := CONCAT_WS('-', result, CONCAT_WS('/', bpoa, epoa));  
-    END IF;   
-    result := CONCAT_WS('-', result, mac, sub);  
-    RETURN result; 
-END; $$ LANGUAGE plpgsql;
+    ata TEXT,
+    aid TEXT,
+    typecode TEXT,
+    bpoa TEXT,
+    epoa TEXT,
+    mac TEXT,
+    sub TEXT
+) RETURNS TEXT AS $$
+DECLARE
+    result TEXT;
+BEGIN
+    result := CONCAT_WS('-', ata, aid);
+    IF typecode IS NOT NULL AND typecode != '' THEN
+        result := CONCAT_WS('-', result, typecode);
+    ELSE
+        result := CONCAT_WS('-', result, CONCAT_WS('/', bpoa, epoa));
+    END IF;
+    result := CONCAT_WS('-', result, mac, sub);
+    RETURN result;
+END; $$ LANGUAGE plpgsql;
 
 DROP TABLE IF EXISTS public.temp_restock_tas;
 
