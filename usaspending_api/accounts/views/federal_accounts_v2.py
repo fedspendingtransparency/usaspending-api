@@ -416,9 +416,9 @@ class FederalAccountsViewSet(APIDocumentationView):
         # add keyword filter, if it exists
         if keyword:
             queryset = queryset.filter(Q(account_name__icontains=keyword) |
-                                       Q(account_number__icontains=keyword) |
+                                       Q(account_number__contains=keyword) |
                                        Q(managing_agency__icontains=keyword) |
-                                       Q(managing_agency_acronym__icontains=keyword))
+                                       Q(managing_agency_acronym__contains=keyword.upper()))
 
         if sort_direction == 'desc':
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
