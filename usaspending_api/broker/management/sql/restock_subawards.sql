@@ -147,7 +147,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                     COALESCE(fp.contract_number,''-NONE-'') || ''_'' ||
                     COALESCE(fp.idv_reference_number,''-NONE-'')) AS expected_generated_unique_award_id,
                 NULL AS fain,
-                ''PROCUREMENT'' AS award_type,
+                ''procurement'' AS award_type,
                 fsc.subcontract_date AS action_date,
                 fp.report_period_mon AS award_report_fy_month,
                 fp.report_period_year AS award_report_fy_year,
@@ -198,7 +198,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 NULL AS piid,
                 NULL AS expected_generated_unique_award_id,
                 UPPER(fg.fain) AS fain,
-                ''GRANT'' AS award_type,
+                ''grant'' AS award_type,
                 fsg.subaward_date AS action_date,
                 fg.report_period_mon AS award_report_fy_month,
                 fg.report_period_year AS award_report_fy_year,
@@ -281,9 +281,9 @@ CREATE TABLE public.temporary_restock_subaward AS (
             recipient_location_zip5 TEXT
         )
     INNER JOIN awards AS aw ON (
-        (broker_subawards.award_type = 'PROCUREMENT' AND aw.is_fpds IS TRUE AND REPLACE(aw.generated_unique_award_id, '-', '') = REPLACE(broker_subawards.expected_generated_unique_award_id, '-', ''))
+        (broker_subawards.award_type = 'procurement' AND aw.is_fpds IS TRUE AND REPLACE(aw.generated_unique_award_id, '-', '') = REPLACE(broker_subawards.expected_generated_unique_award_id, '-', ''))
         OR
-        (broker_subawards.award_type = 'GRANT' AND aw.is_fpds IS FALSE AND REPLACE(aw.fain, '-', '') = REPLACE(broker_subawards.fain, '-', ''))
+        (broker_subawards.award_type = 'grant' AND aw.is_fpds IS FALSE AND REPLACE(aw.fain, '-', '') = REPLACE(broker_subawards.fain, '-', ''))
     )
     LEFT OUTER JOIN legal_entity AS prime_recipient ON aw.recipient_id = prime_recipient.legal_entity_id
     LEFT OUTER JOIN agency AS aa ON aw.awarding_agency_id = aa.id
