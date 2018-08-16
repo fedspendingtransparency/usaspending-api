@@ -13,18 +13,14 @@ DECLARE
     result TEXT;
 BEGIN
     result := CONCAT_WS('-', ata, aid);
-
-    IF typecode IS NOT NULL THEN
+    IF typecode IS NOT NULL AND typecode != '' THEN
         result := CONCAT_WS('-', result, typecode);
     ELSE
         result := CONCAT_WS('-', result, CONCAT_WS('/', bpoa, epoa));
     END IF;
-
     result := CONCAT_WS('-', result, mac, sub);
-
     RETURN result;
-END;
-$$ LANGUAGE plpgsql;
+END; $$ LANGUAGE plpgsql;
 
 DROP TABLE IF EXISTS public.temp_restock_tas;
 

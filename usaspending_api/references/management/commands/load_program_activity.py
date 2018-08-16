@@ -84,7 +84,7 @@ def get_or_create_program_activity(row):
 
     obj, created = RefProgramActivity.objects.get_or_create(
         program_activity_code=row['pa_code'].strip().zfill(4),
-        program_activity_name=row['pa_name'].strip().upper(),
+        program_activity_name=row['pa_name'].strip().upper() if row['pa_name'] else None,
         responsible_agency_id=row['agency_id'].strip().zfill(3),
         allocation_transfer_agency_id=row['alloc_id'].strip().zfill(3),
         main_account_code=row['account'].strip().zfill(4),
