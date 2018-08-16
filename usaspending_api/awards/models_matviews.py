@@ -807,10 +807,14 @@ class SubawardView(models.Model):
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
     pop_state_code = models.TextField()
+    pop_state_name = models.TextField()
     pop_county_code = models.TextField()
     pop_county_name = models.TextField()
     pop_city_code = models.TextField()
+    pop_city_name = models.TextField()
+    pop_zip4 = models.TextField()
     pop_zip5 = models.TextField()
+    pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField()
 
     class Meta:
