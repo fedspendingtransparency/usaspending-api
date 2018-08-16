@@ -137,14 +137,14 @@ class Command(load_base.Command):
         logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
-def update_skipped_tas(row, skipped_tas):
-    if row['tas'] not in skipped_tas:
-        skipped_tas[row['tas']] = {}
-        skipped_tas[row['tas']]['count'] = 1
-        skipped_tas[row['tas']]['rows'] = [row['row_number']]
+def update_skipped_tas(row, tas_rendering_label, skipped_tas):
+    if tas_rendering_label not in skipped_tas:
+        skipped_tas[tas_rendering_label] = {}
+        skipped_tas[tas_rendering_label]['count'] = 1
+        skipped_tas[tas_rendering_label]['rows'] = [row['row_number']]
     else:
-        skipped_tas[row['tas']]['count'] += 1
-        skipped_tas[row['tas']]['rows'] += [row['row_number']]
+        skipped_tas[tas_rendering_label]['count'] += 1
+        skipped_tas[tas_rendering_label]['rows'] += [row['row_number']]
 
 
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
@@ -266,8 +266,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         sub=tas_data[0]["sub_account_code"]
     )
 
-    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.\
-        filter(tas_rendering_label=tas_rendering_label).first()
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = (TreasuryAppropriationAccount.objects.\
+        filter(tas_rendering_label=tas_rendering_label).first(), tas_rendering_label)
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
@@ -343,10 +343,10 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     for row in appropriation_data:
 
         # Check and see if there is an entry for this TAS
-        treasury_account = get_treasury_appropriation_account_tas_lookup(
+        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            update_skipped_tas(row, skipped_tas)
+            update_skipped_tas(row, tas_rendering_label, skipped_tas)
             continue
 
         # Now that we have the account, we can load the appropriation balances
@@ -523,9 +523,10 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         account_balances = None
         try:
             # Check and see if there is an entry for this TAS
-            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+            treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'),
+                                                                                                  db_cursor)
             if treasury_account is None:
-                update_skipped_tas(row, skipped_tas)
+                update_skipped_tas(row, tas_rendering_label, skipped_tas)
                 continue
         except Exception:    # TODO: What is this trying to catch, actually?
             continue
@@ -655,10 +656,10 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         upper_case_dict_values(row)
 
         # Check and see if there is an entry for this TAS
-        treasury_account = get_treasury_appropriation_account_tas_lookup(
+        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            update_skipped_tas(row, skipped_tas)
+            update_skipped_tas(row, tas_rendering_label, skipped_tas)
             continue
 
         # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
