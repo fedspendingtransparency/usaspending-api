@@ -254,7 +254,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
-        return None, None
+        return None, 'Account number {} not found in Broker'.format(tas_lookup_id)
 
     tas_rendering_label = TreasuryAppropriationAccount.generate_tas_rendering_label(
         ata=tas_data[0]["allocation_transfer_agency"],
