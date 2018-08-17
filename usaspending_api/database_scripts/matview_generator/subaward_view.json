@@ -77,7 +77,7 @@
     "  pop_city_name AS pop_city_name,",
     "  pop_zip4 AS pop_zip4,",
     "  LEFT(COALESCE(pop_zip4, ''), 5) AS pop_zip5,",
-    "  pop_street_address AS pop_street_address",
+    "  pop_street_address AS pop_street_address,",
     "  pop_congressional_code AS pop_congressional_code",
     "FROM",
     "  subaward AS sub",
