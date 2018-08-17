@@ -814,7 +814,7 @@ class SubawardView(models.Model):
     pop_city_name = models.TextField()
     pop_zip4 = models.TextField()
     pop_zip5 = models.TextField()
-    pop_street_address = models.TextField(null=True, blank=True)
+    pop_street_address = models.TextField()
     pop_congressional_code = models.TextField()
 
     class Meta:
