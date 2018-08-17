@@ -279,7 +279,6 @@ class Command(BaseCommand):
 
             recipient, place_of_performance = self.get_subaward_references(row, award_type)
 
-            pop_type = 'company' if award_type == 'procurement' else 'awardee'
             subaward_dict = {
                 'award': shared_mappings['award'],
                 'recipient': recipient,
