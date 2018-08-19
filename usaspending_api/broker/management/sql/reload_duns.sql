@@ -35,7 +35,7 @@ INSERT INTO duns (
                     duns.zip4,
                     duns.country_code,
                     duns.congressional_district,
-                    duns.business_types_codes,
+                    COALESCE(duns.business_types_codes, ''{}''::text[]) AS business_types_codes,
                     duns.duns_id
             FROM
                 duns
