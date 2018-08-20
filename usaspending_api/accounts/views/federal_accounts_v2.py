@@ -4,18 +4,16 @@ from collections import OrderedDict
 from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
+from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
-from usaspending_api.common.views import APIDocumentationView
 
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
-
-from usaspending_api.accounts.models import (AppropriationAccountBalances,
-                                             FederalAccount,
-                                             TreasuryAppropriationAccount)
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.financial_activities.models import \
-    FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.common.views import APIDocumentationView
+from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -384,17 +382,39 @@ class FederalAccountsViewSet(APIDocumentationView):
     This route sends a request to the backend to retrieve a list of federal accounts.
     endpoint_doc: /federal_account/federal_account.md
     """
+    def _parse_and_validate_request(self, request_dict):
+        """ Validate the Request object includes the required fields """
+        fy_range = [i for i in range(2001, FiscalDateTime.today().year + 1)]
+        last_fy = SubmissionAttributes.last_certified_fy()
+        request_settings = [
+            {'key': 'sort', 'name': 'sort', 'type': 'object', 'optional': True, 'object_keys': {
+                'field': {'type': 'enum', 'enum_values': ['budgetary_resources', 'managing_agency', 'account_name',
+                                                          'account_number'],
+                          'optional': True, 'default': 'budgetary_resources'},
+                'direction': {'type': 'enum', 'enum_values': ['asc', 'desc'], 'optional': True, 'default': 'asc'},
+            }, 'default': {'field': 'budgetary_resources', 'direction': 'asc'}},
+            {'key': 'page', 'name': 'page', 'type': 'integer', 'default': 1, 'min': 1, 'optional': True},
+            {'key': 'limit', 'name': 'limit', 'type': 'integer', 'default': 10, 'min': 1, 'max': 100, 'optional': True},
+            {'key': 'filters', 'name': 'filters', 'type': 'object', 'optional': True, 'object_keys': {
+                'fy': {'type': 'enum', 'enum_values': fy_range, 'optional': True, 'default': last_fy},
+            }, 'default': {'fy': last_fy}},
+            {'key': 'keyword', 'name': 'keyword', 'type': 'text', 'text_type': 'search', 'optional': True}
+        ]
+
+        validated_request_data = TinyShield(request_settings).block(request_dict)
+        return validated_request_data
+
     @cache_response()
     def post(self, request, format=None):
-        """Return all high-level Federal Account information"""
+        """ Return all high-level Federal Account information """
+        request_data = self._parse_and_validate_request(request.data)
 
-        limit = request.data.get("limit", 10)
-        page = request.data.get("page", 1)
-        sorting = request.data.get("sort", {'field': 'budgetary_resources', 'direction': 'desc'})
-        sort_field = sorting.get('field', 'budgetary_resources')
-        sort_direction = sorting.get('direction', 'asc')
-        filters = request.data.get('filters', {})
-        fy = filters.get('fy') or SubmissionAttributes.last_certified_fy()
+        limit = request_data['limit']
+        page = request_data['page']
+        sort_field = request_data['sort']['field']
+        sort_direction = request_data['sort']['direction']
+        fy = request_data['filters']['fy']
+        keyword = request_data.get('keyword', None)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
@@ -410,15 +430,21 @@ class FederalAccountsViewSet(APIDocumentationView):
                      budgetary_resources=Sum(
                          'treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe'),
                      managing_agency=Subquery(agency_subquery.values('name')[:1]),
-                     managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
-                     )
+                     managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]))
+
+        # add keyword filter, if it exists
+        if keyword:
+            queryset = queryset.filter(Q(account_name__icontains=keyword) |
+                                       Q(account_number__contains=keyword) |
+                                       Q(managing_agency__icontains=keyword) |
+                                       Q(managing_agency_acronym__contains=keyword.upper()))
 
         if sort_direction == 'desc':
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
         else:
             queryset = queryset.order_by(F(sort_field).asc())
 
-        result = {'count': queryset.count(), 'limit': limit, 'page': page, 'fy': fy}
+        result = {'count': queryset.count(), 'limit': limit, 'page': page, 'fy': fy, 'keyword': keyword}
         resultset = queryset.values('account_id', 'account_number', 'account_name', 'budgetary_resources',
                                     'agency_identifier', 'managing_agency', 'managing_agency_acronym')
         resultset = resultset[lower_limit:upper_limit + 1]
