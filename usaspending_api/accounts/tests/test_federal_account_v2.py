@@ -12,9 +12,9 @@ def fixture_data(db):
     mommy.make('references.ToptierAgency', cgac_code='001', abbreviation='ABCD', name='Dept. of Depts')
     mommy.make('references.ToptierAgency', cgac_code='002', abbreviation='EFGH', name='The Bureau')
     mommy.make('references.ToptierAgency', cgac_code='1601', abbreviation='DOL', name='Department of Labor')
-    fa0 = mommy.make(FederalAccount, agency_identifier='001', )
-    fa1 = mommy.make(FederalAccount, agency_identifier='002', )
-    fa2 = mommy.make(FederalAccount, agency_identifier='1600', )
+    fa0 = mommy.make(FederalAccount, agency_identifier='001', main_account_code='0005', account_title='Something')
+    fa1 = mommy.make(FederalAccount, agency_identifier='002', main_account_code='0005', account_title='Nothing1')
+    fa2 = mommy.make(FederalAccount, agency_identifier='1600', main_account_code='0005', account_title='Nothing2')
     ta0 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa0)
     ta1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa1)
     ta2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa2)
@@ -57,7 +57,7 @@ def fixture_data(db):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
-
+    """ Verify the federal accounts endpoint returns a status of 200 """
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
                        data=json.dumps({'filters': {'fy': 2017}}))
@@ -66,7 +66,7 @@ def test_federal_accounts_endpoint_exists(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_form(client, fixture_data):
-
+    """ Verify the correct keys exist within the response """
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
                        data=json.dumps({'filters': {'fy': 2017}}))
@@ -81,7 +81,7 @@ def test_federal_accounts_endpoint_correct_form(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_data(client, fixture_data):
-
+    """ Verify federal accounts endpoint returns the correct data """
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
                        data=json.dumps({'sort': {'field': 'managing_agency',
@@ -98,8 +98,8 @@ def test_federal_accounts_endpoint_correct_data(client, fixture_data):
 
 
 @pytest.mark.django_db
-def test_federal_accounts_endpoint_sorting(client, fixture_data):
-    """Verify that sort parameters are applied correctly"""
+def test_federal_accounts_endpoint_sorting_managing_agency(client, fixture_data):
+    """Verify that managing agency sorts are applied correctly"""
 
     # sort by managing agency, asc
     resp = client.post('/api/v2/federal_accounts/',
@@ -119,6 +119,11 @@ def test_federal_accounts_endpoint_sorting(client, fixture_data):
     response_data = resp.json()
     assert response_data['results'][0]['managing_agency'] > response_data['results'][1]['managing_agency']
 
+
+@pytest.mark.django_db
+def test_federal_accounts_endpoint_sorting_account_number(client, fixture_data):
+    """Verify that account number sorts are applied correctly"""
+
     # sort by account number, asc
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
@@ -136,6 +141,11 @@ def test_federal_accounts_endpoint_sorting(client, fixture_data):
                                         'filters': {'fy': 2017}}))
     response_data = resp.json()
     assert response_data['results'][0]['account_number'] > response_data['results'][1]['account_number']
+
+
+@pytest.mark.django_db
+def test_federal_accounts_endpoint_sorting_budgetary_resources(client, fixture_data):
+    """Verify that budgetary resources sorts are applied correctly"""
 
     # sort by budgetary resources, asc
     resp = client.post('/api/v2/federal_accounts/',
@@ -157,9 +167,64 @@ def test_federal_accounts_endpoint_sorting(client, fixture_data):
 
 
 @pytest.mark.django_db
+def test_federal_accounts_endpoint_keyword_filter_account_number(client, fixture_data):
+    """Verify that budgetary resources sorts are applied correctly"""
+
+    # filter by the "Bureau" keyword
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'filters': {'fy': 2017},
+                                        'keyword': '001-000'}))
+    response_data = resp.json()
+    assert len(response_data['results']) == 1
+    assert response_data['results'][0]['account_number'] == '001-0005'
+
+
+@pytest.mark.django_db
+def test_federal_accounts_endpoint_keyword_filter_account_name(client, fixture_data):
+    """Verify that budgetary resources sorts are applied correctly"""
+
+    # filter by the "Bureau" keyword
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'filters': {'fy': 2017},
+                                        'keyword': 'someth'}))
+    response_data = resp.json()
+    assert len(response_data['results']) == 1
+    assert response_data['results'][0]['account_name'] == 'Something'
+
+
+@pytest.mark.django_db
+def test_federal_accounts_endpoint_keyword_filter_agency_name(client, fixture_data):
+    """Verify that budgetary resources sorts are applied correctly"""
+
+    # filter by the "Bureau" keyword
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'filters': {'fy': 2017},
+                                        'keyword': 'burea'}))
+    response_data = resp.json()
+    assert len(response_data['results']) == 1
+    assert response_data['results'][0]['managing_agency'] == 'The Bureau'
+
+
+@pytest.mark.django_db
+def test_federal_accounts_endpoint_keyword_filter_agency_acronym(client, fixture_data):
+    """Verify that budgetary resources sorts are applied correctly"""
+
+    # filter by the "Bureau" keyword
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'filters': {'fy': 2017},
+                                        'keyword': 'efgh'}))
+    response_data = resp.json()
+    assert len(response_data['results']) == 1
+    assert response_data['results'][0]['managing_agency_acronym'] == 'EFGH'
+
+
+@pytest.mark.django_db
 def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
     """Verify that CGAC reported as 1600 in FederalAccount will map to ToptierAgency 1601"""
-
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
                        data=json.dumps({'sort': {'field': 'managing_agency',

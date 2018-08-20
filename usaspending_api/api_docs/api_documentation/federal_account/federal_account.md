@@ -17,6 +17,7 @@ This route sends a request to the backend to retrieve a list of federal accounts
     "previous": null,
     "hasNext": true,
     "hasPrevious": false,
+    "keyword": null,
     "results": [
         {
             "agency_identifier": "075",
