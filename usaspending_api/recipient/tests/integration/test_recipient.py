@@ -1,6 +1,5 @@
 # Stdlib imports
 import datetime
-from collections import OrderedDict
 from uuid import UUID
 
 # Core Django imports
@@ -16,7 +15,7 @@ from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
 from usaspending_api.recipient.models import RecipientProfile, DUNS, RecipientLookup
-from usaspending_api.references.models import RefCountryCode, Location, LegalEntity
+from usaspending_api.references.models import RefCountryCode, LegalEntity
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
@@ -32,50 +31,14 @@ TEST_REF_COUNTRY_CODE = {
         'country_name': 'CHILD COUNTRY NAME'
     }
 }
-TEST_LOCATIONS = {
-    '00077a9a-5a70-8919-fd19-330762af6b84': {
-        'address_line1': 'PARENT ADDRESS LINE 1',
-        'address_line2': 'PARENT ADDRESS LINE 2',
-        'address_line3': 'PARENT ADDRESS LINE 3',
-        'county_name': 'PARENT COUNTY',
-        'city_name': 'PARENT CITY',
-        'congressional_code': 'PARENT CONGRESSIONAL DISTRICT',
-        'location_country_code': 'PARENT COUNTRY CODE',
-        'country_name': 'PARENT COUNTRY NAME',
-        'state_code': 'PARENT STATE',
-        'zip4': 'PARENT ZIP',
-        'zip_4a': 'PARENT ZIP4',
-        'foreign_province': 'PARENT FOREIGN PROVINCE',
-        'foreign_postal_code': 'PARENT FOREIGN POSTAL CODE'
-    },
-    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
-        'address_line1': 'CHILD ADDRESS LINE 1',
-        'address_line2': 'CHILD ADDRESS LINE 2',
-        'address_line3': 'CHILD ADDRESS LINE 3',
-        'county_name': 'CHILD COUNTY',
-        'city_name': 'CHILD CITY',
-        'congressional_code': 'CHILD CONGRESSIONAL DISTRICT',
-        'location_country_code': 'CHILD COUNTRY CODE',
-        'country_name': 'CHILD COUNTRY NAME',
-        'state_code': 'CHILD STATE',
-        'zip4': 'CHILD ZIP',
-        'zip_4a': 'CHILD ZIP4',
-        'foreign_province': 'CHILD FOREIGN PROVINCE',
-        'foreign_postal_code': 'CHILD FOREIGN POSTAL CODE'
-    }
-}
 MAP_DUNS_TO_CONTRACT = {
     'address_line_1': 'address_line1',
     'address_line_2': 'address_line2',
     'city': 'city_name',
     'congressional_district': 'congressional_code',
-    'state': 'state_code'
+    'state': 'state_code',
+    'zip5': 'zip'
 }
-MAP_LOCATION_TO_CONTRACT = OrderedDict([
-    ('zip4', 'zip'),
-    ('zip_4a', 'zip4'),
-    ('location_country_code', 'country_code')
-])
 
 TEST_DUNS = {
     '000000001': {
@@ -89,7 +52,7 @@ TEST_DUNS = {
         'state': 'PARENT STATE',
         'zip': 'PARENT ZIP',
         'zip4': 'PARENT ZIP4',
-        'business_types_codes': ['PARENT BUSINESS TYPES CODES']
+        'business_types_codes': ['2X']
     },
     '000000002': {
         'awardee_or_recipient_uniqu': '000000002',
@@ -102,7 +65,49 @@ TEST_DUNS = {
         'state': 'CHILD STATE',
         'zip': 'CHILD ZIP',
         'zip4': 'CHILD ZIP4',
-        'business_types_codes': ['CHILD BUSINESS TYPES CODES']
+        'business_types_codes': ['A8']
+    }
+}
+TEST_RECIPIENT_LOCATIONS = {
+    '00077a9a-5a70-8919-fd19-330762af6b84': {
+        'address_line_1': 'PARENT ADDRESS LINE 1',
+        'address_line_2': 'PARENT ADDRESS LINE 2',
+        'city': 'PARENT CITY',
+        'congressional_district': 'PARENT CONGRESSIONAL DISTRICT',
+        'country_code': 'PARENT COUNTRY CODE',
+        'state': 'PARENT STATE',
+        'zip5': 'PARENT ZIP',
+        'zip4': 'PARENT ZIP4'
+    },
+    '392052ae-92ab-f3f4-d9fa-b57f45b7750b': {
+        'address_line_1': 'CHILD ADDRESS LINE 1',
+        'address_line_2': 'CHILD ADDRESS LINE 2',
+        'city': 'CHILD CITY',
+        'congressional_district': 'CHILD CONGRESSIONAL DISTRICT',
+        'country_code': 'CHILD COUNTRY CODE',
+        'state': 'CHILD STATE',
+        'zip5': 'CHILD ZIP',
+        'zip4': 'CHILD ZIP4'
+    },
+    '00002940-fdbe-3fc5-9252-d46c0ae8758c': {
+        'address_line_1': 'OTHER ADDRESS LINE 1',
+        'address_line_2': 'OTHER ADDRESS LINE 2',
+        'city': 'OTHER CITY',
+        'congressional_district': 'OTHER CONGRESSIONAL DISTRICT',
+        'country_code': 'OTHER COUNTRY CODE',
+        'state': 'OTHER STATE',
+        'zip5': 'OTHER ZIP',
+        'zip4': 'OTHER ZIP4'
+    },
+    '6dffe44a-554c-26b4-b7ef-44db50083732': {
+        'address_line_1': None,
+        'address_line_2': None,
+        'city': None,
+        'congressional_district': None,
+        'country_code': None,
+        'state': None,
+        'zip5': None,
+        'zip4': None
     }
 }
 TEST_RECIPIENT_LOOKUPS = {
@@ -120,8 +125,16 @@ TEST_RECIPIENT_LOOKUPS = {
         'recipient_hash': '00002940-fdbe-3fc5-9252-d46c0ae8758c',
         'duns': None,
         'legal_business_name': 'OTHER RECIPIENT'
+    },
+    '6dffe44a-554c-26b4-b7ef-44db50083732': {
+        'recipient_hash': '6dffe44a-554c-26b4-b7ef-44db50083732',
+        'duns': None,
+        'legal_business_name': 'MULTIPLE RECIPIENTS'
     }
 }
+for hash, recipient in TEST_RECIPIENT_LOOKUPS.items():
+    recipient.update(TEST_RECIPIENT_LOCATIONS[hash])
+
 TEST_RECIPIENT_PROFILES = {
     # Parent Recipient, including non-existent child duns
     '00077a9a-5a70-8919-fd19-330762af6b84-P': {
@@ -156,21 +169,21 @@ TEST_RECIPIENT_PROFILES = {
         'recipient_affiliations': []
     }
 }
-TEST_UNIVERSAL_TRANSACTIONS = {
+TEST_SUMMARY_TRANSACTIONS = {
     'latest': {
-        'transaction_id': '1',
         'action_date': INSIDE_OF_LATEST,
-        'generated_pragmatic_obligation': 100
+        'generated_pragmatic_obligation': 100,
+        'counts': 1
     },
     'FY2016': {
-        'transaction_id': '2',
         'action_date': datetime.datetime(2015, 10, 1),
-        'generated_pragmatic_obligation': 50
+        'generated_pragmatic_obligation': 50,
+        'counts': 1
     },
     'FY2008': {
-        'transaction_id': '3',
         'action_date': datetime.datetime(2007, 10, 1),
-        'generated_pragmatic_obligation': 200
+        'generated_pragmatic_obligation': 200,
+        'counts': 1
     }
 }
 
@@ -276,23 +289,15 @@ def test_extract_parent_from_hash_failure():
 
 
 @pytest.mark.django_db
-def test_extract_location_duns():
+def test_extract_location_success():
     """ Testing extracting location data from recipient hash using the DUNS table """
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-
-    test_duns_model = TEST_DUNS[recipient_duns]
-    country_code = test_duns_model['country_code']
-    mommy.make(DUNS, **test_duns_model)
+    country_code = TEST_RECIPIENT_LOCATIONS[recipient_hash]['country_code']
     mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
 
-    non_location_fields = ['awardee_or_recipient_uniqu', 'legal_business_name']
     additional_blank_fields = ['address_line3', 'foreign_province', 'county_name', 'foreign_postal_code']
-    expected_location = test_duns_model.copy()
-    expected_location.pop('business_types_codes')
-    for non_location_field in non_location_fields:
-        del expected_location[non_location_field]
+    expected_location = TEST_RECIPIENT_LOCATIONS[recipient_hash].copy()
     expected_location['country_name'] = TEST_REF_COUNTRY_CODE[country_code]['country_name']
     for additional_blank_field in additional_blank_fields:
         expected_location[additional_blank_field] = None
@@ -304,22 +309,31 @@ def test_extract_location_duns():
 
 
 @pytest.mark.django_db
-def test_extract_location_le():
-    """ Testing extracting location data from recipient hash using the Legal Entity table """
-    recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
-    recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    location = TEST_LOCATIONS[recipient_hash]
-    mock_location = mommy.make(Location, **TEST_LOCATIONS[recipient_hash])
-    mommy.make(LegalEntity, location=mock_location, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
+def test_cleanup_location():
+    """ Testing cleaning up the location data """
 
-    expected_location = location.copy()
-    for k in MAP_LOCATION_TO_CONTRACT:
-        expected_location[MAP_LOCATION_TO_CONTRACT[k]] = expected_location[k]
-        del expected_location[k]
-    location = recipients.extract_location(recipient_hash)
-    assert location == expected_location
+    # Test United States fix
+    test_location = {
+        'country_code': 'UNITED STATES'
+    }
+    assert {'country_code': 'USA', 'country_name': None} == recipients.cleanup_location(test_location)
+
+    # Test Country_Code
+    mommy.make(RefCountryCode, country_code='USA', country_name='UNITED STATES')
+    test_location = {
+        'country_code': 'USA'
+    }
+    assert {'country_code': 'USA', 'country_name': 'UNITED STATES'} == recipients.cleanup_location(test_location)
+
+    # Test Congressional Codes
+    test_location = {
+        'congressional_code': 'CA13'
+    }
+    assert {'congressional_code': '13'} == recipients.cleanup_location(test_location)
+    test_location = {
+        'congressional_code': '13.0'
+    }
+    assert {'congressional_code': '13'} == recipients.cleanup_location(test_location)
 
 
 @pytest.mark.django_db
@@ -328,13 +342,28 @@ def test_extract_business_categories():
     recipient_hash = '00077a9a-5a70-8919-fd19-330762af6b84'
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]['legal_business_name']
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]['duns']
-    expected_business_cat = ['expected', 'business', 'cat']
+    le_business_cat = ['le', 'business', 'cat']
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    mommy.make(LegalEntity, business_categories=expected_business_cat, recipient_name=recipient_name,
+    mommy.make(LegalEntity, business_categories=le_business_cat, recipient_name=recipient_name,
                recipient_unique_id=recipient_duns)
 
+    # Mock DUNS
+    # Should add 'category_business'
+    mommy.make(DUNS, **TEST_DUNS[recipient_duns])
+
+    expected_business_cat = le_business_cat + ['category_business']
     business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
-    assert business_cat == expected_business_cat
+    # testing for equality-only, order unnecessary
+    assert sorted(business_cat) == sorted(expected_business_cat)
+
+
+@pytest.mark.django_db
+def test_extract_business_categories_special():
+    """ Tesing extracting the business categories for a special case  """
+    recipient_name = 'MULTIPLE RECIPIENTS'
+    recipient_duns = None
+    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns)
+    assert business_categories == []
 
 
 @pytest.mark.django_db
@@ -345,32 +374,38 @@ def test_obtain_recipient_totals_year(mock_matviews_qs):
     recipient_hash = recipient_id[:-2]
     # load all of the transactions
     mock_transactions = []
-    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+    for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
         transaction['recipient_hash'] = recipient_hash
         transaction['parent_recipient_unique_id'] = '000000009'
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
+    # For latest transaction's we're pulling from recipient_profile
+    associated_recipient_profile = TEST_RECIPIENT_PROFILES[recipient_id].copy()
+    associated_recipient_profile['last_12_months'] = 100
+    associated_recipient_profile['last_12_months_count'] = 1
+    mommy.make(RecipientProfile, **associated_recipient_profile)
+
     # Latest
     expected_total = 100
     expected_count = 1
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='latest', subawards=False)
-    assert total == expected_total
-    assert count == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year='latest', subawards=False)
+    assert results[0]['total'] == expected_total
+    assert results[0]['count'] == expected_count
 
     # All
     expected_total = 350
     expected_count = 3
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='all', subawards=False)
-    assert total == expected_total
-    assert count == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year='all', subawards=False)
+    assert results[0]['total'] == expected_total
+    assert results[0]['count'] == expected_count
 
     # FY2016
     expected_total = 50
     expected_count = 1
-    total, count = recipients.obtain_recipient_totals(recipient_id, year='2016', subawards=False)
-    assert total == expected_total
-    assert count == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year='2016', subawards=False)
+    assert results[0]['total'] == expected_total
+    assert results[0]['count'] == expected_count
 
 
 @pytest.mark.django_db
@@ -385,15 +420,15 @@ def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
     child2_hash = child2_id[:-2]
     other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
     transaction_hash_map = {
-        '1': {
+        'latest': {
             'hash': child1_hash,
             'parent_duns': parent_child1_duns
         },
-        '2': {
+        'FY2016': {
             'hash': child2_hash,
             'parent_duns': parent_child1_duns,
         },
-        '3': {
+        'FY2008': {
             'hash': other_id,
             'parent_duns': None
         }
@@ -405,17 +440,17 @@ def test_obtain_recipient_totals_parent(mock_matviews_qs, ):
 
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
-    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
-        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
-        transaction['parent_recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['parent_duns']
+    for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[category]['hash']
+        transaction['parent_recipient_unique_id'] = transaction_hash_map[category]['parent_duns']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
     expected_total = 150
     expected_count = 2
-    total, count = recipients.obtain_recipient_totals(parent_id, year='all', subawards=False)
-    assert total == expected_total
-    assert count == expected_count
+    results = recipients.obtain_recipient_totals(parent_id, year='all', subawards=False)
+    assert results[0]['total'] == expected_total
+    assert results[0]['count'] == expected_count
 
 
 def recipient_overview_endpoint(id, year='latest'):
@@ -433,23 +468,26 @@ def test_recipient_overview(client, mock_matviews_qs):
 
     # Mock Transactions
     mock_transactions = []
-    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
+    for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
         transaction['recipient_hash'] = recipient_hash
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
     # Mock Recipient Profiles
     for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
-        mommy.make(RecipientProfile, **recipient_profile)
+        recipient_profile_copy = recipient_profile.copy()
+        if recipient_id == r_id:
+            recipient_profile_copy['last_12_months'] = 100
+            recipient_profile_copy['last_12_months_count'] = 1
+        mommy.make(RecipientProfile, **recipient_profile_copy)
 
     # Mock Recipient Lookups
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
         mommy.make(RecipientLookup, **recipient_lookup)
 
-    # Mock DUNS
+    # Mock DUNS - should add `category-business`
     for duns, duns_dict in TEST_DUNS.items():
         test_duns_model = duns_dict.copy()
-        test_duns_model.pop('business_types_codes')
         country_code = test_duns_model['country_code']
         mommy.make(DUNS, **test_duns_model)
         mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
@@ -469,7 +507,7 @@ def test_recipient_overview(client, mock_matviews_qs):
         'parent_name': 'PARENT RECIPIENT',
         'parent_duns': '000000001',
         'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
-        'business_types': ['expected', 'business', 'cat'],
+        'business_types': sorted(['expected', 'business', 'cat'] + ['category_business']),
         'location': {
             'address_line1': 'PARENT ADDRESS LINE 1',
             'address_line2': 'PARENT ADDRESS LINE 2',
@@ -488,6 +526,8 @@ def test_recipient_overview(client, mock_matviews_qs):
         'total_transaction_amount': 100,
         'total_transactions': 1
     }
+    # testing for equality-only, order unnecessary
+    resp.data['business_types'] = sorted(resp.data['business_types'])
     assert resp.data == expected
 
 
@@ -516,26 +556,32 @@ def test_child_recipient_success(client, mock_matviews_qs):
     """ Testing successfull child recipient calls """
     child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
     child1_hash = child1_id[:-2]
+    parent_child1_name = 'PARENT RECIPIENT'
     parent_child1_duns = '000000001'
     child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
     child2_hash = child2_id[:-2]
+    child2_name = 'CHILD RECIPIENT'
     child2_duns = '000000002'
-    other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
     transaction_hash_map = {
-        '1': {
+        'latest': {
             'hash': child1_hash,
             'duns': parent_child1_duns,
+            'name': parent_child1_name,
             'parent_duns': parent_child1_duns
         },
-        '2': {
+        'FY2016': {
             'hash': child2_hash,
             'duns': child2_duns,
+            'name': child2_name,
             'parent_duns': parent_child1_duns
         },
-        '3': {
-            'hash': other_id,
-            'duns': None,
-            'parent_duns': None
+        # Making sure the children total only applies to transactions where it listed the parent
+        # Not all transactions of that child in general
+        'FY2008': {
+            'hash': child2_hash,
+            'duns': child2_duns,
+            'name': child2_name,
+            'parent_duns': '000000009'
         }
     }
 
@@ -547,19 +593,13 @@ def test_child_recipient_success(client, mock_matviews_qs):
     for recipient_hash, recipient_lookup in TEST_RECIPIENT_LOOKUPS.items():
         mommy.make(RecipientLookup, **recipient_lookup)
 
-    # Mock DUNS
-    for duns, duns_dict in TEST_DUNS.items():
-        test_duns_model = duns_dict.copy()
-        country_code = test_duns_model['country_code']
-        mommy.make(DUNS, **test_duns_model)
-        mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
-
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
-    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
-        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
-        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
-        transaction['parent_recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['parent_duns']
+    for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[category]['hash']
+        transaction['recipient_unique_id'] = transaction_hash_map[category]['duns']
+        transaction['recipient_name'] = transaction_hash_map[category]['name']
+        transaction['parent_recipient_unique_id'] = transaction_hash_map[category]['parent_duns']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
 
@@ -581,7 +621,8 @@ def test_child_recipient_success(client, mock_matviews_qs):
     expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, 'all'))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == sorted(expected, key=lambda key: key['recipient_id'])
+    # testing for equality-only, order unnecessary
+    assert sorted(resp.data, key=lambda key: key['recipient_id']) == expected
 
 
 @pytest.mark.django_db
@@ -590,23 +631,28 @@ def test_child_recipient_failures(client, mock_matviews_qs):
 
     child1_id = '00077a9a-5a70-8919-fd19-330762af6b84-C'
     child1_hash = child1_id[:-2]
+    parent_child1_name = 'PARENT RECIPIENT'
     parent_child1_duns = '000000001'
     child2_id = '392052ae-92ab-f3f4-d9fa-b57f45b7750b-C'
     child2_hash = child2_id[:-2]
+    child2_name = 'CHILD RECIPIENT'
     child2_duns = '000000002'
     other_id = '00002940-fdbe-3fc5-9252-d46c0ae8758c-R'
     transaction_hash_map = {
-        '1': {
+        'latest': {
             'hash': child1_hash,
-            'duns': parent_child1_duns
+            'duns': parent_child1_duns,
+            'name': parent_child1_name
         },
-        '2': {
+        'FY2008': {
             'hash': child2_hash,
             'duns': child2_duns,
+            'name': parent_child1_name
         },
-        '3': {
+        'FY2016': {
             'hash': other_id,
-            'duns': None
+            'duns': None,
+            'name': child2_name
         }
     }
 
@@ -620,16 +666,12 @@ def test_child_recipient_failures(client, mock_matviews_qs):
 
     # load transactions for each child and parent (making sure it's excluded)
     mock_transactions = []
-    for category, transaction in TEST_UNIVERSAL_TRANSACTIONS.items():
-        transaction['recipient_hash'] = transaction_hash_map[transaction['transaction_id']]['hash']
-        transaction['recipient_unique_id'] = transaction_hash_map[transaction['transaction_id']]['duns']
+    for category, transaction in TEST_SUMMARY_TRANSACTIONS.items():
+        transaction['recipient_hash'] = transaction_hash_map[category]['hash']
+        transaction['recipient_unique_id'] = transaction_hash_map[category]['duns']
+        transaction['recipient_name'] = transaction_hash_map[category]['name']
         mock_transactions.append(MockModel(**transaction))
     add_to_mock_objects(mock_matviews_qs, mock_transactions)
-
-    # Testing for child DUNS
-    resp = client.get(recipient_children_endpoint(child2_duns, 'all'))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data['detail'] == 'DUNS is not listed as a parent: \'{}\'.'.format(child2_duns)
 
     # Testing for non-existent DUNS
     non_existent_duns = '000000003'
