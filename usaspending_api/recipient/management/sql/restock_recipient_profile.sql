@@ -21,7 +21,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
   FROM
     universal_transaction_matview
   WHERE action_date >= '2007-10-01' AND
-    (award_category IS NOT NULL OR award_category IS NULL AND pulled_from = 'IDV')
+    (award_category IS NOT NULL OR (award_category IS NULL AND pulled_from = 'IDV'))
 );
 
 CREATE INDEX idx_recipients_in_transactions_view ON public.temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);
