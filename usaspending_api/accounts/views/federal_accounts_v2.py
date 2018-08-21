@@ -86,24 +86,9 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
                 appropriations=F('budget_authority_appropriated_amount_cpe')) \
             .values('outlay', 'budget_authority', 'obligated', 'unobligated',
                     'balance_brought_forward', 'other_budgetary_resources', 'appropriations') \
-            .order_by('-reporting_period_end')
+            .order_by('-reporting_period_end').first()
 
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
-        # queryset = queryset.aggregate(
-        #     outlay=Sum('gross_outlay_amount_by_tas_cpe'),
-        #     budget_authority=Sum('total_budgetary_resources_amount_cpe'),
-        #     obligated=Sum('obligations_incurred_total_by_tas_cpe'),
-        #     unobligated=Sum('unobligated_balance_cpe'),
-        #     balance_brought_forward=Sum(
-        #         F('budget_authority_unobligated_balance_brought_forward_fyb') +
-        #         F('adjustments_to_unobligated_balance_brought_forward_cpe')),
-        #     other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
-        #     appropriations=Sum('budget_authority_appropriated_amount_cpe'))
-        queryset = queryset[0]
-        if queryset['outlay'] is not None:
+        if queryset and queryset['outlay'] is not None:
             name = FederalAccount.objects.filter(id=int(pk)).values('account_title').first()['account_title']
             queryset['name'] = name
             return Response({'results': queryset})
