@@ -17,13 +17,15 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.state AS state,
     broker_duns.zip AS zip,
     broker_duns.zip4 AS zip4,
-    broker_duns.business_types_codes AS business_types_codes
+    broker_duns.business_types_codes AS business_types_codes,
+    broker_duns.dba_name as dba_name
   FROM
     dblink ('broker_server', '(
       SELECT
         DISTINCT ON (duns.awardee_or_recipient_uniqu)
         duns.awardee_or_recipient_uniqu,
         duns.legal_business_name,
+        duns.dba_name,
         duns.ultimate_parent_unique_ide,
         duns.ultimate_parent_legal_enti,
         duns.address_line_1,
@@ -44,6 +46,7 @@ CREATE TABLE public.temporary_restock_duns AS (
           (
             awardee_or_recipient_uniqu text,
             legal_business_name text,
+            dba_name text,
             ultimate_parent_unique_ide text,
             ultimate_parent_legal_enti text,
             address_line_1 text,
