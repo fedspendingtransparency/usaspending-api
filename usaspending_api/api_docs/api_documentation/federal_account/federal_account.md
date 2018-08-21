@@ -12,7 +12,7 @@ This route sends a request to the backend to retrieve a list of federal accounts
     "count": 786,
     "limit": 10,
     "page": 1,
-    "fy": 2017,
+    "fy": "2017",
     "next": 2,
     "previous": null,
     "hasNext": true,
