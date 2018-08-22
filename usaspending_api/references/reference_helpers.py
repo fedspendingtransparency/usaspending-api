@@ -41,8 +41,6 @@ def update_federal_accounts(tas_tuple=None):
         "AND t.main_account_code = fa.main_account_code",
         "AND t.treasury_account_identifier IN %s" if tas_tuple is not None else "",
     ])
-    # if tas_tuple is not None:
-    #     tas_fk_sql += " AND t.treasury_account_identifier IN %s "
 
     with connection.cursor() as cursor:
         cursor.execute(tas_fk_sql, [tas_tuple])
