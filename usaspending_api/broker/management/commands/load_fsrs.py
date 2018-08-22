@@ -133,9 +133,11 @@ class Command(BaseCommand):
         if award_type == 'procurement':
             location_value_map = location_d1_recipient_mapper(row)
             recipient_name = row['company_name']
+            parent_recipient_name = row['parent_company_name']
         else:
             location_value_map = location_d2_recipient_mapper(row)
             recipient_name = row['awardee_name']
+            parent_recipient_name = None
 
         location_value_map['recipient_flag'] = True
 
@@ -152,6 +154,7 @@ class Command(BaseCommand):
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
             parent_recipient_unique_id=row['parent_duns'],
+            parent_recipient_name=parent_recipient_name,
             location=recipient_location
         )
         # recipient.save()
@@ -227,7 +230,8 @@ class Command(BaseCommand):
                                   'sub_award.company_address_state AS company_address_state',
                                   'sub_award.company_address_state_name AS company_address_state_name',
                                   'sub_award.company_address_street AS company_address_street',
-                                  'sub_award.company_address_district AS company_address_district'
+                                  'sub_award.company_address_district AS company_address_district',
+                                  'sub_award.parent_company_name AS parent_company_name'
                                   ])
 
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
