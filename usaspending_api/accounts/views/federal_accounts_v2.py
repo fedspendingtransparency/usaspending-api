@@ -69,42 +69,24 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
         fy = int(fy) or SubmissionAttributes.last_certified_fy()
-        queryset = (
-            AppropriationAccountBalances.objects.all()
-            .filter(treasury_account_identifier__federal_account_id=int(pk), submission__reporting_fiscal_year=fy)
-            .annotate(
-                outlay=F("gross_outlay_amount_by_tas_cpe"),
-                budget_authority=F("total_budgetary_resources_amount_cpe"),
-                obligated=F("obligations_incurred_total_by_tas_cpe"),
-                unobligated=F("unobligated_balance_cpe"),
-                balance_brought_forward=(F("budget_authority_unobligated_balance_brought_forward_fyb") +
-                    F("adjustments_to_unobligated_balance_brought_forward_cpe")),
-                other_budgetary_resources=F("other_budgetary_resources_amount_cpe"),
-                appropriations=F("budget_authority_appropriated_amount_cpe"),
-            )
-            .values(
-                "outlay",
-                "budget_authority",
-                "obligated",
-                "unobligated",
-                "balance_brought_forward",
-                "other_budgetary_resources",
-                "appropriations",
-            )
-            .order_by("-reporting_period_end")
-        )
+        queryset = AppropriationAccountBalances.final_objects.filter(
+            treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
+        queryset = queryset \
+            .aggregate(
+                outlay=Sum('gross_outlay_amount_by_tas_cpe'),
+                budget_authority=Sum('total_budgetary_resources_amount_cpe'),
+                obligated=Sum('obligations_incurred_total_by_tas_cpe'),
+                unobligated=Sum('unobligated_balance_cpe'),
+                balance_brought_forward=Sum(
+                    F('budget_authority_unobligated_balance_brought_forward_fyb') +
+                    F('adjustments_to_unobligated_balance_brought_forward_cpe')),
+                other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
+                appropriations=Sum('budget_authority_appropriated_amount_cpe'))
 
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
-
-        results = queryset.first()
-
-        if results and results["outlay"] is not None:
-            name = FederalAccount.objects.filter(id=int(pk)).values("account_title").first()["account_title"]
-            results["name"] = name
-            return Response({"results": results})
+        if queryset['outlay'] is not None:
+            name = FederalAccount.objects.filter(id=int(pk)).values('account_title').first()['account_title']
+            queryset['name'] = name
+            return Response({'results': queryset})
         else:
             return Response({})
 
