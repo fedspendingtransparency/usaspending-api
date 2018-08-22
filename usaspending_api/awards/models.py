@@ -895,6 +895,7 @@ class Subaward(DataSourceTrackedModel):
     recipient_name = models.TextField(null=True, blank=True)
     prime_recipient_name = models.TextField(null=True, blank=True)
     recipient_unique_id = models.TextField(null=True, blank=True)
+    parent_recipient_name = models.TextField(null=True, blank=True)
     parent_recipient_unique_id = models.TextField(null=True, blank=True)
 
     pulled_from = models.TextField(null=True, blank=True)
