@@ -5,13 +5,17 @@ from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
+from usaspending_api.common.views import APIDocumentationView
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
+
+from usaspending_api.accounts.models import (AppropriationAccountBalances,
+                                             FederalAccount,
+                                             TreasuryAppropriationAccount)
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import \
+    FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -65,24 +69,21 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
 
     endpoint_doc: /federal_account/fiscal_year_snapshot.md
     """
-
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
         fy = int(fy) or SubmissionAttributes.last_certified_fy()
         queryset = AppropriationAccountBalances.final_objects.filter(
             treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
-        queryset = queryset \
-            .aggregate(
-                outlay=Sum('gross_outlay_amount_by_tas_cpe'),
-                budget_authority=Sum('total_budgetary_resources_amount_cpe'),
-                obligated=Sum('obligations_incurred_total_by_tas_cpe'),
-                unobligated=Sum('unobligated_balance_cpe'),
-                balance_brought_forward=Sum(
-                    F('budget_authority_unobligated_balance_brought_forward_fyb') +
-                    F('adjustments_to_unobligated_balance_brought_forward_cpe')),
-                other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
-                appropriations=Sum('budget_authority_appropriated_amount_cpe'))
-
+        queryset = queryset.aggregate(
+            outlay=Sum('gross_outlay_amount_by_tas_cpe'),
+            budget_authority=Sum('total_budgetary_resources_amount_cpe'),
+            obligated=Sum('obligations_incurred_total_by_tas_cpe'),
+            unobligated=Sum('unobligated_balance_cpe'),
+            balance_brought_forward=Sum(
+                F('budget_authority_unobligated_balance_brought_forward_fyb') +
+                F('adjustments_to_unobligated_balance_brought_forward_cpe')),
+            other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
+            appropriations=Sum('budget_authority_appropriated_amount_cpe'))
         if queryset['outlay'] is not None:
             name = FederalAccount.objects.filter(id=int(pk)).values('account_title').first()['account_title']
             queryset['name'] = name
