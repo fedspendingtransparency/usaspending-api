@@ -36,6 +36,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
         broker_subawards.recipient_name AS recipient_name,
         UPPER(prime_recipient.recipient_name) AS prime_recipient_name,
         broker_subawards.duns AS recipient_unique_id,
+        broker_subawards.parent_recipient_name AS parent_recipient_name,
         broker_subawards.parent_duns AS parent_recipient_unique_id,
 
         contract_data.pulled_from,
@@ -315,7 +316,7 @@ INSERT INTO public.subaward
      recipient_location_country_name, recipient_location_country_code, recipient_location_state_code,
      recipient_location_county_name, recipient_location_county_code, recipient_location_zip5,
      recipient_location_congressional_code, pop_country_name, pop_country_code, pop_state_code, pop_county_name,
-     pop_county_code, pop_city_code, pop_zip5, pop_congressional_code)
+     pop_county_code, pop_city_code, pop_zip5, pop_congressional_code, parent_recipient_name)
     SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, recipient_id, cfda_id,
            latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
            action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
@@ -328,7 +329,8 @@ INSERT INTO public.subaward
            funding_subtier_agency_abbreviation, recipient_location_country_name, recipient_location_country_code,
            recipient_location_state_code, recipient_location_county_name, recipient_location_county_code,
            recipient_location_zip5, recipient_location_congressional_code, pop_country_name, pop_country_code,
-           pop_state_code, pop_county_name, pop_county_code, pop_city_code, pop_zip5, pop_congressional_code
+           pop_state_code, pop_county_name, pop_county_code, pop_city_code, pop_zip5, pop_congressional_code,
+           parent_recipient_name
     FROM public.temporary_restock_subaward;
 
 WITH subaward_totals AS (
