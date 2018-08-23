@@ -36,7 +36,11 @@ CREATE TABLE public.temporary_restock_subaward AS (
         broker_subawards.recipient_name AS recipient_name,
         UPPER(prime_recipient.recipient_name) AS prime_recipient_name,
         broker_subawards.duns AS recipient_unique_id,
-        broker_subawards.parent_recipient_name AS parent_recipient_name,
+        (
+            SELECT legal_business_name
+            FROM duns
+            WHERE awardee_or_recipient_uniqu = broker_subawards.parent_duns
+        ) AS parent_recipient_name,
         broker_subawards.parent_duns AS parent_recipient_unique_id,
 
         contract_data.pulled_from,
