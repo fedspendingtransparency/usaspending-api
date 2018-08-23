@@ -55,34 +55,9 @@ CREATE UNIQUE INDEX idx_temporary_restock_recipient_lookup_unique_duns ON public
 
 
 --------------------------------------------------------------------------------
--- Step 2a, Create rows with Parent DUNS + Parent Recipient Names from SAM
+-- Step 2a, Upsert rows with DUNS + Recipient Names from SAM
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 2a: Creating records from SAM parent data'; END $$;
-WITH grouped_parent_recipients AS (
-    SELECT
-    DISTINCT ON (ultimate_parent_unique_ide, ultimate_parent_legal_enti)
-      ultimate_parent_unique_ide AS duns,
-      ultimate_parent_legal_enti AS legal_business_name
-    FROM duns
-    WHERE ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
-    ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, broker_duns_id DESC
-)
-INSERT INTO public.temporary_restock_recipient_lookup (
-    recipient_hash, legal_business_name, duns, parent_duns, parent_legal_business_name)
-SELECT
-    MD5(UPPER(CONCAT(gpr.duns, gpr.legal_business_name)))::uuid AS recipient_hash,
-    UPPER(gpr.legal_business_name) AS legal_business_name,
-    gpr.duns AS duns,
-    gpr.duns AS parent_duns,
-    UPPER(gpr.legal_business_name) AS parent_legal_business_name
-FROM grouped_parent_recipients AS gpr
-ON CONFLICT (duns) DO NOTHING;
-
-
---------------------------------------------------------------------------------
--- Step 2b, Upsert rows with DUNS + Recipient Names from SAM
---------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 2b: Adding/updating records from SAM'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 2a: Adding/updating records from SAM'; END $$;
 
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash, legal_business_name, duns,
@@ -107,21 +82,34 @@ INSERT INTO public.temporary_restock_recipient_lookup (
     congressional_district,
     business_types_codes
   FROM duns
-  ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC
-ON CONFLICT (duns) DO UPDATE SET
-    parent_legal_business_name = excluded.parent_legal_business_name,
-    address_line_1 = excluded.address_line_1,
-    address_line_2 = excluded.address_line_2,
-    city = excluded.city,
-    state = excluded.state,
-    zip5 = excluded.zip5,
-    zip4 = excluded.zip4,
-    country_code = excluded.country_code,
-    congressional_district = excluded.congressional_district,
-    business_types_codes = excluded.business_types_codes;
+  ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC;
+
+
+--------------------------------------------------------------------------------
+-- Step 2b, Create rows with Parent DUNS + Parent Recipient Names from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 2b: Creating records from SAM parent data'; END $$;
+WITH grouped_parent_recipients AS (
+    SELECT
+    DISTINCT ON (ultimate_parent_unique_ide, ultimate_parent_legal_enti)
+      ultimate_parent_unique_ide AS duns,
+      ultimate_parent_legal_enti AS legal_business_name
+    FROM duns
+    WHERE ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
+    ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, broker_duns_id DESC
+)
+INSERT INTO public.temporary_restock_recipient_lookup (
+    recipient_hash, legal_business_name, duns, parent_duns, parent_legal_business_name)
+SELECT
+    MD5(UPPER(CONCAT(gpr.duns, gpr.legal_business_name)))::uuid AS recipient_hash,
+    UPPER(gpr.legal_business_name) AS legal_business_name,
+    gpr.duns AS duns,
+    gpr.duns AS parent_duns,
+    UPPER(gpr.legal_business_name) AS parent_legal_business_name
+FROM grouped_parent_recipients AS gpr
+ON CONFLICT (duns) DO NOTHING;
 
 VACUUM ANALYZE public.temporary_restock_recipient_lookup;
-
 
 --------------------------------------------------------------------------------
 -- Step 3a, Create rows with data from FPDS/FABS
