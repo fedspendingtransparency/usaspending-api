@@ -5,7 +5,7 @@ from django.db import connections, transaction as db_transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.recipient.models import DUNS
+from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -134,14 +134,15 @@ class Command(BaseCommand):
         if award_type == 'procurement':
             location_value_map = location_d1_recipient_mapper(row)
             recipient_name = row['company_name']
+            parent_recipient_name = row['parent_company_name']
         else:
             location_value_map = location_d2_recipient_mapper(row)
             recipient_name = row['awardee_name']
+            parent_recipient_name = None
 
-        parent_recipient_name = None
-        if row.get('parent_duns'):
-            duns_obj = DUNS.objects.filter(awardee_or_recipient_uniqu=row['parent_duns'],
-                                           legal_business_name__isnull=False).values('legal_business_name').first()
+        if not parent_recipient_name and row.get('parent_duns'):
+            duns_obj = RecipientLookup.objects.filter(duns=row['parent_duns'], legal_business_name__isnull=False)\
+                .values('legal_business_name').first()
             if duns_obj:
                 parent_recipient_name = duns_obj['legal_business_name']
 
