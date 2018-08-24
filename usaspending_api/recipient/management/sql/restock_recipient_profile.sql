@@ -55,33 +55,29 @@ INSERT INTO public.temporary_restock_recipient_profile (
   recipient_unique_id,
   recipient_name
 )
-SELECT
-  'P' as recipient_level,
-  recipient_hash,
-  duns AS recipient_unique_id,
-  legal_business_name AS recipient_name
-FROM
-  public.recipient_lookup
-WHERE
-  recipient_lookup.duns IS NOT NULL
+  SELECT
+    'P' as recipient_level,
+    recipient_hash,
+    duns AS recipient_unique_id,
+    legal_business_name AS recipient_name
+  FROM
+    public.recipient_lookup
 UNION ALL
-SELECT
-  'C' as recipient_level,
-  recipient_hash,
-  duns AS recipient_unique_id,
-  legal_business_name AS recipient_name
-FROM
-  public.recipient_lookup
+  SELECT
+    'C' as recipient_level,
+    recipient_hash,
+    duns AS recipient_unique_id,
+    legal_business_name AS recipient_name
+  FROM
+    public.recipient_lookup
 UNION ALL
-SELECT
-  'R' as recipient_level,
-  recipient_hash,
-  duns AS recipient_unique_id,
-  legal_business_name AS recipient_name
-FROM
-  public.recipient_lookup
-WHERE
-  recipient_lookup.duns IS NULL;
+  SELECT
+    'R' as recipient_level,
+    recipient_hash,
+    duns AS recipient_unique_id,
+    legal_business_name AS recipient_name
+  FROM
+    public.recipient_lookup;
 
 
 CREATE UNIQUE INDEX idx_recipient_profile_uniq_new ON public.temporary_restock_recipient_profile USING BTREE(recipient_hash, recipient_level);

@@ -91,7 +91,7 @@ def build_legal_entity_booleans_dict(row):
         'other_not_for_profit_organ',
         'us_local_government'
     ]
-    return {le_col: bool(strtobool(row.get(le_col, 'false'))) for le_col in le_cols}
+    return {le_col: bool(strtobool(row.get(le_col, 'false') or 'false')) for le_col in le_cols}
 
 
 def get_award_category(award_type_code):
