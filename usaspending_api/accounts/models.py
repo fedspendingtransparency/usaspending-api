@@ -249,22 +249,28 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     final_objects = AppropriationAccountBalancesManager()
 
     FINAL_OF_FY_SQL = """
-        UPDATE appropriation_account_balances
-        SET final_of_fy = submission_id in
-        ( SELECT DISTINCT ON
-            (aab.treasury_account_identifier,
-             FY(s.reporting_period_start))
-          s.submission_id
-          FROM submission_attributes s
-          JOIN appropriation_account_balances aab
-              ON (s.submission_id = aab.submission_id)
-          ORDER BY aab.treasury_account_identifier,
-                   FY(s.reporting_period_start),
-                   s.reporting_period_start DESC)"""
+        WITH submission_and_tai AS (
+            SELECT
+                DISTINCT ON (aab.treasury_account_identifier, FY(s.reporting_period_start))
+                aab.treasury_account_identifier,
+                s.submission_id
+            FROM submission_attributes s
+            JOIN appropriation_account_balances aab
+                  ON (s.submission_id = aab.submission_id)
+            ORDER BY aab.treasury_account_identifier,
+                       FY(s.reporting_period_start),
+                       s.reporting_period_start DESC
+        )
+        UPDATE appropriation_account_balances aab
+            SET final_of_fy = true
+            FROM submission_and_tai sat
+            WHERE aab.treasury_account_identifier = sat.treasury_account_identifier AND
+            aab.submission_id = sat.submission_id"""
 
     @classmethod
     def populate_final_of_fy(cls):
         with connection.cursor() as cursor:
+            cursor.execute("UPDATE appropriation_account_balances SET final_of_fy = false")
             cursor.execute(cls.FINAL_OF_FY_SQL)
 
     # TODO: is the self-joining SQL below do-able via the ORM?
