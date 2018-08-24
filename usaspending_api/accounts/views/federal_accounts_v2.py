@@ -384,8 +384,8 @@ class FederalAccountsViewSet(APIDocumentationView):
     """
     def _parse_and_validate_request(self, request_dict):
         """ Validate the Request object includes the required fields """
-        fy_range = [i for i in range(2001, FiscalDateTime.today().year + 1)]
-        last_fy = SubmissionAttributes.last_certified_fy()
+        fy_range = [str(i) for i in range(2001, FiscalDateTime.today().year + 1)]
+        last_fy = str(SubmissionAttributes.last_certified_fy()) or str(FiscalDateTime.today().year)
         request_settings = [
             {'key': 'sort', 'name': 'sort', 'type': 'object', 'optional': True, 'object_keys': {
                 'field': {'type': 'enum', 'enum_values': ['budgetary_resources', 'managing_agency', 'account_name',

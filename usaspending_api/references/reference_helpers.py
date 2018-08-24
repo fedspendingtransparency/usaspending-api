@@ -9,7 +9,8 @@ def remove_empty_federal_accounts(tas_tuple=None):
     """
     Removes federal accounts who are no longer attached to a TAS
     """
-    FederalAccount.objects.filter(treasuryappropriationaccount__isnull=True).distinct().delete()
+    returns = FederalAccount.objects.filter(treasuryappropriationaccount__isnull=True).distinct().delete()
+    return returns[0]
 
 
 def update_federal_accounts(tas_tuple=None):
@@ -32,15 +33,14 @@ def update_federal_accounts(tas_tuple=None):
 
     # Because orm doesn't support join updates, dropping down to raw SQL
     # to update existing federal_account FK relationships on the tas table.
-    tas_fk_sql = '''
-        update treasury_appropriation_account t
-        set federal_account_id = fa.id
-        from federal_account fa
-        where t.agency_id = fa.agency_identifier
-        and t.main_account_code = fa.main_account_code
-        '''
-    if tas_tuple is not None:
-        tas_fk_sql += 'AND t.treasury_account_identifier IN %s '
+    tas_fk_sql = " ".join([
+        "UPDATE treasury_appropriation_account t",
+        "SET federal_account_id = fa.id",
+        "FROM federal_account fa",
+        "WHERE t.agency_id = fa.agency_identifier",
+        "AND t.main_account_code = fa.main_account_code",
+        "AND t.treasury_account_identifier IN %s" if tas_tuple is not None else "",
+    ])
 
     with connection.cursor() as cursor:
         cursor.execute(tas_fk_sql, [tas_tuple])
@@ -86,3 +86,6 @@ def insert_federal_accounts():
         # FKs to their corresponding treasury_appropriation_account records
         tas_update_list = [t.treasury_account_identifier for t in tas_no_federal_account]
         update_federal_accounts(tuple(tas_update_list))
+        return len(fa_objects)
+    else:
+        return 0
