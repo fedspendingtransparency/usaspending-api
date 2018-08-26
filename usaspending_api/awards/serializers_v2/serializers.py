@@ -241,6 +241,7 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
     recipient_parent_name = serializers.SerializerMethodField('recipient_parent_name_func')
 
     def recipient_parent_name_func(self, entity):
+        return{"MESSAGE":"uncomment this"}
         parent_recipient = DUNS.objects.get(awardee_or_recipient_uniqu=entity.parent_recipient_unique_id)
         return parent_recipient.legal_business_name
 
@@ -251,7 +252,7 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
             "recipient_name",
             "recipient_unique_id",
             "parent_recipient_unique_id",
-            #"recipient_parent_name",
+            "recipient_parent_name",
             "business_categories",
             "location"
         ]
@@ -367,7 +368,6 @@ class TransactionNormalizedSerializerV2(LimitableSerializerV2):
         model = TransactionNormalized
         fields = '__all__'
         default_fields = [
-            "id",
             "type",
             "type_description",
             "period_of_performance_start_date",
@@ -448,7 +448,6 @@ class AwardContractSerializerV2(LimitableSerializerV2):
         fields ="__all__"
 
         default_fields=[
-            "id",
             "type",
             "category",
             "type_description",
@@ -496,11 +495,18 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 class AwardMiscSerializerV2(LimitableSerializerV2):
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     executive_details = serializers.SerializerMethodField("executive_details_func")
-    cfda_program_details = serializers.SerializerMethodField("cfda_program_details_func")
-    subawards = serializers.SerializerMethodField("subawards_func")
-    award_amount = serializers.SerializerMethodField("award_amount_func")
-    parent_award_details = serializers.SerializerMethodField("parent_award_details_func")
+    cfda_objectives = serializers.SerializerMethodField('cfda_objectives_func')
+    cfda_title = serializers.SerializerMethodField('cfda_title_func')
+    cfda_number = serializers.SerializerMethodField('cfda_number_func')
 
+    def cfda_objectives_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_objectives
+
+    def cfda_title_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_title
+
+    def cfda_number_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_number
 
     def period_of_performance_func(self, award):
         return {
@@ -509,19 +515,8 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
                 }
 
     def executive_details_func(self, award):
-        return ["some stuff"]
-
-    def cfda_program_details_func(self, award):
-        return ["some stuff"]
-
-    def subawards_func(self, award):
-        return ["some stuff"]
-
-    def award_amount_func(self, award):
-        return ["some stuff"]
-
-    def parent_award_details_func(self, award):
-        return ["some stuff"]
+        entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
+        return entity
 
     class Meta:
 
@@ -529,23 +524,22 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
         fields ="__all__"
 
         default_fields=[
-            "id",
             "type",
             "category",
-            "award_name",
+            "type_description",
             "piid",
             "description",
-            "cfda_program_details",
+            "cfda_objectives",
+            "cfda_number",
+            "cfda_title",
             "awarding_agency",
             "funding_agency",
             "recipient",
-            "parent_award_details",
-            "award_amount",
-            "subawards",
+            "subaward_count",
+            "total_subaward_amount",
             "period_of_performance",
             "place_of_performance",
-            "executive_details"
-            "latest_transaction",
+            "executive_details",
          ]
         nested_serializers = {
             "recipient": {
@@ -567,7 +561,7 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
             "latest_transaction": {
                 "class": TransactionNormalizedSerializerV2,
                 "kwargs": {"read_only": True}
-            },
+            }
         }
         
 
