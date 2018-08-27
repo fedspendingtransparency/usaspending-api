@@ -1,5 +1,4 @@
 appdirs==1.4.3
-autoenv==1.0.0
 bidict==0.13.1
 boto3==1.4.4
 botocore==1.5.46
