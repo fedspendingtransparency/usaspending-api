@@ -19,7 +19,7 @@ class UniversalTransactionView(models.Model):
     last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    action_type = models.TextField()
+    action_type = models.TextField(null=True)
     award_id = models.IntegerField()
     award_category = models.TextField()
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
@@ -826,6 +826,7 @@ class SummaryTransactionRecipientView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
+    action_type = models.TextField(null=True)
     pulled_from = models.TextField()
 
     recipient_hash = models.UUIDField()
