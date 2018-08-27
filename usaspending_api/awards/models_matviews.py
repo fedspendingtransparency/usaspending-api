@@ -828,6 +828,7 @@ class SummaryTransactionRecipientView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
+    action_type = models.TextField(null=True)
     pulled_from = models.TextField()
 
     recipient_hash = models.UUIDField()
