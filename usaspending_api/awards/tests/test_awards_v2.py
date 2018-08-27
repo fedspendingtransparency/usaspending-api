@@ -5,10 +5,8 @@ import json
 from rest_framework import status
 from model_mommy import mommy
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, Award
-from usaspending_api.awards.serializers_v2.serializers import AwardMiscSerializerV2, AwardContractSerializerV2
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, Cfda, OfficeAgency, LegalEntity
-from usaspending_api.recipient.models import DUNS
+from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
 
 
 @pytest.mark.django_db
@@ -25,10 +23,11 @@ def test_award_last_updated_endpoint(client):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data['last_updated'] == test_date_reformatted
 
+
 @pytest.mark.django_db
 def test_award_endpoint(client):
     loc = {
-        "pk":1,
+        "pk": 1,
         "location_country_code": "USA",
         "country_name": "UNITED STATES",
         "state_code": "NC",
@@ -44,20 +43,19 @@ def test_award_endpoint(client):
         "foreign_province": None,
     }
     subag = {
-         "pk":1,
-         "name":"agency name", 
-         "abbreviation":"some other stuff"
+         "pk": 1,
+         "name": "agency name",
+         "abbreviation": "some other stuff"
      }
 
-
     trans_asst = {
-        "pk":1,
+        "pk": 1,
     }
     trans_cont = {
-        "pk":2,
+        "pk": 2,
     }
-    duns = {"awardee_or_recipient_uniqu":123,
-            "legal_business_name":"Sams Club"}
+    duns = {"awardee_or_recipient_uniqu": 123,
+            "legal_business_name": "Sams Club"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
@@ -65,38 +63,36 @@ def test_award_endpoint(client):
     mommy.make("references.ToptierAgency", **subag)
     mommy.make("references.OfficeAgency", name="office_agency")
 
-
     le = {
-        "pk":1,
+        "pk": 1,
         "recipient_name": "John's Pizza",
         "recipient_unique_id": 456,
-        "parent_recipient_unique_id":123,
-        "business_categories":['small_business'],
-        "location":Location.objects.get(pk=1),
+        "parent_recipient_unique_id": 123,
+        "business_categories": ['small_business'],
+        "location": Location.objects.get(pk=1),
     }
 
     ag = {
-        "pk":1,
-        "toptier_agency":ToptierAgency.objects.get(pk=1),
-        "subtier_agency":SubtierAgency.objects.get(pk=1),
-        "office_agency":OfficeAgency.objects.get(pk=1),
+        "pk": 1,
+        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": SubtierAgency.objects.get(pk=1),
+        "office_agency": OfficeAgency.objects.get(pk=1),
     }
 
-    mommy.make("awards.TransactionNormalized",**trans_asst)
-    mommy.make("awards.TransactionNormalized",**trans_cont)
+    mommy.make("awards.TransactionNormalized", **trans_asst)
+    mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **le)
 
-
     asst_data = {
-        "pk":1,
-        "transaction":TransactionNormalized.objects.get(pk=1),
-        "cfda_number":1234,
-        "cfda_title":"Shazam",
+        "pk": 1,
+        "transaction": TransactionNormalized.objects.get(pk=1),
+        "cfda_number": 1234,
+        "cfda_title": "Shazam",
     }
     cont_data = {
-        "pk":2,
-        "transaction":TransactionNormalized.objects.get(pk=2),
+        "pk": 2,
+        "transaction": TransactionNormalized.objects.get(pk=2),
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "naics": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
@@ -140,7 +136,7 @@ def test_award_endpoint(client):
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **cont_data)
     award_1_model = {
-        "pk":1,
+        "pk": 1,
         "type": "11",
         "type_description": "OTHER FINANCIAL ASSISTANCE",
         "category": "grant",
@@ -151,38 +147,36 @@ def test_award_endpoint(client):
         "generated_unique_award_id": "ASST_AW_3620_-NONE-_1830212.0481163",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "awarding_agency":Agency.objects.get(pk=1),
-        "funding_agency":Agency.objects.get(pk=1),
-        "recipient":LegalEntity.objects.get(pk=1), 
-        "place_of_performance":Location.objects.get(pk=1),
-        "latest_transaction":TransactionNormalized.objects.get(pk=1),
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=1),
     }
 
     award_2_model = {
-        "pk":2,
+        "pk": 2,
         "type": "A",
         "type_description": "DEFINITIVE CONTRACT",
         "category": "contract",
         "piid": 5678,
-        "parent_award_id":1,
+        "parent_award_id": 1,
         "description": "lorem ipsum",
-        "awarding_agency":Agency.objects.get(pk=1),
-        "funding_agency":Agency.objects.get(pk=1),
-        "recipient":LegalEntity.objects.get(pk=1), 
-        "total_obligation":1000,
-        "base_and_all_options_value":2000,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
-        "place_of_performance":Location.objects.get(pk=1),
-        "latest_transaction":TransactionNormalized.objects.get(pk=2),
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
     }
     mommy.make('awards.Award', **award_1_model)
     mommy.make('awards.Award', **award_2_model)
-   
-
 
     resp = client.get('/api/v2/awards/ASST_AW_3620_-NONE-_1830212.0481163/')
     assert resp.status_code == status.HTTP_200_OK
@@ -191,7 +185,6 @@ def test_award_endpoint(client):
     resp = client.get('/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/')
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
-
 
 
 expected_response_asst = {
@@ -396,14 +389,3 @@ expected_response_cont = {
     "foreign_province": None
   }
 }
-
-
-   
-
-
-
-
-
-
-
-

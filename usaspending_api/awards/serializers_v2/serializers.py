@@ -1,9 +1,8 @@
 from rest_framework import serializers
-from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, TransactionNormalized
+from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
-                                               SubtierAgency, ToptierAgency,OfficeAgency)
+                                               SubtierAgency, ToptierAgency, OfficeAgency)
 from usaspending_api.recipient.models import DUNS
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
@@ -22,8 +21,6 @@ class RecipientAwardSpendingSerializer(serializers.Serializer):
     recipient = RecipientSerializer(source='*')
 
 
-
-
 class LimitableSerializerV2(serializers.ModelSerializer):
 
     """Extends the model serializer to support field limiting."""
@@ -31,12 +28,10 @@ class LimitableSerializerV2(serializers.ModelSerializer):
 
         # Grab any kwargs include and exclude fields, these are typically
         # passed in by a parent serializer to the child serializer
-        kwargs_has_include = 'fields' in kwargs
         kwargs_include_fields = kwargs.pop('fields', [])
 
         # Initialize now that kwargs have been cleared
         super(LimitableSerializerV2, self).__init__(*args, **kwargs)
-
 
         include_fields = kwargs_include_fields
 
@@ -123,6 +118,8 @@ class LegalEntityOfficersSerializerV2(LimitableSerializerV2):
             "officer_5_name",
             "officer_5_amount",
         ]
+
+
 class ToptierAgencySerializerV2(LimitableSerializerV2):
 
     class Meta:
@@ -156,6 +153,7 @@ class OfficeAgencySerializerV2(LimitableSerializerV2):
             "name"
         ]
 
+
 class LocationSerializerV2(LimitableSerializerV2):
 
     class Meta:
@@ -168,14 +166,13 @@ class LocationSerializerV2(LimitableSerializerV2):
             "foreign_province",
             "city_name",
             "county_name",
-            "state_code",    
+            "state_code",
             "zip5",
             "zip4",
             "foreign_postal_code",
             "country_name",
             "location_country_code",
             "congressional_code"
-            
         ]
 
 
@@ -186,8 +183,7 @@ class AgencySerializerV2(LimitableSerializerV2):
         if agency.office_agency:
             return agency.office_agency.name
         else:
-            return None 
-   
+            return None
 
     class Meta:
         model = Agency
@@ -196,7 +192,6 @@ class AgencySerializerV2(LimitableSerializerV2):
             "toptier_agency",
             "subtier_agency",
             "office_agency_name",
-           
         ]
         nested_serializers = {
             "toptier_agency": {
@@ -212,14 +207,12 @@ class AgencySerializerV2(LimitableSerializerV2):
                 "kwargs": {"read_only": True}
             },
         }
-        
-
 
 
 class LegalEntitySerializerV2(LimitableSerializerV2):
     recipient_parent_name = serializers.SerializerMethodField('recipient_parent_name_func')
 
-    def recipient_parent_name_func(self, entity):  
+    def recipient_parent_name_func(self, entity):
         try:
             parent_recipient = DUNS.objects.get(awardee_or_recipient_uniqu=entity.parent_recipient_unique_id)
         except DUNS.DoesNotExist:
@@ -244,6 +237,7 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
             }
         }
 
+
 class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
 
     class Meta:
@@ -261,7 +255,6 @@ class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
 
 
 class TransactionFPDSSerializerV2(LimitableSerializerV2):
-
 
     class Meta:
         model = TransactionFPDS
@@ -309,39 +302,35 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
         ]
 
 
-
 class AwardContractSerializerV2(LimitableSerializerV2):
     executive_details = serializers.SerializerMethodField("executive_details_func")
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
-    idv_type = serializers.SerializerMethodField("idv_type_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
 
     def latest_transaction_func(seld, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
-    def idv_type_func(self, award):
-        return award.latest_transaction.idv_type 
-
     def period_of_performance_func(self, award):
         return {
-                "period_of_performance_start_date":award.period_of_performance_start_date,
-                "period_of_performance_current_end_date":award.period_of_performance_current_end_date
+                "period_of_performance_start_date": award.period_of_performance_start_date,
+                "period_of_performance_current_end_date": award.period_of_performance_current_end_date
                 }
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
         response = []
         if "officers" in entity and entity["officers"]:
-            for x in range(1,6):
-                response.append({"name":entity["officers"]["officer_"+str(x)+"_name"], "amount":entity["officers"]["officer_"+str(x)+"_amount"]})
-        return {"officers":response}
+            for x in range(1, 6):
+                response.append({"name": entity["officers"]["officer_" + str(x) + "_name"],
+                                "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
+        return {"officers": response}
 
     class Meta:
 
         model = Award
-        fields ="__all__"
+        fields = "__all__"
 
-        default_fields=[
+        default_fields = [
             "type",
             "category",
             "type_description",
@@ -378,8 +367,6 @@ class AwardContractSerializerV2(LimitableSerializerV2):
                 "kwargs": {"read_only": True}
             },
         }
-        
-
 
 
 class AwardMiscSerializerV2(LimitableSerializerV2):
@@ -400,24 +387,25 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
 
     def period_of_performance_func(self, award):
         return {
-                "period_of_performance_start_date":award.period_of_performance_start_date,
-                "period_of_performance_current_end_date":award.period_of_performance_current_end_date
+                "period_of_performance_start_date": award.period_of_performance_start_date,
+                "period_of_performance_current_end_date": award.period_of_performance_current_end_date
                 }
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
         response = []
         if "officers" in entity and entity["officers"]:
-            for x in range(1,6):
-                response.append({"name":entity["officers"]["officer_"+str(x)+"_name"], "amount":entity["officers"]["officer_"+str(x)+"_amount"]})
-        return {"officers":response}
+            for x in range(1, 6):
+                response.append({"name": entity["officers"]["officer_" + str(x) + "_name"],
+                                 "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
+        return {"officers": response}
 
     class Meta:
 
         model = Award
-        fields ="__all__"
+        fields = "__all__"
 
-        default_fields=[
+        default_fields = [
             "type",
             "category",
             "type_description",
@@ -453,7 +441,3 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
                 "kwargs": {"read_only": True}
             }
         }
-        
-
-
-
