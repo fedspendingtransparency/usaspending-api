@@ -45,9 +45,9 @@
   ],
   "indexes": [
     {
-      "name": "unique_pk",
+      "name": "deterministic_unique_hash",
       "unique": true,
-      "columns": [{"name": "pk"}]
+      "columns": [{"name": "duh"}]
     }, {
         "name": "ordered_action_date",
         "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
