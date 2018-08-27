@@ -18,15 +18,22 @@ Assumptions:
 
 # Install PostgreSQL
 
+
 [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
+## Mac Requirement: Homebrew
+It is recommended to have [homebrew](http://brew.sh) installed for Mac users.
+
+**Note:** If you're setting up the project on Mac OSX, we recommend using homebrew to install PostgreSQL, the next step can be skipped if the homebrew installation is successful.
+
+## PostgresSQL install
 1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (minimum PostgreSQL version supported is 9.6.x).
 2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password.
 3. Once PostgreSQL is installed, create the database you will use for this project.
 
 More complete install documentation is available on the PostgreSQL [wiki](https://wiki.postgresql.org/wiki/Detailed_installation_guides).
 
-**Note:** If you're setting up the project on Mac OSX, we recommend using [homebrew](http://brew.sh) to install PostgreSQL.
+
 
 ## Install Memcached
 The API performs query caching via Memcached. If you want to experiment with AWS caching in your development environment, you can find instructions for installing memcached on it's [website](https://memcached.org/). You will also need to install requirements via pip from `caching_requirements.txt` in addition to the other baseline requirements.
@@ -78,6 +85,7 @@ $ brew install direnv
 ```
 
 ## direnv setup
+Depending on your shell (default is bash.)
 ### BASH
 Append the following line to `~/.bashrc`
 ```
