@@ -63,7 +63,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             }, {
                 "name": "sparse",
                 "key": "sparse",
-                "type": "bool",
+                "type": "boolean",
                 "default": True,
             },
         ]
