@@ -37,9 +37,9 @@ ALTER TABLE awards ADD CONSTRAINT award_awarding_agency_fk FOREIGN KEY (awarding
 ALTER TABLE awards ADD CONSTRAINT award_funding_agency_fk FOREIGN KEY (funding_agency_id) REFERENCES agency (id);
 
 -- Subawards table
-ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;
-ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id) DEFERRABLE INITIALLY DEFERRED;
-ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE subaward ADD CONSTRAINT subaward_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE subaward ADD CONSTRAINT subaward_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE subaward ADD CONSTRAINT subaward_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Financial accounts by award table
 ALTER TABLE financial_accounts_by_awards ADD CONSTRAINT faba_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;

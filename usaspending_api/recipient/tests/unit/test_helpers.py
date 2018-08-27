@@ -9,7 +9,7 @@ from django.conf import settings
 import pytest
 
 # Imports from your apps
-from usaspending_api.recipient.v2.views.states import validate_year, reshape_filters
+from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
@@ -74,3 +74,17 @@ def test_reshape_filters_award_type_codes():
     result = reshape_filters(award_type_codes=award_type_codes)
 
     assert result['award_type_codes'] == award_type_codes
+
+
+def test_reshape_filters_duns():
+    duns = '012345678'
+    result = reshape_filters(duns_search_texts=duns)
+
+    assert result['recipient_search_text'] == duns
+
+
+def test_reshape_filters_recipient_id():
+    recipient_id = '00000-fddfdbe-3fcsss5-9d252-d436c0ae8758c-R'
+    result = reshape_filters(recipient_id=recipient_id)
+
+    assert result['recipient_id'] == recipient_id

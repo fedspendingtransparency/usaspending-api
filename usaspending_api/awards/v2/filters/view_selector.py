@@ -80,6 +80,7 @@ MATVIEW_SELECTOR = {
             'time_period',
             'award_type_codes',
             'agencies',
+            'recipient_id',
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
@@ -105,6 +106,7 @@ MATVIEW_SELECTOR = {
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
+            'recipient_id',
             'place_of_performance_scope',
             'place_of_performance_locations',
             'award_amounts',
@@ -124,6 +126,7 @@ MATVIEW_SELECTOR = {
         'allowed_filters': [
             'time_period',
             'award_type_codes',
+            'recipient_id',
         ],
         'prevent_values': {},
         'examine_values': {
@@ -137,6 +140,7 @@ MATVIEW_SELECTOR = {
             'award_type_codes',
             'agencies',
             'legal_entities',
+            'recipient_id',
             'recipient_search_text',
             'recipient_scope',
             'recipient_locations',
@@ -324,6 +328,23 @@ def transaction_spending_summary(filters):
     return queryset, model
 
 
+def recipient_totals(filters):
+    view_chain = [
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
 def spending_by_category(category, filters):
     # category is a string of <category>.
     view_chain = []
@@ -340,7 +361,7 @@ def spending_by_category(category, filters):
         view_chain = ['SummaryNaicsCodesView']
     elif category == 'cfda':
         view_chain = ['SummaryCfdaNumbersView']
-    elif category in ['county', 'district']:
+    elif category in ['county', 'district', 'state_territory', 'country']:
         view_chain = ['SummaryTransactionGeoView']
     elif category in ['recipient_duns']:
         view_chain = ['SummaryTransactionRecipientView']
@@ -351,6 +372,9 @@ def spending_by_category(category, filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ])
+
+    if category in ['federal_account']:
+        view_chain = ['UniversalTransactionView']
 
     for view in view_chain:
         if can_use_view(filters, view):

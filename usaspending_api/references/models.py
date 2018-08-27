@@ -601,6 +601,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
+        index_together = ['recipient_unique_id', 'recipient_name', 'update_date']
 
 
 class LegalEntityOfficers(models.Model):
@@ -651,7 +652,7 @@ class ObjectClass(models.Model):
 class RefProgramActivity(models.Model):
     id = models.AutoField(primary_key=True)
     program_activity_code = models.TextField()
-    program_activity_name = models.TextField()
+    program_activity_name = models.TextField(blank=True, null=True)
     budget_year = models.TextField(blank=True, null=True)
     responsible_agency_id = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
@@ -782,14 +783,3 @@ class PSC(models.Model):
     class Meta:
         managed = True
         db_table = 'psc'
-
-
-class RecipientLookup(models.Model):
-    """Materialized view used for looking up Recipient Names & DUNS"""
-    recipient_hash = models.UUIDField(primary_key=True)
-    legal_business_name = models.TextField(unique=True)
-    duns = models.TextField()
-
-    class Meta:
-        managed = False
-        db_table = 'recipient_lookup_view'

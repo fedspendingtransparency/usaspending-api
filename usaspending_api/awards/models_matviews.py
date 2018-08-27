@@ -816,10 +816,14 @@ class SubawardView(models.Model):
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
     pop_state_code = models.TextField()
+    pop_state_name = models.TextField()
     pop_county_code = models.TextField()
     pop_county_name = models.TextField()
     pop_city_code = models.TextField()
+    pop_city_name = models.TextField()
+    pop_zip4 = models.TextField()
     pop_zip5 = models.TextField()
+    pop_street_address = models.TextField()
     pop_congressional_code = models.TextField()
 
     class Meta:
@@ -848,3 +852,18 @@ class SummaryTransactionRecipientView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_transaction_recipient_view'
+
+
+class SummaryAwardRecipientView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
+    date_signed = models.DateField(blank=False)
+    action_date = models.DateField(blank=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    recipient_hash = models.UUIDField(null=True)
+    parent_recipient_unique_id = models.TextField(blank=True, null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_award_recipient_view'

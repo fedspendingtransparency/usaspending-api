@@ -31,7 +31,7 @@ def test_program_activity_fresh_load():
     call_command('load_program_activity', 'usaspending_api/references/tests/data/program_activity.csv')
 
     expected_results = {
-        'count': 5,
+        'count': 6,
         'program_activity_name_lowercase_found': False
     }
 
