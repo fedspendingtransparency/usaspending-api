@@ -9,7 +9,7 @@ dj-database-url==0.5.0
 django-cors-headers==1.2.2
 django-debug-toolbar==1.7
 django-extensions==1.7.5
-django-filter==0.14.0
+django-filter==2.0.0
 git+https://github.com/fedspendingtransparency/django-mock-queries#egg=django-mock-queries
 django-queryset-csv==1.0.1
 django-simple-history==1.8.2
