@@ -310,7 +310,18 @@ class Command(BaseCommand):
                 'award_report_fy_year': row['report_period_year'],
                 'broker_award_id': row['id'],
                 'internal_id': row['internal_id'],
-                'award_type': award_type
+                'award_type': award_type,
+                'pop_country_code': row['principle_place_country'],
+                'pop_country_name': place_of_performance.country_name,
+                'pop_state_code': row['principle_place_state'],
+                'pop_state_name': row['principle_place_state_name'],
+                'pop_county_code': place_of_performance.county_code,
+                'pop_county_name': place_of_performance.county_name,
+                'pop_city_code': place_of_performance.city_code,
+                'pop_city_name': row['principle_place_city'],
+                'pop_zip4': row['principle_place_zip'],
+                'pop_street_address': row['principle_place_street'],
+                'pop_congressional_code': row['principle_place_district']
             }
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all

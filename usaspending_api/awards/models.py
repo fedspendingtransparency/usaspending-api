@@ -841,6 +841,7 @@ class TransactionFABS(models.Model):
 
 
 class Subaward(DataSourceTrackedModel):
+
     id = models.AutoField(primary_key=True)
 
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards", null=True)
@@ -872,6 +873,8 @@ class Subaward(DataSourceTrackedModel):
     keyword_ts_vector = SearchVectorField(null=True, blank=True)
     award_ts_vector = SearchVectorField(null=True, blank=True)
     recipient_name_ts_vector = SearchVectorField(null=True, blank=True)
+    data_source = models.TextField(null=True, blank=True)
+
     latest_transaction_id = models.IntegerField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
     total_obl_bin = models.TextField(null=True, blank=True)
@@ -913,16 +916,21 @@ class Subaward(DataSourceTrackedModel):
     recipient_location_state_code = models.TextField(null=True, blank=True)
     recipient_location_county_code = models.TextField(null=True, blank=True)
     recipient_location_county_name = models.TextField(null=True, blank=True)
+    recipient_location_city_code = models.TextField(null=True, blank=True)
+    recipient_location_city_name = models.TextField(null=True, blank=True)
     recipient_location_zip5 = models.TextField(null=True, blank=True)
     recipient_location_congressional_code = models.TextField(null=True, blank=True)
 
     pop_country_code = models.TextField(null=True, blank=True)
     pop_country_name = models.TextField(null=True, blank=True)
     pop_state_code = models.TextField(null=True, blank=True)
+    pop_state_name = models.TextField(null=True, blank=True)
     pop_county_code = models.TextField(null=True, blank=True)
     pop_county_name = models.TextField(null=True, blank=True)
     pop_city_code = models.TextField(null=True, blank=True)
-    pop_zip5 = models.TextField(null=True, blank=True)
+    pop_city_name = models.TextField(null=True, blank=True)
+    pop_zip4 = models.TextField(null=True, blank=True)
+    pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
 
     class Meta:
