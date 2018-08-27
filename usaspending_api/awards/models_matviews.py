@@ -92,7 +92,6 @@ class SummaryTransactionView(models.Model):
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    action_type = models.TextField(null=True)
     pulled_from = models.TextField()
     total_obl_bin = models.TextField()
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
@@ -344,7 +343,6 @@ class SummaryTransactionMonthView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
-    action_type = models.TextField(null=True)
     pulled_from = models.TextField()
 
     recipient_location_country_name = models.TextField()

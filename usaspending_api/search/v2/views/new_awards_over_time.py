@@ -6,7 +6,7 @@ from django.db.models import Func, IntegerField, Sum, Q, Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.models_matviews import SummaryTransactionRecipientView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -60,7 +60,12 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 "type": "enum",
                 "enum_values": list(self.groupings.keys()),
                 "default": "fy",
-            }
+            }, {
+                "name": "sparse",
+                "key": "sparse",
+                "type": "bool",
+                "default": True,
+            },
         ]
         advanced_search_filters = [
             model for model in copy.deepcopy(AWARD_FILTER) if model["name"] in ("time_period", "recipient_id")
@@ -81,9 +86,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         assistance_filter = Q(action_type__exact='A') & ~Q(type__in=list(contract_type_mapping.keys()))
         contract_filter = Q(action_type__isnull=True) & Q(type__in=list(contract_type_mapping.keys()))  # | Q(type__isnull=True) & Q(pulled_from='IDV')
-        queryset = UniversalTransactionView.objects.filter(assistance_filter | contract_filter)
+        queryset = SummaryTransactionRecipientView.objects.filter(assistance_filter | contract_filter)
         queryset &= combine_date_range_queryset(
-            time_ranges, UniversalTransactionView, API_SEARCH_MIN_DATE, API_MAX_DATE
+            time_ranges, SummaryTransactionRecipientView, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
 
         if self.filters["recipient_id"][-1] == "P":
@@ -113,7 +118,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             queryset = queryset.annotate(fy=FiscalYear("action_date"))
 
         queryset = (
-            queryset.values(*values).annotate(count=Count("*")).order_by(*["-{}".format(value) for value in values])
+            queryset.values(*values).annotate(count=Sum("counts")).order_by(*["-{}".format(value) for value in values])
         )
         return queryset, values
 
