@@ -108,7 +108,6 @@ class LimitableSerializerV2(serializers.ModelSerializer):
 
 
 class LegalEntityOfficersSerializerV2(LimitableSerializerV2):
-
     class Meta:
         model = LegalEntityOfficers
         fields = '__all__'
@@ -130,8 +129,6 @@ class ToptierAgencySerializerV2(LimitableSerializerV2):
         model = ToptierAgency
         fields = '__all__'
         default_fields = [
-            "cgac_code",
-            "fpds_code",
             "name",
             "abbreviation"
         ]
@@ -143,7 +140,7 @@ class SubtierAgencySerializerV2(LimitableSerializerV2):
         model = SubtierAgency
         fields = '__all__'
         default_fields = [
-            "subtier_code",
+
             "name",
             "abbreviation"
         ]
@@ -183,39 +180,21 @@ class LocationSerializerV2(LimitableSerializerV2):
 
 
 class AgencySerializerV2(LimitableSerializerV2):
-    toptier_agency_name = serializers.SerializerMethodField('toptier_agency_name_func')
-    toptier_agency_abbreviation = serializers.SerializerMethodField('toptier_agency_abbrev_func')
-    subtier_agency_name = serializers.SerializerMethodField('subtier_agency_name_func')
-    subtier_agency_abbreviation = serializers.SerializerMethodField('subtier_agency_abbrev_func')
     office_agency_name = serializers.SerializerMethodField('office_agency_name_func')
 
-
-    def toptier_agency_name_func(self, agency):
-        return agency.toptier_agency.name
-
-    def toptier_agency_abbrev_func(self, agency):
-        return agency.toptier_agency.abbreviation
-
-    def subtier_agency_name_func(self, agency):
-        if agency.subtier_agency and agency.subtier_agency.name:
-            return agency.subtier_agency.name
-
-    def subtier_agency_abbrev_func(self, agency):
-        if agency.subtier_agency and agency.subtier_agency.abbreviation:
-            return agency.subtier_agency.abbreviation
-
     def office_agency_name_func(self, agency):
-        if agency.office_agency and agency.office_agency.name:
-            return agency.office_agency.name  
+        if agency.office_agency:
+            return agency.office_agency.name
+        else:
+            return None 
+   
 
     class Meta:
         model = Agency
         fields = '__all__'
         default_fields = [
-            "toptier_agency_name",
-            "toptier_agency_abbreviation",
-            "subtier_agency_name",
-            "subtier_agency_abbreviation",
+            "toptier_agency",
+            "subtier_agency",
             "office_agency_name",
            
         ]
@@ -240,9 +219,11 @@ class AgencySerializerV2(LimitableSerializerV2):
 class LegalEntitySerializerV2(LimitableSerializerV2):
     recipient_parent_name = serializers.SerializerMethodField('recipient_parent_name_func')
 
-    def recipient_parent_name_func(self, entity):
-        return{"MESSAGE":"uncomment this"}
-        parent_recipient = DUNS.objects.get(awardee_or_recipient_uniqu=entity.parent_recipient_unique_id)
+    def recipient_parent_name_func(self, entity):  
+        try:
+            parent_recipient = DUNS.objects.get(awardee_or_recipient_uniqu=entity.parent_recipient_unique_id)
+        except DUNS.DoesNotExist:
+            return None
         return parent_recipient.legal_business_name
 
     class Meta:
@@ -259,10 +240,6 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
         nested_serializers = {
             "location": {
                 "class": LocationSerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "officers": {
-                "class": LegalEntityOfficersSerializerV2,
                 "kwargs": {"read_only": True}
             }
         }
@@ -281,33 +258,6 @@ class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
                 "kwargs": {"read_only": True}
             }
         }
-
-
-
-class TransactionFABSSerializerV2(LimitableSerializerV2):
-
-
-    class Meta:
-        model = TransactionFABS
-        fields = [
-            "fain",
-            "uri",
-            "cfda_number",
-            "cfda_title",
-            "cfda_objectives",
-            "face_value_loan_guarantee",
-            "original_loan_subsidy_cost",
-        ]
-        default_fields = [
-            "fain",
-            "uri",
-            "cfda_number",
-            "cfda_title",
-            "cfda_objectives",
-            "face_value_loan_guarantee",
-            "original_loan_subsidy_cost",
-        ]
-        
 
 
 class TransactionFPDSSerializerV2(LimitableSerializerV2):
@@ -359,63 +309,6 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
         ]
 
 
-class TransactionNormalizedSerializerV2(LimitableSerializerV2):
-    """Serialize complete transactions, including assistance and contract data."""
-
-
-    class Meta:
-
-        model = TransactionNormalized
-        fields = '__all__'
-        default_fields = [
-            "type",
-            "type_description",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "action_date",
-            "action_type",
-            "action_type_description",
-            "action_date__fy",
-            "federal_action_obligation",
-            "original_loan_subsidy_cost",
-            "modification_number",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "description",
-            "place_of_performance",
-            "contract_data",  # must match related_name in TransactionFPDS
-            "assistance_data"  # must match related_name in TransactionFABS
-        ]
-        nested_serializers = {
-            # name below must match related_name in TransactionFABS
-            "assistance_data": {
-                "class": TransactionFABSSerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            # name below must match related_name in TransactionFPDS
-            "contract_data": {
-                "class": TransactionFPDSSerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "recipient": {
-                "class": LegalEntitySerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "awarding_agency": {
-                "class": AgencySerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "funding_agency": {
-                "class": AgencySerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializerV2,
-                "kwargs": {"read_only": True}
-            }
-        }
-
 
 class AwardContractSerializerV2(LimitableSerializerV2):
     executive_details = serializers.SerializerMethodField("executive_details_func")
@@ -437,10 +330,11 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
-        return entity
-
-
-
+        response = []
+        if "officers" in entity and entity["officers"]:
+            for x in range(1,6):
+                response.append({"name":entity["officers"]["officer_"+str(x)+"_name"], "amount":entity["officers"]["officer_"+str(x)+"_amount"]})
+        return {"officers":response}
 
     class Meta:
 
@@ -483,10 +377,6 @@ class AwardContractSerializerV2(LimitableSerializerV2):
                 "class": LocationSerializerV2,
                 "kwargs": {"read_only": True}
             },
-            "latest_transaction": {
-                "class": TransactionNormalizedSerializerV2,
-                "kwargs": {"read_only": True}
-            }
         }
         
 
@@ -516,7 +406,11 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
-        return entity
+        response = []
+        if "officers" in entity and entity["officers"]:
+            for x in range(1,6):
+                response.append({"name":entity["officers"]["officer_"+str(x)+"_name"], "amount":entity["officers"]["officer_"+str(x)+"_amount"]})
+        return {"officers":response}
 
     class Meta:
 
@@ -556,10 +450,6 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
             },
             "place_of_performance": {
                 "class": LocationSerializerV2,
-                "kwargs": {"read_only": True}
-            },
-            "latest_transaction": {
-                "class": TransactionNormalizedSerializerV2,
                 "kwargs": {"read_only": True}
             }
         }
