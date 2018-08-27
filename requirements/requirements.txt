@@ -17,7 +17,7 @@ django-spaghetti-and-meatballs==0.2.2
 Django==1.11.14
 djangorestframework==3.4.6
 drf-extensions==0.3.1
-drf-tracking==1.1.0
+drf-tracking==1.4.0
 django-partial-index==0.5.2
 elasticsearch==6.1.1
 fiscalyear==0.1.0
