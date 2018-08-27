@@ -160,6 +160,7 @@ class Command(BaseCommand):
         recipient = LegalEntity.objects.create(
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
+            vendor_doing_as_business_name=row['dba_name'],
             parent_recipient_unique_id=row['parent_duns'],
             parent_recipient_name=parent_recipient_name,
             location=recipient_location
@@ -214,6 +215,7 @@ class Command(BaseCommand):
         query_columns = ['award.internal_id', 'award.id',
                          'award.report_period_mon', 'award.report_period_year',
                          'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
+                         'sub_award.dba_name AS dba_name',
                          'sub_award.principle_place_country AS principle_place_country',
                          'sub_award.principle_place_city AS principle_place_city',
                          'sub_award.principle_place_zip AS principle_place_zip',

@@ -893,6 +893,7 @@ class Subaward(DataSourceTrackedModel):
 
     business_categories = ArrayField(models.TextField(), default=list)
     recipient_name = models.TextField(null=True, blank=True)
+    dba_name = models.TextField(null=True, blank=True)
     prime_recipient_name = models.TextField(null=True, blank=True)
     recipient_unique_id = models.TextField(null=True, blank=True)
     parent_recipient_name = models.TextField(null=True, blank=True)
