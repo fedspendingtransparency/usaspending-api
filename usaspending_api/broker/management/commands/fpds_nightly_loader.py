@@ -314,6 +314,10 @@ class Command(BaseCommand):
                 transaction_fpds = TransactionFPDS(transaction=transaction, **contract_instance)
                 transaction_fpds.save()
 
+            # Update legal entity to map back to transaction
+            legal_entity.transaction_unique_id = detached_award_proc_unique
+            legal_entity.save()
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--date',
