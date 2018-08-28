@@ -89,6 +89,7 @@ class UniversalTransactionView(models.Model):
 
 
 class SummaryTransactionView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -232,6 +233,7 @@ class UniversalAwardView(models.Model):
 
 
 class SummaryAwardView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -259,6 +261,7 @@ class SummaryAwardView(models.Model):
 
 
 class SummaryView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -286,6 +289,7 @@ class SummaryView(models.Model):
 
 
 class SummaryNaicsCodesView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -305,6 +309,7 @@ class SummaryNaicsCodesView(models.Model):
 
 
 class SummaryPscCodesView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -322,6 +327,7 @@ class SummaryPscCodesView(models.Model):
 
 
 class SummaryCfdaNumbersView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -340,6 +346,7 @@ class SummaryCfdaNumbersView(models.Model):
 
 
 class SummaryTransactionMonthView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -402,6 +409,7 @@ class SummaryTransactionMonthView(models.Model):
 
 
 class SummaryTransactionGeoView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -447,6 +455,7 @@ class SummaryTransactionGeoView(models.Model):
 
 
 class SummaryStateView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -823,6 +832,7 @@ class SubawardView(models.Model):
 
 
 class SummaryTransactionRecipientView(models.Model):
+    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
