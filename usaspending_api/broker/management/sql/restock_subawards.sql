@@ -281,6 +281,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
 
             duns TEXT,
             recipient_name TEXT,
+            dba_name TEXT,
             parent_duns TEXT,
             parent_recipient_name TEXT,
             recipient_location_country_code TEXT,
@@ -327,7 +328,7 @@ INSERT INTO public.subaward
      recipient_location_county_name, recipient_location_county_code, recipient_location_city_name,
      recipient_location_city_code, recipient_location_zip5, recipient_location_congressional_code, pop_country_name,
      pop_country_code, pop_state_code, pop_state_name, pop_county_name, pop_county_code, pop_city_name, pop_city_code,
-     pop_zip4, pop_street_address, pop_congressional_code, parent_recipient_name, dba_name)
+     pop_zip4, pop_street_address, pop_congressional_code, dba_name, parent_recipient_name)
     SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, data_source, recipient_id, cfda_id,
            latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
            action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
@@ -342,7 +343,7 @@ INSERT INTO public.subaward
            recipient_location_city_name, recipient_location_city_code, recipient_location_zip5,
            recipient_location_congressional_code, pop_country_name, pop_country_code, pop_state_code, pop_state_name,
            pop_county_name, pop_county_code, pop_city_name, pop_city_code, pop_zip4, pop_street_address,
-           pop_congressional_code, parent_recipient_name, dba_name
+           pop_congressional_code, dba_name, parent_recipient_name
     FROM public.temporary_restock_subaward;
 
 WITH subaward_totals AS (
