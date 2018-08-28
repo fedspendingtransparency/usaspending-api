@@ -33,7 +33,7 @@ class AwardRetrieveViewSet(APIDocumentationView):
 
     def _parse_and_validate_request(self, generated_unique_award_id) -> dict:
 
-        #TODO:  May be better to accept either generated_unique_award_id or 
+        # TODO:  May be better to accept either generated_unique_award_id or
         #       internal pk to ease transition from v1 to v2
 
         models = [{"key": "generated_unique_award_id", "name": "generated_unique_award_id", "type": "text",
