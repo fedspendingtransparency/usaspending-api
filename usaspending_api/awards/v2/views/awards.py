@@ -47,12 +47,12 @@ class AwardRetrieveViewSet(APIDocumentationView):
             award = Award.objects.get(generated_unique_award_id=generated_unique_award_id)
             if award.category == 'contract':
                 parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                serialized =  AwardContractSerializerV2(award).data
+                serialized = AwardContractSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
                 return serialized
             else:
                 parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
-                serialized =  AwardMiscSerializerV2(award).data
+                serialized = AwardMiscSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
                 return serialized
         except Award.DoesNotExist:

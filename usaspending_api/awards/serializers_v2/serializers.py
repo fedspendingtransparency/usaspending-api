@@ -2,7 +2,7 @@ from rest_framework import serializers
 from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
-from usaspending_api.recipient.models import DUNS
+# from usaspending_api.recipient.models import DUNS
 
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
@@ -211,14 +211,14 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
             return None
         return parent_recipient.legal_business_name
     '''
-    
+
     class Meta:
         model = LegalEntity
         fields = [
             "recipient_name",
             "recipient_unique_id",
             "parent_recipient_unique_id",
-            #"recipient_parent_name",
+            # "recipient_parent_name",
             "business_categories",
             "location"
         ]
