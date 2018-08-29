@@ -3,7 +3,8 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
-    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS pk,",
+    "  -- Deterministic Unique Hash (DUH) created for view concurrent refresh",
+    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS duh,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
@@ -44,9 +45,9 @@
   ],
   "indexes": [
     {
-      "name": "unique_pk",
+      "name": "deterministic_unique_hash",
       "unique": true,
-      "columns": [{"name": "pk"}]
+      "columns": [{"name": "duh"}]
     }, {
         "name": "ordered_action_date",
         "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
