@@ -5,6 +5,7 @@ from django.db import connections, transaction as db_transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -133,9 +134,17 @@ class Command(BaseCommand):
         if award_type == 'procurement':
             location_value_map = location_d1_recipient_mapper(row)
             recipient_name = row['company_name']
+            parent_recipient_name = row['parent_company_name']
         else:
             location_value_map = location_d2_recipient_mapper(row)
             recipient_name = row['awardee_name']
+            parent_recipient_name = None
+
+        if not parent_recipient_name and row.get('parent_duns'):
+            duns_obj = RecipientLookup.objects.filter(duns=row['parent_duns'], legal_business_name__isnull=False)\
+                .values('legal_business_name').first()
+            if duns_obj:
+                parent_recipient_name = duns_obj['legal_business_name']
 
         location_value_map['recipient_flag'] = True
 
@@ -151,7 +160,9 @@ class Command(BaseCommand):
         recipient = LegalEntity.objects.create(
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
+            vendor_doing_as_business_name=row['dba_name'],
             parent_recipient_unique_id=row['parent_duns'],
+            parent_recipient_name=parent_recipient_name,
             location=recipient_location
         )
         # recipient.save()
@@ -204,6 +215,7 @@ class Command(BaseCommand):
         query_columns = ['award.internal_id', 'award.id',
                          'award.report_period_mon', 'award.report_period_year',
                          'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
+                         'sub_award.dba_name AS dba_name',
                          'sub_award.principle_place_country AS principle_place_country',
                          'sub_award.principle_place_city AS principle_place_city',
                          'sub_award.principle_place_zip AS principle_place_zip',
@@ -227,7 +239,8 @@ class Command(BaseCommand):
                                   'sub_award.company_address_state AS company_address_state',
                                   'sub_award.company_address_state_name AS company_address_state_name',
                                   'sub_award.company_address_street AS company_address_street',
-                                  'sub_award.company_address_district AS company_address_district'
+                                  'sub_award.company_address_district AS company_address_district',
+                                  'sub_award.parent_company_name AS parent_company_name'
                                   ])
 
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
