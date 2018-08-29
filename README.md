@@ -1,23 +1,21 @@
-
 <p align="center">
         <img src="https://avatars1.githubusercontent.com/u/8397762?s=200&v=4" />
 </p>
+
 # USASpending API
 
-[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)
-
-[![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
-
-  
+[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)[![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
 This is the API that will drive the new USAspending.gov. It is currently under active development and not stable. This API is built on Python 3.5+, Django, and Django Rest Framework.
 
 ## Built With
+
 **[PostgreSQL](https://www.postgresql.org/)** is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
 The API’s backend components currently run on **[Python 3.5](https://www.python.org/downloads/)** or higher. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
 
 ## Prerequisites
+
 **Assumptions**:
 * Ability software on your local machine
 * Git familiarity, a good free Git GUI for Mac and Windows is [SourceTree](https://www.sourcetreeapp.com/)
@@ -29,14 +27,16 @@ The API’s backend components currently run on **[Python 3.5](https://www.pytho
 **Other Unix-based OS Users**
   - Familiarity with the operating system's package manager, e.g. `apt-get`, `dkpg`.
 
-## Note:
+## Note
+
 *This guide will use the following as assumptions as defaults:*
 1. `homebrew` is the default system package manager; if using another Unix-based OS, simply replace `homebrew` with your preferred package manager.
 2. `bash` is the default shell; if using a different shell, replace the `bash` references with your preferred shell's equivalent, e.g. `zsh`, `~/.zshrc`
 
 # Development Setup
+
 **Automatic:**
-Use your system's package manager, create the database. 
+Use your system's package manager, create the database.
 ```
 $ brew install postgresql
 $ initdb /usr/local/var/postgres -U postgres -E utf8
@@ -70,6 +70,7 @@ More complete install documentation is available on the PostgreSQL [wiki](https:
 The API performs query caching via Memcached. If you want to experiment with AWS caching in your development environment, you can find instructions for installing memcached on it's [website](https://memcached.org/). You will also need to install requirements via pip from `caching_requirements.txt` in addition to the other baseline requirements.
 
 # Install Python 3.5
+
 ## Automatic :
 ```
 $ brew update
@@ -77,14 +78,17 @@ $ brew install python3.5
 ```
 
 ## Windows/Manual
+
 Windows users can download a Python installer here: [https://www.python.org/downloads/](https://www.python.org/downloads/  "Python installer downloads")
 
   
   
 # Installing Virtual Environment Manager
+
 `direnv` will detect any `.envrc` files in the current directory and load the file, this is useful for exporting paths without cluttering your `~/.bashrc`
 
 ## Automatic
+
 Install `direnv`
 
 ```
@@ -93,6 +97,7 @@ $ brew install direnv
 ```
 
 ## Manual 
+
 Download and install direnv from [direnv.net](https://direnv.net/)
 
 
@@ -105,6 +110,7 @@ echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
 ```
 
 # `venv` setup
+
 `venv` is included in all Python packages after Python 3.3
 
 To use `venv` to instantiate virtual environments automatically, add the following snippet to your `~/.config/direnv/direnvrc`
@@ -136,6 +142,7 @@ layout_python-venv() {
 This will allow `layout python-venv python3.5` to be appended to your project's `.envrc` file, which is used in the next step.
 
 ## *Optional: have git ignore the local files
+
     $ git config --global core.excludesfile "~/.gitignore_global"
 Add the following to your `~/.gitignore_global` file
 ```
@@ -174,6 +181,7 @@ The `source activate` command will open the virtual environment for usaspending-
   
 
 ## Install the dependencies
+
 Use `source activate` to open the virtual environment
 ```
 $ source activate
@@ -267,33 +275,20 @@ $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENA
 
 ## Loading Data
 
-  
-
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
-
-  
-
 For details on how our data loaders modify incoming data, see [data_changes.md](data_changes.md).
-
-  
 
 ## Management Commands
 
-  
-
 Below is a list of available management commands a brief description of their uses. For more help, check the command's help text.
-
-  
-*  `load_reference_data` - Loads all reference data (used on a fresh or flushed db)
-*  `update_location_usage_flags` - Updates the `place_of_performance_flag` and `recipient_flag` on Location objects based upon their foreign key usages
-*  `load_submission` - Loads a submission from the broker for the currently set environment
-*  `loadtas` - Loads tas account information from a file
-*  `loadagencies` - Loads agency information from a file
-*  `loadcfda` - Loads CFDA information from a file
-*  `loadcontracts` - Loads USASpending contract information from a file
-*  `generate_test_endpoint_responses` - Generates endpoint test responses for testing
-
-  
+*`load_reference_data` - Loads all reference data (used on a fresh or flushed db)
+*`update_location_usage_flags` - Updates the `place_of_performance_flag` and `recipient_flag` on Location objects based upon their foreign key usages
+*`load_submission` - Loads a submission from the broker for the currently set environment
+*`loadtas` - Loads tas account information from a file
+*`loadagencies` - Loads agency information from a file
+*`loadcfda` - Loads CFDA information from a file
+*`loadcontracts` - Loads USASpending contract information from a file
+*`generate_test_endpoint_responses` - Generates endpoint test responses for testing
 
 ## Public Domain License
 
