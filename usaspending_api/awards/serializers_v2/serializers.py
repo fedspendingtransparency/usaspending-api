@@ -103,8 +103,7 @@ class LimitableSerializerV2(serializers.ModelSerializer):
 class LegalEntityOfficersSerializerV2(LimitableSerializerV2):
     class Meta:
         model = LegalEntityOfficers
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "officer_1_name",
             "officer_1_amount",
             "officer_2_name",
@@ -122,8 +121,7 @@ class ToptierAgencySerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = ToptierAgency
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "name",
             "abbreviation"
         ]
@@ -133,8 +131,7 @@ class SubtierAgencySerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = SubtierAgency
-        fields = '__all__'
-        default_fields = [
+        fields = [
 
             "name",
             "abbreviation"
@@ -145,8 +142,7 @@ class OfficeAgencySerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = OfficeAgency
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "aac_code",
             "name"
         ]
@@ -156,8 +152,7 @@ class LocationSerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = Location
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "address_line1",
             "address_line2",
             "address_line3",
@@ -185,8 +180,7 @@ class AgencySerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = Agency
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "toptier_agency",
             "subtier_agency",
             "office_agency_name",
@@ -219,8 +213,7 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = LegalEntity
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "recipient_name",
             "recipient_unique_id",
             "parent_recipient_unique_id",
@@ -256,8 +249,7 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = TransactionFPDS
-        fields = '__all__'
-        default_fields = [
+        fields = [
             'idv_type_description',
             'type_of_idc_description',
             'referenced_idv_agency_iden',
@@ -326,9 +318,7 @@ class AwardContractSerializerV2(LimitableSerializerV2):
     class Meta:
 
         model = Award
-        fields = "__all__"
-
-        default_fields = [
+        fields = [
             "id",
             "type",
             "category",
@@ -402,9 +392,7 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
     class Meta:
 
         model = Award
-        fields = "__all__"
-
-        default_fields = [
+        fields = [
             "id",
             "type",
             "category",
