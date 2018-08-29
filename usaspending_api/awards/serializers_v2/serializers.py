@@ -202,7 +202,7 @@ class AgencySerializerV2(LimitableSerializerV2):
 
 
 class LegalEntitySerializerV2(LimitableSerializerV2):
-    recipient_parent_name = serializers.SerializerMethodField('recipient_parent_name_func')
+    '''recipient_parent_name = serializers.SerializerMethodField('recipient_parent_name_func')
 
     def recipient_parent_name_func(self, entity):
         try:
@@ -210,14 +210,15 @@ class LegalEntitySerializerV2(LimitableSerializerV2):
         except DUNS.DoesNotExist:
             return None
         return parent_recipient.legal_business_name
-
+    '''
+    
     class Meta:
         model = LegalEntity
         fields = [
             "recipient_name",
             "recipient_unique_id",
             "parent_recipient_unique_id",
-            "recipient_parent_name",
+            #"recipient_parent_name",
             "business_categories",
             "location"
         ]
@@ -233,8 +234,7 @@ class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
 
     class Meta:
         model = LegalEntity
-        fields = '__all__'
-        default_fields = [
+        fields = [
             "officers"
         ]
         nested_serializers = {
@@ -278,7 +278,7 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
             'materials_supplies_descrip',
             'cost_or_pricing_data_desc',
             'domestic_or_foreign_e_desc',
-            'fair_opportunity_sources',
+            #'fair_opportunity_sources',
             'foreign_funding_desc',
             'interagency_contract_desc',
             'major_program',
