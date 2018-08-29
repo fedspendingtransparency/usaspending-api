@@ -28,12 +28,10 @@ class LimitableSerializerV2(serializers.ModelSerializer):
 
         # Grab any kwargs include and exclude fields, these are typically
         # passed in by a parent serializer to the child serializer
-        kwargs_include_fields = kwargs.pop('fields', [])
+        include_fields = kwargs.pop('fields', [])
 
         # Initialize now that kwargs have been cleared
         super(LimitableSerializerV2, self).__init__(*args, **kwargs)
-
-        include_fields = kwargs_include_fields
 
         if len(include_fields) == 0 and hasattr(self.Meta, "default_fields"):
             include_fields = self.Meta.default_fields
@@ -331,6 +329,7 @@ class AwardContractSerializerV2(LimitableSerializerV2):
         fields = "__all__"
 
         default_fields = [
+            "id",
             "type",
             "category",
             "type_description",
@@ -406,6 +405,7 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
         fields = "__all__"
 
         default_fields = [
+            "id",
             "type",
             "category",
             "type_description",
