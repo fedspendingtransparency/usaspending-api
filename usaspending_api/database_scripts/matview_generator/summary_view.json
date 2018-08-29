@@ -4,7 +4,7 @@
   "matview_sql": [
     "SELECT",
     "  -- Deterministic Unique Hash (DUH) created for view concurrent refresh",
-    "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS duh,",
+    "  MD5(array_to_string(sort(array_agg(transaction_normalized.id::int)), ' '))::uuid AS duh,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
