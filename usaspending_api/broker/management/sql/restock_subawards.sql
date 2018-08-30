@@ -215,8 +215,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
             FROM fsrs_subcontract AS fsc
                 JOIN
                 fsrs_procurement AS fp ON fp.id = fsc.parent_id
-            WHERE fsc.dba_name is not null
-            LIMIT 10000
             )
 
             UNION ALL
@@ -268,8 +266,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
             FROM fsrs_subgrant AS fsg
                 JOIN
                 fsrs_grant AS fg ON fg.id = fsg.parent_id
-            WHERE fsg.dba_name is not null
-            LIMIT 10000
             )') AS broker_subawards
         (
             broker_award_id INTEGER,
