@@ -902,7 +902,7 @@ class Subaward(DataSourceTrackedModel):
     business_type_code = models.TextField(null=True, blank=True)
     business_type_description = models.TextField(null=True, blank=True)
 
-    prime_recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    prime_recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING, null=True)
     business_categories = ArrayField(models.TextField(), default=list)
     prime_recipient_name = models.TextField(null=True, blank=True)
 
