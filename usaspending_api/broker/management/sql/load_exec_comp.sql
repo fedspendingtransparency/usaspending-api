@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS references_legalentityofficers_new;
 CREATE TABLE references_legalentityofficers_new AS (
     SELECT
         legal_entity.legal_entity_id AS legal_entity_id,
+        broker_exec_comp.duns AS duns,
         broker_exec_comp.officer_1_name AS officer_1_name,
         broker_exec_comp.officer_2_name AS officer_2_name,
         broker_exec_comp.officer_3_name AS officer_3_name,
