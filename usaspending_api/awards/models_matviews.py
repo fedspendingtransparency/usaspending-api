@@ -781,6 +781,8 @@ class SubawardView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
+    recipient_unique_id = models.TextField()
+    recipient_name = models.TextField()
     dba_name = models.TextField()
     parent_recipient_unique_id = models.TextField()
     parent_recipient_name = models.TextField()
@@ -795,9 +797,7 @@ class SubawardView(models.Model):
     fain = models.TextField()
 
     business_categories = ArrayField(models.TextField(), default=list)
-    recipient_name = models.TextField()
     prime_recipient_name = models.TextField()
-    recipient_unique_id = models.TextField()
 
     officer_1_name = models.TextField()
     officer_1_amount = models.TextField()
@@ -825,6 +825,7 @@ class SubawardView(models.Model):
     recipient_location_state_code = models.TextField()
     recipient_location_state_name = models.TextField()
     recipient_location_county_code = models.TextField()
+    recipient_location_county_name = models.TextField()
     recipient_location_zip4 = models.TextField()
     recipient_location_street_address = models.TextField()
     recipient_location_congressional_code = models.TextField()
