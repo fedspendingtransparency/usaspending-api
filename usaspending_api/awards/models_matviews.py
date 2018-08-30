@@ -5,7 +5,7 @@ from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import CacheKeyWarning
 from django.db import models
 from usaspending_api.awards.models import TransactionNormalized, Award
-from usaspending_api.references.models import LegalEntity, Location
+from usaspending_api.references.models import Location
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -781,8 +781,12 @@ class SubawardView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
-    place_of_performance = models.OneToOneField(Location, primary_key=True)
-    recipient = models.OneToOneField(LegalEntity, primary_key=True)
+    dba_name = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+    parent_recipient_name = models.TextField()
+    business_type_code = models.TextField()
+    business_type_description = models.TextField()
+
     award_type = models.TextField()
     prime_award_type = models.TextField()
 
@@ -794,7 +798,17 @@ class SubawardView(models.Model):
     recipient_name = models.TextField()
     prime_recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
-    parent_recipient_unique_id = models.TextField()
+
+    officer_1_name = models.TextField()
+    officer_1_amount = models.TextField()
+    officer_2_name = models.TextField()
+    officer_2_amount = models.TextField()
+    officer_3_name = models.TextField()
+    officer_3_amount = models.TextField()
+    officer_4_name = models.TextField()
+    officer_4_amount = models.TextField()
+    officer_5_name = models.TextField()
+    officer_5_amount = models.TextField()
 
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
@@ -807,10 +821,12 @@ class SubawardView(models.Model):
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
+    recipient_location_city_name = models.TextField()
     recipient_location_state_code = models.TextField()
+    recipient_location_state_name = models.TextField()
     recipient_location_county_code = models.TextField()
-    recipient_location_county_name = models.TextField()
-    recipient_location_zip5 = models.TextField()
+    recipient_location_zip4 = models.TextField()
+    recipient_location_street_address = models.TextField()
     recipient_location_congressional_code = models.TextField()
 
     pop_country_code = models.TextField()
