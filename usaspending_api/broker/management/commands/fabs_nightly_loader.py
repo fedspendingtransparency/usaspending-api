@@ -288,6 +288,10 @@ class Command(BaseCommand):
                 transaction_fabs = TransactionFABS(transaction=transaction, **financial_assistance_data)
                 transaction_fabs.save()
 
+            # Update legal entity to map back to transaction
+            legal_entity.transaction_unique_id = afa_generated_unique
+            legal_entity.save()
+
     @staticmethod
     def send_deletes_to_elasticsearch(ids_to_delete):
         logger.info('Uploading FABS delete data to Elasticsearch bucket')

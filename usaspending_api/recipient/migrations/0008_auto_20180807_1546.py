@@ -71,6 +71,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='recipientlookup',
-            index=partial_index.PartialIndex(fields=['parent_duns'], name='recipient_l_parent__e14231_partial', unique=True, where=partial_index.PQ(parent_duns__isnull=False)),
+            index=partial_index.PartialIndex(fields=['parent_duns'], name='recipient_l_parent__e14231_partial',
+                                             unique=False, where=partial_index.PQ(parent_duns__isnull=False)),
         ),
     ]
