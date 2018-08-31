@@ -137,9 +137,9 @@
   ],
   "indexes": [
     {
-      "name": "id",
+      "name": "subaward_id",
       "unique": true,
-      "columns": [{"name": "id"}]
+      "columns": [{"name": "subaward_id"}]
     }, {
       "name": "award_type",
       "where": "award_type IS NOT NULL",
