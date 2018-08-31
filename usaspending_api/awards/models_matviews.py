@@ -800,17 +800,6 @@ class SubawardView(models.Model):
     business_categories = ArrayField(models.TextField(), default=list)
     prime_recipient_name = models.TextField()
 
-    officer_1_name = models.TextField()
-    officer_1_amount = models.TextField()
-    officer_2_name = models.TextField()
-    officer_2_amount = models.TextField()
-    officer_3_name = models.TextField()
-    officer_3_amount = models.TextField()
-    officer_4_name = models.TextField()
-    officer_4_amount = models.TextField()
-    officer_5_name = models.TextField()
-    officer_5_amount = models.TextField()
-
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()

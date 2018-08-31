@@ -4,8 +4,8 @@ DROP TABLE IF EXISTS public.temporary_restock_subaward;
 
 CREATE TABLE public.temporary_restock_subaward AS (
     SELECT
-        to_tsvector(CONCAT(broker_subawards.recipient_name,' ', psc.description,' ', broker_subawards.description)) AS keyword_ts_vector,
-        to_tsvector(CONCAT(aw.piid, ' ', aw.fain, ' ', aw.uri, ' ', broker_subawards.subaward_number)) AS award_ts_vector,
+        to_tsvector(CONCAT_WS(' ', broker_subawards.recipient_name, psc.description, broker_subawards.description)) AS keyword_ts_vector,
+        to_tsvector(CONCAT_WS(' ', aw.piid, aw.fain, aw.uri, broker_subawards.subaward_number)) AS award_ts_vector,
         to_tsvector(COALESCE(broker_subawards.recipient_name, '')) AS recipient_name_ts_vector,
 
         'DBR' AS data_source,
@@ -31,6 +31,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
         aw.id AS award_id,
         aw.piid,
         aw.fain,
+        aw.uri,
 
         broker_subawards.duns AS recipient_unique_id,
         broker_subawards.recipient_name AS recipient_name,
@@ -68,16 +69,16 @@ CREATE TABLE public.temporary_restock_subaward AS (
         saa.abbreviation AS awarding_subtier_agency_abbreviation,
         sfa.abbreviation AS funding_subtier_agency_abbreviation,
 
-        leo.officer_1_name,
-        leo.officer_1_amount,
-        leo.officer_2_name,
-        leo.officer_2_amount,
-        leo.officer_3_name,
-        leo.officer_3_amount,
-        leo.officer_4_name,
-        leo.officer_4_amount,
-        leo.officer_5_name,
-        leo.officer_5_amount,
+        broker_subawards.top_paid_fullname_1 AS officer_1_name,
+        broker_subawards.top_paid_amount_1 AS officer_1_amount,
+        broker_subawards.top_paid_fullname_2 AS officer_2_name,
+        broker_subawards.top_paid_amount_2 AS officer_2_amount,
+        broker_subawards.top_paid_fullname_3 AS officer_3_name,
+        broker_subawards.top_paid_amount_3 AS officer_3_amount,
+        broker_subawards.top_paid_fullname_4 AS officer_4_name,
+        broker_subawards.top_paid_amount_4 AS officer_4_amount,
+        broker_subawards.top_paid_fullname_5 AS officer_5_name,
+        broker_subawards.top_paid_amount_5 AS officer_5_amount,
 
         broker_subawards.recipient_location_country_code,
         (
@@ -190,6 +191,17 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 fsc.funding_agency_id AS funding_agency_code,
                 UPPER(fsc.funding_agency_name) AS funding_agency_name,
 
+                fsc.top_paid_fullname_1,
+                fsc.top_paid_amount_1,
+                fsc.top_paid_fullname_2,
+                fsc.top_paid_amount_2,
+                fsc.top_paid_fullname_3,
+                fsc.top_paid_amount_3,
+                fsc.top_paid_fullname_4,
+                fsc.top_paid_amount_4,
+                fsc.top_paid_fullname_5,
+                fsc.top_paid_amount_5,
+
                 UPPER(fsc.principle_place_country) AS pop_country_code,
                 UPPER(fsc.principle_place_state) AS pop_state_code,
                 UPPER(fsc.principle_place_state_name) AS pop_state_name,
@@ -241,6 +253,17 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 fsg.funding_agency_id AS funding_agency_code,
                 UPPER(fsg.funding_agency_name) AS funding_agency_name,
 
+                fsg.top_paid_fullname_1,
+                fsg.top_paid_amount_1,
+                fsg.top_paid_fullname_2,
+                fsg.top_paid_amount_2,
+                fsg.top_paid_fullname_3,
+                fsg.top_paid_amount_3,
+                fsg.top_paid_fullname_4,
+                fsg.top_paid_amount_4,
+                fsg.top_paid_fullname_5,
+                fsg.top_paid_amount_5,
+
                 UPPER(fsg.principle_place_country) AS pop_country_code,
                 UPPER(fsg.principle_place_state) AS pop_state_code,
                 UPPER(fsg.principle_place_state_name) AS pop_state_name,
@@ -287,6 +310,17 @@ CREATE TABLE public.temporary_restock_subaward AS (
             funding_agency_code TEXT,
             funding_agency_name TEXT,
 
+            top_paid_fullname_1 TEXT,
+            top_paid_amount_1 TEXT,
+            top_paid_fullname_2 TEXT,
+            top_paid_amount_2 TEXT,
+            top_paid_fullname_3 TEXT,
+            top_paid_amount_3 TEXT,
+            top_paid_fullname_4 TEXT,
+            top_paid_amount_4 TEXT,
+            top_paid_fullname_5 TEXT,
+            top_paid_amount_5 TEXT,
+
             pop_country_code TEXT,
             pop_state_code TEXT,
             pop_state_name TEXT,
@@ -327,7 +361,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
     LEFT OUTER JOIN transaction_fpds AS contract_data ON latest_transaction.id = contract_data.transaction_id
     LEFT OUTER JOIN psc ON contract_data.product_or_service_code = psc.code
     LEFT OUTER JOIN references_cfda AS cfda ON assistance_data.cfda_number = cfda.program_number
-    LEFT OUTER JOIN references_legalentityofficers AS leo ON leo.duns = broker_subawards.duns
     WHERE broker_subawards.subaward_number IS NOT NULL
 );
 

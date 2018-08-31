@@ -107,4 +107,9 @@ class Migration(migrations.Migration):
             name='recipient_location_zip4',
             field=models.TextField(blank=True, null=True),
         ),
+        migrations.AddField(
+            model_name='subaward',
+            name='uri',
+            field=models.TextField(blank=True, null=True),
+        ),
     ]

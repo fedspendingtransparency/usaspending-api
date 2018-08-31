@@ -891,6 +891,7 @@ class Subaward(DataSourceTrackedModel):
 
     piid = models.TextField(null=True, blank=True)
     fain = models.TextField(null=True, blank=True)
+    uri = models.TextField(null=True, blank=True)
 
     recipient_unique_id = models.TextField(null=True, blank=True)
     recipient_name = models.TextField(null=True, blank=True)

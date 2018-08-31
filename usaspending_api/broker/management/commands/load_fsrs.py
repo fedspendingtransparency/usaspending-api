@@ -7,7 +7,7 @@ from django.db.models import F, Func, Max, Value
 from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
-from usaspending_api.references.models import LegalEntityOfficers, Agency, Cfda, Location
+from usaspending_api.references.models import Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_award_subawards
 
@@ -286,10 +286,6 @@ class Command(BaseCommand):
                 if duns_obj:
                     parent_recipient_name = duns_obj['legal_business_name']
 
-            # Generate officer names by linking to LegalEntityOfficers
-            legal_entity_officer = LegalEntityOfficers.objects.filter(duns=row['duns']).first()
-            leo_dict = legal_entity_officer.__dict__ if legal_entity_officer else {}
-
             subaward_dict = {
                 'award': shared_mappings['award'],
                 'recipient_unique_id': row['duns'],
@@ -304,7 +300,7 @@ class Command(BaseCommand):
                 'prime_recipient_name': prime_award_dict.get('prime_recipient_name', None),
                 'business_categories': prime_award_dict.get('business_categories', []),
 
-                'recipient_location_country_code':  recipient_location.location_country_code,
+                'recipient_location_country_code': recipient_location.location_country_code,
                 'recipient_location_country_name': recipient_location.country_name,
                 'recipient_location_state_code': recipient_location.state_code,
                 'recipient_location_state_name': recipient_location.state_name,
@@ -318,16 +314,16 @@ class Command(BaseCommand):
                 'recipient_location_congressional_code': recipient_location.congressional_code,
                 'recipient_location_foreign_postal_code': recipient_location.foreign_postal_code,
 
-                'officer_1_name': leo_dict.get('officer_1_name', None),
-                'officer_1_amount': leo_dict.get('officer_1_amount', None),
-                'officer_2_name': leo_dict.get('officer_2_name', None),
-                'officer_2_amount': leo_dict.get('officer_2_amount', None),
-                'officer_3_name': leo_dict.get('officer_3_name', None),
-                'officer_3_amount': leo_dict.get('officer_3_amount', None),
-                'officer_4_name': leo_dict.get('officer_4_name', None),
-                'officer_4_amount': leo_dict.get('officer_4_amount', None),
-                'officer_5_name': leo_dict.get('officer_5_name', None),
-                'officer_5_amount': leo_dict.get('officer_5_amount', None),
+                'officer_1_name': row['top_paid_fullname_1'],
+                'officer_1_amount': row['top_paid_amount_1'],
+                'officer_2_name': row['top_paid_fullname_2'],
+                'officer_2_amount': row['top_paid_amount_2'],
+                'officer_3_name': row['top_paid_fullname_3'],
+                'officer_3_amount': row['top_paid_amount_3'],
+                'officer_4_name': row['top_paid_fullname_4'],
+                'officer_4_amount': row['top_paid_amount_4'],
+                'officer_5_name': row['top_paid_fullname_5'],
+                'officer_5_amount': row['top_paid_amount_5'],
 
                 'data_source': "DBR",
                 'cfda': cfda,
