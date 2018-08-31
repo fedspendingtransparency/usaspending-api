@@ -4,8 +4,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import CacheKeyWarning
 from django.db import models
-from usaspending_api.awards.models import TransactionNormalized, Award
-from usaspending_api.references.models import Location
+
+from usaspending_api.awards.models import TransactionNormalized, Award, Subaward
+
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -753,7 +754,7 @@ class TransactionMatview(models.Model):
 
 
 class SubawardView(models.Model):
-    id = models.IntegerField(primary_key=True)
+    subaward = models.OneToOneField(Subaward, primary_key=True)
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
@@ -826,7 +827,7 @@ class SubawardView(models.Model):
     recipient_location_state_name = models.TextField()
     recipient_location_county_code = models.TextField()
     recipient_location_county_name = models.TextField()
-    recipient_location_zip4 = models.TextField()
+    recipient_location_zip5 = models.TextField()
     recipient_location_street_address = models.TextField()
     recipient_location_congressional_code = models.TextField()
 
@@ -838,7 +839,6 @@ class SubawardView(models.Model):
     pop_county_name = models.TextField()
     pop_city_code = models.TextField()
     pop_city_name = models.TextField()
-    pop_zip4 = models.TextField()
     pop_zip5 = models.TextField()
     pop_street_address = models.TextField()
     pop_congressional_code = models.TextField()
