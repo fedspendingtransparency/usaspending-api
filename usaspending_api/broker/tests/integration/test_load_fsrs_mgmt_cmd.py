@@ -41,8 +41,7 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
         'dba_names': ["JJ'S", "HOGWARTS", "HOGWARTS"],
         'parent_recipient_names': ["PARENT JJ'S DINER", "WIZARD SCHOOLS", "WIZARD SCHOOLS"],
         'broker_award_ids': [10, 20, 30],
-        'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2']
-
+        'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2'],
     }
 
     actual_results = {
@@ -55,12 +54,13 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
         'dba_names': list(Subaward.objects.values_list('dba_name', flat=True)),
         'parent_recipient_names': list(Subaward.objects.values_list('parent_recipient_name', flat=True)),
         'broker_award_ids': list(Subaward.objects.values_list('broker_award_id', flat=True)),
-        'internal_ids': list(Subaward.objects.values_list('internal_id', flat=True))
+        'internal_ids': list(Subaward.objects.values_list('internal_id', flat=True)),
     }
 
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_fresh_subaward_load_associated_awards_exact_match(mock_db_cursor):
@@ -113,6 +113,7 @@ def test_fresh_subaward_load_associated_awards_exact_match(mock_db_cursor):
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
@@ -165,6 +166,7 @@ def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_cursor):
@@ -225,6 +227,7 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_subaward_update(mock_db_cursor):
@@ -279,6 +282,7 @@ def test_subaward_update(mock_db_cursor):
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
 def test_subaward_broken_links(mock_db_cursor):
