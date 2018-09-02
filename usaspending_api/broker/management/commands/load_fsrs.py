@@ -156,28 +156,29 @@ class Command(BaseCommand):
     @staticmethod
     def gather_next_subawards(db_cursor, award_type, subaward_type, max_id, offset):
         """ Get next batch of subawards of the relevant type starting at a given offset """
-        query_columns = ['award.internal_id', 'award.id',
-                         'award.report_period_mon', 'award.report_period_year',
-                         'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
-                         'sub_award.dba_name AS dba_name',
-                         'sub_award.principle_place_country AS principle_place_country',
-                         'sub_award.principle_place_city AS principle_place_city',
-                         'sub_award.principle_place_zip AS principle_place_zip',
-                         'sub_award.principle_place_state AS principle_place_state',
-                         'sub_award.principle_place_state_name AS principle_place_state_name',
-                         'sub_award.principle_place_street AS principle_place_street',
-                         'sub_award.principle_place_district AS principle_place_district',
-                         'sub_award.top_paid_fullname_1',
-                         'sub_award.top_paid_amount_1',
-                         'sub_award.top_paid_fullname_2',
-                         'sub_award.top_paid_amount_2',
-                         'sub_award.top_paid_fullname_3',
-                         'sub_award.top_paid_amount_3',
-                         'sub_award.top_paid_fullname_4',
-                         'sub_award.top_paid_amount_4',
-                         'sub_award.top_paid_fullname_5',
-                         'sub_award.top_paid_amount_5',
-            ]
+        query_columns = [
+            'award.internal_id', 'award.id',
+            'award.report_period_mon', 'award.report_period_year',
+            'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
+            'sub_award.dba_name AS dba_name',
+            'sub_award.principle_place_country AS principle_place_country',
+            'sub_award.principle_place_city AS principle_place_city',
+            'sub_award.principle_place_zip AS principle_place_zip',
+            'sub_award.principle_place_state AS principle_place_state',
+            'sub_award.principle_place_state_name AS principle_place_state_name',
+            'sub_award.principle_place_street AS principle_place_street',
+            'sub_award.principle_place_district AS principle_place_district',
+            'sub_award.top_paid_fullname_1',
+            'sub_award.top_paid_amount_1',
+            'sub_award.top_paid_fullname_2',
+            'sub_award.top_paid_amount_2',
+            'sub_award.top_paid_fullname_3',
+            'sub_award.top_paid_amount_3',
+            'sub_award.top_paid_fullname_4',
+            'sub_award.top_paid_amount_4',
+            'sub_award.top_paid_fullname_5',
+            'sub_award.top_paid_amount_5',
+        ]
 
         # We need different columns depending on if it's a procurement or a grant. Setting some columns to have labels
         # so we can easily access them without making two different dictionaries.
