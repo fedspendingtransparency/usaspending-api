@@ -6,7 +6,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
 
 
-class BudgetFunctionViewSet(APIDocumentationView):
+class ListBudgetFunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Functions associated with a TAS, ordered by Budget
         Function code.
@@ -17,14 +17,13 @@ class BudgetFunctionViewSet(APIDocumentationView):
         # Retrieve all Budget Functions, grouped by code and title, ordered by code
         results = TreasuryAppropriationAccount.objects \
             .filter(~Q(budget_function_code=''), ~Q(budget_function_code=None)) \
-            .filter(budget_function_code='050') \
             .values('budget_function_code', 'budget_function_title') \
             .order_by('budget_function_code').distinct()
 
         return Response({'results': results})
 
 
-class BudgetSubfunctionViewSet(APIDocumentationView):
+class ListBudgetSubfunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Subfunctions associated with a TAS, ordered by
         Budget Subfunction code. Can be filtered by Budget Function.
