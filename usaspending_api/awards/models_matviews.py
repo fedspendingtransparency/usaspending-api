@@ -754,7 +754,7 @@ class TransactionMatview(models.Model):
 
 
 class SubawardView(models.Model):
-    subaward = models.OneToOneField(Subaward, primary_key=True)
+    subaward = models.OneToOneField(Subaward, primary_key=True, on_delete=models.deletion.DO_NOTHING)
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
