@@ -161,7 +161,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
         ) AS pop_city_code,
         broker_subawards.pop_zip4,
         broker_subawards.pop_street_address,
-        broker_subawards.pop_congressional_code
+        broker_subawards.pop_congressional_code,
+        now() AS updated_at
 
     FROM
         dblink('broker_server', '
@@ -384,7 +385,7 @@ INSERT INTO public.subaward
     recipient_location_zip5, recipient_location_zip4, recipient_location_street_address,
     recipient_location_congressional_code, recipient_location_foreign_postal_code, pop_country_name,
     pop_country_code, pop_state_code, pop_state_name, pop_county_name, pop_county_code, pop_city_name,
-    pop_city_code, pop_zip4, pop_street_address, pop_congressional_code)
+    pop_city_code, pop_zip4, pop_street_address, pop_congressional_code, updated_at)
     SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, data_source, cfda_id,
         latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
         action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
@@ -403,7 +404,7 @@ INSERT INTO public.subaward
         recipient_location_street_address, recipient_location_congressional_code,
         recipient_location_foreign_postal_code, pop_country_name, pop_country_code, pop_state_code, pop_state_name,
         pop_county_name, pop_county_code, pop_city_name, pop_city_code, pop_zip4, pop_street_address,
-        pop_congressional_code
+        pop_congressional_code, updated_at
     FROM public.temporary_restock_subaward;
 
 WITH subaward_totals AS (

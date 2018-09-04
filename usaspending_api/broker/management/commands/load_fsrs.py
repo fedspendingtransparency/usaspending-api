@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
@@ -364,7 +365,8 @@ class Command(BaseCommand):
                 'pop_city_name': row['principle_place_city'],
                 'pop_zip4': row['principle_place_zip'],
                 'pop_street_address': row['principle_place_street'],
-                'pop_congressional_code': row['principle_place_district']
+                'pop_congressional_code': row['principle_place_district'],
+                'updated_at': datetime.utcnow()
             }
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
@@ -429,6 +431,7 @@ class Command(BaseCommand):
                     broken_subaward.awarding_agency = award.awarding_agency
                     broken_subaward.funding_agency = award.funding_agency
                     broken_subaward.prime_recipient = award.recipient
+                    broken_subaward.updated_at = datetime.utcnow()
                     broken_subaward.save()
                     fixed_ids.append(award.id)
         award_update_id_list.extend(fixed_ids)

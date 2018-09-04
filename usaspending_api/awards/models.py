@@ -951,6 +951,8 @@ class Subaward(DataSourceTrackedModel):
     pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
 
+    updated_at = models.DateTimeField(blank=True, null=True)
+
     class Meta:
         managed = True
         db_table = 'subaward'
