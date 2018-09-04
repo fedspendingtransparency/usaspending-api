@@ -5,7 +5,7 @@ from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import CacheKeyWarning
 from django.db import models
 
-from usaspending_api.awards.models import TransactionNormalized, Award, Subaward
+from usaspending_api.awards.models import Award, Subaward, TransactionNormalized
 
 
 warnings.simplefilter("ignore", CacheKeyWarning)
