@@ -161,10 +161,10 @@ class TransactionFABSSerializer(LimitableSerializer):
             'transaction_id',
             'updated_at',
             'uri',
-            ] + [
+        ] + [
             # property fields manually added
             'cfda_objectives',
-            ]
+        ]
         # fields = '__all__'
         default_fields = [
             "fain",
@@ -341,20 +341,12 @@ class SubawardSerializer(LimitableSerializer):
                 "class": AwardSerializer,
                 "kwargs": {"read_only": True}
             },
-            "recipient": {
-                "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
-            },
             "awarding_agency": {
                 "class": AgencySerializer,
                 "kwargs": {"read_only": True}
             },
             "funding_agency": {
                 "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializer,
                 "kwargs": {"read_only": True}
             },
             "cfda": {
