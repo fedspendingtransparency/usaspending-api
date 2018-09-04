@@ -201,7 +201,7 @@ class AgencySerializerV2(LimitableSerializerV2):
 
 
 class LegalEntitySerializerV2(LimitableSerializerV2):
-    
+
     class Meta:
         model = LegalEntity
         fields = [
