@@ -1098,7 +1098,7 @@ contract_subaward_mapping = {
     "Awarding Agency": "awarding_toptier_agency_name",
     "Awarding Sub Agency": "awarding_subtier_agency_name",
     "Prime Award ID": "piid",
-    "Prime Recipient Name": "recipient_name"
+    "Prime Recipient Name": "prime_recipient_name"
 }
 
 grant_subaward_mapping = {
@@ -1110,7 +1110,7 @@ grant_subaward_mapping = {
     "Awarding Agency": "awarding_toptier_agency_name",
     "Awarding Sub Agency": "awarding_subtier_agency_name",
     "Prime Award ID": "fain",
-    "Prime Recipient Name": "recipient_name"
+    "Prime Recipient Name": "prime_recipient_name"
 }
 
 award_assistance_mapping = {**grant_award_mapping, **loan_award_mapping, **direct_payment_award_mapping,
