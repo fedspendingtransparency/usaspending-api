@@ -1,5 +1,4 @@
 appdirs==1.4.3
-bidict==0.17.2
 boto3==1.4.4
 botocore==1.5.46
 codeclimate-test-reporter==0.2.3
