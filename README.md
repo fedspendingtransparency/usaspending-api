@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)[![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
-> An Python-based RESTful API for U.S. federal spending data available at USAspending.gov
+> This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act.
 
 ![USAspending Landing Page](readme.jpg?raw=true "Readme")
 
@@ -13,10 +13,15 @@
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-- pyenv using Python3.5
-- PostgreSQL (with a dedicated usaspending-api database)
-- Virtual environment manager 
-- direnv
+- [Python Versioning Management: `pyenv` utilizing Python3.5](https://github.com/pyenv/pyenv)
+- [PostgreSQL (with a dedicated usaspending-api database)](https://www.postgresql.org/)
+- [Virtual environment manager (included in Python3.5)](https://docs.python.org/3/tutorial/venv.html)
+- [direnv](https://direnv.net)
+- Bash or another Unix Shell equivalent
+    - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+- Command line package manager
+    - Windows' WSL bash uses `apt-get`
+    - OSX users will use [`Homebrew`](https://brew.sh/)
 
 ### Setup
 Navigate to the base file directory for the USAspending repositories
@@ -54,8 +59,9 @@ The application will be available at `http://localhost:8000`
 
 ## API
 
-Latest published production API docs may be found on the [USAspending API site](https://api.usaspending.gov/)
-This page is locally accessible on the development environment at `http://localhost:8000/docs/endpoints`
+Latest published production API docs may be found on the [USAspending API site endpoints page](https://api.usaspending.gov/docs/endpoints)
+
+*The local environment location may be found at `http://localhost:8000/docs/endpoints`
 
 ## Loading Data
 
