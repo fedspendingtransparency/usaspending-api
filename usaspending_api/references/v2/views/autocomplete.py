@@ -1,4 +1,4 @@
-from django.db.models import F, Q
+from django.db.models import F, Q, Case, Count, When
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
@@ -46,12 +46,13 @@ class BaseAutocompleteViewSet(APIView):
         queryset = Agency.objects.filter(
             Q(subtier_agency__name__icontains=search_text)
             | Q(subtier_agency__abbreviation__icontains=search_text)
-            ).annotate(deprioritize=Count(Case(When(toptier_agency_id=150, then=1)))
-            ).order_by('deprioritize','-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
-                'toptier_flag', 'toptier_agency_id', 'subtier_agency__name')
-
+            ).order_by('-toptier_flag', 'toptier_agency_id', 'subtier_agency__name'
+            ).distinct('toptier_flag', 'toptier_agency_id', 'subtier_agency__name')
+        # This is the only way to do this because you cannot use annotate and distinct together
+        evaled = AgencySerializer(queryset[:limit], many=True).data
+        evaled.sort(key=lambda x:x["toptier_agency"]["cgac_code"] == "058")
         return Response(
-            {'results': AgencySerializer(queryset[:limit], many=True).data}
+            {'results': evaled }
         )
 
 
