@@ -46,7 +46,8 @@ class BaseAutocompleteViewSet(APIView):
         queryset = Agency.objects.filter(
             Q(subtier_agency__name__icontains=search_text)
             | Q(subtier_agency__abbreviation__icontains=search_text)
-            ).order_by('-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
+            ).annotate(deprioritize=Count(Case(When(toptier_agency_id=150, then=1)))
+            ).order_by('deprioritize','-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
                 'toptier_flag', 'toptier_agency_id', 'subtier_agency__name')
 
         return Response(
