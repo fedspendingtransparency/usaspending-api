@@ -1,4 +1,4 @@
-<p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USASpending API"></p>
+# <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USASpending API"></p>
 
 ---
 
@@ -8,53 +8,54 @@
 
 ![USAspending Landing Page](readme.png?raw=true "Readme")
 
-## Install 
+## Install
 
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
+
 - [Python Versioning Management: `pyenv` utilizing Python3.5](https://github.com/pyenv/pyenv)
-- [PostgreSQL (with a dedicated usaspending-api database)](https://www.postgresql.org/)
+- [PostgreSQL 10.X (with a dedicated usaspending-api database)](https://www.postgresql.org/)
 - [Virtual environment manager (included in Python3.5)](https://docs.python.org/3/tutorial/venv.html)
 - [direnv](https://direnv.net)
 - Bash or another Unix Shell equivalent
-    - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+  - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - Command line package manager
-    - Windows' WSL bash uses `apt-get`
-    - OSX users will use [`Homebrew`](https://brew.sh/)
+  - Windows' WSL bash uses `apt-get`
+  - OSX users will use [`Homebrew`](https://brew.sh/)
 
 ### Setup
+
 Navigate to the base file directory for the USAspending repositories
 
-	$ mkdir usaspending || cd $_
-	$ git clone https://github.com/fedspendingtransparency/usaspending-api.git
+  $ mkdir usaspending || cd $_
+  $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
   
 Create and activate the virtual environment, ensure Python3.5.0 is being used
 
-	$ python3 -m venv .
+  $ python3 -m venv .
     $ source bin/activate
     (usaspending-api) $ pyenv local 3.5.0
 
-   
 [Pip](https://pip.pypa.io/en/stable/installing/)-install the dependencies
-	
+  
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 Set environment variables
 
-	(usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'" >> .direnv
-    direnv: error .envrc is blocked. Run `direnv allow` to approve its content.
-    (usaspending-api) $ direnv allow
-    
+  (usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'" >> .direnv
+  direnv: error .envrc is blocked. Run `direnv allow` to approve its content.
+  (usaspending-api) $ direnv allow
+  
 Test the database connection connection
 
-	(usaspending-api) $ ./manage.py migrate
+  (usaspending-api) $ ./manage.py migrate
 
 Start up the site
 
-	(usaspending-api) $ ./manage.py runserver
-    
+  (usaspending-api) $ ./manage.py runserver
+  
 The application will be available at `http://localhost:8000`
 
 ## API
