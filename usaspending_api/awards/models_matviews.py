@@ -4,8 +4,9 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import CacheKeyWarning
 from django.db import models
-from usaspending_api.awards.models import TransactionNormalized, Award
-from usaspending_api.references.models import LegalEntity, Location
+
+from usaspending_api.awards.models import Award, Subaward, TransactionNormalized
+
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -753,7 +754,7 @@ class TransactionMatview(models.Model):
 
 
 class SubawardView(models.Model):
-    id = models.IntegerField(primary_key=True)
+    subaward = models.OneToOneField(Subaward, primary_key=True, on_delete=models.deletion.DO_NOTHING)
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
@@ -781,8 +782,14 @@ class SubawardView(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
 
-    place_of_performance = models.OneToOneField(Location, primary_key=True)
-    recipient = models.OneToOneField(LegalEntity, primary_key=True)
+    recipient_unique_id = models.TextField()
+    recipient_name = models.TextField()
+    dba_name = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+    parent_recipient_name = models.TextField()
+    business_type_code = models.TextField()
+    business_type_description = models.TextField()
+
     award_type = models.TextField()
     prime_award_type = models.TextField()
 
@@ -791,10 +798,7 @@ class SubawardView(models.Model):
     fain = models.TextField()
 
     business_categories = ArrayField(models.TextField(), default=list)
-    recipient_name = models.TextField()
     prime_recipient_name = models.TextField()
-    recipient_unique_id = models.TextField()
-    parent_recipient_unique_id = models.TextField()
 
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
@@ -807,10 +811,13 @@ class SubawardView(models.Model):
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
+    recipient_location_city_name = models.TextField()
     recipient_location_state_code = models.TextField()
+    recipient_location_state_name = models.TextField()
     recipient_location_county_code = models.TextField()
     recipient_location_county_name = models.TextField()
     recipient_location_zip5 = models.TextField()
+    recipient_location_street_address = models.TextField()
     recipient_location_congressional_code = models.TextField()
 
     pop_country_code = models.TextField()
@@ -821,7 +828,6 @@ class SubawardView(models.Model):
     pop_county_name = models.TextField()
     pop_city_code = models.TextField()
     pop_city_name = models.TextField()
-    pop_zip4 = models.TextField()
     pop_zip5 = models.TextField()
     pop_street_address = models.TextField()
     pop_congressional_code = models.TextField()
