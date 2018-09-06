@@ -16,7 +16,8 @@ Ensure the following dependencies are installed and working prior to continuing:
   - _NOTE: Read full install. `brew install` needs to be followed by additional steps to modify and source your `~/.bash_profile`_
 - [`PostgreSQL`](https://www.postgresql.org/download/) 10.x (with a dedicated `data_store_api` database)
 - [`direnv`](https://github.com/direnv/direnv#install)
-- Bash or another Unix Shell equivalent
+  - For Mac OSX, be sure to put the hook in your `~/.bash_profile`, not `~/.bashrc`
+- `Bash` or another Unix Shell equivalent
   - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - Command line package manager
   - Windows' WSL bash uses `apt-get`
@@ -33,7 +34,7 @@ Create and activate the virtual environment using `venv`, and ensure the right v
 
     (usaspending-api) $ pyenv install 3.5.5
     (usaspending-api) $ pyenv local 3.5.5
-    $ python3 -m venv .
+    $ python -m venv .
     $ source bin/activate
     
 
