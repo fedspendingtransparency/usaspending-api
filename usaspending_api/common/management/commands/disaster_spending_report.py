@@ -1,10 +1,12 @@
 import logging
 from django.core.management.base import BaseCommand
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 import json
 import itertools
 import os
 from django.db import connection, transaction
+from time import perf_counter
+
 
 TAS_XLSX_FILE = 'usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx'
 
@@ -36,12 +38,16 @@ class Command(BaseCommand):
             help='Set for a custom location of output files')
 
     def handle(self, *args, **options):
+        script_start = perf_counter()
         self.contract_results = []
         self.assistance_results = []
+        self.contract_columns = []
+        self.assistance_columns = []
+        self.first_write = True
         self.destination = os.path.dirname(options["destination"])
         tas_dict_list = self.gather_tas_from_file()
         self.query_database(tas_dict_list)
-        self.compile_results_to_csv()
+        print("total script runtime: {}s".format(perf_counter() - script_start))
 
     def gather_tas_from_file(self):
         wb = load_workbook(filename=TAS_XLSX_FILE, read_only=True)
@@ -57,6 +63,7 @@ class Command(BaseCommand):
             raise Exception("Headers {} Don't match expected: {}".format(headers, expected_headers))
 
         tas_code_rows = ws["A9":"G100"]
+        # tas_code_rows = ws["A9":"G10"]
         # Turn "rows" of "cell" into a list of dictionaries using the headers. I'm sure pandas could have done it too
         tas_dicts = [
             {
@@ -66,38 +73,58 @@ class Command(BaseCommand):
 
         # for tas in tas_dicts:
         #     print(json.dumps(tas))
+        # raise Exception
         return tas_dicts
 
     def query_database(self, tas_dict_list):
-        for tas in tas_dict_list:
-            self.contract_results.append(self.single_tas_query(tas, 'contract'))
-            # self.assistance_results.append(self.single_tas_query(tas, 'assistance'))
-            break
+        db_start = perf_counter()
+        wb = Workbook(write_only=True)
+        dest_filename = self.destination + "/disaster_spending.xlsx"
+        ws1 = wb.create_sheet(title="Contracts")
+
+        for i, tas in enumerate(tas_dict_list, 1):
+            contract_results = self.single_tas_query(tas, 'contract')
+            write_to_excel = perf_counter()
+            if self.first_write:
+                ws1.append(self.contract_columns)
+                self.first_write = False
+            for row, value in enumerate(contract_results):
+                ws1.append(value)
+            print("Writing to Excel took {}s for TAS #{}".format(perf_counter - write_to_excel, i))
+
+        wb.save(filename=dest_filename)
+        print("done with DB queries: {}s".format(perf_counter() - db_start))
 
     def single_tas_query(self, tas_dict, transaction_type='contract'):
+        single_db_query = perf_counter()
         if transaction_type == "contract":
             sql_string = CONTRACT_SQL
         else:
             sql_string = ASSISTANCE_SQL
         formatted_dict = {k: "= '{}'".format(v) if v else 'IS NULL' for k, v in tas_dict.items()}
         sql_string = sql_string.format(**formatted_dict)
-        print(sql_string)
+        # print(sql_string)
         results = []
         with connection.cursor() as cursor:
             cursor.execute(sql_string)
-            columns = [col[0] for col in cursor.description]
-            for row in cursor.fetchall():
-                # print(row)
-                results.append(row)
-        # DO SQL call HERE
-        # return DB rows
-        print(columns)
-        print(len(columns))
-        print(len(results))
+            if transaction_type == "contract":
+                self.contract_columns = [col[0] for col in cursor.description]
+            else:
+                self.assistance_columns = [col[0] for col in cursor.description]
+            results = cursor.fetchall()
+        print(json.dumps(tas_dict))
+        print("DB query for above TAS took {}s and returned {} rows".format(perf_counter() - single_db_query, len(results)))
         return results
 
-    def compile_results_to_csv(self):
-        pass
+    # def save_to_xlsx(self):
+    #     wb = Workbook(write_only=True)
+    #     dest_filename = self.destination + "/disaster_spending.xlsx"
+    #     ws1 = wb.create_sheet(title="Contracts")
+    #     ws1.append(self.contract_columns)
+    #     for row, value in enumerate(self.contract_results):
+    #         ws1.append(value)
+
+    #     wb.save(filename=dest_filename)
 
 
 ASSISTANCE_SQL = ''''''
