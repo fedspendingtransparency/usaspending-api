@@ -1,3 +1,4 @@
 supervisor==3.3.3
 sqlparse==0.2.1
+bidict==0.17.2
 zipstream==1.1.4
