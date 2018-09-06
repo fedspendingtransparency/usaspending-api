@@ -47,3 +47,4 @@ boto==2.49.0
 jsonpickle==0.9.6
 filechunkio==1.8
 lxml==4.2.4
+pip==18.0
