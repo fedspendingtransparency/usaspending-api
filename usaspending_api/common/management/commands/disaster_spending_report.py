@@ -8,7 +8,7 @@ from django.db import connection, transaction
 from time import perf_counter
 
 
-TAS_XLSX_FILE = 'usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx'
+TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 
 """
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
@@ -26,8 +26,9 @@ print(columns)
 class Command(BaseCommand):
     """
     """
+
     help = "Generate CSV for specific TAS"
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -35,7 +36,8 @@ class Command(BaseCommand):
             "--destination",
             default=os.path.dirname(os.path.abspath(__file__)),
             type=str,
-            help='Set for a custom location of output files')
+            help="Set for a custom location of output files",
+        )
 
     def handle(self, *args, **options):
         script_start = perf_counter()
@@ -59,7 +61,7 @@ class Command(BaseCommand):
         headers = []
         for header in tas_code_header:
             for cell in header:
-                headers.append(cell.value.replace('\n', '').strip())
+                headers.append(cell.value.replace("\n", "").strip())
         if expected_headers != headers:
             raise Exception("Headers {} Don't match expected: {}".format(headers, expected_headers))
 
@@ -67,9 +69,8 @@ class Command(BaseCommand):
         # tas_code_rows = ws["A9":"G10"]
         # Turn "rows" of "cell" into a list of dictionaries using the headers. I'm sure pandas could have done it too
         tas_dicts = [
-            {
-                key: cell.value.strip() if cell.value else None for key, cell in itertools.zip_longest(headers, row)
-            } for row in tas_code_rows
+            {key: cell.value.strip() if cell.value else None for key, cell in itertools.zip_longest(headers, row)}
+            for row in tas_code_rows
         ]
 
         # for tas in tas_dicts:
@@ -85,7 +86,7 @@ class Command(BaseCommand):
         ws2 = wb.create_sheet(title="Assistance")
 
         for i, tas in enumerate(tas_dict_list, 1):
-            contract_results = self.single_tas_query(tas, 'contract')
+            contract_results = self.single_tas_query(tas, "contract")
             if self.first_contract_write:
                 ws1.append(self.contract_columns)
                 self.first_contract_write = False
@@ -97,7 +98,7 @@ class Command(BaseCommand):
 
         print("\n\n\n\nASSISTANCE RECORDS\n==================\n")
         for i, tas in enumerate(tas_dict_list, 1):
-            assistance_results = self.single_tas_query(tas, 'assistance')
+            assistance_results = self.single_tas_query(tas, "assistance")
             if self.first_assistance_write:
                 ws2.append(self.assistance_columns)
                 self.first_assistance_write = False
@@ -109,13 +110,13 @@ class Command(BaseCommand):
         wb.save(filename=dest_filename)
         print("done with DB queries: {}s".format(perf_counter() - db_start))
 
-    def single_tas_query(self, tas_dict, transaction_type='contract'):
+    def single_tas_query(self, tas_dict, transaction_type="contract"):
         single_db_query = perf_counter()
         if transaction_type == "contract":
             sql_string = CONTRACT_SQL
         else:
             sql_string = ASSISTANCE_SQL
-        formatted_dict = {k: "= '{}'".format(v) if v else 'IS NULL' for k, v in tas_dict.items()}
+        formatted_dict = {k: "= '{}'".format(v) if v else "IS NULL" for k, v in tas_dict.items()}
         sql_string = sql_string.format(**formatted_dict)
         # print(sql_string)
         results = []
@@ -127,7 +128,11 @@ class Command(BaseCommand):
                 self.assistance_columns = [col[0] for col in cursor.description]
             results = cursor.fetchall()
         print(json.dumps(tas_dict))
-        print("DB query for {}s using above TAS took {}s and returned {} rows".format(transaction_type, perf_counter() - single_db_query, len(results)))
+        print(
+            "DB query for {}s using above TAS took {}s and returned {} rows".format(
+                transaction_type, perf_counter() - single_db_query, len(results)
+            )
+        )
         return results
 
     # def save_to_xlsx(self):
@@ -141,7 +146,7 @@ class Command(BaseCommand):
     #     wb.save(filename=dest_filename)
 
 
-ASSISTANCE_SQL = '''
+ASSISTANCE_SQL = """
 SELECT
     "financial_accounts_by_awards"."reporting_period_end" AS "submission_period",
     "treasury_appropriation_account"."allocation_transfer_agency_id" AS "allocation_transfer_agency_identifier",
@@ -319,10 +324,10 @@ SELECT
         )
     )
 ;
-'''
+"""
 
 
-CONTRACT_SQL = '''
+CONTRACT_SQL = """
 SELECT
     "financial_accounts_by_awards"."reporting_period_end" AS "submission_period",
     "treasury_appropriation_account"."allocation_transfer_agency_id" AS "allocation_transfer_agency_identifier",
@@ -681,4 +686,4 @@ SELECT
             treasury_appropriation_account.sub_account_code {Sub}
         )
     )
-;'''
+;"""
