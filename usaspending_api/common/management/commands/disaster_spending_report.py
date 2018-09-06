@@ -86,7 +86,6 @@ class Command(BaseCommand):
 
         for i, tas in enumerate(tas_dict_list, 1):
             contract_results = self.single_tas_query(tas, 'contract')
-            # write_to_excel = perf_counter()
             if self.first_contract_write:
                 ws1.append(self.contract_columns)
                 self.first_contract_write = False
@@ -95,12 +94,10 @@ class Command(BaseCommand):
 
             if (len(tas_dict_list) - i) % 10 == 0:
                 print("{:2>} Contract TAS left".format(len(tas_dict_list) - i))
-            # print("Writing to Excel took {}s for TAS #{}".format(perf_counter() - write_to_excel, i))
 
         print("\n\n\n\nASSISTANCE RECORDS\n==================\n")
         for i, tas in enumerate(tas_dict_list, 1):
             assistance_results = self.single_tas_query(tas, 'assistance')
-            # write_to_excel = perf_counter()
             if self.first_assistance_write:
                 ws2.append(self.assistance_columns)
                 self.first_assistance_write = False
@@ -108,7 +105,6 @@ class Command(BaseCommand):
                 ws2.append(value)
             if (len(tas_dict_list) - i) % 10 == 0:
                 print("{:2>} Assistance TAS left".format(len(tas_dict_list) - i))
-            # print("Writing to Excel took {}s for TAS #{}".format(perf_counter() - write_to_excel, i))
 
         wb.save(filename=dest_filename)
         print("done with DB queries: {}s".format(perf_counter() - db_start))
@@ -131,7 +127,7 @@ class Command(BaseCommand):
                 self.assistance_columns = [col[0] for col in cursor.description]
             results = cursor.fetchall()
         print(json.dumps(tas_dict))
-        print("DB query for {} using above TAS took {}s and returned {} rows".format(transaction_type, perf_counter() - single_db_query, len(results)))
+        print("DB query for {}s using above TAS took {}s and returned {} rows".format(transaction_type, perf_counter() - single_db_query, len(results)))
         return results
 
     # def save_to_xlsx(self):
@@ -193,7 +189,6 @@ SELECT
     "awards"."total_obligation" AS "obligated_amount", -- awards.total_obligation AS total_dollars_obligated,
     -- "awards"."potential_total_value_of_award",
     "awards"."total_funding_amount",
-    "awards"."original_subsidy_cost",
     "awards"."total_subsidy_cost",
     "awards"."total_loan_value",
     "awards"."period_of_performance_start_date",
@@ -206,6 +201,7 @@ SELECT
     "awards"."type_description" AS "award_type",
     "awards"."description" AS "award_description",
 
+    "transaction_fabs"."original_loan_subsidy_cost" AS "original_subsidy_cost",
     "transaction_fabs"."sai_number" AS "sai_number",
     "transaction_fabs"."non_federal_funding_amount" AS "non_federal_funding_amount",
     "transaction_fabs"."face_value_loan_guarantee" AS "face_value_of_loan",
