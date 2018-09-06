@@ -6,7 +6,7 @@
 
 > This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act.
 
-![USAspending Landing Page](readme.jpg?raw=true "Readme")
+![USAspending Landing Page](readme.png?raw=true "Readme")
 
 ## Install 
 
