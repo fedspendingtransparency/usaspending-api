@@ -44,12 +44,15 @@ Create and activate the virtual environment using `venv`, and ensure the right v
 	
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
-Set environment variables
+Set environment variables (fill in the credential placeholders, e.g. `USER`, `PASSWORD`, `HOST`, `PORT`)
+*note: default port for PostgreSQL is `5432`
 
-    (usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'" >> .direnv
-    direnv: error .envrc is blocked. Run `direnv allow` to approve its content.
-    (usaspending-api) $ direnv allow
-  
+```shell
+
+(usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/data_store_api'" >> .envrc
+
+```
+
 Test the database connection and upate the `data_store_api` schema
 
     (usaspending-api) $ ./manage.py migrate
@@ -64,7 +67,7 @@ The application will be available at `http://localhost:8000`
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
-Deployed production API endpoints and docs are found by following links here: https://api.usaspending.gov
+Deployed production API endpoints and docs are found by following links here: `https://api.usaspending.gov`
 
 ## Loading Data
 
