@@ -4,14 +4,14 @@
 
 
 After an agency certifies a submission on [broker.usaspending.gov](broker.usaspending.gov), they are presented with the option to **publish** their certified submission to [www.usaspending.gov](www.usaspending.gov). After the submission is chosen to be published in the broker:
+
 - The submission ID (unique to each submission) is queued for loading into a clone of the database used by [www.usaspending.gov](www.usaspending.gov)
 - If other submissions are currently in the queue, they are loaded first
 - An individual submission can take up to 24 hours to load
 - The data are published on [www.usaspending.gov](www.usaspending.gov) the day following the quarterly submission deadline
 - Any data certified before the close of the quarterly submission window will be available on [www.usaspending.gov](www.usapending.gov) the following day
 
-The current www.usaspending.gov database is publicly available on Amazon's Relational Database Service: [Open Data on AWS](https://registry.opendata.aws/usaspending/)
-
+Advanced users wanting a reference of the _full_ production database archive of the www.usaspending.gov database can access it via a public download available on https://www.usaspending.gov under the _**Download Center > Database Download**_ sub-menu.
 
 # Loading USAspending Data (for Developers)
 
