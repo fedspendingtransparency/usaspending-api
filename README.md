@@ -4,9 +4,9 @@
 
 [![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)[![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
-> An Python-based RESTful API for U.S. federal spending data available at USASpending.gov
+> An Python-based RESTful API for U.S. federal spending data available at USAspending.gov
 
-![USASpending Landing Page](readme.jpg?raw=true "Readme")
+![USAspending Landing Page](readme.jpg?raw=true "Readme")
 
 ## Install 
 
@@ -19,7 +19,7 @@ Ensure the following dependencies are installed and working prior to continuing:
 - direnv
 
 ### Setup
-Navigate to the base file directory for the USASpending repositories
+Navigate to the base file directory for the USAspending repositories
 
 	$ mkdir usaspending || cd $_
 	$ git clone https://github.com/fedspendingtransparency/usaspending-api.git
@@ -54,7 +54,8 @@ The application will be available at `http://localhost:8000`
 
 ## API
 
-Available API endpoints may be found at `http://localhost:8000/docs/endpoints`
+Latest published production API docs may be found on the [USAspending API site](https://api.usaspending.gov/)
+This page is locally accessible on the development environment at `http://localhost:8000/docs/endpoints`
 
 ## Loading Data
 
