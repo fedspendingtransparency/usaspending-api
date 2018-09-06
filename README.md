@@ -1,10 +1,8 @@
 # <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USASpending API"></p>
 
----
+[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
-[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)[![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
-
-> This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act.
+_This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
 ![USAspending Landing Page](readme.png?raw=true "Readme")
 
@@ -13,11 +11,11 @@
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-
-- [Python Versioning Management: `pyenv` utilizing Python3.5](https://github.com/pyenv/pyenv)
-- [PostgreSQL 10.X (with a dedicated usaspending-api database)](https://www.postgresql.org/)
-- [Virtual environment manager (included in Python3.5)](https://docs.python.org/3/tutorial/venv.html)
-- [direnv](https://direnv.net)
+- [`python3`](https://docs.python-guide.org/starting/installation/#python-3-installation-guides)
+- [`pyenv`](https://github.com/pyenv/pyenv/#installation) using Python 3.5.x
+  - _NOTE: Read full install. `brew install` needs to be followed by additional steps to modify and source your `~/.bash_profile`_
+- [`PostgreSQL`](https://www.postgresql.org/download/) 10.x (with a dedicated `data_store_api` database)
+- [`direnv`](https://github.com/direnv/direnv#install)
 - Bash or another Unix Shell equivalent
   - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - Command line package manager
@@ -25,44 +23,48 @@ Ensure the following dependencies are installed and working prior to continuing:
   - OSX users will use [`Homebrew`](https://brew.sh/)
 
 ### Setup
-
 Navigate to the base file directory for the USAspending repositories
 
-  $ mkdir usaspending || cd $_
-  $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
+    $ mkdir -p usaspending && cd usaspending
+    $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
   
-Create and activate the virtual environment, ensure Python3.5.0 is being used
+Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`, currently 3.5.5)
 
-  $ python3 -m venv .
+    (usaspending-api) $ pyenv install 3.5.5
+    (usaspending-api) $ pyenv local 3.5.5
+    $ python3 -m venv .
     $ source bin/activate
-    (usaspending-api) $ pyenv local 3.5.0
+    
 
-[Pip](https://pip.pypa.io/en/stable/installing/)-install the dependencies
-  
+   
+[`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
+
+:bulb: _(try a different WiFi if you're current one blocks dependency downloads)_
+	
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 Set environment variables
 
-  (usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'" >> .direnv
-  direnv: error .envrc is blocked. Run `direnv allow` to approve its content.
-  (usaspending-api) $ direnv allow
+    (usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'" >> .direnv
+    direnv: error .envrc is blocked. Run `direnv allow` to approve its content.
+    (usaspending-api) $ direnv allow
   
-Test the database connection connection
+Test the database connection and upate the `data_store_api` schema
 
-  (usaspending-api) $ ./manage.py migrate
+    (usaspending-api) $ ./manage.py migrate
 
 Start up the site
 
-  (usaspending-api) $ ./manage.py runserver
+    (usaspending-api) $ ./manage.py runserver
   
 The application will be available at `http://localhost:8000`
 
 ## API
 
-Latest published production API docs may be found on the [USAspending API site endpoints page](https://api.usaspending.gov/docs/endpoints)
+In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
-*The local environment location may be found at `http://localhost:8000/docs/endpoints`
+Deployed production API endpoints and docs are found by following links here: https://api.usaspending.gov
 
 ## Loading Data
 
