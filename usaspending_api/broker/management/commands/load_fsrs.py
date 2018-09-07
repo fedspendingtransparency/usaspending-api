@@ -245,8 +245,9 @@ class Command(BaseCommand):
                 prime_award_dict['prime_recipient'] = shared_mappings['award'].recipient
                 if prime_award_dict['prime_recipient']:
                     prime_award_dict['prime_recipient_name'] = shared_mappings['award'].recipient.recipient_name
-                    prime_award_dict['business_categories'] = (shared_mappings['award'].recipient.business_categories
-                                                               or [])
+                    prime_award_dict['business_categories'] = (
+                        shared_mappings['award'].recipient.business_categories or []
+                    )
 
             upper_case_dict_values(row)
 
