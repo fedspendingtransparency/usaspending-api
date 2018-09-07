@@ -8,7 +8,7 @@ from calendar import monthrange, isleap
 from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -73,6 +73,13 @@ def generate_fiscal_month(date):
     if date.month in [10, 11, 12, "10", "11", "12"]:
         return date.month - 9
     return date.month + 3
+
+
+def generate_fiscal_year_and_quarter(date):
+    validate_date(date)
+    quarter = FiscalDate(date.year, date.month, date.day).quarter
+    year = generate_fiscal_year(date)
+    return "{}-Q{}".format(year, quarter)
 
 
 # aliasing the generate_fiscal_month function to the more appropriate function name

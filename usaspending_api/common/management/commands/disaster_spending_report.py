@@ -1,12 +1,17 @@
-import logging
-from django.core.management.base import BaseCommand
-from openpyxl import load_workbook, Workbook
-import json
 import itertools
+import json
+import logging
 import os
-from django.db import connection, transaction
-from time import perf_counter
+import csv
+import glob
+import pandas as pd
+import numpy as np
 
+from django.core.management.base import BaseCommand
+from django.db import connection
+from time import perf_counter
+from openpyxl import load_workbook
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year_and_quarter
 
 TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 
@@ -23,11 +28,40 @@ print(columns)
 """
 
 
+def dump_to_csv(filepath, data_lines):
+    if len(data_lines) == 0:
+        return
+    if os.path.exists(filepath):
+        os.unlink(filepath)
+
+    with open(filepath, "w") as ofile:
+        writer = csv.writer(ofile)
+        for row in data_lines:
+            writer.writerow(row)
+
+
+def generate_tas_rendering_label(tas_dict):
+    """
+        Copied from usaspending_api/accounts/models.py and change to use a dict instead of separate parameters
+    """
+    tas_rendering_label = '-'.join(filter(None, (tas_dict["ATA"], tas_dict["AID"])))
+
+    if tas_dict["AvailType Code"] is not None and tas_dict["AvailType Code"] != '':
+        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_dict["AvailType Code"])))
+    else:
+        poa = '\\'.join(filter(None, (tas_dict["BPOA"], tas_dict["EPOA"])))
+        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
+
+    tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_dict["Main"], tas_dict["Sub"])))
+
+    return tas_rendering_label
+
+
 class Command(BaseCommand):
     """
     """
 
-    help = "Generate CSV for specific TAS"
+    help = "Generate CSV files for provided TAS to help track disaster spending"
     logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
@@ -41,15 +75,21 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start = perf_counter()
-        self.contract_results = []
-        self.assistance_results = []
         self.contract_columns = []
         self.assistance_columns = []
         self.first_contract_write = True
         self.first_assistance_write = True
-        self.destination = os.path.dirname(options["destination"])
+        self.temporary_dir = os.path.dirname(options["destination"]) + '/disaster_tas_csv/'
+        self.destination = os.path.dirname(options["destination"]) + '/OMB_DHS_disaster_report/'
+
+        if not os.path.exists(self.temporary_dir):
+            os.makedirs(self.temporary_dir)
+        if not os.path.exists(self.destination):
+            os.makedirs(self.destination)
+
         tas_dict_list = self.gather_tas_from_file()
         self.query_database(tas_dict_list)
+        self.assemble_csv_files()
         print("total script runtime: {}s".format(perf_counter() - script_start))
 
     def gather_tas_from_file(self):
@@ -80,35 +120,24 @@ class Command(BaseCommand):
 
     def query_database(self, tas_dict_list):
         db_start = perf_counter()
-        wb = Workbook(write_only=True)
-        dest_filename = self.destination + "/disaster_spending.xlsx"
-        ws1 = wb.create_sheet(title="Contracts")
-        ws2 = wb.create_sheet(title="Assistance")
 
         for i, tas in enumerate(tas_dict_list, 1):
             contract_results = self.single_tas_query(tas, "contract")
-            if self.first_contract_write:
-                ws1.append(self.contract_columns)
-                self.first_contract_write = False
-            for row, value in enumerate(contract_results):
-                ws1.append(value)
+            filepath = "{}{}_fpds.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
+            dump_to_csv(filepath, contract_results)
 
-            if (len(tas_dict_list) - i) % 10 == 0:
-                print("{:2>} Contract TAS left".format(len(tas_dict_list) - i))
-
-        print("\n\n\n\nASSISTANCE RECORDS\n==================\n")
-        for i, tas in enumerate(tas_dict_list, 1):
             assistance_results = self.single_tas_query(tas, "assistance")
-            if self.first_assistance_write:
-                ws2.append(self.assistance_columns)
-                self.first_assistance_write = False
-            for row, value in enumerate(assistance_results):
-                ws2.append(value)
-            if (len(tas_dict_list) - i) % 10 == 0:
-                print("{:2>} Assistance TAS left".format(len(tas_dict_list) - i))
+            filepath = "{}{}_fabs.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
+            dump_to_csv(filepath, assistance_results)
 
-        wb.save(filename=dest_filename)
-        print("done with DB queries: {}s".format(perf_counter() - db_start))
+            if (len(tas_dict_list) - i) % 10 == 0:
+                print("{:2>} TAS left".format(len(tas_dict_list) - i))
+
+        print(self.contract_columns)
+        print("\n\n")
+        print(self.assistance_columns)
+
+        print("Completed fetching the data: {}s".format(perf_counter() - db_start))
 
     def single_tas_query(self, tas_dict, transaction_type="contract"):
         single_db_query = perf_counter()
@@ -118,13 +147,13 @@ class Command(BaseCommand):
             sql_string = ASSISTANCE_SQL
         formatted_dict = {k: "= '{}'".format(v) if v else "IS NULL" for k, v in tas_dict.items()}
         sql_string = sql_string.format(**formatted_dict)
-        # print(sql_string)
+
         results = []
         with connection.cursor() as cursor:
             cursor.execute(sql_string)
-            if transaction_type == "contract":
+            if transaction_type == "contract" and not self.contract_columns:
                 self.contract_columns = [col[0] for col in cursor.description]
-            else:
+            elif transaction_type == "assistance" and not self.assistance_columns:
                 self.assistance_columns = [col[0] for col in cursor.description]
             results = cursor.fetchall()
         print(json.dumps(tas_dict))
@@ -135,15 +164,33 @@ class Command(BaseCommand):
         )
         return results
 
-    # def save_to_xlsx(self):
-    #     wb = Workbook(write_only=True)
-    #     dest_filename = self.destination + "/disaster_spending.xlsx"
-    #     ws1 = wb.create_sheet(title="Contracts")
-    #     ws1.append(self.contract_columns)
-    #     for row, value in enumerate(self.contract_results):
-    #         ws1.append(value)
+    def assemble_csv_files(self):
+        print("Reading CSVs")
+        start_pandas = perf_counter()
 
-    #     wb.save(filename=dest_filename)
+        files = glob.glob(self.temporary_dir + '*_fpds.csv')
+        df = pd.concat([pd.read_csv(f, dtype=str, header=None, names=self.contract_columns) for f in files])
+        self.write_pandas(df, "fpds")
+
+        files = glob.glob(self.temporary_dir + '*_fabs.csv')
+        df = pd.concat([pd.read_csv(f, dtype=str, header=None, names=self.assistance_columns) for f in files])
+        self.write_pandas(df, "fabs")
+
+        print("pandas took {}s".format(perf_counter() - start_pandas))
+
+    def write_pandas(self, df, award_type):
+        df = df.replace({np.nan: None})
+        df = df.replace({"NaN": None})
+        df["submission_period"] = pd.to_datetime(df["submission_period"])
+        df['_fyq'] = df.apply(lambda x: generate_fiscal_year_and_quarter(x["submission_period"]), axis=1)
+
+        print("prepped pandas dataframe for all {} records".format(award_type))
+
+        for quarter in pd.unique(df['_fyq']):
+            filepath = "{}{}_{}.csv".format(self.destination, quarter, award_type)
+            temp_df = df.loc[df["_fyq"] == quarter]
+            del temp_df["_fyq"]
+            temp_df.to_csv(path_or_buf=filepath, index=False)
 
 
 ASSISTANCE_SQL = """
@@ -198,13 +245,10 @@ SELECT
     "awards"."total_loan_value",
     "awards"."period_of_performance_start_date",
     "awards"."period_of_performance_current_end_date",
-    "toptier_agency"."cgac_code" AS "awarding_agency_code",
-    "toptier_agency"."name" AS "awarding_agency_name",
     "subtier_agency"."subtier_code" AS "awarding_subagency_code",
     "subtier_agency"."name" AS "awarding_subagency_name",
     "awards"."type" AS "award_type_code",
     "awards"."type_description" AS "award_type",
-    "awards"."description" AS "award_description",
 
     "transaction_fabs"."original_loan_subsidy_cost" AS "original_subsidy_cost",
     "transaction_fabs"."sai_number" AS "sai_number",
@@ -372,16 +416,8 @@ SELECT
     "financial_accounts_by_awards"."uri" AS "uri",
     "financial_accounts_by_awards"."transaction_obligated_amount",
     "awards"."total_obligation" AS "obligated_amount", -- awards.total_obligation AS total_dollars_obligated,
-    "awards"."potential_total_value_of_award",
-    "awards"."period_of_performance_start_date",
-    "awards"."period_of_performance_current_end_date",
-    "toptier_agency"."cgac_code" AS "awarding_agency_code",
-    "toptier_agency"."name" AS "awarding_agency_name",
     "subtier_agency"."subtier_code" AS "awarding_subagency_code",
     "subtier_agency"."name" AS "awarding_subagency_name",
-    "awards"."type" AS "award_type_code",
-    "awards"."type_description" AS "award_type",
-    "awards"."description" AS "award_description",
 
     "transaction_fpds"."referenced_idv_agency_iden" AS "parent_award_agency_id",
     "transaction_fpds"."referenced_idv_agency_desc" AS "parent_award_agency_name",
