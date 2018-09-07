@@ -606,10 +606,9 @@ class LegalEntity(DataSourceTrackedModel):
 
 
 class LegalEntityOfficers(models.Model):
-    legal_entity = models.OneToOneField(
-        LegalEntity, on_delete=models.CASCADE,
-        primary_key=True, related_name='officers')
-
+    legal_entity = models.OneToOneField(LegalEntity, on_delete=models.CASCADE, primary_key=True,
+                                        related_name='officers')
+    duns = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
     officer_1_name = models.TextField(null=True, blank=True)
     officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     officer_2_name = models.TextField(null=True, blank=True)

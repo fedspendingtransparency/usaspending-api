@@ -12,7 +12,16 @@ from usaspending_api.awards.v2.views.subawards import SubawardsViewSet
 
 
 def strip_award_id(api_dict):
-    return {k: v for k, v in api_dict.items() if k != 'award_id'}
+    d = {k: v for k, v in api_dict.items() if k != 'award_id'}
+    return remap_subaward_id(d)
+
+
+def remap_subaward_id(api_dict):
+    if "subaward_id" in api_dict:
+        api_dict["id"] = api_dict.pop("subaward_id")
+    else:
+        api_dict["subaward_id"] = api_dict.pop("id")
+    return api_dict
 
 
 def test_all_subawards(mock_matviews_qs):
@@ -69,7 +78,7 @@ def test_specific_award(mock_matviews_qs):
 
 
 subaward_1 = {
-    "id": 2,
+    "subaward_id": 2,
     "subaward_number": "000",
     "description":
         "Brunch chips craft direct fixie food gluten-free hoodie jean shorts keffiyeh lomo mumblecore readymade"
@@ -86,7 +95,7 @@ subaward_1 = {
 }
 
 subaward_2 = {
-    "id": 1,
+    "subaward_id": 1,
     "subaward_number": "001",
     "description":
         "Aesthetic bushwick chillwave chips cosby fanny pack four fund gentrify helvetica hoodie occupy pork raw"
@@ -103,7 +112,7 @@ subaward_2 = {
 }
 
 subaward_3 = {
-    "id": 3,
+    "subaward_id": 3,
     "subaward_number": "002",
     "description":
         "Ennui gluten-free keytar mixtape pitchfork selvage tattooed tofu viral yr. Austin banksy biodiesel"
@@ -122,7 +131,7 @@ subaward_3 = {
 }
 
 subaward_10 = {
-    "id": 10,
+    "subaward_id": 10,
     "subaward_number": "1234",
     "description": "Sub Award #10",
     "action_date": "2010-04-03",
@@ -132,7 +141,7 @@ subaward_10 = {
 }
 
 subaward_11 = {
-    "id": 11,
+    "subaward_id": 11,
     "subaward_number": "1235",
     "description": "Sub Award #11",
     "action_date": "2018-01-01",
@@ -142,7 +151,7 @@ subaward_11 = {
 }
 
 subaward_12 = {
-    "id": 12,
+    "subaward_id": 12,
     "subaward_number": "1236",
     "description": "subaward_11",
     "action_date": "2017-03-02",
