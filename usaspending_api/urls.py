@@ -36,6 +36,7 @@ urlpatterns = [
     url(r'^api/v2/subawards/', include('usaspending_api.awards.v2.urls_subawards')),
     url(r'^api/v2/budget_authority/', include('usaspending_api.accounts.urls_budget_authority')),
     url(r'^api/v2/download/', include('usaspending_api.download.v2.urls')),
+    url(r'^api/v2/budget_functions/', include('usaspending_api.accounts.v2.urls_budget_functions')),
     url(r'^api/v2/bulk_download/', include('usaspending_api.bulk_download.v2.urls')),
     url(r'^api/v2/federal_accounts/', include('usaspending_api.accounts.urls_federal_accounts_v2')),
     url(r'^api/v2/federal_obligations/', include('usaspending_api.accounts.urls_federal_obligations')),
