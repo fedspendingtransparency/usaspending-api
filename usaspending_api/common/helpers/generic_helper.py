@@ -36,6 +36,12 @@ MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/mat
 ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
 
 
+def read_text_file(filepath):
+    with open(filepath, "r") as plaintext_file:
+        file_content_str = plaintext_file.read()
+    return file_content_str
+
+
 def upper_case_dict_values(input_dict):
     for key in input_dict:
         if isinstance(input_dict[key], str):
