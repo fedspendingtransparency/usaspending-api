@@ -11,8 +11,8 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.broker.management.commands.fabs_nightly_loader import Command as fabs_cmd
 
 logger = logging.getLogger('console')
 
@@ -29,15 +29,25 @@ class Command(BaseCommand):
         db_cursor = connections['default'].cursor()
         db_query = """
             WITH deletable AS (
-                SELECT  afa_generated_unique,
-                        bool_or(is_active) AS is_active,
-                        bool_or(correction_delete_indicatr in ('d', 'D'))
-                            AS deleted
-                FROM    broker.published_award_financial_assistance
+                SELECT *
+                FROM    dblink('broker_server',
+                '
+                SELECT 
+                    afa_generated_unique,
+                    bool_or(is_active) AS is_active,
+                    bool_or(correction_delete_indicatr in (''d'', ''D'')) AS deleted
+                FROM
+                    published_award_financial_assistance
                 GROUP BY 1
                 HAVING  bool_or(is_active) = false
-                AND     bool_or(correction_delete_indicatr in ('d', 'D'))
+                AND     bool_or(correction_delete_indicatr in (''d'', ''D''));
+                ')
+                AS broker_deleteable (
+                    afa_generated_unique text,
+                    is_active boolean,
+                    deleted boolean
                 )
+            )
             SELECT tf.afa_generated_unique
             FROM   transaction_fabs tf
             JOIN   deletable d USING (afa_generated_unique)
@@ -48,7 +58,7 @@ class Command(BaseCommand):
         try:
             db_cursor.execute(db_query)
         except ProgrammingError as e:
-            if 'broker.published_award_financial_assistance' in str(e):
+            if 'broker_server.published_award_financial_assistance' in str(e):
                 msg = str(e) + '\nRun database_scripts/broker_matviews/broker_server.sql\n\n'
                 raise ProgrammingError(str(e) + msg)
             else:
@@ -74,9 +84,9 @@ class Command(BaseCommand):
             if not rows:
                 logger.info('No further rows; finished')
                 return
-            ids = [r[0] for r in rows]
+            delete_ids = [r[0] for r in rows]
             with timer('deleting rows', logger.info):
-                TransactionNormalized.objects.\
-                    filter(assistance_data__afa_generated_unique__in=ids).delete()
+                fabs_cmd.send_deletes_to_elasticsearch(delete_ids)
+                fabs_cmd().delete_stale_fabs(delete_ids)
             batch_no += 1
         logger.info('{} batches finished, complete'.format(batch_no - 1))
