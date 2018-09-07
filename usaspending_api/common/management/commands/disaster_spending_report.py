@@ -1,31 +1,26 @@
+import csv
+import glob
 import itertools
 import json
 import logging
-import os
-import csv
-import glob
-import pandas as pd
 import numpy as np
+import os
+import pandas as pd
+import shutil
+import zipfile
 
+from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connection
-from time import perf_counter
 from openpyxl import load_workbook
+from time import perf_counter
+
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year_and_quarter
+
 
 TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 
-"""
-from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-
-contracts = query_paths['award']['d1']
-columns = []
-for k, v in contracts.items():
-    if v.startswith('award__latest_transaction__contract_data'):
-        col = v.split('__')[-1]
-        print('"transaction_fpds"."{}" AS "{}",'.format(col, k))
-print(columns)
-"""
+logger = logging.getLogger('console')
 
 
 def dump_to_csv(filepath, data_lines):
@@ -44,15 +39,15 @@ def generate_tas_rendering_label(tas_dict):
     """
         Copied from usaspending_api/accounts/models.py and change to use a dict instead of separate parameters
     """
-    tas_rendering_label = '-'.join(filter(None, (tas_dict["ATA"], tas_dict["AID"])))
+    tas_rendering_label = "-".join(filter(None, (tas_dict["ATA"], tas_dict["AID"])))
 
-    if tas_dict["AvailType Code"] is not None and tas_dict["AvailType Code"] != '':
-        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_dict["AvailType Code"])))
+    if tas_dict["AvailType Code"] is not None and tas_dict["AvailType Code"] != "":
+        tas_rendering_label = "-".join(filter(None, (tas_rendering_label, tas_dict["AvailType Code"])))
     else:
-        poa = '\\'.join(filter(None, (tas_dict["BPOA"], tas_dict["EPOA"])))
-        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
+        poa = "\\".join(filter(None, (tas_dict["BPOA"], tas_dict["EPOA"])))
+        tas_rendering_label = "-".join(filter(None, (tas_rendering_label, poa)))
 
-    tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, tas_dict["Main"], tas_dict["Sub"])))
+    tas_rendering_label = "-".join(filter(None, (tas_rendering_label, tas_dict["Main"], tas_dict["Sub"])))
 
     return tas_rendering_label
 
@@ -72,6 +67,7 @@ class Command(BaseCommand):
             type=str,
             help="Set for a custom location of output files",
         )
+        parser.add_argument("-k", "--keep-files", action="store_true", help="If set, don't delete the temp files files")
 
     def handle(self, *args, **options):
         script_start = perf_counter()
@@ -79,8 +75,10 @@ class Command(BaseCommand):
         self.assistance_columns = []
         self.first_contract_write = True
         self.first_assistance_write = True
-        self.temporary_dir = os.path.dirname(options["destination"]) + '/disaster_tas_csv/'
-        self.destination = os.path.dirname(options["destination"]) + '/OMB_DHS_disaster_report/'
+        self.temporary_dir = os.path.dirname(options["destination"] + "/temp_disaster_tas_csv/")
+        self.destination = os.path.dirname(options["destination"] + "/OMB_DHS_disaster_report/")
+        self.keep_files = options["keep_files"]
+        self.verbose = True if options["verbosity"] > 1 else False
 
         if not os.path.exists(self.temporary_dir):
             os.makedirs(self.temporary_dir)
@@ -90,7 +88,9 @@ class Command(BaseCommand):
         tas_dict_list = self.gather_tas_from_file()
         self.query_database(tas_dict_list)
         self.assemble_csv_files()
-        print("total script runtime: {}s".format(perf_counter() - script_start))
+        self.cleanup_files()
+
+        logger.info("total script runtime: {}s".format(perf_counter() - script_start))
 
     def gather_tas_from_file(self):
         wb = load_workbook(filename=TAS_XLSX_FILE, read_only=True)
@@ -106,16 +106,12 @@ class Command(BaseCommand):
             raise Exception("Headers {} Don't match expected: {}".format(headers, expected_headers))
 
         tas_code_rows = ws["A9":"G100"]
-        # tas_code_rows = ws["A9":"G10"]
         # Turn "rows" of "cell" into a list of dictionaries using the headers. I'm sure pandas could have done it too
         tas_dicts = [
             {key: cell.value.strip() if cell.value else None for key, cell in itertools.zip_longest(headers, row)}
             for row in tas_code_rows
         ]
 
-        # for tas in tas_dicts:
-        #     print(json.dumps(tas))
-        # raise Exception
         return tas_dicts
 
     def query_database(self, tas_dict_list):
@@ -123,21 +119,21 @@ class Command(BaseCommand):
 
         for i, tas in enumerate(tas_dict_list, 1):
             contract_results = self.single_tas_query(tas, "contract")
-            filepath = "{}{}_fpds.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
+            filepath = "{}/{}_fpds.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
             dump_to_csv(filepath, contract_results)
 
             assistance_results = self.single_tas_query(tas, "assistance")
-            filepath = "{}{}_fabs.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
+            filepath = "{}/{}_fabs.csv".format(self.temporary_dir, generate_tas_rendering_label(tas))
             dump_to_csv(filepath, assistance_results)
 
-            if (len(tas_dict_list) - i) % 10 == 0:
-                print("{:2>} TAS left".format(len(tas_dict_list) - i))
+            if self.verbose and (len(tas_dict_list) - i) % 10 == 0:
+                logger.info("{:2>} TAS left".format(len(tas_dict_list) - i))
 
-        print(self.contract_columns)
-        print("\n\n")
-        print(self.assistance_columns)
+            if self.verbose:
+                logger.info(self.contract_columns)
+                logger.info(self.assistance_columns)
 
-        print("Completed fetching the data: {}s".format(perf_counter() - db_start))
+        logger.info("Completed fetching the data: {}s".format(perf_counter() - db_start))
 
     def single_tas_query(self, tas_dict, transaction_type="contract"):
         single_db_query = perf_counter()
@@ -156,41 +152,57 @@ class Command(BaseCommand):
             elif transaction_type == "assistance" and not self.assistance_columns:
                 self.assistance_columns = [col[0] for col in cursor.description]
             results = cursor.fetchall()
-        print(json.dumps(tas_dict))
-        print(
-            "DB query for {}s using above TAS took {}s and returned {} rows".format(
-                transaction_type, perf_counter() - single_db_query, len(results)
+        if self.verbose:
+            logger.info(json.dumps(tas_dict))
+            logger.info(
+                "DB query for {}s using above TAS took {}s and returned {} rows".format(
+                    transaction_type, perf_counter() - single_db_query, len(results)
+                )
             )
-        )
         return results
 
     def assemble_csv_files(self):
-        print("Reading CSVs")
+        logger.info("Reading CSVs")
         start_pandas = perf_counter()
 
-        files = glob.glob(self.temporary_dir + '*_fpds.csv')
+        files = glob.glob(self.temporary_dir + "/*_fpds.csv")
         df = pd.concat([pd.read_csv(f, dtype=str, header=None, names=self.contract_columns) for f in files])
         self.write_pandas(df, "fpds")
 
-        files = glob.glob(self.temporary_dir + '*_fabs.csv')
+        files = glob.glob(self.temporary_dir + "/*_fabs.csv")
         df = pd.concat([pd.read_csv(f, dtype=str, header=None, names=self.assistance_columns) for f in files])
         self.write_pandas(df, "fabs")
 
-        print("pandas took {}s".format(perf_counter() - start_pandas))
+        logger.info("pandas took {}s".format(perf_counter() - start_pandas))
 
     def write_pandas(self, df, award_type):
         df = df.replace({np.nan: None})
         df = df.replace({"NaN": None})
         df["submission_period"] = pd.to_datetime(df["submission_period"])
-        df['_fyq'] = df.apply(lambda x: generate_fiscal_year_and_quarter(x["submission_period"]), axis=1)
+        df["_fyq"] = df.apply(lambda x: generate_fiscal_year_and_quarter(x["submission_period"]), axis=1)
 
-        print("prepped pandas dataframe for all {} records".format(award_type))
+        logger.info("prepped pandas dataframe for all {} records".format(award_type))
 
-        for quarter in pd.unique(df['_fyq']):
-            filepath = "{}{}_{}.csv".format(self.destination, quarter, award_type)
+        for quarter in pd.unique(df["_fyq"]):
+            filepath = "{}/{}_{}.csv".format(self.destination, quarter, award_type)
             temp_df = df.loc[df["_fyq"] == quarter]
             del temp_df["_fyq"]
             temp_df.to_csv(path_or_buf=filepath, index=False)
+
+    def cleanup_files(self):
+        csv_files = glob.glob(self.destination + "/*.csv")
+        zip_filepath = "{}_{}.zip".format(
+            self.destination, datetime.utcnow().isoformat(sep="_", timespec="minutes")
+        )
+        zip_filepath.replace(":", "_")
+
+        zipped_csvs = zipfile.ZipFile(zip_filepath, "a", compression=zipfile.ZIP_DEFLATED, allowZip64=True)
+        for csv_file in csv_files:
+            zipped_csvs.write(csv_file, os.path.basename(csv_file))
+
+        if not self.keep_files:
+            shutil.rmtree(self.temporary_dir)
+            shutil.rmtree(self.destination)
 
 
 ASSISTANCE_SQL = """
