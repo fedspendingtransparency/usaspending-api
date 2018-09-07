@@ -20,7 +20,7 @@ from usaspending_api.common.helpers.generic_helper import generate_fiscal_year_a
 
 TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 def dump_to_csv(filepath, data_lines):
@@ -54,31 +54,35 @@ def generate_tas_rendering_label(tas_dict):
 
 class Command(BaseCommand):
     """
+        Management Command to generate a "more expansive" Custom Account Download for specific TAS
+        Essentially, it is Account + Award data for each TAS
+          - It needs a TAS list (initially provided as an XLSX and stored in usaspending_api/data/)
+          - Will create two files for each fiscal quarter of data (one for contracts, another for assistance)
+          - Zips the CSVs and compresses for easier transport
     """
 
     help = "Generate CSV files for provided TAS to help track disaster spending"
     logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "-d",
-            "--destination",
-            default=os.path.dirname(os.path.abspath(__file__)),
-            type=str,
-            help="Set for a custom location of output files",
-        )
-        parser.add_argument("-k", "--keep-files", action="store_true", help="If set, don't delete the temp files files")
+        default_dir = os.path.dirname(os.path.abspath(__file__))
+        parser.add_argument("-d", "--destination", default=default_dir, type=str, help="Custom location of output file")
+        parser.add_argument("-k", "--keep-files", action="store_true", help="If set, don't delete the temp files")
+        parser.add_argument("-p", "--print-zip-path", action="store_true", help="returns the zip path and exists")
 
     def handle(self, *args, **options):
         script_start = perf_counter()
         self.contract_columns = []
         self.assistance_columns = []
-        self.first_contract_write = True
-        self.first_assistance_write = True
         self.temporary_dir = os.path.dirname(options["destination"] + "/temp_disaster_tas_csv/")
         self.destination = os.path.dirname(options["destination"] + "/OMB_DHS_disaster_report/")
         self.keep_files = options["keep_files"]
         self.verbose = True if options["verbosity"] > 1 else False
+        self.zip_filepath = "{}_{}.zip".format(self.destination, datetime.utcnow().strftime("%Y%m%d%H%M_utc"))
+
+        if options["print_zip_path"]:
+            print(self.zip_filepath)
+            raise SystemExit
 
         if not os.path.exists(self.temporary_dir):
             os.makedirs(self.temporary_dir)
@@ -90,7 +94,8 @@ class Command(BaseCommand):
         self.assemble_csv_files()
         self.cleanup_files()
 
-        logger.info("total script runtime: {}s".format(perf_counter() - script_start))
+        logger.info("Success! New zip file: {}".format(self.zip_filepath))
+        logger.info("Script completed in {}s".format(perf_counter() - script_start))
 
     def gather_tas_from_file(self):
         wb = load_workbook(filename=TAS_XLSX_FILE, read_only=True)
@@ -129,11 +134,11 @@ class Command(BaseCommand):
             if self.verbose and (len(tas_dict_list) - i) % 10 == 0:
                 logger.info("{:2>} TAS left".format(len(tas_dict_list) - i))
 
-            if self.verbose:
-                logger.info(self.contract_columns)
-                logger.info(self.assistance_columns)
+        if self.verbose:
+            logger.info(self.contract_columns)
+            logger.info(self.assistance_columns)
 
-        logger.info("Completed fetching the data: {}s".format(perf_counter() - db_start))
+        logger.info("Completed all database queries in {}s".format(perf_counter() - db_start))
 
     def single_tas_query(self, tas_dict, transaction_type="contract"):
         single_db_query = perf_counter()
@@ -155,14 +160,14 @@ class Command(BaseCommand):
         if self.verbose:
             logger.info(json.dumps(tas_dict))
             logger.info(
-                "DB query for {}s using above TAS took {}s and returned {} rows".format(
+                "Query for {}s using above TAS took {}s returning {} rows".format(
                     transaction_type, perf_counter() - single_db_query, len(results)
                 )
             )
         return results
 
     def assemble_csv_files(self):
-        logger.info("Reading CSVs")
+        logger.info("Using pandas to read temporary .csv files")
         start_pandas = perf_counter()
 
         files = glob.glob(self.temporary_dir + "/*_fpds.csv")
@@ -173,7 +178,7 @@ class Command(BaseCommand):
         df = pd.concat([pd.read_csv(f, dtype=str, header=None, names=self.assistance_columns) for f in files])
         self.write_pandas(df, "fabs")
 
-        logger.info("pandas took {}s".format(perf_counter() - start_pandas))
+        logger.info("Assembling data and saving to final .csv files took {}s".format(perf_counter() - start_pandas))
 
     def write_pandas(self, df, award_type):
         df = df.replace({np.nan: None})
@@ -181,7 +186,8 @@ class Command(BaseCommand):
         df["submission_period"] = pd.to_datetime(df["submission_period"])
         df["_fyq"] = df.apply(lambda x: generate_fiscal_year_and_quarter(x["submission_period"]), axis=1)
 
-        logger.info("prepped pandas dataframe for all {} records".format(award_type))
+        if self.verbose:
+            logger.info("Completed pandas dataframe for all {} records".format(award_type))
 
         for quarter in pd.unique(df["_fyq"]):
             filepath = "{}/{}_{}.csv".format(self.destination, quarter, award_type)
@@ -191,16 +197,13 @@ class Command(BaseCommand):
 
     def cleanup_files(self):
         csv_files = glob.glob(self.destination + "/*.csv")
-        zip_filepath = "{}_{}.zip".format(
-            self.destination, datetime.utcnow().isoformat(sep="_", timespec="minutes")
-        )
-        zip_filepath.replace(":", "_")
+        zipped_csvs = zipfile.ZipFile(self.zip_filepath, "a", compression=zipfile.ZIP_DEFLATED, allowZip64=True)
 
-        zipped_csvs = zipfile.ZipFile(zip_filepath, "a", compression=zipfile.ZIP_DEFLATED, allowZip64=True)
         for csv_file in csv_files:
             zipped_csvs.write(csv_file, os.path.basename(csv_file))
 
         if not self.keep_files:
+            logger.info("Removing temporary directories along with temporary files")
             shutil.rmtree(self.temporary_dir)
             shutil.rmtree(self.destination)
 
