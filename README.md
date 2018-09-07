@@ -4,7 +4,7 @@
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
-![USAspending Landing Page](readme.png?raw=true "Readme")
+![USAspending Landing Page](readme.jpg?raw=true "Readme")
 
 ## Install
 
@@ -29,20 +29,20 @@ Navigate to the base file directory for the USAspending repositories
     $ mkdir -p usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
-  
+
 Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`, currently 3.5.5)
 
     (usaspending-api) $ pyenv install 3.5.5
     (usaspending-api) $ pyenv local 3.5.5
     $ python -m venv .
     $ source bin/activate
-    
 
-   
+
+
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
 :bulb: _(try a different WiFi if you're current one blocks dependency downloads)_
-	
+
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 Set environment variables (fill in the connection string placeholders, e.g. `USER`, `PASSWORD`, `HOST`, `PORT`)
@@ -61,7 +61,7 @@ Test the database connection and upate the `data_store_api` schema
 Start up the site
 
     (usaspending-api) $ ./manage.py runserver
-  
+
 The application will be available at `http://localhost:8000`
 
 ## API

@@ -23,7 +23,7 @@ class Command(BaseCommand):
         file_names = ['create_business_categories_functions.sql', 'create_agency_lookup_matview.sql',
                       'create_award_category_table.sql', 'load_fpds.sql', 'load_fabs.sql', 'load_locations.sql',
                       'load_recipients.sql', 'load_transaction_normalized.sql', 'update_transaction_ids.sql',
-                      'load_awards.sql', 'update_award_ids.sql', 'load_exec_comp.sql', 'update_tables.sql',
+                      'load_awards.sql', 'update_award_ids.sql', 'restock_exec_comp.sql', 'update_tables.sql',
                       'load_constraints.sql']
 
         file_names = [bulk_load_file_path + name for name in file_names]
