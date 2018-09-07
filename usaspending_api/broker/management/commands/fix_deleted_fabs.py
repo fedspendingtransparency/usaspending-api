@@ -21,7 +21,7 @@ class Command(BaseCommand):
     help = "Deletes FABS rows that have been deactivated in the broker"
 
     def add_arguments(self, parser):
-        parser.add_argument('-b', '--batchsize', type=int, default=1000, help='Fetch rows for deletion in batches of N')
+        parser.add_argument('-b', '--batchsize', type=int, default=10000, help='Fetch rows for deletion in batches of N')
         parser.add_argument('--batches', type=int, default=0, help='Stop after N batches (deletes all by default)')
 
     @staticmethod
