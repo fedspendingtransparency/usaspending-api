@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 SELECT *
                 FROM    dblink('broker_server',
                 '
-                SELECT 
+                SELECT
                     afa_generated_unique,
                     bool_or(is_active) AS is_active,
                     bool_or(correction_delete_indicatr in (''d'', ''D'')) AS deleted
