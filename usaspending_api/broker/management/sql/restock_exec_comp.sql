@@ -1,19 +1,9 @@
-from datetime import datetime
-from django.core.management.base import BaseCommand
-from django.db import connection, transaction
-from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.broker import lookups
-import logging
-
-logger = logging.getLogger('console')
-
-
-exec_comp_sql = """
 DROP TABLE IF EXISTS references_legalentityofficers_new;
 
 CREATE TABLE references_legalentityofficers_new AS (
     SELECT
         legal_entity.legal_entity_id AS legal_entity_id,
+        broker_exec_comp.duns AS duns,
         broker_exec_comp.officer_1_name AS officer_1_name,
         broker_exec_comp.officer_2_name AS officer_2_name,
         broker_exec_comp.officer_3_name AS officer_3_name,
@@ -75,39 +65,37 @@ CREATE TABLE references_legalentityofficers_new AS (
             legal_entity ON legal_entity.recipient_unique_id = broker_exec_comp.duns
 );
 
-ALTER TABLE references_legalentityofficers RENAME TO references_legalentityofficers_old;
+BEGIN;
+TRUNCATE TABLE references_legalentityofficers RESTART IDENTITY;
 
-ALTER TABLE references_legalentityofficers_new RENAME TO references_legalentityofficers;
+INSERT INTO public.references_legalentityofficers (
+    legal_entity_id, duns,
+    officer_1_name, officer_2_name, officer_3_name, officer_4_name, officer_5_name,
+    officer_1_amount, officer_2_amount, officer_3_amount, officer_4_amount, officer_5_amount,
+    update_date)
+  SELECT
+    legal_entity_id,
+    duns,
+    officer_1_name,
+    officer_2_name,
+    officer_3_name,
+    officer_4_name,
+    officer_5_name,
+    officer_1_amount,
+    officer_2_amount,
+    officer_3_amount,
+    officer_4_amount,
+    officer_5_amount,
+    update_date
+  FROM public.references_legalentityofficers_new;
 
-TRUNCATE references_legalentityofficers_old;
-
-DROP TABLE references_legalentityofficers_old;
-
-ALTER TABLE references_legalentityofficers ADD PRIMARY KEY(legal_entity_id);
-"""
+DROP TABLE references_legalentityofficers_new;
 
 
-class Command(BaseCommand):
+UPDATE external_data_load_date SET last_load_date=now()
+WHERE external_data_type_id = (
+    SELECT external_data_type_id
+    FROM external_data_type
+    WHERE external_data_type.name = 'exec_comp');
 
-    @staticmethod
-    def run_sql_file(file_path):
-        with connection.cursor() as cursor:
-            with open(file_path) as infile:
-                for raw_sql in infile.read().split('\n\n\n'):
-                    if raw_sql.strip():
-                        cursor.execute(raw_sql)
-
-    @transaction.atomic
-    def handle(self, *args, **options):
-        logger.info('Running exec comp SQL to recreate (aka reload) ALL exec comp data')
-        total_start = datetime.now()
-
-        with connection.cursor() as cursor:
-            cursor.execute(exec_comp_sql)
-
-        # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).delete()
-        ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
-                             external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).save()
-
-        logger.info('Finished exec comp SQL in %s seconds' % str(datetime.now()-total_start))
+COMMIT;
