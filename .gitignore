@@ -6,7 +6,6 @@
 .DS_Store
 
 pip-selfcheck.json
-pyvenv.cfg
 log/*
 csv_downloads/*
 tmp/*
@@ -16,10 +15,20 @@ usaspending_api/references/.idea/*
 usaspending_api/financial_activities/.idea/*
 .idea/*
 
+# pyenv ignores
+.python-version
+pyvenv.cfg
+
+# for a project-local (rather than home-dir based) virtual environment directory
+.venv/ 
+
+# direnv ignores
 .direnv/
+.envrc
+
 .pgdump
 .ipynb
 .lprof
-.envrc
 .pytest_cache/*
-.python-version
+
+
