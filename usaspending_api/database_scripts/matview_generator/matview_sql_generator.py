@@ -55,7 +55,7 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
 """
 
 TEMPLATE = {
-    "create_matview": "CREATE MATERIALIZED VIEW {} AS\n{};",
+    "create_matview": "CREATE MATERIALIZED VIEW {} AS\n{} WITH {}DATA;",
     "drop_matview": "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;",
     "rename_matview": "ALTER MATERIALIZED VIEW {}{} RENAME TO {};",
     "cluster_matview": "CLUSTER VERBOSE {} USING {};",
@@ -158,7 +158,11 @@ def make_matview_drops(final_matview_name):
 def make_matview_create(final_matview_name, sql):
     matview_sql = "\n".join(sql)
     matview_temp_name = final_matview_name + "_temp"
-    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql)]
+    with_or_without_data = ""
+    if args.no_data:
+        with_or_without_data = "NO "
+
+    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql, with_or_without_data)]
 
 
 def make_matview_refresh(matview_name):
@@ -249,7 +253,12 @@ def create_all_sql_strings(sql_json):
     final_sql_strings.append("")
     final_sql_strings += create_indexes
     final_sql_strings.append("")
+    if args.no_data:
+        final_sql_strings.append(TEMPLATE["refresh_matview"].format(matview_name))
+        final_sql_strings.append("")
+    final_sql_strings.append("BEGIN;")
     final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
+    final_sql_strings.append("COMMIT;")
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name))
     return final_sql_strings
@@ -347,6 +356,9 @@ if __name__ == "__main__":
         choices=range(1, 8),
         default=1,
         help="When value >=2, distribute the index SQL across that file count",
+    )
+    arg_parser.add_argument(
+        "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
     )
     args = arg_parser.parse_args()
 
