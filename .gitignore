@@ -5,15 +5,15 @@
 .coverage
 .DS_Store
 
-pip-selfcheck.json
+# JetBrains IDEs
+**/.idea/
+
+# Temporary and generated files
 log/*
-csv_downloads/*
-tmp/*
 usaspending_api/logs/*
-usaspending_api/.idea/*
-usaspending_api/references/.idea/*
-usaspending_api/financial_activities/.idea/*
-.idea/*
+csv_downloads/*
+bulk_downloads/*
+tmp/*
 
 # pyenv ignores
 .python-version
@@ -30,5 +30,4 @@ pyvenv.cfg
 .ipynb
 .lprof
 .pytest_cache/*
-
-
+pip-selfcheck.json
