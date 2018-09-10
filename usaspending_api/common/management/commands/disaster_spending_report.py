@@ -68,9 +68,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         default_dir = os.path.dirname(os.path.abspath(__file__))
-        parser.add_argument("-d", "--destination", default=default_dir, type=str, help="Custom location of output file")
-        parser.add_argument("-k", "--keep-files", action="store_true", help="If set, don't delete the temp files")
-        parser.add_argument("-p", "--print-zip-path", action="store_true", help="returns the zip path and exists")
+        parser.add_argument("-d", "--destination", default=default_dir, type=str, help="Location of output file")
+        parser.add_argument("-k", "--keep-files", action="store_true", help="If provided, don't delete the temp files")
+        parser.add_argument("-p", "--print-zip-path", action="store_true", help="Return the zip path and exit")
 
     def handle(self, *args, **options):
         script_start = perf_counter()
