@@ -321,6 +321,7 @@ class BusinessLogic:
         return results
 
     def federal_account(self) -> list:
+        # Matview -> Transaction_normalized -> Awards -> FinancialAccountsByAwards -> TreasuryAppropriationAccount -> FederalAccount
         filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False}
         values = {'transaction__award__financial_set__treasury_account__federal_account_id'}
 
@@ -329,6 +330,10 @@ class BusinessLogic:
             raise InvalidParameterException('Federal Account Category requires recipient ID filter')
 
         self.queryset = self.common_db_query(filters, values)
+
+        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        print('=======================================')
+        print(generate_raw_quoted_query(self.queryset))
 
         # DB hit here
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
