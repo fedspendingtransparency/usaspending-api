@@ -5,6 +5,7 @@ Before running, must set up foreign data broker by running
 usaspending_api/database_scripts/broker_matviews/broker_server.sql
 through psql, after editing to add conneciton specifics
 """
+
 import logging
 
 from django.core.management.base import BaseCommand
