@@ -32,12 +32,15 @@ Navigate to the base file directory for the USAspending repositories
 
 Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`, currently 3.5.5)
 
-    (usaspending-api) $ pyenv install 3.5.5
-    (usaspending-api) $ pyenv local 3.5.5
-    $ python -m venv .
-    $ source bin/activate
+    $ pyenv install 3.5.5
+    $ pyenv local 3.5.5
+    $ python -m venv .venv/usaspending-api
+    $ source .venv/usaspending-api/bin/activate
 
 
+Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
+
+    (usaspending-api) $ 
 
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
