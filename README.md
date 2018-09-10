@@ -38,6 +38,9 @@ Create and activate the virtual environment using `venv`, and ensure the right v
     $ source .venv/usaspending-api/bin/activate
 
 
+Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
+
+    (usaspending-api) $ 
 
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
