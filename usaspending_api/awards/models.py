@@ -845,11 +845,9 @@ class Subaward(DataSourceTrackedModel):
     id = models.AutoField(primary_key=True)
 
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards", null=True)
-    recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
-    place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)
 
     subaward_number = models.TextField(db_index=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
@@ -893,12 +891,19 @@ class Subaward(DataSourceTrackedModel):
 
     piid = models.TextField(null=True, blank=True)
     fain = models.TextField(null=True, blank=True)
+    uri = models.TextField(null=True, blank=True)
 
-    business_categories = ArrayField(models.TextField(), default=list)
-    recipient_name = models.TextField(null=True, blank=True)
-    prime_recipient_name = models.TextField(null=True, blank=True)
     recipient_unique_id = models.TextField(null=True, blank=True)
+    recipient_name = models.TextField(null=True, blank=True)
+    dba_name = models.TextField(null=True, blank=True)
     parent_recipient_unique_id = models.TextField(null=True, blank=True)
+    parent_recipient_name = models.TextField(null=True, blank=True)
+    business_type_code = models.TextField(null=True, blank=True)
+    business_type_description = models.TextField(null=True, blank=True)
+
+    prime_recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING, null=True)
+    business_categories = ArrayField(models.TextField(), default=list)
+    prime_recipient_name = models.TextField(null=True, blank=True)
 
     pulled_from = models.TextField(null=True, blank=True)
     type_of_contract_pricing = models.TextField(null=True, blank=True)
@@ -909,15 +914,30 @@ class Subaward(DataSourceTrackedModel):
     cfda_number = models.TextField(null=True, blank=True)
     cfda_title = models.TextField(null=True, blank=True)
 
+    officer_1_name = models.TextField(null=True, blank=True)
+    officer_1_amount = models.TextField(null=True, blank=True)
+    officer_2_name = models.TextField(null=True, blank=True)
+    officer_2_amount = models.TextField(null=True, blank=True)
+    officer_3_name = models.TextField(null=True, blank=True)
+    officer_3_amount = models.TextField(null=True, blank=True)
+    officer_4_name = models.TextField(null=True, blank=True)
+    officer_4_amount = models.TextField(null=True, blank=True)
+    officer_5_name = models.TextField(null=True, blank=True)
+    officer_5_amount = models.TextField(null=True, blank=True)
+
     recipient_location_country_code = models.TextField(null=True, blank=True)
     recipient_location_country_name = models.TextField(null=True, blank=True)
     recipient_location_state_code = models.TextField(null=True, blank=True)
+    recipient_location_state_name = models.TextField(null=True, blank=True)
     recipient_location_county_code = models.TextField(null=True, blank=True)
     recipient_location_county_name = models.TextField(null=True, blank=True)
     recipient_location_city_code = models.TextField(null=True, blank=True)
     recipient_location_city_name = models.TextField(null=True, blank=True)
+    recipient_location_zip4 = models.TextField(null=True, blank=True)
     recipient_location_zip5 = models.TextField(null=True, blank=True)
+    recipient_location_street_address = models.TextField(null=True, blank=True)
     recipient_location_congressional_code = models.TextField(null=True, blank=True)
+    recipient_location_foreign_postal_code = models.TextField(null=True, blank=True)
 
     pop_country_code = models.TextField(null=True, blank=True)
     pop_country_name = models.TextField(null=True, blank=True)
@@ -930,6 +950,8 @@ class Subaward(DataSourceTrackedModel):
     pop_zip4 = models.TextField(null=True, blank=True)
     pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
+
+    updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = True

@@ -100,7 +100,9 @@ create or replace function compile_fpds_business_categories(
     transit_authority           boolean,
     planning_commission         boolean
 )
-returns text[] as $$
+returns text[]
+immutable parallel safe
+as $$
 declare
     bc_arr text[];
 begin
@@ -554,7 +556,9 @@ end;
 $$  language plpgsql;
 
 create or replace function compile_fabs_business_categories(business_types text)
-returns text[] as $$
+returns text[]
+immutable parallel safe
+as $$
 declare
     bc_arr text[];
 begin

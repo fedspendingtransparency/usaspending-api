@@ -19,7 +19,7 @@
       "fain": "FAIN-54321"
     }
   ],
-  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.subcontract_num AS subaward_num,sub_award.subcontract_amount AS subaward_amount,sub_award.overall_description,sub_award.recovery_model_q1 AS q1_flag,sub_award.recovery_model_q2 AS q2_flag,sub_award.subcontract_date AS subaward_date,sub_award.company_name AS company_name,sub_award.company_address_country AS company_address_country,sub_award.company_address_city AS company_address_city,sub_award.company_address_zip AS company_address_zip,sub_award.company_address_state AS company_address_state,sub_award.company_address_state_name AS company_address_state_name,sub_award.company_address_street AS company_address_street,sub_award.company_address_district AS company_address_district FROM fsrs_procurement AS award JOIN fsrs_subcontract AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
+  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.dba_name AS dba_name,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.top_paid_fullname_1,sub_award.top_paid_amount_1,sub_award.top_paid_fullname_2,sub_award.top_paid_amount_2,sub_award.top_paid_fullname_3,sub_award.top_paid_amount_3,sub_award.top_paid_fullname_4,sub_award.top_paid_amount_4,sub_award.top_paid_fullname_5,sub_award.top_paid_amount_5,sub_award.subcontract_num AS subaward_num,sub_award.subcontract_amount AS subaward_amount,sub_award.overall_description,sub_award.recovery_model_q1 AS q1_flag,sub_award.recovery_model_q2 AS q2_flag,sub_award.subcontract_date AS subaward_date,sub_award.company_name AS company_name,sub_award.company_address_country AS company_address_country,sub_award.company_address_city AS company_address_city,sub_award.company_address_zip AS company_address_zip,sub_award.company_address_state AS company_address_state,sub_award.company_address_state_name AS company_address_state_name,sub_award.company_address_street AS company_address_street,sub_award.company_address_district AS company_address_district,sub_award.parent_company_name AS parent_company_name,sub_award.bus_types AS bus_types FROM fsrs_procurement AS award JOIN fsrs_subcontract AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
     {
       "internal_id": "procurement_internal_id",
       "id": "10",
@@ -27,6 +27,7 @@
       "report_period_year": "1111",
       "duns": "DUNS12345",
       "parent_duns": "PARENTDUNS12345",
+      "dba_name": "JJ's",
       "principle_place_country": "USA",
       "principle_place_city": "Pawnee",
       "principle_place_zip": "11111",
@@ -34,6 +35,16 @@
       "principle_place_state_name": "Idaho",
       "principle_place_street": "Pawnee St",
       "principle_place_district": "PCD",
+      "top_paid_fullname_1": "Sandy Jones",
+      "top_paid_amount_1": "100",
+      "top_paid_fullname_2": "Sam Jones",
+      "top_paid_amount_2": "200",
+      "top_paid_fullname_3": "Sally Jones",
+      "top_paid_amount_3": "300",
+      "top_paid_fullname_4": "Simon Jones",
+      "top_paid_amount_4": "400",
+      "top_paid_fullname_5": "Stefan Jones",
+      "top_paid_amount_5": "500",
       "subaward_num": "SUBNUM12345",
       "subaward_amount": "12345",
       "overall_description": "Random description text",
@@ -47,10 +58,12 @@
       "company_address_state": "ID",
       "company_address_state_name": "Idaho",
       "company_address_street": "Pawnee St",
-      "company_address_district": "PCD"
+      "company_address_district": "PCD",
+      "parent_company_name": "Parent JJ's Diner",
+      "bus_types": "Test,String,Split,by,commas"
     }
   ],
-  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.subcontract_num AS subaward_num,sub_award.subcontract_amount AS subaward_amount,sub_award.overall_description,sub_award.recovery_model_q1 AS q1_flag,sub_award.recovery_model_q2 AS q2_flag,sub_award.subcontract_date AS subaward_date,sub_award.company_name AS company_name,sub_award.company_address_country AS company_address_country,sub_award.company_address_city AS company_address_city,sub_award.company_address_zip AS company_address_zip,sub_award.company_address_state AS company_address_state,sub_award.company_address_state_name AS company_address_state_name,sub_award.company_address_street AS company_address_street,sub_award.company_address_district AS company_address_district FROM fsrs_procurement AS award JOIN fsrs_subcontract AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 10000": [
+  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.dba_name AS dba_name,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.top_paid_fullname_1,sub_award.top_paid_amount_1,sub_award.top_paid_fullname_2,sub_award.top_paid_amount_2,sub_award.top_paid_fullname_3,sub_award.top_paid_amount_3,sub_award.top_paid_fullname_4,sub_award.top_paid_amount_4,sub_award.top_paid_fullname_5,sub_award.top_paid_amount_5,sub_award.subcontract_num AS subaward_num,sub_award.subcontract_amount AS subaward_amount,sub_award.overall_description,sub_award.recovery_model_q1 AS q1_flag,sub_award.recovery_model_q2 AS q2_flag,sub_award.subcontract_date AS subaward_date,sub_award.company_name AS company_name,sub_award.company_address_country AS company_address_country,sub_award.company_address_city AS company_address_city,sub_award.company_address_zip AS company_address_zip,sub_award.company_address_state AS company_address_state,sub_award.company_address_state_name AS company_address_state_name,sub_award.company_address_street AS company_address_street,sub_award.company_address_district AS company_address_district,sub_award.parent_company_name AS parent_company_name FROM fsrs_procurement AS award JOIN fsrs_subcontract AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 10000": [
 
   ],
   "SELECT internal_id,fain FROM fsrs_grant WHERE id > 0 ORDER BY id": [
@@ -69,7 +82,7 @@
       "fain": "FAIN54321"
     }
   ],
-  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
+  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.dba_name AS dba_name,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.top_paid_fullname_1,sub_award.top_paid_amount_1,sub_award.top_paid_fullname_2,sub_award.top_paid_amount_2,sub_award.top_paid_fullname_3,sub_award.top_paid_amount_3,sub_award.top_paid_fullname_4,sub_award.top_paid_amount_4,sub_award.top_paid_fullname_5,sub_award.top_paid_amount_5,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
     {
       "internal_id": "grant_internal_id_1",
       "id": "20",
@@ -77,6 +90,7 @@
       "report_period_year": "2222",
       "duns": "DUNS54321",
       "parent_duns": "PARENTDUNS54321",
+      "dba_name": "Hogwarts",
       "principle_place_country": "UK",
       "principle_place_city": "",
       "principle_place_zip": "NE66 1NQ",
@@ -84,6 +98,16 @@
       "principle_place_state_name": "Alnwick",
       "principle_place_street": "Alnwick Castle",
       "principle_place_district": "",
+      "top_paid_fullname_1": "Sandy Jones",
+      "top_paid_amount_1": "100",
+      "top_paid_fullname_2": "Sam Jones",
+      "top_paid_amount_2": "200",
+      "top_paid_fullname_3": "Sally Jones",
+      "top_paid_amount_3": "300",
+      "top_paid_fullname_4": "Simon Jones",
+      "top_paid_amount_4": "400",
+      "top_paid_fullname_5": "Stefan Jones",
+      "top_paid_amount_5": "500",
       "cfda_numbers": "",
       "subaward_num": "SUBNUM54321",
       "subaward_amount": "54321",
@@ -101,7 +125,7 @@
       "awardee_address_district": ""
     }
   ],
-  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 1 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
+  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.dba_name AS dba_name,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.top_paid_fullname_1,sub_award.top_paid_amount_1,sub_award.top_paid_fullname_2,sub_award.top_paid_amount_2,sub_award.top_paid_fullname_3,sub_award.top_paid_amount_3,sub_award.top_paid_fullname_4,sub_award.top_paid_amount_4,sub_award.top_paid_fullname_5,sub_award.top_paid_amount_5,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 1 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 0": [
     {
       "internal_id": "grant_internal_id_1",
       "id": "20",
@@ -109,6 +133,7 @@
       "report_period_year": "2222",
       "duns": "DUNS54321",
       "parent_duns": "PARENTDUNS54321",
+      "dba_name": "Hogwarts",
       "principle_place_country": "UK",
       "principle_place_city": "",
       "principle_place_zip": "NE66 1NQ",
@@ -116,6 +141,16 @@
       "principle_place_state_name": "Alnwick",
       "principle_place_street": "Alnwick Castle",
       "principle_place_district": "",
+      "top_paid_fullname_1": "Sandy Jones",
+      "top_paid_amount_1": "100",
+      "top_paid_fullname_2": "Sam Jones",
+      "top_paid_amount_2": "200",
+      "top_paid_fullname_3": "Sally Jones",
+      "top_paid_amount_3": "300",
+      "top_paid_fullname_4": "Simon Jones",
+      "top_paid_amount_4": "400",
+      "top_paid_fullname_5": "Stefan Jones",
+      "top_paid_amount_5": "500",
       "cfda_numbers": "",
       "subaward_num": "SUBNUM54321",
       "subaward_amount": "54321",
@@ -133,7 +168,7 @@
       "awardee_address_district": ""
     }
   ],
-  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 10000": [
+  "SELECT award.internal_id,award.id,award.report_period_mon,award.report_period_year,sub_award.duns AS duns,sub_award.parent_duns AS parent_duns,sub_award.dba_name AS dba_name,sub_award.principle_place_country AS principle_place_country,sub_award.principle_place_city AS principle_place_city,sub_award.principle_place_zip AS principle_place_zip,sub_award.principle_place_state AS principle_place_state,sub_award.principle_place_state_name AS principle_place_state_name,sub_award.principle_place_street AS principle_place_street,sub_award.principle_place_district AS principle_place_district,sub_award.top_paid_fullname_1,sub_award.top_paid_amount_1,sub_award.top_paid_fullname_2,sub_award.top_paid_amount_2,sub_award.top_paid_fullname_3,sub_award.top_paid_amount_3,sub_award.top_paid_fullname_4,sub_award.top_paid_amount_4,sub_award.top_paid_fullname_5,sub_award.top_paid_amount_5,sub_award.cfda_numbers,sub_award.subaward_num,sub_award.subaward_amount,sub_award.project_description AS overall_description,sub_award.compensation_q1 AS q1_flag,sub_award.compensation_q2 AS q2_flag,sub_award.subaward_date,sub_award.awardee_name AS awardee_name,sub_award.awardee_address_country AS awardee_address_country,sub_award.awardee_address_city AS awardee_address_city,sub_award.awardee_address_zip AS awardee_address_zip,sub_award.awardee_address_state AS awardee_address_state,sub_award.awardee_address_state_name AS awardee_address_state_name,sub_award.awardee_address_street AS awardee_address_street,sub_award.awardee_address_district AS awardee_address_district FROM fsrs_grant AS award JOIN fsrs_subgrant AS sub_award ON sub_award.parent_id = award.id WHERE award.id > 0 AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT 10000 OFFSET 10000": [
     {
       "internal_id": "grant_internal_id_2",
       "id": "30",
@@ -141,6 +176,7 @@
       "report_period_year": "3333",
       "duns": "DUNS54321",
       "parent_duns": "PARENTDUNS54321",
+      "dba_name": "Hogwarts",
       "principle_place_country": "UK",
       "principle_place_city": "",
       "principle_place_zip": "NE66 1NQ",
@@ -148,6 +184,16 @@
       "principle_place_state_name": "Alnwick",
       "principle_place_street": "Alnwick Castle",
       "principle_place_district": "",
+      "top_paid_fullname_1": "Sandy Jones",
+      "top_paid_amount_1": "100",
+      "top_paid_fullname_2": "Sam Jones",
+      "top_paid_amount_2": "200",
+      "top_paid_fullname_3": "Sally Jones",
+      "top_paid_amount_3": "300",
+      "top_paid_fullname_4": "Simon Jones",
+      "top_paid_amount_4": "400",
+      "top_paid_fullname_5": "Stefan Jones",
+      "top_paid_amount_5": "500",
       "cfda_numbers": "",
       "subaward_num": "SUBNUM54321",
       "subaward_amount": "55555",

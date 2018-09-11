@@ -11,6 +11,7 @@ from model_mommy import mommy
 # Imports from your apps
 from usaspending_api.awards.models import Award, Subaward, TransactionNormalized
 from usaspending_api.references.models import Agency, SubtierAgency
+from usaspending_api.recipient.models import RecipientLookup
 
 
 DB_CURSOR_PARAMS = {
@@ -26,6 +27,7 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
     """
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
+    mommy.make(RecipientLookup, duns='PARENTDUNS54321', legal_business_name='WIZARD SCHOOLS')
     call_command('load_fsrs')
 
     expected_results = {
@@ -36,20 +38,23 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
         'subaward_descs': ['RANDOM DESCRIPTION TEXT', 'HOGWARTS ACCEPTANCE LETTER',
                            'HOGWARTS ACCEPTANCE LETTER REVISED'],
         'duns': ['DUNS12345', 'DUNS54321', 'DUNS54321'],
+        'dba_names': ["JJ'S", "HOGWARTS", "HOGWARTS"],
+        'parent_recipient_names': ["PARENT JJ'S DINER", "WIZARD SCHOOLS", "WIZARD SCHOOLS"],
         'broker_award_ids': [10, 20, 30],
-        'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2']
-
+        'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2'],
     }
 
     actual_results = {
         'count': Subaward.objects.count(),
         'awards': list(Subaward.objects.values_list('award', flat=True)),
-        'recipient_names': list(Subaward.objects.values_list('recipient__recipient_name', flat=True)),
-        'ppop_city_names': list(Subaward.objects.values_list('place_of_performance__city_name', flat=True)),
+        'recipient_names': list(Subaward.objects.values_list('recipient_name', flat=True)),
+        'ppop_city_names': list(Subaward.objects.values_list('pop_city_name', flat=True)),
         'subaward_descs': list(Subaward.objects.values_list('description', flat=True)),
-        'duns': list(Subaward.objects.values_list('recipient__recipient_unique_id', flat=True)),
+        'duns': list(Subaward.objects.values_list('recipient_unique_id', flat=True)),
+        'dba_names': list(Subaward.objects.values_list('dba_name', flat=True)),
+        'parent_recipient_names': list(Subaward.objects.values_list('parent_recipient_name', flat=True)),
         'broker_award_ids': list(Subaward.objects.values_list('broker_award_id', flat=True)),
-        'internal_ids': list(Subaward.objects.values_list('internal_id', flat=True))
+        'internal_ids': list(Subaward.objects.values_list('internal_id', flat=True)),
     }
 
     assert expected_results == actual_results

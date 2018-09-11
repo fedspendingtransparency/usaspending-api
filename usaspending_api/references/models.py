@@ -366,10 +366,11 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True, db_index=True)
+    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name", null=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number",
                                                   db_index=True)
-    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name", null=True)
+    parent_recipient_name = models.TextField(blank=True, verbose_name="Parent Recipient Name", null=True)
     vendor_doing_as_business_name = models.TextField(blank=True, null=True)
     vendor_phone_number = models.TextField(blank=True, null=True)
     vendor_fax_number = models.TextField(blank=True, null=True)
@@ -605,10 +606,9 @@ class LegalEntity(DataSourceTrackedModel):
 
 
 class LegalEntityOfficers(models.Model):
-    legal_entity = models.OneToOneField(
-        LegalEntity, on_delete=models.CASCADE,
-        primary_key=True, related_name='officers')
-
+    legal_entity = models.OneToOneField(LegalEntity, on_delete=models.CASCADE, primary_key=True,
+                                        related_name='officers')
+    duns = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
     officer_1_name = models.TextField(null=True, blank=True)
     officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     officer_2_name = models.TextField(null=True, blank=True)

@@ -1,12 +1,14 @@
 import logging
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
-from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
+from usaspending_api.references.models import Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_award_subawards
 
@@ -127,52 +129,6 @@ class Command(BaseCommand):
                 return None
         return award
 
-    @staticmethod
-    def get_subaward_references(row, award_type):
-        # Create Recipient/Location entries specific to this subaward row
-        if award_type == 'procurement':
-            location_value_map = location_d1_recipient_mapper(row)
-            recipient_name = row['company_name']
-        else:
-            location_value_map = location_d2_recipient_mapper(row)
-            recipient_name = row['awardee_name']
-
-        location_value_map['recipient_flag'] = True
-
-        if location_value_map["location_zip"]:
-            location_value_map.update(
-                zip4=location_value_map["location_zip"],
-                zip5=location_value_map["location_zip"][:5],
-                zip_last4=location_value_map["location_zip"][5:])
-
-        location_value_map.pop("location_zip")
-
-        recipient_location = Location.objects.create(**location_value_map)
-        recipient = LegalEntity.objects.create(
-            recipient_unique_id=row['duns'],
-            recipient_name=recipient_name,
-            parent_recipient_unique_id=row['parent_duns'],
-            location=recipient_location
-        )
-        # recipient.save()
-        # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
-
-        # Create POP location
-        pop_value_map = pop_mapper(row)
-        pop_value_map['place_of_performance_flag'] = True
-
-        if pop_value_map["location_zip"]:
-            pop_value_map.update(
-                zip4=pop_value_map["location_zip"],
-                zip5=pop_value_map["location_zip"][:5],
-                zip_last4=pop_value_map["location_zip"][5:])
-
-        pop_value_map.pop("location_zip")
-
-        place_of_performance = Location.objects.create(**pop_value_map)
-
-        return recipient, place_of_performance
-
     def gather_shared_award_data(self, data, award_type):
         """ Creates a dictionary with internal IDs as keys that stores data for each award that's shared between all
             its subawards so we don't have to query the DB repeatedly
@@ -201,16 +157,29 @@ class Command(BaseCommand):
     @staticmethod
     def gather_next_subawards(db_cursor, award_type, subaward_type, max_id, offset):
         """ Get next batch of subawards of the relevant type starting at a given offset """
-        query_columns = ['award.internal_id', 'award.id',
-                         'award.report_period_mon', 'award.report_period_year',
-                         'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
-                         'sub_award.principle_place_country AS principle_place_country',
-                         'sub_award.principle_place_city AS principle_place_city',
-                         'sub_award.principle_place_zip AS principle_place_zip',
-                         'sub_award.principle_place_state AS principle_place_state',
-                         'sub_award.principle_place_state_name AS principle_place_state_name',
-                         'sub_award.principle_place_street AS principle_place_street',
-                         'sub_award.principle_place_district AS principle_place_district']
+        query_columns = [
+            'award.internal_id', 'award.id',
+            'award.report_period_mon', 'award.report_period_year',
+            'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
+            'sub_award.dba_name AS dba_name',
+            'sub_award.principle_place_country AS principle_place_country',
+            'sub_award.principle_place_city AS principle_place_city',
+            'sub_award.principle_place_zip AS principle_place_zip',
+            'sub_award.principle_place_state AS principle_place_state',
+            'sub_award.principle_place_state_name AS principle_place_state_name',
+            'sub_award.principle_place_street AS principle_place_street',
+            'sub_award.principle_place_district AS principle_place_district',
+            'sub_award.top_paid_fullname_1',
+            'sub_award.top_paid_amount_1',
+            'sub_award.top_paid_fullname_2',
+            'sub_award.top_paid_amount_2',
+            'sub_award.top_paid_fullname_3',
+            'sub_award.top_paid_amount_3',
+            'sub_award.top_paid_fullname_4',
+            'sub_award.top_paid_amount_4',
+            'sub_award.top_paid_fullname_5',
+            'sub_award.top_paid_amount_5',
+        ]
 
         # We need different columns depending on if it's a procurement or a grant. Setting some columns to have labels
         # so we can easily access them without making two different dictionaries.
@@ -227,7 +196,9 @@ class Command(BaseCommand):
                                   'sub_award.company_address_state AS company_address_state',
                                   'sub_award.company_address_state_name AS company_address_state_name',
                                   'sub_award.company_address_street AS company_address_street',
-                                  'sub_award.company_address_district AS company_address_district'
+                                  'sub_award.company_address_district AS company_address_district',
+                                  'sub_award.parent_company_name AS parent_company_name',
+                                  'sub_award.bus_types AS bus_types'
                                   ])
 
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
@@ -269,6 +240,14 @@ class Command(BaseCommand):
         if row['internal_id'] in shared_award_mappings:
             shared_mappings = shared_award_mappings[row['internal_id']]
 
+            prime_award_dict = {}
+            if shared_mappings['award']:
+                prime_award_dict['prime_recipient'] = shared_mappings['award'].recipient
+                if prime_award_dict['prime_recipient']:
+                    prime_award_dict['prime_recipient_name'] = shared_mappings['award'].recipient.recipient_name
+                    prime_award_dict['business_categories'] = (shared_mappings['award'].recipient.business_categories
+                                                               or [])
+
             upper_case_dict_values(row)
 
             cfda = None
@@ -277,16 +256,93 @@ class Command(BaseCommand):
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
-            recipient, place_of_performance = self.get_subaward_references(row, award_type)
+            if award_type == 'procurement':
+                le_location_map = location_d1_recipient_mapper(row)
+                recipient_name = row['company_name']
+                parent_recipient_name = row['parent_company_name']
+                business_type_code = None
+                business_types_description = row['bus_types']
+            else:
+                le_location_map = location_d2_recipient_mapper(row)
+                recipient_name = row['awardee_name']
+                parent_recipient_name = None
+                business_type_code = None
+                business_types_description = None
+
+            if le_location_map["location_zip"]:
+                le_location_map.update(
+                    zip4=le_location_map["location_zip"],
+                    zip5=le_location_map["location_zip"][:5],
+                    zip_last4=le_location_map["location_zip"][5:]
+                )
+
+            le_location_map.pop("location_zip")
+            recipient_location = Location(**le_location_map)
+            recipient_location.pre_save()
+
+            pop_value_map = pop_mapper(row)
+            pop_value_map['place_of_performance_flag'] = True
+
+            if pop_value_map["location_zip"]:
+                pop_value_map.update(
+                    zip4=pop_value_map["location_zip"],
+                    zip5=pop_value_map["location_zip"][:5],
+                    zip_last4=pop_value_map["location_zip"][5:]
+                )
+
+            pop_value_map.pop("location_zip")
+            place_of_performance = Location(**pop_value_map)
+            place_of_performance.pre_save()
+
+            if not parent_recipient_name and row.get('parent_duns'):
+                duns_obj = RecipientLookup.objects.filter(duns=row['parent_duns'], legal_business_name__isnull=False) \
+                    .values('legal_business_name').first()
+                if duns_obj:
+                    parent_recipient_name = duns_obj['legal_business_name']
 
             subaward_dict = {
                 'award': shared_mappings['award'],
-                'recipient': recipient,
+                'recipient_unique_id': row['duns'],
+                'recipient_name': recipient_name,
+                'dba_name': row['dba_name'],
+                'parent_recipient_unique_id': row['parent_duns'],
+                'parent_recipient_name': parent_recipient_name,
+                'business_type_code': business_type_code,
+                'business_type_description': business_types_description,
+
+                'prime_recipient': prime_award_dict.get('prime_recipient', None),
+                'prime_recipient_name': prime_award_dict.get('prime_recipient_name', None),
+                'business_categories': prime_award_dict.get('business_categories', []),
+
+                'recipient_location_country_code': recipient_location.location_country_code,
+                'recipient_location_country_name': recipient_location.country_name,
+                'recipient_location_state_code': recipient_location.state_code,
+                'recipient_location_state_name': recipient_location.state_name,
+                'recipient_location_county_code': recipient_location.county_code,
+                'recipient_location_county_name': recipient_location.county_name,
+                'recipient_location_city_code': recipient_location.city_code,
+                'recipient_location_city_name': recipient_location.city_name,
+                'recipient_location_zip4': recipient_location.zip4,
+                'recipient_location_zip5': recipient_location.zip5,
+                'recipient_location_street_address': recipient_location.address_line1,
+                'recipient_location_congressional_code': recipient_location.congressional_code,
+                'recipient_location_foreign_postal_code': recipient_location.foreign_postal_code,
+
+                'officer_1_name': row['top_paid_fullname_1'],
+                'officer_1_amount': row['top_paid_amount_1'],
+                'officer_2_name': row['top_paid_fullname_2'],
+                'officer_2_amount': row['top_paid_amount_2'],
+                'officer_3_name': row['top_paid_fullname_3'],
+                'officer_3_amount': row['top_paid_amount_3'],
+                'officer_4_name': row['top_paid_fullname_4'],
+                'officer_4_amount': row['top_paid_amount_4'],
+                'officer_5_name': row['top_paid_fullname_5'],
+                'officer_5_amount': row['top_paid_amount_5'],
+
                 'data_source': "DBR",
                 'cfda': cfda,
                 'awarding_agency': shared_mappings['award'].awarding_agency if shared_mappings['award'] else None,
                 'funding_agency': shared_mappings['award'].funding_agency if shared_mappings['award'] else None,
-                'place_of_performance': place_of_performance,
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
                 'description': row['overall_description'],
@@ -298,6 +354,7 @@ class Command(BaseCommand):
                 'broker_award_id': row['id'],
                 'internal_id': row['internal_id'],
                 'award_type': award_type,
+
                 'pop_country_code': row['principle_place_country'],
                 'pop_country_name': place_of_performance.country_name,
                 'pop_state_code': row['principle_place_state'],
@@ -308,7 +365,8 @@ class Command(BaseCommand):
                 'pop_city_name': row['principle_place_city'],
                 'pop_zip4': row['principle_place_zip'],
                 'pop_street_address': row['principle_place_street'],
-                'pop_congressional_code': row['principle_place_district']
+                'pop_congressional_code': row['principle_place_district'],
+                'updated_at': datetime.utcnow()
             }
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
@@ -372,6 +430,8 @@ class Command(BaseCommand):
                     broken_subaward.award = award
                     broken_subaward.awarding_agency = award.awarding_agency
                     broken_subaward.funding_agency = award.funding_agency
+                    broken_subaward.prime_recipient = award.recipient
+                    broken_subaward.updated_at = datetime.utcnow()
                     broken_subaward.save()
                     fixed_ids.append(award.id)
         award_update_id_list.extend(fixed_ids)

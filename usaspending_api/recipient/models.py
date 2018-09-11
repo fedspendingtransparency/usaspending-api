@@ -38,6 +38,7 @@ class DUNS(models.Model):
 
     awardee_or_recipient_uniqu = models.TextField(primary_key=True)
     legal_business_name = models.TextField(null=True, blank=True)
+    dba_name = models.TextField(null=True, blank=True)
     ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
     ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
     address_line_1 = models.TextField(null=True, blank=True)
@@ -116,5 +117,5 @@ class RecipientLookup(models.Model):
         db_table = "recipient_lookup"
         indexes = [
             PartialIndex(fields=["duns"], unique=True, where=PQ(duns__isnull=False)),
-            PartialIndex(fields=["parent_duns"], unique=True, where=PQ(parent_duns__isnull=False)),
+            PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
         ]
