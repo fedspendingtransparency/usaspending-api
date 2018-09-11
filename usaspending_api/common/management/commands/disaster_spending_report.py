@@ -64,7 +64,6 @@ class Command(BaseCommand):
     """
 
     help = "Generate CSV files for provided TAS to help track disaster spending"
-    logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
         default_dir = os.path.dirname(os.path.abspath(__file__))
@@ -85,6 +84,8 @@ class Command(BaseCommand):
         if options["print_zip_path"]:
             print(self.zip_filepath)
             raise SystemExit
+
+        logger.info("Starting Disaster Spending Report script...")
 
         if not os.path.exists(self.temporary_dir):
             os.makedirs(self.temporary_dir)
