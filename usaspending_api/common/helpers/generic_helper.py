@@ -22,6 +22,7 @@ TEMP_SQL_FILES = [
     '../matviews/universal_award_matview.sql',
     '../matviews/summary_transaction_view.sql',
     '../matviews/summary_transaction_month_view.sql',
+    '../matviews/summary_transaction_recipient_view.sql',
     '../matviews/summary_transaction_geo_view.sql',
     '../matviews/summary_state_view.sql',
     '../matviews/summary_award_recipient_view.sql',
@@ -185,6 +186,12 @@ def generate_matviews():
         subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             c.execute(file)
+
+
+def refresh_matviews():
+    sql_strings = get_sql(['usaspending_api/database_scripts/matviews/refresh_matviews.sql'])[0]
+    with connection.cursor() as c:
+        c.execute(sql_strings)
 
 
 def get_sql(sql_files):

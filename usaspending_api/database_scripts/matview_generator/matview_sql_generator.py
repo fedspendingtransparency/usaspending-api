@@ -219,6 +219,7 @@ def make_rename_sql(matview_name, old_indexes, new_indexes):
     matview_temp_name = matview_name + "_temp"
     matview_archive_name = matview_name + "_old"
     sql_strings = ["BEGIN;"]
+    # sql_strings = []
     sql_strings.append(TEMPLATE["rename_matview"].format("IF EXISTS ", matview_name, matview_archive_name))
     sql_strings += old_indexes
     sql_strings.append("")
