@@ -220,3 +220,23 @@ def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
                                         'filters': {'fy': '2015'}}))
     response_data = resp.json()
     response_data['results'][0]['managing_agency_acronym'] == 'DOL'
+
+
+@pytest.mark.django_db
+def test_federal_account_content(client, fixture_data):
+    """ Verify the correct Federal Account is returned with the correct contents"""
+    resp = client.get('/api/v2/federal_accounts/001-0005/')
+
+    response_data = resp.json()
+    assert response_data['agency_identifier'] == '001'
+    assert response_data['main_account_code'] == '0005'
+    assert response_data['account_title'] == 'Something'
+    assert response_data['federal_account_code'] == '001-0005'
+
+
+@pytest.mark.django_db
+def test_federal_account_invalid_param(client, fixture_data):
+    """ Verify the an invalid federal account code will return as a 400 """
+    resp = client.get('/api/v2/federal_accounts/001-0006/')
+
+    assert resp.status_code == 400

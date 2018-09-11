@@ -1,8 +1,7 @@
 import ast
 from collections import OrderedDict
 
-from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, Value
-from django.db.models.functions import Concat
+from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -377,6 +376,23 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
         return Response(result)
 
 
+class FederalAccountViewSet(APIDocumentationView):
+    """
+    This route sends a request to the backend to retrieve a federal account based on its federal_account_code.
+    endpoint_doc: /federal_account/federal_account.md
+    """
+
+    @cache_response()
+    def get(self, request, fed_acct_code, format=None):
+        federal_account = FederalAccount.objects.filter(federal_account_code=fed_acct_code)\
+            .values('id', 'agency_identifier', 'main_account_code', 'account_title', 'federal_account_code')
+
+        if not federal_account:
+            raise InvalidParameterException("Federal Account with code {} does not exist.".format(fed_acct_code))
+
+        return Response(federal_account[0])
+
+
 class FederalAccountsViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
@@ -425,8 +441,8 @@ class FederalAccountsViewSet(APIDocumentationView):
                    treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy).\
             annotate(corrected_agency_identifier=Func(F('agency_identifier'), function='CORRECTED_CGAC')).\
             annotate(account_id=F('id'),
-                     account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
                      account_name=F('account_title'),
+                     account_number=F('federal_account_code'),
                      budgetary_resources=Sum(
                          'treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe'),
                      managing_agency=Subquery(agency_subquery.values('name')[:1]),

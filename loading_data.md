@@ -1,21 +1,21 @@
-# Getting USAspending Data 
+# Getting USAspending Data
 
-***Note:*** *The FY 2017 3rd Quarter submission window is currently open. Submissions are due August 14, 2017.*
+***Note:*** *The quarterly submission windows for each fiscal year are generally open each fiscal quarter 45 days after the end of the quarter. For example, the Q2 (January 1st - March 31st) submission window is April 1st to May 16th every year. Federal holidays might slightly alter the window depending on impact.*
 
-After an agency certifies a submission on [broker.usaspending.gov](broker.usaspending.gov), they are presented with the option to **publish** their certified submission to [beta.usaspending.gov](beta.usaspending.gov). After the submission is chosen to be published in the broker:
-- The submission ID (unique to each submission) is queued for loading into a clone of the database used by [beta.usaspending.gov](beta.usaspending.gov)
+
+After an agency certifies a submission on [broker.usaspending.gov](broker.usaspending.gov), they are presented with the option to **publish** their certified submission to [www.usaspending.gov](www.usaspending.gov). After the submission is chosen to be published in the broker:
+
+- The submission ID (unique to each submission) is queued for loading into a clone of the database used by [www.usaspending.gov](www.usaspending.gov)
 - If other submissions are currently in the queue, they are loaded first
 - An individual submission can take up to 24 hours to load
-- When a new build of [usaspending-api](https://github.com/fedspendingtransparency/usaspending-api) is deployed (every two weeks), the cloned database replaces the old one used by beta.usaspending.gov
-- Data will also be published to [beta.usaspending.gov](beta.usaspending.gov) the day following the quarterly submission deadline
-- Any data certified before the close of the quarterly submission window will be available on [beta.usaspending.gov](beta.usapending.gov) the following day
+- The data are published on [www.usaspending.gov](www.usaspending.gov) the day following the quarterly submission deadline
+- Any data certified before the close of the quarterly submission window will be available on [www.usaspending.gov](www.usapending.gov) the following day
 
-The current beta.usaspending.gov database is publicly available on Amazon's Relational Database Service: https://aws.amazon.com/public-datasets/usaspending/
-
+Advanced users wanting a reference of the _full_ production database archive of the www.usaspending.gov database can access it via a public download available on https://www.usaspending.gov under the _**Download Center > Database Download**_ sub-menu.
 
 # Loading USAspending Data (for Developers)
 
-Data can be loaded to the USAspending API via a series of commands that are run from a terminal. 
+Data can be loaded to the USAspending API via a series of commands that are run from a terminal.
 
 **Note:** You must set the DATABASE_URL environment variable in order to run any of these loader commands.
 
@@ -29,7 +29,7 @@ Populates lookup tables like country codes, agency names, and other fairly stati
 To load in the reference data, from the same directory as manage.py:
 
     python manage.py load_reference_data
-    
+
 
 ## DATA Act Certified Submission Data:
 
@@ -68,7 +68,7 @@ Award data from the [current USAspending site](https://www.usaspending.gov/) com
 4. Make sure _csv_ is selected in _5. Select Type of File_
 5. Click _Submit_ to download the contract award file
 6. Once the file is downloaded, start the load by running:
-    
+
     `python manage.py load_usaspending_contracts [path-to-contracts-file.csv]`
 
 ### Loading Historic Financial Assistance Awards
