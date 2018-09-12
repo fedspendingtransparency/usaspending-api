@@ -69,7 +69,9 @@ ALIAS_DICT = {
         'pop_country_code': 'code'
     },
     'federal_account': {
-        'transaction__award__financial_set__treasury_account__federal_account_id': 'id'
+        'federal_account_id': 'id',
+        'federal_account_display': 'code',
+        'account_title': 'name',
     }
 
 }
@@ -322,8 +324,8 @@ class BusinessLogic:
 
     def federal_account(self) -> list:
         # Matview -> Transaction_normalized -> Awards -> FinancialAccountsByAwards -> TreasuryAppropriationAccount -> FederalAccount
-        filters = {'transaction__award__financial_set__treasury_account__federal_account_id__isnull': False}
-        values = {'transaction__award__financial_set__treasury_account__federal_account_id'}
+        filters = {'treasury_account_id__isnull': False}
+        values = ['federal_account_id', 'federal_account_display', 'account_title']
 
         # Note: Purely for performance reasons, can be removed if still performant
         if 'recipient_id' not in self.filters:
@@ -339,10 +341,10 @@ class BusinessLogic:
         query_results = list(self.queryset[self.lower_limit:self.upper_limit])
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            agency_identifier, main_account_code, federal_account_name = fetch_federal_account_from_id(row['id'])
-            row['code'] = '-'.join([agency_identifier, main_account_code])
-            row['name'] = federal_account_name
+        # for row in results:
+        #     # agency_identifier, main_account_code, federal_account_name = fetch_federal_account_from_id(row['id'])
+        #     row['code'] = '-'.join([agency_identifier, main_account_code])
+        #     row['name'] = federal_account_name
         return results
 
 

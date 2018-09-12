@@ -374,7 +374,7 @@ def spending_by_category(category, filters):
     ])
 
     if category in ['federal_account']:
-        view_chain = ['UniversalTransactionView']
+        view_chain = ['SummaryTransactionRecipientView']
 
     for view in view_chain:
         if can_use_view(filters, view):
