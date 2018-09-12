@@ -79,7 +79,6 @@
   "indexes": [
     {
       "name": "deterministic_unique_hash",
-      "unique": true,
       "columns": [{"name": "duh"}]
     }, {
       "name": "ordered_action_date",
