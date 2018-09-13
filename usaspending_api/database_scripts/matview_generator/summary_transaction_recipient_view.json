@@ -85,6 +85,9 @@
     }, {
       "name": "recipient_hash",
       "columns": [{"name": "recipient_hash"}]
+    }, {
+      "name": "parent_recipient_unique_id",
+      "columns": [{"name": "parent_recipient_unique_id"}]
     }
   ]
 }
