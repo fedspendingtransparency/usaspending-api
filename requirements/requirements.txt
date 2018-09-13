@@ -44,3 +44,4 @@ xlrd==1.0.0
 boto==2.49.0
 jsonpickle==0.9.6
 filechunkio==1.8
+pip==18.0
