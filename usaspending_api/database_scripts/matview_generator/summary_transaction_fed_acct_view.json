@@ -9,11 +9,18 @@
     "    transaction_normalized.fiscal_year,",
     "    transaction_normalized.type,",
     "    transaction_fpds.pulled_from,",
+    "",
     "    TR_ACCT.federal_account_id,",
     "    FABA.treasury_account_id,",
     "    FED_ACT.agency_identifier,",
     "    FED_ACT.main_account_code,",
     "    FED_ACT.account_title,",
+    "",
+    "    legal_entity.recipient_name,",
+    "    legal_entity.recipient_unique_id,",
+    "    legal_entity.parent_recipient_unique_id,",
+    "    COALESCE(recipient_lookup.recipient_hash,",
+    "      MD5(UPPER(legal_entity.recipient_name))::uuid),",
     "    COALESCE(recipient_lookup.recipient_name, legal_entity.recipient_name)",
     "  ))::uuid AS duh,",
     "  cast(date_trunc('month', transaction_normalized.action_date) as date) as action_date,",
@@ -109,6 +116,19 @@
       "name": "pulled_from",
       "where": "pulled_from IS NOT NULL",
       "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "federal_account_id",
+      "where": "federal_account_id IS NOT NULL",
+      "columns": [{"name": "federal_account_id"}]
+    }, {
+      "name": "recipient_unique_id",
+      "columns": [{"name": "recipient_unique_id"}]
+    }, {
+      "name": "recipient_hash",
+      "columns": [{"name": "recipient_hash"}]
+    }, {
+      "name": "parent_recipient_unique_id",
+      "columns": [{"name": "parent_recipient_unique_id"}]
     }
   ]
 }
