@@ -265,9 +265,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        """Return all awards matching the provided filters and limits"""
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'min': 1},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -277,8 +277,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 m['optional'] = False
 
         json_request = TinyShield(models).block(request.data)
-        fields = json_request.get("fields", None)
-        filters = json_request.get("filters", None)
+        fields = json_request["fields"]
+        filters = json_request.get("filters", {})
         subawards = json_request["subawards"]
         order = json_request["order"]
         limit = json_request["limit"]
@@ -286,6 +286,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
+
+        if "no intersection" in filters["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            return Response({
+                "limit": limit,
+                "results": [],
+                "page_metadata": {"page": page, "hasNext": False},
+            })
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
