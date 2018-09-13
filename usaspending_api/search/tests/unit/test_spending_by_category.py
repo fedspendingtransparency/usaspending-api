@@ -838,52 +838,22 @@ def test_category_country_subawards(mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_category_federal_accounts(mock_matviews_qs, mock_federal_account, mock_tas, mock_award,
-                                   mock_financial_account, mock_transaction):
-    fa = MockModel(
-        id=10,
-        agency_identifier='020',
-        main_account_code='0001',
-        account_title='Test Federal Account'
-    )
-    add_to_mock_objects(mock_federal_account, [fa])
+def test_category_federal_accounts(mock_matviews_qs):
 
-    tas = MockModel(
-        treasury_account_identifier=2,
-        federal_account_id=10
-    )
-    add_to_mock_objects(mock_tas, [tas])
-
-    award = MockModel(
-        id=3
-    )
-    add_to_mock_objects(mock_award, [award])
-
-    fs = MockModel(
-        financial_accounts_by_awards_id=4,
-        submission_id=3,
-        treasury_account=tas,
-        award=award
-    )
-    add_to_mock_objects(mock_financial_account, [fs])
-
-    award.financial_set = MockSet(fs)
-    t1 = MockModel(
-        award=award,
-        id=5
-    )
-    t2 = MockModel(
-        award=award,
-        id=6
-    )
-    add_to_mock_objects(mock_transaction, [t1, t2])
-
-    mock_model_1 = MockModel(transaction=t1, recipient_hash='00000-00000-00000-00000-00000',
-                             parent_recipient_unique_id='000000',
-                             generated_pragmatic_obligation=1)
-    mock_model_2 = MockModel(transaction=t2, recipient_hash='00000-00000-00000-00000-00000',
-                             parent_recipient_unique_id='000000',
-                             generated_pragmatic_obligation=1)
+    mock_model_1 = MockModel(
+        federal_account_id=10,
+        federal_account_display="020-0001",
+        account_title="Test Federal Account",
+        recipient_hash="00000-00000-00000-00000-00000",
+        parent_recipient_unique_id="000000",
+        generated_pragmatic_obligation=1)
+    mock_model_2 = MockModel(
+        federal_account_id=10,
+        federal_account_display="020-0001",
+        account_title="Test Federal Account",
+        recipient_hash="00000-00000-00000-00000-00000",
+        parent_recipient_unique_id="000000",
+        generated_pragmatic_obligation=2)
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2])
 
     test_payload = {
@@ -910,7 +880,7 @@ def test_category_federal_accounts(mock_matviews_qs, mock_federal_account, mock_
         },
         'results': [
             {
-                'amount': 2,
+                'amount': 3,
                 'code': '020-0001',
                 'name': 'Test Federal Account',
                 'id': 10

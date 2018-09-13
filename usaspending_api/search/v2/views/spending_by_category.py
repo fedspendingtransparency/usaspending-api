@@ -327,6 +327,10 @@ class BusinessLogic:
         filters = {'federal_account_id__isnull': False}
         values = ['federal_account_id', 'federal_account_display', 'account_title']
 
+        if self.subawards:
+            # N/A for subawards
+            self.raise_not_implemented()
+
         # Note: For performance reasons, limiting to only recipient profile requests
         if 'recipient_id' not in self.filters:
             raise InvalidParameterException('Federal Account category requires recipient_id in search filter')
