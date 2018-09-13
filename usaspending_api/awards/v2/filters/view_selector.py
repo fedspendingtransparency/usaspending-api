@@ -9,6 +9,7 @@ from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.models_matviews import SummaryTransactionFedAcctView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum, \
     only_action_date_type
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -132,6 +133,17 @@ MATVIEW_SELECTOR = {
         'examine_values': {
             'time_period': [only_action_date_type]},
         'model': SummaryTransactionRecipientView,
+    },
+    'SummaryTransactionFedAcctView': {
+        'allowed_filters': [
+            'time_period',
+            'award_type_codes',
+            'recipient_id',
+        ],
+        'prevent_values': {},
+        'examine_values': {
+            'time_period': [only_action_date_type]},
+        'model': SummaryTransactionFedAcctView,
     },
     'UniversalTransactionView': {
         'allowed_filters': [
@@ -374,7 +386,7 @@ def spending_by_category(category, filters):
     ])
 
     if category in ['federal_account']:
-        view_chain = ['SummaryTransactionRecipientView']
+        view_chain = ['SummaryTransactionFedAcctView']
 
     for view in view_chain:
         if can_use_view(filters, view):
