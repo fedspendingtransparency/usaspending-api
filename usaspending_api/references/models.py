@@ -725,15 +725,17 @@ class Cfda(DataSourceTrackedModel):
     def __str__(self):
         return "%s" % self.program_title
 
+
 class NAICSRaw(models.Model):
     id = models.AutoField(primary_key=True)
     year = models.TextField()
-    naics_id = models.TextField()
+    naics_code = models.TextField()
     description = models.TextField(max_length=500)
 
     def save(self, *arg, **kwarg):
-        self.slug = slugify(self.naics_id)
+        self.slug = slugify(self.naics_code)
         return super(NAICSRaw, self).save(*arg, **kwarg)
+
 
 class Definition(models.Model):
     id = models.AutoField(primary_key=True)

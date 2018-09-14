@@ -4,8 +4,11 @@ import os.path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
+from usaspending_api.common.helpers.generic_helper import natural_sort
+import re
 
 from usaspending_api.references.models import NAICSRaw
+# from usaspending_api.references.models import naics
 
 
 class Command(BaseCommand):
@@ -37,42 +40,60 @@ class Command(BaseCommand):
 
 
 def load_NAICS(path, append):
-    for filename in os.listdir(path):
-        logger = logging.getLogger('console')
-        path = os.path.join(path, filename)
-        wb = load_workbook(filename=path)
-        ws = wb.active
-        rows = ws.rows
+    # year regex object
+    p_year = re.compile("(20[0-9]{2})")
 
-        headers = [c.value for c in next(rows)[:2]]
-        expected_headers = [
-            'naics', 'item index description'
-        ]
-        for header in headers:
-            if(header[0].lower().find(expected_headers[0]) < 0 or header[1].lower().findexpected_headers[1] < 0):
-                raise Exception('Expected headers of {} in {}'.format(
-                    expected_headers, path))
+    # case-insensitive naics regex object (for verification)
+    p_name = re.compile("naics", re.IGNORECASE)
 
-        naics_year_header = headers[0]
+    naics_list = naics.objects.all()
+    dir_files = []
+
+    for fname in os.listdir(path):
+        if(fname.find("naics") > 0):
+            dir_files.append(os.path.join(path, fname))
+
+    # Sort by ints found
+    dir_files.sort(key=lambda f: int(filter(str.isdigit, f)))
+
+    logger = logging.getLogger('console')
+    path_to_file = os.path.join(path, fname)
+    wb = load_workbook(filename=path_to_file)
+    ws = wb.active
+    rows = ws.rows
+
+    headers = [c.value for c in next(rows)[:2]]
+    expected_headers = [
+        'naics', 'description'
+    ]
+    if((headers[0] is not None) and (headers[1] is not None)):
+        print(headers[1])
+        year = p_year.search(headers[0]).group()
+        contains_title = p_name.search(headers[1]).group()
+        if((year is None) or (contains_title is None)):
+            raise Exception('Expected header containing "year; \'naics\'"')
 
         if append:
             logging.info('Appending definitions to existing guide')
         else:
             logging.info('Deleting existing definitions from guide')
-            NAICSRaw.objects.all().delete()
+            # NAICSRaw.objects.all().delete()
 
-        field_names = ('naics_year_header', 'naics_id', 'naics_description')
+        field_names = ('naics_code', 'naics_description')
         row_count = 0
         for row in rows:
             if not row[0].value:
                 break  # Reads file only until a line with blank `term`
-            naics_item = NAICSRaw()
-            i = 1
-            setattr(naics_item, 'naics_year_header', naics_year_header)
-            for (i, field_name) in enumerate(field_names):
-                if field_name:
-                    setattr(naics_item, field_name, row[i].value)
-            naics_iotem.save()
-            row_count += 1
+
+            naics_code = row[0].value
+            naics_desc = row[1].value
+            naics_item = NAICSRaw(year=year, naics_code=naics_code, description=naics_desc)
+            naics_item.save()
+
         logger.info('{} naics data loaded from {}'.format(
             row_count, path))
+
+# def natural_sort(l):
+#     convert = lambda text: int(text) if text.isdigit() else text.lower()
+#     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+#     return sorted(l, key = alphanum_key)
