@@ -189,9 +189,9 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(pop_country_name="UNITED STATES")
+                queryset = queryset.filter(Q(pop_country_name="UNITED STATES") | Q(pop_country_code="USA"))
             elif value == "foreign":
-                queryset = queryset.exclude(pop_country_name="UNITED STATES")
+                queryset = queryset.exclude(Q(pop_country_name="UNITED STATES") | Q(pop_country_code="USA"))
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
