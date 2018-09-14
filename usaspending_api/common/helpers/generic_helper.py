@@ -3,6 +3,7 @@ import logging
 import time
 import timeit
 import subprocess
+import re
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
@@ -257,7 +258,7 @@ def get_pagination(results, limit, page, benchmarks=False):
     if not page_metadata["hasNext"]:
         paginated_results = results[limit * (page - 1):]
     else:
-        paginated_results = results[limit * (page - 1): limit * page]
+        paginated_results = results[limit * (page - 1):limit * page]
 
     page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
     page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
@@ -317,6 +318,12 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
+
+
+def natural_sort(l, reverse=False):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, reverse=reverse, key=alphanum_key)
 
 
 @contextlib.contextmanager
@@ -394,7 +401,6 @@ FY_FROM_TEXT_PG_FUNCTION_DEF = '''
           END;
         $$ LANGUAGE plpgsql;
         '''
-
 """
 Filtering on `field_name__fy` is present for free on all Date fields.
 To add this field to the serializer:
