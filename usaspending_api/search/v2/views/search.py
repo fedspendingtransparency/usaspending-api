@@ -329,7 +329,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
-        if sort and "no intersection" not in filters["award_type_codes"]:
+        if sort:
             if subawards:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
@@ -533,6 +533,17 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         if validated_payload['sort'] not in validated_payload['fields']:
             raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload['sort']))
+
+        if "filters" in validated_payload and "no intersection" in validated_payload["filters"]["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            return Response({
+                "limit": validated_payload["limit"],
+                "results": [],
+                "page_metadata": {
+                    "page": validated_payload["page"], "next": None, "previous": None,
+                    "hasNext": False, "hasPrevious": False,
+                },
+            })
 
         lower_limit = (validated_payload['page'] - 1) * validated_payload['limit']
         success, response, total = search_transactions(validated_payload, lower_limit, validated_payload['limit'] + 1)
