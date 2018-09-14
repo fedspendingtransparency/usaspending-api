@@ -165,10 +165,7 @@ def make_matview_create(final_matview_name, sql):
     return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql, with_or_without_data)]
 
 
-def make_matview_refresh(matview_name):
-    concurrently = "CONCURRENTLY "
-    if args.no_data:
-        concurrently = ""
+def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):
     return [TEMPLATE["refresh_matview"].format(concurrently, matview_name), TEMPLATE["vacuum"].format(matview_name)]
 
 
@@ -304,7 +301,10 @@ def create_componentized_files(sql_json):
     write_sql_file(sql_strings, filename_base + "__renames")
 
     if "refresh" in sql_json and sql_json["refresh"] is True:
-        sql_strings = make_matview_refresh(matview_name)
+        if args.no_data:
+            sql_strings = make_matview_refresh(matview_temp_name, "")
+        else:
+            sql_strings = make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + "__refresh")
 
 
