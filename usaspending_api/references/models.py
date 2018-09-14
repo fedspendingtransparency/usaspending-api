@@ -767,7 +767,8 @@ class FrecMap(models.Model):
 class NAICS(models.Model):
     """Based on United States Census Bureau"""
     code = models.TextField(primary_key=True)
-    description = models.TextField(null=False)
+    description = models.TextField()
+    year = models.TextField()
 
     class Meta:
         managed = True
