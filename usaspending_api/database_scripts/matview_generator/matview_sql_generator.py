@@ -166,7 +166,10 @@ def make_matview_create(final_matview_name, sql):
 
 
 def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):
-    return [TEMPLATE["refresh_matview"].format(concurrently, matview_name), TEMPLATE["vacuum"].format(matview_name)]
+    statement_list = [TEMPLATE["refresh_matview"].format(concurrently, matview_name)]
+    if concurrently == "CONCURRENTLY ":
+        statement_list.append(TEMPLATE["vacuum"].format(matview_name))
+    return statement_list
 
 
 def make_indexes_sql(sql_json, matview_name):
