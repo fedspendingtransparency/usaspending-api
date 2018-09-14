@@ -48,7 +48,7 @@ class BaseAutocompleteViewSet(APIView):
             | Q(subtier_agency__abbreviation__icontains=search_text)
             ).order_by('-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
             'toptier_flag', 'toptier_agency_id', 'subtier_agency__name')
-        # The below is a one-off fix to promote FEMA as a subteir to the top when "FEMA" is searched
+        # The below is a one-off fix to promote FEMA as a subtier to the top when "FEMA" is searched
         # This is the only way to do this because you cannot use annotate and distinct together
         evaled = AgencySerializer(queryset[:limit], many=True).data
         evaled.sort(key=lambda x: x["toptier_agency"]["cgac_code"] == "058")
