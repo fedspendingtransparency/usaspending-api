@@ -218,14 +218,12 @@ def make_modification_sql(matview_name):
 def make_rename_sql(matview_name, old_indexes, new_indexes):
     matview_temp_name = matview_name + "_temp"
     matview_archive_name = matview_name + "_old"
-    sql_strings = ["BEGIN;"]
-    # sql_strings = []
+    sql_strings = []
     sql_strings.append(TEMPLATE["rename_matview"].format("IF EXISTS ", matview_name, matview_archive_name))
     sql_strings += old_indexes
     sql_strings.append("")
     sql_strings.append(TEMPLATE["rename_matview"].format("", matview_temp_name, matview_name))
     sql_strings += new_indexes
-    sql_strings.append("COMMIT;")
     return sql_strings
 
 
@@ -256,8 +254,7 @@ def create_all_sql_strings(sql_json):
     final_sql_strings += create_indexes
     final_sql_strings.append("")
     if args.no_data:
-        final_sql_strings.append(TEMPLATE["refresh_matview"].format("", matview_name))
-        final_sql_strings.append("")
+        final_sql_strings.extend([TEMPLATE["refresh_matview"].format("", matview_name), ""])
     final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name))
