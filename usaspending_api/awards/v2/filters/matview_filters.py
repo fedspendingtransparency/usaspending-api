@@ -222,9 +222,9 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(pop_country_name="UNITED STATES")
+                queryset = queryset.filter(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
             elif value == "foreign":
-                queryset = queryset.exclude(pop_country_name="UNITED STATES")
+                queryset = queryset.exclude(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
