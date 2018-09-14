@@ -444,6 +444,15 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
+        if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            results = {
+                "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+            } if not subawards else {
+                "subcontracts": 0, "subgrants": 0
+            }
+            Response({"results": results})
+
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             queryset = subaward_filter(filters)
