@@ -3,7 +3,6 @@ import logging
 import time
 import timeit
 import subprocess
-import re
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
@@ -331,12 +330,6 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
-
-
-def natural_sort(l, reverse=False):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(l, reverse=reverse, key=alphanum_key)
 
 
 @contextlib.contextmanager

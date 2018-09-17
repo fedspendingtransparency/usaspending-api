@@ -64,7 +64,6 @@ def load_NAICS(path, append):
 
             obj, created = NAICS.objects.get_or_create(pk=naics_code)
 
-            print(obj.year, created)
             if not created:
                 if int(naics_year) > int(obj.year):
                     NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)

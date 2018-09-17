@@ -724,6 +724,7 @@ class Cfda(DataSourceTrackedModel):
     def __str__(self):
         return "%s" % self.program_title
 
+
 class Definition(models.Model):
     id = models.AutoField(primary_key=True)
     term = models.TextField(unique=True, db_index=True, blank=False, null=False)
@@ -767,8 +768,8 @@ class FrecMap(models.Model):
 class NAICS(models.Model):
     """Based on United States Census Bureau"""
     code = models.TextField(primary_key=True)
-    description = models.TextField()
-    year = models.TextField()
+    description = models.TextField(null=False)
+    year = models.IntegerField()
 
     class Meta:
         managed = True
