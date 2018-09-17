@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
 import re
+import glob
 
 from usaspending_api.references.models import NAICS
 
@@ -38,26 +39,25 @@ def load_NAICS(path, append):
     # year regex object precompile
     p_year = re.compile("(20[0-9]{2})")
 
-    dir_files = []
+    dir_files = glob.glob(path + "/*.xlsx")
 
     for fname in os.listdir(path):
+
         if fname.find("naics") > 0:
             dir_files.append(os.path.join(path, fname))
 
     for path in dir_files:
-
-        naics_year = p_year.search(path).group()
         wb = load_workbook(filename=path)
         ws = wb.active
-        rows = ws.rows
 
-        current_row = 0
-        for row in rows:
+        naics_year = p_year.search(ws["A1"].value).group()
+
+        for current_row, row in enumerate(ws.rows):
             if current_row == 0:
-                current_row += 1
                 continue
+
             if not row[0].value:
-                break  # Reads file only until a line with blank `term`
+                break  # Reads file only until a blank line
 
             naics_code = row[0].value
             naics_desc = row[1].value
@@ -71,5 +71,3 @@ def load_NAICS(path, append):
                 obj.description = naics_desc
                 obj.year = naics_year
                 obj.save()
-
-            current_row += 1
