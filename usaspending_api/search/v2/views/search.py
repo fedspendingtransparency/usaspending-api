@@ -477,7 +477,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
                 .values('category', 'category_count')
 
-
         categories = {
             'contract': 'contracts',
             'grant': 'grants',
