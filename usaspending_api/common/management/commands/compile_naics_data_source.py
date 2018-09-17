@@ -4,7 +4,6 @@ import os.path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
-from usaspending_api.common.helpers.generic_helper import natural_sort
 import re
 
 from usaspending_api.references.models import NAICS
@@ -39,38 +38,19 @@ def load_NAICS(path, append):
     # year regex object precompile
     p_year = re.compile("(20[0-9]{2})")
 
-    # case-insensitive naics regex object (for verification) precompile
-    p_name = re.compile("naics", re.IGNORECASE)
-    naics_list = NAICS.objects.all()
-
     dir_files = []
 
     for fname in os.listdir(path):
-        if (fname.find("naics") > 0):
+        if fname.find("naics") > 0:
             dir_files.append(os.path.join(path, fname))
-
-
-    # Sort by ints found
-
-    dir_files = natural_sort(dir_files, reverse=True)
 
     for path in dir_files:
 
         naics_year = p_year.search(path).group()
-
-        logger = logging.getLogger('console')
         wb = load_workbook(filename=path)
         ws = wb.active
         rows = ws.rows
 
-        # headers = [c.value for c in next(rows)[:2]]
-
-        # if (headers[0] is not None and headers[1] is not None):
-        #     print(headers[1])
-        #     year = p_year.search(headers[0]).group()
-        #     contains_title = p_name.search(headers[1]).group()
-        #     if ((year is None) or (contains_title is None)):
-        #         raise Exception('Expected header containing "year; \'naics\'"')
         current_row = 0
         for row in rows:
             if current_row == 0:
@@ -94,4 +74,3 @@ def load_NAICS(path, append):
                 obj.save()
 
             current_row += 1
-
