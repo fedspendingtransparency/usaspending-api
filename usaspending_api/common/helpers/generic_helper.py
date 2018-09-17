@@ -18,19 +18,21 @@ logger = logging.getLogger(__name__)
 QUOTABLE_TYPES = (str, datetime.date)
 
 TEMP_SQL_FILES = [
-    '../matviews/universal_transaction_matview.sql',
-    '../matviews/universal_award_matview.sql',
-    '../matviews/summary_transaction_view.sql',
-    '../matviews/summary_transaction_month_view.sql',
-    '../matviews/summary_transaction_geo_view.sql',
-    '../matviews/summary_state_view.sql',
+    '../matviews/subaward_view.sql',
     '../matviews/summary_award_recipient_view.sql',
     '../matviews/summary_award_view.sql',
+    '../matviews/summary_state_view.sql',
+    '../matviews/summary_transaction_fed_acct_view.sql',
+    '../matviews/summary_transaction_geo_view.sql',
+    '../matviews/summary_transaction_month_view.sql',
+    '../matviews/summary_transaction_recipient_view.sql',
+    '../matviews/summary_transaction_view.sql',
+    '../matviews/summary_view.sql',
     '../matviews/summary_view_cfda_number.sql',
     '../matviews/summary_view_naics_codes.sql',
     '../matviews/summary_view_psc_codes.sql',
-    '../matviews/summary_view.sql',
-    '../matviews/subaward_view.sql',
+    '../matviews/universal_award_matview.sql',
+    '../matviews/universal_transaction_matview.sql',
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
 ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']

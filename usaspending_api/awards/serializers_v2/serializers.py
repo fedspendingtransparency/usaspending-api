@@ -285,7 +285,7 @@ class AwardContractSerializerV2(LimitableSerializerV2):
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
 
-    def latest_transaction_func(seld, award):
+    def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
     def period_of_performance_func(self, award):
