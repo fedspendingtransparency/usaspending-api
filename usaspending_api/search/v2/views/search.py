@@ -444,13 +444,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
+        results = {
+            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+        } if not subawards else {
+            "subcontracts": 0, "subgrants": 0
+        }
+
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            results = {
-                "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
-            } if not subawards else {
-                "subcontracts": 0, "subgrants": 0
-            }
             return Response({"results": results})
 
         if subawards:
@@ -476,11 +477,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
                 .values('category', 'category_count')
 
-        results = {
-            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
-        } if not subawards else {
-            "subcontracts": 0, "subgrants": 0
-        }
 
         categories = {
             'contract': 'contracts',
