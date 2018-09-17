@@ -35,6 +35,7 @@ script:
 - psql $DATABASE_URL -f temp_sql/summary_award_recipient_view.sql  -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_award_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_state_view.sql -v ON_ERROR_STOP=1 --quiet
+- psql $DATABASE_URL -f temp_sql/summary_transaction_fed_acct_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_transaction_geo_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_transaction_month_view.sql -v ON_ERROR_STOP=1 --quiet
 - psql $DATABASE_URL -f temp_sql/summary_transaction_recipient_view.sql -v ON_ERROR_STOP=1 --quiet
