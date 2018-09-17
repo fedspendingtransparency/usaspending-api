@@ -55,11 +55,11 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
 """
 
 TEMPLATE = {
-    "create_matview": "CREATE MATERIALIZED VIEW {} AS\n{};",
+    "create_matview": "CREATE MATERIALIZED VIEW {} AS\n{} WITH {}DATA;",
     "drop_matview": "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;",
     "rename_matview": "ALTER MATERIALIZED VIEW {}{} RENAME TO {};",
     "cluster_matview": "CLUSTER VERBOSE {} USING {};",
-    "refresh_matview": "REFRESH MATERIALIZED VIEW CONCURRENTLY {} WITH DATA;",
+    "refresh_matview": "REFRESH MATERIALIZED VIEW {}{} WITH DATA;",
     "analyze": "ANALYZE VERBOSE {};",
     "vacuum": "VACUUM ANALYZE VERBOSE {};",
     "create_index": "CREATE {}INDEX {} ON {} USING {}({}){}{};",
@@ -70,8 +70,9 @@ TEMPLATE = {
 
 CLUSTERING_INDEX = None
 COMMIT_HASH = ""
-DEST_FOLDER = "../matviews/"
 COMPONENT_DIR = "componentized/"
+DEST_FOLDER = "../matviews/"
+GLOBAL_ARGS = None
 HERE = os.path.abspath(os.path.dirname(__file__))
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 RANDOM_CHARS = ""
@@ -97,11 +98,11 @@ def generate_uid(characters=8, filename=None):
 
 def get_git_commit(characters=8, filename=None):
     cmd = 'git log -n 1 --pretty=format:"%H"'
-    args = cmd.split(" ")
+    cmd_args = cmd.split(" ")
     if filename and os.path.isfile(filename):
-        args.append(filename)
+        cmd_args.append(filename)
 
-    shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
+    shell = subprocess.run(cmd_args, stdout=subprocess.PIPE, check=True)
     if shell.stdout:
         # First character is a '#' so skip it
         return shell.stdout[1:characters + 1].decode()
@@ -158,11 +159,18 @@ def make_matview_drops(final_matview_name):
 def make_matview_create(final_matview_name, sql):
     matview_sql = "\n".join(sql)
     matview_temp_name = final_matview_name + "_temp"
-    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql)]
+    with_or_without_data = ""
+    if GLOBAL_ARGS.no_data:
+        with_or_without_data = "NO "
+
+    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql, with_or_without_data)]
 
 
-def make_matview_refresh(matview_name):
-    return [TEMPLATE["refresh_matview"].format(matview_name), TEMPLATE["vacuum"].format(matview_name)]
+def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):
+    statement_list = [TEMPLATE["refresh_matview"].format(concurrently, matview_name)]
+    if concurrently == "CONCURRENTLY ":
+        statement_list.append(TEMPLATE["vacuum"].format(matview_name))
+    return statement_list
 
 
 def make_indexes_sql(sql_json, matview_name):
@@ -249,6 +257,8 @@ def create_all_sql_strings(sql_json):
     final_sql_strings.append("")
     final_sql_strings += create_indexes
     final_sql_strings.append("")
+    if GLOBAL_ARGS.no_data:
+        final_sql_strings.extend([TEMPLATE["refresh_matview"].format("", matview_name), ""])
     final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name))
@@ -282,10 +292,10 @@ def create_componentized_files(sql_json):
 
     write_sql_file(create_indexes, filename_base + "__indexes")
 
-    if args.batch_indexes > 1:
+    if GLOBAL_ARGS.batch_indexes > 1:
         if not os.path.exists(index_dir_path):
             os.makedirs(index_dir_path)
-        for i, index_block in enumerate(split_indexes_chunks(create_indexes, args.batch_indexes)):
+        for i, index_block in enumerate(split_indexes_chunks(create_indexes, GLOBAL_ARGS.batch_indexes)):
             write_sql_file(index_block, index_dir_path + "group_{}".format(i))
 
     sql_strings = make_modification_sql(matview_name)
@@ -295,7 +305,10 @@ def create_componentized_files(sql_json):
     write_sql_file(sql_strings, filename_base + "__renames")
 
     if "refresh" in sql_json and sql_json["refresh"] is True:
-        sql_strings = make_matview_refresh(matview_name)
+        if GLOBAL_ARGS.no_data:
+            sql_strings = make_matview_refresh(matview_temp_name, "")
+        else:
+            sql_strings = make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + "__refresh")
 
 
@@ -323,7 +336,7 @@ def main(source_file):
 
 
 def print_debug(msg):
-    if not args.quiet:
+    if not GLOBAL_ARGS.quiet:
         print(msg)
 
 
@@ -348,16 +361,19 @@ if __name__ == "__main__":
         default=1,
         help="When value >=2, distribute the index SQL across that file count",
     )
-    args = arg_parser.parse_args()
+    arg_parser.add_argument(
+        "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
+    )
+    GLOBAL_ARGS = arg_parser.parse_args()
 
-    DEST_FOLDER = args.dest
+    DEST_FOLDER = GLOBAL_ARGS.dest
     if not os.path.exists(os.path.join(DEST_FOLDER, COMPONENT_DIR)):
         os.makedirs(os.path.join(DEST_FOLDER, COMPONENT_DIR))
 
-    if args.file is not None:
-        if os.path.isfile(args.file):
-            print_debug("Creating matview SQL using {}".format(args.file))
-            main(args.file)
+    if GLOBAL_ARGS.file is not None:
+        if os.path.isfile(GLOBAL_ARGS.file):
+            print_debug("Creating matview SQL using {}".format(GLOBAL_ARGS.file))
+            main(GLOBAL_ARGS.file)
     else:
         all_files = glob.glob(os.path.join(HERE, "*.json"))
         for f in all_files:

@@ -306,21 +306,21 @@ def test_new_awards_failures(add_award_recipients, client):
 
 @pytest.mark.django_db
 def test_new_awards_filter_errors():
-    A = NewAwardsOverTimeVisualizationViewSet()
+    new_awards_viewset = NewAwardsOverTimeVisualizationViewSet()
     filters = {"group": "baseball"}
-    catch_filter_errors(A, filters, "UnprocessableEntityException")
+    catch_filter_errors(new_awards_viewset, filters, "UnprocessableEntityException")
     filters = {
         "group": "baseball",
         "filters": {"recipient_id": "", "time_period": []},
     }
-    catch_filter_errors(A, filters, "InvalidParameterException")
+    catch_filter_errors(new_awards_viewset, filters, "InvalidParameterException")
     filters = {
         "group": "month",
         "filters": {"recipient_id": "", "time_period": []},
     }
-    catch_filter_errors(A, filters, "UnprocessableEntityException")
+    catch_filter_errors(new_awards_viewset, filters, "UnprocessableEntityException")
     filters = {
         "group": "month",
         "filters": {"recipient_id": "", "time_period": [{"start_date": ""}]},
     }
-    catch_filter_errors(A, filters, "UnprocessableEntityException")
+    catch_filter_errors(new_awards_viewset, filters, "UnprocessableEntityException")
