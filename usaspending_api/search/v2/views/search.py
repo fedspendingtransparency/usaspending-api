@@ -451,7 +451,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             } if not subawards else {
                 "subcontracts": 0, "subgrants": 0
             }
-            Response({"results": results})
+            return Response({"results": results})
 
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters

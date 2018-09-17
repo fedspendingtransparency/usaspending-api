@@ -1,7 +1,6 @@
 # Stdlib imports
 import pytest
 import json
-from time import perf_counter
 from rest_framework import status
 
 # Core Django imports
@@ -70,9 +69,6 @@ def test_no_intersection(client, mock_matviews_qs):
     assert len(resp.data["results"]) == 1
 
     request["filters"]["award_type_codes"].append("no intersection")
-    api_start = perf_counter()
     resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(request))
-    api_end = perf_counter()
     assert resp.status_code == status.HTTP_200_OK
-    assert api_end - api_start < 0.5, "Response took over 0.5s! Investigate why"
     assert len(resp.data["results"]) == 0, "Results returned, there should be 0"
