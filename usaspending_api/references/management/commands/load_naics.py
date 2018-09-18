@@ -1,12 +1,12 @@
 import logging
 import os.path
+import re
+import glob
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
 from django.db import transaction
-import re
-import glob
 
 from usaspending_api.references.models import NAICS
 
@@ -21,8 +21,13 @@ class Command(BaseCommand):
     default_path = os.path.join(settings.BASE_DIR, path)
 
     def add_arguments(self, parser):
-        parser.add_argument('-p', '--path', help='the path to the Excel spreadsheets to load', default=self.default_path)
-        parser.add_argument('-a', '--append', help='Append to existing guide', action='store_true', default=True)
+        parser.add_argument('-p', '--path',
+                            help='the path to the Excel spreadsheets to load',
+                            default=self.default_path)
+        parser.add_argument('-a', '--append',
+                            help='Append to existing guide',
+                            action='store_true',
+                            default=True)
 
     def handle(self, *args, **options):
         load_naics(path=options['path'], append=options['append'])
