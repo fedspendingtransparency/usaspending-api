@@ -265,9 +265,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        """Return all awards matching the provided filters and limits"""
         models = [
-            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'min': 1},
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -277,8 +277,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 m['optional'] = False
 
         json_request = TinyShield(models).block(request.data)
-        fields = json_request.get("fields", None)
-        filters = json_request.get("filters", None)
+        fields = json_request["fields"]
+        filters = json_request.get("filters", {})
         subawards = json_request["subawards"]
         order = json_request["order"]
         limit = json_request["limit"]
@@ -286,6 +286,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
+
+        if "no intersection" in filters["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            return Response({
+                "limit": limit,
+                "results": [],
+                "page_metadata": {"page": page, "hasNext": False},
+            })
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
@@ -321,7 +329,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
-        if sort and "no intersection" not in filters["award_type_codes"]:
+        if sort:
             if subawards:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
@@ -436,6 +444,16 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
+        results = {
+            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+        } if not subawards else {
+            "subcontracts": 0, "subgrants": 0
+        }
+
+        if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            return Response({"results": results})
+
         if subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             queryset = subaward_filter(filters)
@@ -458,12 +476,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 .values('category') \
                 .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
                 .values('category', 'category_count')
-
-        results = {
-            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
-        } if not subawards else {
-            "subcontracts": 0, "subgrants": 0
-        }
 
         categories = {
             'contract': 'contracts',
@@ -525,6 +537,17 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         if validated_payload['sort'] not in validated_payload['fields']:
             raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload['sort']))
+
+        if "filters" in validated_payload and "no intersection" in validated_payload["filters"]["award_type_codes"]:
+            # "Special case": there will never be results when the website provides this value
+            return Response({
+                "limit": validated_payload["limit"],
+                "results": [],
+                "page_metadata": {
+                    "page": validated_payload["page"], "next": None, "previous": None,
+                    "hasNext": False, "hasPrevious": False,
+                },
+            })
 
         lower_limit = (validated_payload['page'] - 1) * validated_payload['limit']
         success, response, total = search_transactions(validated_payload, lower_limit, validated_payload['limit'] + 1)
