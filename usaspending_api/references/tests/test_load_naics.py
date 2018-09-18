@@ -14,9 +14,7 @@ def test_naics_existing_and_new_files():
     call_command('load_naics')
 
     naics_2002_data_total = NAICS.objects.all().filter(year=2002).count()
-    naics_2002_named_entry = NAICS.objects.get(pk=541710)
     naics_2012_named_entry = NAICS.objects.get(pk=541712)
-
-    assert naics_2002_named_entry is not None
+    
     assert naics_2012_named_entry is not None
     assert naics_2002_data_total == 36

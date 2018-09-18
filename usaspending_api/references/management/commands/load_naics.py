@@ -30,11 +30,12 @@ class Command(BaseCommand):
 
 @transaction.atomic
 def load_naics(path, append):
+    logger = logging.getLogger('console')
 
     if append:
-        logging.info('Appending definitions to existing guide')
+        logger.info('Appending definitions to existing guide')
     else:
-        logging.info('Deleting existing definitions from guide')
+        logger.info('Deleting existing definitions from guide')
         NAICS.objects.all().delete()
 
     # year regex object precompile
