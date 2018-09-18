@@ -57,23 +57,3 @@ def test_naics_autocomplete_failure(client):
         content_type='application/json',
         data=json.dumps({'search_text': ''}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-@pytest.mark.django_db
-def test_naics_existing_and_new_files():
-    """
-    Test to ensure the ingested data size is correct
-    Test to make sure previously missing information has been added
-
-    """
-
-    call_command('load_naics')
-
-    naics_2002_data_total = NAICS.objects.all().filter(year=2002)
-    naics_2002_named_entry = NAICS.objects.get(pk=541710)
-    naics_2012_named_entry = NAICS.objects.get(pk=541712)
-
-    assert naics_2002_named_entry is not None
-    assert naics_2012_named_entry is not None
-    assert naics_2002_data_total == 36
-
-

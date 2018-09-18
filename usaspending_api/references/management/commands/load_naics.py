@@ -42,12 +42,7 @@ def load_naics(path, append):
 
     dir_files = glob.glob(path + "/*.xlsx")
 
-    for fname in os.listdir(path):
-
-        if fname.find("naics") > 0:
-            dir_files.append(os.path.join(path, fname))
-
-    for path in dir_files:
+    for path in sorted(dir_files, reverse=True):
         wb = load_workbook(filename=path)
         ws = wb.active
 
