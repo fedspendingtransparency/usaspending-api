@@ -4,6 +4,7 @@ import os.path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
+from django.db import transaction
 import re
 import glob
 
@@ -20,15 +21,15 @@ class Command(BaseCommand):
     default_path = os.path.join(settings.BASE_DIR, path)
 
     def add_arguments(self, parser):
-        parser.add_argument('-p', '--path', help='the path to the Excel spreadsheet to load', default=self.default_path)
-        parser.add_argument('-a', '--append', help='Append to existing guide', action='store_true', default=False)
+        parser.add_argument('-p', '--path', help='the path to the Excel spreadsheets to load', default=self.default_path)
+        parser.add_argument('-a', '--append', help='Append to existing guide', action='store_true', default=True)
 
     def handle(self, *args, **options):
+        load_naics(path=options['path'], append=options['append'])
 
-        load_NAICS(path=options['path'], append=options['append'])
 
-
-def load_NAICS(path, append):
+@transaction.atomic
+def load_naics(path, append):
 
     if append:
         logging.info('Appending definitions to existing guide')
