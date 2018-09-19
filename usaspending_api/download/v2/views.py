@@ -163,6 +163,8 @@ class BaseDownloadViewSet(APIDocumentationView):
     def validate_account_request(self, request_data):
         json_request = {}
 
+        json_request['columns'] = request_data.get('columns', [])
+
         # Validate required parameters
         for required_param in ["account_level", "filters"]:
             if required_param not in request_data:
