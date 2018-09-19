@@ -272,7 +272,7 @@ def get_pagination(results, limit, page, benchmarks=False):
     if not page_metadata["hasNext"]:
         paginated_results = results[limit * (page - 1):]
     else:
-        paginated_results = results[limit * (page - 1): limit * page]
+        paginated_results = results[limit * (page - 1):limit * page]
 
     page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
     page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
@@ -409,7 +409,6 @@ FY_FROM_TEXT_PG_FUNCTION_DEF = '''
           END;
         $$ LANGUAGE plpgsql;
         '''
-
 """
 Filtering on `field_name__fy` is present for free on all Date fields.
 To add this field to the serializer:
