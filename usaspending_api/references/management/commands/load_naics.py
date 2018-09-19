@@ -32,6 +32,24 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_naics(path=options['path'], append=options['append'])
 
+def populate_naics_fields(ws, naics_year):
+    for current_row, row in enumerate(ws.rows):
+        if current_row == 0:
+            continue
+
+        if not row[0].value:
+            break  # Reads file only until a blank line
+
+        naics_code = row[0].value
+        naics_desc = row[1].value
+
+        obj, created = NAICS.objects.get_or_create(pk=naics_code,
+                                                   defaults={'description': naics_desc,
+                                                             'year': naics_year})
+
+        if not created:
+            if int(naics_year) > int(obj.year):
+                NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
 
 @transaction.atomic
 def load_naics(path, append):
@@ -53,23 +71,4 @@ def load_naics(path, append):
         ws = wb.active
 
         naics_year = p_year.search(ws["A1"].value).group()
-
-        for current_row, row in enumerate(ws.rows):
-            if current_row == 0:
-                continue
-
-            if not row[0].value:
-                break  # Reads file only until a blank line
-
-            naics_code = row[0].value
-            naics_desc = row[1].value
-
-            obj, created = NAICS.objects.get_or_create(pk=naics_code)
-
-            if not created:
-                if int(naics_year) > int(obj.year):
-                    NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
-            else:
-                obj.description = naics_desc
-                obj.year = naics_year
-                obj.save()
+        populate_naics_fields(ws, naics_year)
