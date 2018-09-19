@@ -71,6 +71,8 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     derived_fields = {
         # treasury_account_symbol: AID-BPOA/EPOA-MAC-SAC or AID-"X"-MAC-SAC
         'treasury_account_symbol': Concat(
+            Subquery(ata_subquery.values('name')[:1]),
+            Value('-'),
             '{}__agency_id'.format(tas_id),
             Value('-'),
             Case(When(**{'{}__availability_type_code'.format(tas_id): 'X', 'then': Value('X')}),
