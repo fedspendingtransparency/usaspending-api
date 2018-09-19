@@ -32,6 +32,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_naics(path=options['path'], append=options['append'])
 
+
 def populate_naics_fields(ws, naics_year):
     for current_row, row in enumerate(ws.rows):
         if current_row == 0:
@@ -50,6 +51,7 @@ def populate_naics_fields(ws, naics_year):
         if not created:
             if int(naics_year) > int(obj.year):
                 NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
+
 
 @transaction.atomic
 def load_naics(path, append):
