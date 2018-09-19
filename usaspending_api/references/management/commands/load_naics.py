@@ -26,8 +26,7 @@ class Command(BaseCommand):
                             default=self.default_path)
         parser.add_argument('-a', '--append',
                             help='Append to existing guide',
-                            action='store_true',
-                            default=True)
+                            action='store_true')
 
     def handle(self, *args, **options):
         load_naics(path=options['path'], append=options['append'])
