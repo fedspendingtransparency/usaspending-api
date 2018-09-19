@@ -8,7 +8,7 @@ from calendar import monthrange, isleap
 from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -18,22 +18,30 @@ logger = logging.getLogger(__name__)
 QUOTABLE_TYPES = (str, datetime.date)
 
 TEMP_SQL_FILES = [
-    '../matviews/universal_transaction_matview.sql',
-    '../matviews/universal_award_matview.sql',
-    '../matviews/summary_transaction_view.sql',
-    '../matviews/summary_transaction_month_view.sql',
-    '../matviews/summary_transaction_geo_view.sql',
-    '../matviews/summary_state_view.sql',
+    '../matviews/subaward_view.sql',
     '../matviews/summary_award_recipient_view.sql',
     '../matviews/summary_award_view.sql',
+    '../matviews/summary_state_view.sql',
+    '../matviews/summary_transaction_fed_acct_view.sql',
+    '../matviews/summary_transaction_geo_view.sql',
+    '../matviews/summary_transaction_month_view.sql',
+    '../matviews/summary_transaction_recipient_view.sql',
+    '../matviews/summary_transaction_view.sql',
+    '../matviews/summary_view.sql',
     '../matviews/summary_view_cfda_number.sql',
     '../matviews/summary_view_naics_codes.sql',
     '../matviews/summary_view_psc_codes.sql',
-    '../matviews/summary_view.sql',
-    '../matviews/subaward_view.sql',
+    '../matviews/universal_award_matview.sql',
+    '../matviews/universal_transaction_matview.sql',
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
 ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
+
+
+def read_text_file(filepath):
+    with open(filepath, "r") as plaintext_file:
+        file_content_str = plaintext_file.read()
+    return file_content_str
 
 
 def upper_case_dict_values(input_dict):
@@ -73,6 +81,13 @@ def generate_fiscal_month(date):
     if date.month in [10, 11, 12, "10", "11", "12"]:
         return date.month - 9
     return date.month + 3
+
+
+def generate_fiscal_year_and_quarter(date):
+    validate_date(date)
+    quarter = FiscalDate(date.year, date.month, date.day).quarter
+    year = generate_fiscal_year(date)
+    return "{}-Q{}".format(year, quarter)
 
 
 # aliasing the generate_fiscal_month function to the more appropriate function name
@@ -257,7 +272,7 @@ def get_pagination(results, limit, page, benchmarks=False):
     if not page_metadata["hasNext"]:
         paginated_results = results[limit * (page - 1):]
     else:
-        paginated_results = results[limit * (page - 1): limit * page]
+        paginated_results = results[limit * (page - 1):limit * page]
 
     page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
     page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
@@ -394,7 +409,6 @@ FY_FROM_TEXT_PG_FUNCTION_DEF = '''
           END;
         $$ LANGUAGE plpgsql;
         '''
-
 """
 Filtering on `field_name__fy` is present for free on all Date fields.
 To add this field to the serializer:

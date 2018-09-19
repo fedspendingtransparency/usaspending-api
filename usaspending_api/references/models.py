@@ -113,6 +113,7 @@ class Agency(models.Model):
             toptier_agency__cgac_code=toptier_cgac_code,
             subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
 
+    @staticmethod
     def get_by_subtier(subtier_code):
         """
         Get an agency record by subtier information only
@@ -769,6 +770,7 @@ class NAICS(models.Model):
     """Based on United States Census Bureau"""
     code = models.TextField(primary_key=True)
     description = models.TextField(null=False)
+    year = models.IntegerField(default=0)
 
     class Meta:
         managed = True

@@ -293,8 +293,8 @@ class Command(BaseCommand):
             legal_entity.save()
 
     @staticmethod
-    def send_deletes_to_elasticsearch(ids_to_delete):
-        logger.info('Uploading FABS delete data to Elasticsearch bucket')
+    def send_deletes_to_s3(ids_to_delete):
+        logger.info('Uploading FABS delete data to FPDS bucket')
 
         # Make timestamp
         seconds = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
@@ -310,8 +310,8 @@ class Command(BaseCommand):
         else:
             # Write to file in S3 bucket directly
             aws_region = os.environ.get('USASPENDING_AWS_REGION')
-            elasticsearch_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
-            s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(elasticsearch_bucket_name)
+            fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+            s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(fpds_bucket_name)
             conn = s3_bucket.new_key(file_name)
             with smart_open.smart_open(conn, 'w') as writer:
                 for row in file_with_headers:
@@ -352,7 +352,7 @@ class Command(BaseCommand):
 
         if total_rows_delete > 0:
             # Create a file with the deletion IDs and place in a bucket for ElasticSearch
-            self.send_deletes_to_elasticsearch(ids_to_delete)
+            self.send_deletes_to_s3(ids_to_delete)
 
             # Delete FABS records by ID
             with timer('deleting stale FABS data', logger.info):
