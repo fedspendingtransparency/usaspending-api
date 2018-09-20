@@ -69,8 +69,12 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('{}__allocation_transfer_agency_id'.format(tas_id)))
     agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('{}__agency_id'.format(tas_id)))
     derived_fields = {
-        # treasury_account_symbol: AID-BPOA/EPOA-MAC-SAC or AID-"X"-MAC-SAC
+        # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         'treasury_account_symbol': Concat(
+            Case(When(**{'{}__allocation_transfer_agency_id__isnull'.format(tas_id): False,
+                         'then': Concat('{}__allocation_transfer_agency_id'.format(tas_id), Value('-'))}),
+                 default=Value(''),
+                 output_field=CharField()),
             '{}__agency_id'.format(tas_id),
             Value('-'),
             Case(When(**{'{}__availability_type_code'.format(tas_id): 'X', 'then': Value('X')}),
