@@ -40,8 +40,12 @@ def populate_naics_fields(ws, naics_year):
         if not row[0].value:
             break  # Reads file only until a blank line
 
-        naics_code = row[0].value
-        naics_desc = row[1].value
+        try:
+            naics_code = int(row[0].value)
+        except:
+            logging.warning('could not parse to string: %s', row[0].value)
+
+        naics_desc = row[1].value.strip()
 
         obj, created = NAICS.objects.get_or_create(pk=naics_code,
                                                    defaults={'description': naics_desc,
