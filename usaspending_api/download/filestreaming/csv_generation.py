@@ -138,7 +138,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
 
     start_time = time.time()
     try:
@@ -255,11 +255,11 @@ def wait_for_process(process, start_time, download_job, message):
     return time.time() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job):
+def generate_temp_query_file(source_query, limit, source, download_job, columns):
     if limit:
         source_query = source_query[:limit]
     csv_query_raw = generate_raw_quoted_query(source_query)
-    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
+    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.columns(columns))
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
