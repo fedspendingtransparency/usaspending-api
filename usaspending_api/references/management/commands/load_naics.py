@@ -42,7 +42,7 @@ def populate_naics_fields(ws, naics_year):
 
         try:
             naics_code = int(row[0].value)
-        except:
+        except ValueError:
             logging.warning('could not parse to string: %s', row[0].value)
 
         naics_desc = row[1].value.strip()
