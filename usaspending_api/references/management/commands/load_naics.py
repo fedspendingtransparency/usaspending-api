@@ -40,7 +40,7 @@ def populate_naics_fields(ws, naics_year):
         if not row[0].value:
             break  # Reads file only until a blank line
 
-        naics_code = row[0].value
+        naics_code = int(row[0].value)
         naics_desc = row[1].value
 
         obj, created = NAICS.objects.get_or_create(pk=naics_code,
