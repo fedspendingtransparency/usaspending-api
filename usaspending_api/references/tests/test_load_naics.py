@@ -24,4 +24,4 @@ def test_naics_existing_and_new_files():
     assert naics_2012_named_entry is not None
     assert naics_count_2002 == 12
     assert naics_count_2017 == 1057
-    assert naics_count_all == 1256
+    assert naics_count_all == 1283
