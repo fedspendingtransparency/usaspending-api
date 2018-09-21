@@ -4,32 +4,52 @@ import os.path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
 from usaspending_api.references.models import Definition
+
+logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
     help = "Loads an Excel spreadsheet of DATA Act/USAspending data names across the various systems into <>"
 
-    logger = logging.getLogger('console')
-
-    path = 'usaspending_api/data/USAspendingGlossary.xlsx'
-    path = os.path.normpath(path)
-    default_path = os.path.join(settings.BASE_DIR, path)
+    # path = 'usaspending_api/data/USAspendingGlossary.xlsx'
+    bucket = "da-public-files"
+    s3_filepath = "user_reference_docs/Data Transparency Rosetta Stone_Public_only.xlsx"
 
     def add_arguments(self, parser):
         parser.add_argument(
             '-p',
             '--path',
-            help='the path to the Excel spreadsheet to load',
-            default=self.default_path)
+            help='filepath to a local Excel spreadsheet to load',
+            default=None)
 
     def handle(self, *args, **options):
+        rosetta_object = extract_data_from_source_file(path=options['path'])
+        # load_xlsx_data_to_model(rosetta_object)
 
-        load_glossary(path=options['path'], append=options['append'])
+
+def extract_data_from_source_file(path=None):
+    if path:
+        filepath = path
+
+    rosetta_object = {}
+    wb = load_workbook(filename=filepath, read_only=True)
+    sheet = wb["Public"]
+    last_column = get_column_letter(sheet.max_column)
+    last_row = sheet.max_row
+    cell_range = "A2:{}2".format(last_column)
+    # print(f"cell range {cell_range}")
+    headers = [cell.value for cell in sheet[cell_range][0]]
+    print(headers)
+    # print(last_column)
+    # print(last_row)
+
+    return rosetta_object
 
 
-def load_glossary(path, append):
+def load_xlsx_data_to_model(rosetta_object):
 
     logger = logging.getLogger('console')
 
