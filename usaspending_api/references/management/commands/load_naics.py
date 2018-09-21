@@ -4,7 +4,7 @@ import re
 import glob
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from openpyxl import load_workbook
 from django.db import transaction
 
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         load_naics(path=options['path'], append=options['append'])
 
 
-def populate_naics_fields(ws, naics_year):
+def populate_naics_fields(ws, naics_year, path):
     for current_row, row in enumerate(ws.rows):
         if current_row == 0:
             continue
@@ -43,7 +43,7 @@ def populate_naics_fields(ws, naics_year):
         try:
             naics_code = int(row[0].value)
         except ValueError:
-            logging.warning('could not parse to string: %s', row[0].value)
+            raise CommandError('Invalid NAICS code: {0}. Please review file {1}'.format(naics_code, path))
 
         naics_desc = row[1].value.strip()
 
@@ -76,4 +76,4 @@ def load_naics(path, append):
         ws = wb.active
 
         naics_year = p_year.search(ws["A1"].value).group()
-        populate_naics_fields(ws, naics_year)
+        populate_naics_fields(ws, naics_year, path)
