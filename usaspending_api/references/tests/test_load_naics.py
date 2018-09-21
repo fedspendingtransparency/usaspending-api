@@ -14,12 +14,14 @@ def test_naics_existing_and_new_files():
 
     call_command('load_naics')
 
-    naics_cascade_count = (NAICS.objects.all().filter(year=2017).count()
-                           + NAICS.objects.all().filter(year=2012).count()
-                           + NAICS.objects.all().filter(year=2007).count()
-                           + NAICS.objects.all().filter(year=2002).count())
+    naics = NAICS.objects.all()
+    naics_count_2017 = naics.filter(year=2017).count()
+    naics_count_2002 = naics.filter(year=2002).count()
+    naics_count_all = naics.count()
 
     naics_2012_named_entry = NAICS.objects.get(pk=541712)
 
     assert naics_2012_named_entry is not None
-    assert naics_cascade_count == 1283
+    assert naics_count_2002 == 12
+    assert naics_count_2017 == 1057
+    assert naics_count_all == 1256
