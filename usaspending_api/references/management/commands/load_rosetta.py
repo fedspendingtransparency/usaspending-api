@@ -1,14 +1,35 @@
 import logging
 import os.path
+import json
+from time import perf_counter
+from collections import OrderedDict
 
+
+from django.db import transaction
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
-from usaspending_api.references.models import Definition
+from usaspending_api.references.models import Rosetta
 
 logger = logging.getLogger('console')
+
+DB_TO_XLSX_MAPPING = OrderedDict([
+    # DB contains a section field which is actually a XLSX header over that column
+    ("element", "Element"),
+    ("definition", "Definition"),
+    ("fpds_element", "FPDS Element"),
+    ("file_a_f", "File\nA-F"),
+    ("award_file", "Award File"),
+    ("award_element", "Award Element"),
+    ("subaward_file", "Subaward File"),
+    ("subaward_element", "Subaward Element"),
+    ("account_file", "Account File"),
+    ("account_element", "Account Element"),
+    ("legacy_award_element", "Award Element"),
+    ("legacy_subaward_element", "Subaward Element"),
+])
 
 
 class Command(BaseCommand):
@@ -26,62 +47,70 @@ class Command(BaseCommand):
             default=None)
 
     def handle(self, *args, **options):
+        logger.info("Starting load_rosetta management command")
+        script_start_time = perf_counter()
         rosetta_object = extract_data_from_source_file(path=options['path'])
-        # load_xlsx_data_to_model(rosetta_object)
+        load_xlsx_data_to_model(rosetta_object)
+        # print(json.dumps(rosetta_object))
+        logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))
 
 
-def extract_data_from_source_file(path=None):
+def extract_data_from_source_file(path: str=None) -> dict:
     if path:
+        logger.info("Using local file: {}".format(path))
         filepath = path
+    else:
+        logger.info("Using S3 file: {}".format("TBD"))
 
-    rosetta_object = {}
-    wb = load_workbook(filename=filepath, read_only=True)
+    wb = load_workbook(filename=filepath)
     sheet = wb["Public"]
     last_column = get_column_letter(sheet.max_column)
-    last_row = sheet.max_row
     cell_range = "A2:{}2".format(last_column)
     # print(f"cell range {cell_range}")
-    headers = [cell.value for cell in sheet[cell_range][0]]
-    print(headers)
-    # print(last_column)
-    # print(last_row)
+    headers = [{"column": cell.column, "header": cell.value} for cell in sheet[cell_range][0]]
 
-    return rosetta_object
+    current_section = None
+    for header in headers:
+        header["section"] = sheet["{}1".format(header["column"])].value
+        if header["section"] is None:
+            header["section"] = current_section
+        else:
+            current_section = header["section"]
+
+    elements = {}
+    for i, row in enumerate(sheet.values):
+        if i < 2:
+            continue
+        elements[row[0]] = [r.strip() for r in row]
+
+    field_names = list(header["header"] for header in headers)
+    assert list(DB_TO_XLSX_MAPPING.values()) == field_names, "Column headers don't match the headers in the model"
+    logger.info("Columns in file: {} with {} rows of elements".format(field_names, len(elements)))
+    return {"headers": headers, "data": elements}
 
 
-def load_xlsx_data_to_model(rosetta_object):
+@transaction.atomic
+def load_xlsx_data_to_model(rosetta_object: dict):
+    Rosetta.objects.all().delete()
 
-    logger = logging.getLogger('console')
+    for header, row in rosetta_object["data"].items():
+        zipped_data = zip(DB_TO_XLSX_MAPPING.keys(), row)
+        db_insert_params = {z[0]: z[1] for z in zipped_data}
 
-    wb = load_workbook(filename=path)
-    ws = wb.active
-    rows = ws.rows
+        json_doc = {
+            "section": DB_TO_XLSX_MAPPING[header],
+        }
+        for x in zip(DB_TO_XLSX_MAPPING.values(), row):
+            json_doc[x[0]] = x[1]
+        print(json.dumps(json_doc))
+        break
+        rosetta = Rosetta(full_doc=db_insert_params, **db_insert_params)
+        rosetta.save()
 
-    headers = [c.value for c in next(rows)[:6]]
-    expected_headers = [
-        'Term', 'Plain Language Descriptions', 'DATA Act Schema Term',
-        'DATA Act Schema Definition', 'More Resources', 'Markdown for More Resources'
-    ]
-    if headers != expected_headers:
-        raise Exception('Expected headers of {} in {}'.format(
-            expected_headers, path))
 
-    if append:
-        logging.info('Appending definitions to existing guide')
-    else:
-        logging.info('Deleting existing definitions from guide')
-        Definition.objects.all().delete()
-
-    field_names = ('term', 'plain', 'data_act_term', 'official', None, 'resources')
-    row_count = 0
-    for row in rows:
-        if not row[0].value:
-            break  # Reads file only until a line with blank `term`
-        definition = Definition()
-        for (i, field_name) in enumerate(field_names):
-            if field_name:
-                setattr(definition, field_name, row[i].value)
-        definition.save()
-        row_count += 1
-    logger.info('{} definitions loaded from {}'.format(
-        row_count, path))
+    #     for (i, field_name) in enumerate(field_names):
+    #         if field_name:
+    #             setattr(rosetta, field_name, )
+    #     rosetta.save()
+    #     row_count += 1
+    # logger.info('{} definitions loaded from {}'.format(row_count))

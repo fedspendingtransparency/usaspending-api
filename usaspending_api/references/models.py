@@ -785,3 +785,27 @@ class PSC(models.Model):
     class Meta:
         managed = True
         db_table = 'psc'
+
+
+class Rosetta(models.Model):
+    """
+        Based on the "public" tab in Schema's Rosetta Crosswalk Data Dictionary:
+            Data Transparency Rosetta Stone_All_Versions.xlsx
+    """
+    element = models.TextField(primary_key=True, verbose_name="Element")
+    definition = models.TextField(verbose_name="Definition")
+    fpds_element = models.TextField(verbose_name="FPDS Element")
+    file_a_f = models.TextField(verbose_name="File A-F")
+    award_file = models.TextField(verbose_name="Award File")
+    award_element = models.TextField(verbose_name="Award Element")
+    subaward_file = models.TextField(verbose_name="Subaward File")
+    subaward_element = models.TextField(verbose_name="Subaward Element")
+    account_file = models.TextField(verbose_name="Account File")
+    account_element = models.TextField(verbose_name="Account Element")
+    legacy_award_element = models.TextField(verbose_name="Legacy Award Element")
+    legacy_subaward_element = models.TextField(verbose_name="Legacy Subaward Element")
+    full_doc = JSONField()
+
+    class Meta:
+        managed = True
+        db_table = "rosetta"
