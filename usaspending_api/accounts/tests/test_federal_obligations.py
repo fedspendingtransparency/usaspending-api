@@ -9,8 +9,8 @@ def financial_obligations_models():
     fiscal_year = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016)
     top_tier_id = mommy.make('references.Agency', id=654, toptier_agency_id=987).toptier_agency_id
     top_tier = mommy.make('references.ToptierAgency', toptier_agency_id=top_tier_id)
-    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969, account_title='Turtlenecks and Chains')
-    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234, account_title='Suits and Ties')
+    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969, agency_identifier="867", main_account_code="5309", account_title='Turtlenecks and Chains')
+    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234, agency_identifier="314", main_account_code="1592", account_title='Suits and Ties')
     """
         Until this gets updated with mock.Mock(),
         the following cascade of variables applied to parameters,
@@ -106,10 +106,12 @@ def test_financial_obligations(client, financial_obligations_models):
     assert len(resp.data['results']) == 2
     res_awesome = resp.data['results'][0]
     assert res_awesome['id'] == '1234'
+    assert res_awesome['account_number'] == '314-1592'
     assert res_awesome['account_title'] == 'Suits and Ties'
     assert res_awesome['obligated_amount'] == '400.00'
     res_lame = resp.data['results'][1]
     assert res_lame['id'] == '6969'
+    assert res_lame['account_number'] == '867-5309'
     assert res_lame['account_title'] == 'Turtlenecks and Chains'
     assert res_lame['obligated_amount'] == '100.00'
 
