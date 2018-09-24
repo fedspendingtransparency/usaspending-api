@@ -1,15 +1,14 @@
+import json
 import logging
 import os.path
-import json
-from time import perf_counter
+
 from collections import OrderedDict
-
-
-from django.db import transaction
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
+from time import perf_counter
 
 from usaspending_api.references.models import Rosetta
 
@@ -62,6 +61,8 @@ def extract_data_from_source_file(path: str=None) -> dict:
     else:
         logger.info("Using S3 file: {}".format("TBD"))
 
+    file_size = os.path.getsize(filepath)
+
     wb = load_workbook(filename=filepath)
     sheet = wb["Public"]
     last_column = get_column_letter(sheet.max_column)
@@ -69,48 +70,48 @@ def extract_data_from_source_file(path: str=None) -> dict:
     # print(f"cell range {cell_range}")
     headers = [{"column": cell.column, "header": cell.value} for cell in sheet[cell_range][0]]
 
-    current_section = None
+    sections = []
     for header in headers:
-        header["section"] = sheet["{}1".format(header["column"])].value
-        if header["section"] is None:
-            header["section"] = current_section
+        section = {
+            "section": sheet["{}1".format(header["column"])].value,
+            "colspan": 1}
+
+        if section["section"] is None:
+            sections[-1]["colspan"] += 1
         else:
-            current_section = header["section"]
+            sections.append(section)
 
     elements = {}
     for i, row in enumerate(sheet.values):
         if i < 2:
             continue
-        elements[row[0]] = [r.strip() for r in row]
+        elements[row[0]] = [r.strip() if r.strip() != "N/A" else None for r in row]
 
     field_names = list(header["header"] for header in headers)
+    row_count = len(elements)
     assert list(DB_TO_XLSX_MAPPING.values()) == field_names, "Column headers don't match the headers in the model"
-    logger.info("Columns in file: {} with {} rows of elements".format(field_names, len(elements)))
-    return {"headers": headers, "data": elements}
+    logger.info("Columns in file: {} with {} rows of elements".format(field_names, row_count))
+    return {
+        "headers": headers,
+        "data": elements,
+        "sections": sections,
+        "metadata": {
+            "total_rows": row_count,
+            "total_columns": len(field_names),
+            "file_name": os.path.basename(path),
+            "total_size": "{:.2f}KB".format(float(file_size) / 1000),  # Convert to KB (seems to be 1000 not 1024)
+        }}
 
 
 @transaction.atomic
 def load_xlsx_data_to_model(rosetta_object: dict):
     Rosetta.objects.all().delete()
-
-    for header, row in rosetta_object["data"].items():
-        zipped_data = zip(DB_TO_XLSX_MAPPING.keys(), row)
-        db_insert_params = {z[0]: z[1] for z in zipped_data}
-
-        json_doc = {
-            "section": DB_TO_XLSX_MAPPING[header],
-        }
-        for x in zip(DB_TO_XLSX_MAPPING.values(), row):
-            json_doc[x[0]] = x[1]
-        print(json.dumps(json_doc))
-        break
-        rosetta = Rosetta(full_doc=db_insert_params, **db_insert_params)
-        rosetta.save()
-
-
-    #     for (i, field_name) in enumerate(field_names):
-    #         if field_name:
-    #             setattr(rosetta, field_name, )
-    #     rosetta.save()
-    #     row_count += 1
-    # logger.info('{} definitions loaded from {}'.format(row_count))
+    json_doc = {
+        "metadata": rosetta_object["metadata"],
+        "sections": rosetta_object["sections"],
+        "headers": list({"display": pretty, "raw": raw} for raw, pretty in DB_TO_XLSX_MAPPING.items()),
+        "rows": list(row for row in rosetta_object["data"].values()),
+    }
+    # print(json.dumps(json_doc))
+    rosetta = Rosetta(document_name="api_response", document=json_doc)
+    rosetta.save()
