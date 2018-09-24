@@ -17,7 +17,7 @@ from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, StateData
-from usaspending_api.references.models import Agency, Cfda, PSC, LegalEntity, RefCountryCode
+from usaspending_api.references.models import Agency, Cfda, LegalEntity, NAICS, PSC, RefCountryCode
 
 
 logger = logging.getLogger(__name__)
@@ -288,6 +288,7 @@ class BusinessLogic:
                 row["name"] = fetch_psc_description_by_code(row["code"])
             elif self.category == "naics":
                 row["id"] = None
+                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
         return results
 
     def location(self) -> list:
@@ -403,4 +404,13 @@ def fetch_state_name_from_code(state_code):
     if not result:
         logger.warning("{} not found for state_code: {}".format(",".join(columns), state_code))
         return None
+    return result[columns[0]]
+
+
+def fetch_naics_description_from_code(naics_code, passthrough=None):
+    columns = ["description"]
+    result = NAICS.objects.filter(code=naics_code).values(*columns).first()
+    if not result:
+        logger.warning("{} not found for naics_code: {}".format(",".join(columns), naics_code))
+        return passthrough
     return result[columns[0]]
