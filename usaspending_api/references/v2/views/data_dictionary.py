@@ -8,13 +8,14 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.references.models import Rosetta
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 class DataDictionaryViewSet(APIDocumentationView):
     """
 
     """
+
     @cache_response()
     def get(self, request, format=None):
         try:

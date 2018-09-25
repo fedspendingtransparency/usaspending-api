@@ -12,23 +12,25 @@ from time import perf_counter
 
 from usaspending_api.references.models import Rosetta
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
-DB_TO_XLSX_MAPPING = OrderedDict([
-    # DB contains a section field which is actually a XLSX header over that column
-    ("element", "Element"),
-    ("definition", "Definition"),
-    ("fpds_element", "FPDS Element"),
-    ("file_a_f", "File\nA-F"),
-    ("award_file", "Award File"),
-    ("award_element", "Award Element"),
-    ("subaward_file", "Subaward File"),
-    ("subaward_element", "Subaward Element"),
-    ("account_file", "Account File"),
-    ("account_element", "Account Element"),
-    ("legacy_award_element", "Award Element"),
-    ("legacy_subaward_element", "Subaward Element"),
-])
+DB_TO_XLSX_MAPPING = OrderedDict(
+    [
+        # DB contains a section field which is actually a XLSX header over that column
+        ("element", "Element"),
+        ("definition", "Definition"),
+        ("fpds_element", "FPDS Element"),
+        ("file_a_f", "File\nA-F"),
+        ("award_file", "Award File"),
+        ("award_element", "Award Element"),
+        ("subaward_file", "Subaward File"),
+        ("subaward_element", "Subaward Element"),
+        ("account_file", "Account File"),
+        ("account_element", "Account Element"),
+        ("legacy_award_element", "Award Element"),
+        ("legacy_subaward_element", "Subaward Element"),
+    ]
+)
 
 
 class Command(BaseCommand):
@@ -39,22 +41,18 @@ class Command(BaseCommand):
     s3_filepath = "user_reference_docs/Data Transparency Rosetta Stone_Public_only.xlsx"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '-p',
-            '--path',
-            help='filepath to a local Excel spreadsheet to load',
-            default=None)
+        parser.add_argument("-p", "--path", help="filepath to a local Excel spreadsheet to load", default=None)
 
     def handle(self, *args, **options):
         logger.info("Starting load_rosetta management command")
         script_start_time = perf_counter()
-        rosetta_object = extract_data_from_source_file(path=options['path'])
+        rosetta_object = extract_data_from_source_file(path=options["path"])
         load_xlsx_data_to_model(rosetta_object)
         # print(json.dumps(rosetta_object))
         logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))
 
 
-def extract_data_from_source_file(path: str=None) -> dict:
+def extract_data_from_source_file(path: str = None) -> dict:
     if path:
         logger.info("Using local file: {}".format(path))
         filepath = path
@@ -72,9 +70,7 @@ def extract_data_from_source_file(path: str=None) -> dict:
 
     sections = []
     for header in headers:
-        section = {
-            "section": sheet["{}1".format(header["column"])].value,
-            "colspan": 1}
+        section = {"section": sheet["{}1".format(header["column"])].value, "colspan": 1}
 
         if section["section"] is None:
             sections[-1]["colspan"] += 1
@@ -100,7 +96,8 @@ def extract_data_from_source_file(path: str=None) -> dict:
             "total_columns": len(field_names),
             "file_name": os.path.basename(path),
             "total_size": "{:.2f}KB".format(float(file_size) / 1000),  # Convert to KB (seems to be 1000 not 1024)
-        }}
+        },
+    }
 
 
 @transaction.atomic
