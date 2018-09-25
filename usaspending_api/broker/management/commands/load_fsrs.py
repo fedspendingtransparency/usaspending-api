@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
@@ -245,8 +245,9 @@ class Command(BaseCommand):
                 prime_award_dict['prime_recipient'] = shared_mappings['award'].recipient
                 if prime_award_dict['prime_recipient']:
                     prime_award_dict['prime_recipient_name'] = shared_mappings['award'].recipient.recipient_name
-                    prime_award_dict['business_categories'] = (shared_mappings['award'].recipient.business_categories
-                                                               or [])
+                    prime_award_dict['business_categories'] = (
+                        shared_mappings['award'].recipient.business_categories or []
+                    )
 
             upper_case_dict_values(row)
 
@@ -366,7 +367,7 @@ class Command(BaseCommand):
                 'pop_zip4': row['principle_place_zip'],
                 'pop_street_address': row['principle_place_street'],
                 'pop_congressional_code': row['principle_place_district'],
-                'updated_at': datetime.utcnow()
+                'updated_at': datetime.now(timezone.utc)
             }
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
@@ -431,7 +432,7 @@ class Command(BaseCommand):
                     broken_subaward.awarding_agency = award.awarding_agency
                     broken_subaward.funding_agency = award.funding_agency
                     broken_subaward.prime_recipient = award.recipient
-                    broken_subaward.updated_at = datetime.utcnow()
+                    broken_subaward.updated_at = datetime.now(timezone.utc)
                     broken_subaward.save()
                     fixed_ids.append(award.id)
         award_update_id_list.extend(fixed_ids)

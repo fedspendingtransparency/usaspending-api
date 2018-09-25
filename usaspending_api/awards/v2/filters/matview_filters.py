@@ -83,10 +83,10 @@ def matview_search_filter(filters, model, for_downloads=False):
             filter_obj = Q()
             for keyword in value:
                 filter_obj |= keyword_parse(keyword)
-            potential_DUNS = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
-            if len(potential_DUNS) > 0:
-                filter_obj |= Q(recipient_unique_id__in=potential_DUNS) | \
-                    Q(parent_recipient_unique_id__in=potential_DUNS)
+            potential_duns = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
+            if len(potential_duns) > 0:
+                filter_obj |= Q(recipient_unique_id__in=potential_duns) | \
+                    Q(parent_recipient_unique_id__in=potential_duns)
 
             queryset = queryset.filter(filter_obj)
 
@@ -222,9 +222,9 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(pop_country_name="UNITED STATES")
+                queryset = queryset.filter(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
             elif value == "foreign":
-                queryset = queryset.exclude(pop_country_name="UNITED STATES")
+                queryset = queryset.exclude(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 

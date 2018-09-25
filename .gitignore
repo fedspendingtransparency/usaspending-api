@@ -5,18 +5,29 @@
 .coverage
 .DS_Store
 
-log/*
-csv_downloads/*
-tmp/*
-usaspending_api/logs/*
-usaspending_api/.idea/*
-usaspending_api/references/.idea/*
-usaspending_api/financial_activities/.idea/*
-.idea/*
+# JetBrains IDEs
+**/.idea/
 
+# Temporary and generated files
+log/*
+usaspending_api/logs/*
+csv_downloads/*
+bulk_downloads/*
+tmp/*
+
+# pyenv ignores
+.python-version
+pyvenv.cfg
+
+# for a project-local (rather than home-dir based) virtual environment directory
+.venv/ 
+
+# direnv ignores
 .direnv/
+.envrc
+
 .pgdump
 .ipynb
 .lprof
-.envrc
 .pytest_cache/*
+pip-selfcheck.json
