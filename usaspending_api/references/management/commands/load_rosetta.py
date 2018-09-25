@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import boto3
 
 from collections import OrderedDict
 from django.conf import settings
@@ -56,11 +57,15 @@ def extract_data_from_source_file(path: str = None) -> dict:
     if path:
         logger.info("Using local file: {}".format(path))
         filepath = path
+        download_path = None
     else:
-        logger.info("Using S3 file: {}".format("TBD"))
+        download_path = "user_reference_docs/DATA Transparency Crosswalk.xlsx"
+        filepath = "temp_data_act_crosswalk.xlsx"
+        logger.info("Using S3 file: {} from {}".format(filepath, settings.PUBLIC_BUCKET_NAME))
+        s3_client = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
+        s3_client.download_file(settings.PUBLIC_BUCKET_NAME, download_path, filepath)
 
     file_size = os.path.getsize(filepath)
-
     wb = load_workbook(filename=filepath)
     sheet = wb["Public"]
     last_column = get_column_letter(sheet.max_column)
@@ -87,16 +92,21 @@ def extract_data_from_source_file(path: str = None) -> dict:
     row_count = len(elements)
     assert list(DB_TO_XLSX_MAPPING.values()) == field_names, "Column headers don't match the headers in the model"
     logger.info("Columns in file: {} with {} rows of elements".format(field_names, row_count))
+
+    if path is None:  # If path is None, it means the file was retrived from S3. Delete the temp file
+        os.unlink(filepath)
+
     return {
-        "headers": headers,
-        "data": elements,
-        "sections": sections,
         "metadata": {
             "total_rows": row_count,
             "total_columns": len(field_names),
-            "file_name": os.path.basename(path),
-            "total_size": "{:.2f}KB".format(float(file_size) / 1000),  # Convert to KB (seems to be 1000 not 1024)
+            "file_name": os.path.basename(filepath),
+            "download_location": download_path,
+            "total_size": "{:.2f}KB".format(float(file_size) / 1024),
         },
+        "headers": headers,
+        "sections": sections,
+        "data": elements,
     }
 
 
