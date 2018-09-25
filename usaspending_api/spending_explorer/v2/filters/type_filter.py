@@ -37,10 +37,13 @@ def get_unreported_data_obj(queryset, filters, limit, spending_type, actual_tota
 
     result_set = []
     result_keys = ['id', 'code', 'type', 'name', 'amount']
+    if spending_type == "federal_account":
+        result_keys.append('account_number')
     for entry in queryset:
         condensed_entry = {}
         for key in result_keys:
-            condensed_entry[key] = entry[key]
+            #front-end specifically requested that id be a string for all types
+            condensed_entry[key] = entry[key] if key != 'id' else str(entry[key])
         result_set.append(condensed_entry)
 
     expected_total = GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter). \
@@ -143,6 +146,8 @@ def type_filter(_type, filters, limit=None):
 
         alt_set = alt_set.all()
         for award in alt_set:
+            #front-end specifically requested that id be a string for all types
+            award['id'] = str(award['id'])
             if _type in ['award', 'award_category']:
                 code = None
                 for code_type in ('piid', 'fain', 'uri'):
