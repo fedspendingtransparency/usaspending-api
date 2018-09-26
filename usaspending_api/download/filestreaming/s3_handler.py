@@ -13,7 +13,8 @@ class S3Handler:
     This class acts a wrapper for S3 URL Signing
     """
 
-    def __init__(self, name, region=settings.USASPENDING_AWS_REGION):
+    def __init__(self, bucket_name, redirect_dir, region=settings.USASPENDING_AWS_REGION,
+                 environment=settings.DOWNLOAD_ENV):
         """
         Creates the object for signing URLS
 
@@ -21,16 +22,22 @@ class S3Handler:
         name -- (String) Name of the S3 bucket
 
         """
-        self.bucketRoute = name
+        self.bucketRoute = bucket_name
+        self.redirect_dir = redirect_dir
         self.region = region
+        self.environment = environment
 
     def get_simple_url(self, file_name):
         """
         Gets URL for read
         """
+        subdomain = 'files'
+        if self.environment != 'production':
+            subdomain = 'files-nonprod'
 
-        s3connection = boto.s3.connect_to_region(self.region)
-        generated = "https://{}/{}/{}".format(s3connection.server_name(), self.bucketRoute, file_name)
+        bucket_url = "https://{}.usaspending.gov/{}/".format(subdomain, self.redirect_dir)
+        env_dir = '' if self.environment == 'production' else '{}/'.format(self.environment)
+        generated = '{}{}{}',format(bucket_url, env_dir, file_name)
         return generated
 
     @staticmethod
