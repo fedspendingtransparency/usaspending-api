@@ -42,7 +42,6 @@ def get_unreported_data_obj(queryset, filters, limit, spending_type, actual_tota
     for entry in queryset:
         condensed_entry = {}
         for key in result_keys:
-            #front-end specifically requested that id be a string for all types
             condensed_entry[key] = entry[key] if key != 'id' else str(entry[key])
         result_set.append(condensed_entry)
 
@@ -146,7 +145,6 @@ def type_filter(_type, filters, limit=None):
 
         alt_set = alt_set.all()
         for award in alt_set:
-            #front-end specifically requested that id be a string for all types
             award['id'] = str(award['id'])
             if _type in ['award', 'award_category']:
                 code = None

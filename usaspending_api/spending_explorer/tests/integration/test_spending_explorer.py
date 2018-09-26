@@ -1,4 +1,5 @@
 import json
+import copy
 
 import pytest
 from model_mommy import mommy
@@ -7,16 +8,13 @@ from rest_framework import status
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass, \
     SubmissionAttributes, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency
 
 
 ENDPOINT_URL = '/api/v2/spending/'
 CONTENT_TYPE = 'application/json'
-
-
-@pytest.mark.django_db
-def test_unreported_data_actual_value_file_b(client):
-    models_to_mock = [
+GLOBAL_MOCK_DICT = [
         {
             'model': GTASTotalObligation,
             'fiscal_year': 1600,
@@ -54,12 +52,21 @@ def test_unreported_data_actual_value_file_b(client):
         {
             'model': TreasuryAppropriationAccount,
             'treasury_account_identifier': -1,
-            'funding_toptier_agency_id': -1
+            'funding_toptier_agency_id': -1,
+            'federal_account_id': 1,
+        },
+        {
+            'model': FederalAccount,
+            'id': 1,
+            'account_title': 'Tommy Two-Tone',
+            'agency_identifier': '867',
+            'main_account_code': '5309'
         },
         {
             'model': TreasuryAppropriationAccount,
             'treasury_account_identifier': -2,
-            'funding_toptier_agency_id': -2
+            'funding_toptier_agency_id': -2,
+            'federal_account_id': 1,
         },
         {
             'model': FinancialAccountsByProgramActivityObjectClass,
@@ -84,7 +91,12 @@ def test_unreported_data_actual_value_file_b(client):
         }
     ]
 
-    for entry in models_to_mock:
+
+@pytest.mark.django_db
+def test_unreported_data_actual_value_file_b(client):
+
+    models = copy.deepcopy(GLOBAL_MOCK_DICT)
+    for entry in models:
         mommy.make(entry.pop('model'), **entry)
 
     json_request = {
@@ -261,6 +273,27 @@ def test_unreported_data_no_data_available(client):
     }
 
     assert expected_results == actual_results
+
+
+@pytest.mark.django_db
+def test_federal_account_linkage(client):
+    models = copy.deepcopy(GLOBAL_MOCK_DICT)
+    for entry in models:
+        mommy.make(entry.pop('model'), **entry)
+    json_request = {
+        'type': 'federal_account',
+        'filters': {
+            'fy': '1600',
+            'quarter': '1'
+        }
+    }
+    response = client.post(
+        path=ENDPOINT_URL,
+        content_type=CONTENT_TYPE,
+        data=json.dumps(json_request)
+    )
+    json_response = response.json()
+    assert json_response['results'][0]['account_number'] == '867-5309'
 
 
 @pytest.mark.django_db
