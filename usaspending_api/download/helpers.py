@@ -123,7 +123,7 @@ def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, g
         bytes = min([bytes_per_chunk, remaining_bytes])
         part_num = i + 1
         pool.apply_async(_upload_part, [bucketname, regionname, mp.id,
-                         part_num, source_path, offset, bytes])
+                                        part_num, source_path, offset, bytes])
     pool.close()
     pool.join()
 
@@ -189,7 +189,7 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 # Split csv function mostly copied from Jordi Rivero's solution
 # https://gist.github.com/jrivero/1085501
 def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv', output_path='.',
-              keep_headers=True):
+              keep_headers=True, file_name=None):
     """Splits a CSV file into multiple pieces.
 
     A quick bastardization of the Python CSV library.
@@ -205,10 +205,21 @@ def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='o
     split_csvs = []
     reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
     current_piece = 1
-    current_out_path = os.path.join(
-        output_path,
-        output_name_template % current_piece
-    )
+    if file_name is not None:
+        zip_idx = file_name.find(".zip")
+
+        if(zip_idx > 0):
+            file_name = "%s.csv" % file_name[:zip_idx]
+
+        current_out_path = os.path.join(
+            output_path,
+            file_name
+        )
+    else:
+        current_out_path = os.path.join(
+            output_path,
+            output_name_template % current_piece
+        )
     split_csvs.append(current_out_path)
     current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
     current_limit = row_limit
