@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -68,7 +68,11 @@ class Command(BaseCommand):
             # Only use files that match the date we're currently checking
             for item in file_list:
                 # if the date on the file is the same day as we're checking
-                if re.search(regex_str, item) and '/' not in item and datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
+                if (
+                    re.search(regex_str, item) and
+                    '/' not in item and
+                    datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date
+                ):
                     # make the url params to pass
                     url_params = {
                         'Bucket': fpds_bucket_name,
@@ -97,25 +101,23 @@ class Command(BaseCommand):
 
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
-        db_query = 'SELECT detached_award_procurement_id ' \
-                   'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s'
+        db_query = "SELECT detached_award_procurement_id " \
+                   "FROM detached_award_procurement " \
+                   "WHERE updated_at >= %s"
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
-        # db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
-        db_rows = db_cursor.fetchall()
+        db_rows = [id[0] for id in db_cursor.fetchall()]
 
         logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
         return db_rows
 
     @staticmethod
     def fetch_fpds_data_generator(id_list):
+        start_time = datetime.now()
 
         db_cursor = connections['data_broker'].cursor()
 
-        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
-        # by the Broker's PK since every modification is a new row
         db_query = "SELECT * " \
                    "FROM detached_award_procurement " \
                    "WHERE detached_award_procurement_id IN (%s)"
@@ -123,14 +125,17 @@ class Command(BaseCommand):
         total_id_count = len(id_list)
         starting_index = 0
         ending_index = BATCH_FETCH_SIZE if total_id_count > BATCH_FETCH_SIZE else total_id_count
-        for fpds_ids_batch_size in id_list[starting_index:ending_index]:
-            logger.info("Fetching next {}/{} records from broker".format(BATCH_FETCH_SIZE, len(id_list)))
-            db_args = [fpds_ids_batch_size]
+        while True:
+            fpds_ids_batch = id_list[starting_index:ending_index]
+            log_msg = "[{}] Fetching {}-{} out of {} records from broker"
+            logger.info(log_msg.format(datetime.now() - start_time, starting_index, ending_index, total_id_count))
 
-            db_cursor.execute(db_query, db_args)
-            db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+            db_args = ",".join(str(id) for id in fpds_ids_batch)
+            db_cursor.execute(db_query % db_args)
+            yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
-            yield db_rows
+            if ending_index == total_id_count:
+                break
             starting_index = ending_index
             if ending_index + BATCH_FETCH_SIZE > total_id_count:
                 ending_index = total_id_count
@@ -209,8 +214,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def insert_new_fpds(self, to_insert, total_rows):
-        logger.info('Starting insertion of new FPDS data')
-
         place_of_performance_field_map = {
             "location_country_code": "place_of_perform_country_c",
             "country_name": "place_of_perf_country_desc",
@@ -242,13 +245,7 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5"
         }
 
-        start_time = datetime.now()
-
         for index, row in enumerate(to_insert, 1):
-            if not (index % BATCH_FETCH_SIZE):
-                logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
-                                                                                       datetime.now() - start_time))
-
             upper_case_dict_values(row)
 
             # Create new LegalEntityLocation and LegalEntity from the row data
@@ -331,7 +328,7 @@ class Command(BaseCommand):
             unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
 
             if unique_fpds.first():
-                transaction_normalized_dict["update_date"] = datetime.utcnow()
+                transaction_normalized_dict["update_date"] = datetime.now(timezone.utc)
                 transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
 
                 # update TransactionNormalized
