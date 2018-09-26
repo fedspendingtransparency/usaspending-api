@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import urllib.request
+import time
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -145,11 +146,6 @@ class Command(BaseCommand):
             else:
                 ending_index += BATCH_FETCH_SIZE
 
-    @transaction.atomic
-    def insert_all_new_fpds(self, total_insert):
-        for to_insert in self.fetch_fpds_data_generator(total_insert):
-            self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
-
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
         tn_count = TransactionNormalized.objects.filter(award_id__in=related_award_ids).values('award_id') \
@@ -220,6 +216,7 @@ class Command(BaseCommand):
             db_query = ''.join(queries)
             db_cursor.execute(db_query, [])
 
+    @transaction.atomic
     def insert_new_fpds(self, to_insert, total_rows):
         place_of_performance_field_map = {
             "location_country_code": "place_of_perform_country_c",
@@ -398,7 +395,10 @@ class Command(BaseCommand):
         if len(total_insert) > 0:
             # Add FPDS records
             with timer('insertion of new FPDS data in batches', logger.info):
-                self.insert_all_new_fpds(total_insert)
+                for to_insert in self.fetch_fpds_data_generator(total_insert):
+                    start = time.perf_counter()
+                    self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
+                    logger.info("Insertion took {:.2f}s".format(time.perf_counter() - start))
 
             # Update Awards based on changed FPDS records
             with timer('updating awards to reflect their latest associated transaction info', logger.info):
