@@ -37,7 +37,7 @@ class S3Handler:
 
         bucket_url = "https://{}.usaspending.gov/{}/".format(subdomain, self.redirect_dir)
         env_dir = '' if self.environment == 'production' else '{}/'.format(self.environment)
-        generated = '{}{}{}',format(bucket_url, env_dir, file_name)
+        generated = '{}{}{}'.format(bucket_url, env_dir, file_name)
         return generated
 
     @staticmethod
