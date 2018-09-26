@@ -132,15 +132,23 @@ class Command(BaseCommand):
 
             db_args = ",".join(str(id) for id in fpds_ids_batch)
             db_cursor.execute(db_query % db_args)
-            yield dictfetchall(db_cursor)  # this returns an OrderedDict
+            db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+            if len(db_rows) == 0:
+                break
+            yield db_rows
 
-            if ending_index == total_id_count:
+            if ending_index >= total_id_count:
                 break
             starting_index = ending_index
-            if ending_index + BATCH_FETCH_SIZE > total_id_count:
+            if (ending_index + BATCH_FETCH_SIZE) > total_id_count:
                 ending_index = total_id_count
             else:
                 ending_index += BATCH_FETCH_SIZE
+
+    @transaction.atomic
+    def insert_all_new_fpds(self, total_insert):
+        for to_insert in self.fetch_fpds_data_generator(total_insert):
+            self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
 
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
@@ -212,7 +220,6 @@ class Command(BaseCommand):
             db_query = ''.join(queries)
             db_cursor.execute(db_query, [])
 
-    @transaction.atomic
     def insert_new_fpds(self, to_insert, total_rows):
         place_of_performance_field_map = {
             "location_country_code": "place_of_perform_country_c",
@@ -391,8 +398,7 @@ class Command(BaseCommand):
         if len(total_insert) > 0:
             # Add FPDS records
             with timer('insertion of new FPDS data in batches', logger.info):
-                for to_insert in self.fetch_fpds_data_generator(total_insert):
-                    self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
+                self.insert_all_new_fpds(total_insert)
 
             # Update Awards based on changed FPDS records
             with timer('updating awards to reflect their latest associated transaction info', logger.info):
