@@ -84,7 +84,7 @@ This route sends a request to the backend to retrieve spending data information 
 {
     "amount": 141781627513.91,
     "id": 577,
-    "type": "agency",
+    "type": "federal_account",
     "name": "Department of Veterans Affairs",
     "code": "036",
     "total": 141781627513.91
