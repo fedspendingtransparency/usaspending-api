@@ -198,6 +198,7 @@ def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='o
         `output_name_template`: A %s-style template for the numbered output files.
         `output_path`: Where to stick the output files.
         `keep_headers`: Whether or not to print the headers in each output file.
+        `file_name`: Alternative naming convention for output files (optional)
     Example usage:
         >> from toolbox import csv_splitter;
         >> csv_splitter.split('/home/ben/input.csv');
