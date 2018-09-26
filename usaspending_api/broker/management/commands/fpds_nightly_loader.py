@@ -5,55 +5,44 @@ import os
 import re
 import urllib.request
 from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.models import Count
-from django.conf import settings
 
-from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
-from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
+from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
+from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-award_update_id_list = []
+AWARD_UPDATE_ID_LIST = []
+BATCH_FETCH_SIZE = 10000
 
 
 class Command(BaseCommand):
-    help = "Update FPDS data nightly"
+    help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
 
     @staticmethod
-    def get_fpds_data(date):
+    def get_deleted_fpds_data_from_s3(date):
         if not hasattr(date, 'month'):
             date = datetime.strptime(date, '%Y-%m-%d').date()
-
-        db_cursor = connections['data_broker'].cursor()
-
-        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
-        # by the Broker's PK since every modification is a new row
-        db_query = 'SELECT * ' \
-                   'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s'
-        db_args = [date]
-
-        db_cursor.execute(db_query, db_args)
-        db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
-
         ids_to_delete = []
+        regex_str = '.*_delete_records_(IDV|award).*'
 
         if settings.IS_LOCAL:
             for file in os.listdir(settings.CSV_LOCAL_PATH):
-                if re.search('.*_delete_records_(IDV|award).*', file) and \
-                            datetime.strptime(file[:file.find('_')], '%m-%d-%Y').date() >= date:
+                if re.search(regex_str, file) and datetime.strptime(file[:file.find('_')], '%m-%d-%Y').date() >= date:
                     with open(settings.CSV_LOCAL_PATH + file, 'r') as current_file:
                         # open file, split string to array, skip the header
                         reader = csv.reader(current_file.read().splitlines())
@@ -79,8 +68,7 @@ class Command(BaseCommand):
             # Only use files that match the date we're currently checking
             for item in file_list:
                 # if the date on the file is the same day as we're checking
-                if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
-                                datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
+                if re.search(regex_str, item) and '/' not in item and datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
                     # make the url params to pass
                     url_params = {
                         'Bucket': fpds_bucket_name,
@@ -97,10 +85,57 @@ class Command(BaseCommand):
 
                     ids_to_delete += unique_key_list
 
-        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
+        return ids_to_delete
 
-        return db_rows, ids_to_delete
+    @staticmethod
+    def get_fpds_transaction_ids(date):
+        if not hasattr(date, 'month'):
+            date = datetime.strptime(date, '%Y-%m-%d').date()
+
+        db_cursor = connections['data_broker'].cursor()
+
+        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
+        # by the Broker's PK since every modification is a new row
+        db_query = 'SELECT detached_award_procurement_id ' \
+                   'FROM detached_award_procurement ' \
+                   'WHERE updated_at >= %s'
+        db_args = [date]
+
+        db_cursor.execute(db_query, db_args)
+        # db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+        db_rows = db_cursor.fetchall()
+
+        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        return db_rows
+
+    @staticmethod
+    def fetch_fpds_data_generator(id_list):
+
+        db_cursor = connections['data_broker'].cursor()
+
+        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
+        # by the Broker's PK since every modification is a new row
+        db_query = "SELECT * " \
+                   "FROM detached_award_procurement " \
+                   "WHERE detached_award_procurement_id IN (%s)"
+
+        total_id_count = len(id_list)
+        starting_index = 0
+        ending_index = BATCH_FETCH_SIZE if total_id_count > BATCH_FETCH_SIZE else total_id_count
+        for fpds_ids_batch_size in id_list[starting_index:ending_index]:
+            logger.info("Fetching next {}/{} records from broker".format(BATCH_FETCH_SIZE, len(id_list)))
+            db_args = [fpds_ids_batch_size]
+
+            db_cursor.execute(db_query, db_args)
+            db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+
+            yield db_rows
+            starting_index = ending_index
+            if ending_index + BATCH_FETCH_SIZE > total_id_count:
+                ending_index = total_id_count
+            else:
+                ending_index += BATCH_FETCH_SIZE
 
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
@@ -148,8 +183,8 @@ class Command(BaseCommand):
             queries.extend([fpds, tn])
         # Update Awards
         if update_award_ids:
-            # Adding to award_update_id_list so the latest_transaction will be recalculated
-            award_update_id_list.extend(update_award_ids)
+            # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
+            AWARD_UPDATE_ID_LIST.extend(update_award_ids)
             update_awards_query = 'UPDATE "awards" ' \
                                   'SET "latest_transaction_id" = null ' \
                                   'WHERE "id" IN ({});'.format(update_award_str_ids)
@@ -210,7 +245,7 @@ class Command(BaseCommand):
         start_time = datetime.now()
 
         for index, row in enumerate(to_insert, 1):
-            if not (index % 1000):
+            if not (index % BATCH_FETCH_SIZE):
                 logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
@@ -253,7 +288,7 @@ class Command(BaseCommand):
             award.save()
 
             # Append row to list of Awards updated
-            award_update_id_list.append(award.id)
+            AWARD_UPDATE_ID_LIST.append(award.id)
 
             try:
                 last_mod_date = datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S.%f").date()
@@ -328,7 +363,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logger.info('Starting FPDS nightly data load...')
+        logger.info('==== Starting FPDS nightly data load ====')
 
         if options.get('date'):
             date = options.get('date')[0]
@@ -344,44 +379,45 @@ class Command(BaseCommand):
 
         logger.info('Processing data for FPDS starting from %s' % date)
 
-        with timer('retrieving/diff-ing FPDS Data', logger.info):
-            to_insert, ids_to_delete = self.get_fpds_data(date=date)
+        with timer('retrieval of deleted FPDS IDs', logger.info):
+            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
 
-        total_rows = len(to_insert)
-        total_rows_delete = len(ids_to_delete)
-
-        if total_rows_delete > 0:
-            with timer('deleting stale FPDS data', logger.info):
+        if len(ids_to_delete) > 0:
+            with timer("deletion of all stale FPDS data", logger.info):
                 self.delete_stale_fpds(ids_to_delete=ids_to_delete)
         else:
-            logger.info('Nothing to delete...')
+            logger.info('No FPDS records to delete at this juncture')
 
-        if total_rows > 0:
+        with timer('retrieval of new/modified FPDS data ID list', logger.info):
+            total_insert = self.get_fpds_transaction_ids(date=date)
+
+        if len(total_insert) > 0:
             # Add FPDS records
-            with timer('inserting new FPDS data', logger.info):
-                self.insert_new_fpds(to_insert=to_insert, total_rows=total_rows)
+            with timer('insertion of new FPDS data in batches', logger.info):
+                for to_insert in self.fetch_fpds_data_generator(total_insert):
+                    self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
 
             # Update Awards based on changed FPDS records
             with timer('updating awards to reflect their latest associated transaction info', logger.info):
-                update_awards(tuple(award_update_id_list))
+                update_awards(tuple(AWARD_UPDATE_ID_LIST))
 
             # Update FPDS-specific Awards based on the info in child transactions
             with timer('updating contract-specific awards to reflect their latest transaction info', logger.info):
-                update_contract_awards(tuple(award_update_id_list))
+                update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
 
             # Update AwardCategories based on changed FPDS records
             with timer('updating award category variables', logger.info):
-                update_award_categories(tuple(award_update_id_list))
+                update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
             # Check the linkages from file C to FPDS records and update any that are missing
             with timer('updating C->D linkages', logger.info):
                 update_c_to_d_linkages('contract')
         else:
-            logger.info('Nothing to insert...')
+            logger.info('No FPDS records to insert or modify at this juncture')
 
         # Update the date for the last time the data load was run
         ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).delete()
         ExternalDataLoadDate(last_load_date=start_date,
                              external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).save()
 
-        logger.info('FPDS NIGHTLY UPDATE FINISHED!')
+        logger.info("FPDS NIGHTLY UPDATE COMPLETE")
