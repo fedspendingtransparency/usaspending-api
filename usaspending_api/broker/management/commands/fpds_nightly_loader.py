@@ -110,10 +110,11 @@ class Command(BaseCommand):
         total_uid_count = len(dap_uid_list)
 
         for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
-            fpds_ids_batch = dap_uid_list[i:i + BATCH_FETCH_SIZE]
+            max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
+            fpds_ids_batch = dap_uid_list[i:max_index]
 
             log_msg = "[{}] Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(datetime.now() - start_time, i, i + BATCH_FETCH_SIZE, total_uid_count))
+            logger.info(log_msg.format(datetime.now() - start_time, i, max_index, total_uid_count))
 
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
@@ -165,39 +166,25 @@ class Command(BaseCommand):
         queries = []
         # Transaction FPDS
         if delete_transaction_ids:
-            fpds = (
-                "DELETE "
-                'FROM "transaction_fpds" tf '
-                'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
-            )
+            fpds = "DELETE FROM transaction_fpds tf WHERE tf.transaction_id IN ({});".format(delete_transaction_str_ids)
             # Transaction Normalized
-            tn = (
-                "DELETE "
-                'FROM "transaction_normalized" tn '
-                'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
-            )
+            tn = "DELETE FROM transaction_normalized tn WHERE tn.id IN ({});".format(delete_transaction_str_ids)
             queries.extend([fpds, tn])
         # Update Awards
         if update_award_ids:
             # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
             AWARD_UPDATE_ID_LIST.extend(update_award_ids)
-            update_awards_query = (
-                'UPDATE "awards" '
-                'SET "latest_transaction_id" = null '
-                'WHERE "id" IN ({});'.format(update_award_str_ids)
-            )
+            query_str = "UPDATE awards SET latest_transaction_id = null WHERE id IN ({});"
+            update_awards_query = query_str.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:
             # Financial Accounts by Awards
-            fa = (
-                'UPDATE "financial_accounts_by_awards" '
-                'SET "award_id" = null '
-                'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
-            )
+            query_str = "UPDATE financial_accounts_by_awards SET award_id = null WHERE award_id IN ({});"
+            fa = query_str.format(delete_award_str_ids)
             # Subawards
-            sub = 'UPDATE "subaward" ' 'SET "award_id" = null ' 'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            sub = "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(delete_award_str_ids)
             # Delete Subawards
-            delete_awards_query = "DELETE " 'FROM "awards" a ' 'WHERE a."id" IN ({});'.format(delete_award_str_ids)
+            delete_awards_query = "DELETE FROM awards a WHERE a.id IN ({});".format(delete_award_str_ids)
             queries.extend([fa, sub, delete_awards_query])
         if queries:
             db_query = "".join(queries)
