@@ -3,8 +3,8 @@ import csv
 import logging
 import os
 import re
-import urllib.request
 import time
+import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -90,10 +90,7 @@ class Command(BaseCommand):
     @staticmethod
     def get_fpds_transaction_ids(date):
         db_cursor = connections["data_broker"].cursor()
-
-        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
-        # by the Broker's PK since every modification is a new row
-        db_query = "SELECT detached_award_procurement_id " "FROM detached_award_procurement " "WHERE updated_at >= %s"
+        db_query = "SELECT detached_award_procurement_id FROM detached_award_procurement WHERE updated_at >= %s;"
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -108,7 +105,7 @@ class Command(BaseCommand):
 
         db_cursor = connections["data_broker"].cursor()
 
-        db_query = "SELECT * " "FROM detached_award_procurement " "WHERE detached_award_procurement_id IN (%s)"
+        db_query = "SELECT * FROM detached_award_procurement WHERE detached_award_procurement_id IN ({});"
 
         total_uid_count = len(dap_uid_list)
 
@@ -118,7 +115,7 @@ class Command(BaseCommand):
             log_msg = "[{}] Fetching {}-{} out of {} records from broker"
             logger.info(log_msg.format(datetime.now() - start_time, i, i + BATCH_FETCH_SIZE, total_uid_count))
 
-            db_cursor.execute(db_query % ",".join(str(id) for id in fpds_ids_batch))
+            db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
     def find_related_awards(self, transactions):
@@ -150,11 +147,8 @@ class Command(BaseCommand):
         return update_awards, delete_awards
 
     @transaction.atomic
-    def delete_stale_fpds(self, ids_to_delete=None):
+    def delete_stale_fpds(self, ids_to_delete):
         logger.info("Starting deletion of stale FPDS data")
-
-        if not ids_to_delete:
-            return
 
         transactions = TransactionNormalized.objects.filter(
             contract_data__detached_award_procurement_id__in=ids_to_delete
