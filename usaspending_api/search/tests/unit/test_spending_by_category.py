@@ -530,7 +530,7 @@ def test_category_psc_subawards(mock_matviews_qs, mock_psc):
     assert expected_response == spending_by_category_logic
 
 
-def test_category_naics_awards(mock_matviews_qs):
+def test_category_naics_awards(mock_matviews_qs, mock_naics):
     mock_model_1 = MockModel(
         naics_code="NAICS 1234", naics_description="NAICS DESC 1234", generated_pragmatic_obligation=1
     )
@@ -544,7 +544,11 @@ def test_category_naics_awards(mock_matviews_qs):
         naics_code="NAICS 9876", naics_description="NAICS DESC 9876", generated_pragmatic_obligation=2
     )
 
+    mock_naics_1 = MockModel(code="NAICS 1234", description="SOURCE NAICS DESC 1234", year=1955)
+    mock_naics_2 = MockModel(code="NAICS 9876", description="SOURCE NAICS DESC 9876", year=1985)
+
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3, mock_model_4])
+    add_to_mock_objects(mock_naics, [mock_naics_1, mock_naics_2])
 
     test_payload = {"category": "naics", "subawards": False, "page": 1, "limit": 50}
 
@@ -555,8 +559,8 @@ def test_category_naics_awards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
     }
 

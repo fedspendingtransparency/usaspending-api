@@ -61,6 +61,15 @@ def mock_cfda(monkeypatch):
 
 
 @pytest.fixture()
+def mock_naics(monkeypatch):
+    """Mocks all agency querysets into a single mock"""
+    mock_naics_qs = MockSet()
+    monkeypatch.setattr('usaspending_api.references.models.NAICS.objects', mock_naics_qs)
+    yield mock_naics_qs
+    mock_naics_qs.delete()
+
+
+@pytest.fixture()
 def mock_recipients(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_recipient_qs = MockSet()
