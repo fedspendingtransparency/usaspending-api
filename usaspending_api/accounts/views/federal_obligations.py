@@ -51,13 +51,13 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
         queryset = queryset.annotate(
             account_title=F('treasury_account_identifier__federal_account__account_title'),
             id=F('treasury_account_identifier__federal_account')
-
         )
         # Sum and sort descending obligations_incurred by account
         queryset = queryset.values(
             'id',
-            'account_title'
+            'account_title',
         ).annotate(
+            account_number=F('treasury_account_identifier__federal_account__federal_account_code'),
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe')
         ).order_by('-obligated_amount')
         # Return minor object class vars

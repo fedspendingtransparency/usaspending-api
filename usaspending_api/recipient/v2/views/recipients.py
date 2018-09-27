@@ -186,7 +186,7 @@ def extract_business_categories(recipient_name, recipient_duns):
     # combine with latest transaction's business categories
     le_business_cat = LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns) \
         .order_by('-update_date').values('business_categories').first()
-    if le_business_cat:
+    if le_business_cat and le_business_cat['business_categories']:
         business_categories |= set(le_business_cat['business_categories'])
 
     return list(business_categories)
