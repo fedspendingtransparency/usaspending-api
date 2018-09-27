@@ -1,7 +1,6 @@
 import logging
 import os
 import boto3
-import io
 import pandas as pd
 
 from django.core.management.base import BaseCommand
