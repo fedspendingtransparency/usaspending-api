@@ -78,6 +78,20 @@ This route sends a request to the backend to retrieve spending data information 
 }
 ```
 
+**NOTE**: For `type: federal_account` responses, the response object will also contain an `account_number` field containing the federal account code,. i.e.,
+
+```
+{
+    "amount": 141781627513.91,
+    "id": 577,
+    "type": "federal_account",
+    "name": "Department of Veterans Affairs",
+    "code": "036",
+    "total": 141781627513.91
+    "account_number": "123-4567"
+}
+```
+
 **Response Key Descriptions**
 
 **id** - The Database Id for the requested *type*
