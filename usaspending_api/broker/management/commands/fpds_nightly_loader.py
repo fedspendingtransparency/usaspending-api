@@ -25,10 +25,9 @@ from usaspending_api.references.models import LegalEntity, Agency
 
 
 logger = logging.getLogger('console')
-exception_logger = logging.getLogger("exceptions")
 
 AWARD_UPDATE_ID_LIST = []
-BATCH_FETCH_SIZE = 10000
+BATCH_FETCH_SIZE = 2500
 
 
 class Command(BaseCommand):
@@ -36,8 +35,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_deleted_fpds_data_from_s3(date):
-        if not hasattr(date, 'month'):
-            date = datetime.strptime(date, '%Y-%m-%d').date()
         ids_to_delete = []
         regex_str = '.*_delete_records_(IDV|award).*'
 
@@ -95,9 +92,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_fpds_transaction_ids(date):
-        if not hasattr(date, 'month'):
-            date = datetime.strptime(date, '%Y-%m-%d').date()
-
         db_cursor = connections['data_broker'].cursor()
 
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
@@ -114,7 +108,7 @@ class Command(BaseCommand):
         return db_rows
 
     @staticmethod
-    def fetch_fpds_data_generator(id_list):
+    def fetch_fpds_data_generator(dap_uid_list):
         start_time = datetime.now()
 
         db_cursor = connections['data_broker'].cursor()
@@ -123,28 +117,16 @@ class Command(BaseCommand):
                    "FROM detached_award_procurement " \
                    "WHERE detached_award_procurement_id IN (%s)"
 
-        total_id_count = len(id_list)
-        starting_index = 0
-        ending_index = BATCH_FETCH_SIZE if total_id_count > BATCH_FETCH_SIZE else total_id_count
-        while True:
-            fpds_ids_batch = id_list[starting_index:ending_index]
+        total_uid_count = len(dap_uid_list)
+
+        for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
+            fpds_ids_batch = dap_uid_list[i:i + BATCH_FETCH_SIZE]
+
             log_msg = "[{}] Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(datetime.now() - start_time, starting_index, ending_index, total_id_count))
+            logger.info(log_msg.format(datetime.now() - start_time, i, i + BATCH_FETCH_SIZE, total_uid_count))
 
-            db_args = ",".join(str(id) for id in fpds_ids_batch)
-            db_cursor.execute(db_query % db_args)
-            db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
-            if len(db_rows) == 0:
-                break
-            yield db_rows
-
-            if ending_index >= total_id_count:
-                break
-            starting_index = ending_index
-            if (ending_index + BATCH_FETCH_SIZE) > total_id_count:
-                ending_index = total_id_count
-            else:
-                ending_index += BATCH_FETCH_SIZE
+            db_cursor.execute(db_query % ",".join(str(id) for id in fpds_ids_batch))
+            yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
@@ -360,7 +342,7 @@ class Command(BaseCommand):
             dest="date",
             nargs='+',
             type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD"
         )
 
     def handle(self, *args, **options):
