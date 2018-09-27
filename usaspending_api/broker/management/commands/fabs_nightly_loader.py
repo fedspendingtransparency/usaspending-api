@@ -312,9 +312,9 @@ class Command(BaseCommand):
             aws_region = os.environ.get('USASPENDING_AWS_REGION')
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
             s3client = boto3.client('s3', region_name=aws_region)
-            contents = io.StringIO()
+            contents = bytes()
             for row in file_with_headers:
-                contents.write(row + '\n')
+                contents += bytes('{}\n'.format(row).encode())
             s3client.put_object(Bucket=fpds_bucket_name, Key=file_name, Body=contents)
 
     def add_arguments(self, parser):
