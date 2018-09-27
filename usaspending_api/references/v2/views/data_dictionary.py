@@ -13,7 +13,7 @@ logger = logging.getLogger("console")
 
 class DataDictionaryViewSet(APIDocumentationView):
     """
-
+    endpoint_doc: /references/data_dictionary.md
     """
 
     @cache_response()
