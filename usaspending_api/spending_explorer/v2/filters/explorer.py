@@ -43,11 +43,12 @@ class Explorer(object):
         # Federal Account Queryset
         queryset = self.queryset.annotate(
             id=F('treasury_account__federal_account'),
+            account_number=F('treasury_account__federal_account__federal_account_code'),
             type=Value('federal_account', output_field=CharField()),
             name=F('treasury_account__federal_account__account_title'),
             code=F('treasury_account__federal_account__main_account_code')
         ).values(
-            'id', 'type', 'name', 'code', 'amount').annotate(
+            'id', 'account_number', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
         return queryset

@@ -1,5 +1,5 @@
 ## Federal Obligations
-**Route:** `v2/federal_obligations?fiscal_year=[year]&federal_account_id=[id]`
+**Route:** `v2/federal_obligations?fiscal_year=[year]&funding_agency_id=[id]`
 
 **Example:** `v2/federal_obligations?fiscal_year=2017&funding_agency_id=1068`
 
@@ -11,7 +11,7 @@ This route sends a request to the backend to retrieve federal obligations.
 ### Query Parameters Description
 
 * `year` - **REQUIRED** - Required parameter indicating what fiscal year to retrieve federal obligations.
-* `id` - **REQUIRED** - Required parameter indicating what Agency to retrieve federal obligations for.
+* `funding_agency_id` - **REQUIRED** - Required parameter indicating what Agency to retrieve federal obligations for.
 * `limit` - **OPTIONAL** - How many results are returned.
 * `page` - **OPTIONAL** - What page of results are returned.
 
@@ -31,21 +31,25 @@ This route sends a request to the backend to retrieve federal obligations.
     "results": [
         {
             "id": "2497",
+            "account_number":"020-1234",
             "account_title": "Federal Direct Student Loan Program, Education",
             "obligated_amount": "45538408088.64"
         },
         {
             "id": "2484",
+            "account_number":"020-1534",
             "account_title": "Student Financial Assistance, Education",
             "obligated_amount": "33796974073.25"
         },
         {
             "id": "2509",
+            "account_number":"070-1234",
             "account_title": "Education for the Disadvantaged, Education",
             "obligated_amount": "16789619206.31"
         },
         {
             "id": "2500",
+            "account_number":"070-1534",
             "account_title": "Special Education, Education",
             "obligated_amount": "13063113992.31"
         },...
