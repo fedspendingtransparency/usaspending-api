@@ -205,7 +205,7 @@ class Command(BaseCommand):
         # moving it to self.bucket as it may be used in different cases
         bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
         region_name = settings.USASPENDING_AWS_REGION
-        self.bucket = boto3.client('s3', region_name=region_name).Bucket(bucket_name)
+        self.bucket = boto3.resource('s3', region_name=region_name).Bucket(bucket_name)
 
         if not clobber:
             reuploads = []

@@ -152,7 +152,7 @@ class Command(BaseCommand):
                                 values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
-        bucket = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION).Bucket(settings.FPDS_BUCKET_NAME)
+        bucket = boto3.resource('s3', region_name=settings.USASPENDING_AWS_REGION).Bucket(settings.FPDS_BUCKET_NAME)
 
         all_deletions = pd.DataFrame()
         for key in bucket.objects.all():
