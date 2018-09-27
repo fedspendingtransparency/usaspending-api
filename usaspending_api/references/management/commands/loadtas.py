@@ -1,4 +1,4 @@
-import boto
+import boto3
 import logging
 import os
 
@@ -22,9 +22,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         is_remote_file = len(options['location'][0].split('.')) == 1
         if is_remote_file:
-            s3connection = boto.s3.connect_to_region(os.environ.get('USASPENDING_AWS_REGION'))
-            s3bucket = s3connection.lookup(options['location'][0])
-            file_path = s3bucket.get_key('cars_tas.csv')
+            s3connection = boto3.client('s3', region_name=os.environ.get('USASPENDING_AWS_REGION'))
+            file_path = s3connection.get_object(Bucket=options['location'][0], Key='cars_tas.csv')
         else:
             file_path = options['location'][0]
 

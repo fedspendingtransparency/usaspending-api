@@ -1,4 +1,4 @@
-import boto
+import boto3
 import csv
 import logging
 import math
@@ -104,16 +104,15 @@ def verify_requested_columns_available(sources, requested):
 def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, guess_mimetype=True,
                      parallel_processes=4):
     """Parallel multipart upload."""
-    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
+    s3client = boto3.client('s3', region_name=regionname)
     if guess_mimetype:
         mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
         headers.update({'Content-Type': mtype})
 
-    mp = bucket.initiate_multipart_upload(keyname, headers=headers)
+    mp = s3client.create_multipart_upload(Bucket=bucketname, Key=keyname, headers=headers)
 
     source_size = os.stat(source_path).st_size
-    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)),
-                          5242880)
+    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     chunk_amount = int(math.ceil(source_size / float(bytes_per_chunk)))
 
     pool = multiprocessing.Pool(processes=parallel_processes)
@@ -122,30 +121,28 @@ def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, g
         remaining_bytes = source_size - offset
         bytes = min([bytes_per_chunk, remaining_bytes])
         part_num = i + 1
-        pool.apply_async(_upload_part, [bucketname, regionname, mp.id,
-                         part_num, source_path, offset, bytes])
+        pool.apply_async(_upload_part, [bucketname, regionname, keyname, mp['UploadId'], part_num, source_path, offset,
+                                        bytes])
     pool.close()
     pool.join()
 
-    if len(mp.get_all_parts()) == chunk_amount:
-        mp.complete_upload()
+    if len(s3client.list_parts(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])['Parts']) == chunk_amount:
+        s3client.complete_multipart_upload(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])
     else:
-        mp.cancel_upload()
+        s3client.abort_multipart_upload(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])
 
 
-def _upload_part(bucketname, regionname, multipart_id, part_num, source_path, offset, bytes, amount_of_retries=10):
+def _upload_part(bucketname, regionname, keyname, multipart_id, part_num, source_path, offset, bytes,
+                 amount_of_retries=10):
     """Uploads a part with retries."""
-    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
+    s3client = boto3.client('s3', region_name=regionname)
 
     def _upload(retries_left=amount_of_retries):
         try:
             logging.info('Start uploading part #%d ...' % part_num)
-            for mp in bucket.get_all_multipart_uploads():
-                if mp.id == multipart_id:
-                    with FileChunkIO(source_path, 'r', offset=offset,
-                                     bytes=bytes) as fp:
-                        mp.upload_part_from_file(fp=fp, part_num=part_num)
-                    break
+            with FileChunkIO(source_path, 'r', offset=offset, bytes=bytes) as fp:
+                s3client.upload_part(Bucket=bucketname, Key=keyname, Body=fp, PartNumber=part_num,
+                                     UploadId=multipart_id)
         except Exception as exc:
             if retries_left:
                 _upload(retries_left=retries_left - 1)

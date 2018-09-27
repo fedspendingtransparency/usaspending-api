@@ -1,4 +1,4 @@
-import boto
+import boto3
 import copy
 import datetime
 import json
@@ -556,11 +556,11 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
         delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
         # Retrieve and filter the files we need
-        bucket = boto.s3.connect_to_region(self.s3_handler.region).get_bucket(self.s3_handler.bucketRoute)
+        bucket = boto3.client('s3', region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
         monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
-                                             [key.name for key in bucket.list(prefix=monthly_download_prefixes)]))
+                                             [key.key for key in bucket.objects.filter(Prefix=monthly_download_prefixes)]))
         delta_download_names = list(filter(re.compile(delta_download_regex).search,
-                                           [key.name for key in bucket.list(prefix=delta_download_prefixes)]))
+                                           [key.key for key in bucket.objects.filter(Prefix=delta_download_prefixes)]))
 
         # Generate response
         downloads = []

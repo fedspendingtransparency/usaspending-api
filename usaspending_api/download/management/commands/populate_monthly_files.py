@@ -2,7 +2,7 @@ import logging
 import datetime
 import json
 import multiprocessing
-import boto
+import boto3
 import re
 
 from django.conf import settings
@@ -61,12 +61,12 @@ class Command(BaseCommand):
             if cleanup:
                 # Get all the files that have the same prefix except for the update date
                 file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'
-                for key in self.bucket.list(prefix=file_name_prefix):
-                    if key.name == file_name:
+                for key in self.bucket.objects.filter(Prefix=file_name_prefix):
+                    if key.key == file_name:
                         # ignore the one we just uploaded
                         continue
-                    self.bucket.delete_key(key.name)
-                    logger.info('Deleting {} from bucket'.format(key.name))
+                    key.delete()
+                    logger.info('Deleting {} from bucket'.format(key.key))
         else:
             # Send a SQS message that will be processed by another server, which will eventually run
             # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
@@ -205,12 +205,12 @@ class Command(BaseCommand):
         # moving it to self.bucket as it may be used in different cases
         bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
         region_name = settings.USASPENDING_AWS_REGION
-        self.bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+        self.bucket = boto3.client('s3', region_name=region_name).Bucket(bucket_name)
 
         if not clobber:
             reuploads = []
-            for key in self.bucket.list():
-                re_match = re.findall('(.*)_Full_{}.zip'.format(updated_date_timestamp), key.name)
+            for key in self.bucket.objects.all():
+                re_match = re.findall('(.*)_Full_{}.zip'.format(updated_date_timestamp), key.key)
                 if re_match:
                     reuploads.append(re_match[0])
 

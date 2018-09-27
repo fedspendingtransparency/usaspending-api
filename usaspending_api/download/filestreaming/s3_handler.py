@@ -1,5 +1,4 @@
 import logging
-import boto
 
 from datetime import datetime
 from django.conf import settings

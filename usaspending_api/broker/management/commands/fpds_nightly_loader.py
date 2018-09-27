@@ -81,15 +81,8 @@ class Command(BaseCommand):
                 # if the date on the file is the same day as we're checking
                 if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
                                 datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
-                    # make the url params to pass
-                    url_params = {
-                        'Bucket': fpds_bucket_name,
-                        'Key': item
-                    }
-                    # get the url for the current file
-                    file_path = s3client.generate_presigned_url('get_object', Params=url_params)
-                    current_file = urllib.request.urlopen(file_path)
-                    reader = csv.reader(current_file.read().decode("utf-8").splitlines())
+                    s3_item = s3client.get_object(Bucket=fpds_bucket_name, Key=item)
+                    reader = csv.reader(s3_item['Body'].read().decode("utf-8").splitlines())
                     # skip the header, the reader doesn't ignore it for some reason
                     next(reader)
                     # make an array of all the detached_award_procurement_ids
