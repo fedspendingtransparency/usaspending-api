@@ -160,7 +160,7 @@ class Command(BaseCommand):
             if match_date:
                 # Create a local copy of the deletion file
                 delete_filepath = '{}{}'.format(working_dir, key.key)
-                bucket.download_file(obj.key, delete_filepath)
+                bucket.download_file(key.key, delete_filepath)
                 df = pd.read_csv(delete_filepath)
                 os.remove(delete_filepath)
 

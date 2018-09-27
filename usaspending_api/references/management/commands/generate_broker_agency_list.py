@@ -19,8 +19,10 @@ class Command(BaseCommand):
         self.logger.info('Connecting to S3 bucked to retrive broker agency list')
 
         s3connection = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
-        agency_list = s3connection.get_object(Bucket=settings.BROKER_AGENCY_BUCKET_NAME, Key='agency_list.csv')
-        broker_agency_list = pd.read_csv(io.BytesIO(agency_list['Body'].read()), dtype=str)
+        agency_list_url = s3connection.generate_presigned_url('get_object',
+                                                              Params={'Bucket': settings.BROKER_AGENCY_BUCKET_NAME,
+                                                                      'Key': 'agency_list.csv'})
+        broker_agency_list = pd.read_csv(agency_list_url, dtype=str)
 
         self.logger.info('Agency file sucessfully retrieved from S3')
 
