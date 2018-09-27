@@ -12,8 +12,7 @@ from usaspending_api.references.reference_helpers import insert_federal_accounts
 
 
 class Command(BaseCommand):
-    help = "Loads tas and agencies info from CARS list in \
-            the folder of this management command."
+    help = "Loads tas and agencies info from CARS list in the folder of this management command."
     logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
