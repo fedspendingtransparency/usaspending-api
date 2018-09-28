@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import time
-import timeit
 import subprocess
 
 from calendar import monthrange, isleap
@@ -343,13 +342,13 @@ def timer(msg='', logging_func=print):
         (active code)
 
     """
-    start = timeit.default_timer()
+    start = time.perf_counter()
     logging_func('Beginning {}...'.format(msg))
     try:
         yield {}
     finally:
-        elapsed = timeit.default_timer() - start
-        logging_func('... finished {} in {} sec'.format(msg, elapsed))
+        elapsed = time.perf_counter() - start
+        logging_func('... finished {} in {:.2f}s'.format(msg, elapsed))
 
 
 # Raw SQL run during a migration
