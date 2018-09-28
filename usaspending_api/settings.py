@@ -53,10 +53,10 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 BROKER_AGENCY_BUCKET_NAME = ""
 FPDS_BUCKET_NAME = ""
-PUBLIC_BUCKET_NAME = ""
 CFDA_BUCKET_NAME = ""
 CFDA_REGION = ""
 CFDA_FILE_PATH = ""
+ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
 
 # Elasticsearch
 ES_HOSTNAME = ""

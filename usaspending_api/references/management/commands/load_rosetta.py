@@ -58,11 +58,12 @@ def extract_data_from_source_file(path: str = None) -> dict:
         filepath = path
         download_path = None
     else:
-        download_path = "user_reference_docs/DATA Transparency Crosswalk.xlsx"
+        download_path = settings.ROSETTA_DICT_S3_PATH
+        bucket_name = download_path.split("/")[0]
         filepath = "temp_data_act_crosswalk.xlsx"
-        logger.info("Using S3 file: {} from {}".format(filepath, settings.PUBLIC_BUCKET_NAME))
+        logger.info("Using S3 file: {} from {}".format(filepath, bucket_name))
         s3_client = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
-        s3_client.download_file(settings.PUBLIC_BUCKET_NAME, download_path, filepath)
+        s3_client.download_file(bucket_name, "/".join(settings.ROSETTA_DICT_S3_PATH.split("/")[1:]), filepath)
 
     file_size = os.path.getsize(filepath)
     wb = load_workbook(filename=filepath)
