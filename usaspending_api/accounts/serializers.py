@@ -147,4 +147,5 @@ class FederalAccountByObligationSerializer(serializers.Serializer):
 
     id = serializers.CharField()
     account_title = serializers.CharField()
+    account_number = serializers.CharField()
     obligated_amount = serializers.DecimalField(None, 2)
