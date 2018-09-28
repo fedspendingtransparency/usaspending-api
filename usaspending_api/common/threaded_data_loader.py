@@ -5,8 +5,7 @@ from multiprocessing import Process, JoinableQueue
 from django import db
 import logging
 import csv
-import smart_open
-import os
+import codecs
 
 
 # This class is a threaded data loader
@@ -90,9 +89,8 @@ class ThreadedDataLoader():
             process.start()
 
         if remote_file:
-            aws_region = os.environ.get('USASPENDING_AWS_REGION')
-            with smart_open.smart_open(filepath, 'r', encoding=encoding, region_name=aws_region) as csv_file:
-                row_queue = self.csv_file_to_queue(csv_file, row_queue)
+            csv_file = codecs.getreader('utf-8')(filepath['Body'])
+            row_queue = self.csv_file_to_queue(csv_file, row_queue)
         else:
             with open(filepath, encoding=encoding) as csv_file:
                 row_queue = self.csv_file_to_queue(csv_file, row_queue)
