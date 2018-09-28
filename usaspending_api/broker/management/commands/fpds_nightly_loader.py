@@ -147,7 +147,6 @@ class Command(BaseCommand):
         ]
         return update_awards, delete_awards
 
-    @transaction.atomic
     def delete_stale_fpds(self, ids_to_delete):
         logger.info("Starting deletion of stale FPDS data")
 
@@ -162,9 +161,8 @@ class Command(BaseCommand):
         delete_award_str_ids = ",".join([str(deleted_result) for deleted_result in delete_award_ids])
 
         db_cursor = connections["default"].cursor()
-
         queries = []
-        # Transaction FPDS
+
         if delete_transaction_ids:
             fpds = "DELETE FROM transaction_fpds tf WHERE tf.transaction_id IN ({});".format(delete_transaction_str_ids)
             # Transaction Normalized
@@ -190,7 +188,6 @@ class Command(BaseCommand):
             db_query = "".join(queries)
             db_cursor.execute(db_query, [])
 
-    @transaction.atomic
     def insert_all_new_fpds(self, total_insert):
         for to_insert in self.fetch_fpds_data_generator(total_insert):
             start = time.perf_counter()
@@ -350,6 +347,7 @@ class Command(BaseCommand):
             help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
         )
 
+    @transaction.atomic
     def handle(self, *args, **options):
         logger.info("==== Starting FPDS nightly data load ====")
 
