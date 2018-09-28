@@ -188,39 +188,27 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 
 # Split csv function mostly copied from Jordi Rivero's solution
 # https://gist.github.com/jrivero/1085501
-def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv', output_path='.',
-              keep_headers=True, file_name=None):
+def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv',
+              keep_headers=True):
     """Splits a CSV file into multiple pieces.
 
     A quick bastardization of the Python CSV library.
     Arguments:
         `row_limit`: The number of rows you want in each output file. 10,000 by default.
         `output_name_template`: A %s-style template for the numbered output files.
-        `output_path`: Where to stick the output files.
         `keep_headers`: Whether or not to print the headers in each output file.
-        `file_name`: Alternative naming convention for output files (optional)
     Example usage:
         >> from toolbox import csv_splitter;
         >> csv_splitter.split('/home/ben/input.csv');
     """
     split_csvs = []
+    output_path = os.path.dirname(file_path)
     reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
     current_piece = 1
-    if file_name is not None:
-        zip_idx = file_name.find(".zip")
-
-        if(zip_idx > 0):
-            file_name = "%s.csv" % file_name[:zip_idx]
-
-        current_out_path = os.path.join(
-            output_path,
-            file_name
-        )
-    else:
-        current_out_path = os.path.join(
-            output_path,
-            output_name_template % current_piece
-        )
+    current_out_path = os.path.join(
+        output_path,
+        output_name_template % current_piece
+    )
     split_csvs.append(current_out_path)
     current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
     current_limit = row_limit
