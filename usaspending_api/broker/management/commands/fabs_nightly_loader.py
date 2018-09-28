@@ -37,9 +37,8 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
-                   'WHERE created_at >= %s ' \
-                   'AND (is_active IS True OR UPPER(correction_delete_indicatr) = \'D\')'
-        db_args = [date]
+                   'WHERE published_award_financial_assistance_id=81494538'
+        db_args = []
 
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
