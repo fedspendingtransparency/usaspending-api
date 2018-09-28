@@ -27,7 +27,7 @@ from usaspending_api.references.models import LegalEntity, Agency
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
-BATCH_FETCH_SIZE = 2500
+BATCH_FETCH_SIZE = 25000
 
 
 class Command(BaseCommand):
@@ -191,6 +191,12 @@ class Command(BaseCommand):
             db_cursor.execute(db_query, [])
 
     @transaction.atomic
+    def insert_all_new_fpds(self, total_insert):
+        for to_insert in self.fetch_fpds_data_generator(total_insert):
+            start = time.perf_counter()
+            self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
+            logger.info("Insertion took {:.2f}s".format(time.perf_counter() - start))
+
     def insert_new_fpds(self, to_insert, total_rows):
         place_of_performance_field_map = {
             "location_country_code": "place_of_perform_country_c",
@@ -377,10 +383,7 @@ class Command(BaseCommand):
         if len(total_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                for to_insert in self.fetch_fpds_data_generator(total_insert):
-                    start = time.perf_counter()
-                    self.insert_new_fpds(to_insert=to_insert, total_rows=len(to_insert))
-                    logger.info("Insertion took {:.2f}s".format(time.perf_counter() - start))
+                self.insert_all_new_fpds(total_insert)
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
