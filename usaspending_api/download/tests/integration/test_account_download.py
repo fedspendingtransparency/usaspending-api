@@ -14,7 +14,7 @@ from usaspending_api.download.lookups import JOB_STATUS
 def base_job_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make('download.JobStatus', job_status_id=js.id, name=js.name, description=js.desc)
+        mommy.make('download.JobStatus', job_status_id=js.id, name=js.name, description=js.desc, update_date="2016-09-03")
 
 
 @pytest.mark.django_db

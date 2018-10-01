@@ -221,7 +221,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             # csv_generation.write_csvs(**kwargs) (see generate_zip.py)
             write_to_log(message='Passing download_job {} to SQS'.format(download_job.download_job_id),
                          download_job=download_job)
-            queue = sqs_queue(QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def get_download_response(self, file_name):

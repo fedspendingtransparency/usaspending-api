@@ -13,7 +13,7 @@ from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
 from usaspending_api.common.helpers.generic_helper import timer
-from usaspending_api.broker.management.commands.fabs_nightly_loader import Command as fabs_cmd
+from usaspending_api.broker.management.commands.fabs_nightly_loader import Command as FabsCommand
 
 logger = logging.getLogger('console')
 
@@ -88,7 +88,7 @@ class Command(BaseCommand):
                 return
             delete_ids = [r[0] for r in rows]
             with timer('deleting rows', logger.info):
-                fabs_cmd.send_deletes_to_s3(delete_ids)
-                fabs_cmd().delete_stale_fabs(delete_ids)
+                FabsCommand.send_deletes_to_s3(delete_ids)
+                FabsCommand().delete_stale_fabs(delete_ids)
             batch_no += 1
         logger.info('{} batches finished, complete'.format(batch_no - 1))

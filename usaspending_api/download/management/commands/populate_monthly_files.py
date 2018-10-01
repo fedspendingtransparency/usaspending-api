@@ -70,7 +70,7 @@ class Command(BaseCommand):
         else:
             # Send a SQS message that will be processed by another server, which will eventually run
             # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
-            queue = sqs_queue(QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):
