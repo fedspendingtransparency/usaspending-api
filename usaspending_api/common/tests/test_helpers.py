@@ -86,7 +86,7 @@ def test_timer(capsys):
 def test_timer_times(capsys):
     'Verify that timer shows longer times for slower operations'
 
-    pattern = re.compile(r'([\d\.e\-]+) sec')
+    pattern = re.compile(r'([\d\.e\-]+)s')
 
     with timer():
         print('Doing a thing')
