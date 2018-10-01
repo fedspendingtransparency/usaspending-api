@@ -109,7 +109,7 @@ def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, g
         mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
         headers.update({'ContentType': mtype})
 
-    mp = s3client.create_multipart_upload(Bucket=bucketname, Key=keyname, headers=headers)
+    mp = s3client.create_multipart_upload(Bucket=bucketname, Key=keyname, **headers)
 
     source_size = os.stat(source_path).st_size
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
