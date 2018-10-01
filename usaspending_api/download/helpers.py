@@ -2,14 +2,12 @@ import boto3
 import csv
 import logging
 import math
-import mimetypes
-import multiprocessing
 import os
 import pandas as pd
+from boto3.s3.transfer import TransferConfig, S3Transfer
 
 from datetime import datetime
 from django.conf import settings
-from filechunkio import FileChunkIO
 from rest_framework.exceptions import ParseError
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -97,6 +95,15 @@ def verify_requested_columns_available(sources, requested):
         bad_cols -= set(source.columns(requested))
     if bad_cols:
         raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
+
+
+def multipart_upload(bucketname, regionname, source_path, keyname):
+    s3client = boto3.client('s3', region_name=regionname)
+    source_size = os.stat(source_path).st_size
+    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
+    config = TransferConfig(multipart_threshold=bytes_per_chunk)
+    transfer = S3Transfer(s3client, config)
+    transfer.upload_file(source_path, bucketname, os.path.basename(keyname))
 
 
 def write_to_download_log(message, download_job=None, is_debug=False, is_error=False, other_params={}):

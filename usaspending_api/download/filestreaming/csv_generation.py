@@ -9,9 +9,7 @@ import tempfile
 import time
 import zipfile
 import csv
-import boto3
-from boto3.s3.transfer import TransferConfig, S3Transfer
-import math
+
 
 from django.conf import settings
 
@@ -72,12 +70,7 @@ def generate_csvs(download_job, sqs_message=None):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
             start_uploading = time.time()
-            s3client = boto3.client('s3', region_name=region)
-            source_size = os.stat(file_path).st_size
-            bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
-            config = TransferConfig(multipart_threshold=bytes_per_chunk)
-            transfer = S3Transfer(s3client, config)
-            transfer.upload_file(file_path, bucket, os.path.basename(file_path))
+            multipart_upload(bucket, region, file_path, os.path.basename(file_path))
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
     except Exception as e:
