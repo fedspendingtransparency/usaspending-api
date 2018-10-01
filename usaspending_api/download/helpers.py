@@ -107,7 +107,7 @@ def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, g
     s3client = boto3.client('s3', region_name=regionname)
     if guess_mimetype:
         mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
-        headers.update({'Content-Type': mtype})
+        headers.update({'ContentType': mtype})
 
     mp = s3client.create_multipart_upload(Bucket=bucketname, Key=keyname, headers=headers)
 
