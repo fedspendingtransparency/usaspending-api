@@ -99,61 +99,6 @@ def verify_requested_columns_available(sources, requested):
         raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
 
 
-# Multipart upload functions copied from Fabian Topfstedt's solution
-# http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
-def multipart_upload(bucketname, regionname, source_path, keyname, headers={}, guess_mimetype=True,
-                     parallel_processes=4):
-    """Parallel multipart upload."""
-    s3client = boto3.client('s3', region_name=regionname)
-    if guess_mimetype:
-        mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
-        headers.update({'ContentType': mtype})
-
-    mp = s3client.create_multipart_upload(Bucket=bucketname, Key=keyname, **headers)
-
-    source_size = os.stat(source_path).st_size
-    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
-    chunk_amount = int(math.ceil(source_size / float(bytes_per_chunk)))
-
-    pool = multiprocessing.Pool(processes=parallel_processes)
-    for i in range(chunk_amount):
-        offset = i * bytes_per_chunk
-        remaining_bytes = source_size - offset
-        bytes = min([bytes_per_chunk, remaining_bytes])
-        part_num = i + 1
-        pool.apply_async(_upload_part, [bucketname, regionname, keyname, mp['UploadId'], part_num, source_path, offset,
-                                        bytes])
-    pool.close()
-    pool.join()
-
-    if len(s3client.list_parts(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])['Parts']) == chunk_amount:
-        s3client.complete_multipart_upload(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])
-    else:
-        s3client.abort_multipart_upload(Bucket=bucketname, Key=keyname, UploadId=mp['UploadId'])
-
-
-def _upload_part(bucketname, regionname, keyname, multipart_id, part_num, source_path, offset, bytes,
-                 amount_of_retries=10):
-    """Uploads a part with retries."""
-    s3client = boto3.client('s3', region_name=regionname)
-
-    def _upload(retries_left=amount_of_retries):
-        try:
-            logging.info('Start uploading part #%d ...' % part_num)
-            with FileChunkIO(source_path, 'r', offset=offset, bytes=bytes) as fp:
-                s3client.upload_part(Bucket=bucketname, Key=keyname, Body=fp, PartNumber=part_num,
-                                     UploadId=multipart_id)
-        except Exception as exc:
-            if retries_left:
-                _upload(retries_left=retries_left - 1)
-            else:
-                logging.info('... Failed uploading part #%d' % part_num)
-                raise exc
-        else:
-            logging.info('... Uploaded part #%d' % part_num)
-    _upload()
-
-
 def write_to_download_log(message, download_job=None, is_debug=False, is_error=False, other_params={}):
     """Handles logging for the downloader instance"""
     if settings.IS_LOCAL:

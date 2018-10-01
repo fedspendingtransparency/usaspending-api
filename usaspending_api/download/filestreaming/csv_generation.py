@@ -9,6 +9,9 @@ import tempfile
 import time
 import zipfile
 import csv
+import boto3
+from boto3.s3.transfer import TransferConfig, S3Transfer
+import math
 
 from django.conf import settings
 
@@ -57,7 +60,7 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_messages) from e
+        raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -69,15 +72,19 @@ def generate_csvs(download_job, sqs_message=None):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
             start_uploading = time.time()
-            multipart_upload(bucket, region, file_path, os.path.basename(file_path),
-                             parallel_processes=multiprocessing.cpu_count())
+            s3client = boto3.client('s3', region_name=region)
+            source_size = os.stat(file_path).st_size
+            bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
+            config = TransferConfig(multipart_threshold=bytes_per_chunk)
+            transfer = S3Transfer(s3client, config)
+            transfer.upload_file(file_path, bucket, os.path.basename(file_path))
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
     except Exception as e:
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_messages) from e
+        raise Exception(download_job.error_message) from e
     finally:
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(file_path):
