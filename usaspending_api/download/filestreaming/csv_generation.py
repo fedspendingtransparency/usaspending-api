@@ -57,7 +57,7 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        raise type(e)(download_job.error_message)
+        raise Exception(download_job.error_messages) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -77,7 +77,7 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
-        raise type(e)(download_job.error_message)
+        raise Exception(download_job.error_messages) from e
     finally:
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(file_path):
