@@ -13,8 +13,6 @@ from usaspending_api.references.models import Rosetta
 
 @pytest.mark.django_db
 def test_rosetta_fresh_load():
-    """
-    """
     test_file_path = os.path.abspath("usaspending_api/references/tests/data/data_transparency_crosswalk_test_file.xlsx")
     all_rows = Rosetta.objects.count()
     assert all_rows == 0, "Table is not empty before testing the loader script. Results will be unexpected"
@@ -23,8 +21,6 @@ def test_rosetta_fresh_load():
 
     all_rows = Rosetta.objects.count()
     assert all_rows == 1, "Loader did not populate the table"
-
-    # import pdb; pdb.set_trace()
 
     expected_result = {
         "rows": [
