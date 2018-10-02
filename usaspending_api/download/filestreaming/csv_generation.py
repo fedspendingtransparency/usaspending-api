@@ -100,22 +100,18 @@ def get_csv_sources(json_request):
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
-            queryset = filter_function(json_request['filters'])
-
             # Award downloads
             queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
-            d1_award_type_codes = set(contract_type_mapping.keys())
-            d2_award_type_codes = set(assistance_type_mapping.keys())
 
-            if award_type_codes & d1_award_type_codes:
+            if award_type_codes & set(contract_type_mapping.keys()):
                 # only generate d1 files if the user is asking for contract data
                 d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
                 d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
 
-            if award_type_codes & d2_award_type_codes:
+            if award_type_codes & set(assistance_type_mapping.keys()):
                 # only generate d2 files if the user is asking for assistance data
                 d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
                 d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
@@ -270,8 +266,7 @@ def wait_for_process(process, start_time, download_job, message):
 def generate_temp_query_file(source_query, limit, source, download_job, columns):
     if limit:
         source_query = source_query[:limit]
-    csv_query_raw = generate_raw_quoted_query(source_query)
-    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.columns(columns))
+    csv_query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
