@@ -61,6 +61,7 @@ FPDS_BUCKET_NAME = ""
 CFDA_BUCKET_NAME = ""
 CFDA_REGION = ""
 CFDA_FILE_PATH = ""
+ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
 
 # Elasticsearch
 ES_HOSTNAME = ""
