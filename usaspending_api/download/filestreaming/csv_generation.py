@@ -175,12 +175,20 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
     try:
         # Split CSV into separate files
         log_time = time.time()
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                               output_name_template='{}_%s.csv'.format(source_name))
-        if download_job:
-            write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
-                         download_job=download_job)
+        # Output template default:
+        # e.g. `Assistance_prime_transactions_delta_%s.csv`
+        output_template = '{}_%s.csv'.format(source_name)
 
+        if download_job is not None:
+            # Use existing detailed filename from parent file if it exists
+            # e.g. `019_Assistance_Delta_20180917_%s.csv`
+            output_template = '{}_%s.csv'.format(strip_file_extension(download_job.file_name))
+
+        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
+                               output_name_template=output_template)
+
+        write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
+                     download_job=download_job)
         # Zip the split CSVs into one zipfile
         log_time = time.time()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
@@ -343,3 +351,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 def retrieve_db_string():
     """It is necessary for this to be a function so the test suite can mock the connection string"""
     return os.environ['DOWNLOAD_DATABASE_URL']
+
+
+def strip_file_extension(file_name):
+    return os.path.splitext(os.path.basename(file_name))[0]
