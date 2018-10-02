@@ -99,7 +99,7 @@ def verify_requested_columns_available(sources, requested):
 def multipart_upload(bucketname, regionname, source_path, keyname):
     s3client = boto3.client('s3', region_name=regionname)
     source_size = os.stat(source_path).st_size
-    # Sets the chunksize at minimum ~5MB to 5MB * sqrt(source size)
+    # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = boto3.s3.transfer.TransferConfig(multipart_chunksize=bytes_per_chunk)
     transfer = boto3.s3.transfer.S3Transfer(s3client, config)
