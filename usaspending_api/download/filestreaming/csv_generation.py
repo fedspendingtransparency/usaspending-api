@@ -15,6 +15,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.filestreaming.csv_source import CsvSource
@@ -58,7 +59,10 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_message) from e
+        if isinstance(e, InvalidParameterException):
+            raise InvalidParameterException(e)
+        else:
+            raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -77,7 +81,10 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
-        raise Exception(download_job.error_message) from e
+        if isinstance(e, InvalidParameterException):
+            raise InvalidParameterException(e)
+        else:
+            raise Exception(download_job.error_message) from e
     finally:
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(file_path):
