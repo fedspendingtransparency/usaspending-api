@@ -1,7 +1,7 @@
 import logging
 import os
 import csv
-import boto
+import boto3
 
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.recipient.models import StateData
@@ -43,12 +43,11 @@ class Command(BaseCommand):
             elif os.path.splitext(csv_file)[1] != '.csv':
                 raise Exception('Wrong filetype provided, expecting csv')
             file_path = csv_file
-        elif not settings.IS_LOCAL and os.environ.get('USASPENDING_AWS_REGION') and os.environ.get('STATE_DATA_BUCKET'):
-            s3connection = boto.s3.connect_to_region(os.environ.get('USASPENDING_AWS_REGION'))
-            s3bucket = s3connection.lookup(os.environ.get('STATE_DATA_BUCKET'))
-            key = s3bucket.get_key(LOCAL_STATE_DATA_FILENAME)
+        elif not settings.IS_LOCAL and settings.USASPENDING_AWS_REGION and os.environ.get('STATE_DATA_BUCKET'):
+            s3connection = boto3.resource('s3', region_name=settings.USASPENDING_AWS_REGION)
+            s3bucket = s3connection.Bucket(os.environ.get('STATE_DATA_BUCKET'))
             file_path = os.path.join('/', 'tmp', LOCAL_STATE_DATA_FILENAME)
-            key.get_contents_to_filename(file_path)
+            s3bucket.download_file(LOCAL_STATE_DATA_FILENAME, file_path)
             remote = True
         else:
             file_path = LOCAL_STATE_DATA

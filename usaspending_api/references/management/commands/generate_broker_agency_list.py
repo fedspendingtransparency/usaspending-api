@@ -1,6 +1,6 @@
 import logging
 import os
-import boto
+import boto3
 import pandas as pd
 
 from django.core.management.base import BaseCommand
@@ -17,10 +17,11 @@ class Command(BaseCommand):
 
         self.logger.info('Connecting to S3 bucked to retrive broker agency list')
 
-        s3connection = boto.s3.connect_to_region(settings.USASPENDING_AWS_REGION)
-        s3bucket = s3connection.lookup(settings.BROKER_AGENCY_BUCKET_NAME)
-        agency_list = s3bucket.get_key("agency_list.csv").generate_url(expires_in=600)
-        broker_agency_list = pd.read_csv(agency_list, dtype=str)
+        s3connection = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
+        agency_list_url = s3connection.generate_presigned_url('get_object',
+                                                              Params={'Bucket': settings.BROKER_AGENCY_BUCKET_NAME,
+                                                                      'Key': 'agency_list.csv'})
+        broker_agency_list = pd.read_csv(agency_list_url, dtype=str)
 
         self.logger.info('Agency file sucessfully retrieved from S3')
 
