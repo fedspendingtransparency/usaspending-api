@@ -3,6 +3,7 @@ import subprocess
 
 from datetime import datetime
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from time import perf_counter
 
 from usaspending_api.etl.es_etl_helpers import configure_sql_strings
@@ -158,7 +159,7 @@ class Command(BaseCommand):
 
 def set_config():
 
-    if not os.environ.get('USASPENDING_AWS_REGION'):
+    if not settings.USASPENDING_AWS_REGION:
         print('Missing environment variable `USASPENDING_AWS_REGION`')
         raise SystemExit
 
@@ -171,7 +172,7 @@ def set_config():
         raise SystemExit
 
     config = {
-        'aws_region': os.environ.get('USASPENDING_AWS_REGION'),
+        'aws_region': settings.USASPENDING_AWS_REGION,
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME')
     }
 

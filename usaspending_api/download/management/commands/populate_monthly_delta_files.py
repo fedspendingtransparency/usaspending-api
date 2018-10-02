@@ -1,4 +1,4 @@
-import boto
+import boto3
 import logging
 import os
 import pandas as pd
@@ -152,15 +152,15 @@ class Command(BaseCommand):
                                 values_list('subtier_code', flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
-        bucket = boto.s3.connect_to_region(settings.USASPENDING_AWS_REGION).get_bucket(settings.FPDS_BUCKET_NAME)
+        bucket = boto3.resource('s3', region_name=settings.USASPENDING_AWS_REGION).Bucket(settings.FPDS_BUCKET_NAME)
 
         all_deletions = pd.DataFrame()
-        for key in bucket.list():
-            match_date = self.check_regex_match(award_type, key.name, generate_since)
+        for key in bucket.objects.all():
+            match_date = self.check_regex_match(award_type, key.key, generate_since)
             if match_date:
                 # Create a local copy of the deletion file
-                delete_filepath = '{}{}'.format(working_dir, key.name)
-                key.get_contents_to_filename(delete_filepath)
+                delete_filepath = '{}{}'.format(working_dir, key.key)
+                bucket.download_file(key.key, delete_filepath)
                 df = pd.read_csv(delete_filepath)
                 os.remove(delete_filepath)
 
