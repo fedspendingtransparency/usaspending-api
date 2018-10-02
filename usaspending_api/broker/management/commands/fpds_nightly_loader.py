@@ -62,7 +62,7 @@ class Command(BaseCommand):
                         ids_to_delete += unique_key_list
         else:
             # Connect to AWS
-            aws_region = os.environ.get('USASPENDING_AWS_REGION')
+            aws_region = settings.USASPENDING_AWS_REGION
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
 
             if not (aws_region or fpds_bucket_name):

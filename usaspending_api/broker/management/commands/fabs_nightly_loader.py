@@ -308,7 +308,7 @@ class Command(BaseCommand):
                     writer.write(row + '\n')
         else:
             # Write to file in S3 bucket directly
-            aws_region = os.environ.get('USASPENDING_AWS_REGION')
+            aws_region = settings.USASPENDING_AWS_REGION
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
             s3client = boto3.client('s3', region_name=aws_region)
             contents = bytes()
