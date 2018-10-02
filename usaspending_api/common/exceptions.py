@@ -2,6 +2,13 @@ from rest_framework.exceptions import APIException
 from rest_framework import status
 
 
+class NoDataFoundException(APIException):
+    """Exception when no data were returned in query when there should always be data"""
+    status_code = 204
+    default_detail = "Request contains no data"
+    default_code = "no_data"
+
+
 class InvalidParameterException(APIException):
     """Exception for invalid request parameters."""
     status_code = status.HTTP_400_BAD_REQUEST
