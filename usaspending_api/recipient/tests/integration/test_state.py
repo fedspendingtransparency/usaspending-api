@@ -15,7 +15,7 @@ from usaspending_api.recipient.v2.views.states import obtain_state_totals
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
-OUTSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 + 2))
+OUTSIDE_OF_LATEST = (TODAY - datetime.timedelta(365 * 2))
 CURRENT_FISCAL_YEAR = generate_fiscal_year(TODAY)
 
 EXPECTED_STATE = {
@@ -27,7 +27,7 @@ EXPECTED_STATE = {
     'pop_year': CURRENT_FISCAL_YEAR,
     'pop_source': 'Census 2010 Pop',
     'median_household_income': 50000,
-    'mhi_year': CURRENT_FISCAL_YEAR-1,
+    'mhi_year': CURRENT_FISCAL_YEAR-2,
     'mhi_source': 'Census 2010 MHI',
     'total_prime_amount': 100000,
     'total_prime_awards': 1,
@@ -39,7 +39,7 @@ EXPECTED_DISTRICT.update({
     'code': 'TD',
     'fips': '02',
     'type': 'district',
-    'pop_year': CURRENT_FISCAL_YEAR-1,
+    'pop_year': CURRENT_FISCAL_YEAR-2,
     'median_household_income': 20000,
     'population': 5000,
     'total_prime_amount': 1000,
@@ -52,7 +52,7 @@ EXPECTED_TERRITORY.update({
     'code': 'TT',
     'fips': '03',
     'type': 'territory',
-    'pop_year': CURRENT_FISCAL_YEAR-1,
+    'pop_year': CURRENT_FISCAL_YEAR-2,
     'median_household_income': 10000,
     'population': 5000,
     'total_prime_amount': 1000,
@@ -121,12 +121,12 @@ def state_data(db):
     )
     mommy.make(
         'recipient.StateData',
-        id='01-{}'.format(CURRENT_FISCAL_YEAR-1),
+        id='01-{}'.format(CURRENT_FISCAL_YEAR-2),
         fips='01',
         name='Test State',
         code='TS',
         type='state',
-        year=CURRENT_FISCAL_YEAR-1,
+        year=CURRENT_FISCAL_YEAR-2,
         population=50000,
         pop_source='Census 2010 Pop',
         median_household_income=50000,
@@ -147,12 +147,12 @@ def state_data(db):
     )
     mommy.make(
         'recipient.StateData',
-        id='02-{}'.format(CURRENT_FISCAL_YEAR-1),
+        id='02-{}'.format(CURRENT_FISCAL_YEAR-2),
         fips='02',
         name='Test District',
         code='TD',
         type='district',
-        year=CURRENT_FISCAL_YEAR-1,
+        year=CURRENT_FISCAL_YEAR-2,
         population=5000,
         pop_source='Census 2010 Pop',
         median_household_income=20000,
@@ -160,12 +160,12 @@ def state_data(db):
     )
     mommy.make(
         'recipient.StateData',
-        id='03-{}'.format(CURRENT_FISCAL_YEAR-1),
+        id='03-{}'.format(CURRENT_FISCAL_YEAR-2),
         fips='03',
         name='Test Territory',
         code='TT',
         type='territory',
-        year=CURRENT_FISCAL_YEAR-1,
+        year=CURRENT_FISCAL_YEAR-2,
         population=5000,
         pop_source='Census 2010 Pop',
         median_household_income=10000,
@@ -248,7 +248,7 @@ def test_state_years_success(client, state_data, refresh_matviews):
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({
         'pop_year': CURRENT_FISCAL_YEAR,
-        'mhi_year': CURRENT_FISCAL_YEAR-1,
+        'mhi_year': CURRENT_FISCAL_YEAR-2,
         'total_prime_amount': 0,
         'total_prime_awards': 0,
         'award_amount_per_capita': 0
@@ -260,8 +260,8 @@ def test_state_years_success(client, state_data, refresh_matviews):
     # test old year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({
-        'pop_year': CURRENT_FISCAL_YEAR-1,
-        'mhi_year': CURRENT_FISCAL_YEAR-1,
+        'pop_year': CURRENT_FISCAL_YEAR-2,
+        'mhi_year': CURRENT_FISCAL_YEAR-2,
         'population': 50000,
         'total_prime_amount': 0,
         'total_prime_awards': 0,
@@ -274,12 +274,12 @@ def test_state_years_success(client, state_data, refresh_matviews):
     # test older year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({
-        'pop_year': CURRENT_FISCAL_YEAR-1,
-        'mhi_year': CURRENT_FISCAL_YEAR-1,
+        'pop_year': CURRENT_FISCAL_YEAR-2,
+        'mhi_year': CURRENT_FISCAL_YEAR-2,
         'population': 50000,
         'award_amount_per_capita': 2
     })
-    resp = client.get(state_metadata_endpoint('01', CURRENT_FISCAL_YEAR-1))
+    resp = client.get(state_metadata_endpoint('01', CURRENT_FISCAL_YEAR-2))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == expected_response
 
@@ -287,7 +287,7 @@ def test_state_years_success(client, state_data, refresh_matviews):
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({
         'pop_year': CURRENT_FISCAL_YEAR,
-        'mhi_year': CURRENT_FISCAL_YEAR-1,
+        'mhi_year': CURRENT_FISCAL_YEAR-2,
     })
     resp = client.get(state_metadata_endpoint('01', 'latest'))
     assert resp.status_code == status.HTTP_200_OK
@@ -300,7 +300,7 @@ def test_state_current_all_years_success(client, state_data, refresh_matviews):
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({
         'pop_year': CURRENT_FISCAL_YEAR,
-        'mhi_year': CURRENT_FISCAL_YEAR-1,
+        'mhi_year': CURRENT_FISCAL_YEAR-2,
         'award_amount_per_capita': None,
         'total_prime_awards': 2,
         'total_prime_amount': 200000
@@ -381,7 +381,7 @@ def test_state_breakdown_success_year(client, state_view_data, state_breakdown_r
 
 @pytest.mark.django_db
 def test_state_breakdown_success_no_data(client, state_view_data, state_breakdown_result, refresh_matviews):
-    resp = client.get('/api/v2/recipient/state/awards/01/?year={}'.format(CURRENT_FISCAL_YEAR-2))
+    resp = client.get('/api/v2/recipient/state/awards/01/?year={}'.format(CURRENT_FISCAL_YEAR-3))
     sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
