@@ -10,7 +10,6 @@ import time
 import zipfile
 import csv
 
-
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
@@ -182,13 +181,11 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
     try:
         # Split CSV into separate files
         log_time = time.time()
-        # Output template default:
-        # e.g. `Assistance_prime_transactions_delta_%s.csv`
+        # Output template default: e.g. `Assistance_prime_transactions_delta_%s.csv`
         output_template = '{}_%s.csv'.format(source_name)
 
         if download_job is not None:
-            # Use existing detailed filename from parent file if it exists
-            # e.g. `019_Assistance_Delta_20180917_%s.csv`
+            # Use existing detailed filename from parent file if it exists e.g. `019_Assistance_Delta_20180917_%s.csv`
             output_template = '{}_%s.csv'.format(strip_file_extension(download_job.file_name))
 
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
@@ -279,7 +276,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
 
-    # Create a unique temporary file to hold the raw query
+    # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
     with open(temp_sql_file_path, 'w') as file:
         file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
@@ -330,7 +327,6 @@ def apply_annotations_to_sql(raw_query, aliases):
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:
-        # Generate the csv with \copy
         log_time = time.time()
 
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)

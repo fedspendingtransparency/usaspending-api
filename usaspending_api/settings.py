@@ -44,7 +44,7 @@ IS_LOCAL = True
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
 if not USASPENDING_AWS_REGION:
-   USASPENDING_AWS_REGION = os.environ.get('USASPENDING_AWS_REGION')
+    USASPENDING_AWS_REGION = os.environ.get('USASPENDING_AWS_REGION')
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
