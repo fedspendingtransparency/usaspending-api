@@ -1,7 +1,6 @@
 import logging
 import os
 import boto3
-import io
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction

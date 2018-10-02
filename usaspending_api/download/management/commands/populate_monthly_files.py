@@ -1,7 +1,6 @@
 import logging
 import datetime
 import json
-import multiprocessing
 import boto3
 import re
 

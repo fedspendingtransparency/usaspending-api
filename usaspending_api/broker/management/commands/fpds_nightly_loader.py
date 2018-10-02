@@ -3,7 +3,6 @@ import csv
 import logging
 import os
 import re
-import urllib.request
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
