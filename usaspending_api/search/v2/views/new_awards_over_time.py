@@ -110,7 +110,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         for row in queryset:
             result = {"time_period": {}}
             for period in values:
-                result["time_period"][self.groupings[period]] = row[period]
+                result["time_period"][self.groupings[period]] = str(row[period])
             result["new_award_count_in_period"] = row["count"]
 
             results.append(result)
