@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
-from django.db.models import Func, IntegerField, Sum
+from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,28 +14,11 @@ from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
+from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
-
-
-class FiscalMonth(Func):
-    function = "EXTRACT"
-    template = "%(function)s(MONTH from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
-
-
-class FiscalQuarter(Func):
-    function = "EXTRACT"
-    template = "%(function)s(QUARTER from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
-
-
-class FiscalYear(Func):
-    function = "EXTRACT"
-    template = "%(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
 
 
 class NewAwardsOverTimeVisualizationViewSet(APIView):

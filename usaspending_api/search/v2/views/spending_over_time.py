@@ -18,6 +18,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_month
+# from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -34,9 +35,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
     endpoint_doc: /advanced_award_search/spending_over_time.md
     """
-    @cache_response()
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+    @staticmethod
+    def validate_request_data(json_data):
         valid_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
         models = [
             {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
@@ -44,31 +44,21 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
-        json_request = TinyShield(models).block(request.data)
-        group = json_request['group']
-        subawards = json_request['subawards']
-        filters = json_request.get("filters", None)
+        validated_data = TinyShield(models).block(json_data)
 
-        if filters is None:
+        if validated_data.get("filters", None) is None:
             raise InvalidParameterException('Missing request parameters: filters')
 
-        # define what values are needed in the sql query
-        # we do not use matviews for Subaward filtering, just the Subaward download filters
+        return validated_data
 
-        if subawards:
-            queryset = subaward_filter(filters)
+    def database_data_layer(self):
+        if self.subawards:
+            queryset = subaward_filter(self.filters)
         else:
-            queryset = spending_over_time(filters).values('action_date', 'generated_pragmatic_obligation')
-
-        # build response
-        response = {'group': group, 'results': []}
-        nested_order = ''
-
-        # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
-        group_results = OrderedDict()
+            queryset = spending_over_time(self.filters).values('action_date', 'generated_pragmatic_obligation')
 
         # for Subawards we extract data from action_date
-        if subawards:
+        if self.subawards:
             data_set = queryset \
                 .values('award_type') \
                 .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('amount')) \
@@ -76,7 +66,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         else:
             # for Awards we Sum generated_pragmatic_obligation for transaction_amount
             queryset = queryset.values('fiscal_year')
-            if group in ('fy', 'fiscal_year'):
+            if self.group in ('fy', 'fiscal_year'):
                 data_set = queryset \
                     .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
                     .values('fiscal_year', 'transaction_amount')
@@ -88,14 +78,33 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         transaction_amount=Sum('generated_pragmatic_obligation')) \
                     .values('fiscal_year', 'month', 'transaction_amount')
 
-        for record in data_set:
+        return list(data_set)
+
+    @cache_response()
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = self.validate_request_data(request.data)
+        self.group = json_request["group"]
+        self.subawards = json_request["subawards"]
+        self.filters = json_request["filters"]
+
+        db_results = self.database_data_layer
+
+        # build response
+        response = {'group': self.group, 'results': []}
+        nested_order = ''
+
+        # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
+        group_results = OrderedDict()
+
+        for record in db_results:
             # generate unique key by fiscal date, depending on group
             key = {'fiscal_year': str(record['fiscal_year'])}
-            if group in ('m', 'month'):
+            if self.group in ('m', 'month'):
                 # generate the fiscal month
                 key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
                 nested_order = 'month'
-            elif group in ('q', 'quarter'):
+            elif self.group in ('q', 'quarter'):
                 # generate the fiscal quarter
                 key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
                 nested_order = 'quarter'
