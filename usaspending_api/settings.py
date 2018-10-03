@@ -271,7 +271,7 @@ LOGGING = {
         'console': {
             'handlers': ['console', 'console_file'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         }
     },
 }
