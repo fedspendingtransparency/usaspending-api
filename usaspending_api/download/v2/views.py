@@ -1,4 +1,4 @@
-import boto
+import boto3
 import copy
 import datetime
 import json
@@ -41,7 +41,8 @@ from usaspending_api.references.models import ToptierAgency
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
-    s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
+    s3_handler = S3Handler(bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+                           redirect_dir=settings.BUCK_DOWNLOAD_S3_REDIRECT_DIR)
 
     def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
@@ -162,6 +163,8 @@ class BaseDownloadViewSet(APIDocumentationView):
 
     def validate_account_request(self, request_data):
         json_request = {}
+
+        json_request['columns'] = request_data.get('columns', [])
 
         # Validate required parameters
         for required_param in ["account_level", "filters"]:
@@ -518,7 +521,8 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
 
     endpoint_doc: /download/list_downloads.md
     """
-    s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME)
+    s3_handler = S3Handler(bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
+                           redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR)
 
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
@@ -552,11 +556,12 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
         delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
         # Retrieve and filter the files we need
-        bucket = boto.s3.connect_to_region(self.s3_handler.region).get_bucket(self.s3_handler.bucketRoute)
+        bucket = boto3.resource('s3', region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
         monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
-                                             [key.name for key in bucket.list(prefix=monthly_download_prefixes)]))
+                                             [key.key for key
+                                              in bucket.objects.filter(Prefix=monthly_download_prefixes)]))
         delta_download_names = list(filter(re.compile(delta_download_regex).search,
-                                           [key.name for key in bucket.list(prefix=delta_download_prefixes)]))
+                                           [key.key for key in bucket.objects.filter(Prefix=delta_download_prefixes)]))
 
         # Generate response
         downloads = []

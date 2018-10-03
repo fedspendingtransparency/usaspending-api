@@ -14,6 +14,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.filestreaming.csv_source import CsvSource
@@ -57,7 +58,10 @@ def generate_csvs(download_job, sqs_message=None):
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        raise type(e)(download_job.error_message)
+        if isinstance(e, InvalidParameterException):
+            raise InvalidParameterException(e)
+        else:
+            raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -69,15 +73,17 @@ def generate_csvs(download_job, sqs_message=None):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
             start_uploading = time.time()
-            multipart_upload(bucket, region, file_path, os.path.basename(file_path),
-                             parallel_processes=multiprocessing.cpu_count())
+            multipart_upload(bucket, region, file_path, os.path.basename(file_path))
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
     except Exception as e:
         # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
-        raise type(e)(download_job.error_message)
+        if isinstance(e, InvalidParameterException):
+            raise InvalidParameterException(e)
+        else:
+            raise Exception(download_job.error_message) from e
     finally:
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(file_path):
@@ -94,22 +100,18 @@ def get_csv_sources(json_request):
         download_type_table = VALUE_MAPPINGS[download_type]['table']
 
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
-            queryset = filter_function(json_request['filters'])
-
             # Award downloads
             queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
-            d1_award_type_codes = set(contract_type_mapping.keys())
-            d2_award_type_codes = set(assistance_type_mapping.keys())
 
-            if award_type_codes & d1_award_type_codes:
+            if award_type_codes & set(contract_type_mapping.keys()):
                 # only generate d1 files if the user is asking for contract data
                 d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
                 d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
 
-            if award_type_codes & d2_award_type_codes:
+            if award_type_codes & set(assistance_type_mapping.keys()):
                 # only generate d2 files if the user is asking for assistance data
                 d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
                 d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
@@ -138,7 +140,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
 
     start_time = time.time()
     try:
@@ -175,12 +177,18 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
     try:
         # Split CSV into separate files
         log_time = time.time()
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                               output_name_template='{}_%s.csv'.format(source_name))
-        if download_job:
-            write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
-                         download_job=download_job)
+        # Output template default: e.g. `Assistance_prime_transactions_delta_%s.csv`
+        output_template = '{}_%s.csv'.format(source_name)
 
+        if download_job is not None:
+            # Use existing detailed filename from parent file if it exists e.g. `019_Assistance_Delta_20180917_%s.csv`
+            output_template = '{}_%s.csv'.format(strip_file_extension(download_job.file_name))
+
+        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
+                               output_name_template=output_template)
+
+        write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
+                     download_job=download_job)
         # Zip the split CSVs into one zipfile
         log_time = time.time()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
@@ -255,16 +263,15 @@ def wait_for_process(process, start_time, download_job, message):
     return time.time() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job):
+def generate_temp_query_file(source_query, limit, source, download_job, columns):
     if limit:
         source_query = source_query[:limit]
-    csv_query_raw = generate_raw_quoted_query(source_query)
-    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
+    csv_query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
                  is_debug=True)
 
-    # Create a unique temporary file to hold the raw query
+    # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
     with open(temp_sql_file_path, 'w') as file:
         file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
@@ -315,7 +322,6 @@ def apply_annotations_to_sql(raw_query, aliases):
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:
-        # Generate the csv with \copy
         log_time = time.time()
 
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
@@ -343,3 +349,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 def retrieve_db_string():
     """It is necessary for this to be a function so the test suite can mock the connection string"""
     return os.environ['DOWNLOAD_DATABASE_URL']
+
+
+def strip_file_extension(file_name):
+    return os.path.splitext(os.path.basename(file_name))[0]

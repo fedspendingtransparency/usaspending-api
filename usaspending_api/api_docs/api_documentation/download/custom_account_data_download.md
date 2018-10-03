@@ -37,6 +37,7 @@ This route sends a request to the backend to begin generating a zipfile of accou
     * `fy` - *required* - fiscal year
     * `quarter` - *required* - fiscal quarter
 * `file_format` - *optional* - must be `csv`
+* `columns` - *optional* - columns to select
 
 ### Response (JSON)
 

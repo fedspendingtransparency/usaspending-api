@@ -4,9 +4,8 @@ import logging
 import os
 import re
 import time
-import urllib.request
-from datetime import datetime, timedelta, timezone
 
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -40,7 +39,7 @@ class Command(BaseCommand):
 
         if settings.IS_LOCAL:
             for file in os.listdir(settings.CSV_LOCAL_PATH):
-                if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= date:
+                if re.search(regex_str, file) and datetime.strptime(file[:file.find("_")], "%m-%d-%Y").date() >= date:
                     with open(settings.CSV_LOCAL_PATH + file, "r") as current_file:
                         # open file, split string to array, skip the header
                         reader = csv.reader(current_file.read().splitlines())
@@ -50,10 +49,10 @@ class Command(BaseCommand):
                         ids_to_delete += unique_key_list
         else:
             # Connect to AWS
-            aws_region = os.environ.get("USASPENDING_AWS_REGION")
+            aws_region = settings.USASPENDING_AWS_REGION
             fpds_bucket_name = os.environ.get("FPDS_BUCKET_NAME")
 
-            if not (aws_region or fpds_bucket_name):
+            if not (aws_region and fpds_bucket_name):
                 raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME")
 
             s3client = boto3.client("s3", region_name=aws_region)
@@ -69,14 +68,11 @@ class Command(BaseCommand):
                 if (
                     re.search(regex_str, item) and
                     "/" not in item and
-                    datetime.strptime(item[:item.find("_")], "%m-%d-%Y").date() >= date
+                    datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
                 ):
-                    # make the url params to pass
-                    url_params = {"Bucket": fpds_bucket_name, "Key": item}
-                    # get the url for the current file
-                    file_path = s3client.generate_presigned_url("get_object", Params=url_params)
-                    current_file = urllib.request.urlopen(file_path)
-                    reader = csv.reader(current_file.read().decode("utf-8").splitlines())
+                    s3_item = s3client.get_object(Bucket=fpds_bucket_name, Key=item)
+                    reader = csv.reader(s3_item["Body"].read().decode("utf-8").splitlines())
+
                     # skip the header, the reader doesn't ignore it for some reason
                     next(reader)
                     # make an array of all the detached_award_procurement_ids
