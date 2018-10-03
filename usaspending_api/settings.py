@@ -43,19 +43,25 @@ IS_LOCAL = True
 
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
+if not USASPENDING_AWS_REGION:
+    USASPENDING_AWS_REGION = os.environ.get('USASPENDING_AWS_REGION')
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
 
+DOWNLOAD_ENV = ''
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
+BUCK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
+MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 FPDS_BUCKET_NAME = ""
 CFDA_BUCKET_NAME = ""
 CFDA_REGION = ""
 CFDA_FILE_PATH = ""
+ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
 
 # Elasticsearch
 ES_HOSTNAME = ""
