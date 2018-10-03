@@ -35,19 +35,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
     endpoint_doc: /advanced_award_search/spending_over_time.md
     """
+
     @staticmethod
     def validate_request_data(json_data):
-        valid_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
+        valid_groups = ["quarter", "fiscal_year", "month", "fy", "q", "m"]
         models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
-            {'name': 'group', 'key': 'group', 'type': 'enum', 'enum_values': valid_groups, 'optional': False}
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {"name": "group", "key": "group", "type": "enum", "enum_values": valid_groups, "optional": False},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         validated_data = TinyShield(models).block(json_data)
 
         if validated_data.get("filters", None) is None:
-            raise InvalidParameterException('Missing request parameters: filters')
+            raise InvalidParameterException("Missing request parameters: filters")
 
         return validated_data
 
@@ -55,28 +56,27 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if self.subawards:
             queryset = subaward_filter(self.filters)
         else:
-            queryset = spending_over_time(self.filters).values('action_date', 'generated_pragmatic_obligation')
+            queryset = spending_over_time(self.filters).values("action_date", "generated_pragmatic_obligation")
 
         # for Subawards we extract data from action_date
         if self.subawards:
-            data_set = queryset \
-                .values('award_type') \
-                .annotate(month=ExtractMonth('action_date'), transaction_amount=Sum('amount')) \
-                .values('month', 'fiscal_year', 'transaction_amount')
+            data_set = (
+                queryset.values("award_type")
+                .annotate(month=ExtractMonth("action_date"), transaction_amount=Sum("amount"))
+                .values("month", "fiscal_year", "transaction_amount")
+            )
         else:
             # for Awards we Sum generated_pragmatic_obligation for transaction_amount
-            queryset = queryset.values('fiscal_year')
-            if self.group in ('fy', 'fiscal_year'):
-                data_set = queryset \
-                    .annotate(transaction_amount=Sum('generated_pragmatic_obligation')) \
-                    .values('fiscal_year', 'transaction_amount')
+            queryset = queryset.values("fiscal_year")
+            if self.group in ("fy", "fiscal_year"):
+                data_set = queryset.annotate(transaction_amount=Sum("generated_pragmatic_obligation")).values(
+                    "fiscal_year", "transaction_amount"
+                )
             else:
                 # quarterly also takes months and aggregates the data
-                data_set = queryset \
-                    .annotate(
-                        month=ExtractMonth('action_date'),
-                        transaction_amount=Sum('generated_pragmatic_obligation')) \
-                    .values('fiscal_year', 'month', 'transaction_amount')
+                data_set = queryset.annotate(
+                    month=ExtractMonth("action_date"), transaction_amount=Sum("generated_pragmatic_obligation")
+                ).values("fiscal_year", "month", "transaction_amount")
 
         return list(data_set)
 
@@ -91,30 +91,30 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         db_results = self.database_data_layer
 
         # build response
-        response = {'group': self.group, 'results': []}
-        nested_order = ''
+        response = {"group": self.group, "results": []}
+        nested_order = ""
 
         # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         group_results = OrderedDict()
 
         for record in db_results:
             # generate unique key by fiscal date, depending on group
-            key = {'fiscal_year': str(record['fiscal_year'])}
-            if self.group in ('m', 'month'):
+            key = {"fiscal_year": str(record["fiscal_year"])}
+            if self.group in ("m", "month"):
                 # generate the fiscal month
-                key['month'] = generate_fiscal_month(date(year=2017, day=1, month=record['month']))
-                nested_order = 'month'
-            elif self.group in ('q', 'quarter'):
+                key["month"] = generate_fiscal_month(date(year=2017, day=1, month=record["month"]))
+                nested_order = "month"
+            elif self.group in ("q", "quarter"):
                 # generate the fiscal quarter
-                key['quarter'] = FiscalDate(2017, record['month'], 1).quarter
-                nested_order = 'quarter'
+                key["quarter"] = FiscalDate(2017, record["month"], 1).quarter
+                nested_order = "quarter"
             key = str(key)
 
             # if key exists, aggregate
             if group_results.get(key) is None:
-                group_results[key] = record['transaction_amount']
+                group_results[key] = record["transaction_amount"]
             else:
-                group_results[key] = group_results.get(key) + record['transaction_amount']
+                group_results[key] = group_results.get(key) + record["transaction_amount"]
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -125,14 +125,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # }]
         sorted_group_results = sorted(
             group_results.items(),
-            key=lambda k: (
-                ast.literal_eval(k[0])['fiscal_year'],
-                int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year']))
+            key=lambda k: (ast.literal_eval(k[0])["fiscal_year"], int(ast.literal_eval(k[0])[nested_order]))
+            if nested_order
+            else (ast.literal_eval(k[0])["fiscal_year"]),
+        )
 
         for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
-            result = {'time_period': key_dict, 'aggregated_amount': float(value) if value else float(0)}
+            result = {"time_period": key_dict, "aggregated_amount": float(value) if value else float(0)}
             results.append(result)
-        response['results'] = results
+        response["results"] = results
 
         return Response(response)
