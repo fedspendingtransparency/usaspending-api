@@ -10,7 +10,7 @@ class ListBudgetFunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Functions associated with a TAS, ordered by Budget
         Function code.
-    endpoint_doc: /budget_function.md
+    endpoint_doc: /budget_functions/list_budget_function.md
     """
     @cache_response()
     def get(self, request):
@@ -27,7 +27,7 @@ class ListBudgetSubfunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Subfunctions associated with a TAS, ordered by
         Budget Subfunction code. Can be filtered by Budget Function.
-    endpoint_doc: /budget_subfunction.md
+    endpoint_doc: /budget_functions/list_budget_subfunction.md
     """
     @cache_response()
     def post(self, request):
