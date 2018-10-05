@@ -18,7 +18,7 @@ class ListBudgetFunctionViewSet(APIDocumentationView):
         results = TreasuryAppropriationAccount.objects \
             .filter(~Q(budget_function_code=''), ~Q(budget_function_code=None)) \
             .values('budget_function_code', 'budget_function_title') \
-            .order_by('budget_function_code').distinct()
+            .order_by('budget_function_title').distinct()
 
         return Response({'results': results})
 
@@ -43,6 +43,6 @@ class ListBudgetSubfunctionViewSet(APIDocumentationView):
         # Group by code and title, order by code
         results = queryset \
             .values('budget_subfunction_code', 'budget_subfunction_title') \
-            .order_by('budget_subfunction_code').distinct()
+            .order_by('budget_subfunction_title').distinct()
 
         return Response({'results': results})
