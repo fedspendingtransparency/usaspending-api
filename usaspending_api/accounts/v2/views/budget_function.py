@@ -10,7 +10,7 @@ class ListBudgetFunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Functions associated with a TAS, ordered by Budget
         Function code.
-    endpoint_doc: /budget_function.md
+    endpoint_doc: /budget_functions/list_budget_function.md
     """
     @cache_response()
     def get(self, request):
@@ -18,7 +18,7 @@ class ListBudgetFunctionViewSet(APIDocumentationView):
         results = TreasuryAppropriationAccount.objects \
             .filter(~Q(budget_function_code=''), ~Q(budget_function_code=None)) \
             .values('budget_function_code', 'budget_function_title') \
-            .order_by('budget_function_code').distinct()
+            .order_by('budget_function_title').distinct()
 
         return Response({'results': results})
 
@@ -27,7 +27,7 @@ class ListBudgetSubfunctionViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all Budget Subfunctions associated with a TAS, ordered by
         Budget Subfunction code. Can be filtered by Budget Function.
-    endpoint_doc: /budget_subfunction.md
+    endpoint_doc: /budget_functions/list_budget_subfunction.md
     """
     @cache_response()
     def post(self, request):
@@ -43,6 +43,6 @@ class ListBudgetSubfunctionViewSet(APIDocumentationView):
         # Group by code and title, order by code
         results = queryset \
             .values('budget_subfunction_code', 'budget_subfunction_title') \
-            .order_by('budget_subfunction_code').distinct()
+            .order_by('budget_subfunction_title').distinct()
 
         return Response({'results': results})
