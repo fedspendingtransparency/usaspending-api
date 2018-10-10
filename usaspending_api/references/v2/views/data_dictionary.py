@@ -2,7 +2,6 @@ import logging
 
 from rest_framework.response import Response
 
-# from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NoDataFoundException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.references.models import Rosetta

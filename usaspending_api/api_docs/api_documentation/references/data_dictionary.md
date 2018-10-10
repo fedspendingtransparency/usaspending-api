@@ -87,7 +87,7 @@ This route takes no parameters and returns a JSON structure of the Schema team's
     }
   ],
   "metadata": {
-    "download_location": "http://files-nonprod.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx",
+    "download_location": "http://files.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx",
     "total_rows": 393,
     "total_size": "116.52KB",
     "total_columns": 11
