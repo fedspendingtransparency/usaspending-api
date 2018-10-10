@@ -84,7 +84,7 @@ def extract_data_from_source_file(path: str = None) -> dict:
         else:
             sections.append(section)
 
-    elements = {}
+    elements = OrderedDict()
     for i, row in enumerate(sheet.values):
         if i < 2:
             continue
