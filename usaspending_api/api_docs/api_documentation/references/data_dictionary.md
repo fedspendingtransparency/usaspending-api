@@ -17,7 +17,6 @@ This route takes no parameters and returns a JSON structure of the Schema team's
       "Interstate Entity",
       "https://www.sam.gov",
       "Interstate Entity",
-      "D1",
       "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
       "interstate_entity",
       null,
@@ -31,7 +30,6 @@ This route takes no parameters and returns a JSON structure of the Schema team's
       "Joint Venture Economically Disadvantaged Women Owned Small Business",
       "https://www.sam.gov OR List characteristic of the contractor such as whether the selected contractor is an Economically Disadvantaged Woman Owned Small Business or not. It can be derived from the SAM data element, 'Business Types'.",
       "Joint Venture Economically Disadvantaged Women Owned Small Business",
-      "D1",
       "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
       "joint_venture_economic_disadvantaged_women_owned_small_bus",
       null,
@@ -54,10 +52,6 @@ This route takes no parameters and returns a JSON structure of the Schema team's
     {
       "raw": "fpds_element",
       "display": "FPDS Element"
-    },
-    {
-      "raw": "file_a_f",
-      "display": "File\nA-F"
     },
     {
       "raw": "award_file",
@@ -93,19 +87,15 @@ This route takes no parameters and returns a JSON structure of the Schema team's
     }
   ],
   "metadata": {
-    "file_name": "file.xlsx",
+    "download_location": "http://files-nonprod.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx",
     "total_rows": 393,
-    "total_size": "119.32KB",
-    "total_columns": 12
+    "total_size": "116.52KB",
+    "total_columns": 11
   },
   "sections": [
     {
       "colspan": 3,
       "section": "Schema Data Label & Description"
-    },
-    {
-      "colspan": 1,
-      "section": "File"
     },
     {
       "colspan": 6,
