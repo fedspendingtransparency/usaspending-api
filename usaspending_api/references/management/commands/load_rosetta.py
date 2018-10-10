@@ -20,7 +20,6 @@ DB_TO_XLSX_MAPPING = OrderedDict(
         ("element", "Element"),
         ("definition", "Definition"),
         ("fpds_element", "FPDS Element"),
-        ("file_a_f", "File\nA-F"),
         ("award_file", "Award File"),
         ("award_element", "Award Element"),
         ("subaward_file", "Subaward File"),
@@ -103,7 +102,6 @@ def extract_data_from_source_file(path: str = None) -> dict:
         "metadata": {
             "total_rows": row_count,
             "total_columns": len(field_names),
-            "file_name": os.path.basename(filepath),
             "download_location": download_path,
             "total_size": "{:.2f}KB".format(float(file_size) / 1024),
         },
