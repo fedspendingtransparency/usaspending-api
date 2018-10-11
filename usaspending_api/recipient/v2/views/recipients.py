@@ -70,23 +70,23 @@ def extract_parents_from_hash(recipient_hash):
             recipient_hash: uuid of the hash+duns to look up
 
         Returns:
-            parent_duns
-            parent_name
+            List of dictionaries (or empty)
+                parent_id
+                parent_duns
+                parent_name
     """
     parents = []
     affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
         .values('recipient_affiliations').first()
-    if not affiliations:
-        return parents
 
     for duns in affiliations['recipient_affiliations']:
         parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+        name, parent_id = None, None
+
         if parent:
             name = parent['legal_business_name']
             parent_id = '{}-P'.format(parent['recipient_hash'])
-        else:
-            name = None
-            parent_id = None
+
         parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id})
     return parents
 
@@ -244,25 +244,22 @@ class RecipientOverView(APIDocumentationView):
         if not (recipient_name or recipient_duns):
             raise InvalidParameterException('Recipient Hash not found: \'{}\'.'.format(recipient_hash))
 
+        parents = []
         if recipient_level == "C":
             parents = extract_parents_from_hash(recipient_hash)
         elif recipient_level == "P":
             parents = [{"parent_id": recipient_id, "parent_duns": recipient_duns, "parent_name": recipient_name}]
-        else:
-            parents = []
+
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns)
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
-        if len(parents) > 0:
+        parent_id, parent_name, parent_duns = None, None, None
+        if parents:
             parent_id = parents[0].get("parent_id")
             parent_name = parents[0].get("parent_name")
             parent_duns = parents[0].get("parent_duns")
-        else:
-            parent_id = None
-            parent_name = None
-            parent_duns = None
 
         result = {
             'name': recipient_name,
