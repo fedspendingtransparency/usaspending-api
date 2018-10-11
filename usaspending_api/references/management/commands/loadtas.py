@@ -1,8 +1,8 @@
-import boto
+import boto3
 import logging
-import os
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.models import ToptierAgency
@@ -12,8 +12,7 @@ from usaspending_api.references.reference_helpers import insert_federal_accounts
 
 
 class Command(BaseCommand):
-    help = "Loads tas and agencies info from CARS list in \
-            the folder of this management command."
+    help = "Loads tas and agencies info from CARS list in the folder of this management command."
     logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
@@ -22,9 +21,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         is_remote_file = len(options['location'][0].split('.')) == 1
         if is_remote_file:
-            s3connection = boto.s3.connect_to_region(os.environ.get('USASPENDING_AWS_REGION'))
-            s3bucket = s3connection.lookup(options['location'][0])
-            file_path = s3bucket.get_key('cars_tas.csv')
+            s3connection = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
+            file_path = s3connection.get_object(Bucket=options['location'][0], Key='cars_tas.csv')
         else:
             file_path = options['location'][0]
 

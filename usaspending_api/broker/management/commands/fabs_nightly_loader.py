@@ -1,7 +1,6 @@
 import logging
 import os
-import boto
-import smart_open
+import boto3
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -309,13 +308,13 @@ class Command(BaseCommand):
                     writer.write(row + '\n')
         else:
             # Write to file in S3 bucket directly
-            aws_region = os.environ.get('USASPENDING_AWS_REGION')
+            aws_region = settings.USASPENDING_AWS_REGION
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
-            s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(fpds_bucket_name)
-            conn = s3_bucket.new_key(file_name)
-            with smart_open.smart_open(conn, 'w') as writer:
-                for row in file_with_headers:
-                    writer.write(row + '\n')
+            s3client = boto3.client('s3', region_name=aws_region)
+            contents = bytes()
+            for row in file_with_headers:
+                contents += bytes('{}\n'.format(row).encode())
+            s3client.put_object(Bucket=fpds_bucket_name, Key=file_name, Body=contents)
 
     def add_arguments(self, parser):
         parser.add_argument(
