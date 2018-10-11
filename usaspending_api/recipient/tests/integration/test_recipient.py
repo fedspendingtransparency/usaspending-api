@@ -262,10 +262,10 @@ def test_extract_parent_from_hash():
 
     expected_name = TEST_RECIPIENT_LOOKUPS[parent_hash]['legal_business_name']
     expected_duns = parent_duns
-    parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
-    assert parent_duns == expected_duns
-    assert parent_name == expected_name
-    assert parent_id == expected_parent_id
+    parents = recipients.extract_parents_from_hash(recipient_hash)
+    assert expected_duns == parents[0]["parent_duns"]
+    assert expected_name == parents[0]["parent_name"]
+    assert expected_parent_id == parents[0]["parent_id"]
 
 
 @pytest.mark.django_db
@@ -282,10 +282,10 @@ def test_extract_parent_from_hash_failure():
     expected_name = None
     expected_duns = parent_duns
     expected_parent_id = None
-    parent_duns, parent_name, parent_id = recipients.extract_parent_from_hash(recipient_hash)
-    assert parent_duns == expected_duns
-    assert parent_name == expected_name
-    assert parent_id == expected_parent_id
+    parents = recipients.extract_parents_from_hash(recipient_hash)
+    assert expected_duns == parents[0]["parent_duns"]
+    assert expected_name == parents[0]["parent_name"]
+    assert expected_parent_id == parents[0]["parent_id"]
 
 
 @pytest.mark.django_db
@@ -507,6 +507,11 @@ def test_recipient_overview(client, mock_matviews_qs):
         'parent_name': 'PARENT RECIPIENT',
         'parent_duns': '000000001',
         'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
+        'parents': [{
+            'parent_duns': '000000001',
+            'parent_id': '00077a9a-5a70-8919-fd19-330762af6b84-P',
+            'parent_name': 'PARENT RECIPIENT',
+        }],
         'business_types': sorted(['expected', 'business', 'cat'] + ['category_business']),
         'location': {
             'address_line1': 'PARENT ADDRESS LINE 1',

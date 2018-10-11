@@ -63,7 +63,7 @@ def extract_name_duns_from_hash(recipient_hash):
         return name_duns_qs['duns'], name_duns_qs['legal_business_name']
 
 
-def extract_parent_from_hash(recipient_hash):
+def extract_parents_from_hash(recipient_hash):
     """ Extract the parent name and parent duns from the recipient hash
 
         Args:
@@ -73,20 +73,22 @@ def extract_parent_from_hash(recipient_hash):
             parent_duns
             parent_name
     """
-    duns = None
-    name = None
-    parent_id = None
+    parents = []
     affiliations = RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='C')\
         .values('recipient_affiliations').first()
     if not affiliations:
-        return duns, name, parent_id
-    duns = affiliations['recipient_affiliations'][0]
+        return parents
 
-    parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
-    if parent:
-        name = parent['legal_business_name']
-        parent_id = '{}-P'.format(parent['recipient_hash'])
-    return duns, name, parent_id
+    for duns in affiliations['recipient_affiliations']:
+        parent = RecipientLookup.objects.filter(duns=duns).values('recipient_hash', 'legal_business_name').first()
+        if parent:
+            name = parent['legal_business_name']
+            parent_id = '{}-P'.format(parent['recipient_hash'])
+        else:
+            name = None
+            parent_id = None
+        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id})
+    return parents
 
 
 def cleanup_location(location):
@@ -242,14 +244,25 @@ class RecipientOverView(APIDocumentationView):
         if not (recipient_name or recipient_duns):
             raise InvalidParameterException('Recipient Hash not found: \'{}\'.'.format(recipient_hash))
 
-        if recipient_level != 'R':
-            parent_duns, parent_name, parent_id = extract_parent_from_hash(recipient_hash)
+        if recipient_level == "C":
+            parents = extract_parents_from_hash(recipient_hash)
+        elif recipient_level == "P":
+            parents = [{"parent_id": recipient_id, "parent_duns": recipient_duns, "parent_name": recipient_name}]
         else:
-            parent_duns, parent_name, parent_id = None, None, None
+            parents = []
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns)
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
+
+        if len(parents) > 0:
+            parent_id = parents[0].get("parent_id")
+            parent_name = parents[0].get("parent_name")
+            parent_duns = parents[0].get("parent_duns")
+        else:
+            parent_id = None
+            parent_name = None
+            parent_duns = None
 
         result = {
             'name': recipient_name,
@@ -259,6 +272,7 @@ class RecipientOverView(APIDocumentationView):
             'parent_id': parent_id,
             'parent_name': parent_name,
             'parent_duns': parent_duns,
+            'parents': parents,
             'business_types': business_types,
             'location': location,
             'total_transaction_amount': results[0]['total'] if results else 0,
