@@ -1,23 +1,18 @@
-from django.apps import apps
 from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-def geocode_filter_locations(scope, values, model, use_matview=False, app_name='awards'):
+def geocode_filter_locations(scope, values, use_matview=False):
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
     values- array of location requests
-    model- awards or transactions will create queryset for model
     returns queryset
     """
     or_queryset = Q()
 
     # Accounts for differences between matview queries and regular queries
     q_str, country_code = return_query_string(use_matview)
-
-    if type(model) == str:
-        model = apps.get_model(app_name, model)
 
     # creates a dictionary with all of the locations organized by country
     # Counties and congressional districts are nested under state codes
@@ -45,7 +40,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
             state_qs |= state_inner_qs
 
         or_queryset |= (country_qs & state_qs)
-    return model.objects.filter(or_queryset)
+    return or_queryset
 
 
 def create_nested_object(values):
@@ -60,8 +55,10 @@ def create_nested_object(values):
             # Second level of filtering is zip and state
             # Requests must have a country+zip or country+state combination
             if 'zip' in v:
+                # Initialize the list
                 if not nested_locations[v['country']].get('zip'):
                     nested_locations[v['country']]['zip'] = []
+                # Appending zips so we don't overwrite
                 nested_locations[v['country']]['zip'].append(v['zip'])
             elif 'state' in v and nested_locations[v['country']].get(v['state']) is None:
                 nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
