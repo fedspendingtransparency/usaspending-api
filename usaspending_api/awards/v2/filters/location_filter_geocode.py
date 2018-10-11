@@ -30,7 +30,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == 'zip':
-                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__exact': state_values})
+                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
                 state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
                 county_qs = Q()
@@ -60,7 +60,9 @@ def create_nested_object(values):
             # Second level of filtering is zip and state
             # Requests must have a country+zip or country+state combination
             if 'zip' in v:
-                nested_locations[v['country']]['zip'] = v['zip']
+                if not nested_locations[v['country']].get('zip'):
+                    nested_locations[v['country']]['zip'] = []
+                nested_locations[v['country']]['zip'].append(v['zip'])
             elif 'state' in v and nested_locations[v['country']].get(v['state']) is None:
                 nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
 
@@ -76,7 +78,6 @@ def create_nested_object(values):
         except KeyError:
             # This result if there is value for country or state where necessary
             location_error_handling(v.keys())
-
     return nested_locations
 
 
@@ -84,13 +85,9 @@ def location_error_handling(fields):
     # Request must have country, and can only have 3 fields,
     # and must have state if there is county or district
     if 'country' not in fields:
-        raise InvalidParameterException(
-            'Invalid filter:  Missing necessary location field: country.'
-        )
+        raise InvalidParameterException('Invalid filter:  Missing necessary location field: country.')
     elif 'state' not in fields and('county' in fields or 'district' in fields):
-        raise InvalidParameterException(
-            'Invalid filter:  Missing necessary location field: state.'
-        )
+        raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
 
 
 def get_fields_list(scope, field_value):
