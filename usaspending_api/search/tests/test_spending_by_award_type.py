@@ -182,11 +182,14 @@ def test_spending_by_award_recipient_zip_filter(client, mock_matviews_qs):
 def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
     """ Test that filtering by both kinds of zips works"""
     mock_model_1 = MockModel(recipient_location_zip5="00501", recipient_location_country_code='USA', pop_zip5='00001',
-                             award_id=1, piid=None, fain='abc', uri=None, type='B', pulled_from="AWARD")
+                             pop_country_code='USA', award_id=1, piid=None, fain='abc', uri=None, type='B',
+                             pulled_from="AWARD")
     mock_model_2 = MockModel(recipient_location_zip5="00502", recipient_location_country_code='USA', pop_zip5='00002',
-                             award_id=2, piid=None, fain='abd', uri=None, type='B', pulled_from="AWARD")
+                             pop_country_code='USA', award_id=2, piid=None, fain='abd', uri=None, type='B',
+                             pulled_from="AWARD")
     mock_model_3 = MockModel(recipient_location_zip5="00503", recipient_location_country_code='USA', pop_zip5='00003',
-                             award_id=3, piid=None, fain='abe', uri=None, type='B', pulled_from="AWARD")
+                             pop_country_code='USA', award_id=3, piid=None, fain='abe', uri=None, type='B',
+                             pulled_from="AWARD")
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
 
     # test simple, single pair of zips that both match
@@ -216,8 +219,7 @@ def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
                 "place_of_performance_locations": [{"country": "USA", "zip": "00002"}]
             }
         }))
-    assert len(resp.data['results']) == 1
-    assert resp.data['results'][0] == {'internal_id': 1, 'Place of Performance Zip5': '00001'}
+    assert len(resp.data['results']) == 0
 
     # test 2 pairs (only one pair can be made from this)
     resp = client.post(
