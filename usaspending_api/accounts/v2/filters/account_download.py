@@ -42,7 +42,8 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters['{}__budget_subfunction_code'.format(tas_id)] = filters['budget_subfunction']
 
     # Filter by Fiscal Year and Quarter
-    reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type, filters)
+    reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(account_type,
+                                                                                              account_level, filters)
     query_filters[reporting_period_start] = start_date
     query_filters[reporting_period_end] = end_date
 
@@ -147,7 +148,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     return queryset.annotate(**summed_cols)
 
 
-def retrieve_fyq_filters(account_type, filters):
+def retrieve_fyq_filters(account_type, account_level, filters):
     """ Apply a filter by Fiscal Year and Quarter """
     if filters.get('fy', False) and filters.get('quarter', False):
         start_date, end_date = start_and_end_dates_from_fyq(filters['fy'], filters['quarter'])
@@ -155,8 +156,8 @@ def retrieve_fyq_filters(account_type, filters):
         reporting_period_start = 'reporting_period_start'
         reporting_period_end = 'reporting_period_end'
 
-        # C files need all data, up to and including the FYQ in the filter
-        if account_type == 'award_financial':
+        # C files and TAS need all data, up to and including the FYQ in the filter
+        if account_type == 'award_financial' or account_level == 'treasury_account':
             reporting_period_start = '{}__gte'.format(reporting_period_start)
             reporting_period_end = '{}__lte'.format(reporting_period_end)
             if str(filters['quarter']) != '1':
