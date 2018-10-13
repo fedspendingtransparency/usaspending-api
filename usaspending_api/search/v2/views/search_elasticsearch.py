@@ -2,7 +2,6 @@ import copy
 import logging
 
 from django.conf import settings
-from functools import total_ordering
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -28,14 +27,6 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     This route takes keyword search fields, and returns the fields of the searched term.
         endpoint_doc: /advanced_award_search/spending_by_transaction.md
     """
-    @total_ordering
-    class MinType(object):
-        def __le__(self, other):
-            return True
-
-        def __eq__(self, other):
-            return self is other
-    Min = MinType()
 
     @cache_response()
     def post(self, request):

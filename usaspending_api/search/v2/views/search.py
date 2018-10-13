@@ -1,8 +1,6 @@
 import logging
 import copy
 
-from functools import total_ordering
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -251,14 +249,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
     This route takes award filters and fields, and returns the fields of the filtered awards.
     endpoint_doc: /advanced_award_search/spending_by_award.md
     """
-    @total_ordering
-    class MinType(object):
-        def __le__(self, other):
-            return True
-
-        def __eq__(self, other):
-            return self is other
-    Min = MinType()
 
     @cache_response()
     def post(self, request):
