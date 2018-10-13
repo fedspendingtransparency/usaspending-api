@@ -6,21 +6,28 @@ from elasticsearch import ConnectionTimeout
 from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
-from urllib3.exceptions import LocationValueError
 
 logger = logging.getLogger('console')
-client_timeout = settings.ES_TIMEOUT or 15
+CLIENT_TIMEOUT = settings.ES_TIMEOUT or 15
+CLIENT = None
 
-try:
-    CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=client_timeout)
-except LocationValueError as e:
-    logging.error('ES_HOSTNAME is not specified!!!')
-except Exception as e:
-    logger.exception('Error creating the elasticsearch client')
+
+def create_es_client():
+    if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
+        logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
+    global CLIENT
+    try:
+        CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=CLIENT_TIMEOUT)
+    except Exception as e:
+        logger.error('Error creating the elasticsearch client: {}'.format(e))
 
 
 def es_client_query(index, body, timeout='1m', retries=1):
-    if retries > 20:
+    if CLIENT is None:
+        create_es_client()
+    if CLIENT is None:
+        retries = 0
+    elif retries > 20:
         retries = 20
     elif retries < 1:
         retries = 1
@@ -39,6 +46,8 @@ def _es_search(index, body, timeout):
     result = None
     try:
         result = CLIENT.search(index=index, body=body, timeout=timeout)
+    except NameError as e:
+        logger.error(error_template.format(type='Hostname', e=str(e)))
     except (ConnectionError, ConnectionTimeout) as e:
         logger.error(error_template.format(type='Connection', e=str(e)))
     except TransportError as e:
