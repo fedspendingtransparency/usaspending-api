@@ -1,5 +1,6 @@
 import logging
 import re
+
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
@@ -49,10 +50,7 @@ def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
 
 def search_transactions(request_data, lower_limit, limit):
     """
-    filters: dictionary
-    fields: list
-    sort: string
-    order: string
+    request_data: dictionary
     lower_limit: integer
     limit: integer
 
