@@ -50,7 +50,7 @@ class Command(BaseCommand):
         else:
             # Connect to AWS
             aws_region = settings.USASPENDING_AWS_REGION
-            fpds_bucket_name = os.environ.get("FPDS_BUCKET_NAME")
+            fpds_bucket_name = settings.FPDS_BUCKET_NAME
 
             if not (aws_region and fpds_bucket_name):
                 raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME")

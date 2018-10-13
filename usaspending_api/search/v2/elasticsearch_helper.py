@@ -9,7 +9,7 @@ from usaspending_api.core.elasticsearch.client import es_client_query
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
-DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
+DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 KEYWORD_DATATYPE_FIELDS = ['{}.raw'.format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})

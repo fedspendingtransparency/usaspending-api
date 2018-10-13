@@ -1,13 +1,10 @@
 """
-Django settings for usaspending_api project.
-For more information on this file, see
-https://docs.djangoproject.com/en/1.11/topics/settings/
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.11/ref/settings/
+For more information on this file: https://docs.djangoproject.com/en/1.11/topics/settings/
+For the full list of settings and their values: https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os
 import dj_database_url
+import os
 import sys
 from django.utils.crypto import get_random_string
 
@@ -48,9 +45,9 @@ if not USASPENDING_AWS_REGION:
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
-
-DOWNLOAD_ENV = ''
+DOWNLOAD_ENV = ""
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
+
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BUCK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
@@ -58,6 +55,14 @@ MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 FPDS_BUCKET_NAME = ""
+if not FPDS_BUCKET_NAME:
+    FPDS_BUCKET_NAME = os.environ.get('FPDS_BUCKET_NAME')
+DELETED_TRANSACTIONS_S3_BUCKET_NAME = ""
+if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
+    DELETED_TRANSACTIONS_S3_BUCKET_NAME = os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME')
+STATE_DATA_BUCKET = ""
+if not STATE_DATA_BUCKET:
+    STATE_DATA_BUCKET = os.environ.get('STATE_DATA_BUCKET')
 CFDA_BUCKET_NAME = ""
 CFDA_REGION = ""
 CFDA_FILE_PATH = ""
@@ -68,7 +73,6 @@ ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
-DOWNLOAD_QUERY_SIZE = 500000
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
 
@@ -155,7 +159,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 DEFAULT_DB_OPTIONS = {
     'OPTIONS': {
-        'options': '-c statement_timeout={0}'.format(DEFAULT_DB_TIMEOUT_IN_SECONDS*1000)
+        'options': '-c statement_timeout={0}'.format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
     }
 }
 
@@ -180,18 +184,10 @@ if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 API_VERSION = 2
@@ -214,13 +210,9 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -228,9 +220,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'usaspending_api/static/')
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'usaspending_api/static_doc_files'),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'usaspending_api/static_doc_files'),)
 
 LOGGING = {
     'version': 1,
@@ -344,8 +334,8 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-  'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions', ],
-  'show_fields': False,
-  'exclude': {},
-  'show_proxy': False,
+    'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions'],
+    'show_fields': False,
+    'exclude': {},
+    'show_proxy': False,
 }
