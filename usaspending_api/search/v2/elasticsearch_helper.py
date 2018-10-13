@@ -18,7 +18,7 @@ TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 def preprocess(keyword):
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub('[\/:\]\[\^!]', '', keyword)
+    processed_string = re.sub(r'[/:][^!]', '', keyword)
     if len(processed_string) != len(keyword):
         msg = 'Stripped characters from ES keyword search string New: \'{}\' Original: \'{}\''
         logger.info(msg.format(processed_string, keyword))
@@ -40,21 +40,22 @@ def format_for_frontend(response):
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
     keyword = preprocess(keyword)
     query = {
-            "dis_max": {
-                "queries": [{
-                  'query_string': {
-                        'query': keyword
-                        }
-                    },
-                    {
-                      "query_string": {
-                            "query": keyword,
-                            "fields": fields
-                        }
+        "dis_max": {
+            "queries": [
+                {
+                    "query_string": {
+                        "query": keyword
                     }
-                ]
-            }
+                },
+                {
+                    "query_string": {
+                        "query": keyword,
+                        "fields": fields
+                    }
+                }
+            ]
         }
+    }
     return query
 
 
