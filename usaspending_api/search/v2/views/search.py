@@ -1,12 +1,10 @@
-import logging
 import copy
 
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
+from django.conf import settings
 from django.db.models import Sum, Count, F, Value
 from django.db.models.functions import Coalesce
-from django.conf import settings
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -25,11 +23,7 @@ from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 
-logger = logging.getLogger(__name__)
-API_VERSION = settings.API_VERSION
-
-
-@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardVisualizationViewSet(APIView):
     """
     This route takes award filters and fields, and returns the fields of the filtered awards.
@@ -57,9 +51,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         limit = json_request["limit"]
         page = json_request["page"]
 
-        lower_limit = (page - 1) * limit
-        upper_limit = page * limit
-
         if "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
             return Response({
@@ -70,20 +61,23 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+            raise InvalidParameterException("Sort value '{}' not found in requested fields: {}".format(sort, fields))
 
         subawards_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
         awards_values = list(award_contracts_mapping.keys()) + list(loan_award_mapping) + \
             list(non_loan_assistance_award_mapping.keys())
-        if (subawards and sort not in subawards_values) or (not subawards and sort not in awards_values):
-            raise InvalidParameterException("Sort value not found in award mappings: {}".format(sort))
+
+        msg = "Sort value '{}' not found in {{}} mappings: {{}}".format(sort)
+        if (not subawards and sort not in awards_values):
+            raise InvalidParameterException(msg.format("award", awards_values))
+        elif (subawards and sort not in subawards_values):
+            raise InvalidParameterException(msg.format("subaward", subawards_values))
 
         # build sql query filters
         if subawards:
-            # We do not use matviews for Subaward filtering, just the Subaward download filters
             queryset = subaward_filter(filters)
+            values = {'subaward_number', 'piid', 'fain', 'award_type'}
 
-            values = {'subaward_number', 'award__piid', 'award__fain', 'award_type'}
             for field in fields:
                 if contract_subaward_mapping.get(field):
                     values.add(contract_subaward_mapping.get(field))
@@ -91,8 +85,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     values.add(grant_subaward_mapping.get(field))
         else:
             queryset = matview_search_filter(filters, UniversalAwardView).values()
-
             values = {'award_id', 'piid', 'fain', 'uri', 'type'}
+
             for field in fields:
                 if award_contracts_mapping.get(field):
                     values.add(award_contracts_mapping.get(field))
@@ -101,7 +95,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if non_loan_assistance_award_mapping.get(field):
                     values.add(non_loan_assistance_award_mapping.get(field))
 
-        # Modify queryset to be ordered if we specify "sort" in the request
+        # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
             if subawards:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # Subaward contracts
@@ -146,7 +140,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             else:
                 queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
-        limited_queryset = queryset[lower_limit:upper_limit + 1]
+        limited_queryset = queryset[(page - 1) * limit:page * limit + 1]  # lower limit : upper limit
         has_next = len(limited_queryset) > limit
 
         results = []
@@ -181,20 +175,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                             break
             results.append(row)
 
-        # build response
-        response = {
-            'limit': limit,
-            'results': results,
-            'page_metadata': {
-                'page': page,
-                'hasNext': has_next
-            }
-        }
-
-        return Response(response)
+        return Response({"limit": limit, "results": results, "page_metadata": {"page": page, "hasNext": has_next}})
 
 
-@api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
@@ -202,20 +186,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}
-        ]
+        models = [{'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False}]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
-        '''for m in models:
-            if m['name'] in ('award_type_codes', 'fields'):
-                m['optional'] = True'''
         json_request = TinyShield(models).block(request.data)
         filters = json_request.get("filters", None)
         subawards = json_request["subawards"]
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
+            raise InvalidParameterException("Missing required request parameters: 'filters'")
 
         results = {
             "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
@@ -228,20 +206,15 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             return Response({"results": results})
 
         if subawards:
-            # We do not use matviews for Subaward filtering, just the Subaward download filters
             queryset = subaward_filter(filters)
         else:
             queryset, model = spending_by_award_count(filters)
 
         if subawards:
-            queryset = queryset \
-                .values('award_type') \
-                .annotate(category_count=Count('subaward_id'))
+            queryset = queryset.values('award_type').annotate(category_count=Count('subaward_id'))
 
         elif model == 'SummaryAwardView':
-            queryset = queryset \
-                .values('category') \
-                .annotate(category_count=Sum('counts'))
+            queryset = queryset.values('category').annotate(category_count=Sum('counts'))
 
         else:
             # for IDV CONTRACTS category is null. change to contract
@@ -270,5 +243,4 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 result_key = categories[award[category_name]]
             results[result_key] += award['category_count']
 
-        # build response
         return Response({"results": results})
