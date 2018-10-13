@@ -891,15 +891,12 @@ class SummaryTransactionFedAcctView(models.Model):
 
 
 class SummaryAwardRecipientView(models.Model):
-    duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
-    date_signed = models.DateField(blank=False)
+    generated_unique_award_id = models.TextField(primary_key=True, db_column='generated_unique_award_id')
     action_date = models.DateField(blank=True)
     fiscal_year = models.IntegerField()
-    type = models.TextField(blank=True, null=True)
     recipient_hash = models.UUIDField(null=True)
-    parent_recipient_unique_id = models.TextField(blank=True, null=True)
-    counts = models.IntegerField()
+    parent_recipient_unique_id = models.TextField(null=True)
 
     class Meta:
         managed = False
-        db_table = 'summary_award_recipient_view'
+        db_table = 'summary_award_recipient_view_temp2'

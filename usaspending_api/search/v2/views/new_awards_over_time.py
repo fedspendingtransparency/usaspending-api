@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
-from django.db.models import Func, IntegerField, Sum
+from django.db.models import Func, IntegerField, Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -75,7 +75,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         recipient_hash = self.filters["recipient_id"][:-2]
         time_ranges = []
         for t in self.filters["time_period"]:
-            t["date_type"] = "date_signed"
+            t["date_type"] = "action_date"
             time_ranges.append(t)
         queryset = SummaryAwardRecipientView.objects.filter()
         queryset &= combine_date_range_queryset(
@@ -98,18 +98,18 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         values = ["fy"]
         if self.groupings[self.json_request["group"]] == "month":
-            queryset = queryset.annotate(month=FiscalMonth("date_signed"), fy=FiscalYear("date_signed"))
+            queryset = queryset.annotate(month=FiscalMonth("action_date"), fy=FiscalYear("action_date"))
             values.append("month")
 
         elif self.groupings[self.json_request["group"]] == "quarter":
-            queryset = queryset.annotate(quarter=FiscalQuarter("date_signed"), fy=FiscalYear("date_signed"))
+            queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), fy=FiscalYear("action_date"))
             values.append("quarter")
 
         elif self.groupings[self.json_request["group"]] == "fiscal_year":
-            queryset = queryset.annotate(fy=FiscalYear("date_signed"))
+            queryset = queryset.annotate(fy=FiscalYear("action_date"))
 
         queryset = (
-            queryset.values(*values).annotate(count=Sum("counts")).order_by(*["-{}".format(value) for value in values])
+            queryset.values(*values).annotate(count=Count("generated_unique_award_id")).order_by(*["{}".format(value) for value in values])
         )
         return queryset, values
 
