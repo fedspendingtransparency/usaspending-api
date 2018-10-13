@@ -10,13 +10,13 @@ from decimal import Decimal
 import dateutil
 from copy import copy
 from django import db
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.core.cache import caches
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.references.helpers import canonicalize_location_dict
@@ -486,8 +486,8 @@ def load_data_into_model(model_instance, data, **kwargs):
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
-        if broker_field in settings.LONG_TO_TERSE_LABELS:
-            broker_field = settings.LONG_TO_TERSE_LABELS[broker_field]
+        if broker_field in LONG_TO_TERSE_LABELS:
+            broker_field = LONG_TO_TERSE_LABELS[broker_field]
         sts = False
         if value_map:
             if broker_field in value_map:
