@@ -65,6 +65,8 @@ ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Cr
 
 # Elasticsearch
 ES_HOSTNAME = ""
+if not ES_HOSTNAME:
+    ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
 DOWNLOAD_QUERY_SIZE = 500000
 ES_TIMEOUT = 30

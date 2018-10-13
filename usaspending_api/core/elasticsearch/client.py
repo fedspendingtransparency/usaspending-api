@@ -7,7 +7,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 CLIENT_TIMEOUT = settings.ES_TIMEOUT or 15
 CLIENT = None
 
@@ -19,13 +19,13 @@ def create_es_client():
     try:
         CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=CLIENT_TIMEOUT)
     except Exception as e:
-        logger.error('Error creating the elasticsearch client: {}'.format(e))
+        logger.error("Error creating the elasticsearch client: {}".format(e))
 
 
-def es_client_query(index, body, timeout='1m', retries=1):
+def es_client_query(index, body, timeout="1m", retries=1):
     if CLIENT is None:
         create_es_client()
-    if CLIENT is None:
+    if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
         retries = 0
     elif retries > 20:
         retries = 20
@@ -34,26 +34,26 @@ def es_client_query(index, body, timeout='1m', retries=1):
     for attempt in range(retries):
         response = _es_search(index=index, body=body, timeout=timeout)
         if response is None:
-            logger.info('Failure using these: Index=\'{}\', body={}'.format(index, json.dumps(body)))
+            logger.info("Failure using these: Index='{}', body={}".format(index, json.dumps(body)))
         else:
             return response
-    logger.error('Unable to reach elasticsearch cluster. {} attempt(s) made'.format(retries))
+    logger.error("Unable to reach elasticsearch cluster. {} attempt(s) made".format(retries))
     return None
 
 
 def _es_search(index, body, timeout):
-    error_template = '[ERROR] ({type}) with ElasticSearch cluster: {e}'
+    error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:
         result = CLIENT.search(index=index, body=body, timeout=timeout)
     except NameError as e:
-        logger.error(error_template.format(type='Hostname', e=str(e)))
+        logger.error(error_template.format(type="Hostname", e=str(e)))
     except (ConnectionError, ConnectionTimeout) as e:
-        logger.error(error_template.format(type='Connection', e=str(e)))
+        logger.error(error_template.format(type="Connection", e=str(e)))
     except TransportError as e:
-        logger.error(error_template.format(type='Transport', e=str(e)))
+        logger.error(error_template.format(type="Transport", e=str(e)))
     except NotFoundError as e:
-        logger.error(error_template.format(type='404 Not Found', e=str(e)))
+        logger.error(error_template.format(type="404 Not Found", e=str(e)))
     except Exception as e:
-        logger.error(error_template.format(type='Generic', e=str(e)))
+        logger.error(error_template.format(type="Generic", e=str(e)))
     return result
