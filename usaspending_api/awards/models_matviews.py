@@ -893,7 +893,6 @@ class SummaryTransactionFedAcctView(models.Model):
 class SummaryAwardRecipientView(models.Model):
     award_id = models.TextField(primary_key=True)
     action_date = models.DateField(blank=True)
-    fiscal_year = models.IntegerField()
     recipient_hash = models.UUIDField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
 
