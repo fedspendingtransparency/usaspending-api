@@ -46,12 +46,12 @@ def get_recipients(filters={}):
         .exclude(recipient_name__in=SPECIAL_CASES)
     )
 
-    API_TO_DB_MAPPER = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
+    api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
 
     if filters["order"] == "desc":
-        queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters["sort"]]).desc(nulls_last=True))
+        queryset = queryset.order_by(F(api_to_db_mapper[filters["sort"]]).desc(nulls_last=True))
     else:
-        queryset = queryset.order_by(F(API_TO_DB_MAPPER[filters["sort"]]).asc(nulls_last=True))
+        queryset = queryset.order_by(F(api_to_db_mapper[filters["sort"]]).asc(nulls_last=True))
 
     count = queryset.count()
     page_metadata = get_pagination_metadata(count, filters["limit"], filters["page"])
