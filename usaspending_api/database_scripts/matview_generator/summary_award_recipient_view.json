@@ -1,0 +1,57 @@
+  {
+    "final_name": "summary_award_recipient_view_temp2",
+    "refresh": true,
+    "matview_sql": [
+      "WITH lowest_action_date AS (",
+      "    SELECT",
+      "      award_id,",
+      "      MIN(action_date) AS min_date",
+      "    FROM transaction_normalized",
+      "    WHERE action_date >= '2007-10-01'",
+      "    GROUP BY award_id",
+      "), txn_earliest AS (",
+      "  SELECT ",
+      "    txn.award_id,",
+      "    txn.id,",
+      "    txn.action_date,",
+      "    txn.is_fpds",
+      "  FROM lowest_action_date AS lad",
+      "  JOIN transaction_normalized AS txn ON lad.award_id=txn.award_id AND lad.min_date = txn.action_date",
+      ")",
+      "SELECT",
+      "  txn_earliest_temp.award_id,",
+      "  txn_earliest_temp.action_date,",
+      "  COALESCE(recipient_lookup.recipient_hash, MD5(",
+      "    UPPER(COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)))::uuid",
+      "  )::uuid AS recipient_hash,",
+      "  COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id",
+      "FROM txn_earliest",
+      "LEFT OUTER JOIN transaction_fabs ON (txn_earliest_temp.is_fpds = false AND txn_earliest_temp.id = transaction_fabs.transaction_id)",
+      "LEFT OUTER JOIN transaction_fpds ON (txn_earliest_temp.is_fpds = true AND txn_earliest_temp.id = transaction_fpds.transaction_id)",
+      "LEFT OUTER JOIN",
+      "  (SELECT",
+      "    recipient_hash,",
+      "    legal_business_name AS recipient_name,",
+      "    duns",
+      "  FROM recipient_lookup AS rlv",
+      "  ) recipient_lookup ON (",
+      "    recipient_lookup.duns = COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AND",
+      "    COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL",
+      "  )"
+    ],
+    "indexes": [
+      {
+        "name": "award_id",
+        "columns": [{"name": "award_id"}]
+      }, {
+        "name": "action_date",
+        "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
+      }, {
+        "name": "recipient_hash",
+        "columns": [{"name": "recipient_hash"}]
+      }, {
+        "name": "parent_recipient_unique_id",
+        "columns": [{"name": "parent_recipient_unique_id"}]
+      }
+    ]
+  }
