@@ -898,4 +898,4 @@ class SummaryAwardRecipientView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_award_recipient_view_temp2'
+        db_table = 'summary_award_recipient_view'
