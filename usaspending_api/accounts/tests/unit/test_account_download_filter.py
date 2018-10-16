@@ -54,6 +54,78 @@ def test_federal_account_filter():
 
 
 @pytest.mark.django_db
+def test_tas_account_filter_later_qtr_treasury():
+    """ Ensure the fiscal year and quarter filter is working, later quarter - treasury_account"""
+    # Create FederalAccount models
+    fed_acct1 = mommy.make('accounts.FederalAccount')
+    fed_acct2 = mommy.make('accounts.FederalAccount')
+
+    # Create TAS models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+
+    # Create file A models
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+
+    queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
+        'fy': 1700,
+        'quarter': 3
+    }, 'treasury_account')
+    assert queryset.count() == 2
+
+
+@pytest.mark.django_db
+def test_tas_account_filter_later_qtr_award_financial():
+    """ Ensure the fiscal year and quarter filter is working, later quarter - award_financial"""
+    # Create FederalAccount models
+    fed_acct1 = mommy.make('accounts.FederalAccount')
+    fed_acct2 = mommy.make('accounts.FederalAccount')
+
+    # Create TAS models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+
+    # Create file A models
+    mommy.make('awards.FinancialAccountsByAwards', treasury_account=tas1,
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+    mommy.make('awards.FinancialAccountsByAwards', treasury_account=tas2,
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+
+    queryset = account_download_filter('award_financial', FinancialAccountsByAwards, {
+        'fy': 1700,
+        'quarter': 3
+    }, 'treasury_account')
+    assert queryset.count() == 2
+
+
+@pytest.mark.django_db
+def test_tas_account_filter_later_qtr_federal():
+    """ Ensure the fiscal year and quarter filter is working, later quarter - federal account"""
+    # Create FederalAccount models
+    fed_acct1 = mommy.make('accounts.FederalAccount')
+    fed_acct2 = mommy.make('accounts.FederalAccount')
+
+    # Create TAS models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+
+    # Create file A models
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+
+    queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
+        'fy': 1700,
+        'quarter': 3
+    }, 'federal_account')
+    assert queryset.count() == 1
+
+
+@pytest.mark.django_db
 def test_budget_function_filter():
     """ Ensure the Budget Function filter is working """
     # Create TAS models
