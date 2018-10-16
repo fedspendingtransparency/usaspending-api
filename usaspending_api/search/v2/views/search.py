@@ -68,9 +68,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             list(non_loan_assistance_award_mapping.keys())
 
         msg = "Sort value '{}' not found in {{}} mappings: {{}}".format(sort)
-        if (not subawards and sort not in awards_values):
+        if not subawards and sort not in awards_values:
             raise InvalidParameterException(msg.format("award", awards_values))
-        elif (subawards and sort not in subawards_values):
+        elif subawards and sort not in subawards_values:
             raise InvalidParameterException(msg.format("subaward", subawards_values))
 
         # build sql query filters

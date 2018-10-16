@@ -1,23 +1,18 @@
-from django.apps import apps
 from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-def geocode_filter_locations(scope, values, model, use_matview=False, app_name='awards'):
+def geocode_filter_locations(scope, values, use_matview=False):
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
     values- array of location requests
-    model- awards or transactions will create queryset for model
     returns queryset
     """
     or_queryset = Q()
 
     # Accounts for differences between matview queries and regular queries
     q_str, country_code = return_query_string(use_matview)
-
-    if type(model) == str:
-        model = apps.get_model(app_name, model)
 
     # creates a dictionary with all of the locations organized by country
     # Counties and congressional districts are nested under state codes
@@ -30,7 +25,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == 'zip':
-                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__exact': state_values})
+                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
                 state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
                 county_qs = Q()
@@ -45,52 +40,58 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
             state_qs |= state_inner_qs
 
         or_queryset |= (country_qs & state_qs)
-    return model.objects.filter(or_queryset)
+    return or_queryset
+
+
+def validate_location_keys(values):
+    """ Validate that the keys provided are sufficient and match properly. """
+    for v in values:
+        if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
+            location_error_handling(v.keys())
 
 
 def create_nested_object(values):
+    # Makes sure keys provided are valid
+    validate_location_keys(values)
+
     nested_locations = {}
     for v in values:
-        try:
-            # First level in location filtering in country
-            # All location requests must have a country otherwise there will be a key error
-            if nested_locations.get(v['country']) is None:
-                nested_locations[v['country']] = {}
+        # First level in location filtering in country
+        # All location requests must have a country otherwise there will be a key error
+        if nested_locations.get(v['country']) is None:
+            nested_locations[v['country']] = {}
 
-            # Second level of filtering is zip and state
-            # Requests must have a country+zip or country+state combination
-            if 'zip' in v:
-                nested_locations[v['country']]['zip'] = v['zip']
-            elif 'state' in v and nested_locations[v['country']].get(v['state']) is None:
-                nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
+        # Initialize the list
+        if 'zip' in v and not nested_locations[v['country']].get('zip'):
+            nested_locations[v['country']]['zip'] = []
 
-            # Under state a user can filter on county and/or district (congressional_code)
-            # Error will be thrown if no state value
-            if v.get('county'):
-                nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
+        # Second level of filtering is zip and state
+        # Requests must have a country+zip or country+state combination
+        if 'zip' in v:
+            # Appending zips so we don't overwrite
+            nested_locations[v['country']]['zip'].append(v['zip'])
 
-            if v.get('district'):
-                nested_locations[v['country']][v['state']]['district'].extend(
-                    get_fields_list('district', v['district']))
+        # If we have a state, add it to the list
+        if 'state' in v and nested_locations[v['country']].get(v['state']) is None:
+            nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
 
-        except KeyError:
-            # This result if there is value for country or state where necessary
-            location_error_handling(v.keys())
+        # Based on previous checks, there will always be a state if either of these exist
+        if v.get('county'):
+            nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
 
+        if v.get('district'):
+            nested_locations[v['country']][v['state']]['district'].extend(get_fields_list('district', v['district']))
     return nested_locations
 
 
 def location_error_handling(fields):
-    # Request must have country, and can only have 3 fields,
-    # and must have state if there is county or district
+    """ Raise the relevant error for location keys. """
+    # Request must have country, and can only have 3 fields, and must have state if there is county or district
     if 'country' not in fields:
-        raise InvalidParameterException(
-            'Invalid filter:  Missing necessary location field: country.'
-        )
-    elif 'state' not in fields and('county' in fields or 'district' in fields):
-        raise InvalidParameterException(
-            'Invalid filter:  Missing necessary location field: state.'
-        )
+        raise InvalidParameterException('Invalid filter:  Missing necessary location field: country.')
+
+    if 'state' not in fields and('county' in fields or 'district' in fields):
+        raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
 
 
 def get_fields_list(scope, field_value):

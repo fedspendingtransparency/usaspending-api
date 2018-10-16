@@ -211,10 +211,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations(
-                'recipient_location', value, model, True
-            )
-            queryset &= or_queryset
+            queryset = queryset.filter(geocode_filter_locations('recipient_location', value, True))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -229,9 +226,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            queryset &= geocode_filter_locations(
-                'pop', value, model, True
-            )
+            queryset = queryset.filter(geocode_filter_locations('pop', value, True))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, model, filters)
