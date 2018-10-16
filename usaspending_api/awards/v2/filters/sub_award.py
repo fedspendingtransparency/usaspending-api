@@ -23,6 +23,10 @@ def subaward_download(filters):
 def subaward_filter(filters, for_downloads=False):
 
     queryset = SubawardView.objects.all()
+
+    recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
+    pop_scope_q = Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES")
+
     for key, value in filters.items():
 
         if value is None:
@@ -171,9 +175,9 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "recipient_scope":
             if value == "domestic":
-                queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
+                queryset = queryset.filter(recipient_scope_q)
             elif value == "foreign":
-                queryset = queryset.exclude(recipient_location_country_name="UNITED STATES")
+                queryset = queryset.exclude(recipient_scope_q)
             else:
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
@@ -186,9 +190,9 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(Q(pop_country_name="UNITED STATES") | Q(pop_country_code="USA"))
+                queryset = queryset.filter(pop_scope_q)
             elif value == "foreign":
-                queryset = queryset.exclude(Q(pop_country_name="UNITED STATES") | Q(pop_country_code="USA"))
+                queryset = queryset.exclude(pop_scope_q)
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
