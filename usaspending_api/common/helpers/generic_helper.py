@@ -8,6 +8,7 @@ from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
+from dateutil.relativedelta import relativedelta
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -122,14 +123,28 @@ def dates_are_month_bookends(start, end):
     return False
 
 
-def generate_all_fiscal_years_in_range(start, end):
-    """ For a given date-range, provide the inclusive fiscal years """
-    fiscal_years = []
+def hash_date_range(date_range_dict):
+    values = ['fiscal_year', 'quarter', 'month']
+    return '-'.join([str(date_range_dict[value]).zfill(2) for value in values if date_range_dict.get(value)])
+
+
+def generate_date_ranges_in_time_period(start, end, range_type='fiscal_year'):
+    """ For a given date-range, provide the inclusive fiscal years, fiscal quarters, or fiscal months """
+    date_ranges = []
     temp_date = start
     while temp_date < end:
-        fiscal_years.append(generate_fiscal_year(temp_date))
-        temp_date = datetime.date(temp_date.year + 1, temp_date.month, temp_date.day)
-    return fiscal_years
+        fy, quarter = generate_fiscal_year_and_quarter(temp_date).split('-Q')
+        date_range = {'fiscal_year': int(fy)}
+        date_interval = relativedelta(years=1)
+        if range_type == 'quarter':
+            date_range['quarter'] = int(quarter)
+            date_interval = relativedelta(months=3)
+        elif range_type == 'month':
+            date_range['month'] = generate_fiscal_month(temp_date)
+            date_interval = relativedelta(months=1)
+        temp_date = datetime.date(temp_date.year, temp_date.month, temp_date.day) + date_interval
+        date_ranges.append(date_range)
+    return date_ranges
 
 
 def within_one_year(d1, d2):
