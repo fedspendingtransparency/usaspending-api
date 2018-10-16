@@ -11,10 +11,10 @@ class Command(BaseCommand):
     logger = logging.getLogger('console')
 
     def handle(self, *args, **options):
-        DEFAULT_DIRECTORY = os.path.normpath('usaspending_api/references/management/commands/')
-        DEFAULT_FILEPATH = os.path.join(DEFAULT_DIRECTORY, 'psc_codes.csv')
+        default_directory = os.path.normpath('usaspending_api/references/management/commands/')
+        default_filepath = os.path.join(default_directory, 'psc_codes.csv')
 
-        load_psc(DEFAULT_FILEPATH)
+        load_psc(default_filepath)
         self.logger.log(20, 'Loaded PSC codes successfully.')
 
 
