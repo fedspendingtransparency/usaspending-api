@@ -1,5 +1,6 @@
 import copy
 import logging
+from datetime import datetime
 
 from django.conf import settings
 from django.db.models import Sum
@@ -99,7 +100,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # Populate all possible periods with no new awards for now
         hashed_results = {}
-        for time_period in self.filters['time_period']:
+
+        # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to today.
+        # Otherwise, users will see blank results for years
+        default_time_period = {'start_date': settings.API_SEARCH_MIN_DATE,
+                               'end_date': datetime.today().strftime('%Y-%m-%d')}
+        time_periods = self.filters.get('time_period', [default_time_period])
+
+        for time_period in time_periods:
             start_date = generate_date_from_string(time_period['start_date'])
             end_date = generate_date_from_string(time_period['end_date'])
             for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=values[-1]):
