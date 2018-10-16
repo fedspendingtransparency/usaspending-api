@@ -124,17 +124,17 @@ def dates_are_month_bookends(start, end):
 
 
 def hash_date_range(date_range_dict):
-    values = ['fiscal_year', 'quarter', 'month']
+    values = ['fy', 'quarter', 'month']
     return '-'.join([str(date_range_dict[value]).zfill(2) for value in values if date_range_dict.get(value)])
 
 
-def generate_date_ranges_in_time_period(start, end, range_type='fiscal_year'):
+def generate_date_ranges_in_time_period(start, end, range_type='fy'):
     """ For a given date-range, provide the inclusive fiscal years, fiscal quarters, or fiscal months """
     date_ranges = []
     temp_date = start
     while temp_date < end:
         fy, quarter = generate_fiscal_year_and_quarter(temp_date).split('-Q')
-        date_range = {'fiscal_year': int(fy)}
+        date_range = {'fy': int(fy)}
         date_interval = relativedelta(years=1)
         if range_type == 'quarter':
             date_range['quarter'] = int(quarter)

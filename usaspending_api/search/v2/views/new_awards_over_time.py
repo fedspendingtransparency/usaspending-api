@@ -81,17 +81,17 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         else:
             queryset = queryset.filter(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
 
-        values = ['fiscal_year']
+        values = ['fy']
         if self.groupings[self.json_request['group']] == 'month':
-            queryset = queryset.annotate(month=FiscalMonth('action_date'), fiscal_year=FiscalYear('action_date'))
+            queryset = queryset.annotate(month=FiscalMonth('action_date'), fy=FiscalYear('action_date'))
             values.append('month')
 
         elif self.groupings[self.json_request['group']] == 'quarter':
-            queryset = queryset.annotate(quarter=FiscalQuarter('action_date'), fiscal_year=FiscalYear('action_date'))
+            queryset = queryset.annotate(quarter=FiscalQuarter('action_date'), fy=FiscalYear('action_date'))
             values.append('quarter')
 
         elif self.groupings[self.json_request['group']] == 'fiscal_year':
-            queryset = queryset.annotate(fiscal_year=FiscalYear('action_date'))
+            queryset = queryset.annotate(fy=FiscalYear('action_date'))
 
         queryset = queryset.values(*values).annotate(count=Count('award_id'))
         return queryset, values
@@ -113,8 +113,8 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             end_date = generate_date_from_string(time_period['end_date'])
             for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=values[-1]):
                 # front-end wants a string for fiscal_year
-                date_range['fiscal_year'] = str(date_range['fiscal_year'])
                 date_range_hash = hash_date_range(date_range)
+                date_range['fy'] = str(date_range['fy'])
                 hashed_results[date_range_hash] = {'time_period': date_range, 'new_award_count_in_period': 0}
 
         # populate periods with new awards
@@ -125,6 +125,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         # sort the list chronologically
         results = sorted(list(hashed_results.values()), key=lambda k: hash_date_range(k['time_period']))
 
-        response_dict = {'group': self.groupings[self.json_request['group']], 'results': results}
+        # change fy's to fiscal_years
+        for result in results:
+            result['time_period']['fiscal_year'] = result['time_period']['fy']
+            del result['time_period']['fy']
 
-        return Response(response_dict)
+        return Response({'group': self.groupings[self.json_request['group']], 'results': results})
