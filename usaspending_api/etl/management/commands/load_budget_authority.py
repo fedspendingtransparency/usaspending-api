@@ -69,10 +69,10 @@ class Command(BaseCommand):
 
     def load_frec_map(self):
 
-        FREC_MAP_PATH = os.path.join(self.directory,
+        frec_map_path = os.path.join(self.directory,
                                      'broker_rules_fr_entity.xlsx')
 
-        workbook = open_workbook(FREC_MAP_PATH)
+        workbook = open_workbook(frec_map_path)
         sheet = workbook.sheets()[1]
         headers = [cell.value for cell in sheet.row(3)]
 
@@ -132,10 +132,10 @@ class Command(BaseCommand):
         self.directory = options['directory']
         self.load_frec_map()
 
-        HISTORICAL_PATH = os.path.join(self.directory, 'budget_authority.csv')
+        historical_path = os.path.join(self.directory, 'budget_authority.csv')
         overall_totals = defaultdict(int)
         results = defaultdict(int)
-        with open(HISTORICAL_PATH) as infile:
+        with open(historical_path) as infile:
             BudgetAuthority.objects.all().delete()
             results = defaultdict(int)
             reader = csv.DictReader(infile)

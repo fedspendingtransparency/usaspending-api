@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import connection
 from retrying import retry
 from multiprocessing import Process, JoinableQueue
@@ -6,6 +5,8 @@ from django import db
 import logging
 import csv
 import codecs
+
+from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 
 
 # This class is a threaded data loader
@@ -226,8 +227,8 @@ class DataLoaderThread(Process):
                 source_field = field_map[model_field]
             # If our field is the 'long form' field, we need to get what it maps to
             # in the data so we can map the data properly
-            elif model_field in settings.LONG_TO_TERSE_LABELS:
-                source_field = settings.LONG_TO_TERSE_LABELS[model_field]
+            elif model_field in LONG_TO_TERSE_LABELS:
+                source_field = LONG_TO_TERSE_LABELS[model_field]
 
             # If we haven't loaded via value map, load in the data using the source field
             if not loaded:

@@ -106,11 +106,11 @@ def test_new_awards_month(add_award_recipients, client):
         "group": "month",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009, "month": 10},
+                "time_period": {"fiscal_year": "2009", "month": "10"},
                 "new_award_count_in_period": 1,
             },
             {
-                "time_period": {"fiscal_year": 2009, "month": 8},
+                "time_period": {"fiscal_year": "2009", "month": "8"},
                 "new_award_count_in_period": 15,
             },
         ],
@@ -133,15 +133,15 @@ def test_new_awards_month(add_award_recipients, client):
         "group": "month",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009, "month": 10},
+                "time_period": {"fiscal_year": "2009", "month": "10"},
                 "new_award_count_in_period": 1,
             },
             {
-                "time_period": {"fiscal_year": 2009, "month": 8},
+                "time_period": {"fiscal_year": "2009", "month": "8"},
                 "new_award_count_in_period": 15,
             },
             {
-                "time_period": {"fiscal_year": 2008, "month": 4},
+                "time_period": {"fiscal_year": "2008", "month": "4"},
                 "new_award_count_in_period": 2,
             },
         ],
@@ -178,11 +178,11 @@ def test_new_awards_quarter(add_award_recipients, client):
         "group": "quarter",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009, "quarter": 4},
+                "time_period": {"fiscal_year": "2009", "quarter": "4"},
                 "new_award_count_in_period": 1,
             },
             {
-                "time_period": {"fiscal_year": 2009, "quarter": 3},
+                "time_period": {"fiscal_year": "2009", "quarter": "3"},
                 "new_award_count_in_period": 15,
             },
         ],
@@ -194,15 +194,15 @@ def test_new_awards_quarter(add_award_recipients, client):
         "group": "quarter",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009, "quarter": 4},
+                "time_period": {"fiscal_year": "2009", "quarter": "4"},
                 "new_award_count_in_period": 1,
             },
             {
-                "time_period": {"fiscal_year": 2009, "quarter": 3},
+                "time_period": {"fiscal_year": "2009", "quarter": "3"},
                 "new_award_count_in_period": 15,
             },
             {
-                "time_period": {"fiscal_year": 2008, "quarter": 2},
+                "time_period": {"fiscal_year": "2008", "quarter": "2"},
                 "new_award_count_in_period": 2,
             },
         ],
@@ -235,7 +235,7 @@ def test_new_awards_fiscal_year(add_award_recipients, client):
         "group": "fiscal_year",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009},
+                "time_period": {"fiscal_year": "2009"},
                 "new_award_count_in_period": 16,
             }
         ],
@@ -258,11 +258,11 @@ def test_new_awards_fiscal_year(add_award_recipients, client):
         "group": "fiscal_year",
         "results": [
             {
-                "time_period": {"fiscal_year": 2009},
+                "time_period": {"fiscal_year": "2009"},
                 "new_award_count_in_period": 16,
             },
             {
-                "time_period": {"fiscal_year": 2008},
+                "time_period": {"fiscal_year": "2008"},
                 "new_award_count_in_period": 2,
             },
         ],
