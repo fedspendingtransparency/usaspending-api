@@ -19,7 +19,6 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 TEMP_SQL_FILES = [
     '../matviews/subaward_view.sql',
-    # '../matviews/summary_award_recipient_view.sql',
     '../matviews/summary_award_view.sql',
     '../matviews/summary_state_view.sql',
     '../matviews/summary_transaction_fed_acct_view.sql',
