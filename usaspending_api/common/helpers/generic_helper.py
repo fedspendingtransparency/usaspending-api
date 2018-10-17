@@ -123,7 +123,7 @@ def dates_are_month_bookends(start, end):
 
 
 def generate_date_range_hash(date_range_dict):
-    """ For a given date range dictionary, make a string that can be used as a hash and sort a list of date ranges"""
+    """ For a given date range dictionary, make a string that can be used as a hash and sort a list of date ranges """
     values = ['fy', 'quarter', 'month']
     return '-'.join([str(date_range_dict[value]).zfill(2) for value in values if date_range_dict.get(value)])
 
