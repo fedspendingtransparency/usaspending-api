@@ -71,13 +71,11 @@ DO $$ BEGIN RAISE NOTICE 'Step 4: Cleaning up'; END $$;
 
 ALTER TABLE IF EXISTS summary_award_recipient RENAME TO summary_award_recipient_old;
 ALTER INDEX IF EXISTS idx_25fc29e1$aca_action_date RENAME TO idx_25fc29e1$aca_action_date_old;
-ALTER INDEX IF EXISTS idx_25fc29e1$aca_fiscal_year RENAME TO idx_25fc29e1$aca_fiscal_year_old;
 ALTER INDEX IF EXISTS idx_25fc29e1$aca_recipient_hash RENAME TO idx_25fc29e1$aca_recipient_hash_old;
 ALTER INDEX IF EXISTS idx_25fc29e1$aca_parent_recipient_unique_id RENAME TO idx_25fc29e1$aca_parent_recipient_unique_id_old;
 
 ALTER TABLE summary_award_recipient_temp RENAME TO summary_award_recipient;
 ALTER INDEX idx_25fc29e1$aca_action_date_temp RENAME TO idx_25fc29e1$aca_action_date;
-ALTER INDEX idx_25fc29e1$aca_fiscal_year_temp RENAME TO idx_25fc29e1$aca_fiscal_year;
 ALTER INDEX idx_25fc29e1$aca_recipient_hash_temp RENAME TO idx_25fc29e1$aca_recipient_hash;
 ALTER INDEX idx_25fc29e1$aca_parent_recipient_unique_id_temp RENAME TO idx_25fc29e1$aca_parent_recipient_unique_id;
 
