@@ -57,7 +57,7 @@ CREATE TABLE summary_award_recipient_temp AS (
 --------------------------------------------------------------------------------
 -- Step 3, create indexes on our new summary_award_recipient
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4: Creating indexes on summary_award_recipient'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 3: Creating indexes on summary_award_recipient'; END $$;
 
 CREATE INDEX idx_25fc29e1$aca_award_id ON summary_award_recipient_temp USING BTREE(award_id) WITH (fillfactor = 97);
 CREATE INDEX idx_25fc29e1$aca_action_date_temp ON summary_award_recipient_temp USING BTREE(action_date DESC NULLS LAST) WITH (fillfactor = 97);
@@ -67,7 +67,7 @@ CREATE INDEX idx_25fc29e1$aca_parent_recipient_unique_id_temp ON summary_award_r
 --------------------------------------------------------------------------------
 -- Step 4, Cleanup, renaming, drop temp table
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: Cleaning up'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4: Cleaning up'; END $$;
 
 ALTER TABLE IF EXISTS summary_award_recipient RENAME TO summary_award_recipient_old;
 ALTER INDEX IF EXISTS idx_25fc29e1$aca_action_date RENAME TO idx_25fc29e1$aca_action_date_old;
