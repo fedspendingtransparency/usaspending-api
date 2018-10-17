@@ -48,7 +48,7 @@ def add_award_recipients(monkeypatch):
     mock_model_list = []
     current_id = 1
     new_award_count = 12
-    for i in range(current_id,current_id + new_award_count):
+    for i in range(current_id, current_id + new_award_count):
         mock_model_list.append(MockModel(
             award_id=i,
             recipient_hash='21a1b0df-e7cd-349b-b948-60ed0ac1e6a0',

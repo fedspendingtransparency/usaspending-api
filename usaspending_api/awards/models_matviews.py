@@ -888,4 +888,3 @@ class SummaryTransactionFedAcctView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_transaction_fed_acct_view'
-
