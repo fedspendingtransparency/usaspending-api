@@ -126,3 +126,41 @@ def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"] == {"subcontracts": 0, "subgrants": 0}, "Results returned, there should all be 0"
+
+
+@pytest.mark.django_db
+def test_spending(client, mock_matviews_qs):
+    """ Verify that foreign country filter is returning the correct results """
+    mock_model_1 = MockModel(award_id=1, piid=None, fain='abc', uri=None,
+                             type='B', pulled_from="AWARD", recipient_location_country_name="United States",
+                             recipient_location_country_code="USA")
+    mock_model_2 = MockModel(award_id=2, piid=None, fain='abd', uri=None,
+                             type='B', pulled_from="AWARD", recipient_location_country_name="United States",
+                             recipient_location_country_code="USA")
+    mock_model_3 = MockModel(award_id=3, piid=None, fain='abe', uri=None,
+                             type='B', pulled_from="AWARD", recipient_location_country_name="Gibraltar",
+                             recipient_location_country_code="GIB")
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
+
+    # test simple, single zip
+    resp = client.post(
+        '/api/v2/search/spending_by_award_count/',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2019-09-30"}],
+                        "recipient_locations":[{"country":"USA"}]}, "subawards": "False", "auditTrail": "Award Table - Tab Counts"
+        }))
+    assert len(resp.data['results']) == 2
+    assert resp.data['results'][0] == {'internal_id': 1}
+
+    # test that adding a zip that has no results doesn't remove the results from the first zip
+    resp = client.post(
+        '/api/v2/search/spending_by_award_count/',
+        content_type='application/json',
+        data=json.dumps({
+                "filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2019-09-30"}],
+                            "recipient_scope": "foreign"}
+        }))
+    assert len(resp.data['results']) == 1
+    assert resp.data['results'][0] == {'internal_id': 3}
