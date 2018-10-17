@@ -265,9 +265,7 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
                         "C",
                         "D"
                         ]},
-                        "fields": [
-                            "Award ID"
-                        ],
+            "fields": ["Award ID"]
         }))
     assert len(resp.data['results']) == 3
 
