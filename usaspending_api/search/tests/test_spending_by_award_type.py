@@ -238,6 +238,7 @@ def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
     assert len(resp.data['results']) == 1
     assert resp.data['results'][0] == {'internal_id': 1, 'Place of Performance Zip5': '00001'}
 
+
 @pytest.mark.django_db
 def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
     """ Verify that foreign country filter is returning the correct results """
@@ -259,14 +260,14 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
         content_type='application/json',
         data=json.dumps({
             "filters": {"award_type_codes": [
-                "A",
-                "B",
-                "C",
-                "D"
-            ]},
-            "fields": [
-                "Award ID"
-            ],
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                        ]},
+                        "fields": [
+                            "Award ID"
+                        ],
         }))
     assert len(resp.data['results']) == 3
 
