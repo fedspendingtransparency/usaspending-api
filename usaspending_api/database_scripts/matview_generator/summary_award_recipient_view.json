@@ -1,5 +1,5 @@
   {
-    "final_name": "summary_award_recipient_view_temp2",
+    "final_name": "summary_award_recipient_view",
     "refresh": true,
     "matview_sql": [
       "WITH lowest_action_date AS (",
