@@ -6,7 +6,7 @@ from django.db.models import Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import SummaryAwardRecipientView
+from usaspending_api.awards.models_matviews import SummaryAwardRecipient
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -62,9 +62,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         for t in self.filters['time_period']:
             t['date_type'] = 'action_date'
             time_ranges.append(t)
-        queryset = SummaryAwardRecipientView.objects.filter()
+        queryset = SummaryAwardRecipient.objects.filter()
         queryset &= combine_date_range_queryset(
-            time_ranges, SummaryAwardRecipientView, API_SEARCH_MIN_DATE, API_MAX_DATE
+            time_ranges, SummaryAwardRecipient, API_SEARCH_MIN_DATE, API_MAX_DATE
         )
 
         if self.filters['recipient_id'][-1] == 'P':
