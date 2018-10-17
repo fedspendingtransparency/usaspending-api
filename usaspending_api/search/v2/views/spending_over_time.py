@@ -104,7 +104,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to today.
         # Otherwise, users will see blank results for years
         default_time_period = {'start_date': settings.API_SEARCH_MIN_DATE,
-                               'end_date': datetime.today().strftime('%Y-%m-%d')}
+                               'end_date': datetime.utcnow().strftime('%Y-%m-%d')}
         time_periods = self.filters.get('time_period', [default_time_period])
 
         for time_period in time_periods:
