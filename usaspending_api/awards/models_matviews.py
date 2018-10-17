@@ -889,13 +889,3 @@ class SummaryTransactionFedAcctView(models.Model):
         managed = False
         db_table = 'summary_transaction_fed_acct_view'
 
-
-class SummaryAwardRecipient(models.Model):
-    award_id = models.TextField(primary_key=True)
-    action_date = models.DateField(blank=True)
-    recipient_hash = models.UUIDField(null=True)
-    parent_recipient_unique_id = models.TextField(null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'summary_award_recipient'

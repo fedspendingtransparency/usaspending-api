@@ -6,7 +6,6 @@ from django.db.models import Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import SummaryAwardRecipient
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -14,7 +13,7 @@ from usaspending_api.common.helpers.generic_helper import (
     generate_date_ranges_in_time_period, generate_date_from_string, hash_date_range)
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
-from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
 from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 
