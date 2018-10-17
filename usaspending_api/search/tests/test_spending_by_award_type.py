@@ -259,18 +259,16 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
         content_type='application/json',
         data=json.dumps({
             "filters": {"award_type_codes": [
-                        "A",
-                        "B",
-                        "C",
-                        "D"
-                        ],
-                        "recipient_locations":[{"country" : "USA"}]
-                        },
-                        "fields": [
-                            "Award ID"
-                        ],
+                "A",
+                "B",
+                "C",
+                "D"
+            ]},
+            "fields": [
+                "Award ID"
+            ],
         }))
-    assert len(resp.data['results']) == 2
+    assert len(resp.data['results']) == 3
 
     # test that adding a zip that has no results doesn't remove the results from the first zip
     resp = client.post(
