@@ -13,8 +13,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
-from usaspending_api.common.helpers.generic_helper import (
-    generate_date_ranges_in_time_period, generate_date_from_string, generate_date_range_hash)
+from usaspending_api.common.helpers.generic_helper import generate_date_ranged_results_from_queryset
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -98,35 +97,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         db_results, values = self.database_data_layer()
 
-        # Populate all possible periods with no new awards for now
-        hashed_results = {}
-
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to today.
         # Otherwise, users will see blank results for years
         default_time_period = {'start_date': settings.API_SEARCH_MIN_DATE,
                                'end_date': datetime.utcnow().strftime('%Y-%m-%d')}
         time_periods = self.filters.get('time_period', [default_time_period])
 
-        for time_period in time_periods:
-            start_date = generate_date_from_string(time_period['start_date'])
-            end_date = generate_date_from_string(time_period['end_date'])
-            for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=values[-1]):
-                # front-end wants a string for fiscal_year
-                date_range_hash = generate_date_range_hash(date_range)
-                date_range['fy'] = str(date_range['fy'])
-                hashed_results[date_range_hash] = {'time_period': date_range, 'aggregated_amount': 0}
-
-        # populate periods with db results
-        for db_result in db_results:
-            row_hash = generate_date_range_hash(db_result)
-            hashed_results[row_hash]['aggregated_amount'] = db_result['aggregated_amount']
-
-        # sort the list chronologically
-        results = sorted(list(hashed_results.values()), key=lambda k: generate_date_range_hash(k['time_period']))
-
-        # change fy's to fiscal_years
-        for result in results:
-            result['time_period']['fiscal_year'] = result['time_period']['fy']
-            del result['time_period']['fy']
+        results = generate_date_ranged_results_from_queryset(filter_time_periods=time_periods, queryset=db_results,
+                                                             date_range_type=values[-1],
+                                                             columns={'aggregated_amount': 'aggregated_amount'})
 
         return Response({"group": self.groupings[self.group], "results": results})

@@ -147,6 +147,59 @@ def generate_date_ranges_in_time_period(start, end, range_type='fy'):
     return date_ranges
 
 
+def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, date_range_type, columns,
+                                               include_empty=True):
+    """ Given the following, generate a list of dict results split by fiscal years/quarters/months
+
+        Args:
+            filter_time_periods: list of time_period objects usually provided by filters
+                - {'start_date':..., 'end_date':...}
+            queryset: the resulting data to split into these results
+            data_range_type: how the results are split
+                - 'fy', 'quarter', or 'month'
+            columns: dictionary of columns to include from the queryset
+                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
+            include_empty: whether or not to include all possible results whether or not they exist in the queryset
+        Returns:
+            list of dict results split by fiscal years/quarters/months
+    """
+    hashed_results = {}
+
+    # Populate all possible periods results can include
+    for time_period in filter_time_periods:
+        start_date = generate_date_from_string(time_period['start_date'])
+        end_date = generate_date_from_string(time_period['end_date'])
+        for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=date_range_type):
+            # front-end wants a string for fiscal_year
+            date_range_hash = generate_date_range_hash(date_range)
+            date_range['fy'] = str(date_range['fy'])
+            hashed_results[date_range_hash] = {'time_period': date_range}
+            for column_name, column_in_queryset in columns.items():
+                hashed_results[date_range_hash][column_name] = 0
+
+    # populate periods with new awards
+    populated_time_periods = []
+    for row in queryset:
+        row_hash = generate_date_range_hash(row)
+        populated_time_periods.append(row_hash)
+        for column_name, column_in_queryset in columns.items():
+            hashed_results[row_hash][column_name] = row[column_in_queryset]
+
+    # if we're not including the empty ones, just keep the populated time periods
+    if not include_empty:
+        hashed_results = {key: result for key, result in hashed_results.items() if key in populated_time_periods}
+
+    # sort the list chronologically
+    results = sorted(list(hashed_results.values()), key=lambda k: generate_date_range_hash(k['time_period']))
+
+    # change fy's to fiscal_years
+    for result in results:
+        result['time_period']['fiscal_year'] = result['time_period']['fy']
+        del result['time_period']['fy']
+
+    return results
+
+
 def within_one_year(d1, d2):
     """ includes leap years """
     year_range = list(range(d1.year, d2.year + 1))
