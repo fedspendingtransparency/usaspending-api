@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'summary_award_recipient',
-                'managed': False,
+                'managed': True,
             },
         ),
     ]

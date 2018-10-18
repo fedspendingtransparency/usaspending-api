@@ -128,5 +128,5 @@ class SummaryAwardRecipient(models.Model):
     parent_recipient_unique_id = models.TextField(null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'summary_award_recipient'
