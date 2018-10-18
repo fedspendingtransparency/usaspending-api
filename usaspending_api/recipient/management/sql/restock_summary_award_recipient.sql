@@ -79,5 +79,7 @@ ALTER INDEX idx_25fc29e1$aca_action_date_temp RENAME TO idx_25fc29e1$aca_action_
 ALTER INDEX idx_25fc29e1$aca_recipient_hash_temp RENAME TO idx_25fc29e1$aca_recipient_hash;
 ALTER INDEX idx_25fc29e1$aca_parent_recipient_unique_id_temp RENAME TO idx_25fc29e1$aca_parent_recipient_unique_id;
 
+DROP TABLE IF EXISTS earliest_transaction;
+
 ANALYZE VERBOSE summary_award_recipient;
 GRANT SELECT ON summary_award_recipient TO readonly;
