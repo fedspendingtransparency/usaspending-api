@@ -1,5 +1,4 @@
 VACUUM ANALYZE VERBOSE subaward_view;
-VACUUM ANALYZE VERBOSE summary_award_recipient_view;
 VACUUM ANALYZE VERBOSE summary_award_view;
 VACUUM ANALYZE VERBOSE summary_state_view;
 VACUUM ANALYZE VERBOSE summary_transaction_fed_acct_view;
