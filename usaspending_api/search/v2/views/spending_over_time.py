@@ -13,7 +13,8 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
-from usaspending_api.common.helpers.generic_helper import generate_date_ranged_results_from_queryset
+from usaspending_api.common.helpers.generic_helper import (
+    generate_date_ranged_results_from_queryset, generate_fiscal_year)
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -97,10 +98,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         db_results, values = self.database_data_layer()
 
-        # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to today.
+        # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
         default_time_period = {'start_date': settings.API_SEARCH_MIN_DATE,
-                               'end_date': datetime.utcnow().strftime('%Y-%m-%d')}
+                               'end_date': '{}-09-30'.format(generate_fiscal_year(datetime.utcnow()))}
         time_periods = self.filters.get('time_period', [default_time_period])
 
         results = generate_date_ranged_results_from_queryset(filter_time_periods=time_periods, queryset=db_results,
