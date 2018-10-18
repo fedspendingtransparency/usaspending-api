@@ -182,7 +182,6 @@ def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SubawardView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardRecipientView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects', mock_qs)
     monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)

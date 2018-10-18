@@ -119,3 +119,14 @@ class RecipientLookup(models.Model):
             PartialIndex(fields=["duns"], unique=True, where=PQ(duns__isnull=False)),
             PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
         ]
+
+
+class SummaryAwardRecipient(models.Model):
+    award_id = models.TextField(primary_key=True)
+    action_date = models.DateField(blank=True)
+    recipient_hash = models.UUIDField(null=True)
+    parent_recipient_unique_id = models.TextField(null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'summary_award_recipient'

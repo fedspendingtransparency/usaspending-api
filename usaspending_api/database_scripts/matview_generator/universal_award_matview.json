@@ -53,7 +53,7 @@
     "  SAA.subtier_code AS awarding_subtier_agency_code,",
     "  SFA.subtier_code AS funding_subtier_agency_code,",
     "",
-    "  COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) AS recipient_location_country_code,",
+    "  CASE WHEN COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'UNITED STATES' THEN 'USA' ELSE COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) END AS recipient_location_country_code,",
     "  COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,",
     "  COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,",
     "  COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code) AS recipient_location_county_code,",
