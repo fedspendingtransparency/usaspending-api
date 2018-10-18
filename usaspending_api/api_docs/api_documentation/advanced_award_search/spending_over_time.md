@@ -18,8 +18,8 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
 {
     "group": "quarter",
     "filters": {
-        "award_type_codes": ["A", "B", "03"],
-        "award_ids": [1, 2, 3],
+        "award_type_codes": ["A", "B", "C", "D", "02", "03"],
+        "award_ids": ["99ORANGE-NONE", "VA24615C0093"],
         "award_amounts": [
             {
                 "lower_bound": 1000000.00,
@@ -31,7 +31,7 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
             {
                 "lower_bound": 500000000.00
             }
-        ],
+        ]
     },
     "subawards": false
 }
@@ -42,11 +42,21 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
 
 ```
 {
-    "group": "quarter"
+    "group": "quarter",
     "results": [
         {
-            "time_period": {"fiscal_year": "2017", "quarter": "3"},
-            "aggregated_amount": "200000000"
+            "aggregated_amount": 2507827,
+            "time_period": {
+                "fiscal_year": "2016",
+                "quarter": "1"
+            }
+        },
+        {
+            "aggregated_amount": 0,
+            "time_period": {
+                "fiscal_year": "2016",
+                "quarter": "2"
+            }
         },
         ....
 

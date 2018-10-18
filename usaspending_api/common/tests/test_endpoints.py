@@ -76,10 +76,10 @@ def test_endpoints(endpoint_data, client):
         # be a multi-tiered nest of lists and objects, and can also be OrderedDicts
         # and ResultLists, which don't play nice with the native equality checks
         # TESTING TODO: I bet I can beat this
-        assert evaluateEquivalence(response_object, response.data)
+        assert evaluate_equivalence(response_object, response.data)
 
 
-def evaluateEquivalence(item1, item2):
+def evaluate_equivalence(item1, item2):
     equality = True
     if isinstance(item1, list):
         if len(item1) is not len(item2):
@@ -88,7 +88,7 @@ def evaluateEquivalence(item1, item2):
             for i in range(len(item1)):
                 matched = False
                 for item in item2:
-                    if evaluateEquivalence(item1[i], item):
+                    if evaluate_equivalence(item1[i], item):
                         item2.remove(
                             item
                         )  # Remove this item from the list if we hit a match
@@ -108,7 +108,7 @@ def evaluateEquivalence(item1, item2):
                 continue
             if 'page_metadata' in key:  # Ignore this due to checksum comparison
                 continue
-            equality = equality and evaluateEquivalence(item1[key], item2[key])
+            equality = equality and evaluate_equivalence(item1[key], item2[key])
     else:
         # Converting to string represenations to clear up some issues with Decimal casting
         # print(str(item1))  # Leaving these here for future debugging

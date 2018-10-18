@@ -1,13 +1,13 @@
 import logging
 
+from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections
 
+from usaspending_api.broker import lookups
+from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.etl.executive_compensation_etl import load_executive_compensation
-from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.broker import lookups
-from datetime import datetime, timedelta
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -63,7 +63,7 @@ class Command(BaseCommand):
             data_load_date_obj = ExternalDataLoadDate.objects. \
                 filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).first()
             if not data_load_date_obj:
-                date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+                date = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 date = data_load_date_obj.last_load_date
         start_date = datetime.utcnow().strftime('%Y-%m-%d')
