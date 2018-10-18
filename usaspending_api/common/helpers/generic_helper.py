@@ -163,7 +163,7 @@ def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, da
         Returns:
             list of dict results split by fiscal years/quarters/months
     """
-    hashed_results = {}
+    hashed_results = OrderedDict()
 
     # Populate all possible periods results can include
     for time_period in filter_time_periods:
@@ -189,8 +189,7 @@ def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, da
     if not include_empty:
         hashed_results = {key: result for key, result in hashed_results.items() if key in populated_time_periods}
 
-    # sort the list chronologically
-    results = sorted(list(hashed_results.values()), key=lambda k: generate_date_range_hash(k['time_period']))
+    results = list(hashed_results.values())
 
     # change fy's to fiscal_years
     for result in results:
