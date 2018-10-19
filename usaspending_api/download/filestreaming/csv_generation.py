@@ -179,7 +179,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         log_time = time.time()
         output_template = '{}_%s.csv'.format(source_name)
 
-        if download_job is not None and download_job.monthly_download == True:
+        if download_job is not None and download_job.monthly_download is True:
             # Use existing detailed filename from parent file if it exists
             # e.g. `019_Assistance_Delta_20180917_%s.csv`
             output_template = '{}_%s.csv'.format(strip_file_extension(download_job.file_name))
