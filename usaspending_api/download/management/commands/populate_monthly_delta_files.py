@@ -111,7 +111,7 @@ class Command(BaseCommand):
         working_dir = '{}_{}_delta_gen_{}/'.format(settings.CSV_LOCAL_PATH, agency_code, timestamp)
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
-        source_name = '{}_{}_delta'.format(award_type, VALUE_MAPPINGS['transactions']['download_name'])
+        source_name = '{}_{}_Delta_{}'.format(agency_code, award_type, datetime.strftime(date.today(), '%Y%m%d'))
         source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
         # Create a unique temporary file with the raw query
@@ -130,10 +130,10 @@ class Command(BaseCommand):
         self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if csv_row_count(source_path, has_header=True) > 0:
             # Split the CSV into multiple files and zip it up
-            zipfile_path = '{}{}_{}_Delta_{}.zip'.format(settings.CSV_LOCAL_PATH, agency_code, award_type,
-                                                         datetime.strftime(date.today(), '%Y%m%d'))
+            zipfile_path = '{}{}.zip'.format(settings.CSV_LOCAL_PATH, source_name)
+
             logger.info('Creating compressed file: {}'.format(os.path.basename(zipfile_path)))
-            split_and_zip_csvs(zipfile_path, source_path, source_name, inherit_source_name=True)
+            split_and_zip_csvs(zipfile_path, source_path, source_name)
         else:
             zipfile_path = None
 
