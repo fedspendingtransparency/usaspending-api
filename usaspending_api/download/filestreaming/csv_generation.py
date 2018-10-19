@@ -158,9 +158,8 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         with open(source_path, 'r') as source_csv:
             download_job.number_of_rows += sum(1 for row in csv.reader(source_csv)) - 1
             download_job.save()
-        inherit_source_name = False
-        if download_job.monthly_download is True:
-            inherit_source_name = True
+
+        inherit_source_name = download_job.monthly_download
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
@@ -181,7 +180,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.time()
         output_template = '{}_%s.csv'.format(source_name)
-        if inherit_source_name is True:
+        if inherit_source_name:
             # Use existing detailed filename from parent file if it exists
             # e.g. `019_Assistance_Delta_20180917_%s.csv`
             output_template = '{}_%s.csv'.format(strip_file_extension(download_job.file_name))
