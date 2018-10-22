@@ -6,11 +6,12 @@ from django.db import connections, transaction as db_transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
-from usaspending_api.references.models import Agency, Cfda, Location
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_award_subawards
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.references.models import Agency, Cfda, Location
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -221,21 +222,12 @@ class Command(BaseCommand):
                     'sub_award.bus_types AS bus_types',
                 ]
             )
-
-            query = (
-                "SELECT "
-                + ",".join(query_columns)
-                + " FROM fsrs_"
-                + award_type
-                + " AS award "
-                + "JOIN fsrs_"
-                + subaward_type
-                + " AS sub_award ON sub_award.parent_id = award.id WHERE award.id > "
-                + str(max_id)
-                + " AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT "
-                + str(QUERY_LIMIT)
-                + " OFFSET "
-                + str(offset)
+            _select = "SELECT {}"
+            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id".format()
+            _where = " WHERE award.id > {} AND sub_award.subcontract_num IS NOT NULL"
+            _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
+            query = (_select + _from + _where + _other).format(
+                ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
             )
         else:
             query_columns.extend(
@@ -257,8 +249,11 @@ class Command(BaseCommand):
                     'sub_award.awardee_address_district AS awardee_address_district',
                 ]
             )
-
-            query = "SELECT {} FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}".format(
+            _select = "SELECT {}"
+            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id".format()
+            _where = " WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL"
+            _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
+            query = (_select + _from + _where + _other).format(
                 ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
             )
 
@@ -285,17 +280,24 @@ class Command(BaseCommand):
                         shared_mappings['award'].recipient.business_categories or []
                     )
 
-                    # awarding_subtier_agency_abbreviation
-                    # awarding_subtier_agency_name
-                    # awarding_toptier_agency_abbreviation
-                    # awarding_toptier_agency_name
-                    # cfda (cfda_numbers -> cfda_number)
-                    # fiscal_year
-                    # latest_transaction_id
-                    # parent_recipient_unique_id ???
-                    # pop
-                    # recipient_location
-                    #
+            # awarding_agency = Agency.objects.filter(shared_mappings['award'].awarding_agency)
+            # aw.funding_agency_id,
+            # taa.name AS awarding_toptier_agency_name,
+            # saa.name AS awarding_subtier_agency_name,
+            # tfa.name AS funding_toptier_agency_name,
+            # sfa.name AS funding_subtier_agency_name,
+            # taa.abbreviation AS awarding_toptier_agency_abbreviation,
+            # tfa.abbreviation AS funding_toptier_agency_abbreviation,
+            # saa.abbreviation AS awarding_subtier_agency_abbreviation,
+            # sfa.abbreviation AS funding_subtier_agency_abbreviation,
+            # awarding_subtier_agency_abbreviation
+            # awarding_subtier_agency_name
+            # awarding_toptier_agency_abbreviation
+            # awarding_toptier_agency_name
+            # funding ???
+            # pop
+            # recipient_location
+            #
 
             upper_case_dict_values(row)
 
@@ -304,6 +306,11 @@ class Command(BaseCommand):
             if 'cfda_numbers' in row and row['cfda_numbers']:
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
+                logger.debug(
+                    "{} {}".format(cfda.program_number, cfda.program_title)
+                    if cfda
+                    else "No CFDA found for {}".format(only_num)
+                )
 
             if award_type == 'procurement':
                 le_location_map = location_d1_recipient_mapper(row)
@@ -388,11 +395,6 @@ class Command(BaseCommand):
                 'officer_5_name': row['top_paid_fullname_5'],
                 'officer_5_amount': row['top_paid_amount_5'],
                 'data_source': "DBR",
-                'cfda': cfda,
-                'awarding_agency': shared_mappings['award'].awarding_agency if shared_mappings['award'] else None,
-                'funding_agency': shared_mappings['award'].funding_agency if shared_mappings['award'] else None,
-                'prime_award_type': shared_mappings['award'].type if shared_mappings['award'] else None,
-                'last_modified_date': shared_mappings['award'].last_modified_date if shared_mappings['award'] else None,
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
                 'description': row['overall_description'],
@@ -417,6 +419,22 @@ class Command(BaseCommand):
                 'pop_congressional_code': row['principle_place_district'],
                 'updated_at': datetime.now(timezone.utc),
             }
+
+            if shared_mappings['award']:
+                subaward_dict.update({
+                    'awarding_agency': shared_mappings['award'].awarding_agency,
+                    'funding_agency': shared_mappings['award'].funding_agency,
+                    'prime_award_type': shared_mappings['award'].type,
+                    'last_modified_date': shared_mappings['award'].last_modified_date,
+                    'latest_transaction_id': shared_mappings['award'].latest_transaction_id,
+                    'fiscal_year': generate_fiscal_year(shared_mappings['award'].action_date)
+                })
+
+            if cfda:
+                subaward_dict.update({
+                    'cfda_number': cfda.program_number,
+                    'cfda_title': cfda.program_title,
+                })
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
