@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS public.summary_award_recipient_temp CASCADE;
 DROP TABLE IF EXISTS public.earliest_transaction_temp CASCADE;
 
 --------------------------------------------------------------------------------
