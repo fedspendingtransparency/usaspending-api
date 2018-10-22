@@ -24,21 +24,20 @@ CREATE TABLE public.earliest_transaction_temp AS (
 
 --------------------------------------------------------------------------------
 -- Step 2, create summary_award_recipient using txn_earliest_temp
-------------------------------------------------    --------------------------------
+--------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 2: Create summary_award_recipient'; END $$;
 
 BEGIN;
-DROP TABLE public.summary_award_recipient;
-CREATE TABLE public.summary_award_recipient AS (
+TRUNCATE TABLE public.summary_award_recipient RESTART IDENTITY;
+INSERT INTO public.summary_award_recipient
+  (award_id, action_date, recipient_hash, parent_recipient_unique_id)
   SELECT
+      DISTINCT ON (award_id)
       earliest_transaction_temp.award_id,
       earliest_transaction_temp.action_date,
       txn_matview.recipient_hash,
       txn_matview.parent_recipient_unique_id
   FROM public.earliest_transaction_temp
-  LEFT OUTER JOIN universal_transaction_matview txn_matview ON (earliest_transaction_temp.id = txn_matview.transaction_id)
-);
+  LEFT OUTER JOIN universal_transaction_matview txn_matview ON (earliest_transaction_temp.id = txn_matview.transaction_id);
 DROP TABLE public.earliest_transaction_temp;
 COMMIT;
-
-
