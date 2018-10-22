@@ -23,7 +23,7 @@ CREATE TABLE public.earliest_transaction_temp AS (
 );
 
 --------------------------------------------------------------------------------
--- Step 2, create summary_award_recipient using txn_earliest_temp
+-- Step 2, update summary_award_recipient using txn_earliest_temp
 --------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 2: Create summary_award_recipient'; END $$;
 
