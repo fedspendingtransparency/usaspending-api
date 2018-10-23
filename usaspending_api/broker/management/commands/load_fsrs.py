@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction as db_transaction
+from django.db import connections, transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
@@ -136,13 +136,13 @@ class Command(BaseCommand):
             )
 
             if all_awards.count() > 1:
-                logger.warning("Multiple awards found with fain {}".format(row['fain']))
+                logger.warning("Multiple awards found with FAIN {}".format(row['fain']))
 
             award = all_awards.first()
 
             # We don't have a matching award for this subgrant, log a warning and continue to the next row
             if not award:
-                logger.warning("Internal ID {} cannot find award with fain {};".format(row['internal_id'], row['fain']))
+                logger.warning("FAIN '{}' was not found in Awards for Internal ID '{}'".format(row['fain'], row['internal_id']))
                 return None
         return award
 
@@ -223,7 +223,7 @@ class Command(BaseCommand):
                 ]
             )
             _select = "SELECT {}"
-            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id".format()
+            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
             _where = " WHERE award.id > {} AND sub_award.subcontract_num IS NOT NULL"
             _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
             query = (_select + _from + _where + _other).format(
@@ -250,7 +250,7 @@ class Command(BaseCommand):
                 ]
             )
             _select = "SELECT {}"
-            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id".format()
+            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
             _where = " WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL"
             _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
             query = (_select + _from + _where + _other).format(
@@ -279,25 +279,6 @@ class Command(BaseCommand):
                     prime_award_dict['business_categories'] = (
                         shared_mappings['award'].recipient.business_categories or []
                     )
-
-            # awarding_agency = Agency.objects.filter(shared_mappings['award'].awarding_agency)
-            # aw.funding_agency_id,
-            # taa.name AS awarding_toptier_agency_name,
-            # saa.name AS awarding_subtier_agency_name,
-            # tfa.name AS funding_toptier_agency_name,
-            # sfa.name AS funding_subtier_agency_name,
-            # taa.abbreviation AS awarding_toptier_agency_abbreviation,
-            # tfa.abbreviation AS funding_toptier_agency_abbreviation,
-            # saa.abbreviation AS awarding_subtier_agency_abbreviation,
-            # sfa.abbreviation AS funding_subtier_agency_abbreviation,
-            # awarding_subtier_agency_abbreviation
-            # awarding_subtier_agency_name
-            # awarding_toptier_agency_abbreviation
-            # awarding_toptier_agency_name
-            # funding ???
-            # pop
-            # recipient_location
-            #
 
             upper_case_dict_values(row)
 
@@ -422,25 +403,43 @@ class Command(BaseCommand):
 
             if shared_mappings['award']:
                 subaward_dict.update({
-                    'awarding_agency': shared_mappings['award'].awarding_agency,
-                    'funding_agency': shared_mappings['award'].funding_agency,
-                    'prime_award_type': shared_mappings['award'].type,
-                    'last_modified_date': shared_mappings['award'].last_modified_date,
-                    'latest_transaction_id': shared_mappings['award'].latest_transaction_id,
-                    'fiscal_year': generate_fiscal_year(shared_mappings['award'].action_date)
+                    "awarding_agency": shared_mappings["award"].awarding_agency,
+                    "funding_agency": shared_mappings["award"].funding_agency,
+                    "prime_award_type": shared_mappings["award"].type,
+                    "last_modified_date": shared_mappings["award"].last_modified_date,
+                    "latest_transaction_id": shared_mappings["award"].latest_transaction_id,
                 })
+                funding_agency = get_agency_values(shared_mappings["award"].funding_agency)
+                awarding_agency = get_agency_values(shared_mappings["award"].awarding_agency)
+            else:
+                funding_agency, awarding_agency = None, None
 
             if cfda:
                 subaward_dict.update({
-                    'cfda_number': cfda.program_number,
-                    'cfda_title': cfda.program_title,
+                    "cfda_number": cfda.program_number,
+                    "cfda_title": cfda.program_title,
+                })
+
+            if funding_agency:
+                subaward_dict.update({
+                    "funding_toptier_agency_abbreviation": funding_agency["toptier_agency_abbreviation"],
+                    "funding_toptier_agency_name": funding_agency["toptier_agency_name"],
+                    "funding_subtier_agency_abbreviation": funding_agency["subtier_agency_abbreviation"],
+                    "funding_subtier_agency_name": funding_agency["subtier_agency_name"],
+                })
+            if awarding_agency:
+                subaward_dict.update({
+                    "awarding_toptier_agency_abbreviation": awarding_agency["toptier_agency_abbreviation"],
+                    "awarding_toptier_agency_name": awarding_agency["toptier_agency_name"],
+                    "awarding_subtier_agency_abbreviation": awarding_agency["subtier_agency_abbreviation"],
+                    "awarding_subtier_agency_name": awarding_agency["subtier_agency_name"],
                 })
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
             Subaward.objects.create(**subaward_dict)
-            if shared_mappings['award']:
-                award_update_id_list.add(shared_mappings['award'].id)
+            if shared_mappings["award"]:
+                award_update_id_list.add(shared_mappings["award"].id)
 
     def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
         """ Process the subawards and insert them as we go """
@@ -450,7 +449,7 @@ class Command(BaseCommand):
 
         # run as long as we get any results for the subawards, stop as soon as we run out
         while len(subaward_list) > 0:
-            logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
+            logger.info("Processing next {} subawards, starting at offset: {}".format(QUERY_LIMIT, current_offset))
             for row in subaward_list:
                 self.create_subaward(row, shared_award_mappings, award_type)
 
@@ -504,7 +503,7 @@ class Command(BaseCommand):
         award_update_id_list.update(fixed_ids)
         logger.info('Fixed {} of {} broken links'.format(len(fixed_ids), broken_links))
 
-    @db_transaction.atomic
+    @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FSRS data load...')
 
@@ -515,8 +514,8 @@ class Command(BaseCommand):
         logger.info('Cleaning up previous subawards without parent awards...')
         self.cleanup_broken_links(db_cursor)
 
-        logger.info('Get Broker FSRS procurement data...')
-        self.process_award_type(db_cursor, "procurement", "subcontract")
+        # logger.info('Get Broker FSRS procurement data...')
+        # self.process_award_type(db_cursor, "procurement", "subcontract")
 
         logger.info('Get Broker FSRS grant data...')
         self.process_award_type(db_cursor, "grant", "subgrant")
@@ -528,6 +527,7 @@ class Command(BaseCommand):
         logger.info('Finished updating award metadata...')
 
         logger.info('Load FSRS Script Complete!')
+        transaction.rollback()
 
 
 def get_valid_awarding_agency(row):
@@ -541,6 +541,18 @@ def get_valid_awarding_agency(row):
         agency = Agency.get_by_subtier(agency_subtier_code)
 
     return agency
+
+
+def get_agency_values(agency):
+    if not agency:
+        return None
+    agency_dict = {
+        "toptier_agency_abbreviation": F("toptier_agency__abbreviation"),
+        "toptier_agency_name": F("toptier_agency__name"),
+        "subtier_agency_abbreviation": F("subtier_agency__abbreviation"),
+        "subtier_agency_name": F("subtier_agency__name"),
+    }
+    return Agency.objects.filter(id=agency.id).values(**agency_dict).first()
 
 
 def location_d1_recipient_mapper(row):
