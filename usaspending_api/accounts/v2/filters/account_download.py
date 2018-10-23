@@ -47,6 +47,10 @@ def account_download_filter(account_type, download_table, filters, account_level
     query_filters[reporting_period_start] = start_date
     query_filters[reporting_period_end] = end_date
 
+    if account_type in ['account_balances', 'object_class_program_activity']:
+        # only include the latest TASs, not all of them
+        query_filters['final_of_fy'] = True
+
     # Create the base queryset
     queryset = download_table.objects
 
