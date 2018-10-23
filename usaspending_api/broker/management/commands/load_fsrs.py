@@ -6,7 +6,6 @@ from django.db import connections, transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -142,7 +141,8 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subgrant, log a warning and continue to the next row
             if not award:
-                logger.warning("FAIN '{}' was not found in Awards for Internal ID '{}'".format(row['fain'], row['internal_id']))
+                msg = "FAIN '{}' was not found in Awards for Internal ID '{}'"
+                logger.warning(msg.format(row['fain'], row['internal_id']))
                 return None
         return award
 
@@ -449,7 +449,7 @@ class Command(BaseCommand):
 
         # run as long as we get any results for the subawards, stop as soon as we run out
         while len(subaward_list) > 0:
-            logger.info("Processing next {} subawards, starting at offset: {}".format(QUERY_LIMIT, current_offset))
+            logger.info("Processing next {:,} subawards, starting at offset: {:,}".format(QUERY_LIMIT, current_offset))
             for row in subaward_list:
                 self.create_subaward(row, shared_award_mappings, award_type)
 
@@ -514,8 +514,8 @@ class Command(BaseCommand):
         logger.info('Cleaning up previous subawards without parent awards...')
         self.cleanup_broken_links(db_cursor)
 
-        # logger.info('Get Broker FSRS procurement data...')
-        # self.process_award_type(db_cursor, "procurement", "subcontract")
+        logger.info('Get Broker FSRS procurement data...')
+        self.process_award_type(db_cursor, "procurement", "subcontract")
 
         logger.info('Get Broker FSRS grant data...')
         self.process_award_type(db_cursor, "grant", "subgrant")
@@ -527,7 +527,6 @@ class Command(BaseCommand):
         logger.info('Finished updating award metadata...')
 
         logger.info('Load FSRS Script Complete!')
-        transaction.rollback()
 
 
 def get_valid_awarding_agency(row):
