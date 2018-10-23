@@ -77,16 +77,22 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
 
     FINAL_OF_FY_SQL = """
         UPDATE financial_accounts_by_program_activity_object_class
-        SET final_of_fy = (treasury_account_id, submission_id) in
+        SET final_of_fy = (treasury_account_id, program_activity_id, object_class_id, submission_id) in
         ( SELECT DISTINCT ON
             (fabpaoc.treasury_account_id,
+             fabpaoc.program_activity_id,
+             fabpaoc.object_class,
              FY(s.reporting_period_start))
           fabpaoc.treasury_account_id,
+          fabpaoc.program_activity_id,
+          fabpaoc.object_class_id,
           s.submission_id
           FROM submission_attributes s
           JOIN financial_accounts_by_program_activity_object_class fabpaoc
               ON (s.submission_id = fabpaoc.submission_id)
           ORDER BY fabpaoc.treasury_account_id,
+                   fabpaoc.program_activity_id,
+                   fabpaoc.object_class_id,
                    FY(s.reporting_period_start),
                    s.reporting_period_start DESC)"""
 
