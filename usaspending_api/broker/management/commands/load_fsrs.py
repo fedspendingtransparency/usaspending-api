@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.models import F, Func, Max, Value
 
-from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.awards.models import Award, Subaward, TransactionFPDS
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -347,6 +347,14 @@ class Command(BaseCommand):
                 'piid': row.get('piid', None),
                 'fain': row.get('fain', None),
                 'updated_at': datetime.now(timezone.utc),
+
+                # keyword_ts_vector               # leave NULL, matview SQL will populate
+                # award_ts_vector                 # leave NULL, matview SQL will populate
+                # recipient_name_ts_vector        # leave NULL, matview SQL will populate
+                # product_or_service_description  # leave NULL, matview SQL will populate
+                # total_obl_bin                   # leave NULL, matview SQL will populate
+                # business_type_code              # always NULL
+                # extent_competed                 # always NULL
             }
 
             if shared_mappings['award']:
@@ -361,6 +369,18 @@ class Command(BaseCommand):
                 )
                 funding_agency = get_agency_values(shared_mappings["award"].funding_agency)
                 awarding_agency = get_agency_values(shared_mappings["award"].awarding_agency)
+                contract_data = get_contract_fields(shared_mappings["award"].latest_transaction_id)
+                if contract_data:
+                    subaward_dict.update(
+                        {
+
+                            'pulled_from': contract_data['pulled_from'],
+                            'product_or_service_code': contract_data['product_or_service_code'],
+                            # 'product_or_service_description': None,
+                            'type_of_contract_pricing': contract_data['type_of_contract_pricing'],
+                            'type_set_aside': contract_data['type_set_aside'],
+                        }
+                    )
 
             else:
                 funding_agency, awarding_agency = None, None
@@ -406,16 +426,16 @@ class Command(BaseCommand):
             performance_city_county = get_city_and_county_from_state(
                 row['principle_place_state'], row['principle_place_city']
             )
-            subaward_dict['pop_county_code'] = performance_city_county["county_code"]
-            subaward_dict['pop_county_name'] = performance_city_county["county_name"]
-            subaward_dict['pop_city_code'] = performance_city_county["city_code"]
+            subaward_dict['pop_county_code'] = performance_city_county.get("county_code")
+            subaward_dict['pop_county_name'] = performance_city_county.get("county_name")
+            subaward_dict['pop_city_code'] = performance_city_county.get("city_code")
 
             ref_loc_city_county = get_city_and_county_from_state(
                 row['recipient_location_state_code'], row['recipient_location_city_name']
             )
-            subaward_dict['recipient_location_county_code'] = ref_loc_city_county["county_code"]
-            subaward_dict['recipient_location_county_name'] = ref_loc_city_county["county_name"]
-            subaward_dict['recipient_location_city_code'] = ref_loc_city_county["city_code"]
+            subaward_dict['recipient_location_county_code'] = ref_loc_city_county.get("county_code")
+            subaward_dict['recipient_location_county_name'] = ref_loc_city_county.get("county_name")
+            subaward_dict['recipient_location_city_code'] = ref_loc_city_county.get("city_code")
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
@@ -550,7 +570,7 @@ def get_city_and_county_from_state(state, city_name):
     )
     if ref_loc:
         return ref_loc[0]
-    return {"county_name": None, "county_code": None, "city_code": None}
+    return {}
 
 
 def get_le_business_categories(le_id):
@@ -558,3 +578,10 @@ def get_le_business_categories(le_id):
     if le:
         return le.business_categories or []
     return []
+
+
+def get_contract_fields(transaction_id):
+    trx = TransactionFPDS.objects.filter(transaction_id=transaction_id).values().first()
+    if trx:
+        return trx
+    return {}
