@@ -9,7 +9,7 @@ from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.references.models import Agency, Cfda, RefCountryCode, RefCityCountyCode
+from usaspending_api.references.models import Agency, Cfda, RefCountryCode, RefCityCountyCode, LegalEntity
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -356,18 +356,19 @@ class Command(BaseCommand):
                         "prime_award_type": shared_mappings["award"].type,
                         "last_modified_date": shared_mappings["award"].last_modified_date,
                         "latest_transaction_id": shared_mappings["award"].latest_transaction_id,
-                        "funding_agency_id": shared_mappings["award"].funding_agency.id,
-                        "awarding_agency_id": shared_mappings["award"].awarding_agency.id,
+                        "business_categories": get_le_business_categories(shared_mappings["award"].recipient_id),
                     }
                 )
                 funding_agency = get_agency_values(shared_mappings["award"].funding_agency)
                 awarding_agency = get_agency_values(shared_mappings["award"].awarding_agency)
+
             else:
                 funding_agency, awarding_agency = None, None
 
             if funding_agency:
                 subaward_dict.update(
                     {
+                        "funding_agency_id": funding_agency["agency_id"],
                         "funding_toptier_agency_abbreviation": funding_agency["toptier_agency_abbreviation"],
                         "funding_toptier_agency_name": funding_agency["toptier_agency_name"],
                         "funding_subtier_agency_abbreviation": funding_agency["subtier_agency_abbreviation"],
@@ -377,6 +378,7 @@ class Command(BaseCommand):
             if awarding_agency:
                 subaward_dict.update(
                     {
+                        "awarding_agency_id": awarding_agency["agency_id"],
                         "awarding_toptier_agency_abbreviation": awarding_agency["toptier_agency_abbreviation"],
                         "awarding_toptier_agency_name": awarding_agency["toptier_agency_name"],
                         "awarding_subtier_agency_abbreviation": awarding_agency["subtier_agency_abbreviation"],
@@ -530,6 +532,7 @@ def get_agency_values(agency):
         "toptier_agency_name": F("toptier_agency__name"),
         "subtier_agency_abbreviation": F("subtier_agency__abbreviation"),
         "subtier_agency_name": F("subtier_agency__name"),
+        "agency_id": F("id"),
     }
     return Agency.objects.filter(id=agency.id).values(**agency_dict).first()
 
@@ -548,3 +551,10 @@ def get_city_and_county_from_state(state, city_name):
     if ref_loc:
         return ref_loc[0]
     return {"county_name": None, "county_code": None, "city_code": None}
+
+
+def get_le_business_categories(le_id):
+    le = LegalEntity.objects.get(legal_entity_id=le_id)
+    if le:
+        return le.business_categories or []
+    return []
