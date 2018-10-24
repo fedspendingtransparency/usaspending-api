@@ -81,7 +81,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
         ( SELECT DISTINCT ON
             (fabpaoc.treasury_account_id,
              fabpaoc.program_activity_id,
-             fabpaoc.object_class,
+             fabpaoc.object_class_id,
              FY(s.reporting_period_start))
           fabpaoc.treasury_account_id,
           fabpaoc.program_activity_id,
