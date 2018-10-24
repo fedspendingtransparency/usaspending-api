@@ -9,8 +9,7 @@ from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.recipient.models import RecipientLookup
-from usaspending_api.references.models import Agency, Cfda, Location
+from usaspending_api.references.models import Agency, Cfda, RefCountryCode, RefCityCountyCode
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -113,9 +112,12 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
+                msg = (
+                    "[Internal ID {}] Award not found for {},{},{},{}"
+                    + " (agency_id, referenced_idv_agency_iden, piid, parent_award_id)"
+                )
                 logger.warning(
-                    "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
-                    "parent_award_id {};".format(
+                    msg.format(
                         row['internal_id'],
                         row['contract_agency_code'],
                         row['contract_idv_agency_code'],
@@ -135,14 +137,14 @@ class Command(BaseCommand):
             )
 
             if all_awards.count() > 1:
-                logger.warning("Multiple awards found with FAIN {}".format(row['fain']))
+                logger.warning("Multiple awards found with FAIN '{}'".format(row['fain']))
 
             award = all_awards.first()
 
             # We don't have a matching award for this subgrant, log a warning and continue to the next row
             if not award:
-                msg = "FAIN '{}' was not found in Awards for Internal ID '{}'"
-                logger.warning(msg.format(row['fain'], row['internal_id']))
+                msg = "[Internal ID {}] Award not found for FAIN '{}'"
+                logger.warning(msg.format(row['internal_id'], row['fain']))
                 return None
         return award
 
@@ -204,56 +206,66 @@ class Command(BaseCommand):
         if award_type == 'procurement':
             query_columns.extend(
                 [
+                    'award.contract_number AS piid',
+                    'sub_award.naics AS naics_code',
                     'sub_award.subcontract_num AS subaward_num',
                     'sub_award.subcontract_amount AS subaward_amount',
-                    'sub_award.overall_description',
+                    'sub_award.overall_description AS description',
                     'sub_award.recovery_model_q1 AS q1_flag',
                     'sub_award.recovery_model_q2 AS q2_flag',
-                    'sub_award.subcontract_date AS subaward_date',
-                    'sub_award.company_name AS company_name',
-                    'sub_award.company_address_country AS company_address_country',
-                    'sub_award.company_address_city AS company_address_city',
-                    'sub_award.company_address_zip AS company_address_zip',
-                    'sub_award.company_address_state AS company_address_state',
-                    'sub_award.company_address_state_name AS company_address_state_name',
-                    'sub_award.company_address_street AS company_address_street',
-                    'sub_award.company_address_district AS company_address_district',
-                    'sub_award.parent_company_name AS parent_company_name',
+                    'sub_award.subcontract_date AS action_date',
+                    'sub_award.company_name AS recipient_name',
+                    'sub_award.company_address_country AS recipient_location_country_code',
+                    'sub_award.company_address_city AS recipient_location_city_name',
+                    'sub_award.company_address_zip AS recipient_location_zip4',
+                    'LEFT(sub_award.company_address_zip, 5) AS recipient_location_zip5',
+                    'sub_award.company_address_state AS recipient_location_state_code',
+                    'sub_award.company_address_state_name AS recipient_location_state_name',
+                    'sub_award.company_address_street AS recipient_location_street_address',
+                    'sub_award.company_address_district AS recipient_location_congressional_code',
+                    'sub_award.parent_company_name AS parent_recipient_name',
                     'sub_award.bus_types AS bus_types',
+                    # funding_agency_code
+                    # funding_agency_name
                 ]
             )
             _select = "SELECT {}"
-            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
-            _where = " WHERE award.id > {} AND sub_award.subcontract_num IS NOT NULL"
-            _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
-            query = (_select + _from + _where + _other).format(
+            _from = "FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
+            _where = "WHERE award.id > {} AND sub_award.subcontract_num IS NOT NULL"
+            _other = "ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
+            query = " ".join([_select, _from, _where, _other]).format(
                 ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
             )
-        else:
+        else:  # grant
             query_columns.extend(
                 [
                     'sub_award.cfda_numbers',
                     'sub_award.subaward_num',
                     'sub_award.subaward_amount',
-                    'sub_award.project_description AS overall_description',
+                    'sub_award.project_description AS description',
                     'sub_award.compensation_q1 AS q1_flag',
                     'sub_award.compensation_q2 AS q2_flag',
-                    'sub_award.subaward_date',
-                    'sub_award.awardee_name AS awardee_name',
-                    'sub_award.awardee_address_country AS awardee_address_country',
-                    'sub_award.awardee_address_city AS awardee_address_city',
-                    'sub_award.awardee_address_zip AS awardee_address_zip',
-                    'sub_award.awardee_address_state AS awardee_address_state',
-                    'sub_award.awardee_address_state_name AS awardee_address_state_name',
-                    'sub_award.awardee_address_street AS awardee_address_street',
-                    'sub_award.awardee_address_district AS awardee_address_district',
+                    'sub_award.subaward_date AS action_date',
+                    'sub_award.awardee_name AS recipient_name',
+                    'sub_award.awardee_address_country AS recipient_location_country_code',
+                    'sub_award.awardee_address_city AS recipient_location_city_name',
+                    'sub_award.awardee_address_zip AS recipient_location_zip4',
+                    'LEFT(sub_award.awardee_address_zip, 5) AS recipient_location_zip5',
+                    'sub_award.awardee_address_state AS recipient_location_state_code',
+                    'sub_award.awardee_address_state_name AS recipient_location_state_name',
+                    'sub_award.awardee_address_street AS recipient_location_street_address',
+                    'sub_award.awardee_address_district AS recipient_location_congressional_code',
+                    'UPPER(award.fain) AS fain',
+                    # funding_agency_code
+                    # funding_agency_name
+
                 ]
             )
             _select = "SELECT {}"
-            _from = " FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
-            _where = " WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL"
-            _other = " ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
-            query = (_select + _from + _where + _other).format(
+            _from = "FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
+            _where = "WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL"
+            _other = "ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
+            query = " ".join([_select, _from, _where, _other]).format(
                 ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
             )
 
@@ -268,7 +280,9 @@ class Command(BaseCommand):
 
         # only insert the subaward if the internal_id is in our mappings, otherwise there was a problem
         # finding one or more parts of the shared data for it and we don't want to insert it.
-        if row['internal_id'] in shared_award_mappings:
+        if row['internal_id'] not in shared_award_mappings:
+            logger.info("[Internal ID {}] not in 'shared_award_mappings'".format(row["internal_id"]))
+        else:
             shared_mappings = shared_award_mappings[row['internal_id']]
 
             prime_award_dict = {}
@@ -287,84 +301,28 @@ class Command(BaseCommand):
             if 'cfda_numbers' in row and row['cfda_numbers']:
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
-                logger.debug(
-                    "{} {}".format(cfda.program_number, cfda.program_title)
-                    if cfda
-                    else "No CFDA found for {}".format(only_num)
-                )
-
-            if award_type == 'procurement':
-                le_location_map = location_d1_recipient_mapper(row)
-                recipient_name = row['company_name']
-                parent_recipient_name = row['parent_company_name']
-                business_type_code = None
-                business_types_description = row['bus_types']
-            else:
-                le_location_map = location_d2_recipient_mapper(row)
-                recipient_name = row['awardee_name']
-                parent_recipient_name = None
-                business_type_code = None
-                business_types_description = None
-
-            if le_location_map["location_zip"]:
-                le_location_map.update(
-                    zip4=le_location_map["location_zip"],
-                    zip5=le_location_map["location_zip"][:5],
-                    zip_last4=le_location_map["location_zip"][5:],
-                )
-
-            le_location_map.pop("location_zip")
-            recipient_location = Location(**le_location_map)
-            recipient_location.pre_save()
-
-            pop_value_map = pop_mapper(row)
-            pop_value_map['place_of_performance_flag'] = True
-
-            if pop_value_map["location_zip"]:
-                pop_value_map.update(
-                    zip4=pop_value_map["location_zip"],
-                    zip5=pop_value_map["location_zip"][:5],
-                    zip_last4=pop_value_map["location_zip"][5:],
-                )
-
-            pop_value_map.pop("location_zip")
-            place_of_performance = Location(**pop_value_map)
-            place_of_performance.pre_save()
-
-            if not parent_recipient_name and row.get('parent_duns'):
-                duns_obj = (
-                    RecipientLookup.objects.filter(duns=row['parent_duns'], legal_business_name__isnull=False)
-                    .values('legal_business_name')
-                    .first()
-                )
-                if duns_obj:
-                    parent_recipient_name = duns_obj['legal_business_name']
 
             subaward_dict = {
                 'award': shared_mappings['award'],
                 'recipient_unique_id': row['duns'],
-                'recipient_name': recipient_name,
+                'recipient_name': row['recipient_name'],
                 'dba_name': row['dba_name'],
                 'parent_recipient_unique_id': row['parent_duns'],
-                'parent_recipient_name': parent_recipient_name,
-                'business_type_code': business_type_code,
-                'business_type_description': business_types_description,
+                'parent_recipient_name': row.get('parent_recipient_name', None),
+                'business_type_code': None,
+                'business_type_description': row.get('bus_types', None),
                 'prime_recipient': prime_award_dict.get('prime_recipient', None),
                 'prime_recipient_name': prime_award_dict.get('prime_recipient_name', None),
                 'business_categories': prime_award_dict.get('business_categories', []),
-                'recipient_location_country_code': recipient_location.location_country_code,
-                'recipient_location_country_name': recipient_location.country_name,
-                'recipient_location_state_code': recipient_location.state_code,
-                'recipient_location_state_name': recipient_location.state_name,
-                'recipient_location_county_code': recipient_location.county_code,
-                'recipient_location_county_name': recipient_location.county_name,
-                'recipient_location_city_code': recipient_location.city_code,
-                'recipient_location_city_name': recipient_location.city_name,
-                'recipient_location_zip4': recipient_location.zip4,
-                'recipient_location_zip5': recipient_location.zip5,
-                'recipient_location_street_address': recipient_location.address_line1,
-                'recipient_location_congressional_code': recipient_location.congressional_code,
-                'recipient_location_foreign_postal_code': recipient_location.foreign_postal_code,
+                'recipient_location_country_code': row['recipient_location_country_code'],
+                'recipient_location_state_code': row['recipient_location_state_code'],
+                'recipient_location_state_name': row['recipient_location_state_name'],
+                'recipient_location_city_name': row['recipient_location_city_name'],
+                'recipient_location_zip4': row['recipient_location_zip4'],
+                'recipient_location_zip5': row['recipient_location_zip5'],
+                'recipient_location_street_address': row['recipient_location_street_address'],
+                'recipient_location_congressional_code': row['recipient_location_congressional_code'],
+                'recipient_location_foreign_postal_code': None,
                 'officer_1_name': row['top_paid_fullname_1'],
                 'officer_1_amount': row['top_paid_amount_1'],
                 'officer_2_name': row['top_paid_fullname_2'],
@@ -378,62 +336,76 @@ class Command(BaseCommand):
                 'data_source': "DBR",
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
-                'description': row['overall_description'],
+                'description': row['description'],
                 'recovery_model_question1': row['q1_flag'],
                 'recovery_model_question2': row['q2_flag'],
-                'action_date': row['subaward_date'],
+                'action_date': row['action_date'],
                 'award_report_fy_month': row['report_period_mon'],
                 'award_report_fy_year': row['report_period_year'],
                 'broker_award_id': row['id'],
                 'internal_id': row['internal_id'],
                 'award_type': award_type,
                 'pop_country_code': row['principle_place_country'],
-                'pop_country_name': place_of_performance.country_name,
                 'pop_state_code': row['principle_place_state'],
                 'pop_state_name': row['principle_place_state_name'],
-                'pop_county_code': place_of_performance.county_code,
-                'pop_county_name': place_of_performance.county_name,
-                'pop_city_code': place_of_performance.city_code,
                 'pop_city_name': row['principle_place_city'],
                 'pop_zip4': row['principle_place_zip'],
                 'pop_street_address': row['principle_place_street'],
                 'pop_congressional_code': row['principle_place_district'],
+                'piid': row.get('piid', None),
+                'fain': row.get('fain', None),
                 'updated_at': datetime.now(timezone.utc),
             }
 
             if shared_mappings['award']:
-                subaward_dict.update({
-                    "awarding_agency": shared_mappings["award"].awarding_agency,
-                    "funding_agency": shared_mappings["award"].funding_agency,
-                    "prime_award_type": shared_mappings["award"].type,
-                    "last_modified_date": shared_mappings["award"].last_modified_date,
-                    "latest_transaction_id": shared_mappings["award"].latest_transaction_id,
-                })
+                subaward_dict.update(
+                    {
+                        "awarding_agency": shared_mappings["award"].awarding_agency,
+                        "funding_agency": shared_mappings["award"].funding_agency,
+                        "prime_award_type": shared_mappings["award"].type,
+                        "last_modified_date": shared_mappings["award"].last_modified_date,
+                        "latest_transaction_id": shared_mappings["award"].latest_transaction_id,
+                    }
+                )
                 funding_agency = get_agency_values(shared_mappings["award"].funding_agency)
                 awarding_agency = get_agency_values(shared_mappings["award"].awarding_agency)
             else:
                 funding_agency, awarding_agency = None, None
 
             if cfda:
-                subaward_dict.update({
-                    "cfda_number": cfda.program_number,
-                    "cfda_title": cfda.program_title,
-                })
+                subaward_dict.update({"cfda_number": cfda.program_number, "cfda_title": cfda.program_title})
 
             if funding_agency:
-                subaward_dict.update({
-                    "funding_toptier_agency_abbreviation": funding_agency["toptier_agency_abbreviation"],
-                    "funding_toptier_agency_name": funding_agency["toptier_agency_name"],
-                    "funding_subtier_agency_abbreviation": funding_agency["subtier_agency_abbreviation"],
-                    "funding_subtier_agency_name": funding_agency["subtier_agency_name"],
-                })
+                subaward_dict.update(
+                    {
+                        "funding_toptier_agency_abbreviation": funding_agency["toptier_agency_abbreviation"],
+                        "funding_toptier_agency_name": funding_agency["toptier_agency_name"],
+                        "funding_subtier_agency_abbreviation": funding_agency["subtier_agency_abbreviation"],
+                        "funding_subtier_agency_name": funding_agency["subtier_agency_name"],
+                    }
+                )
             if awarding_agency:
-                subaward_dict.update({
-                    "awarding_toptier_agency_abbreviation": awarding_agency["toptier_agency_abbreviation"],
-                    "awarding_toptier_agency_name": awarding_agency["toptier_agency_name"],
-                    "awarding_subtier_agency_abbreviation": awarding_agency["subtier_agency_abbreviation"],
-                    "awarding_subtier_agency_name": awarding_agency["subtier_agency_name"],
-                })
+                subaward_dict.update(
+                    {
+                        "awarding_toptier_agency_abbreviation": awarding_agency["toptier_agency_abbreviation"],
+                        "awarding_toptier_agency_name": awarding_agency["toptier_agency_name"],
+                        "awarding_subtier_agency_abbreviation": awarding_agency["subtier_agency_abbreviation"],
+                        "awarding_subtier_agency_name": awarding_agency["subtier_agency_name"],
+                    }
+                )
+
+            subaward_dict['pop_country_name'] = get_country_name_from_code(row['principle_place_country'])
+            subaward_dict['recipient_location_country_name'] = get_country_name_from_code(row['recipient_location_country_code'])
+
+            performance_city_county = get_city_and_county_from_state(row['principle_place_state'], row['principle_place_city'])
+            subaward_dict['pop_county_code'] = performance_city_county["county_code"]
+            subaward_dict['pop_county_name'] = performance_city_county["county_name"]
+            subaward_dict['pop_city_code'] = performance_city_county["city_code"]
+
+            ref_loc_city_county = get_city_and_county_from_state(row['recipient_location_state_code'], row['recipient_location_city_name'])
+            subaward_dict['recipient_location_county_code'] = ref_loc_city_county["county_code"]
+            subaward_dict['recipient_location_county_name'] = ref_loc_city_county["county_name"]
+            subaward_dict['recipient_location_city_code'] = ref_loc_city_county["city_code"]
 
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
@@ -554,40 +526,15 @@ def get_agency_values(agency):
     return Agency.objects.filter(id=agency.id).values(**agency_dict).first()
 
 
-def location_d1_recipient_mapper(row):
-    loc = {
-        "location_country_code": row.get("company_address_country", ""),
-        "city_name": row.get("company_address_city", ""),
-        "location_zip": row.get("company_address_zip", ""),
-        "state_code": row.get("company_address_state"),
-        "state_name": row.get("company_address_state_name"),
-        "address_line1": row.get("company_address_street"),
-        "congressional_code": row.get("company_address_district", None),
-    }
-    return loc
+def get_country_name_from_code(country_code):
+    ref_loc = RefCountryCode.objects.filter(country_code=country_code).values('country_name')
+    if ref_loc:
+        return ref_loc[0]['country_name']
+    return None
 
 
-def location_d2_recipient_mapper(row):
-    loc = {
-        "location_country_code": row.get("awardee_address_country", ""),
-        "city_name": row.get("awardee_address_city", ""),
-        "location_zip": row.get("awardee_address_zip", ""),
-        "state_code": row.get("awardee_address_state"),
-        "state_name": row.get("awardee_address_state_name"),
-        "address_line1": row.get("awardee_address_street"),
-        "congressional_code": row.get("awardee_address_district"),
-    }
-    return loc
-
-
-def pop_mapper(row):
-    loc = {
-        "location_country_code": row.get("principle_place_country", ""),
-        "city_name": row.get("principle_place_city", ""),
-        "location_zip": row.get("principle_place_zip", ""),
-        "state_code": row.get("principle_place_state"),
-        "state_name": row.get("principle_place_state_name"),
-        "address_line1": row.get("principle_place_street"),
-        "congressional_code": row.get("principle_place_district"),
-    }
-    return loc
+def get_city_and_county_from_state(state, city_name):
+    ref_loc = RefCityCountyCode.objects.filter(state_code=state, city_name=city_name).values('county_name', 'county_code', 'city_code')
+    if ref_loc:
+        return ref_loc[0]
+    return {"county_name": None, "county_code": None, "city_code": None}

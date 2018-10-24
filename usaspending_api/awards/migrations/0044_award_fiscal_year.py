@@ -12,14 +12,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='subaward',
+            name='fiscal_year',
+        ),
+        migrations.RemoveField(
+            model_name='subaward',
+            name='uri',
+        ),
         migrations.AddField(
             model_name='award',
             name='fiscal_year',
             field=models.IntegerField(blank=True, help_text='Fiscal Year calculated based on Action Date', null=True),
-        ),
-
-        migrations.RemoveField(
-            model_name='subaward',
-            name='fiscal_year',
         ),
     ]
