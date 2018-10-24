@@ -57,7 +57,6 @@ class Command(BaseCommand):
 
         db_cursor.execute(query)
 
-        logger.info("Running dictfetchall on db_cursor")
         return dictfetchall(db_cursor)
 
     @staticmethod
@@ -258,7 +257,6 @@ class Command(BaseCommand):
                     'UPPER(award.fain) AS fain',
                     # funding_agency_code
                     # funding_agency_name
-
                 ]
             )
             _select = "SELECT {}"
@@ -293,23 +291,18 @@ class Command(BaseCommand):
                     prime_award_dict['business_categories'] = (
                         shared_mappings['award'].recipient.business_categories or []
                     )
+            else:
+                # logger.info("[Internal ID {}] does not have an award model".format(row["internal_id"]))
+                pass
 
             upper_case_dict_values(row)
 
-            cfda = None
-            # check if the key exists and if it isn't empty (only here for grants)
-            if 'cfda_numbers' in row and row['cfda_numbers']:
-                only_num = row['cfda_numbers'].split(' ')
-                cfda = Cfda.objects.filter(program_number=only_num[0]).first()
-
             subaward_dict = {
-                'award': shared_mappings['award'],
                 'recipient_unique_id': row['duns'],
                 'recipient_name': row['recipient_name'],
                 'dba_name': row['dba_name'],
                 'parent_recipient_unique_id': row['parent_duns'],
                 'parent_recipient_name': row.get('parent_recipient_name', None),
-                'business_type_code': None,
                 'business_type_description': row.get('bus_types', None),
                 'prime_recipient': prime_award_dict.get('prime_recipient', None),
                 'prime_recipient_name': prime_award_dict.get('prime_recipient_name', None),
@@ -322,7 +315,6 @@ class Command(BaseCommand):
                 'recipient_location_zip5': row['recipient_location_zip5'],
                 'recipient_location_street_address': row['recipient_location_street_address'],
                 'recipient_location_congressional_code': row['recipient_location_congressional_code'],
-                'recipient_location_foreign_postal_code': None,
                 'officer_1_name': row['top_paid_fullname_1'],
                 'officer_1_amount': row['top_paid_amount_1'],
                 'officer_2_name': row['top_paid_fullname_2'],
@@ -360,20 +352,18 @@ class Command(BaseCommand):
             if shared_mappings['award']:
                 subaward_dict.update(
                     {
-                        "awarding_agency": shared_mappings["award"].awarding_agency,
-                        "funding_agency": shared_mappings["award"].funding_agency,
+                        "award_id": shared_mappings["award"].id,
                         "prime_award_type": shared_mappings["award"].type,
                         "last_modified_date": shared_mappings["award"].last_modified_date,
                         "latest_transaction_id": shared_mappings["award"].latest_transaction_id,
+                        "funding_agency_id": shared_mappings["award"].funding_agency.id,
+                        "awarding_agency_id": shared_mappings["award"].awarding_agency.id,
                     }
                 )
                 funding_agency = get_agency_values(shared_mappings["award"].funding_agency)
                 awarding_agency = get_agency_values(shared_mappings["award"].awarding_agency)
             else:
                 funding_agency, awarding_agency = None, None
-
-            if cfda:
-                subaward_dict.update({"cfda_number": cfda.program_number, "cfda_title": cfda.program_title})
 
             if funding_agency:
                 subaward_dict.update(
@@ -394,15 +384,33 @@ class Command(BaseCommand):
                     }
                 )
 
-            subaward_dict['pop_country_name'] = get_country_name_from_code(row['principle_place_country'])
-            subaward_dict['recipient_location_country_name'] = get_country_name_from_code(row['recipient_location_country_code'])
+            cfda = None
+            if 'cfda_numbers' in row and row['cfda_numbers']:
+                only_num = row['cfda_numbers'].split(' ')
+                cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
-            performance_city_county = get_city_and_county_from_state(row['principle_place_state'], row['principle_place_city'])
+            if cfda:
+                subaward_dict.update({
+                    "cfda_number": cfda.program_number,
+                    "cfda_title": cfda.program_title,
+                    "cfda_id": cfda.pk,
+                })
+
+            subaward_dict['pop_country_name'] = get_country_name_from_code(row['principle_place_country'])
+            subaward_dict['recipient_location_country_name'] = get_country_name_from_code(
+                row['recipient_location_country_code']
+            )
+
+            performance_city_county = get_city_and_county_from_state(
+                row['principle_place_state'], row['principle_place_city']
+            )
             subaward_dict['pop_county_code'] = performance_city_county["county_code"]
             subaward_dict['pop_county_name'] = performance_city_county["county_name"]
             subaward_dict['pop_city_code'] = performance_city_county["city_code"]
 
-            ref_loc_city_county = get_city_and_county_from_state(row['recipient_location_state_code'], row['recipient_location_city_name'])
+            ref_loc_city_county = get_city_and_county_from_state(
+                row['recipient_location_state_code'], row['recipient_location_city_name']
+            )
             subaward_dict['recipient_location_county_code'] = ref_loc_city_county["county_code"]
             subaward_dict['recipient_location_county_name'] = ref_loc_city_county["county_name"]
             subaward_dict['recipient_location_city_code'] = ref_loc_city_county["city_code"]
@@ -534,7 +542,9 @@ def get_country_name_from_code(country_code):
 
 
 def get_city_and_county_from_state(state, city_name):
-    ref_loc = RefCityCountyCode.objects.filter(state_code=state, city_name=city_name).values('county_name', 'county_code', 'city_code')
+    ref_loc = RefCityCountyCode.objects.filter(state_code=state, city_name=city_name).values(
+        'county_name', 'county_code', 'city_code'
+    )
     if ref_loc:
         return ref_loc[0]
     return {"county_name": None, "county_code": None, "city_code": None}
