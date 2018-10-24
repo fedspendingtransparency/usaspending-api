@@ -17,9 +17,9 @@ def test_fyq_filter():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-01-01', reporting_period_end='1700-03-31')
+               reporting_period_start='1700-01-01', reporting_period_end='1700-03-31', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
@@ -41,9 +41,9 @@ def test_federal_account_filter():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'federal_account': fed_acct1.id,
@@ -66,9 +66,9 @@ def test_tas_account_filter_later_qtr_treasury():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
@@ -114,9 +114,9 @@ def test_tas_account_filter_later_qtr_federal():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
