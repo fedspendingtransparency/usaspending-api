@@ -224,8 +224,6 @@ class Command(BaseCommand):
                     'sub_award.company_address_district AS recipient_location_congressional_code',
                     'sub_award.parent_company_name AS parent_recipient_name',
                     'sub_award.bus_types AS bus_types',
-                    # funding_agency_code
-                    # funding_agency_name
                 ]
             )
             _select = "SELECT {}"
@@ -255,8 +253,6 @@ class Command(BaseCommand):
                     'sub_award.awardee_address_street AS recipient_location_street_address',
                     'sub_award.awardee_address_district AS recipient_location_congressional_code',
                     'UPPER(award.fain) AS fain',
-                    # funding_agency_code
-                    # funding_agency_name
                 ]
             )
             _select = "SELECT {}"
@@ -291,9 +287,6 @@ class Command(BaseCommand):
                     prime_award_dict['business_categories'] = (
                         shared_mappings['award'].recipient.business_categories or []
                     )
-            else:
-                # logger.info("[Internal ID {}] does not have an award model".format(row["internal_id"]))
-                pass
 
             upper_case_dict_values(row)
 
