@@ -10,7 +10,7 @@ from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.awards.models import Award, Subaward, TransactionNormalized
-from usaspending_api.references.models import Agency, SubtierAgency
+from usaspending_api.references.models import Agency, SubtierAgency, LegalEntity
 from usaspending_api.recipient.models import RecipientLookup
 
 
@@ -39,7 +39,7 @@ def test_fresh_subaward_load_no_associated_awards(mock_db_cursor):
                            'HOGWARTS ACCEPTANCE LETTER REVISED'],
         'duns': ['DUNS12345', 'DUNS54321', 'DUNS54321'],
         'dba_names': ["JJ'S", "HOGWARTS", "HOGWARTS"],
-        'parent_recipient_names': ["PARENT JJ'S DINER", "WIZARD SCHOOLS", "WIZARD SCHOOLS"],
+        'parent_recipient_names': ["PARENT JJ'S DINER", None, None],
         'broker_award_ids': [10, 20, 30],
         'internal_ids': ['PROCUREMENT_INTERNAL_ID', 'GRANT_INTERNAL_ID_1', 'GRANT_INTERNAL_ID_2'],
     }
@@ -74,22 +74,34 @@ def test_fresh_subaward_load_associated_awards_exact_match(mock_db_cursor):
             'model': Award,
             'id': 50,
             'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 77,
         },
         {
             'model': Award,
             'id': 100,
             'fain': 'FAIN54321',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 66,
         },
         {
             'model': SubtierAgency,
             'subtier_agency_id': 1,
-            'subtier_code': '12345'
+            'subtier_code': '12345',
         },
         {
             'model': Agency,
-            'subtier_agency_id': 1
+            'subtier_agency_id': 1,
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 77,
+            'business_categories': ['stark_industry', 'oscorp']
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 66,
+            'business_categories': ['blues', 'reds']
         }
     ]
 
@@ -126,13 +138,15 @@ def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
             'model': Award,
             'id': 50,
             'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 77,
         },
         {
             'model': Award,
             'id': 100,
             'fain': 'FAIN-54321',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 66,
         },
         {
             'model': SubtierAgency,
@@ -142,6 +156,16 @@ def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
         {
             'model': Agency,
             'subtier_agency_id': 1
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 77,
+            'business_categories': ['stark_industry', 'oscorp']
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 66,
+            'business_categories': ['blues', 'reds']
         }
     ]
 
@@ -178,21 +202,24 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
             'model': Award,
             'id': 50,
             'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 77,
         },
         {
             'model': Award,
             'id': 99,
             'fain': 'FAIN54321',
             'date_signed': '1700-01-02',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 66,
         },
         {
             'model': Award,
             'id': 100,
             'fain': 'FAIN-54321',
             'date_signed': '1700-01-01',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 66,
         },
         {
             'model': SubtierAgency,
@@ -202,6 +229,16 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
         {
             'model': Agency,
             'subtier_agency_id': 1
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 77,
+            'business_categories': ['stark_industry', 'oscorp']
+        },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 66,
+            'business_categories': ['blues', 'reds']
         }
     ]
 
@@ -237,16 +274,17 @@ def test_subaward_update(mock_db_cursor):
             'id': 99,
             'fain': 'FAIN54321',
             'date_signed': '1700-01-03',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 88,
         },
         {
             'model': SubtierAgency,
             'subtier_agency_id': 1,
-            'subtier_code': '12345'
+            'subtier_code': '12345',
         },
         {
             'model': Agency,
-            'subtier_agency_id': 1
+            'subtier_agency_id': 1,
         },
         {
             'id': 5,
@@ -257,8 +295,13 @@ def test_subaward_update(mock_db_cursor):
             'award_type': 'grant',
             'award_id': 99,
             'amount': 2,
-            'action_date': '2014-01-01'
+            'action_date': '2014-01-01',
         },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 88,
+            'business_categories': [],
+        }
     ]
 
     for entry in models_to_mock:
@@ -269,7 +312,7 @@ def test_subaward_update(mock_db_cursor):
     expected_results = {
         'subaward_number': 'SUBNUM54321',
         'amount': 54321,
-        'action_date': '1212-12-12'
+        'action_date': '1212-12-12',
     }
 
     actual_results = Subaward.objects.filter(internal_id='GRANT_INTERNAL_ID_1').values(*expected_results)[0]
@@ -291,16 +334,17 @@ def test_subaward_broken_links(mock_db_cursor):
             'id': 99,
             'fain': 'FAIN54321',
             'date_signed': '1700-01-03',
-            'latest_transaction': mommy.make(TransactionNormalized)
+            'latest_transaction': mommy.make(TransactionNormalized),
+            'recipient_id': 0,
         },
         {
             'model': SubtierAgency,
             'subtier_agency_id': 1,
-            'subtier_code': '12345'
+            'subtier_code': '12345',
         },
         {
             'model': Agency,
-            'subtier_agency_id': 1
+            'subtier_agency_id': 1,
         },
         {
             'id': 5,
@@ -311,8 +355,13 @@ def test_subaward_broken_links(mock_db_cursor):
             'award_type': 'grant',
             'award_id': None,
             'amount': 2,
-            'action_date': '2014-01-01'
+            'action_date': '2014-01-01',
         },
+        {
+            'model': LegalEntity,
+            'legal_entity_id': 0,
+            'business_categories': [],
+        }
     ]
 
     for entry in models_to_mock:
