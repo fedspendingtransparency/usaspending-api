@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SummaryAwardRecipient',
             fields=[
-                ('award_id', models.TextField(primary_key=True, serialize=False)),
+                ('award_id', models.IntegerField(primary_key=True, serialize=False)),
                 ('action_date', models.DateField(blank=True, db_index=True)),
                 ('recipient_hash', models.UUIDField(null=True, db_index=True)),
                 ('parent_recipient_unique_id', models.TextField(null=True, db_index=True)),
