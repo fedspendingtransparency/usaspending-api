@@ -38,6 +38,6 @@ INSERT INTO public.summary_award_recipient
       txn_matview.recipient_hash,
       txn_matview.parent_recipient_unique_id
   FROM public.earliest_transaction_temp
-  LEFT OUTER JOIN universal_transaction_matview txn_matview ON (earliest_transaction_temp.id = txn_matview.transaction_id);
+  JOIN universal_transaction_matview txn_matview ON (earliest_transaction_temp.id = txn_matview.transaction_id);
 DROP TABLE public.earliest_transaction_temp;
 COMMIT;
