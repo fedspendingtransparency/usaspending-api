@@ -122,7 +122,8 @@ def test_tas_account_filter_later_qtr_federal():
         'fy': 1700,
         'quarter': 3
     }, 'federal_account')
-    assert queryset.count() == 1
+    # this count is 2 as the federal account downloads are now cumulative while still excluding duplicates
+    assert queryset.count() == 2
 
 
 @pytest.mark.django_db
