@@ -157,11 +157,11 @@ class Command(BaseCommand):
         logger.info("Starting shared data gathering")
         counter = 0
         new_awards = len(data)
-        logger.info(str(new_awards) + " new awards to process.")
+        logger.info("{} new awards to process".format(new_awards))
         for row in data:
             counter += 1
             if counter % LOG_LIMIT == 0:
-                logger.info("Processed " + str(counter) + " of " + str(new_awards) + " new awards.")
+                logger.info("Processed {} of {} new awards".format(counter, new_awards))
             award = self.get_award(row, award_type)
 
             # set shared data content
@@ -551,18 +551,18 @@ def get_agency_values(agency):
 
 
 def get_country_name_from_code(country_code):
-    ref_loc = RefCountryCode.objects.filter(country_code=country_code).values('country_name')
+    ref_loc = RefCountryCode.objects.filter(country_code=country_code).values('country_name').first()
     if ref_loc:
-        return ref_loc[0]['country_name']
+        return ref_loc['country_name']
     return None
 
 
 def get_city_and_county_from_state(state, city_name):
     ref_loc = RefCityCountyCode.objects.filter(state_code=state, city_name=city_name).values(
         'county_name', 'county_code', 'city_code'
-    )
+    ).first()
     if ref_loc:
-        return ref_loc[0]
+        return ref_loc
     return {}
 
 
