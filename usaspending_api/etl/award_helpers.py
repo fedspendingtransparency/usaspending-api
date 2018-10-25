@@ -21,7 +21,7 @@ def update_awards(award_tuple=None):
     transactions was problematic to do in a set-based way via the ORM. These updates do need to be set-based, as
     looping through and updating individual award records would be an ETL bottleneck.
     """
-    logger.info("Running update_awards in usaspending/et/award_helpers.py")
+    logger.info("Running update_awards() in usaspending/et/award_helpers.py")
 
     # common table expression for each award's latest transaction
     sql_txn_latest = (
@@ -52,7 +52,8 @@ def update_awards(award_tuple=None):
             'SUM(face_value_loan_guarantee) AS total_loan_value,',
             'SUM(non_federal_funding_amount) AS non_federal_funding_amount',
             'FROM transaction_normalized'
-    ])
+        ]
+    )
     if award_tuple:
         sql_txn_totals += ' WHERE award_id IN %s'
     sql_txn_totals += ' GROUP BY award_id) '

@@ -225,13 +225,13 @@ class Award(DataSourceTrackedModel):
     total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
                                                null=True, help_text="A summation of this award's transactions'"
                                                                     " funding amount")
-    non_federal_funding_amount = models.DecimalField(max_digits=20,decimal_places=2, null=True, blank=True, 
-                                                    help_text="A summation of this award's transactions' non-federal funding amount")
+    non_federal_funding_amount = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True,
+        help_text="A summation of this award's transactions' non-federal funding amount")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     subaward_count = models.IntegerField(default=0)
-
 
     objects = models.Manager()
     nonempty = AwardManager()
