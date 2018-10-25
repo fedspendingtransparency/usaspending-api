@@ -244,7 +244,8 @@ class Command(BaseCommand):
                 "last_modified_date": last_mod_date,
                 "type_description": row['assistance_type_desc'],
                 "transaction_unique_id": row['afa_generated_unique'],
-                "generated_unique_award_id": generated_unique_id
+                "generated_unique_award_id": generated_unique_id,
+                "non_federal_funding_amount": row["non_federal_funding_amount"],
             }
 
             fad_field_map = {
