@@ -250,6 +250,7 @@ class Command(BaseCommand):
             fad_field_map = {
                 "type": "assistance_type",
                 "description": "award_description",
+                "funding_amount": "total_funding_amount",
             }
 
             transaction_normalized_dict = load_data_into_model(
