@@ -44,7 +44,7 @@ def update_awards(award_tuple=None):
     # common table expression for each award's summarized data (currently the only we summarize is
     # federal_actio_obligation, but we can add more as necessary)
     sql_txn_totals = (
-        'txn_totals AS (',
+        'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
         'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
         'SUM(funding_amount) AS total_funding_amount, '
