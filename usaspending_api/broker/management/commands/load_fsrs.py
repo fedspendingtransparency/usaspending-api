@@ -226,13 +226,8 @@ class Command(BaseCommand):
                     'sub_award.bus_types AS bus_types',
                 ]
             )
-            _select = "SELECT {}"
-            _from = "FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
             _where = "WHERE award.id > {} AND sub_award.subcontract_num IS NOT NULL"
-            _other = "ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
-            query = " ".join([_select, _from, _where, _other]).format(
-                ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
-            )
+
         else:  # grant
             query_columns.extend(
                 [
@@ -255,13 +250,14 @@ class Command(BaseCommand):
                     'UPPER(award.fain) AS fain',
                 ]
             )
-            _select = "SELECT {}"
-            _from = "FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
             _where = "WHERE award.id > {} AND sub_award.subaward_num IS NOT NULL"
-            _other = "ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
-            query = " ".join([_select, _from, _where, _other]).format(
-                ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
-            )
+
+        _select = "SELECT {}"
+        _from = "FROM fsrs_{} AS award JOIN fsrs_{} AS sub_award ON sub_award.parent_id = award.id"
+        _other = "ORDER BY award.id, sub_award.id LIMIT {} OFFSET {}"
+        query = " ".join([_select, _from, _where, _other]).format(
+            ",".join(query_columns), award_type, subaward_type, str(max_id), str(QUERY_LIMIT), str(offset)
+        )
 
         db_cursor.execute(query)
 
