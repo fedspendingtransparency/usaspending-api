@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS public.temporary_restock_subaward;
 CREATE TABLE public.temporary_restock_subaward AS (
     SELECT
         to_tsvector(CONCAT_WS(' ', broker_subawards.recipient_name, psc.description, broker_subawards.description)) AS keyword_ts_vector,
-        to_tsvector(CONCAT_WS(' ', aw.piid, aw.fain, aw.uri, broker_subawards.subaward_number)) AS award_ts_vector,
+        to_tsvector(CONCAT_WS(' ', aw.piid, aw.fain, broker_subawards.subaward_number)) AS award_ts_vector,
         to_tsvector(COALESCE(broker_subawards.recipient_name, '')) AS recipient_name_ts_vector,
 
         'DBR' AS data_source,
