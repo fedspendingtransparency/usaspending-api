@@ -228,6 +228,7 @@ class Award(DataSourceTrackedModel):
     non_federal_funding_amount = models.DecimalField(
         max_digits=20, decimal_places=2, null=True, blank=True,
         help_text="A summation of this award's transactions' non-federal funding amount")
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
@@ -880,7 +881,6 @@ class Subaward(DataSourceTrackedModel):
     latest_transaction_id = models.IntegerField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
     total_obl_bin = models.TextField(null=True, blank=True)
-    fiscal_year = models.IntegerField(null=True, blank=True)
 
     awarding_toptier_agency_name = models.TextField(null=True, blank=True)
     awarding_subtier_agency_name = models.TextField(null=True, blank=True)
@@ -895,7 +895,6 @@ class Subaward(DataSourceTrackedModel):
 
     piid = models.TextField(null=True, blank=True)
     fain = models.TextField(null=True, blank=True)
-    uri = models.TextField(null=True, blank=True)
 
     recipient_unique_id = models.TextField(null=True, blank=True)
     recipient_name = models.TextField(null=True, blank=True)
