@@ -18,7 +18,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
 
         obligation_to_enum(broker_subawards.subaward_amount) AS total_obl_bin,
         broker_subawards.description,
-        fy(broker_subawards.action_date) AS fiscal_year,
         broker_subawards.action_date,
         broker_subawards.award_report_fy_month,
         broker_subawards.award_report_fy_year,
@@ -31,7 +30,6 @@ CREATE TABLE public.temporary_restock_subaward AS (
         aw.id AS award_id,
         aw.piid,
         aw.fain,
-        aw.uri,
 
         broker_subawards.duns AS recipient_unique_id,
         broker_subawards.recipient_name AS recipient_name,
@@ -369,7 +367,7 @@ BEGIN;
 TRUNCATE TABLE public.subaward RESTART IDENTITY;
 INSERT INTO public.subaward
     (keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, data_source, cfda_id,
-    latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
+    latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description,
     action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
     prime_award_type, award_id, piid, fain, recipient_unique_id, recipient_name, dba_name, parent_recipient_unique_id,
     parent_recipient_name, business_type_code, business_type_description, prime_recipient_id, business_categories,
@@ -387,7 +385,7 @@ INSERT INTO public.subaward
     pop_country_code, pop_state_code, pop_state_name, pop_county_name, pop_county_code, pop_city_name,
     pop_city_code, pop_zip4, pop_street_address, pop_congressional_code, updated_at)
     SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector, data_source, cfda_id,
-        latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description, fiscal_year,
+        latest_transaction_id, last_modified_date, subaward_number, amount, total_obl_bin, description,
         action_date, award_report_fy_month, award_report_fy_year, broker_award_id, internal_id, award_type,
         prime_award_type, award_id, piid, fain, recipient_unique_id, recipient_name, dba_name,
         parent_recipient_unique_id, parent_recipient_name, business_type_code, business_type_description,

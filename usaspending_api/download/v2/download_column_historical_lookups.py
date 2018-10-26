@@ -403,7 +403,7 @@ query_paths = {
             ('award_id_uri', 'award__uri'),
             ('sai_number', 'award__latest_transaction__assistance_data__sai_number'),
             ('obligated_amount', 'award__total_obligation'),
-            ('non_federal_funding_amount', 'award__latest_transaction__assistance_data__non_federal_funding_amount'),
+            ('non_federal_funding_amount', 'award__non_federal_funding_amount'),
             ('total_funding_amount', 'award__total_funding_amount'),
             ('face_value_of_loan', 'award__latest_transaction__assistance_data__face_value_loan_guarantee'),
             ('original_subsidy_cost', 'award__latest_transaction__original_loan_subsidy_cost'),
