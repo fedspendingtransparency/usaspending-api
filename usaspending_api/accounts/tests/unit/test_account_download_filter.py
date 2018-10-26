@@ -17,9 +17,9 @@ def test_fyq_filter():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-01-01', reporting_period_end='1700-03-31')
+               reporting_period_start='1700-01-01', reporting_period_end='1700-03-31', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
@@ -41,9 +41,9 @@ def test_federal_account_filter():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'federal_account': fed_acct1.id,
@@ -66,9 +66,9 @@ def test_tas_account_filter_later_qtr_treasury():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
@@ -114,14 +114,61 @@ def test_tas_account_filter_later_qtr_federal():
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas2,
-               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30', final_of_fy=True)
 
     queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
         'fy': 1700,
         'quarter': 3
     }, 'federal_account')
+    # this count is 2 as the federal account downloads are now cumulative while still excluding duplicates
+    assert queryset.count() == 2
+
+
+@pytest.mark.django_db
+def test_tas_account_filter_duplciate_tas_account_balances():
+    """ Ensure the fiscal year and quarter filter is working, duplicate tas for account balances """
+    # Create FederalAccount models
+    fed_acct1 = mommy.make('accounts.FederalAccount')
+
+    # Create TAS models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
+
+    # Create file A models
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31', final_of_fy=False)
+    mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30', final_of_fy=True)
+
+    queryset = account_download_filter('account_balances', AppropriationAccountBalances, {
+        'fy': 1700,
+        'quarter': 3
+    }, 'federal_account')
+    assert queryset.count() == 1
+
+
+@pytest.mark.django_db
+def test_tas_account_filter_duplciate_tas_financial_accounts_program_object():
+    """ Ensure the fiscal year and quarter filter is working, duplicate tas for financial accounts """
+    # Create FederalAccount models
+    fed_acct1 = mommy.make('accounts.FederalAccount')
+
+    # Create TAS models
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
+
+    # Create file A models
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
+               treasury_account_id=tas1.treasury_account_identifier, reporting_period_start='1699-10-01',
+               reporting_period_end='1699-12-31', final_of_fy=False)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
+               treasury_account_id=tas1.treasury_account_identifier, reporting_period_start='1700-04-01',
+               reporting_period_end='1700-06-30', final_of_fy=True)
+
+    queryset = account_download_filter('object_class_program_activity', FinancialAccountsByProgramActivityObjectClass, {
+        'fy': 1700,
+        'quarter': 3
+    })
     assert queryset.count() == 1
 
 
@@ -135,12 +182,12 @@ def test_budget_function_filter():
     # Create file B models
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
                treasury_account_id=tas1.treasury_account_identifier, reporting_period_start='1699-10-01',
-               reporting_period_end='1699-12-31')
+               reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
                treasury_account_id=tas2.treasury_account_identifier, reporting_period_start='1699-10-01',
-               reporting_period_end='1699-12-31')
+               reporting_period_end='1699-12-31', final_of_fy=True)
 
-    queryset = account_download_filter('program_activity_object_class', FinancialAccountsByProgramActivityObjectClass, {
+    queryset = account_download_filter('object_class_program_activity', FinancialAccountsByProgramActivityObjectClass, {
         'budget_function': 'BUD',
         'fy': 1700,
         'quarter': 1
@@ -179,17 +226,17 @@ def test_cgac_agency_filter():
     # Create file B models
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
                treasury_account_id=tas1.treasury_account_identifier, reporting_period_start='1699-10-01',
-               reporting_period_end='1699-12-31')
+               reporting_period_end='1699-12-31', final_of_fy=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass',
                treasury_account_id=tas2.treasury_account_identifier, reporting_period_start='1699-10-01',
-               reporting_period_end='1699-12-31')
+               reporting_period_end='1699-12-31', final_of_fy=True)
 
     # Create ToptierAgency models
     mommy.make('references.ToptierAgency', toptier_agency_id=-9999, cgac_code='CGC')
     mommy.make('references.ToptierAgency', toptier_agency_id=-9998, cgac_code='NOT')
 
     # Filter by ToptierAgency (CGAC)
-    queryset = account_download_filter('program_activity_object_class', FinancialAccountsByProgramActivityObjectClass, {
+    queryset = account_download_filter('object_class_program_activity', FinancialAccountsByProgramActivityObjectClass, {
         'agency': '-9999',
         'fy': 1700,
         'quarter': 1
