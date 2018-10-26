@@ -43,20 +43,17 @@ def update_awards(award_tuple=None):
 
     # common table expression for each award's summarized data (currently the only we summarize is
     # federal_actio_obligation, but we can add more as necessary)
-    sql_txn_totals = " ".join(
-        [
-            'txn_totals AS (',
-            'SELECT award_id, SUM(federal_action_obligation) AS total_obligation,',
-            'SUM(original_loan_subsidy_cost) AS total_subsidy_cost,',
-            'SUM(funding_amount) AS total_funding_amount,',
-            'SUM(face_value_loan_guarantee) AS total_loan_value,',
-            'SUM(non_federal_funding_amount) AS non_federal_funding_amount',
-            'FROM transaction_normalized'
-        ]
-    )
+    sql_txn_totals = (
+        'txn_totals AS (',
+        'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
+        'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
+        'SUM(funding_amount) AS total_funding_amount, '
+        'SUM(face_value_loan_guarantee) AS total_loan_value, '
+        'SUM(non_federal_funding_amount) AS non_federal_funding_amount '
+        'FROM transaction_normalized ')
     if award_tuple:
-        sql_txn_totals += ' WHERE award_id IN %s'
-    sql_txn_totals += ' GROUP BY award_id) '
+        sql_txn_totals += 'WHERE award_id IN %s '
+    sql_txn_totals += 'GROUP BY award_id) '
 
     # construct a sql query that uses the common table expressions defined above and joins each of them to their
     # corresopnding award. the joined data from earliest, latest, and summarized transactions are used to update awards
