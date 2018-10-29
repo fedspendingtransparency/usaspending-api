@@ -60,7 +60,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
                                                                            null=True)
     drv_obligations_undelivered_orders_unpaid = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
                                                                     null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
+    reporting_period_start = models.DateField(blank=True, null=True, db_index=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
     certified_date = models.DateField(blank=True, null=True)
