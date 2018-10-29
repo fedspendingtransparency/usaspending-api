@@ -237,3 +237,81 @@ def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
         }))
     assert len(resp.data['results']) == 1
     assert resp.data['results'][0] == {'internal_id': 1, 'Place of Performance Zip5': '00001'}
+
+
+@pytest.mark.django_db
+def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
+    """ Verify that foreign country filter is returning the correct results """
+    mock_model_0 = MockModel(award_id=0,
+                             piid=None,
+                             fain='aaa',
+                             uri=None,
+                             type='B',
+                             pulled_from="AWARD",
+                             recipient_location_country_name="UNITED STATES",
+                             recipient_location_country_code="USA")
+    mock_model_1 = MockModel(award_id=1,
+                             piid=None,
+                             fain='abc',
+                             uri=None,
+                             type='B',
+                             pulled_from="AWARD",
+                             recipient_location_country_name="",
+                             recipient_location_country_code="USA")
+    mock_model_2 = MockModel(award_id=2,
+                             piid=None,
+                             fain='abd',
+                             uri=None,
+                             type='B',
+                             pulled_from="AWARD",
+                             recipient_location_country_name="UNITED STATES",
+                             recipient_location_country_code="")
+    mock_model_3 = MockModel(award_id=3,
+                             piid=None,
+                             fain='abe',
+                             uri=None,
+                             type='B',
+                             pulled_from="AWARD",
+                             recipient_location_country_name="Gibraltar",
+                             recipient_location_country_code="GIB")
+
+    add_to_mock_objects(mock_matviews_qs, [mock_model_0, mock_model_1, mock_model_2, mock_model_3])
+    # add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_3])
+
+    resp = client.post(
+        '/api/v2/search/spending_by_award/',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {
+                "award_type_codes": [
+                    "A",
+                    "B",
+                    "C",
+                    "D"
+                ],
+                # "recipient_locations": [{"country": "USA"}]
+                "recipient_scope": "domestic"
+            },
+            "fields": ["Award ID"]
+        }))
+    # Three results are returned when searching for "USA"-based recipients
+    # e.g. "USA"; "UNITED STATES"; "USA" and "UNITED STATES";
+    assert len(resp.data['results']) == 3
+
+    resp = client.post(
+        '/api/v2/search/spending_by_award/',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {
+                "award_type_codes": [
+                    "A",
+                    "B",
+                    "C",
+                    "D"
+                ],
+                "recipient_scope": "foreign"
+            },
+            "fields": ["Award ID"],
+        }))
+    # One result is returned when searching for "Foreign" recipients
+    assert len(resp.data['results']) == 1
