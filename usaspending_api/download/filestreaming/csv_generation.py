@@ -134,8 +134,13 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
              'federal_account': 'federal_account'}
-    source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
-                                    VALUE_MAPPINGS[source.source_type]['download_name'])
+    if download_job and download_job.monthly_download:
+        # Use existing detailed filename from parent file for monthly files
+        # e.g. `019_Assistance_Delta_20180917_%s.csv`
+        source_name = strip_file_extension(download_job.file_name)
+    else:
+        source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
+                                        VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
@@ -161,7 +166,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
-                                                                               download_job,))
+                                                                               download_job))
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job, message)
         download_job.save()
@@ -176,21 +181,30 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
 def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None):
     try:
         # Split CSV into separate files
+        # e.g. `Assistance_prime_transactions_delta_%s.csv`
+
         log_time = time.time()
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
-                               output_name_template='{}_%s.csv'.format(source_name))
+
+        output_template = '{}_%s.csv'.format(source_name)
+
+        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
+                               output_name_template=output_template)
+
         if download_job:
             write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
                          download_job=download_job)
+
         # Zip the split CSVs into one zipfile
         log_time = time.time()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
+
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
 
         if download_job:
             write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
                          download_job=download_job)
+
     except Exception as e:
         logger.error(e)
         raise e
@@ -342,3 +356,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 def retrieve_db_string():
     """It is necessary for this to be a function so the test suite can mock the connection string"""
     return os.environ['DOWNLOAD_DATABASE_URL']
+
+
+def strip_file_extension(file_name):
+    return os.path.splitext(os.path.basename(file_name))[0]

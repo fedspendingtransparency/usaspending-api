@@ -10,6 +10,33 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
 
+"""
+Account Download Logic
+
+Account Balances (A file):
+    - Treasury Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+        2. Only include the most recently submitted TASs (uniqueness based on TAS)
+    - Federal Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+        2. Only include the most recently submitted TASs (uniqueness based on TAS)
+        3. Group by Federal Accounts
+Account Breakdown by Program Activity & Object Class (B file):
+    - Treasury Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+        2. Only include the most recently submitted TASs (uniqueness based on TAS/PA/OC/DR)
+    - Federal Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+        2. Only include the most recently submitted TASs (uniqueness based on TAS/PA/OC/DR)
+        3. Group by Federal Accounts
+Account Breakdown by Award (C file):
+    - Treasury Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+    - Federal Account
+        1. Get all TASs matching the filers from Q1 to the FSQ selected
+        2. Group by Federal Accounts
+"""
+
 
 def account_download_filter(account_type, download_table, filters, account_level='treasury_account'):
     query_filters = {}
@@ -49,6 +76,25 @@ def account_download_filter(account_type, download_table, filters, account_level
 
     # Create the base queryset
     queryset = download_table.objects
+
+    if account_type in ['account_balances', 'object_class_program_activity']:
+        # only include the latest TASs, not all of them
+        unique_id_mapping = {
+            'account_balances': 'appropriation_account_balances_id',
+            'object_class_program_activity': 'financial_accounts_by_program_activity_object_class_id'
+        }
+        unique_columns_mapping = {
+            'account_balances': ['treasury_account_identifier__tas_rendering_label'],
+            'object_class_program_activity': ['treasury_account__tas_rendering_label',
+                                              'program_activity__program_activity_code',
+                                              'object_class__object_class']
+        }
+        distinct_cols = unique_columns_mapping[account_type]
+        order_by_cols = distinct_cols + ['-reporting_period_start']
+        latest_ids_q = download_table.objects.filter(**query_filters).distinct(*distinct_cols).order_by(*order_by_cols)
+        latest_ids = list(latest_ids_q.values_list(unique_id_mapping[account_type], flat=True))
+        if latest_ids:
+            query_filters['{}__in'.format(unique_id_mapping[account_type])] = latest_ids
 
     # Make derivations based on the account level
     if account_level == 'treasury_account':
@@ -156,12 +202,11 @@ def retrieve_fyq_filters(account_type, account_level, filters):
         reporting_period_start = 'reporting_period_start'
         reporting_period_end = 'reporting_period_end'
 
-        # C files and TAS need all data, up to and including the FYQ in the filter
-        if account_type == 'award_financial' or account_level == 'treasury_account':
-            reporting_period_start = '{}__gte'.format(reporting_period_start)
-            reporting_period_end = '{}__lte'.format(reporting_period_end)
-            if str(filters['quarter']) != '1':
-                start_date = datetime.date(filters['fy']-1, 10, 1)
+        # For all files, filter up to and including the FYQ
+        reporting_period_start = '{}__gte'.format(reporting_period_start)
+        reporting_period_end = '{}__lte'.format(reporting_period_end)
+        if str(filters['quarter']) != '1':
+            start_date = datetime.date(filters['fy']-1, 10, 1)
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 

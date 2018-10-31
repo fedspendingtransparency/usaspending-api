@@ -27,6 +27,9 @@ def universal_transaction_matview_filter(filters):
 def matview_search_filter(filters, model, for_downloads=False):
     queryset = model.objects.all()
 
+    recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
+    pop_scope_q = Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES")
+
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
 
@@ -204,17 +207,14 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "recipient_scope":
             if value == "domestic":
-                queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
+                queryset = queryset.filter(recipient_scope_q)
             elif value == "foreign":
-                queryset = queryset.exclude(recipient_location_country_name="UNITED STATES")
+                queryset = queryset.exclude(recipient_scope_q)
             else:
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations(
-                'recipient_location', value, model, True
-            )
-            queryset &= or_queryset
+            queryset = queryset.filter(geocode_filter_locations('recipient_location', value, True))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -222,16 +222,14 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
+                queryset = queryset.filter(pop_scope_q)
             elif value == "foreign":
-                queryset = queryset.exclude(Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES"))
+                queryset = queryset.exclude(pop_scope_q)
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            queryset &= geocode_filter_locations(
-                'pop', value, model, True
-            )
+            queryset = queryset.filter(geocode_filter_locations('pop', value, True))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, model, filters)

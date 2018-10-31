@@ -8,6 +8,7 @@ from collections import OrderedDict
 from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
+from dateutil.relativedelta import relativedelta
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -18,7 +19,6 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 TEMP_SQL_FILES = [
     '../matviews/subaward_view.sql',
-    '../matviews/summary_award_recipient_view.sql',
     '../matviews/summary_award_view.sql',
     '../matviews/summary_state_view.sql',
     '../matviews/summary_transaction_fed_acct_view.sql',
@@ -122,14 +122,81 @@ def dates_are_month_bookends(start, end):
     return False
 
 
-def generate_all_fiscal_years_in_range(start, end):
-    """ For a given date-range, provide the inclusive fiscal years """
-    fiscal_years = []
+def generate_date_range_hash(date_range_dict):
+    """ For a given date range dictionary, make a string that can be used as a hash and sort a list of date ranges """
+    values = ['fy', 'quarter', 'month']
+    return '-'.join([str(date_range_dict[value]).zfill(2) for value in values if date_range_dict.get(value)])
+
+
+def generate_date_ranges_in_time_period(start, end, range_type='fy'):
+    """ For a given date-range, provide the inclusive fiscal years, fiscal quarters, or fiscal months """
+    date_ranges = []
     temp_date = start
     while temp_date < end:
-        fiscal_years.append(generate_fiscal_year(temp_date))
-        temp_date = datetime.date(temp_date.year + 1, temp_date.month, temp_date.day)
-    return fiscal_years
+        fy, quarter = generate_fiscal_year_and_quarter(temp_date).split('-Q')
+        date_range = {'fy': int(fy)}
+        date_interval = relativedelta(years=1)
+        if range_type == 'quarter':
+            date_range['quarter'] = int(quarter)
+            date_interval = relativedelta(months=3)
+        elif range_type == 'month':
+            date_range['month'] = generate_fiscal_month(temp_date)
+            date_interval = relativedelta(months=1)
+        temp_date = datetime.date(temp_date.year, temp_date.month, temp_date.day) + date_interval
+        date_ranges.append(date_range)
+    return date_ranges
+
+
+def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, date_range_type, columns,
+                                               include_empty=True):
+    """ Given the following, generate a list of dict results split by fiscal years/quarters/months
+
+        Args:
+            filter_time_periods: list of time_period objects usually provided by filters
+                - {'start_date':..., 'end_date':...}
+            queryset: the resulting data to split into these results
+            data_range_type: how the results are split
+                - 'fy', 'quarter', or 'month'
+            columns: dictionary of columns to include from the queryset
+                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
+            include_empty: whether or not to include all possible results whether or not they exist in the queryset
+        Returns:
+            list of dict results split by fiscal years/quarters/months
+    """
+    hashed_results = OrderedDict()
+
+    # Populate all possible periods results can include
+    for time_period in filter_time_periods:
+        start_date = generate_date_from_string(time_period['start_date'])
+        end_date = generate_date_from_string(time_period['end_date'])
+        for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=date_range_type):
+            # front-end wants a string for fiscal_year
+            date_range_hash = generate_date_range_hash(date_range)
+            date_range['fy'] = str(date_range['fy'])
+            hashed_results[date_range_hash] = {'time_period': date_range}
+            for column_name, column_in_queryset in columns.items():
+                hashed_results[date_range_hash][column_name] = 0
+
+    # populate periods with new awards
+    populated_time_periods = []
+    for row in queryset:
+        row_hash = generate_date_range_hash(row)
+        populated_time_periods.append(row_hash)
+        for column_name, column_in_queryset in columns.items():
+            hashed_results[row_hash][column_name] = row[column_in_queryset]
+
+    # if we're not including the empty ones, just keep the populated time periods
+    if not include_empty:
+        hashed_results = {key: result for key, result in hashed_results.items() if key in populated_time_periods}
+
+    results = list(hashed_results.values())
+
+    # change fy's to fiscal_years
+    for result in results:
+        result['time_period']['fiscal_year'] = result['time_period']['fy']
+        del result['time_period']['fy']
+
+    return results
 
 
 def within_one_year(d1, d2):

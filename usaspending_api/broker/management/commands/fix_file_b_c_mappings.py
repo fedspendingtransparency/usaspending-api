@@ -2,9 +2,9 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connection, connections
-from django.conf import settings
 
-from usaspending.common.helpers import timer
+from usaspending_api.common.helpers import timer
+from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 
 logger = logging.getLogger('console')
 
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         # First looks at broker_website_cols_translation that have a specific website to broker mapping
         # Then looks at settings.py for the overall website website->broker mapping
         return ",".join([
-            broker_website_cols_mapping.get(column, settings.LONG_TO_TERSE_LABELS.get(column))
+            broker_website_cols_mapping.get(column, LONG_TO_TERSE_LABELS.get(column))
             for column, table in website_cols])
 
     @staticmethod

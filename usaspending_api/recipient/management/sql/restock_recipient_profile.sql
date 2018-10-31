@@ -230,29 +230,19 @@ WHERE rpv.recipient_unique_id = pr.parent_recipient_unique_id and rpv.recipient_
 DO $$ BEGIN RAISE NOTICE 'Step 6: Populating parent duns in children'; END $$;
 
 WITH all_recipients AS (
-  WITH all_recipients_inner AS (
-    SELECT
-      recipient_unique_id,
-      parent_recipient_unique_id,
-      MAX(action_date) as action_date
-    FROM
-      public.temporary_recipients_from_transactions_view
-    WHERE
-      recipient_unique_id IS NOT NULL AND
-      parent_recipient_unique_id IS NOT NULL
-    GROUP BY recipient_unique_id, parent_recipient_unique_id
-  )
   SELECT
-    DISTINCT recipient_unique_id,
-    parent_recipient_unique_id,
-    action_date
+    recipient_unique_id,
+    array_agg(DISTINCT parent_recipient_unique_id) AS parent_duns_list
   FROM
-    all_recipients_inner
-  ORDER BY action_date DESC
+    public.temporary_recipients_from_transactions_view
+  WHERE
+    recipient_unique_id IS NOT NULL AND
+    parent_recipient_unique_id IS NOT NULL
+  GROUP BY recipient_unique_id
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = ARRAY[ar.parent_recipient_unique_id],
+  recipient_affiliations = ar.parent_duns_list,
   unused = false
 FROM all_recipients AS ar
 WHERE

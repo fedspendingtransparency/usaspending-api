@@ -1,7 +1,12 @@
+import logging
+
 from django.db import connection
 from usaspending_api.awards.models import Award, Agency
 from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
+
+
+logger = logging.getLogger('console')
 
 
 def update_awards(award_tuple=None):
@@ -16,6 +21,7 @@ def update_awards(award_tuple=None):
     transactions was problematic to do in a set-based way via the ORM. These updates do need to be set-based, as
     looping through and updating individual award records would be an ETL bottleneck.
     """
+    logger.info("Running update_awards() in usaspending/et/award_helpers.py")
 
     # common table expression for each award's latest transaction
     sql_txn_latest = (
@@ -42,7 +48,8 @@ def update_awards(award_tuple=None):
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
         'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
         'SUM(funding_amount) AS total_funding_amount, '
-        'SUM(face_value_loan_guarantee) AS total_loan_value '
+        'SUM(face_value_loan_guarantee) AS total_loan_value, '
+        'SUM(non_federal_funding_amount) AS non_federal_funding_amount '
         'FROM transaction_normalized ')
     if award_tuple:
         sql_txn_totals += 'WHERE award_id IN %s '
@@ -68,6 +75,7 @@ def update_awards(award_tuple=None):
         'total_funding_amount = t.total_funding_amount, '
         'total_subsidy_cost = t.total_subsidy_cost, '
         'total_loan_value = t.total_loan_value, '
+        'non_federal_funding_amount = t.non_federal_funding_amount, '
         'latest_transaction_id = l.id, '
         'type = l.type, '
         'type_description = l.type_description '
@@ -78,6 +86,9 @@ def update_awards(award_tuple=None):
         'ON l.award_id = t.award_id '
         'WHERE t.award_id = a.id'
     )
+    if award_tuple:
+        logger.info("Award IDs: {}".format(award_tuple))
+    logger.info("SQL: {}".format(sql_update))
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)

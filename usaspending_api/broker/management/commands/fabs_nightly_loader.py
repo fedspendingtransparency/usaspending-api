@@ -1,5 +1,4 @@
 import logging
-import os
 import boto3
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
@@ -251,6 +250,7 @@ class Command(BaseCommand):
             fad_field_map = {
                 "type": "assistance_type",
                 "description": "award_description",
+                "funding_amount": "total_funding_amount",
             }
 
             transaction_normalized_dict = load_data_into_model(
@@ -309,7 +309,7 @@ class Command(BaseCommand):
         else:
             # Write to file in S3 bucket directly
             aws_region = settings.USASPENDING_AWS_REGION
-            fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+            fpds_bucket_name = settings.FPDS_BUCKET_NAME
             s3client = boto3.client('s3', region_name=aws_region)
             contents = bytes()
             for row in file_with_headers:
