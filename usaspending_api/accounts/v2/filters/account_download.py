@@ -10,6 +10,31 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
 
+# Account Download Logic
+#
+# Account Balances (A file):
+# 	- Treasury Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 		2. Only include the most recently submitted TASs (uniqueness based on TAS)
+# 	- Federal Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 		2. Only include the most recently submitted TASs (uniqueness based on TAS)
+# 		3. Group by Federal Accounts
+# Account Breakdown by Program Activity & Object Class (B file):
+# 	- Treasury Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 		2. Only include the most recently submitted TASs (uniqueness based on TAS/PA/OC/DR)
+# 	- Federal Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 		2. Only include the most recently submitted TASs (uniqueness based on TAS/PA/OC/DR)
+# 		3. Group by Federal Accounts
+# Account Breakdown by Award (C file):
+# 	- Treasury Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 	- Federal Account
+# 		1. Get all TASs matching the filers from Q1 to the FSQ selected
+# 		2. Group by Federal Accounts
+
 
 def account_download_filter(account_type, download_table, filters, account_level='treasury_account'):
     query_filters = {}
