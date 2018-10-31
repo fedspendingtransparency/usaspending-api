@@ -66,7 +66,8 @@ def account_download_filter(account_type, download_table, filters, account_level
         order_by_cols = unique_columns_mapping[account_type] + ['-reporting_period_start']
         latest_ids_q = download_table.objects.filter(**query_filters).distinct(*distinct_cols).order_by(*order_by_cols)
         latest_ids = list(latest_ids_q.values_list(unique_id_mapping[account_type], flat=True))
-        query_filters['{}__in'.format(unique_id_mapping[account_type])] = latest_ids
+        if latest_ids:
+            query_filters['{}__in'.format(unique_id_mapping[account_type])] = latest_ids
 
     # Make derivations based on the account level
     if account_level == 'treasury_account':
