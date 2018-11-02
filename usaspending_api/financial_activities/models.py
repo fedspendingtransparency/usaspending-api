@@ -75,7 +75,28 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     objects = models.Manager()
     final_objects = FinancialAccountsByProgramActivityObjectClassManager()
 
+    """
+    Note: The FINAL_OF_FY_SQL will be used despite UPDATED_FINAL_OF_FY_SQL being more accurate.
+          Reasons for this decision are twofold
+            1. It is significantly more performant than the more accurate SQL
+            2. The endpoints which use this field are V1 which don't require the effort for accuracy and performance.
+    """
+
     FINAL_OF_FY_SQL = """
+        UPDATE financial_accounts_by_program_activity_object_class
+        SET final_of_fy = submission_id in
+        ( SELECT DISTINCT ON
+            (fabpaoc.treasury_account_id,
+             FY(s.reporting_period_start))
+          s.submission_id
+          FROM submission_attributes s
+          JOIN financial_accounts_by_program_activity_object_class fabpaoc
+              ON (s.submission_id = fabpaoc.submission_id)
+          ORDER BY fabpaoc.treasury_account_id,
+                   FY(s.reporting_period_start),
+                   s.reporting_period_start DESC)"""
+
+    UPDATED_FINAL_OF_FY_SQL = """
         UPDATE financial_accounts_by_program_activity_object_class
         SET final_of_fy = (treasury_account_id, program_activity_id, object_class_id, submission_id) in
         ( SELECT DISTINCT ON
