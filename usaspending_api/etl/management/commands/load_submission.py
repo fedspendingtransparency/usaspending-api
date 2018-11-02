@@ -554,8 +554,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     # Insert File B quarterly numbers for this submission
     TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(submission_attributes.submission_id)
 
-    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
-
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
 
