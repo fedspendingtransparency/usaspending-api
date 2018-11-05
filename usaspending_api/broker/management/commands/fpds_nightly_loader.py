@@ -272,7 +272,7 @@ class Command(BaseCommand):
             # Append row to list of Awards updated
             AWARD_UPDATE_ID_LIST.append(award.id)
 
-            if row["last_modified"] and len(str(row["last_modified"])) == 19:
+            if row["last_modified"] and len(str(row["last_modified"])) == len("YYYY-MM-DD HH:MM:SS"):  # 19 characters
                 dt_fmt = "%Y-%m-%d %H:%M:%S"
             else:
                 dt_fmt = "%Y-%m-%d %H:%M:%S.%f"  # try using this even if last_modified isn't a valid string
