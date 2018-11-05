@@ -61,8 +61,8 @@ def test_tas_account_filter_later_qtr_treasury():
     fed_acct2 = mommy.make('accounts.FederalAccount')
 
     # Create TAS models
-    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
-    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1, tas_rendering_label='1')
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2, tas_rendering_label='2')
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
@@ -84,15 +84,25 @@ def test_tas_account_filter_later_qtr_award_financial():
     fed_acct1 = mommy.make('accounts.FederalAccount')
     fed_acct2 = mommy.make('accounts.FederalAccount')
 
+    # Create Program Activities
+    prog1 = mommy.make('references.RefProgramActivity', program_activity_code='0001')
+    prog2 = mommy.make('references.RefProgramActivity', program_activity_code='0002')
+
+    # Create Object Classes
+    obj_cls1 = mommy.make('references.ObjectClass', object_class='001')
+    obj_cls2 = mommy.make('references.ObjectClass', object_class='002')
+
     # Create TAS models
-    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
-    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1, tas_rendering_label='1')
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2, tas_rendering_label='2')
 
     # Create file A models
     mommy.make('awards.FinancialAccountsByAwards', treasury_account=tas1,
-               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31')
+               reporting_period_start='1699-10-01', reporting_period_end='1699-12-31',
+               program_activity=prog1, object_class=obj_cls1)
     mommy.make('awards.FinancialAccountsByAwards', treasury_account=tas2,
-               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30')
+               reporting_period_start='1700-04-01', reporting_period_end='1700-06-30',
+               program_activity=prog2, object_class=obj_cls2)
 
     queryset = account_download_filter('award_financial', FinancialAccountsByAwards, {
         'fy': 1700,
@@ -109,8 +119,8 @@ def test_tas_account_filter_later_qtr_federal():
     fed_acct2 = mommy.make('accounts.FederalAccount')
 
     # Create TAS models
-    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1)
-    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2)
+    tas1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct1, tas_rendering_label='1')
+    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct2, tas_rendering_label='2')
 
     # Create file A models
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas1,
