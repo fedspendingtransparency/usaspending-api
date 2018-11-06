@@ -34,7 +34,7 @@ class Command(BaseCommand):
     TRANSACTION_NORMALIZED_TFA = """
         UPDATE transaction_normalized AS txn
         SET non_federal_funding_amount = txf.non_federal_funding_amount,
-        funding_amount = txf.federal_action_obligation + txf.non_federal_funding_amount
+        funding_amount = COALESCE(txf.federal_action_obligation, 0) + COALESCE(txf.non_federal_funding_amount, 0)
         FROM transaction_fabs AS txf
         WHERE txf.transaction_id = txn.id;
     """
