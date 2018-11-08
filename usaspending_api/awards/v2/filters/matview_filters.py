@@ -2,7 +2,7 @@ import logging
 import itertools
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import idv_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
@@ -112,11 +112,14 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= combine_date_range_queryset(value, model, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            idv_flag = all(i in value for i in contract_type_mapping.keys())
+            # TODO: update Matviews and Awards to include IDV (and IDC) award types to remove IDV as an edge case
+            # queryset &= model.objects.filter(type__in=value)
+
+            idv_flag = all(i in value for i in idv_type_mapping.keys())
 
             filter_obj = Q(type__in=value)
             if idv_flag:
-                filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
+                filter_obj |= Q(pulled_from='IDV')
             queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":
