@@ -116,6 +116,9 @@ def matview_search_filter(filters, model, for_downloads=False):
             # queryset &= model.objects.filter(type__in=value)
 
             idv_flag = all(i in value for i in idv_type_mapping.keys())
+            if not idv_flag and len([i for i in value if i in idv_type_mapping.keys()]) > 0:
+                raise InvalidParameterException("IDV award type filter currently not supported; award_type_codes " \
+                                                "parameter must include every IDV type or none at all.")
 
             filter_obj = Q(type__in=value)
             if idv_flag:
