@@ -196,7 +196,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
         results = {
-            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+            "contracts": 0, "idv": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
         } if not subawards else {
             "subcontracts": 0, "subgrants": 0
         }
@@ -214,17 +214,16 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             queryset = queryset.values('award_type').annotate(category_count=Count('subaward_id'))
 
         elif model == 'SummaryAwardView':
-            queryset = queryset.values('category').annotate(category_count=Sum('counts'))
+            queryset = queryset.values('category', 'pulled_from') \
+                .annotate(category_count=Sum('counts'))
 
         else:
-            # for IDV CONTRACTS category is null. change to contract
-            queryset = queryset \
-                .values('category') \
-                .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
-                .values('category', 'category_count')
+            queryset = queryset.values('category', 'pulled_from') \
+                .annotate(category_count=Count(Coalesce('category', Value('contract'))))
 
         categories = {
             'contract': 'contracts',
+            'idv': 'idv',
             'grant': 'grants',
             'direct payment': 'direct_payments',
             'loans': 'loans',
@@ -241,6 +240,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 result_key = 'other'
             else:
                 result_key = categories[award[category_name]]
+
+            # Account for IDV records that were previously being counted as Contracts
+            if result_key == 'contracts' and award['pulled_from'] == 'IDV':
+                result_key = 'idv'
+
             results[result_key] += award['category_count']
 
         return Response({"results": results})
