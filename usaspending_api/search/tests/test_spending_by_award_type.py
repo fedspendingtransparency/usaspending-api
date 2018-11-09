@@ -23,6 +23,18 @@ def test_spending_by_award_type_success(client, refresh_matviews):
         }))
     assert resp.status_code == status.HTTP_200_OK
 
+    # test IDV award types
+    resp = client.post(
+        '/api/v2/search/spending_by_award/',
+        content_type='application/json',
+        data=json.dumps({
+            "fields": ["Award ID", "Recipient Name"],
+            "filters": {
+                "award_type_codes": ["IDV_A", "IDV_B", "IDV_C", "IDV_D", "IDV_E"]
+            }
+        }))
+    assert resp.status_code == status.HTTP_200_OK
+
     # test all features
     resp = client.post(
         '/api/v2/search/spending_by_award',
@@ -47,8 +59,20 @@ def test_spending_by_award_type_success(client, refresh_matviews):
 
 @pytest.mark.django_db
 def test_spending_by_award_type_failure(client, refresh_matviews):
-    """Verify error on bad autocomplete request for budget function."""
 
+    # test incomplete IDV award types
+    resp = client.post(
+        '/api/v2/search/spending_by_award/',
+        content_type='application/json',
+        data=json.dumps({
+            "fields": ["Award ID", "Recipient Name"],
+            "filters": {
+                "award_type_codes": ["IDV_A", "IDV_B", "IDV_C"]
+            }
+        }))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    # test bad autocomplete request for budget function
     resp = client.post(
         '/api/v2/search/spending_by_award/',
         content_type='application/json',
@@ -242,38 +266,14 @@ def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
 @pytest.mark.django_db
 def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
     """ Verify that foreign country filter is returning the correct results """
-    mock_model_0 = MockModel(award_id=0,
-                             piid=None,
-                             fain='aaa',
-                             uri=None,
-                             type='B',
-                             pulled_from="AWARD",
-                             recipient_location_country_name="UNITED STATES",
-                             recipient_location_country_code="USA")
-    mock_model_1 = MockModel(award_id=1,
-                             piid=None,
-                             fain='abc',
-                             uri=None,
-                             type='B',
-                             pulled_from="AWARD",
-                             recipient_location_country_name="",
-                             recipient_location_country_code="USA")
-    mock_model_2 = MockModel(award_id=2,
-                             piid=None,
-                             fain='abd',
-                             uri=None,
-                             type='B',
-                             pulled_from="AWARD",
-                             recipient_location_country_name="UNITED STATES",
-                             recipient_location_country_code="")
-    mock_model_3 = MockModel(award_id=3,
-                             piid=None,
-                             fain='abe',
-                             uri=None,
-                             type='B',
-                             pulled_from="AWARD",
-                             recipient_location_country_name="Gibraltar",
-                             recipient_location_country_code="GIB")
+    mock_model_0 = MockModel(award_id=0, piid=None, fain='aaa', uri=None, type='B', pulled_from="AWARD",
+                             recipient_location_country_name="UNITED STATES", recipient_location_country_code="USA")
+    mock_model_1 = MockModel(award_id=1, piid=None, fain='abc', uri=None, type='B', pulled_from="AWARD",
+                             recipient_location_country_name="", recipient_location_country_code="USA")
+    mock_model_2 = MockModel(award_id=2, piid=None, fain='abd', uri=None, type='B', pulled_from="AWARD",
+                             recipient_location_country_name="UNITED STATES", recipient_location_country_code="")
+    mock_model_3 = MockModel(award_id=3, piid=None, fain='abe', uri=None, type='B', pulled_from="AWARD",
+                             recipient_location_country_name="Gibraltar", recipient_location_country_code="GIB")
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_0, mock_model_1, mock_model_2, mock_model_3])
     # add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_3])
@@ -283,12 +283,7 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "award_type_codes": [
-                    "A",
-                    "B",
-                    "C",
-                    "D"
-                ],
+                "award_type_codes": ["A", "B", "C", "D"],
                 # "recipient_locations": [{"country": "USA"}]
                 "recipient_scope": "domestic"
             },
@@ -303,12 +298,7 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
         content_type='application/json',
         data=json.dumps({
             "filters": {
-                "award_type_codes": [
-                    "A",
-                    "B",
-                    "C",
-                    "D"
-                ],
+                "award_type_codes": ["A", "B", "C", "D"],
                 "recipient_scope": "foreign"
             },
             "fields": ["Award ID"],

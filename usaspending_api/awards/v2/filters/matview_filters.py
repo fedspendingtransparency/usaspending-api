@@ -1,6 +1,8 @@
 import logging
 import itertools
+
 from django.db.models import Q
+
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import idv_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -117,7 +119,7 @@ def matview_search_filter(filters, model, for_downloads=False):
 
             idv_flag = all(i in value for i in idv_type_mapping.keys())
             if not idv_flag and len([i for i in value if i in idv_type_mapping.keys()]) > 0:
-                raise InvalidParameterException("IDV award type filter currently not supported; award_type_codes " \
+                raise InvalidParameterException("IDV award type filter currently not supported; award_type_codes "
                                                 "parameter must include every IDV type or none at all.")
 
             filter_obj = Q(type__in=value)
