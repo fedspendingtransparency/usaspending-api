@@ -1118,6 +1118,7 @@ award_assistance_mapping = {**grant_award_mapping, **loan_award_mapping, **direc
 non_loan_assistance_award_mapping = assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping,
                                                                 **other_award_mapping}
 
+# TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {
     '02': 'Block Grant',
     '03': 'Formula Grant',
@@ -1182,6 +1183,7 @@ all_award_types_mappings = {
     'loans': list(loan_type_mapping.keys()),
     'other_financial_assistance': list(other_type_mapping.keys())
 }
+# TODO: delete this and update the all_award_types_mappings to include IDVs
 all_award_types_mappings_incl_idv = {
     'contracts': list(contract_type_mapping.keys()),
     'idvs': list(idv_type_mapping.keys()),

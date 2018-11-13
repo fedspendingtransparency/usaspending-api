@@ -30,7 +30,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
         data=json.dumps({
             "fields": ["Award ID", "Recipient Name"],
             "filters": {
-                "award_type_codes": ["IDV_A", "IDV_B", "IDV_C", "IDV_D", "IDV_E"]
+                "award_type_codes": ["IDV_A", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
@@ -67,7 +67,7 @@ def test_spending_by_award_type_failure(client, refresh_matviews):
         data=json.dumps({
             "fields": ["Award ID", "Recipient Name"],
             "filters": {
-                "award_type_codes": ["IDV_A", "IDV_B", "IDV_C"]
+                "award_type_codes": ["IDV_A", "IDV_B_A", "IDV_C", "IDV_D"]
             }
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
