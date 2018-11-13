@@ -3,7 +3,7 @@
 
 **Method:** `POST`
 
-This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, and Other).
+This route takes award filters, and returns the number of awards in each award type (Contracts, IDV, Loans, Direct Payments, Grants, and Other).
 
 ### Request
 
@@ -66,13 +66,14 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
         "grants": 0,
         "loans": 0,
         "contracts": 0,
+        "idv": 0,
         "direct_payments": 1,
         "other": 0
     }
 }
 ```
 **Response Documentation**
-The result set always returns how many grants, loans, contracts, direct payments, and other awards are returned with the specified filters.
+The result set always returns how many grants, loans, contracts, idvs, direct payments, and other awards are returned with the specified filters.
 
 
 ### Response (JSON) - Subawards
