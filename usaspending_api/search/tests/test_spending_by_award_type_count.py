@@ -84,7 +84,7 @@ def test_spending_by_award_no_intersection(client, mock_matviews_qs):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"] == {
         "contracts": 0,
-        "idv": 0,
+        "idvs": 0,
         "grants": 0,
         "direct_payments": 0,
         "loans": 0,
