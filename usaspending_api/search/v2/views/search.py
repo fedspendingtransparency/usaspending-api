@@ -196,7 +196,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
         results = {
-            "contracts": 0, "idv": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+            "contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
         } if not subawards else {
             "subcontracts": 0, "subgrants": 0
         }
@@ -219,11 +219,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         else:
             queryset = queryset.values('category', 'pulled_from') \
-                .annotate(category_count=Count(Coalesce('category', Value('contract'))))
+                .annotate(category_count=Count(Coalesce('category', Value('idvs'))))
 
         categories = {
             'contract': 'contracts',
-            'idv': 'idv',
+            'idvs': 'idvs',
             'grant': 'grants',
             'direct payment': 'direct_payments',
             'loans': 'loans',
@@ -235,15 +235,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # DB hit here
         for award in queryset:
             if award[category_name] is None:
-                result_key = 'contracts' if not subawards else 'subcontracts'
+                result_key = 'idv' if not subawards else 'subcontracts'
             elif award[category_name] not in categories.keys():
                 result_key = 'other'
             else:
                 result_key = categories[award[category_name]]
-
-            # Account for IDV records that were previously being counted as Contracts
-            if result_key == 'contracts' and award['pulled_from'] == 'IDV':
-                result_key = 'idv'
 
             results[result_key] += award['category_count']
 

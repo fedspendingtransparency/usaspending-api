@@ -1148,9 +1148,9 @@ contract_type_mapping = {
 }
 idv_type_mapping = {
     'IDV_A': 'GWAC Government Wide Acquisition Contract',
-    'IDV_B_A': 'IDC Indefinite Delivery Contract - ',
-    'IDV_B_B': 'IDC Indefinite Delivery Contract - ',
-    'IDV_B_C': 'IDC Indefinite Delivery Contract - ',
+    'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
+    'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
+    'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',
     'IDV_C': 'FSS Federal Supply Schedule',
     'IDV_D': 'BOA Basic Ordering Agreement',
     'IDV_E': 'BPA Blanket Purchase Agreement'

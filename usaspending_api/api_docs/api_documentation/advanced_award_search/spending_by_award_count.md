@@ -66,7 +66,7 @@ subawards (**OPTIONAL**): boolean value.  True when you want to group by Subawar
         "grants": 0,
         "loans": 0,
         "contracts": 0,
-        "idv": 0,
+        "idvs": 0,
         "direct_payments": 1,
         "other": 0
     }
