@@ -272,10 +272,18 @@ class Command(BaseCommand):
             # Append row to list of Awards updated
             AWARD_UPDATE_ID_LIST.append(award.id)
 
+            if row["last_modified"] and len(str(row["last_modified"])) == len("YYYY-MM-DD HH:MM:SS"):  # 19 characters
+                dt_fmt = "%Y-%m-%d %H:%M:%S"
+            else:
+                dt_fmt = "%Y-%m-%d %H:%M:%S.%f"  # try using this even if last_modified isn't a valid string
+
             try:
-                last_mod_date = datetime.strptime(str(row["last_modified"]), "%Y-%m-%d %H:%M:%S.%f").date()
-            except ValueError:
-                last_mod_date = datetime.strptime(str(row["last_modified"]), "%Y-%m-%d %H:%M:%S").date()
+                last_mod_date = datetime.strptime(str(row["last_modified"]), dt_fmt).date()
+            except ValueError:  # handle odd-string formats and NULLs from the upstream FPDS-NG system
+                info_message = "Invalid value '{}' does not match: '{}'".format(row["last_modified"], dt_fmt)
+                logger.info(info_message)
+                last_mod_date = None
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
