@@ -27,11 +27,13 @@ search: False
 # allowed: list
 requirements:
   - requirements/requirements.txt:
+    update: False
+    pin: True
 
 # add a label to pull requests, default is not set
 # requires private repo permissions, even on public repos
 # default: empty
-label_prs: pyup.io
+label_prs: pyup
 
 # assign users to pull requests, default is not set
 # requires private repo permissions, even on public repos

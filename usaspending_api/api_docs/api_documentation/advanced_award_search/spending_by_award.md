@@ -69,7 +69,7 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 }
 ```
 ### Fields
-The possible fields returned are split by contracts or assistance awards (loans, grants, etc.)
+The possible fields returned are split by contracts (and IDV) or assistance awards (loans, grants, etc.)
 
 #### Possible Award Fields (available for every type of award)
 ```
@@ -94,7 +94,7 @@ The possible fields returned are split by contracts or assistance awards (loans,
     'Base Obligation Date': 'date_signed'
 ```
 
-#### Possible Contract Fields w/ db mapping
+#### Possible Contract (and IDV) Fields w/ db mapping
 ```
     'Award ID': 'piid',
     'Start Date': 'period_of_performance_start_date',

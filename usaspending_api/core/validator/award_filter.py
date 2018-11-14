@@ -1,13 +1,13 @@
 from django.conf import settings
 
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, idv_type_mapping
 from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
 
 
 AWARD_FILTER = [
     {'name': 'award_ids', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'award_type_codes', 'type': 'array', 'array_type': 'enum',
-     'enum_values': list(award_type_mapping.keys()) + ['no intersection']},
+     'enum_values': list(award_type_mapping.keys()) + list(idv_type_mapping.keys()) + ['no intersection']},
     {'name': 'contract_pricing_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'extent_competed_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'keywords', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'text_min': 3},
