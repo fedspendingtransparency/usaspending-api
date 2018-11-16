@@ -43,6 +43,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {"name": "sparse", "key": "sparse", "type": "boolean", "default": True},
             {
                 "name": "group",
                 "key": "group",
@@ -96,7 +97,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
 
-        db_results, values = self.database_data_layer()
+        results, values = self.database_data_layer()
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
@@ -104,8 +105,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                                'end_date': '{}-09-30'.format(generate_fiscal_year(datetime.utcnow()))}
         time_periods = self.filters.get('time_period', [default_time_period])
 
-        results = generate_date_ranged_results_from_queryset(filter_time_periods=time_periods, queryset=db_results,
-                                                             date_range_type=values[-1],
-                                                             columns={'aggregated_amount': 'aggregated_amount'})
+        if json_request["sparse"]:
+            for result in results:
+                result["time_period"] = {}
+                for period in values:
+                    result["time_period"][self.groupings[period]] = str(result[period])
+                    del result[period]
+        else:
+            results = generate_date_ranged_results_from_queryset(
+                filter_time_periods=time_periods,
+                queryset=results,
+                date_range_type=values[-1])
 
         return Response({"group": self.groupings[self.group], "results": results})

@@ -1,14 +1,15 @@
 import contextlib
 import logging
-import time
 import subprocess
+import time
 
 from calendar import monthrange, isleap
 from collections import OrderedDict
+from datetime import datetime as dt
+from django.conf import settings
 from django.db import DEFAULT_DB_ALIAS, connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
-from dateutil.relativedelta import relativedelta
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
@@ -78,8 +79,8 @@ def generate_fiscal_month(date):
     validate_date(date)
 
     if date.month in [10, 11, 12, "10", "11", "12"]:
-        return date.month - 9
-    return date.month + 3
+        return int(date.month) - 9
+    return int(date.month) + 3
 
 
 def generate_fiscal_year_and_quarter(date):
@@ -122,33 +123,37 @@ def dates_are_month_bookends(start, end):
     return False
 
 
-def generate_date_range_hash(date_range_dict):
-    """ For a given date range dictionary, make a string that can be used as a hash and sort a list of date ranges """
-    values = ['fy', 'quarter', 'month']
-    return '-'.join([str(date_range_dict[value]).zfill(2) for value in values if date_range_dict.get(value)])
+def min_and_max_from_date_ranges(filter_time_periods):
+    min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
+    max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
+    return (dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d"))
 
 
-def generate_date_ranges_in_time_period(start, end, range_type='fy'):
-    """ For a given date-range, provide the inclusive fiscal years, fiscal quarters, or fiscal months """
-    date_ranges = []
-    temp_date = start
-    while temp_date < end:
-        fy, quarter = generate_fiscal_year_and_quarter(temp_date).split('-Q')
-        date_range = {'fy': int(fy)}
-        date_interval = relativedelta(years=1)
-        if range_type == 'quarter':
-            date_range['quarter'] = int(quarter)
-            date_interval = relativedelta(months=3)
-        elif range_type == 'month':
-            date_range['month'] = generate_fiscal_month(temp_date)
-            date_interval = relativedelta(months=1)
-        temp_date = datetime.date(temp_date.year, temp_date.month, temp_date.day) + date_interval
-        date_ranges.append(date_range)
-    return date_ranges
+def create_full_time_periods(min_date, max_date, group):
+    fiscal_years = [int(fy) for fy in range(generate_fiscal_year(min_date), generate_fiscal_year(max_date) + 1)]
+    if group == "fy":
+        return [{"aggregated_amount": 0, "time_period": {"fy": str(fy)}} for fy in fiscal_years]
+
+    if group == "month":
+        period = int(generate_fiscal_month(min_date))
+        ending = int(generate_fiscal_month(max_date))
+        rollover = 12
+    else:  # Quarters
+        period = int(generate_fiscal_year_and_quarter(min_date).split('-Q')[-1])
+        ending = int(generate_fiscal_year_and_quarter(max_date).split('-Q')[-1])
+        rollover = 4
+
+    results = []
+    for fy in fiscal_years:
+        while period <= rollover and not (period > ending and fy == fiscal_years[-1]):
+            results.append({"aggregated_amount": 0, "time_period": {"fy": str(fy), group: str(period)}})
+            period += 1
+        period = 1
+
+    return results
 
 
-def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, date_range_type, columns,
-                                               include_empty=True):
+def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, date_range_type):
     """ Given the following, generate a list of dict results split by fiscal years/quarters/months
 
         Args:
@@ -157,45 +162,20 @@ def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, da
             queryset: the resulting data to split into these results
             data_range_type: how the results are split
                 - 'fy', 'quarter', or 'month'
-            columns: dictionary of columns to include from the queryset
-                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
-            include_empty: whether or not to include all possible results whether or not they exist in the queryset
         Returns:
             list of dict results split by fiscal years/quarters/months
     """
-    hashed_results = OrderedDict()
+    min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
+    results = create_full_time_periods(min_date, max_date, date_range_type)
 
-    # Populate all possible periods results can include
-    for time_period in filter_time_periods:
-        start_date = generate_date_from_string(time_period['start_date'])
-        end_date = generate_date_from_string(time_period['end_date'])
-        for date_range in generate_date_ranges_in_time_period(start_date, end_date, range_type=date_range_type):
-            # front-end wants a string for fiscal_year
-            date_range_hash = generate_date_range_hash(date_range)
-            date_range['fy'] = str(date_range['fy'])
-            hashed_results[date_range_hash] = {'time_period': date_range}
-            for column_name, column_in_queryset in columns.items():
-                hashed_results[date_range_hash][column_name] = 0
-
-    # populate periods with new awards
-    populated_time_periods = []
     for row in queryset:
-        row_hash = generate_date_range_hash(row)
-        populated_time_periods.append(row_hash)
-        for column_name, column_in_queryset in columns.items():
-            hashed_results[row_hash][column_name] = row[column_in_queryset]
+        for item in results:
+            if str(item["time_period"]["fy"]) == str(row["fy"]) and str(item["time_period"][date_range_type]) == str(row[date_range_type]):
+                item["aggregated_amount"] = row["aggregated_amount"]
 
-    # if we're not including the empty ones, just keep the populated time periods
-    if not include_empty:
-        hashed_results = {key: result for key, result in hashed_results.items() if key in populated_time_periods}
-
-    results = list(hashed_results.values())
-
-    # change fy's to fiscal_years
     for result in results:
         result['time_period']['fiscal_year'] = result['time_period']['fy']
         del result['time_period']['fy']
-
     return results
 
 
