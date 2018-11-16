@@ -196,7 +196,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
         results = {
-            "contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
+            "contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0
         } if not subawards else {
             "subcontracts": 0, "subgrants": 0
         }
@@ -217,14 +217,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             queryset = queryset.values('category').annotate(category_count=Sum('counts'))
 
         else:
-            # for IDV CONTRACTS category is null. change to contract
-            queryset = queryset \
-                .values('category') \
-                .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
-                .values('category', 'category_count')
+            queryset = queryset.values('category').annotate(category_count=Count(Coalesce('category', Value('idvs'))))
 
         categories = {
             'contract': 'contracts',
+            'idvs': 'idvs',
             'grant': 'grants',
             'direct payment': 'direct_payments',
             'loans': 'loans',
@@ -236,11 +233,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # DB hit here
         for award in queryset:
             if award[category_name] is None:
-                result_key = 'contracts' if not subawards else 'subcontracts'
+                result_key = 'idvs' if not subawards else 'subcontracts'
             elif award[category_name] not in categories.keys():
                 result_key = 'other'
             else:
                 result_key = categories[award[category_name]]
+
             results[result_key] += award['category_count']
 
         return Response({"results": results})
