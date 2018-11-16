@@ -1,6 +1,6 @@
 import copy
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db.models import Sum
@@ -13,8 +13,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
-from usaspending_api.common.helpers.generic_helper import (
-    generate_date_ranged_results_from_queryset, generate_fiscal_year)
+from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, generate_fiscal_year
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.core.validator.tinyshield import TinyShield
@@ -43,7 +42,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-            {"name": "sparse", "key": "sparse", "type": "boolean", "default": True},
+            {"name": "sparse", "key": "sparse", "type": "boolean", "default": False},
             {
                 "name": "group",
                 "key": "group",
@@ -101,9 +100,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
-        default_time_period = {'start_date': settings.API_SEARCH_MIN_DATE,
-                               'end_date': '{}-09-30'.format(generate_fiscal_year(datetime.utcnow()))}
-        time_periods = self.filters.get('time_period', [default_time_period])
+        current_fy = generate_fiscal_year(datetime.now(timezone.utc))
+        if self.groupings[self.group] == "fiscal_year":
+            end_date = "{}-09-30".format(current_fy)
+        else:
+            end_date = "{}-{}-30".format(current_fy, datetime.now(timezone.utc).month)
+
+        default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
+        time_periods = self.filters.get("time_period", [default_time_period])
 
         if json_request["sparse"]:
             for result in results:
@@ -112,9 +116,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     result["time_period"][self.groupings[period]] = str(result[period])
                     del result[period]
         else:
-            results = generate_date_ranged_results_from_queryset(
+            results = bolster_missing_time_periods(
                 filter_time_periods=time_periods,
                 queryset=results,
-                date_range_type=values[-1])
+                date_range_type=values[-1],
+                columns={"aggregated_amount": "aggregated_amount"},
+            )
 
         return Response({"group": self.groupings[self.group], "results": results})

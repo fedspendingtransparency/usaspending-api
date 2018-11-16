@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import generate_date_ranged_results_from_queryset
+from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
@@ -104,8 +104,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         queryset, values = self.database_data_layer()
 
-        results = generate_date_ranged_results_from_queryset(filter_time_periods=self.filters['time_period'],
-                                                             queryset=queryset,
-                                                             date_range_type=values[-1],
-                                                             columns={'new_award_count_in_period': 'count'})
+        results = bolster_missing_time_periods(
+            filter_time_periods=self.filters['time_period'],
+            queryset=queryset,
+            date_range_type=values[-1],
+            columns={'new_award_count_in_period': 'count'})
         return Response({'group': self.groupings[self.json_request['group']], 'results': results})

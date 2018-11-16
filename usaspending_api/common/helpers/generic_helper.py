@@ -153,7 +153,7 @@ def create_full_time_periods(min_date, max_date, group):
     return results
 
 
-def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, date_range_type):
+def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
     """ Given the following, generate a list of dict results split by fiscal years/quarters/months
 
         Args:
@@ -162,6 +162,8 @@ def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, da
             queryset: the resulting data to split into these results
             data_range_type: how the results are split
                 - 'fy', 'quarter', or 'month'
+            columns: dictionary of columns to include from the queryset
+                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
         Returns:
             list of dict results split by fiscal years/quarters/months
     """
@@ -170,8 +172,11 @@ def generate_date_ranged_results_from_queryset(filter_time_periods, queryset, da
 
     for row in queryset:
         for item in results:
-            if str(item["time_period"]["fy"]) == str(row["fy"]) and str(item["time_period"][date_range_type]) == str(row[date_range_type]):
-                item["aggregated_amount"] = row["aggregated_amount"]
+            same_year = str(item["time_period"]["fy"]) == str(row["fy"])
+            same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
+            if same_year and same_period:
+                for column_name, column_in_queryset in columns.items():
+                    item[column_name] = row[column_in_queryset]
 
     for result in results:
         result['time_period']['fiscal_year'] = result['time_period']['fy']
