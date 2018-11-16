@@ -1134,11 +1134,6 @@ award_type_mapping = {
     'B': 'Purchase Order',
     'C': 'Delivery Order',
     'D': 'Definitive Contract',
-    'E': 'Unknown Type',
-    'F': 'Cooperative Agreement',
-    'G': 'Grant for Research',
-    'S': 'Funded Space Act Agreement',
-    'T': 'Training Grant'
 }
 contract_type_mapping = {
     'A': 'BPA Call',
