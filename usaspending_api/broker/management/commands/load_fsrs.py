@@ -66,13 +66,13 @@ class Command(BaseCommand):
             # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
             return (
                 'CONT_AW_'
-                + (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else '-NONE-')
+                + (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else 'NONE')
                 + '_'
-                + (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else '-NONE-')
+                + (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else 'NONE')
                 + '_'
-                + (row['contract_number'].replace('-', '') if row['contract_number'] else '-NONE-')
+                + (row['contract_number'].replace('-', '') if row['contract_number'] else 'NONE')
                 + '_'
-                + (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else '-NONE-')
+                + (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else 'NONE')
             )
         else:
             # For assistance awards, 'ASST_AW_' is NOT prepended because we are unable to build the full unique
