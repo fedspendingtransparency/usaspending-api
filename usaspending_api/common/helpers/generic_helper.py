@@ -129,10 +129,11 @@ def min_and_max_from_date_ranges(filter_time_periods):
     return (dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d"))
 
 
-def create_full_time_periods(min_date, max_date, group):
+def create_full_time_periods(min_date, max_date, group, columns):
+    cols = {col: 0 for col in columns.keys()}
     fiscal_years = [int(fy) for fy in range(generate_fiscal_year(min_date), generate_fiscal_year(max_date) + 1)]
     if group == "fy":
-        return [{"aggregated_amount": 0, "time_period": {"fy": str(fy)}} for fy in fiscal_years]
+        return [{**cols, **{"time_period": {"fy": str(fy)}}} for fy in fiscal_years]
 
     if group == "month":
         period = int(generate_fiscal_month(min_date))
@@ -146,7 +147,7 @@ def create_full_time_periods(min_date, max_date, group):
     results = []
     for fy in fiscal_years:
         while period <= rollover and not (period > ending and fy == fiscal_years[-1]):
-            results.append({"aggregated_amount": 0, "time_period": {"fy": str(fy), group: str(period)}})
+            results.append({**cols, **{"time_period": {"fy": str(fy), group: str(period)}}})
             period += 1
         period = 1
 
@@ -168,7 +169,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             list of dict results split by fiscal years/quarters/months
     """
     min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
-    results = create_full_time_periods(min_date, max_date, date_range_type)
+    results = create_full_time_periods(min_date, max_date, date_range_type, columns)
 
     for row in queryset:
         for item in results:
