@@ -655,7 +655,7 @@ class AwardMatview(models.Model):
 
 
 class AwardCategory(models.Model):
-    type_code = models.TextField()
+    type_code = models.TextField(db_index=True)
     type_name = models.TextField()
 
     class Meta:

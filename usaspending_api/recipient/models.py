@@ -62,12 +62,12 @@ class HistoricParentDUNS(models.Model):
     Model representing DUNS data (imported from the broker)
     """
 
-    awardee_or_recipient_uniqu = models.TextField(primary_key=True)
-    legal_business_name = models.TextField()
-    ultimate_parent_unique_ide = models.TextField()
-    ultimate_parent_legal_enti = models.TextField()
+    awardee_or_recipient_uniqu = models.TextField(primary_key=True, db_index=True)
+    legal_business_name = models.TextField(null=True, blank=True)
+    ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
+    ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
     broker_historic_duns_id = models.TextField()
-    year = models.IntegerField()
+    year = models.IntegerField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = "historic_parent_duns"
@@ -81,7 +81,7 @@ class RecipientProfile(models.Model):
     recipient_unique_id = models.TextField(null=True, db_index=True)
     recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
-    award_types = ArrayField(base_field=models.TextField(), default=list, size=None)
+    award_types = ArrayField(base_field=models.TextField(), default=list, size=None, db_index=True)
     last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_contracts = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_grants = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
@@ -100,8 +100,8 @@ class RecipientProfile(models.Model):
 class RecipientLookup(models.Model):
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
-    duns = models.TextField(null=True)
-    parent_duns = models.TextField(null=True)
+    duns = models.TextField(unique=True, null=True, db_index=True)
+    parent_duns = models.TextField(null=True, db_index=True)
     parent_legal_business_name = models.TextField(null=True)
     address_line_1 = models.TextField(null=True)
     address_line_2 = models.TextField(null=True)

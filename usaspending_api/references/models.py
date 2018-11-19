@@ -367,7 +367,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.BigAutoField(primary_key=True, db_index=True)
-    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name", null=True)
+    recipient_name = models.TextField(blank=True, verbose_name="Recipient Name", null=True, db_index=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number",
                                                   db_index=True)
