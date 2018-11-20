@@ -76,3 +76,9 @@ XY,Indian Tribe (Federally Recognized),indian_tribe_federally_rec
 FO,Township,township_local_government
 TR,Airport Authority,airport_authority
 G9,Other Than One of the Proceeding,
+2J,Sole Proprietorship,sole_proprietorship
+2K,Partnership or Limited Liability Partnership,partnership_or_limited_lia
+2L,Corporate Entity (Not Tax Exempt),corporate_entity_not_tax_e
+8H,Corporate Entity (Tax Exempt),corporate_entity_tax_exemp
+2A,U.S. Government Entity,us_government_entity
+X6,International Organization,international_organization
