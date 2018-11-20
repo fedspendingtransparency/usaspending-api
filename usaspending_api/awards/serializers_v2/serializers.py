@@ -235,6 +235,7 @@ class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
 
 
 class TransactionFPDSSerializerV2(LimitableSerializerV2):
+    small_business_competitive = serializers.CharField()
 
     class Meta:
         model = TransactionFPDS
