@@ -148,11 +148,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         limited_queryset = queryset[(page - 1) * limit:page * limit + 1]  # lower limit : upper limit
         has_next = len(limited_queryset) > limit
 
-        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
-        print('=======================================')
-        print(request.path)
-        print(generate_raw_quoted_query(queryset))
-
         results = []
         for award in limited_queryset[:limit]:
             if subawards:
