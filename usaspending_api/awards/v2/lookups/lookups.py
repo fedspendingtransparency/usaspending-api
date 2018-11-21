@@ -1148,6 +1148,7 @@ contract_type_mapping = {
 }
 idv_type_mapping = {
     'IDV_A': 'GWAC Government Wide Acquisition Contract',
+    'IDV_B': 'IDC (Unknown)',
     'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
     'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
     'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',

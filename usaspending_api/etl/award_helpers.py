@@ -267,3 +267,29 @@ def get_awarding_agency(row):
         # No matching transaction found, so find/create Award by using toptier agency only, since CGAC code is the only
         # piece of awarding agency info that we have.
         return Agency.get_by_toptier(row.agency_identifier)
+
+
+def update_idv_awards(award_tuple=None):
+    award_predicate = ""
+    sql = """
+UPDATE awards a
+SET
+  type = CASE
+        WHEN t.idv_type = 'B' AND t.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', t.type_of_idc::text)
+        ELSE CONCAT('IDV_', t.idv_type::text) END,
+  type_description = CASE
+        WHEN t.idv_type = 'B' THEN t.type_of_idc_description
+        ELSE t.idv_type_description END
+FROM transaction_fpds t
+WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
+
+    if award_tuple:
+        award_predicate = " AND award_id IN %s"
+
+    with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
+        # list (even if it uses the same one!)
+        cursor.execute(sql.format(award_predicate), [award_tuple])
+        rows = cursor.rowcount
+
+    return rows

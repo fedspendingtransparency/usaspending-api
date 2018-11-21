@@ -38,6 +38,7 @@
     "  awards.period_of_performance_start_date,",
     "  awards.period_of_performance_current_end_date,",
     "  awards.date_signed,",
+    "  transaction_fpds.ordering_period_end_date::date,",
     "",
     "  transaction_fabs.original_loan_subsidy_cost,",
     "  transaction_fabs.face_value_loan_guarantee,",
@@ -194,6 +195,10 @@
       "name": "period_of_performance_current_end_date",
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_ordering_period_end_date",
+      "where": "action_date >= '2007-10-01'",
+      "columns": [{"name": "ordering_period_end_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "recipient_name",
       "where": "recipient_name IS NOT NULL AND action_date >= '2007-10-01'",

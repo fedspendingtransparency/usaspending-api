@@ -12,9 +12,10 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.lookups.lookups import (contract_type_mapping, loan_type_mapping,
                                                        non_loan_assistance_type_mapping, grant_type_mapping,
-                                                       contract_subaward_mapping, grant_subaward_mapping)
+                                                       contract_subaward_mapping, grant_subaward_mapping,
+                                                       idv_type_mapping)
 from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_mapping, loan_award_mapping,
-                                                               non_loan_assistance_award_mapping)
+                                                               non_loan_assistance_award_mapping, award_idv_mapping)
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
@@ -94,6 +95,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     values.add(loan_award_mapping.get(field))
                 if non_loan_assistance_award_mapping.get(field):
                     values.add(non_loan_assistance_award_mapping.get(field))
+                if award_idv_mapping.get(field):
+                    values.add(award_idv_mapping.get(field))
 
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
@@ -111,6 +114,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_filters = [award_contracts_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
                     sort_filters = [loan_award_mapping[sort]]
+                elif set(filters["award_type_codes"]) <= set(idv_type_mapping):  # idvs
+                    sort_filters = [award_idv_mapping[sort]]
                 else:  # assistance data
                     sort_filters = [non_loan_assistance_award_mapping[sort]]
 
@@ -143,6 +148,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         limited_queryset = queryset[(page - 1) * limit:page * limit + 1]  # lower limit : upper limit
         has_next = len(limited_queryset) > limit
 
+        from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(queryset))
+
         results = []
         for award in limited_queryset[:limit]:
             if subawards:
@@ -163,6 +173,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                     for field in fields:
                         row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+                elif award['type'] in idv_type_mapping:
+                    for field in fields:
+                        row[field] = award.get(award_idv_mapping.get(field))
                 elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:
                     # IDV + contract
                     for field in fields:
