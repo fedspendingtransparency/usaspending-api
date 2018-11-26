@@ -1134,6 +1134,12 @@ award_type_mapping = {
     'B': 'Purchase Order',
     'C': 'Delivery Order',
     'D': 'Definitive Contract',
+    # While these types exist, they should not be included when returning all award types
+    # 'E': 'Unknown Type',
+    # 'F': 'Cooperative Agreement',
+    # 'G': 'Grant for Research',
+    # 'S': 'Funded Space Act Agreement',
+    # 'T': 'Training Grant'
 }
 contract_type_mapping = {
     'A': 'BPA Call',
