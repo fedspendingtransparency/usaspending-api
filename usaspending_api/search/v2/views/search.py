@@ -1,8 +1,7 @@
 import copy
 
 from django.conf import settings
-from django.db.models import Sum, Count, F, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, Count, F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -220,16 +219,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         if subawards:
             queryset = queryset.values('award_type').annotate(category_count=Count('subaward_id'))
-
         elif model == 'SummaryAwardView':
             queryset = queryset.values('category').annotate(category_count=Sum('counts'))
-
         else:
-            queryset = queryset.values('category').annotate(category_count=Count(Coalesce('category', Value('idvs'))))
+            queryset = queryset.values('category').annotate(category_count=Count('category'))
 
         categories = {
             'contract': 'contracts',
-            'idvs': 'idvs',
+            'idv': 'idvs',
             'grant': 'grants',
             'direct payment': 'direct_payments',
             'loans': 'loans',
@@ -241,7 +238,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # DB hit here
         for award in queryset:
             if award[category_name] is None:
-                result_key = 'idvs' if not subawards else 'subcontracts'
+                result_key = 'other' if not subawards else 'subcontracts'
             elif award[category_name] not in categories.keys():
                 result_key = 'other'
             else:

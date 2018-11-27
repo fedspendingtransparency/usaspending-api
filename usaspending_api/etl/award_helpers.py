@@ -33,6 +33,7 @@ def update_awards(award_tuple=None):
         "  WHEN type in ('07', '08') THEN 'loans'"
         "  WHEN type = '09' THEN 'insurance'"
         "  WHEN type = '11' THEN 'other'"
+        "  WHEN type LIKE 'IDV%' THEN 'idv'"
         "  ELSE NULL END AS category "
         "FROM transaction_normalized ")
     if award_tuple:
@@ -100,7 +101,10 @@ def update_awards(award_tuple=None):
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)
-        cursor.execute(sql_update, [award_tuple, award_tuple, award_tuple])
+        if award_tuple:
+            cursor.execute(sql_update, [award_tuple, award_tuple, award_tuple])
+        else:
+            cursor.execute(sql_update)
         rows = cursor.rowcount
 
     return rows
@@ -128,7 +132,9 @@ def update_contract_awards(award_tuple=None):
         "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
         "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
-        "      WHEN idv_type = 'B' AND (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') THEN type_of_idc_description "
+        "      WHEN idv_type = 'B' AND "
+        "        (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') "
+        "        THEN type_of_idc_description "
         "      ELSE idv_type_description END AS type_description "
         "  FROM transaction_fpds f INNER JOIN transaction_normalized as tx on f.transaction_id = tx.id "
     )
@@ -153,7 +159,10 @@ def update_contract_awards(award_tuple=None):
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)
-        cursor.execute(sql_update, [award_tuple, award_tuple])
+        if award_tuple:
+            cursor.execute(sql_update, [award_tuple, award_tuple])
+        else:
+            cursor.execute(sql_update)
         rows = cursor.rowcount
 
     return rows
@@ -221,6 +230,7 @@ def update_award_categories(award_tuple=None):
             When(type__in=['07', '08'], then=Value('loans')),
             When(type__in=['09'], then=Value('insurance')),
             When(type__in=['11'], then=Value('other')),
+            When(type__startswith='IDV', then=Value('idv')),
             default=None,
             output_field=TextField()
         )
@@ -306,7 +316,9 @@ SET
         WHEN t.idv_type = 'B' AND t.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', t.type_of_idc::text)
         ELSE CONCAT('IDV_', t.idv_type::text) END,
   type_description = CASE
-        WHEN t.idv_type = 'B' AND (t.type_of_idc_description IS DISTINCT FROM NULL AND t.type_of_idc_description <> 'NAN') THEN t.type_of_idc_description
+        WHEN t.idv_type = 'B' AND
+            (t.type_of_idc_description IS DISTINCT FROM NULL AND t.type_of_idc_description <> 'NAN')
+            THEN t.type_of_idc_description
         ELSE t.idv_type_description END
 FROM transaction_fpds t
 WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
@@ -317,7 +329,33 @@ WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)
-        cursor.execute(sql.format(award_predicate), [award_tuple])
+        if award_tuple:
+            cursor.execute(sql.format(award_predicate), [award_tuple])
+        else:
+            cursor.execute(sql.format(award_predicate))
         rows = cursor.rowcount
 
     return rows
+
+
+def award_types(row):
+    pulled_from = row.get("pulled_from", None)
+    idv_type = row.get("idv_type", None)
+    type_of_idc = row.get("type_of_idc", None)
+    type_of_idc_description = row.get("type_of_idc_description", None)
+
+    if pulled_from != "IDV":
+        award_type = row.get("contract_award_type")
+    elif idv_type == "B" and type_of_idc is not None:
+        award_type = "IDV_B_{}".format(type_of_idc)
+    else:
+        award_type = "IDV_{}".format(idv_type)
+
+    if pulled_from != "IDV":
+        award_type_desc = row.get("contract_award_type_desc")
+    elif idv_type == "B" and type_of_idc_description not in (None, "NAN"):
+        award_type_desc = type_of_idc_description
+    else:
+        award_type_desc = row.get("idv_type_description")
+
+    return award_type, award_type_desc
