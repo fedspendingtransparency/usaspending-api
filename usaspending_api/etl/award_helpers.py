@@ -278,7 +278,7 @@ SET
         WHEN t.idv_type = 'B' AND t.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', t.type_of_idc::text)
         ELSE CONCAT('IDV_', t.idv_type::text) END,
   type_description = CASE
-        WHEN t.idv_type = 'B' THEN t.type_of_idc_description
+        WHEN t.idv_type = 'B' AND (t.type_of_idc_description IS DISTINCT FROM NULL AND t.type_of_idc_description <> 'NAN') THEN t.type_of_idc_description
         ELSE t.idv_type_description END
 FROM transaction_fpds t
 WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
