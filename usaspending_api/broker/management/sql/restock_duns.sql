@@ -18,7 +18,8 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.zip AS zip,
     broker_duns.zip4 AS zip4,
     broker_duns.business_types_codes AS business_types_codes,
-    broker_duns.dba_name as dba_name
+    broker_duns.dba_name as dba_name,
+    broker_duns.entity_structure as entity_structure
   FROM
     dblink ('broker_server', '(
       SELECT
@@ -37,6 +38,7 @@ CREATE TABLE public.temporary_restock_duns AS (
         duns.country_code,
         duns.congressional_district,
         COALESCE(duns.business_types_codes, ''{}''::text[]) AS business_types_codes,
+        duns.entity_structure,
         duns.duns_id
       FROM
         duns
@@ -58,6 +60,7 @@ CREATE TABLE public.temporary_restock_duns AS (
             country_code text,
             congressional_district text,
             business_types_codes text[],
+            entity_structure text,
             duns_id text
           )
 );
