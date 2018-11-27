@@ -25,12 +25,19 @@ def update_awards(award_tuple=None):
 
     # common table expression for each award's latest transaction
     sql_txn_latest = (
-        'txn_latest AS ('
-        'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction_normalized ')
+        "txn_latest AS ("
+        "SELECT DISTINCT ON (award_id) *, "
+        "CASE WHEN type IN ('A', 'B', 'C', 'D') THEN 'contract'"
+        "  WHEN type IN ('02', '03', '04', '05') THEN 'grant'"
+        "  WHEN type in ('06', '10') THEN 'direct payment'"
+        "  WHEN type in ('07', '08') THEN 'loans'"
+        "  WHEN type = '09' THEN 'insurance'"
+        "  WHEN type = '11' THEN 'other'"
+        "  ELSE NULL END AS category "
+        "FROM transaction_normalized ")
     if award_tuple:
-        sql_txn_latest += 'WHERE award_id IN %s '
-    sql_txn_latest += 'ORDER BY award_id, action_date DESC) '
+        sql_txn_latest += "WHERE award_id IN %s "
+    sql_txn_latest += "ORDER BY award_id, action_date DESC) "
 
     # common table expression for each award's earliest transaction
     sql_txn_earliest = (
@@ -78,6 +85,7 @@ def update_awards(award_tuple=None):
         'non_federal_funding_amount = t.non_federal_funding_amount, '
         'latest_transaction_id = l.id, '
         'type = l.type, '
+        'category = l.category, '
         'type_description = l.type_description '
         'FROM txn_earliest e '
         'JOIN txn_latest l '
