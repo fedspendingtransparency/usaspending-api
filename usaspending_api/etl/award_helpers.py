@@ -112,28 +112,48 @@ def update_contract_awards(award_tuple=None):
     # sum the base_and_all_options_value from contract_data for an award
     sql_txn_totals = (
         'txn_totals AS ('
-        'SELECT tx.award_id, SUM(CAST(base_and_all_options_value as double precision)) AS total_base_and_options_value '
-        'FROM transaction_fpds INNER JOIN transaction_normalized as tx on '
-        'transaction_fpds.transaction_id = tx.id ')
+        'SELECT '
+        ' tx.award_id, SUM(CAST(f.base_and_all_options_value as double precision)) AS total_base_and_options_value '
+        'FROM transaction_fpds f INNER JOIN transaction_normalized as tx on '
+        'f.transaction_id = tx.id ')
     if award_tuple:
         sql_txn_totals += 'WHERE tx.award_id IN %s '
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
+    sql_award_types = (
+        "sql_award_types AS ("
+        "  SELECT"
+        "    tx.award_id,"
+        "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
+        "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
+        "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
+        "      WHEN idv_type = 'B' AND (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') THEN type_of_idc_description "
+        "      ELSE idv_type_description END AS type_description "
+        "  FROM transaction_fpds f INNER JOIN transaction_normalized as tx on f.transaction_id = tx.id "
+    )
+    if award_tuple:
+        sql_award_types += "WHERE tx.award_id IN %s "
+    sql_award_types += ")"
+
     # construct a sql query that uses the latest txn contract common table expression above and joins it to the
     # corresponding award. that joined data is used to update awards fields as appropriate (currently, there's only one
     # trasnaction_contract field that trickles up and updates an award record: base_and_all_options_value)
-    sql_update = 'WITH {}'.format(sql_txn_totals)
+    sql_update = 'WITH {}, {}'.format(sql_txn_totals, sql_award_types)
     sql_update += (
-        'UPDATE awards a '
-        'SET base_and_all_options_value = t.total_base_and_options_value '
-        'FROM txn_totals t '
-        'WHERE t.award_id = a.id'
+        "UPDATE awards a "
+        "SET base_and_all_options_value = t.total_base_and_options_value, "
+        " type = at.type, "
+        " type_description = at.type_description "
+        "FROM txn_totals t "
+        "INNER JOIN sql_award_types at ON t.award_id = at.award_id "
+        "WHERE t.award_id = a.id "
     )
 
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)
-        cursor.execute(sql_update, [award_tuple])
+        cursor.execute(sql_update, [award_tuple, award_tuple])
         rows = cursor.rowcount
 
     return rows
