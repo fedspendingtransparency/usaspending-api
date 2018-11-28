@@ -17,7 +17,7 @@ class StateData(models.Model):
     year = models.IntegerField(db_index=True)
     population = models.BigIntegerField(null=True, blank=True)
     pop_source = models.TextField(null=True, blank=True)
-    median_household_income = models.DecimalField(null=True, blank=True, decimal_places=2, max_digits=21)
+    median_household_income = models.DecimalField(null=True, blank=True, decimal_places=2, max_digits=23)
     mhi_source = models.TextField(null=True, blank=True)  # median household income source
 
     class Meta:
@@ -63,12 +63,12 @@ class HistoricParentDUNS(models.Model):
     Model representing DUNS data (imported from the broker)
     """
 
-    awardee_or_recipient_uniqu = models.TextField(primary_key=True, db_index=True)
+    awardee_or_recipient_uniqu = models.TextField()
     legal_business_name = models.TextField(null=True, blank=True)
     ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
     ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
-    broker_historic_duns_id = models.TextField()
-    year = models.IntegerField(null=True, blank=True, db_index=True)
+    broker_historic_duns_id = models.IntegerField(primary_key=True)
+    year = models.IntegerField(null=True, blank=True)
 
     class Meta:
         db_table = "historic_parent_duns"
@@ -82,7 +82,7 @@ class RecipientProfile(models.Model):
     recipient_unique_id = models.TextField(null=True, db_index=True)
     recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
-    award_types = ArrayField(base_field=models.TextField(), default=list, size=None, db_index=True)
+    award_types = ArrayField(base_field=models.TextField(), default=list, size=None)
     last_12_months = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_contracts = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_grants = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
@@ -94,15 +94,28 @@ class RecipientProfile(models.Model):
     class Meta:
         managed = True
         db_table = "recipient_profile"
-        unique_together = ("recipient_level", "recipient_hash")
-        indexes = [GinIndex(fields=["award_types"])]
+        unique_together = (
+            ("recipient_level", "recipient_hash"),
+            ("recipient_hash", "recipient_level")
+        )
+        # Note:  A custom index was added in the migration because there's
+        # currently not a Django native means by which to add a GinIndex with
+        # a specific Postgres operator class:
+        #
+        #     create index idx_recipient_profile_name on
+        #         public.recipient_profile using gin (recipient_name public.gin_trgm_ops)
+        #
+        indexes = [
+            GinIndex(fields=["award_types"]),
+            models.Index(fields=["recipient_unique_id"]),
+        ]
 
 
 class RecipientLookup(models.Model):
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
-    duns = models.TextField(unique=True, null=True, db_index=True)
-    parent_duns = models.TextField(null=True, db_index=True)
+    duns = models.TextField(unique=True, null=True)
+    parent_duns = models.TextField(null=True)
     parent_legal_business_name = models.TextField(null=True)
     address_line_1 = models.TextField(null=True)
     address_line_2 = models.TextField(null=True)

@@ -181,4 +181,4 @@ class AggregateSerializer(serializers.Serializer):
             self.fields[field_name] = serializers.CharField(required=False)
 
     item = serializers.CharField(required=False)
-    aggregate = serializers.DecimalField(20, 2)
+    aggregate = serializers.DecimalField(23, 2)
