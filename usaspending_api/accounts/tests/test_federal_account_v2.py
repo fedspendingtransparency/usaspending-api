@@ -24,6 +24,7 @@ def fixture_data(db):
     ta2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa2)
     ta3 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa3)
     ta4 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa4)
+
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
@@ -63,12 +64,13 @@ def fixture_data(db):
                final_of_fy=True,
                treasury_account_identifier=ta3,
                total_budgetary_resources_amount_cpe=2000,
-               submission__reporting_period_start='2017-03-01')
+               submission__reporting_period_start='2018-03-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta4,
                total_budgetary_resources_amount_cpe=2000,
-               submission__reporting_period_start='2017-03-02')
+               submission__reporting_period_start='2018-03-02')
+
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
@@ -256,14 +258,15 @@ def test_federal_account_invalid_param(client, fixture_data):
 
     assert resp.status_code == 400
 
+
 @pytest.mark.django_db
 def test_federal_account_dod_cgac(client, fixture_data):
     """ Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097' """
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
                        data=json.dumps({'sort': {'agency_identifier': '097', 'direction': 'asc'},
-                                        'filters': {'fy': '2017'}}))
+                                        'filters': {'fy': '2018'}}))
     response_data = resp.json()
-    assert len(response_data['results']) == 1
+    assert len(response_data['results']) == 2
     assert response_data['results'][0]['account_name'].contains("CGAC_DOD")
     assert response_data['results'][1]['account_name'].contains("CGAC_DOD")

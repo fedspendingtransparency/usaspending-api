@@ -1,7 +1,5 @@
 import ast
 from collections import OrderedDict
-from functools import reduce
-import operator
 from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
