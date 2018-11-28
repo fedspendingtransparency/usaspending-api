@@ -114,18 +114,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= combine_date_range_queryset(value, model, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            # TODO: update Matviews and Awards to include IDV (and IDC) award types to remove IDV as an edge case
-            # queryset &= model.objects.filter(type__in=value)
-
-            idv_flag = all(i in value for i in idv_type_mapping.keys())
-            if not idv_flag and len([i for i in value if i in idv_type_mapping.keys()]) > 0:
-                raise InvalidParameterException("IDV award type filter currently not supported; award_type_codes "
-                                                "parameter must include every IDV type or none at all.")
-
-            filter_obj = Q(type__in=value)
-            if idv_flag:
-                filter_obj |= Q(pulled_from='IDV')
-            queryset &= model.objects.filter(filter_obj)
+            queryset &= queryset.filter(type__in=value)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error

@@ -33,7 +33,7 @@ def update_awards(award_tuple=None):
         "  WHEN type in ('07', '08') THEN 'loans'"
         "  WHEN type = '09' THEN 'insurance'"
         "  WHEN type = '11' THEN 'other'"
-        "  WHEN type LIKE 'IDV%' THEN 'idv'"
+        "  WHEN type LIKE 'IDV%%' THEN 'idv'"
         "  ELSE NULL END AS category "
         "FROM transaction_normalized ")
     if award_tuple:
