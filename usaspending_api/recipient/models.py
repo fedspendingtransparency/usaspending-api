@@ -50,6 +50,7 @@ class DUNS(models.Model):
     country_code = models.TextField(null=True, blank=True)
     congressional_district = models.TextField(null=True, blank=True)
     business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
+    entity_structure = models.TextField(null=True, blank=True)
     broker_duns_id = models.TextField()
     update_date = models.DateField()
 
