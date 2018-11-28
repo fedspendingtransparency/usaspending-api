@@ -12,12 +12,18 @@ def fixture_data(db):
     mommy.make('references.ToptierAgency', cgac_code='001', abbreviation='ABCD', name='Dept. of Depts')
     mommy.make('references.ToptierAgency', cgac_code='002', abbreviation='EFGH', name='The Bureau')
     mommy.make('references.ToptierAgency', cgac_code='1601', abbreviation='DOL', name='Department of Labor')
+    mommy.make('references.ToptierAgency', cgac_code='097', abbreviation='DOD', name='Department of Defense')
+    mommy.make('references.ToptierAgency', cgac_code='021', abbreviation='DOD', name='Department of Navy')
     fa0 = mommy.make(FederalAccount, agency_identifier='001', main_account_code='0005', account_title='Something')
     fa1 = mommy.make(FederalAccount, agency_identifier='002', main_account_code='0005', account_title='Nothing1')
     fa2 = mommy.make(FederalAccount, agency_identifier='1600', main_account_code='0005', account_title='Nothing2')
+    fa3 = mommy.make(FederalAccount, agency_identifier='097', main_account_code='0005', account_title='CGAC_DOD')
+    fa4 = mommy.make(FederalAccount, agency_identifier='021', main_account_code='0005', account_title='CGAC_DOD(NAVY)')
     ta0 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa0)
     ta1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa1)
     ta2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa2)
+    ta3 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa3)
+    ta4 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa4)
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
@@ -53,7 +59,16 @@ def fixture_data(db):
                treasury_account_identifier=ta2,
                total_budgetary_resources_amount_cpe=1000,
                submission__reporting_period_start='2015-06-01')
-
+    mommy.make('accounts.AppropriationAccountBalances',
+               final_of_fy=True,
+               treasury_account_identifier=ta3,
+               total_budgetary_resources_amount_cpe=2000,
+               submission__reporting_period_start='2017-03-01')
+    mommy.make('accounts.AppropriationAccountBalances',
+               final_of_fy=True,
+               treasury_account_identifier=ta4,
+               total_budgetary_resources_amount_cpe=2000,
+               submission__reporting_period_start='2017-03-02')
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
@@ -240,3 +255,15 @@ def test_federal_account_invalid_param(client, fixture_data):
     resp = client.get('/api/v2/federal_accounts/001-0006/')
 
     assert resp.status_code == 400
+
+@pytest.mark.django_db
+def test_federal_account_dod_cgac(client, fixture_data):
+    """ Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097' """
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'sort': {'agency_identifier': '097', 'direction': 'asc'},
+                                        'filters': {'fy': '2017'}}))
+    response_data = resp.json()
+    assert len(response_data['results']) == 1
+    assert response_data['results'][0]['account_name'].contains("CGAC_DOD")
+    assert response_data['results'][1]['account_name'].contains("CGAC_DOD")
