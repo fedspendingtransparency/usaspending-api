@@ -178,9 +178,12 @@ def extract_business_categories(recipient_name, recipient_duns):
 
     # Go through DUNS first
     d_business_cat = DUNS.objects.filter(legal_business_name=recipient_name, awardee_or_recipient_uniqu=recipient_duns)\
-        .order_by('-update_date').values('business_types_codes').first()
+        .order_by('-update_date').values('business_types_codes', 'entity_structure').first()
     if d_business_cat:
         duns_types_mapping = get_duns_business_types_mapping()
+        business_types_codes = d_business_cat['business_types_codes']
+        if d_business_cat['entity_structure']:
+            business_types_codes.append(d_business_cat['entity_structure'])
         business_types = {duns_types_mapping[type]: 'true' for type in d_business_cat['business_types_codes']
                           if type in duns_types_mapping}
         business_categories |= set(get_business_categories(business_types, data_type='fpds'))
