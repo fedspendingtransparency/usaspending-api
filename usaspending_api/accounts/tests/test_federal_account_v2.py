@@ -268,5 +268,5 @@ def test_federal_account_dod_cgac(client, fixture_data):
                                         'filters': {'fy': '2018'}}))
     response_data = resp.json()
     assert len(response_data['results']) == 2
-    assert response_data['results'][0]['account_name'].contains("CGAC_DOD")
-    assert response_data['results'][1]['account_name'].contains("CGAC_DOD")
+    assert "CGAC_DOD" in response_data['results'][0]['account_name']
+    assert "CGAC_DOD" in response_data['results'][1]['account_name']
