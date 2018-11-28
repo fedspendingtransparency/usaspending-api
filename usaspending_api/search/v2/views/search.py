@@ -64,8 +64,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value '{}' not found in requested fields: {}".format(sort, fields))
 
         subawards_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-        awards_values = list(award_contracts_mapping.keys()) + list(loan_award_mapping) + \
-            list(non_loan_assistance_award_mapping.keys())
+        awards_values = list(award_contracts_mapping.keys()) + list(loan_award_mapping.keys()) + \
+            list(non_loan_assistance_award_mapping.keys()) + list(award_idv_mapping.keys())
 
         msg = "Sort value '{}' not found in {{}} mappings: {{}}".format(sort)
         if not subawards and sort not in awards_values:

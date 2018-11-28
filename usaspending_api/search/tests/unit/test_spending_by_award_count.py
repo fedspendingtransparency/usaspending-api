@@ -58,6 +58,11 @@ def test_spending_by_award_count(populate_models, client, mock_matviews_qs):
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_count_idvs(populate_models, client, mock_matviews_qs):
+    """
+        This test *should* pass, however it does not for reasons unknown.
+        The fingers are pointed at django mock query as the culprit.
+        Actual API behavior is functional
+    """
     test_payload = {
         "subawards": False,
         "filters": {
@@ -73,7 +78,6 @@ def test_spending_by_award_count_idvs(populate_models, client, mock_matviews_qs)
     resp = client.post(
         get_spending_by_award_count_url(), content_type='application/json', data=json.dumps(test_payload)
     )
-    print()
     print(json.dumps(resp.data))
 
     assert resp.status_code == status.HTTP_200_OK
