@@ -111,7 +111,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= combine_date_range_queryset(value, model, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            queryset &= queryset.filter(type__in=value)
+            queryset &= queryset.filter(Q(type__in=value))
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -212,7 +212,7 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= queryset.filter(business_categories__overlap=value)
+                queryset &= queryset.filter(Q(business_categories__overlap=value))
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -239,22 +239,22 @@ def matview_search_filter(filters, model, for_downloads=False):
         elif key == "program_numbers":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(cfda_number__in=in_query)
+                queryset &= queryset.filter(Q(cfda_number__in=in_query))
 
         elif key == "naics_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(naics_code__in=in_query)
+                queryset &= queryset.filter(Q(naics_code__in=in_query))
 
         elif key == "psc_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(product_or_service_code__in=in_query)
+                queryset &= queryset.filter(Q(product_or_service_code__in=in_query))
 
         elif key == "contract_pricing_type_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(type_of_contract_pricing__in=in_query)
+                queryset &= queryset.filter(Q(type_of_contract_pricing__in=in_query))
 
         elif key == "set_aside_type_codes":
             or_queryset = Q()
@@ -297,6 +297,6 @@ def matview_search_filter(filters, model, for_downloads=False):
 
     if faba_flag:
         award_ids = faba_queryset.values('award_id')
-        queryset &= queryset.filter(award_id__in=award_ids)
+        queryset &= queryset.filter(Q(award_id__in=award_ids))
 
     return queryset
