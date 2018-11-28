@@ -264,7 +264,7 @@ def test_federal_account_dod_cgac(client, fixture_data):
     """ Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097' """
     resp = client.post('/api/v2/federal_accounts/',
                        content_type='application/json',
-                       data=json.dumps({'sort': {'agency_identifier': '097', 'direction': 'asc'},
+                       data=json.dumps({'agency_identifier': '097',
                                         'filters': {'fy': '2018'}}))
     response_data = resp.json()
     assert len(response_data['results']) == 2
