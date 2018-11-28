@@ -125,7 +125,6 @@
     "  subtier_agency AS SFA",
     "    ON (FA.subtier_agency_id = SFA.subtier_agency_id)",
     "WHERE",
-    "  (awards.category IS NOT NULL OR transaction_fpds.pulled_from = 'IDV') AND",
     "  latest_transaction.action_date >= '2000-10-01'",
     "ORDER BY",
     "  awards.total_obligation DESC NULLS LAST"
