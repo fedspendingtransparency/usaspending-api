@@ -28,34 +28,71 @@ class Command(BaseCommand):
     help = "Update FABS data nightly"
 
     @staticmethod
-    def get_fabs_data(date):
-        db_cursor = connections['data_broker'].cursor()
-
+    def get_fabs_transaction_ids(date):
+        db_cursor = connections["data_broker"].cursor()
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
-        db_query = 'SELECT * ' \
+        db_query = 'SELECT published_award_financial_assistance_id ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
                    'AND (is_active IS True OR UPPER(correction_delete_indicatr) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
-        db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+        db_rows = [id[0] for id in db_cursor.fetchall()]
 
-        ids_to_delete = []
-        final_db_rows = []
+        logger.info("Number of records to insert/update: %s" % str(len(db_rows)))
+        return db_rows
 
-        # Iterate through the result dict and determine what needs to be deleted and what needs to be added
-        for row in db_rows:
-            if row['correction_delete_indicatr'] and row['correction_delete_indicatr'].upper() == 'D':
-                ids_to_delete.append(row['afa_generated_unique'].upper())
-            else:
-                final_db_rows.append(row)
+    @staticmethod
+    def fetch_fpds_data_generator(dap_uid_list):
+        start_time = datetime.now()
 
-        logger.info('Number of records to insert/update: %s' % str(len(final_db_rows)))
-        logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
+        db_cursor = connections["data_broker"].cursor()
 
-        return final_db_rows, ids_to_delete
+        db_query = "SELECT * FROM detached_award_procurement WHERE detached_award_procurement_id IN ({});"
+
+        total_uid_count = len(dap_uid_list)
+
+        for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
+            max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
+            fpds_ids_batch = dap_uid_list[i:max_index]
+
+            log_msg = "[{}] Fetching {}-{} out of {} records from broker"
+            logger.info(log_msg.format(datetime.now() - start_time, i, max_index, total_uid_count))
+
+            db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
+            yield dictfetchall(db_cursor)  # this returns an OrderedDict
+
+    # @staticmethod
+    # def get_fabs_data(date):
+    #     db_cursor = connections['data_broker'].cursor()
+
+    #     # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
+    #     # by the Broker's PK since every modification is a new row
+    #     db_query = 'SELECT * ' \
+    #                'FROM published_award_financial_assistance ' \
+    #                'WHERE created_at >= %s ' \
+    #                'AND (is_active IS True OR UPPER(correction_delete_indicatr) = \'D\')'
+    #     db_args = [date]
+
+    #     db_cursor.execute(db_query, db_args)
+    #     db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+
+    #     ids_to_delete = []
+    #     final_db_rows = []
+
+    #     # Iterate through the result dict and determine what needs to be deleted and what needs to be added
+    #     for row in db_rows:
+    #         if row['correction_delete_indicatr'] and row['correction_delete_indicatr'].upper() == 'D':
+    #             ids_to_delete.append(row['afa_generated_unique'].upper())
+    #         else:
+    #             final_db_rows.append(row)
+
+    #     logger.info('Number of records to insert/update: %s' % str(len(final_db_rows)))
+    #     logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
+
+    #     return final_db_rows, ids_to_delete
 
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
@@ -344,7 +381,11 @@ class Command(BaseCommand):
 
         # Retrieve FABS data
         with timer('retrieving/diff-ing FABS Data', logger.info):
-            to_insert, ids_to_delete = self.get_fabs_data(date=date)
+            # to_insert, ids_to_delete = self.get_fabs_data(date=date)
+            to_insert = self.get_fabs_transaction_ids(date=date)
+
+        with timer("obtaining delete records", logger.info):
+            ids_to_delete = []
 
         total_rows = len(to_insert)
         total_rows_delete = len(ids_to_delete)
