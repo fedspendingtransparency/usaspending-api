@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from usaspending_api.common.helpers.migration_helpers import drop_like_pattern_ops_index
 
 
 class Migration(migrations.Migration):
@@ -61,11 +60,14 @@ class Migration(migrations.Migration):
             model_name='recipientprofile',
             index=models.Index(fields=['recipient_unique_id'], name='recipient_p_recipie_7039a5_idx'),
         ),
-        migrations.RunPython(
-            drop_like_pattern_ops_index('recipient', 'RecipientLookup', 'duns')
+        # A couple of random, "like" indexes that never existed in the database.
+        migrations.RunSQL(
+            sql='drop index recipient_lookup_duns_ae948c75_like',
+            reverse_sql='create index recipient_lookup_duns_ae948c75_like on recipient_lookup(duns text_pattern_ops)'
         ),
-        migrations.RunPython(
-            drop_like_pattern_ops_index('recipient', 'DUNS', 'awardee_or_recipient_uniqu')
+        migrations.RunSQL(
+            sql='drop index duns_awardee_or_recipient_uniqu_81b7969d_like',
+            reverse_sql='create index duns_awardee_or_recipient_uniqu_81b7969d_like on duns(awardee_or_recipient_uniqu text_pattern_ops)'
         ),
         # No idea why Django insists on creating this unique constraint.  PKs are unique by definition.
         migrations.RunSQL(

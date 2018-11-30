@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from usaspending_api.common.helpers.migration_helpers import drop_like_pattern_ops_index
 
 
 class Migration(migrations.Migration):
@@ -273,9 +272,10 @@ class Migration(migrations.Migration):
             name='afa_generated_unique',
             field=models.TextField(db_index=True, unique=True),
         ),
-        # Drop "_like" indexes since we're converting from text to integer.
-        migrations.RunPython(
-            drop_like_pattern_ops_index('awards', 'transactionfabs', 'published_award_financial_assistance_id')
+        # Drop "_like" index since we're converting from text to integer.
+        migrations.RunSQL(
+            sql='drop index transaction_fabs_published_award_financia_7a0c4b63_like',
+            reverse_sql='create index transaction_fabs_published_award_financia_7a0c4b63_like on transaction_fabs(published_award_financial_assistance_id text_pattern_ops)'
         ),
         migrations.AlterField(
             model_name='transactionfabs',
@@ -382,9 +382,10 @@ class Migration(migrations.Migration):
             name='detached_award_proc_unique',
             field=models.TextField(null=True, unique=True),
         ),
-        # Drop "_like" indexes since we're converting from text to integer.
-        migrations.RunPython(
-            drop_like_pattern_ops_index('awards', 'transactionfpds', 'detached_award_procurement_id')
+        # Drop "_like" index since we're converting from text to integer.
+        migrations.RunSQL(
+            sql='drop index transaction_fpds_detached_award_procurement_id_eeddae57_like',
+            reverse_sql='create index transaction_fpds_detached_award_procurement_id_eeddae57_like on transaction_fpds(detached_award_procurement_id text_pattern_ops)'
         ),
         migrations.AlterField(
             model_name='transactionfpds',
