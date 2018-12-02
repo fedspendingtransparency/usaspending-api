@@ -1120,6 +1120,14 @@ non_loan_assistance_award_mapping = assistance_award_mapping = {**grant_award_ma
 
 # TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {
+    'IDV_A': 'GWAC Government Wide Acquisition Contract',
+    'IDV_B': 'IDC Multi-Agency Contract, Other Indefinite Delivery Contract',
+    'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
+    'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
+    'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',
+    'IDV_C': 'FSS Federal Supply Schedule',
+    'IDV_D': 'BOA Basic Ordering Agreement',
+    'IDV_E': 'BPA Blanket Purchase Agreement',
     '02': 'Block Grant',
     '03': 'Formula Grant',
     '04': 'Project Grant',
@@ -1148,6 +1156,7 @@ contract_type_mapping = {
 }
 idv_type_mapping = {
     'IDV_A': 'GWAC Government Wide Acquisition Contract',
+    'IDV_B': 'IDC Multi-Agency Contract, Other Indefinite Delivery Contract',
     'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
     'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
     'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',
@@ -1178,15 +1187,6 @@ assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, 
 non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}
 all_award_types_mappings = {
     'contracts': list(contract_type_mapping.keys()),
-    'grants': list(grant_type_mapping.keys()),
-    'direct_payments': list(direct_payment_type_mapping.keys()),
-    'loans': list(loan_type_mapping.keys()),
-    'other_financial_assistance': list(other_type_mapping.keys())
-}
-# TODO: delete this and update the all_award_types_mappings to include IDVs
-all_award_types_mappings_incl_idv = {
-    'contracts': list(contract_type_mapping.keys()),
-    'idvs': list(idv_type_mapping.keys()),
     'grants': list(grant_type_mapping.keys()),
     'direct_payments': list(direct_payment_type_mapping.keys()),
     'loans': list(loan_type_mapping.keys()),
