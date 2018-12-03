@@ -95,9 +95,7 @@ def update_awards(award_tuple=None):
         'ON l.award_id = t.award_id '
         'WHERE t.award_id = a.id'
     )
-    if award_tuple:
-        logger.info("Award IDs: {}".format(award_tuple))
-    logger.info("SQL: {}".format(sql_update))
+
     with connection.cursor() as cursor:
         # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
         # list (even if it uses the same one!)
