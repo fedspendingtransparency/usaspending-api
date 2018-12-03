@@ -4,13 +4,13 @@
 
 ```
 {
-	"keywords": ["example search text"],
-	"time_period": [
-		{
-			"start_date": "2001-01-01",
-			"end_date": "2001-01-31"
-		}
-	]
+    "keywords": ["example search text"],
+    "time_period": [
+        {
+            "start_date": "2001-01-01",
+            "end_date": "2001-01-31"
+        }
+    ]
 }
 ```
 
@@ -100,7 +100,7 @@ Keys in a location object include:
 **Example Request:**
 ```
 {
-	"keywords": ["example search text", "more search text"]
+    "keywords": ["example search text", "more search text"]
 }
 ```
 
@@ -117,24 +117,24 @@ Request parameter description:
 **Example Request for Fiscal Year (Fiscal Year is converted to a date range by frontend):**
 ```
 {
-	"time_period": [
-		{
-			"start_date": "2016-10-01",
-			"end_date": "2017-09-30"
-		}
-	]
+    "time_period": [
+        {
+            "start_date": "2016-10-01",
+            "end_date": "2017-09-30"
+        }
+    ]
 }
 ```
 
 **Example Request for Date Range:**
 ```
 {
-	"time_period": [
-		{
-			"start_date": "2001-01-01",
-			"end_date": "2001-01-31"
-		}
-	]
+    "time_period": [
+        {
+            "start_date": "2001-01-01",
+            "end_date": "2001-01-31"
+        }
+    ]
 }
 ```
 
@@ -153,7 +153,7 @@ Request parameter description:
 **Example Request for "Show Only" Selection:**
 ```
 {
-	"place_of_performance_scope": "domestic"
+    "place_of_performance_scope": "domestic"
 }
 ```
 
@@ -168,7 +168,7 @@ Request parameter description:
 **Example Request**
 ```
 {
-	"place_of_performance_locations": [
+    "place_of_performance_locations": [
         {
             "country": "USA",
             "state": "VA",
@@ -190,16 +190,16 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"agencies": [
-    	{
-        	"type": "funding",
-            	"tier": "toptier",
-            	"name": "Office of Pizza"
+    "agencies": [
+        {
+            "type": "funding",
+                "tier": "toptier",
+                "name": "Office of Pizza"
         },
-	{
-        	"type": "awarding",
-            	"tier": "subtier",
-            	"name": "Personal Pizza"
+    {
+            "type": "awarding",
+                "tier": "subtier",
+                "name": "Personal Pizza"
         }
     ]
 }
@@ -218,7 +218,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"recipient_search_text": ["D12345678", "Department of Defense"]
+    "recipient_search_text": ["D12345678", "Department of Defense"]
 }
 ```
 
@@ -235,7 +235,7 @@ Request parameter description:
 **Example Request for "Show Only" Selection:**
 ```
 {
-	"recipient_scope": "domestic"
+    "recipient_scope": "domestic"
 }
 ```
 
@@ -249,7 +249,7 @@ Request parameter description:
 **Example Request**
 ```
 {
-	"recipient_locations": [
+    "recipient_locations": [
         {
             "country": "USA",
             "state": "VA",
@@ -271,10 +271,10 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"recipient_type_names": [
-		"Small Business",
-		"Alaskan Native Owned Business"
-    	]
+    "recipient_type_names": [
+        "Small Business",
+        "Alaskan Native Owned Business"
+        ]
 }
 ```
 
@@ -285,12 +285,14 @@ Request Parameter Description:
 
 **Description:** Filtering based on one or more checkbox selections for award type.
 
+**Acceptable Values:** `A`, `B`, `C`, `D`, `02`, `03`, `04`, `05`, `06`, `07`, `08`, `09`, `10`, `11`, `IDV_A`, `IDV_B`, `IDV_B_A`, `IDV_B_B`, `IDV_B_C`, `IDV_C`, `IDV_D`, `IDV_E`
+
 **NOTE:** The values provided here will be OR'd against each other, but only within the scope of this particular filter. This filter set, as a whole, will still be AND'd with the other filters.
 
 **Example Request:**
 ```
 {
-	"award_type_codes": ["A", "B", "03"]
+    "award_type_codes": ["A", "B", "03"]
 }
 ```
 
@@ -304,7 +306,7 @@ Request Parameter Description:
 **Example Request:**
 ```
 {
-	"award_ids": ["1605SS17F00018", "P063P151708", "AID-OFDA-G-14-00121-01"]
+    "award_ids": ["1605SS17F00018", "P063P151708", "AID-OFDA-G-14-00121-01"]
 }
 ```
 
@@ -323,18 +325,18 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"award_amounts": [
-	      {
-		"lower_bound": 1000000.00,
-		"upper_bound": 25000000.00
-	      },
-	      {
-		"upper_bound": 1000000.00
-	      },
-	      {
-		"lower_bound": 500000000.00
-	      }
-    	]
+    "award_amounts": [
+          {
+        "lower_bound": 1000000.00,
+        "upper_bound": 25000000.00
+          },
+          {
+        "upper_bound": 1000000.00
+          },
+          {
+        "lower_bound": 500000000.00
+          }
+        ]
 }
 ```
 
@@ -350,7 +352,7 @@ Request Parameter Description:
 **Example Request:**
 ```
 {
-	"program_numbers": ["10.553"]
+    "program_numbers": ["10.553"]
 }
 ```
 
@@ -364,7 +366,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"naics_codes": ["336411"]
+    "naics_codes": ["336411"]
 }
 ```
 
@@ -379,7 +381,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"psc_codes": ["1510"]
+    "psc_codes": ["1510"]
 }
 ```
 
@@ -393,7 +395,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"contract_pricing_type_codes": ["SAMPLECODE123"]
+    "contract_pricing_type_codes": ["SAMPLECODE123"]
 }
 ```
 
@@ -407,7 +409,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"set_aside_type_codes": ["SAMPLECODE123"]
+    "set_aside_type_codes": ["SAMPLECODE123"]
 }
 ```
 
@@ -421,7 +423,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-	"extent_competed_type_codes": ["SAMPLECODE123"]
+    "extent_competed_type_codes": ["SAMPLECODE123"]
 }
 ```
 

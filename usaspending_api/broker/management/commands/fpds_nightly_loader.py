@@ -17,7 +17,8 @@ from usaspending_api.broker.helpers import get_business_categories, set_legal_en
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.etl.award_helpers import (update_awards, update_contract_awards, update_award_categories,
+                                               award_types)
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
@@ -284,6 +285,8 @@ class Command(BaseCommand):
                 logger.info(info_message)
                 last_mod_date = None
 
+            award_type, award_type_desc = award_types(row)
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
@@ -297,13 +300,11 @@ class Command(BaseCommand):
                 "transaction_unique_id": row["detached_award_proc_unique"],
                 "generated_unique_award_id": generated_unique_id,
                 "is_fpds": True,
+                "type": award_type,
+                "type_description": award_type_desc,
             }
 
-            contract_field_map = {
-                "type": "contract_award_type",
-                "type_description": "contract_award_type_desc",
-                "description": "award_description",
-            }
+            contract_field_map = {"description": "award_description"}
 
             transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
