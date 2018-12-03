@@ -235,6 +235,9 @@ class LegalEntityOfficerPassThroughSerializerV2(LimitableSerializerV2):
 
 
 class TransactionFPDSSerializerV2(LimitableSerializerV2):
+    # Force small_business_competitive to text as is expected in the API
+    # contract.  Is stored as boolean in the database.
+    small_business_competitive = serializers.CharField()
 
     class Meta:
         model = TransactionFPDS

@@ -14,7 +14,7 @@ from usaspending_api.references.helpers import canonicalize_string
 class GTASTotalObligation(models.Model):
     fiscal_year = models.IntegerField()
     fiscal_quarter = models.IntegerField()
-    total_obligation = models.DecimalField(max_digits=25, decimal_places=2)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
 
@@ -740,7 +740,7 @@ class OverallTotals(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     fiscal_year = models.IntegerField(blank=True, null=True)
-    total_budget_authority = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    total_budget_authority = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = True
