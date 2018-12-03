@@ -376,7 +376,7 @@ def fetch_cfda_id_title_by_number(cfda_number):
     result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
     if not result:
         logger.warning("{} not found for cfda_number: {}".format(",".join(columns), cfda_number))
-        return None
+        return None, None
     return result[columns[0]], result[columns[1]]
 
 
