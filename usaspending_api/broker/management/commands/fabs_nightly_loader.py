@@ -32,12 +32,14 @@ class Command(BaseCommand):
     @staticmethod
     def get_fabs_records_to_delete(date):
         db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join([
-            "SELECT UPPER(afa_generated_unique) as afa_generated_unique",
-            "FROM published_award_financial_assistance",
-            "WHERE created_at >= %s",
-            "AND UPPER(correction_delete_indicatr) = 'D'",
-        ])
+        db_query = " ".join(
+            [
+                "SELECT UPPER(afa_generated_unique) as afa_generated_unique",
+                "FROM published_award_financial_assistance",
+                "WHERE created_at >= %s",
+                "AND UPPER(correction_delete_indicatr) = 'D'",
+            ]
+        )
 
         db_cursor.execute(db_query, [date])
         db_rows = [id[0] for id in db_cursor.fetchall()]
@@ -48,12 +50,14 @@ class Command(BaseCommand):
     @staticmethod
     def get_fabs_transaction_ids(date):
         db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join([
-            "SELECT published_award_financial_assistance_id",
-            "FROM published_award_financial_assistance",
-            "WHERE created_at >= %s",
-            "AND is_active IS True",  # add UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D' ?
-        ])
+        db_query = " ".join(
+            [
+                "SELECT published_award_financial_assistance_id",
+                "FROM published_award_financial_assistance",
+                "WHERE created_at >= %s",
+                "AND is_active IS True",  # add UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D' ?
+            ]
+        )
 
         db_cursor.execute(db_query, [date])
         db_rows = [id[0] for id in db_cursor.fetchall()]
@@ -67,9 +71,12 @@ class Command(BaseCommand):
 
         db_cursor = connections["data_broker"].cursor()
 
-        db_query = " ".join([
-            "SELECT * FROM published_award_financial_assistance"
-            "WHERE published_award_financial_assistance_id IN ({});"])
+        db_query = " ".join(
+            [
+                "SELECT * FROM published_award_financial_assistance"
+                "WHERE published_award_financial_assistance_id IN ({});"
+            ]
+        )
 
         total_uid_count = len(dap_uid_list)
 
@@ -85,17 +92,30 @@ class Command(BaseCommand):
 
     def find_related_awards(self, transactions):
         related_award_ids = [result[0] for result in transactions.values_list('award_id')]
-        tn_count = TransactionNormalized.objects.filter(award_id__in=related_award_ids).values('award_id') \
-            .annotate(transaction_count=Count('id')).values_list('award_id', 'transaction_count')
-        tn_count_filtered = transactions.values('award_id').annotate(transaction_count=Count('id'))\
+        tn_count = (
+            TransactionNormalized.objects.filter(award_id__in=related_award_ids)
+            .values('award_id')
+            .annotate(transaction_count=Count('id'))
             .values_list('award_id', 'transaction_count')
+        )
+        tn_count_filtered = (
+            transactions.values('award_id')
+            .annotate(transaction_count=Count('id'))
+            .values_list('award_id', 'transaction_count')
+        )
         tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
         tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
         # only delete awards if and only if all their transactions are deleted, otherwise update the award
-        update_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
-                         if tn_count_filtered_mapping[award_id] != transaction_count]
-        delete_awards = [award_id for award_id, transaction_count in tn_count_mapping.items()
-                         if tn_count_filtered_mapping[award_id] == transaction_count]
+        update_awards = [
+            award_id
+            for award_id, transaction_count in tn_count_mapping.items()
+            if tn_count_filtered_mapping[award_id] != transaction_count
+        ]
+        delete_awards = [
+            award_id
+            for award_id, transaction_count in tn_count_mapping.items()
+            if tn_count_filtered_mapping[award_id] == transaction_count
+        ]
         return update_awards, delete_awards
 
     @transaction.atomic
@@ -118,35 +138,39 @@ class Command(BaseCommand):
         queries = []
         # Transaction FABS
         if delete_transaction_ids:
-            fabs = 'DELETE ' \
-                   'FROM "transaction_fabs" tf ' \
-                   'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
+            fabs = (
+                'DELETE '
+                'FROM "transaction_fabs" tf '
+                'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
+            )
             # Transaction Normalized
-            tn = 'DELETE ' \
-                 'FROM "transaction_normalized" tn ' \
-                 'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+            tn = (
+                'DELETE '
+                'FROM "transaction_normalized" tn '
+                'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
+            )
             queries.extend([fabs, tn])
         # Update Awards
         if update_award_ids:
             # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
             AWARD_UPDATE_ID_LIST.extend(update_award_ids)
-            update_awards_query = 'UPDATE "awards" ' \
-                                  'SET "latest_transaction_id" = null ' \
-                                  'WHERE "id" IN ({});'.format(update_award_str_ids)
+            update_awards_query = (
+                'UPDATE "awards" '
+                'SET "latest_transaction_id" = null '
+                'WHERE "id" IN ({});'.format(update_award_str_ids)
+            )
             queries.append(update_awards_query)
         if delete_award_ids:
             # Financial Accounts by Awards
-            fa = 'UPDATE "financial_accounts_by_awards" ' \
-                 'SET "award_id" = null '\
-                 'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            fa = (
+                'UPDATE "financial_accounts_by_awards" '
+                'SET "award_id" = null '
+                'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            )
             # Subawards
-            sub = 'UPDATE "subaward" ' \
-                  'SET "award_id" = null ' \
-                  'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
+            sub = 'UPDATE "subaward" SET "award_id" = null WHERE "award_id" IN ({});'.format(delete_award_str_ids)
             # Delete Awards
-            delete_awards_query = 'DELETE ' \
-                                  'FROM "awards" a ' \
-                                  'WHERE a."id" IN ({});'.format(delete_award_str_ids)
+            delete_awards_query = 'DELETE FROM "awards" a WHERE a."id" IN ({});'.format(delete_award_str_ids)
             queries.extend([fa, sub, delete_awards_query])
         if queries:
             db_query = ''.join(queries)
@@ -175,7 +199,7 @@ class Command(BaseCommand):
             "congressional_code": "place_of_performance_congr",
             "performance_code": "place_of_performance_code",
             "zip_last4": "place_of_perform_zip_last4",
-            "zip5": "place_of_performance_zip5"
+            "zip5": "place_of_performance_zip5",
         }
 
         legal_entity_location_field_map = {
@@ -196,7 +220,7 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5",
             "foreign_postal_code": "legal_entity_foreign_posta",
             "foreign_province": "legal_entity_foreign_provi",
-            "foreign_city_name": "legal_entity_foreign_city"
+            "foreign_city_name": "legal_entity_foreign_city",
         }
 
         for row in to_insert:
@@ -208,12 +232,12 @@ class Command(BaseCommand):
             legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
                 recipient_name=recipient_name if recipient_name is not None else "",
-                parent_recipient_unique_id=row['ultimate_parent_unique_ide']
+                parent_recipient_unique_id=row['ultimate_parent_unique_ide'],
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
                 "business_categories": get_business_categories(row=row, data_type='fabs'),
-                "business_types_description": row['business_types_desc']
+                "business_types_description": row['business_types_desc'],
             }
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -237,18 +261,19 @@ class Command(BaseCommand):
                 uri = '-NONE-'
                 fain = row['fain'] if row['fain'] else '-NONE-'
             else:
-                raise Exception('Invalid record type encountered for the following afa_generated_unique record: %s' %
-                                row['afa_generated_unique'])
+                msg = "Invalid record type encountered for the following afa_generated_unique record: {}"
+                raise Exception(msg.format(row['afa_generated_unique']))
 
-            generated_unique_id = 'ASST_AW_' +\
-                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
-                fain + '_' + uri
+            astac = row["awarding_sub_tier_agency_c"] if row["awarding_sub_tier_agency_c"] else "-NONE-"
+            generated_unique_id = "ASST_AW_{}_{}_{}".format(astac, fain, uri)
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
-                                                                 fain=row['fain'],
-                                                                 uri=row['uri'],
-                                                                 record_type=row['record_type'])
+            (created, award) = Award.get_or_create_summary_award(
+                generated_unique_award_id=generated_unique_id,
+                fain=row['fain'],
+                uri=row['uri'],
+                record_type=row['record_type'],
+            )
             award.save()
 
             # Append row to list of Awards updated
@@ -270,7 +295,7 @@ class Command(BaseCommand):
                 "last_modified_date": last_mod_date,
                 "type_description": row['assistance_type_desc'],
                 "transaction_unique_id": row['afa_generated_unique'],
-                "generated_unique_award_id": generated_unique_id
+                "generated_unique_award_id": generated_unique_id,
             }
 
             fad_field_map = {
@@ -284,12 +309,10 @@ class Command(BaseCommand):
                 row,
                 field_map=fad_field_map,
                 value_map=parent_txn_value_map,
-                as_dict=True)
+                as_dict=True,
+            )
 
-            financial_assistance_data = load_data_into_model(
-                TransactionFABS(),  # thrown away
-                row,
-                as_dict=True)
+            financial_assistance_data = load_data_into_model(TransactionFABS(), row, as_dict=True)  # thrown away
 
             afa_generated_unique = financial_assistance_data['afa_generated_unique']
             unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
@@ -299,8 +322,9 @@ class Command(BaseCommand):
                 transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
 
                 # Update TransactionNormalized
-                TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
-                    update(**transaction_normalized_dict)
+                TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).update(
+                    **transaction_normalized_dict
+                )
 
                 # Update TransactionFABS
                 unique_fabs.update(**financial_assistance_data)
@@ -348,7 +372,7 @@ class Command(BaseCommand):
             dest="date",
             nargs='+',
             type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY",
         )
 
     def handle(self, *args, **options):
@@ -358,8 +382,9 @@ class Command(BaseCommand):
         if options.get('date'):
             date = options.get('date')[0]
         else:
-            data_load_date_obj = ExternalDataLoadDate.objects. \
-                filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).first()
+            data_load_date_obj = ExternalDataLoadDate.objects.filter(
+                external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
+            ).first()
             if not data_load_date_obj:
                 date = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
             else:
@@ -406,7 +431,8 @@ class Command(BaseCommand):
 
         # Update the date for the last time the data load was run
         ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).delete()
-        ExternalDataLoadDate(last_load_date=start_date,
-                             external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).save()
+        ExternalDataLoadDate(
+            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
+        ).save()
 
         logger.info('FABS NIGHTLY UPDATE FINISHED!')
