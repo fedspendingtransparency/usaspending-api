@@ -424,22 +424,22 @@ class FederalAccountsViewSet(APIDocumentationView):
 
     @cache_response()
     def post(self, request, format=None):
+
         """ Return all high-level Federal Account information """
         request_data = self._parse_and_validate_request(request.data)
-
         limit = request_data['limit']
         page = request_data['page']
         sort_field = request_data['sort']['field']
         sort_direction = request_data['sort']['direction']
-        fy = request_data['filters']['fy']
         keyword = request_data.get('keyword', None)
+        filters = request_data.get('filters', None)
+
+        if filters is not None:
+            agency_id = filters.get('agency_identifier', None)
+            fy = filters.get('fy', str(SubmissionAttributes.last_certified_fy()) or str(FiscalDateTime.today().year))
+
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
-
-        try:
-            agency_id = request_data['filters']['agency_identifier']
-        except KeyError:
-            agency_id = None
 
         agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('corrected_agency_identifier'))
         queryset = FederalAccount.objects.\
@@ -453,6 +453,7 @@ class FederalAccountsViewSet(APIDocumentationView):
                          'treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe'),
                      managing_agency=Subquery(agency_subquery.values('name')[:1]),
                      managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]))
+
         # add keyword filter, if it exists
         if keyword:
             queryset = queryset.filter(Q(account_name__icontains=keyword) |
