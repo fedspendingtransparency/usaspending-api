@@ -414,7 +414,7 @@ class FederalAccountsViewSet(APIDocumentationView):
             {'key': 'filters', 'name': 'filters', 'type': 'object', 'optional': True, 'object_keys': {
                 'agency_identifier': {'name': 'agency_identifier', 'type': 'text', 'text_type': 'search',
                                       'optional': True},
-                'fy': {'type': 'enum', 'enum_values': fy_range, 'optional': True, 'default': last_fy}
+                'fy': {'type': 'enum', 'enum_values': fy_range, 'optional': True, 'default': last_fy},
             }, 'default': {'fy': last_fy}},
             {'key': 'keyword', 'name': 'keyword', 'type': 'text', 'text_type': 'search', 'optional': True},
         ]

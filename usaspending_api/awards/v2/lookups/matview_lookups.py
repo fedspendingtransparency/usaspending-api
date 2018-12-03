@@ -21,6 +21,7 @@ default_mapping = {
 }
 
 award_contracts_mapping = default_mapping.copy()
+award_idv_mapping = default_mapping.copy()
 grant_award_mapping = default_mapping.copy()
 loan_award_mapping = default_mapping.copy()
 direct_payment_award_mapping = default_mapping.copy()
@@ -33,6 +34,14 @@ award_contracts_mapping.update({
     'Award Amount': 'total_obligation',
     'Contract Award Type': 'type_description',
 
+})
+
+award_idv_mapping.update({
+    'Award ID': 'piid',
+    'Start Date': 'period_of_performance_start_date',
+    'Award Amount': 'total_obligation',
+    'Contract Award Type': 'type_description',
+    'Last Date to Order': 'ordering_period_end_date',
 })
 
 grant_award_mapping.update({
