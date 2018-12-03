@@ -412,11 +412,11 @@ class FederalAccountsViewSet(APIDocumentationView):
             {'key': 'page', 'name': 'page', 'type': 'integer', 'default': 1, 'min': 1, 'optional': True},
             {'key': 'limit', 'name': 'limit', 'type': 'integer', 'default': 10, 'min': 1, 'max': 100, 'optional': True},
             {'key': 'filters', 'name': 'filters', 'type': 'object', 'optional': True, 'object_keys': {
+                'agency_identifier': {'name': 'agency_identifier', 'type': 'text', 'text_type': 'search',
+                                      'optional': True},
                 'fy': {'type': 'enum', 'enum_values': fy_range, 'optional': True, 'default': last_fy}
             }, 'default': {'fy': last_fy}},
             {'key': 'keyword', 'name': 'keyword', 'type': 'text', 'text_type': 'search', 'optional': True},
-            {'key': 'agency_identifier', 'name': 'agency_identifier', 'type': 'text', 'text_type': 'search',
-                'optional': True}
         ]
 
         validated_request_data = TinyShield(request_settings).block(request_dict)
@@ -433,10 +433,13 @@ class FederalAccountsViewSet(APIDocumentationView):
         sort_direction = request_data['sort']['direction']
         fy = request_data['filters']['fy']
         keyword = request_data.get('keyword', None)
-        agency_id = request_data.get('agency_identifier', None)
-
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
+
+        try:
+            agency_id = request_data['filters']['agency_identifier']
+        except KeyError:
+            agency_id = None
 
         agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('corrected_agency_identifier'))
         queryset = FederalAccount.objects.\
@@ -456,15 +459,15 @@ class FederalAccountsViewSet(APIDocumentationView):
                                        Q(account_number__contains=keyword) |
                                        Q(managing_agency__icontains=keyword) |
                                        Q(managing_agency_acronym__contains=keyword.upper()))
-        if agency_id:
-            if agency_id == DOD_CGAC:
-                tta_list = DOD_ARMED_FORCES_CGAC
-            else:
-                tta_list = agency_id
 
+        if agency_id is not None:
+            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else agency_id
             tta_filter = Q()
-            for tta in tta_list:
-                tta_filter |= Q(account_number__startswith=tta)
+            if isinstance(tta_list, str):
+                tta_filter |= Q(account_number__startswith=tta_list)
+            else:
+                for tta in tta_list:
+                    tta_filter |= Q(account_number__startswith=tta)
             queryset &= queryset.filter(tta_filter)
 
         if sort_direction == 'desc':
