@@ -23,7 +23,7 @@ from usaspending_api.references.models import LegalEntity, Agency
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
-BATCH_FETCH_SIZE = 2500
+BATCH_FETCH_SIZE = 25000
 
 
 class Command(BaseCommand):
@@ -43,7 +43,6 @@ class Command(BaseCommand):
 
         db_cursor.execute(db_query, [date])
         db_rows = [id[0] for id in db_cursor.fetchall()]
-
         logger.info("Number of records to delete: %s" % str(len(db_rows)))
         return db_rows
 
@@ -61,7 +60,6 @@ class Command(BaseCommand):
 
         db_cursor.execute(db_query, [date])
         db_rows = [id[0] for id in db_cursor.fetchall()]
-
         logger.info("Number of records to insert/update: %s" % str(len(db_rows)))
         return db_rows
 
@@ -83,7 +81,7 @@ class Command(BaseCommand):
             fpds_ids_batch = dap_uid_list[i:max_index]
 
             log_msg = "Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(i, max_index, total_uid_count))
+            logger.info(log_msg.format(i + 1, max_index, total_uid_count))
 
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
@@ -137,40 +135,24 @@ class Command(BaseCommand):
         queries = []
         # Transaction FABS
         if delete_transaction_ids:
-            fabs = (
-                'DELETE '
-                'FROM "transaction_fabs" tf '
-                'WHERE tf."transaction_id" IN ({});'.format(delete_transaction_str_ids)
-            )
-            # Transaction Normalized
-            tn = (
-                'DELETE '
-                'FROM "transaction_normalized" tn '
-                'WHERE tn."id" IN ({});'.format(delete_transaction_str_ids)
-            )
-            queries.extend([fabs, tn])
+            fabs = 'DELETE FROM "transaction_fabs" tf WHERE tf."transaction_id" IN ({});'
+            tn = 'DELETE FROM "transaction_normalized" tn WHERE tn."id" IN ({});'
+            queries.extend([fabs.format(delete_transaction_str_ids), tn.format(delete_transaction_str_ids)])
         # Update Awards
         if update_award_ids:
             # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
             AWARD_UPDATE_ID_LIST.extend(update_award_ids)
-            update_awards_query = (
-                'UPDATE "awards" '
-                'SET "latest_transaction_id" = null '
-                'WHERE "id" IN ({});'.format(update_award_str_ids)
-            )
+            update_awards = 'UPDATE "awards" SET "latest_transaction_id" = null WHERE "id" IN ({});'
+            update_awards_query = update_awards.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:
             # Financial Accounts by Awards
-            fa = (
-                'UPDATE "financial_accounts_by_awards" '
-                'SET "award_id" = null '
-                'WHERE "award_id" IN ({});'.format(delete_award_str_ids)
-            )
+            faba = 'UPDATE "financial_accounts_by_awards" SET "award_id" = null WHERE "award_id" IN ({});'
             # Subawards
             sub = 'UPDATE "subaward" SET "award_id" = null WHERE "award_id" IN ({});'.format(delete_award_str_ids)
             # Delete Awards
             delete_awards_query = 'DELETE FROM "awards" a WHERE a."id" IN ({});'.format(delete_award_str_ids)
-            queries.extend([fa, sub, delete_awards_query])
+            queries.extend([faba.format(delete_award_str_ids), sub, delete_awards_query])
         if queries:
             db_query = ''.join(queries)
             db_cursor.execute(db_query, [])
@@ -339,23 +321,19 @@ class Command(BaseCommand):
             legal_entity.save()
 
     @staticmethod
-    def send_deletes_to_s3(ids_to_delete):
-        logger.info('Uploading FABS delete data to FPDS bucket')
-
-        # Make timestamp
-        seconds = int(time.time())
+    def store_deleted_fabs(ids_to_delete):
+        seconds = int(time.time())  # adds enough uniqueness to filename
         file_name = datetime.now(timezone.utc).strftime('%Y-%m-%d') + "_FABSdeletions_" + str(seconds) + ".csv"
         file_with_headers = ['afa_generated_unique'] + ids_to_delete
 
         if settings.IS_LOCAL:
-            # Write to local file
             file_path = settings.CSV_LOCAL_PATH + file_name
             logger.info("storing deleted transaction IDs at: {}".format(file_path))
             with open(file_path, 'w') as writer:
                 for row in file_with_headers:
                     writer.write(row + '\n')
         else:
-            # Write to file in S3 bucket directly
+            logger.info('Uploading FABS delete data to S3 bucket')
             aws_region = settings.USASPENDING_AWS_REGION
             fpds_bucket_name = settings.FPDS_BUCKET_NAME
             s3client = boto3.client('s3', region_name=aws_region)
@@ -374,33 +352,29 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logger.info('Starting FABS nightly data load...')
+        logger.info("Starting FABS data load script...")
+        start_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
-        # Use date provided or pull most recent ExternalDataLoadDate
-        if options.get('date'):
-            date = options.get('date')[0]
-        else:
-            data_load_date_obj = ExternalDataLoadDate.objects.filter(
-                external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
-            ).first()
-            if not data_load_date_obj:
-                date = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
-            else:
-                date = data_load_date_obj.last_load_date
-        start_date = datetime.utcnow().strftime('%Y-%m-%d')
+        fabs_load_db_id = lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
+        data_load_date_obj = ExternalDataLoadDate.objects.filter(external_data_type_id=fabs_load_db_id).first()
 
-        logger.info('Processing data for FABS starting from %s' % date)
+        if options.get("date"):  # if provided, use cli data
+            load_from_date = options.get("date")[0]
+        elif data_load_date_obj:  # else if last run is in DB, use that
+            load_from_date = data_load_date_obj.last_load_date
+        else:  # Default is yesterday at midnight
+            load_from_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
 
-        # Retrieve FABS data
+        logger.info('Processing data for FABS starting from %s' % load_from_date)
+
         with timer('retrieving/diff-ing FABS Data', logger.info):
-            upsert_transactions = self.get_fabs_transaction_ids(date=date)
+            upsert_transactions = self.get_fabs_transaction_ids(date=load_from_date)
 
         with timer("obtaining delete records", logger.info):
-            ids_to_delete = self.get_fabs_records_to_delete(date=date)
+            ids_to_delete = self.get_fabs_records_to_delete(date=load_from_date)
 
         if ids_to_delete:
-            # Create a file with the deletion IDs and place in a bucket for ElasticSearch
-            self.send_deletes_to_s3(ids_to_delete)
+            self.store_deleted_fabs(ids_to_delete)
 
             # Delete FABS records by ID
             with timer("deleting stale FABS data", logger.info):
