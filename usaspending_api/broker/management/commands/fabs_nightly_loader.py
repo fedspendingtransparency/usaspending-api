@@ -2,7 +2,7 @@ import boto3
 import logging
 import time
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -23,7 +23,7 @@ from usaspending_api.references.models import LegalEntity, Agency
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
-BATCH_FETCH_SIZE = 25000
+BATCH_FETCH_SIZE = 2500
 
 
 class Command(BaseCommand):
@@ -67,13 +67,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def fetch_fabs_data_generator(dap_uid_list):
-        start_time = datetime.now()
-
         db_cursor = connections["data_broker"].cursor()
-
         db_query = " ".join(
             [
-                "SELECT * FROM published_award_financial_assistance"
+                "SELECT * FROM published_award_financial_assistance",
                 "WHERE published_award_financial_assistance_id IN ({});"
             ]
         )
@@ -81,13 +78,15 @@ class Command(BaseCommand):
         total_uid_count = len(dap_uid_list)
 
         for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
+            start_time = time.perf_counter()
             max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
             fpds_ids_batch = dap_uid_list[i:max_index]
 
-            log_msg = "[{}] Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(datetime.now() - start_time, i, max_index, total_uid_count))
+            log_msg = "Fetching {}-{} out of {} records from broker"
+            logger.info(log_msg.format(i, max_index, total_uid_count))
 
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
+            logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
     def find_related_awards(self, transactions):
@@ -176,16 +175,14 @@ class Command(BaseCommand):
             db_query = ''.join(queries)
             db_cursor.execute(db_query, [])
 
+    @transaction.atomic
     def insert_all_new_fabs(self, all_new_to_insert):
         for to_insert in self.fetch_fabs_data_generator(all_new_to_insert):
             start = time.perf_counter()
             self.insert_new_fabs(to_insert=to_insert)
-            logger.info("Insertion took {:.2f}s".format(time.perf_counter() - start))
+            logger.info("FABS insertions took {:.2f}s".format(time.perf_counter() - start))
 
-    @transaction.atomic
     def insert_new_fabs(self, to_insert):
-        logger.info('Starting insertion of new FABS data')
-
         place_of_performance_field_map = {
             "location_country_code": "place_of_perform_country_c",
             "country_name": "place_of_perform_country_n",
@@ -318,7 +315,7 @@ class Command(BaseCommand):
             unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
             if unique_fabs.first():
-                transaction_normalized_dict["update_date"] = datetime.utcnow()
+                transaction_normalized_dict["update_date"] = datetime.now(timezone.utc)
                 transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
 
                 # Update TransactionNormalized
@@ -346,13 +343,14 @@ class Command(BaseCommand):
         logger.info('Uploading FABS delete data to FPDS bucket')
 
         # Make timestamp
-        seconds = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
-        file_name = datetime.utcnow().strftime('%Y-%m-%d') + "_FABSdeletions_" + str(seconds) + ".csv"
+        seconds = int(time.time())
+        file_name = datetime.now(timezone.utc).strftime('%Y-%m-%d') + "_FABSdeletions_" + str(seconds) + ".csv"
         file_with_headers = ['afa_generated_unique'] + ids_to_delete
 
         if settings.IS_LOCAL:
             # Write to local file
             file_path = settings.CSV_LOCAL_PATH + file_name
+            logger.info("storing deleted transaction IDs at: {}".format(file_path))
             with open(file_path, 'w') as writer:
                 for row in file_with_headers:
                     writer.write(row + '\n')
@@ -395,7 +393,7 @@ class Command(BaseCommand):
 
         # Retrieve FABS data
         with timer('retrieving/diff-ing FABS Data', logger.info):
-            to_insert = self.get_fabs_transaction_ids(date=date)
+            upsert_transactions = self.get_fabs_transaction_ids(date=date)
 
         with timer("obtaining delete records", logger.info):
             ids_to_delete = self.get_fabs_records_to_delete(date=date)
@@ -407,13 +405,14 @@ class Command(BaseCommand):
             # Delete FABS records by ID
             with timer("deleting stale FABS data", logger.info):
                 self.delete_stale_fabs(ids_to_delete=ids_to_delete)
+                del ids_to_delete
         else:
             logger.info("Nothing to delete...")
 
-        if to_insert:
+        if upsert_transactions:
             # Add FABS records
             with timer('inserting new FABS data', logger.info):
-                self.insert_all_new_fabs(to_insert=to_insert)
+                self.insert_all_new_fabs(all_new_to_insert=upsert_transactions)
 
             # Update Awards based on changed FABS records
             with timer('updating awards to reflect their latest associated transaction info', logger.info):
@@ -435,4 +434,4 @@ class Command(BaseCommand):
             last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
         ).save()
 
-        logger.info('FABS NIGHTLY UPDATE FINISHED!')
+        logger.info('FABS UPDATE FINISHED!')
