@@ -420,6 +420,7 @@ class FederalAccountsViewSet(APIDocumentationView):
         ]
 
         validated_request_data = TinyShield(request_settings).block(request_dict)
+        validated_request_data["filters"]["fy"] = validated_request_data["filters"].get("fy", last_fy)
         return validated_request_data
 
     @cache_response()
@@ -432,11 +433,8 @@ class FederalAccountsViewSet(APIDocumentationView):
         sort_field = request_data['sort']['field']
         sort_direction = request_data['sort']['direction']
         keyword = request_data.get('keyword', None)
-        filters = request_data.get('filters', None)
-
-        if filters is not None:
-            agency_id = filters.get('agency_identifier', None)
-            fy = filters.get('fy', str(SubmissionAttributes.last_certified_fy()) or str(FiscalDateTime.today().year))
+        fy = request_data['filters']['fy']
+        agency_id = request_data['filters'].get('agency_identifier', None)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
@@ -462,12 +460,9 @@ class FederalAccountsViewSet(APIDocumentationView):
                                        Q(managing_agency_acronym__contains=keyword.upper()))
 
         if agency_id is not None:
-            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else agency_id
+            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else [agency_id]
             tta_filter = Q()
-            if isinstance(tta_list, str):
-                tta_filter |= Q(account_number__startswith=tta_list)
-            else:
-                for tta in tta_list:
+            for tta in tta_list:
                     tta_filter |= Q(account_number__startswith=tta)
             queryset &= queryset.filter(tta_filter)
 
