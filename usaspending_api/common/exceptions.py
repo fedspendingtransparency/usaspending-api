@@ -4,7 +4,7 @@ from rest_framework import status
 
 class NoDataFoundException(APIException):
     """Exception when no data were returned in query when there should always be data"""
-    status_code = 204
+    status_code = status.HTTP_204_NO_CONTENT
     default_detail = "Request contains no data"
     default_code = "no_data"
 
@@ -18,20 +18,26 @@ class InvalidParameterException(APIException):
 
 class UnprocessableEntityException(APIException):
     """https://tools.ietf.org/html/rfc4918"""
-    status_code = 422
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = 'Request parameter is valid but unable to process due to constraints'
     default_code = 'invalid_request'
 
 
 class ElasticsearchConnectionException(APIException):
     """Exception for invalid request parameters."""
-    status_code = 500
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = 'Unable to reach the Elasticsearch Cluster'
     default_code = 'service_unavailable'
 
 
+class NotImplementedException(APIException):
+    status_code = status.HTTP_501_NOT_IMPLEMENTED
+    default_detail = "Functionality Not (yet) Implemented"
+    default_code = "invalid_request"
+
+
 class EndpointTimeoutException(APIException):
     """Exception for timeout for an API endpoint."""
-    status_code = 504
+    status_code = status.HTTP_504_GATEWAY_TIMEOUT
     default_detail = 'Endpoint has timed out'
     default_code = 'timeout'
