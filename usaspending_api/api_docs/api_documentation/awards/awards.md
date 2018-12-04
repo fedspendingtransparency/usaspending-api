@@ -1,5 +1,5 @@
 ## Awards
-**Route:** `/api/v2/awards/<generated_unique_award_id>/`
+**Route:** `/api/v2/awards/<requested_award>/`
 
 **Method** `GET`
 
@@ -7,7 +7,7 @@ This route sends a request to the backend to retrieve data about a specific awar
 
 ## Request Parameters
 
-- generated_unique_award_id: (required) ID of award to retrieve
+- requested_award: (required) ID of award to retrieve. This can either be `generated_unique_award_id` or `id` from awards table
 
 
 ## Response (JSON)
