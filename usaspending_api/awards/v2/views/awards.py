@@ -24,9 +24,7 @@ class AwardLastUpdatedViewSet(APIDocumentationView):
         """Return latest updated date for Awards"""
 
         max_update_date = Award.objects.all().aggregate(Max('update_date'))['update_date__max']
-        response = {
-            "last_updated": max_update_date.strftime('%m/%d/%Y')
-        }
+        response = {"last_updated": max_update_date.strftime('%m/%d/%Y')}
 
         return Response(response)
 
@@ -41,13 +39,21 @@ class AwardRetrieveViewSet(APIDocumentationView):
             request_dict = {"id": int(provided_award_id)}
             models = [{"key": "id", "name": "id", "type": "integer", "optional": False}]
         except Exception as e:
-            models = [{"key": "generated_unique_award_id", "name": "generated_unique_award_id", "type": "text", "text_type": "search", "optional": False}]
+            models = [
+                {
+                    "key": "generated_unique_award_id",
+                    "name": "generated_unique_award_id",
+                    "type": "text",
+                    "text_type": "search",
+                    "optional": False,
+                }
+            ]
             request_dict = {"generated_unique_award_id": provided_award_id}
 
         validated_request_data = TinyShield(models).block(request_dict)
         return validated_request_data
 
-    def _business_logic(self, request_dict: dict) -> list:
+    def _business_logic(self, request_dict: dict) -> dict:
         dict_key = "id" if "id" in request_dict else "generated_unique_award_id"
 
         try:
