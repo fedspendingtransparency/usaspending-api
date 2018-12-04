@@ -5,7 +5,7 @@ from rest_framework import status
 class NoDataFoundException(APIException):
     """Exception when no data were returned in query when there should always be data"""
     status_code = status.HTTP_204_NO_CONTENT
-    default_detail = "Request contains no data"
+    default_detail = "Unmet data expectations: response contains no data"
     default_code = "no_data"
 
 
