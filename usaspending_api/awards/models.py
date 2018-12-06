@@ -158,8 +158,8 @@ class Award(DataSourceTrackedModel):
                                       "blanket purchase agreement. It is used to track the contract, and any "
                                       "modifications or transactions related to it. After October 2017, it is "
                                       "between 13 and 17 digits, both letters and numbers.")
-    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True,
-                                     help_text="The parent award, if applicable")
+    fpds_agency_id = models.TextField(db_index=True, blank=True, null=True)
+    fpds_parent_agency_id = models.TextField(db_index=True, blank=True, null=True)
     fain = models.TextField(db_index=True, blank=True, null=True,
                             help_text="An identification code assigned to each financial assistance award tracking "
                                       "purposes. The FAIN is tied to that award (and all future modifications to that "
@@ -960,3 +960,16 @@ class Subaward(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'subaward'
+
+
+class ParentAward(models.Model):
+    award_id = models.OneToOneField(Award, primary_key=True)
+    generated_unique_award_id = models.TextField()
+    parent_award_id = models.ForeignKey('self', null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
+    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+
+    class Meta:
+        managed = True
+        db_table = "parent_award"
