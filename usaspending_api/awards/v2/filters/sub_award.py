@@ -6,7 +6,6 @@ from django.db.models import Q
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
@@ -100,13 +99,7 @@ def subaward_filter(filters, for_downloads=False):
             queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            idv_flag = all(i in value for i in contract_type_mapping.keys())
-
-            if len(value) != 0:
-                filter_obj = Q(prime_award_type__in=value)
-                if idv_flag:
-                    filter_obj |= Q(pulled_from='IDV')
-                queryset &= SubawardView.objects.filter(filter_obj)
+            queryset &= queryset.filter(Q(type__in=value))
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -171,7 +164,7 @@ def subaward_filter(filters, for_downloads=False):
             filter_obj = Q()
             for recipient in value:
                 filter_obj |= recip_string_parse(recipient)
-            queryset &= SubawardView.objects.filter(filter_obj)
+            queryset &= queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -186,7 +179,7 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= SubawardView.objects.filter(business_categories__overlap=value)
+                queryset &= queryset.filter(Q(business_categories__overlap=value))
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -208,7 +201,7 @@ def subaward_filter(filters, for_downloads=False):
                 # award_id_string is a Postgres TS_vector
                 # award_id_string = piid + fain + uri + subaward_number
                 filter_obj |= Q(award_ts_vector=val)
-            queryset &= SubawardView.objects.filter(filter_obj)
+            queryset &= queryset.filter(filter_obj)
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
