@@ -143,7 +143,7 @@ class Award(DataSourceTrackedModel):
     These updates happen in our USAspending and data act broker load processes:
     see ETL\award_helpers.py for details.
     """
-
+    id = models.BigAutoField(primary_key=True)
     type = models.TextField(db_index=True, verbose_name="Award Type", null=True,
                             help_text="The mechanism used to distribute funding. The federal government can distribute "
                                       "funding in several forms. These award types include contracts, grants, loans, "
@@ -321,6 +321,7 @@ class Award(DataSourceTrackedModel):
 
 
 class TransactionNormalized(models.Model):
+    id = models.BigAutoField(primary_key=True)
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True,
                                                          help_text="If this record is legacy USASpending data, this is "

@@ -1118,7 +1118,16 @@ award_assistance_mapping = {**grant_award_mapping, **loan_award_mapping, **direc
 non_loan_assistance_award_mapping = assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping,
                                                                 **other_award_mapping}
 
+# TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {
+    'IDV_A': 'GWAC Government Wide Acquisition Contract',
+    'IDV_B': 'IDC Multi-Agency Contract, Other Indefinite Delivery Contract',
+    'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
+    'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
+    'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',
+    'IDV_C': 'FSS Federal Supply Schedule',
+    'IDV_D': 'BOA Basic Ordering Agreement',
+    'IDV_E': 'BPA Blanket Purchase Agreement',
     '02': 'Block Grant',
     '03': 'Formula Grant',
     '04': 'Project Grant',
@@ -1144,6 +1153,16 @@ contract_type_mapping = {
     'B': 'Purchase Order',
     'C': 'Delivery Order',
     'D': 'Definitive Contract'
+}
+idv_type_mapping = {
+    'IDV_A': 'GWAC Government Wide Acquisition Contract',
+    'IDV_B': 'IDC Multi-Agency Contract, Other Indefinite Delivery Contract',
+    'IDV_B_A': 'IDC Indefinite Delivery Contract / Requirements',
+    'IDV_B_B': 'IDC Indefinite Delivery Contract / Indefinite Quantity',
+    'IDV_B_C': 'IDC Indefinite Delivery Contract / Definite Quantity',
+    'IDV_C': 'FSS Federal Supply Schedule',
+    'IDV_D': 'BOA Basic Ordering Agreement',
+    'IDV_E': 'BPA Blanket Purchase Agreement'
 }
 grant_type_mapping = {
     '02': 'Block Grant',

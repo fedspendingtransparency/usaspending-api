@@ -12,7 +12,7 @@ import csv
 
 from django.conf import settings
 
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
@@ -104,7 +104,7 @@ def get_csv_sources(json_request):
             queryset = filter_function(json_request['filters'])
             award_type_codes = set(json_request['filters']['award_type_codes'])
 
-            if award_type_codes & set(contract_type_mapping.keys()):
+            if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
                 # only generate d1 files if the user is asking for contract data
                 d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
                 d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}

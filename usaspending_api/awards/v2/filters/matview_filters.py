@@ -1,8 +1,9 @@
 import logging
 import itertools
+
 from django.db.models import Q
+
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
@@ -100,8 +101,6 @@ def matview_search_filter(filters, model, for_downloads=False):
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
             logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            if model is UniversalAwardView:
-                queryset = queryset.filter(latest_transaction__id__isnull=False)
             queryset &= queryset.extra(
                 where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
@@ -112,12 +111,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= combine_date_range_queryset(value, model, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            idv_flag = all(i in value for i in contract_type_mapping.keys())
-
-            filter_obj = Q(type__in=value)
-            if idv_flag:
-                filter_obj |= Q(pulled_from='IDV') & Q(type__isnull=True)
-            queryset &= model.objects.filter(filter_obj)
+            queryset &= queryset.filter(Q(type__in=value))
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -181,7 +175,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
                 all_filters_obj |= filter_obj
-            queryset &= model.objects.filter(all_filters_obj)
+            queryset &= queryset.filter(all_filters_obj)
 
         elif key == "recipient_id":
             filter_obj = Q()
@@ -203,7 +197,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             else:
                 # "R" recipient level
                 filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
-            queryset &= model.objects.filter(filter_obj)
+            queryset &= queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -218,7 +212,7 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= model.objects.filter(business_categories__overlap=value)
+                queryset &= queryset.filter(Q(business_categories__overlap=value))
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -240,43 +234,39 @@ def matview_search_filter(filters, model, for_downloads=False):
                 # award_id_string is a Postgres TS_vector
                 # award_id_string = piid + fain + uri
                 filter_obj |= Q(award_ts_vector=val)
-            queryset &= model.objects.filter(filter_obj)
+            queryset &= queryset.filter(filter_obj)
 
         elif key == "program_numbers":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= model.objects.filter(
-                    cfda_number__in=in_query)
+                queryset &= queryset.filter(Q(cfda_number__in=in_query))
 
         elif key == "naics_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= model.objects.filter(
-                    naics_code__in=in_query)
+                queryset &= queryset.filter(Q(naics_code__in=in_query))
 
         elif key == "psc_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= model.objects.filter(
-                    product_or_service_code__in=in_query)
+                queryset &= queryset.filter(Q(product_or_service_code__in=in_query))
 
         elif key == "contract_pricing_type_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= model.objects.filter(
-                    type_of_contract_pricing__in=in_query)
+                queryset &= queryset.filter(Q(type_of_contract_pricing__in=in_query))
 
         elif key == "set_aside_type_codes":
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(type_set_aside__exact=v)
-            queryset = queryset.filter(or_queryset)
+            queryset &= queryset.filter(or_queryset)
 
         elif key == "extent_competed_type_codes":
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(extent_competed__exact=v)
-            queryset = queryset.filter(or_queryset)
+            queryset &= queryset.filter(or_queryset)
 
         # Federal Account Filter
         elif key == "federal_account_ids":
@@ -307,6 +297,6 @@ def matview_search_filter(filters, model, for_downloads=False):
 
     if faba_flag:
         award_ids = faba_queryset.values('award_id')
-        queryset = queryset.filter(award_id__in=award_ids)
+        queryset &= queryset.filter(Q(award_id__in=award_ids))
 
     return queryset
