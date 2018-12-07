@@ -963,12 +963,12 @@ class Subaward(DataSourceTrackedModel):
 
 
 class ParentAward(models.Model):
-    award_id = models.OneToOneField(Award, primary_key=True)
-    generated_unique_award_id = models.TextField()
-    parent_award_id = models.ForeignKey('self', null=True)
-    total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
-    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
-    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+    award = models.OneToOneField(Award, primary_key=True)
+    generated_unique_award_id = models.TextField(unique=True)
+    parent_award = models.ForeignKey('self', db_index=True, blank=True, null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = True
