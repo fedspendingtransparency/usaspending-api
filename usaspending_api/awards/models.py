@@ -238,7 +238,7 @@ class Award(DataSourceTrackedModel):
     nonempty = AwardManager()
 
     def __str__(self):
-        return '%s piid: %s fain: %s uri: %s parent_piid: %s' % (self.type_description, self.piid, self.fain, self.uri, self.parent_award_piid)
+        return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
     def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_piid=None,

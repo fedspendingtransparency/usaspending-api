@@ -1,5 +1,4 @@
 # Stdlib imports
-import timeit
 from time import perf_counter
 
 # Core Django imports
