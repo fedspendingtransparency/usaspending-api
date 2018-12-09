@@ -106,7 +106,6 @@ CREATE TABLE transaction_fpds_new_2 AS (
         transaction_fpds_new.awarding_sub_tier_agency_n AS awarding_sub_tier_agency_n,
         transaction_fpds_new.awarding_agency_code AS awarding_agency_code,
         transaction_fpds_new.awarding_agency_name AS awarding_agency_name,
-        transaction_fpds_new.parent_award_id AS parent_award_id,
         transaction_fpds_new.award_modification_amendme AS award_modification_amendme,
         transaction_fpds_new.type_of_contract_pricing AS type_of_contract_pricing,
         transaction_fpds_new.type_of_contract_pric_desc AS type_of_contract_pric_desc,

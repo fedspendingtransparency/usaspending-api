@@ -35,11 +35,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='award',
             name='fpds_agency_id',
-            field=models.TextField(blank=True, db_index=True, null=True),
+            field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='award',
             name='fpds_parent_agency_id',
-            field=models.TextField(blank=True, db_index=True, null=True),
+            field=models.TextField(blank=True, null=True),
+        ),
+        migrations.AlterField(
+            model_name='award',
+            name='parent_award_piid',
+            field=models.TextField(db_index=True, help_text="The piid of the Award's parent Award", null=True, verbose_name='Parent Award Piid'),
         ),
     ]

@@ -52,13 +52,6 @@ def aggregate_models():
 
     award_recipe.make(_quantity=4)
 
-    # make each award parent of the next
-    parent = None
-    for award in Award.objects.order_by('period_of_performance_start_date'):
-        award.parent_award = parent
-        award.save()
-        parent = award
-
 
 @pytest.fixture
 def aggregate_models_with_nulls():
@@ -287,36 +280,6 @@ _expected_parent_fy_aggregated = [{
     'parent_award__period_of_performance_start_date__fy': 2018,
     'aggregate': None
 }]
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize('model, request_data, expected', [(Award, {
-    'field': 'total_obligation',
-    'group': 'parent_award__period_of_performance_start_date__fy',
-    'show_nulls': True
-}, _expected_parent_fy_aggregated)])
-def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model, request_data, expected):
-    request = Mock()
-    request.query_params = {}
-    request.data = request_data
-    a = AggregateQuerysetMixin()
-    agg = a.aggregate(request=request, queryset=model.objects.all())
-
-    def itemsorter(a):
-        if a['item'] is None:
-            return 0
-        return a['item']
-
-    agg_list = [a for a in agg]
-    if 'order' not in request_data:
-        # this isn't an 'order by' request, (i.e., we're not testing the result order), so sort the actual and expected
-        # results to ensure a good comparison
-        agg_list.sort(key=itemsorter)
-        expected.sort(key=itemsorter)
-        # agg_list.sort(key=itemgetter('item'))
-        # expected.sort(key=itemgetter('item'))
-        #
-    assert agg_list == expected
 
 
 @pytest.mark.django_db
