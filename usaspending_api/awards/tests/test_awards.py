@@ -138,51 +138,6 @@ def test_award_date_signed_fy(client):
 
 
 @pytest.mark.django_db
-def test_manual_hash_eq_fain():
-    """test that records with equal FAIN hash as equal"""
-    m1 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
-    m2 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
-    assert m1.manual_hash() == m2.manual_hash()
-
-
-@pytest.mark.django_db
-def test_award_hash_ineq_fain():
-    """test that records with unequal FAIN hash as unequal"""
-    m1 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
-    m2 = mommy.make('awards.award', fain='XYZ', piid=None, uri=None, _fill_optional=True)
-    assert m1.manual_hash() != m2.manual_hash()
-
-
-@pytest.mark.django_db
-def test_transaction_changes_logged():
-    # LEGACY CODE: History is not required for TransactionNormalized, TransactionFPDS, TransactionFABS
-
-    """test that changes to a transaction are logged in the history file"""
-    # t1 = mommy.make('awards.transactionnormalized', description='bought some stuff', _fill_optional=True,)
-    # assert t1.history.count() == 1
-    # t1.description = 'Procured mission-critical resources'
-    # t1.save()
-    # assert t1.history.count() == 2
-    # assert t1.history.filter(description='bought some stuff').count() == 1
-    # assert t1.history.filter(description='this never happened').count() == 0
-
-    # tc1 = mommy.make('awards.transactionfpds', transaction=t1, current_total_value_award=1000.00)
-    # assert tc1.history.count() == 1
-    # tc1.base_exercised_options_val = 2000.00
-    # tc1.save()
-    # assert tc1.history.count() == 2
-    # tc1.history.filter(base_exercised_options_val=1000.00).count() == 1
-    #
-    # t2 = mommy.make('awards.transactionnormalized', description='doled out some dough', _fill_optional=True,)
-    # ta2 = mommy.make('awards.transactionfabs', transaction=t2, total_funding_amount=100.00)
-    # assert ta2.history.count() == 1
-    # ta2.total_funding_amount = 300.00
-    # ta2.save()
-    # assert ta2.history.count() == 2
-    # ta2.history.filter(total_funding_amount=300.00).count() == 1
-
-
-@pytest.mark.django_db
 def test_get_or_create_summary_award():
     """Test award record lookup."""
     sta1 = mommy.make(SubtierAgency, subtier_code='1234', name='Bureau of Effective Unit Tests')
@@ -201,10 +156,9 @@ def test_get_or_create_summary_award():
     t1 = Award.get_or_create_summary_award(piid='DUT123', awarding_agency=a1)[1]
     assert t1 == m1
 
-    # match on awarding agency and piid + parent award
-    pa1 = mommy.make('awards.award', piid='IDVDUT456')
-    m2 = mommy.make('awards.award', piid='DUT456', parent_award=pa1, awarding_agency=a1)
-    t2 = Award.get_or_create_summary_award(piid='DUT456', parent_award_id='IDVDUT456', awarding_agency=a1)[1]
+    # match on awarding agency and piid + parent award piid
+    m2 = mommy.make('awards.award', piid='DUT456', parent_award_piid='IDVDUT456', awarding_agency=a1)
+    t2 = Award.get_or_create_summary_award(piid='DUT456', parent_award_piid='IDVDUT456', awarding_agency=a1)[1]
     assert t2 == m2
 
     # match on awarding agency and fain
@@ -243,35 +197,32 @@ def test_get_or_create_summary_award():
     assert len(t9[0]) == 1
     assert m9 != t9[1]
 
-    # non-match with piid + matching parent award creates one new award
-    pa10 = mommy.make('awards.award', piid='thingmom')
-    m10 = mommy.make('awards.award', piid='thing1', parent_award=pa10)
-    t10 = Award.get_or_create_summary_award(piid='thing2', parent_award_id='thingmom')
+    # non-match with piid + matching parent award piid creates one new award
+    m10 = mommy.make('awards.award', piid='thing1', parent_award_piid='thingmom')
+    t10 = Award.get_or_create_summary_award(piid='thing2', parent_award_piid='thingmom')
     assert len(t10[0]) == 1
     assert m10 != t10[1]
 
     # matching piid + non-matching parent
-    pa11 = mommy.make('awards.award', piid='piidthing')
-    m11 = mommy.make('awards.award', piid='0005', parent_award=pa11)
-    t11 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')[1]
-    assert t11 != m11
+    m11 = mommy.make('awards.award', piid='0005', parent_award_piid='piidthing')
+    t11 = Award.get_or_create_summary_award(piid='0005', parent_award_piid='anotherpiidthing')
+    assert m11 != t11[0]
 
     # matching piid and parent award id but mismatched subtier agency, same top tier agency
-    pa12 = mommy.make('awards.award', piid='imalittlepiid', awarding_agency=a1)
-    m12 = mommy.make('awards.award', piid='shortandstout', parent_award=pa12, awarding_agency=a1)
-    t12 = Award.get_or_create_summary_award(piid='shortandstout', parent_award_id='imalittlepiid',
+    m12 = mommy.make('awards.award', piid='shortandstout', parent_award_piid='imalittlepiid', awarding_agency=a1)
+    t12 = Award.get_or_create_summary_award(piid='shortandstout', parent_award_piid='imalittlepiid',
                                             awarding_agency=a3)[1]
     assert t12 != m12
 
     # matching fain but mismatched subtier agency, same top tier agency
-    m13 = mommy.make('awards.award', fain='imalittlefain', parent_award=pa12, awarding_agency=a1)
+    m13 = mommy.make('awards.award', fain='imalittlefain', awarding_agency=a1)
     t13 = Award.get_or_create_summary_award(fain='imalittlefain', record_type='2', awarding_agency=a3)[1]
     assert t13 != m13
 
     # matching piid and parent award but mismatched subtier and toptier agency
     mommy.make('awards.Award', piid='imjustapiidparent', awarding_agency=a3)
     m14 = mommy.make('awards.Award', piid='imjustapiidchild', awarding_agency=a3)
-    t14 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent',
+    t14 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_piid='imjustapiidparent',
                                             awarding_agency=a4)[1]
     assert t14 != m14
 

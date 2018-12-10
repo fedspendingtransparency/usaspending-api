@@ -209,7 +209,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
+            parent_award_piid=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
         award.save()
 
         award_update_id_list.append(award.id)
@@ -385,8 +385,7 @@ def load_file_d2(
             awarding_agency=awarding_agency,
             piid=row.get('piid'),
             fain=row.get('fain'),
-            uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))
+            uri=row.get('uri'))
         award.save()
 
         award_update_id_list.append(award.id)
