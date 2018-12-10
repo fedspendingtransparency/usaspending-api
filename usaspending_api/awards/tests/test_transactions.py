@@ -55,7 +55,8 @@ def test_transaction_endpoint_v2(client):
 def test_transaction_endpoint_v2_award_fk(client):
     """Test the transaction endpoint."""
 
-    awd = mommy.make('awards.Award', id=10, total_obligation="2000", _fill_optional=True, generated_unique_award_id="-TEST-")
+    awd = mommy.make('awards.Award', id=10, total_obligation="2000", _fill_optional=True,
+                     generated_unique_award_id="-TEST-")
     mommy.make(
         'awards.TransactionNormalized',
         description="this should match",
