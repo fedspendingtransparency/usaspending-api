@@ -207,6 +207,10 @@ class Award(DataSourceTrackedModel):
                                                      null=True, verbose_name="Base and All Options Value",
                                                      help_text="The sum of the base_and_all_options_value from "
                                                                "associated transactions")
+    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True, verbose_name="Combined Base and Exercised Options",
+                                                     help_text="The sum of the base_exercised_options_val from "
+                                                               "associated transactions")
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True,
@@ -948,9 +952,18 @@ class ParentAward(models.Model):
     award = models.OneToOneField(Award, primary_key=True)
     generated_unique_award_id = models.TextField(unique=True)
     parent_award = models.ForeignKey('self', db_index=True, blank=True, null=True)
-    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+
+    direct_idv_count = models.IntegerField()
+    direct_contract_count = models.IntegerField()
+    direct_total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    direct_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    direct_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+
+    rollup_idv_count = models.IntegerField()
+    rollup_contract_count = models.IntegerField()
+    rollup_total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    rollup_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    rollup_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = True
