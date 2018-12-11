@@ -611,7 +611,7 @@
       "certified_date": null,
       "create_date": "2016-12-20T22:50:53.882000Z",
       "update_date": "2016-12-20T22:50:57.802000Z",
-      "parent_award": null,
+      "parent_award_piid": null,
       "awarding_agency": null,
       "funding_agency": null,
       "recipient": null,

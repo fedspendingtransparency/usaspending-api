@@ -439,7 +439,7 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_id=row.get('parent_award_id'))
+                    parent_award_piid=row.get('parent_award_id'))
                 award.save()
 
                 award_update_id_list.append(award.id)

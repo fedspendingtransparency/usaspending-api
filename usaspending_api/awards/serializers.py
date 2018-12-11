@@ -194,7 +194,7 @@ class TransactionFPDSSerializer(LimitableSerializer):
         fields = '__all__'
         default_fields = [
             "piid",
-            "parent_award_id",
+            "parent_award_piid",
             "type",
             "type_description",
             "cost_or_pricing_data",
