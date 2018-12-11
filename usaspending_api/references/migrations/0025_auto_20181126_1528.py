@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='legalentity',
             name='business_categories',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
+            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, size=None),
         ),
         migrations.AlterField(
             model_name='legalentity',

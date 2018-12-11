@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='recipientprofile',
-            unique_together=set([('recipient_level', 'recipient_hash'), ('recipient_hash', 'recipient_level')]),
+            unique_together=set([('recipient_hash', 'recipient_level')]),
         ),
         migrations.AddIndex(
             model_name='recipientprofile',
