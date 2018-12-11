@@ -126,7 +126,6 @@ CREATE INDEX awards_base_and_all_options_value_1bee496c ON awards USING btree (b
 CREATE INDEX awards_awarding_agency_id_a8cf5df8 ON awards USING btree (awarding_agency_id);
 CREATE INDEX awards_funding_agency_id_aafee1a4 ON awards USING btree (funding_agency_id);
 CREATE INDEX awards_latest_transaction_id_a78dcb0f ON awards USING btree (latest_transaction_id);
-CREATE INDEX awards_parent_award_id_bcf46af7 ON awards USING btree (parent_award_id);
 CREATE INDEX awards_place_of_performance_id_7d7369e6 ON awards USING btree (place_of_performance_id);
 CREATE INDEX awards_recipient_id_3cdf8905 ON awards USING btree (recipient_id);
 CREATE INDEX awards_category_c8863e0a ON awards USING btree (category);
