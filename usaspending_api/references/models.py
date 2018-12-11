@@ -462,7 +462,7 @@ class LegalEntity(DataSourceTrackedModel):
 
     individuals
     '''
-    business_categories = ArrayField(models.TextField(), default=list, null=True)
+    business_categories = ArrayField(models.TextField(), default=list)
 
     recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
     limited_liability_corporation = models.NullBooleanField(blank=False, default=False)

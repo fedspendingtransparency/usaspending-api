@@ -95,7 +95,6 @@ class RecipientProfile(models.Model):
         managed = True
         db_table = "recipient_profile"
         unique_together = (
-            ("recipient_level", "recipient_hash"),
             ("recipient_hash", "recipient_level")
         )
         # Note:  A custom index was added in the migration because there's
