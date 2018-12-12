@@ -158,8 +158,8 @@ class Award(DataSourceTrackedModel):
                                       "blanket purchase agreement. It is used to track the contract, and any "
                                       "modifications or transactions related to it. After October 2017, it is "
                                       "between 13 and 17 digits, both letters and numbers.")
-    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True,
-                                     help_text="The parent award, if applicable")
+    fpds_agency_id = models.TextField(blank=True, null=True)
+    fpds_parent_agency_id = models.TextField(blank=True, null=True)
     fain = models.TextField(db_index=True, blank=True, null=True,
                             help_text="An identification code assigned to each financial assistance award tracking "
                                       "purposes. The FAIN is tied to that award (and all future modifications to that "
@@ -207,6 +207,10 @@ class Award(DataSourceTrackedModel):
                                                      null=True, verbose_name="Base and All Options Value",
                                                      help_text="The sum of the base_and_all_options_value from "
                                                                "associated transactions")
+    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True, verbose_name="Combined Base and Exercised Options",
+                                                     help_text="The sum of the base_exercised_options_val from "
+                                                               "associated transactions")
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True,
@@ -215,7 +219,7 @@ class Award(DataSourceTrackedModel):
                                        help_text="The last time this record was updated in the API")
     latest_transaction = models.ForeignKey("awards.TransactionNormalized", related_name="latest_for_award", null=True,
                                            help_text="The latest transaction by action_date associated with this award")
-    parent_award_piid = models.TextField(null=True, verbose_name="Parent Award Piid",
+    parent_award_piid = models.TextField(db_index=True, null=True, verbose_name="Parent Award Piid",
                                          help_text="The piid of the Award's parent Award")
     generated_unique_award_id = models.TextField(blank=False, null=False, default="NONE",
                                                  verbose_name="Generated Unique Award ID")
@@ -237,23 +241,11 @@ class Award(DataSourceTrackedModel):
     objects = models.Manager()
     nonempty = AwardManager()
 
-    def manual_hash(self):
-        """Used to manually establish equality between instances.
-
-        Useful for unsaved records where `.id` is not yet set.
-        Possibly this could be converted to __hash__"""
-
-        return hash((self.piid, self.fain, self.uri,
-                    (self.parent_award and
-                     (self.parent_award.piid,
-                      self.parent_award.fain,
-                      self.parent_award.uri))))
-
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_id=None,
+    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_piid=None,
                                     use_cache=False, save=True, agency_toptier_map=None, record_type=None,
                                     generated_unique_award_id=None):
         """
@@ -279,14 +271,8 @@ class Award(DataSourceTrackedModel):
                 lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
             else:
                 # Use the lookup_value is generated unique ID is not available
-                lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+                lookup_kwargs = {"awarding_agency": awarding_agency}
                 lookup_kwargs[lookup_value[1]] = lookup_value[0]
-
-                # Only contracts have parent awards
-                if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
-                    lookup_kwargs["parent_award__piid"] = parent_award_id
-                    if "parent_award" in lookup_kwargs:
-                        del lookup_kwargs["parent_award"]
 
             # Look for an existing award record
             summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
@@ -295,13 +281,13 @@ class Award(DataSourceTrackedModel):
                 return [], summary_award
 
             # Now create the award record for this award transaction
-            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": None,
-                             "parent_award_piid": parent_award_id}
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award_piid": parent_award_piid}
             create_kwargs[lookup_value[1]] = lookup_value[0]
             if generated_unique_award_id:
                 create_kwargs["generated_unique_award_id"] = generated_unique_award_id
                 if generated_unique_award_id.startswith('CONT_AW_'):
                     create_kwargs["is_fpds"] = True
+
             summary_award = Award(**create_kwargs)
 
             if save:
@@ -313,8 +299,8 @@ class Award(DataSourceTrackedModel):
         except ValueError:
             raise ValueError(
                 'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, '
-                'parent_id={}, awarding_agency={}, generated_unique_award_id={}'
-                .format(piid, fain, uri, parent_award_id, awarding_agency, generated_unique_award_id))
+                'parent_award_piid={}, awarding_agency={}, generated_unique_award_id={}'
+                .format(piid, fain, uri, parent_award_piid, awarding_agency, generated_unique_award_id))
 
     class Meta:
         db_table = 'awards'
@@ -970,3 +956,25 @@ class Subaward(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'subaward'
+
+
+class ParentAward(models.Model):
+    award = models.OneToOneField(Award, primary_key=True)
+    generated_unique_award_id = models.TextField(unique=True)
+    parent_award = models.ForeignKey('self', db_index=True, blank=True, null=True)
+
+    direct_idv_count = models.IntegerField()
+    direct_contract_count = models.IntegerField()
+    direct_total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    direct_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
+    direct_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+
+    rollup_idv_count = models.IntegerField()
+    rollup_contract_count = models.IntegerField()
+    rollup_total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    rollup_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
+    rollup_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+
+    class Meta:
+        managed = True
+        db_table = "parent_award"
