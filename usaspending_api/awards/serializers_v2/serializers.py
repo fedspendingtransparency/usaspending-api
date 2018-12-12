@@ -427,12 +427,12 @@ class IDVAmountsSerializerV2(LimitableSerializerV2):
     class Meta:
         model = ParentAward
         fields = [
+            'award_id',
             'idv_count',
             'contract_count',
             'rollup_total_obligation',
             'rollup_base_and_all_options_value',
             'rollup_base_exercised_options_val',
-            'award_id',
         ]
 
     @staticmethod
