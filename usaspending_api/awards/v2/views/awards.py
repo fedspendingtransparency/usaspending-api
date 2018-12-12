@@ -5,14 +5,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import Award
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2
+from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
+    AwardIDVSerializerV2
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NotImplementedException, UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 logger = logging.getLogger("console")
-
 
 class AwardLastUpdatedViewSet(APIDocumentationView):
     """Return all award spending by award type for a given fiscal year and agency id.
@@ -68,7 +68,25 @@ class AwardRetrieveViewSet(APIDocumentationView):
                 serialized = AwardContractSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             elif award.category == "idv":
-                raise NotImplementedException("IDVs are not yet implemented")
+                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
+                # parent_transaction = TransactionFPDS.objects.filter(
+                #     agency_id=idv_transaction["referenced_idv_agency_iden"],
+                #     piid=idv_transaction["parent_award_id"]).values(agency_id, referenced_idv_agency_iden, piid,
+                #                                                     parent_award_id).first()
+                # parent_generated_unique_id = (
+                #         "CONT_AW_" +
+                #         (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
+                #         "_" +
+                #         (parent_transaction["referenced_idv_agency_iden"] if parent_transaction[
+                #             "referenced_idv_agency_iden"] else "-NONE-") +
+                #         "_" +
+                #         (parent_transaction["piid"] if parent_transaction["piid"] else "-NONE-") +
+                #         "_" +
+                #         (parent_transaction["parent_award_id"] if parent_transaction["parent_award_id"] else "-NONE-")
+                # )
+                # raise NotImplementedException("IDVs are not yet implemented")
+                serialized = AwardIDVSerializerV2(award).data
+                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             else:
                 parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
                 serialized = AwardMiscSerializerV2(award).data

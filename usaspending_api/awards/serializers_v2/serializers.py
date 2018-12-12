@@ -346,6 +346,106 @@ class AwardContractSerializerV2(LimitableSerializerV2):
         }
 
 
+class AwardIDVSerializerV2(LimitableSerializerV2):
+    executive_details = serializers.SerializerMethodField("executive_details_func")
+    # period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
+    latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
+    cfda_objectives = serializers.SerializerMethodField('cfda_objectives_func')
+    cfda_title = serializers.SerializerMethodField('cfda_title_func')
+    cfda_number = serializers.SerializerMethodField('cfda_number_func')
+
+    def cfda_objectives_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_objectives
+
+    def cfda_title_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_title
+
+    def cfda_number_func(self, award):
+        return award.latest_transaction.assistance_data.cfda_number
+
+    def latest_transaction_func(self, award):
+        return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
+
+    def executive_details_func(self, award):
+        entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
+        response = []
+        if "officers" in entity and entity["officers"]:
+            for x in range(1, 6):
+                response.append({"name": entity["officers"]["officer_" + str(x) + "_name"],
+                                "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
+        return {"officers": response}
+
+    def get_parent_transaction_id(self, award):
+        latest_transaction = self.latest_transaction_func(award)
+        # return latest_transaction.objects.filter(agency_id=latest_transaction["referenced_idv_agency_iden"],
+        #                                piid=latest_transaction["parent_award_id"]).values(agency_id,
+        #                                                                                referenced_idv_agency_iden,
+        #                                                                                piid,
+        #                                                                                parent_award_id).first()
+        return 1
+
+    def generate_parent_unique_id(self, award):
+        parent_generated_unique_id = (
+                "CONT_AW_" +
+                (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
+                "_" +
+                (parent_transaction["referenced_idv_agency_iden"] if parent_transaction[
+                    "referenced_idv_agency_iden"] else "-NONE-") +
+                "_" +
+                (parent_transaction["piid"] if parent_transaction["piid"] else "-NONE-") +
+                "_" +
+                (parent_transaction["parent_award_id"] if parent_transaction["parent_award_id"] else "-NONE-")
+        )
+        return parent_generated_unique_id
+
+    class Meta:
+
+        model = Award
+        fields = [
+            "id",
+            "type",
+            "category",
+            "type_description",
+            "piid",
+            "parent_award_piid",
+            "description",
+            "cfda_objectives",
+            "cfda_number",
+            "cfda_title",
+            "awarding_agency",
+            "funding_agency",
+            "recipient",
+            # "idv_dates",
+            "subaward_count",
+            "total_subaward_amount",
+            "place_of_performance",
+            "executive_details",
+            "latest_transaction_contract_data",
+            # "parent_generated_unique_award_id",
+            "total_obligation",
+            "base_and_all_options_value",
+            "base_exercised_options_val"
+        ]
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializerV2,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializerV2,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializerV2,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializerV2,
+                "kwargs": {"read_only": True}
+            }
+        }
+
+
 class AwardMiscSerializerV2(LimitableSerializerV2):
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     executive_details = serializers.SerializerMethodField("executive_details_func")
