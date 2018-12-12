@@ -123,6 +123,7 @@ def update_contract_awards(award_tuple=None):
         sql_txn_totals += 'WHERE tx.award_id IN %s '
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
+    # Gather additional fpds fields such as agency_ids and types
     extra_fpds_fields = (
         "extra_fpds_fields AS ("
         "  SELECT"
