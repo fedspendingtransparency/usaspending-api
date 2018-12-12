@@ -2,7 +2,9 @@ from rest_framework import serializers
 from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
+import logging
 
+logger = logging.getLogger(__name__)
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
     award_category = serializers.CharField()
@@ -285,6 +287,8 @@ class AwardContractSerializerV2(LimitableSerializerV2):
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
 
+    # def latest_transaction_func2(self2, award):
+    #     return TransactionFPDSSerializerV2(award.latest_transaction.)
     def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
@@ -347,21 +351,12 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 
 
 class AwardIDVSerializerV2(LimitableSerializerV2):
-    executive_details = serializers.SerializerMethodField("executive_details_func")
+    logger.info("=============entered serialiized=========")
+    logger.info("===past declaration===")
     # period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
-    cfda_objectives = serializers.SerializerMethodField('cfda_objectives_func')
-    cfda_title = serializers.SerializerMethodField('cfda_title_func')
-    cfda_number = serializers.SerializerMethodField('cfda_number_func')
 
-    def cfda_objectives_func(self, award):
-        return award.latest_transaction.assistance_data.cfda_objectives
-
-    def cfda_title_func(self, award):
-        return award.latest_transaction.assistance_data.cfda_title
-
-    def cfda_number_func(self, award):
-        return award.latest_transaction.assistance_data.cfda_number
+    executive_details = serializers.SerializerMethodField("executive_details_func")
 
     def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
@@ -375,16 +370,18 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
                                 "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
-    def get_parent_transaction_id(self, award):
-        latest_transaction = self.latest_transaction_func(award)
-        # return latest_transaction.objects.filter(agency_id=latest_transaction["referenced_idv_agency_iden"],
-        #                                piid=latest_transaction["parent_award_id"]).values(agency_id,
-        #                                                                                referenced_idv_agency_iden,
-        #                                                                                piid,
-        #                                                                                parent_award_id).first()
-        return 1
+    def get_parent_transaction(self, award):
+        idv_transaction = self.latest_transaction_func(award)
+        return TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
+                                                            piid=idv_transaction["parent_award_id"]).values(agency_id,
+                                                                                                            referenced_idv_agency_iden,
+                                                                                                            piid,
+                                                                                                            parent_award_id).first()
+
 
     def generate_parent_unique_id(self, award):
+        parent_transaction = self.get_parent_transaction(award)
+        logger.info(parent_transaction)
         parent_generated_unique_id = (
                 "CONT_AW_" +
                 (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
@@ -402,29 +399,46 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
 
         model = Award
         fields = [
-            "id",
+                        "id",
             "type",
             "category",
             "type_description",
             "piid",
             "parent_award_piid",
             "description",
-            "cfda_objectives",
-            "cfda_number",
-            "cfda_title",
             "awarding_agency",
             "funding_agency",
             "recipient",
-            # "idv_dates",
-            "subaward_count",
-            "total_subaward_amount",
-            "place_of_performance",
-            "executive_details",
-            "latest_transaction_contract_data",
-            # "parent_generated_unique_award_id",
             "total_obligation",
             "base_and_all_options_value",
-            "base_exercised_options_val"
+            "place_of_performance",
+            "latest_transaction_contract_data",
+            "subaward_count",
+            "total_subaward_amount",
+            "executive_details"
+            # "id",
+            # "type",
+            # "category",
+            # "type_description",
+            # "piid",
+            # "parent_award_piid",
+            # "description",
+            # "cfda_objectives",
+            # "cfda_number",
+            # "cfda_title",
+            # "awarding_agency",
+            # "funding_agency",
+            # "recipient",
+            # # "idv_dates",
+            # "subaward_count",
+            # "total_subaward_amount",
+            # "place_of_performance",
+            # "executive_details",
+            # "latest_transaction_contract_data",
+            # # "parent_generated_unique_award_id",
+            # "total_obligation",
+            # "base_and_all_options_value",
+            # "base_exercised_options_val"
         ]
         nested_serializers = {
             "recipient": {

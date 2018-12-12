@@ -3,6 +3,8 @@ import logging
 from django.db.models import Max
 from rest_framework.request import Request
 from rest_framework.response import Response
+from botocore.exceptions import ClientError
+import boto3
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
@@ -54,6 +56,9 @@ class AwardRetrieveViewSet(APIDocumentationView):
         return validated_request_data
 
     def _business_logic(self, request_dict: dict) -> dict:
+
+        s3 = boto3.client("s3")
+
         dict_key = "id" if "id" in request_dict else "generated_unique_award_id"
 
         try:
@@ -65,34 +70,32 @@ class AwardRetrieveViewSet(APIDocumentationView):
         try:
             if award.category == 'contract':
                 parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
+                logger.info("parent recipient name", parent_recipient_name)
+
                 serialized = AwardContractSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             elif award.category == "idv":
+                logger.info("in idv")
+                # transaction.idv_type
                 parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                # parent_transaction = TransactionFPDS.objects.filter(
-                #     agency_id=idv_transaction["referenced_idv_agency_iden"],
-                #     piid=idv_transaction["parent_award_id"]).values(agency_id, referenced_idv_agency_iden, piid,
-                #                                                     parent_award_id).first()
-                # parent_generated_unique_id = (
-                #         "CONT_AW_" +
-                #         (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
-                #         "_" +
-                #         (parent_transaction["referenced_idv_agency_iden"] if parent_transaction[
-                #             "referenced_idv_agency_iden"] else "-NONE-") +
-                #         "_" +
-                #         (parent_transaction["piid"] if parent_transaction["piid"] else "-NONE-") +
-                #         "_" +
-                #         (parent_transaction["parent_award_id"] if parent_transaction["parent_award_id"] else "-NONE-")
-                # )
-                # raise NotImplementedException("IDVs are not yet implemented")
+
+                # logger.info("parent recipient name", parent_recipient_name)
+                logger.info("=============entering serialiized=========")
                 serialized = AwardIDVSerializerV2(award).data
+
+                logger.info("serialized", serialized)
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             else:
                 parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
                 serialized = AwardMiscSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
-        except AttributeError:
-            raise UnprocessableEntityException("Unable to complete response due to missing Award data")
+
+        except ClientError as e:
+            s3.exceptions.__dict__['_code_to_exception'].keys()
+            error_code = e.response['Error']['Code']
+            logger.info(error_code)
+        # except AttributeError:
+        #     raise UnprocessableEntityException("Unable to complete response due to missing Award data")
 
         return serialized
 
