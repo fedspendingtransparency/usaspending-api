@@ -87,7 +87,7 @@ class AwardRetrieveViewSet(APIDocumentationView):
 
 
 class IDVAmountsViewSet(APIDocumentationView):
-    """Return IDV values from.
+    """Return IDV values from parent_award table.
     endpoint_doc: /awards/idvs/amounts.md
     """
 
