@@ -1,10 +1,9 @@
+import logging
 from rest_framework import serializers
 from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
-import logging
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("console")
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
     award_category = serializers.CharField()
@@ -264,6 +263,7 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
             'information_technolog_desc',
             'sea_transportation_desc',
             'clinger_cohen_act_pla_desc',
+            'ordering_period_end_date',
             'construction_wage_rat_desc',
             'labor_standards_descrip',
             'materials_supplies_descrip',
@@ -353,10 +353,17 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 class AwardIDVSerializerV2(LimitableSerializerV2):
     # period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
-
+    idv_dates = serializers.SerializerMethodField("idv_dates_func")
     executive_details = serializers.SerializerMethodField("executive_details_func")
-    parent_generated_unique_award_id = serializers.SerializerMethodField('generate_parent_unique_id')
+    parent_generated_unique_award_id = serializers.SerializerMethodField('parent_unique_id_func')
 
+    def idv_dates_func(self, award):
+        transaction_data = self.latest_transaction_func(award)
+        return {
+                "start_date": award.period_of_performance_start_date,
+                "last_modified_date": award.last_modified_date,
+                "end_date": transaction_data["ordering_period_end_date"]
+                }
     def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
@@ -369,7 +376,7 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
                                 "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
-    def generate_parent_unique_id(self, award):
+    def parent_unique_id_func(self, award):
         idv_transaction = self.latest_transaction_func(award)
         try:
             parent_transaction = TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
@@ -420,7 +427,7 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
             "executive_details",
             "base_and_all_options_value",
             "base_exercised_options_val",
-            # "idv_dates"
+            "idv_dates"
         ]
         nested_serializers = {
             "recipient": {
