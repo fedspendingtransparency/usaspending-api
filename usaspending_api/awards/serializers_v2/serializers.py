@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from usaspending_api.awards.models import Award, TransactionFPDS
+from usaspending_api.awards.models import Award, ParentAward, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
 
@@ -417,3 +417,32 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class IDVAmountsSerializerV2(LimitableSerializerV2):
+    award_id = serializers.SerializerMethodField()
+    idv_count = serializers.SerializerMethodField()
+    contract_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ParentAward
+        fields = [
+            'idv_count',
+            'contract_count',
+            'rollup_total_obligation',
+            'rollup_base_and_all_options_value',
+            'rollup_base_exercised_options_val',
+            'award_id',
+        ]
+
+    @staticmethod
+    def get_award_id(parent_award):
+        return parent_award.generated_unique_award_id
+
+    @staticmethod
+    def get_idv_count(parent_award):
+        return parent_award.direct_idv_count
+
+    @staticmethod
+    def get_contract_count(parent_award):
+        return parent_award.direct_contract_count
