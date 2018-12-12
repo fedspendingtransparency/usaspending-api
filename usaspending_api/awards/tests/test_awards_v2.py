@@ -154,8 +154,6 @@ def awards_and_transactions(db):
     mommy.make('awards.Award', **award_1_model)
     mommy.make('awards.Award', **award_2_model)
 
-    mommy.make('awards.ParentAward', **input_idv_amounts)
-
 
 @pytest.mark.django_db
 def test_award_last_updated_endpoint(client):
@@ -197,7 +195,33 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 
 
 @pytest.mark.django_db
-def test_idv_award_amount_endpoint(client, awards_and_transactions):
+def test_idv_award_amount_endpoint(client):
+
+    mommy.make('awards.Award', pk=1)
+    mommy.make(
+        'awards.ParentAward',
+        award_id=1,
+        generated_unique_award_id='CONT_AW_2',
+        direct_idv_count=3,
+        direct_contract_count=4,
+        direct_total_obligation='5.01',
+        direct_base_and_all_options_value='6.02',
+        direct_base_exercised_options_val='7.03',
+        rollup_idv_count=8,
+        rollup_contract_count=9,
+        rollup_total_obligation='10.04',
+        rollup_base_and_all_options_value='11.05',
+        rollup_base_exercised_options_val='12.06',
+    )
+
+    output_idv_amounts = {
+        'idv_count': 3,
+        'contract_count': 4,
+        'rollup_total_obligation': '10.04',
+        'rollup_base_and_all_options_value': '11.05',
+        'rollup_base_exercised_options_val': '12.06',
+        'award_id': "CONT_AW_2",
+    }
 
     resp = client.get('/api/v2/awards/idvs/amounts/1/')
     assert resp.status_code == status.HTTP_200_OK
@@ -393,28 +417,4 @@ expected_response_cont = {
     "subaward_count": 10,
     "total_subaward_amount": "12345.00",
     "executive_details": {"officers": []},
-}
-
-input_idv_amounts = {
-    'award_id': 1,
-    'generated_unique_award_id': 'CONT_AW_2',
-    'direct_idv_count': 3,
-    'direct_contract_count': 4,
-    'direct_total_obligation': '5.01',
-    'direct_base_and_all_options_value': '6.02',
-    'direct_base_exercised_options_val': '7.03',
-    'rollup_idv_count': 8,
-    'rollup_contract_count': 9,
-    'rollup_total_obligation': '10.04',
-    'rollup_base_and_all_options_value': '11.05',
-    'rollup_base_exercised_options_val': '12.06',
-}
-
-output_idv_amounts = {
-    'idv_count': 3,
-    'contract_count': 4,
-    'rollup_total_obligation': '10.04',
-    'rollup_base_and_all_options_value': '11.05',
-    'rollup_base_exercised_options_val': '12.06',
-    'award_id': "CONT_AW_2",
 }
