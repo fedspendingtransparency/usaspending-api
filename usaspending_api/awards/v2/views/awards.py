@@ -3,17 +3,17 @@ import logging
 from django.db.models import Max
 from rest_framework.request import Request
 from rest_framework.response import Response
-from botocore.exceptions import ClientError
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
     AwardIDVSerializerV2
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import NotImplementedException, UnprocessableEntityException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 logger = logging.getLogger("console")
+
 
 class AwardLastUpdatedViewSet(APIDocumentationView):
     """Return all award spending by award type for a given fiscal year and agency id.
@@ -34,7 +34,6 @@ class AwardRetrieveViewSet(APIDocumentationView):
     """
     endpoint_doc: /awards.md
     """
-
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
         try:
             request_dict = {"id": int(provided_award_id)}

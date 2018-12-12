@@ -22,8 +22,8 @@ class RecipientAwardSpendingSerializer(serializers.Serializer):
 
 
 class LimitableSerializerV2(serializers.ModelSerializer):
-
     """Extends the model serializer to support field limiting."""
+
     def __init__(self, *args, **kwargs):
 
         # Grab any kwargs include and exclude fields, these are typically
@@ -294,9 +294,9 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 
     def period_of_performance_func(self, award):
         return {
-                "period_of_performance_start_date": award.period_of_performance_start_date,
-                "period_of_performance_current_end_date": award.period_of_performance_current_end_date
-                }
+            "period_of_performance_start_date": award.period_of_performance_start_date,
+            "period_of_performance_current_end_date": award.period_of_performance_current_end_date
+        }
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
@@ -304,7 +304,7 @@ class AwardContractSerializerV2(LimitableSerializerV2):
         if "officers" in entity and entity["officers"]:
             for x in range(1, 6):
                 response.append({"name": entity["officers"]["officer_" + str(x) + "_name"],
-                                "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
+                                 "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
     class Meta:
@@ -329,7 +329,7 @@ class AwardContractSerializerV2(LimitableSerializerV2):
             "subaward_count",
             "total_subaward_amount",
             "executive_details"
-         ]
+        ]
         nested_serializers = {
             "recipient": {
                 "class": LegalEntitySerializerV2,
@@ -360,10 +360,11 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
     def idv_dates_func(self, award):
         transaction_data = self.latest_transaction_func(award)
         return {
-                "start_date": award.period_of_performance_start_date,
-                "last_modified_date": award.last_modified_date,
-                "end_date": transaction_data["ordering_period_end_date"]
-                }
+            "start_date": award.period_of_performance_start_date,
+            "last_modified_date": award.last_modified_date,
+            "end_date": transaction_data["ordering_period_end_date"]
+        }
+
     def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
@@ -373,17 +374,18 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
         if "officers" in entity and entity["officers"]:
             for x in range(1, 6):
                 response.append({"name": entity["officers"]["officer_" + str(x) + "_name"],
-                                "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
+                                 "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
     def parent_unique_id_func(self, award):
         idv_transaction = self.latest_transaction_func(award)
         try:
             parent_transaction = TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
-                                                                piid=idv_transaction["parent_award_id"]).values(agency_id,
-                                                                                                                referenced_idv_agency_iden,
-                                                                                                                piid,
-                                                                                                                parent_award_id).first()
+                                                                piid=idv_transaction["parent_award_id"]).values(
+                "agency_id",
+                "referenced_idv_agency_iden",
+                "piid",
+                "parent_award_id").first()
 
             parent_generated_unique_id = (
                     "CONT_AW_" +
@@ -467,9 +469,9 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
 
     def period_of_performance_func(self, award):
         return {
-                "period_of_performance_start_date": award.period_of_performance_start_date,
-                "period_of_performance_current_end_date": award.period_of_performance_current_end_date
-                }
+            "period_of_performance_start_date": award.period_of_performance_start_date,
+            "period_of_performance_current_end_date": award.period_of_performance_current_end_date
+        }
 
     def executive_details_func(self, award):
         entity = LegalEntityOfficerPassThroughSerializerV2(award.recipient).data
@@ -501,7 +503,7 @@ class AwardMiscSerializerV2(LimitableSerializerV2):
             "period_of_performance",
             "place_of_performance",
             "executive_details",
-         ]
+        ]
         nested_serializers = {
             "recipient": {
                 "class": LegalEntitySerializerV2,
