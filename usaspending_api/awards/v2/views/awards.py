@@ -1,12 +1,14 @@
 import logging
 
+from collections import OrderedDict
+
 from django.db.models import Max
+from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import Award, ParentAward
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2, \
-    IDVAmountsSerializerV2
+from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NotImplementedException, UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
@@ -116,13 +118,27 @@ class IDVAmountsViewSet(APIDocumentationView):
     def _business_logic(request_data: dict) -> dict:
         try:
             parent_award = ParentAward.objects.get(**request_data)
-            return IDVAmountsSerializerV2(parent_award).data
+            return {
+                'data': OrderedDict((
+                    ('award_id', parent_award.award_id),
+                    ('generated_unique_award_id', parent_award.generated_unique_award_id),
+                    ('idv_count', parent_award.direct_idv_count),
+                    ('contract_count', parent_award.direct_contract_count),
+                    ('rollup_total_obligation', parent_award.rollup_total_obligation),
+                    ('rollup_base_and_all_options_value', parent_award.rollup_base_and_all_options_value),
+                    ('rollup_base_exercised_options_val', parent_award.rollup_base_exercised_options_val),
+                )),
+                'status': status.HTTP_200_OK
+            }
         except ParentAward.DoesNotExist:
             logger.info("No IDV Award found where '%s' is '%s'" % next(iter(request_data.items())))
-            return {'message': 'No IDV award found with this id'}  # Consider returning 404 or 410 error code
+            return {
+                'data': OrderedDict({'message': 'No IDV award found with this id'}),
+                'status': status.HTTP_404_NOT_FOUND
+            }
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:
         """Return IDV counts and sums"""
         request_data = self._parse_and_validate_request(requested_award)
-        return Response(self._business_logic(request_data))
+        return Response(**self._business_logic(request_data))
