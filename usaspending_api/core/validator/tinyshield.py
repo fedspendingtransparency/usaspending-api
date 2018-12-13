@@ -80,9 +80,7 @@ VALIDATORS = {
 
 class TinyShield:
     """
-    Class to validate/sanity-check request input before use.  Although designed to work primarily with Django/DRF
-    requests, the consumer is in complete control over what gets validated so feel free to validate POST data, PUT
-    data, GET data, data from files, whatever!
+    Class to validate/sanity-check request input before use.
 
     TYPICAL USAGE
 
@@ -94,7 +92,7 @@ class TinyShield:
            {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
         ]
 
-    Then validate the request using the ".block" method (assuming Django Rest Framework (DRF) request):
+    Then validate the request using the ".block" method (assuming a Django Rest Framework (DRF) request):
 
         validated = TinyShield(models).block(request.data)
 
@@ -103,7 +101,7 @@ class TinyShield:
 
     ALTERNATE USAGE
 
-    Another common usage is to define your own "request object" as a dictionary:
+    Another common usage is to define your own request object as a dictionary:
 
         models = [
            {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
