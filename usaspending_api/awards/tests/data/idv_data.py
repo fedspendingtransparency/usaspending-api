@@ -1,9 +1,9 @@
-import pytest
 from model_mommy import mommy
 from copy import deepcopy
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
+
 
 def set_up_related_award_objects():
 
@@ -97,8 +97,8 @@ def set_up_related_award_objects():
     }
     mommy.make("awards.TransactionFPDS", **cont_data)
 
-    
-def create_tree(*awards):
+
+def create_tree(awards):
     generic_model = {
         "type_description": "FAKE",
         "category": "contract",
@@ -119,5 +119,3 @@ def create_tree(*awards):
         new_model = {**generic_model, **award}
         award_dict.append(new_model)
     return award_dict
-        
-
