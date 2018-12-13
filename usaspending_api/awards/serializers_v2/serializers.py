@@ -351,11 +351,40 @@ class AwardContractSerializerV2(LimitableSerializerV2):
 
 
 class AwardIDVSerializerV2(LimitableSerializerV2):
-    # period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
     idv_dates = serializers.SerializerMethodField("idv_dates_func")
     executive_details = serializers.SerializerMethodField("executive_details_func")
-    parent_generated_unique_award_id = serializers.SerializerMethodField('parent_unique_id_func')
+    parent_generated_unique_award_id = serializers.SerializerMethodField('parent_idv_details_func')
+
+    # return new parentidv object (new addition to api docs 12/13 3:52pm -jl
+    def parent_idv_details_func(self, award):
+        idv_transaction = self.latest_transaction_func(award)
+        try:
+            parent_transaction = TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
+                                                                piid=idv_transaction["parent_award_id"]).values(
+                "agency_id",
+                "referenced_idv_agency_iden",
+                "piid",
+                "parent_award_id").first()
+
+            parent_agency_id = parent_transaction["agency_id"]
+            parent_reference_idv_agency_iden = parent_transaction["referenced_idv_agency_iden"]
+            parent_piid = parent_transaction["piid"]
+            parent_award_id = parent_transaction["parent_award_id"]
+
+            return {
+                "agency_id": parent_agency_id,
+                "referenced_idv_agency_iden": parent_reference_idv_agency_iden,
+                "piid": parent_piid,
+                "parent_award_id": parent_award_id
+            }
+
+        except KeyError as e:
+            logger.info("key error occurred")
+            logger.info(e)
+            parent_generated_unique_id = None
+
+        return parent_generated_unique_id
 
     def idv_dates_func(self, award):
         transaction_data = self.latest_transaction_func(award)
@@ -377,6 +406,7 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
                                  "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
+    # todo: revert parent generated unique id back to its original purpose  -jl
     def parent_unique_id_func(self, award):
         idv_transaction = self.latest_transaction_func(award)
         try:
@@ -429,7 +459,8 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
             "executive_details",
             "base_and_all_options_value",
             "base_exercised_options_val",
-            "idv_dates"
+            "idv_dates",
+            "parent_unique_award",
         ]
         nested_serializers = {
             "recipient": {
