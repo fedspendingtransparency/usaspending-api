@@ -215,12 +215,13 @@ def test_idv_award_amount_endpoint(client):
     )
 
     output_idv_amounts = {
+        'award_id': 1,
+        'generated_unique_award_id': 'CONT_AW_2',
         'idv_count': 3,
         'contract_count': 4,
-        'rollup_total_obligation': '10.04',
-        'rollup_base_and_all_options_value': '11.05',
-        'rollup_base_exercised_options_val': '12.06',
-        'award_id': "CONT_AW_2",
+        'rollup_total_obligation': 10.04,
+        'rollup_base_and_all_options_value': 11.05,
+        'rollup_base_exercised_options_val': 12.06,
     }
 
     resp = client.get('/api/v2/awards/idvs/amounts/1/')
@@ -232,11 +233,11 @@ def test_idv_award_amount_endpoint(client):
     assert json.loads(resp.content.decode('utf-8')) == output_idv_amounts
 
     resp = client.get('/api/v2/awards/idvs/amounts/3/')
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert json.loads(resp.content.decode('utf-8')) == {'message': 'No IDV award found with this id'}
 
     resp = client.get('/api/v2/awards/idvs/amounts/BOGUS_ID/')
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert json.loads(resp.content.decode('utf-8')) == {'message': 'No IDV award found with this id'}
 
     resp = client.get('/api/v2/awards/idvs/amounts/INVALID_ID_&&&/')
