@@ -40,8 +40,8 @@
 --                                                                                 ---------------
 --                                                                                 |             |
 --                                                                         |-------------| |-------------|
---                                                                         |  CONTRACT 4 | | CONTRACT 5  |
---                                                                         |      $2     | |     $2      |
+--                                                                         |  CONTRACT 4 | |  CONTRACT 5 |
+--                                                                         |      $2     | |      $2     |
 --                                                                         |-------------| |-------------|
 --
 -- Using above model, values would be as follows.  Only showing total_obligation for dollar figures to shorten example.
