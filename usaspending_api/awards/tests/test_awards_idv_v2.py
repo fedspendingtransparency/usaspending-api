@@ -13,65 +13,77 @@ from usaspending_api.references.models import Agency, Location, ToptierAgency, S
 def test_idv_award_endpoint(client):
     """Test the /v2/awards endpoint."""
 
-    resp = client.get('/api/v2/awards/27254436')
+    resp = client.get("/api/v2/awards/27254436")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data) > 1
 
-    assert client.get(
-        '/api/v2/awards/27254436',
-        content_type='application/json').status_code == status.HTTP_200_OK
+    assert client.get("/api/v2/awards/27254436", content_type="application/json").status_code == status.HTTP_200_OK
 
-    assert client.get(
-        '/api/v1/awards/?page=1&limit=10',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": [{
-                "field": "funding_agency__toptier_agency__fpds_code",
-                "operation": "equals",
-                "value": "0300"
-            }]
-        })).status_code == status.HTTP_200_OK
+    assert (
+        client.get(
+            "/api/v1/awards/?page=1&limit=10",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "filters": [
+                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "equals", "value": "0300"}
+                    ]
+                }
+            ),
+        ).status_code
+        == status.HTTP_200_OK
+    )
 
-    assert client.post(
-        '/api/v1/awards/?page=1&limit=10',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": [{
-                "combine_method": "OR",
-                "filters": [{
-                    "field": "funding_agency__toptier_agency__fpds_code",
-                    "operation": "equals",
-                    "value": "0300"
-                }, {
-                    "field": "awarding_agency__toptier_agency__fpds_code",
-                    "operation": "equals",
-                    "value": "0300"
-                }]
-            }]
-        })).status_code == status.HTTP_200_OK
+    assert (
+        client.post(
+            "/api/v1/awards/?page=1&limit=10",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "filters": [
+                        {
+                            "combine_method": "OR",
+                            "filters": [
+                                {
+                                    "field": "funding_agency__toptier_agency__fpds_code",
+                                    "operation": "equals",
+                                    "value": "0300",
+                                },
+                                {
+                                    "field": "awarding_agency__toptier_agency__fpds_code",
+                                    "operation": "equals",
+                                    "value": "0300",
+                                },
+                            ],
+                        }
+                    ]
+                }
+            ),
+        ).status_code
+        == status.HTTP_200_OK
+    )
 
-    assert client.post(
-        '/api/v1/awards/?page=1&limit=10',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": [{
-                "field": "funding_agency__toptier_agency__fpds_code",
-                "operation": "ff",
-                "value": "0300"
-            }]
-        })).status_code == status.HTTP_400_BAD_REQUEST
+    assert (
+        client.post(
+            "/api/v1/awards/?page=1&limit=10",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "filters": [
+                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "ff", "value": "0300"}
+                    ]
+                }
+            ),
+        ).status_code
+        == status.HTTP_400_BAD_REQUEST
+    )
 
 
 @pytest.mark.django_db
 def test_null_awards():
     """Test the award.nonempty command."""
-    mommy.make('awards.Award', total_obligation="2000", _quantity=2)
-    mommy.make(
-        'awards.Award',
-        type="U",
-        total_obligation=None,
-        date_signed=None,
-        recipient=None)
+    mommy.make("awards.Award", total_obligation="2000", _quantity=2)
+    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None, recipient=None)
 
     assert Award.objects.count() == 3
     assert Award.nonempty.count() == 2
@@ -79,42 +91,30 @@ def test_null_awards():
 
 @pytest.fixture
 def awards_data(db):
-    mommy.make(
-        'awards.Award',
-        piid='zzz',
-        fain='abc123',
-        type='B',
-        total_obligation=1000)
-    mommy.make(
-        'awards.Award',
-        piid='###',
-        fain='ABC789',
-        type='B',
-        total_obligation=1000)
-    mommy.make('awards.Award', fain='XYZ789', type='C', total_obligation=1000)
+    mommy.make("awards.Award", piid="zzz", fain="abc123", type="B", total_obligation=1000)
+    mommy.make("awards.Award", piid="###", fain="ABC789", type="B", total_obligation=1000)
+    mommy.make("awards.Award", fain="XYZ789", type="C", total_obligation=1000)
 
 
 def test_award_total_grouped(client, awards_data):
     """Test award total endpoint with a group parameter."""
 
     resp = client.post(
-        '/api/v1/awards/total/',
-        content_type='application/json',
-        data=json.dumps({
-            'field': 'total_obligation',
-            'group': 'type',
-            'aggregate': 'sum'
-        }))
+        "/api/v1/awards/total/",
+        content_type="application/json",
+        data=json.dumps({"field": "total_obligation", "group": "type", "aggregate": "sum"}),
+    )
     assert resp.status_code == status.HTTP_200_OK
-    results = resp.data['results']
+    results = resp.data["results"]
     # our data has two different type codes, we should get two summarized items back
     assert len(results) == 2
     # check total
-    for result in resp.data['results']:
-        if result['item'] == 'B':
-            assert float(result['aggregate']) == 2000
+    for result in resp.data["results"]:
+        if result["item"] == "B":
+            assert float(result["aggregate"]) == 2000
         else:
-            assert float(result['aggregate']) == 1000
+            assert float(result["aggregate"]) == 1000
+
 
 @pytest.fixture
 def awards_and_transactions(db):
@@ -151,7 +151,7 @@ def awards_and_transactions(db):
         "recipient_name": "John's Pizza",
         "recipient_unique_id": 456,
         "parent_recipient_unique_id": 123,
-        "business_categories": ['small_business'],
+        "business_categories": ["small_business"],
         "location": Location.objects.get(pk=1),
     }
 
@@ -167,7 +167,6 @@ def awards_and_transactions(db):
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **le)
 
-
     asst_data = {
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
@@ -175,18 +174,9 @@ def awards_and_transactions(db):
         "cfda_title": "Shazam",
     }
 
-    parent_unique_award = {
-        "agency_id": "192",
-        "referenced_idv_agency_iden": "168",
-        "piid": "0",
-        "parent_award_id": "1",
-    }
+    parent_unique_award = {"agency_id": "192", "referenced_idv_agency_iden": "168", "piid": "0", "parent_award_id": "1"}
 
-    idv_date_obj = {
-        "end_date": "2025-06-30",
-        "start_date": "2010-09-23",
-        "last_modified_date": "2018-08-24"
-    }
+    idv_date_obj = {"end_date": "2025-06-30", "start_date": "2010-09-23", "last_modified_date": "2018-08-24"}
 
     latest_transaction_contract_data = {
         "pk": 2,
@@ -249,8 +239,7 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
-        "idv_dates": idv_date_obj
-
+        "idv_dates": idv_date_obj,
     }
 
     award_2_model = {
@@ -272,8 +261,8 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "idv_dates": idv_date_obj,
     }
-    mommy.make('awards.Award', **award_1_model)
-    mommy.make('awards.Award', **award_2_model)
+    mommy.make("awards.Award", **award_1_model)
+    mommy.make("awards.Award", **award_2_model)
 
 
 @pytest.mark.django_db
@@ -281,34 +270,34 @@ def test_award_last_updated_endpoint(client):
     """Test the awards endpoint."""
 
     test_date = datetime.datetime.now()
-    test_date_reformatted = test_date.strftime('%m/%d/%Y')
+    test_date_reformatted = test_date.strftime("%m/%d/%Y")
 
-    mommy.make('awards.Award', update_date=test_date)
-    mommy.make('awards.Award', update_date='')
+    mommy.make("awards.Award", update_date=test_date)
+    mommy.make("awards.Award", update_date="")
 
-    resp = client.get('/api/v2/awards/last_updated/')
+    resp = client.get("/api/v2/awards/last_updated/")
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data['last_updated'] == test_date_reformatted
+    assert resp.data["last_updated"] == test_date_reformatted
 
 
 @pytest.mark.django_db
 def test_award_endpoint_generated_id(client, awards_and_transactions):
 
-    resp = client.get('/api/v2/awards/ASST_AW_3620_-NONE-_1830212.0481163/')
+    resp = client.get("/api/v2/awards/ASST_AW_3620_-NONE-_1830212.0481163/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
 
-    resp = client.get('/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/')
+    resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
 
-
-# @pytest.mark.django_db
-# def test_award_endpoint_primary_key(client, awards_and_transactions):
+    # @pytest.mark.django_db
+    # def test_award_endpoint_primary_key(client, awards_and_transactions):
     """Unable to run these in a new test function, so combining with above test function"""
-    resp = client.get('/api/v2/awards/1/')
+    resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
+
 
 expected_response_idv = {
     "id": 2,
@@ -412,38 +401,19 @@ expected_response_idv = {
         "multi_year_contract_desc": "YES",
         "purchase_card_as_paym_desc": None,
         "consolidated_contract_desc": "NO",
-        "type_of_contract_pric_desc": "FIRM FIXED PRICE"
+        "type_of_contract_pric_desc": "FIRM FIXED PRICE",
     },
     "executive_details": {
         "officers": [
-            {
-                "name": "Salvatore T Bruno ",
-                "amount": "2127685.00"
-            },
-            {
-                "name": "Daniel J Collins ",
-                "amount": "1323860.00"
-            },
-            {
-                "name": "Charles G Krisch ",
-                "amount": "560304.00"
-            },
-            {
-                "name": "James J DeNapoli ",
-                "amount": "475534.00"
-            },
-            {
-                "name": "Robbie K Sabathier ",
-                "amount": "463429.00"
-            }
+            {"name": "Salvatore T Bruno ", "amount": "2127685.00"},
+            {"name": "Daniel J Collins ", "amount": "1323860.00"},
+            {"name": "Charles G Krisch ", "amount": "560304.00"},
+            {"name": "James J DeNapoli ", "amount": "475534.00"},
+            {"name": "Robbie K Sabathier ", "amount": "463429.00"},
         ]
     },
     "base_exercised_options_val": None,
-    "idv_dates": {
-        "end_date": "2025-06-30",
-        "start_date": "2010-09-23",
-        "last_modified_date": "2018-08-24"
-    }
+    "idv_dates": {"end_date": "2025-06-30", "start_date": "2010-09-23", "last_modified_date": "2018-08-24"},
     "subaward_count": 10,
     "total_subaward_amount": "12345.00",
 }

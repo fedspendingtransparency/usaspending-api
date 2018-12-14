@@ -1,9 +1,12 @@
 import logging
 from rest_framework import serializers
+
 from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
+
 logger = logging.getLogger("console")
+
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
     award_category = serializers.CharField()
@@ -181,6 +184,7 @@ class AgencySerializerV2(LimitableSerializerV2):
     class Meta:
         model = Agency
         fields = [
+            "id",
             "toptier_agency",
             "subtier_agency",
             "office_agency_name",
@@ -257,13 +261,13 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
             'small_business_competitive',
             'fair_opportunity_limi_desc',
             'product_or_service_code',
+            'product_or_service_co_desc',
             'naics',
             'dod_claimant_program_code',
             'program_system_or_equipmen',
             'information_technolog_desc',
             'sea_transportation_desc',
             'clinger_cohen_act_pla_desc',
-            'ordering_period_end_date',
             'construction_wage_rat_desc',
             'labor_standards_descrip',
             'materials_supplies_descrip',
@@ -279,6 +283,7 @@ class TransactionFPDSSerializerV2(LimitableSerializerV2):
             'purchase_card_as_paym_desc',
             'consolidated_contract_desc',
             'type_of_contract_pric_desc',
+            'ordering_period_end_date',
         ]
 
 
@@ -354,37 +359,7 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
     idv_dates = serializers.SerializerMethodField("idv_dates_func")
     executive_details = serializers.SerializerMethodField("executive_details_func")
-    parent_generated_unique_award_id = serializers.SerializerMethodField('parent_idv_details_func')
-
-    # return new parentidv object (new addition to api docs 12/13 3:52pm -jl
-    def parent_idv_details_func(self, award):
-        idv_transaction = self.latest_transaction_func(award)
-        try:
-            parent_transaction = TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
-                                                                piid=idv_transaction["parent_award_id"]).values(
-                "agency_id",
-                "referenced_idv_agency_iden",
-                "piid",
-                "parent_award_id").first()
-
-            parent_agency_id = parent_transaction["agency_id"]
-            parent_reference_idv_agency_iden = parent_transaction["referenced_idv_agency_iden"]
-            parent_piid = parent_transaction["piid"]
-            parent_award_id = parent_transaction["parent_award_id"]
-
-            return {
-                "agency_id": parent_agency_id,
-                "referenced_idv_agency_iden": parent_reference_idv_agency_iden,
-                "piid": parent_piid,
-                "parent_award_id": parent_award_id
-            }
-
-        except KeyError as e:
-            logger.info("key error occurred")
-            logger.info(e)
-            parent_generated_unique_id = None
-
-        return parent_generated_unique_id
+    parent_generated_unique_award_id = serializers.SerializerMethodField('parent_unique_id_func')
 
     def idv_dates_func(self, award):
         transaction_data = self.latest_transaction_func(award)
@@ -408,29 +383,26 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
 
     # todo: revert parent generated unique id back to its original purpose  -jl
     def parent_unique_id_func(self, award):
-        idv_transaction = self.latest_transaction_func(award)
-        try:
-            parent_transaction = TransactionFPDS.objects.filter(agency_id=idv_transaction["referenced_idv_agency_iden"],
-                                                                piid=idv_transaction["parent_award_id"]).values(
-                "agency_id",
-                "referenced_idv_agency_iden",
-                "piid",
-                "parent_award_id").first()
+        parent_transaction = TransactionFPDS.objects.filter(agency_id=award.fpds_parent_agency_id,
+                                                            piid=award.parent_award_piid).values(
+            "agency_id",
+            "referenced_idv_agency_iden",
+            "piid",
+            "parent_award_id").first()
 
+        if parent_transaction:
             parent_generated_unique_id = (
-                    "CONT_AW_" +
-                    (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
-                    "_" +
-                    (parent_transaction["referenced_idv_agency_iden"] if parent_transaction[
-                        "referenced_idv_agency_iden"] else "-NONE-") +
-                    "_" +
-                    (parent_transaction["piid"] if parent_transaction["piid"] else "-NONE-") +
-                    "_" +
-                    (parent_transaction["parent_award_id"] if parent_transaction["parent_award_id"] else "-NONE-")
+                "CONT_AW_" +
+                (parent_transaction["agency_id"] if parent_transaction["agency_id"] else "-NONE-") +
+                "_" +
+                (parent_transaction["referenced_idv_agency_iden"] if parent_transaction[
+                    "referenced_idv_agency_iden"] else "-NONE-") +
+                "_" +
+                (parent_transaction["piid"] if parent_transaction["piid"] else "-NONE-") +
+                "_" +
+                (parent_transaction["parent_award_id"] if parent_transaction["parent_award_id"] else "-NONE-")
             )
-        except KeyError as e:
-            logger.info("key error occurred")
-            logger.info(e)
+        else:
             parent_generated_unique_id = None
 
         return parent_generated_unique_id
@@ -440,27 +412,26 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
         model = Award
         fields = [
             "id",
+            "generated_unique_award_id",
+            "piid",
+            "parent_generated_unique_award_id",
+            "parent_award_piid",
             "type",
             "category",
             "type_description",
-            "piid",
-            "parent_award_piid",
             "description",
+            "total_obligation",
+            "base_exercised_options_val",
+            "base_and_all_options_value",
+            "subaward_count",
+            "total_subaward_amount",
             "awarding_agency",
             "funding_agency",
             "recipient",
-            "total_obligation",
-            "base_and_all_options_value",
             "place_of_performance",
-            "latest_transaction_contract_data",
-            "subaward_count",
-            "parent_generated_unique_award_id",
-            "total_subaward_amount",
             "executive_details",
-            "base_and_all_options_value",
-            "base_exercised_options_val",
             "idv_dates",
-            "parent_unique_award",
+            "latest_transaction_contract_data",
         ]
         nested_serializers = {
             "recipient": {
