@@ -7,10 +7,12 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+
 from usaspending_api.awards.models import Award, ParentAward
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2
+from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
+    AwardIDVSerializerV2
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import NotImplementedException, UnprocessableEntityException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.tinyshield import TinyShield
 
@@ -71,11 +73,14 @@ class AwardRetrieveViewSet(APIDocumentationView):
                 serialized = AwardContractSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             elif award.category == "idv":
-                raise NotImplementedException("IDVs are not yet implemented")
+                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
+                serialized = AwardIDVSerializerV2(award).data
+                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             else:
                 parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
                 serialized = AwardMiscSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
+
         except AttributeError:
             raise UnprocessableEntityException("Unable to complete response due to missing Award data")
 
