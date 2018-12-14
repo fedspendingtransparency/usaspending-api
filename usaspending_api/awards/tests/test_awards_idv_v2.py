@@ -5,88 +5,8 @@ import json
 from rest_framework import status
 from model_mommy import mommy
 
-from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized, Award
 from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
-
-
-@pytest.mark.django_db
-def test_idv_award_endpoint(client):
-    """Test the /v2/awards endpoint."""
-
-    resp = client.get("/api/v2/awards/27254436")
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data) > 1
-
-    assert client.get("/api/v2/awards/27254436", content_type="application/json").status_code == status.HTTP_200_OK
-
-    assert (
-        client.get(
-            "/api/v1/awards/?page=1&limit=10",
-            content_type="application/json",
-            data=json.dumps(
-                {
-                    "filters": [
-                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "equals", "value": "0300"}
-                    ]
-                }
-            ),
-        ).status_code
-        == status.HTTP_200_OK
-    )
-
-    assert (
-        client.post(
-            "/api/v1/awards/?page=1&limit=10",
-            content_type="application/json",
-            data=json.dumps(
-                {
-                    "filters": [
-                        {
-                            "combine_method": "OR",
-                            "filters": [
-                                {
-                                    "field": "funding_agency__toptier_agency__fpds_code",
-                                    "operation": "equals",
-                                    "value": "0300",
-                                },
-                                {
-                                    "field": "awarding_agency__toptier_agency__fpds_code",
-                                    "operation": "equals",
-                                    "value": "0300",
-                                },
-                            ],
-                        }
-                    ]
-                }
-            ),
-        ).status_code
-        == status.HTTP_200_OK
-    )
-
-    assert (
-        client.post(
-            "/api/v1/awards/?page=1&limit=10",
-            content_type="application/json",
-            data=json.dumps(
-                {
-                    "filters": [
-                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "ff", "value": "0300"}
-                    ]
-                }
-            ),
-        ).status_code
-        == status.HTTP_400_BAD_REQUEST
-    )
-
-
-@pytest.mark.django_db
-def test_null_awards():
-    """Test the award.nonempty command."""
-    mommy.make("awards.Award", total_obligation="2000", _quantity=2)
-    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None, recipient=None)
-
-    assert Award.objects.count() == 3
-    assert Award.nonempty.count() == 2
 
 
 @pytest.fixture
@@ -94,26 +14,6 @@ def awards_data(db):
     mommy.make("awards.Award", piid="zzz", fain="abc123", type="B", total_obligation=1000)
     mommy.make("awards.Award", piid="###", fain="ABC789", type="B", total_obligation=1000)
     mommy.make("awards.Award", fain="XYZ789", type="C", total_obligation=1000)
-
-
-def test_award_total_grouped(client, awards_data):
-    """Test award total endpoint with a group parameter."""
-
-    resp = client.post(
-        "/api/v1/awards/total/",
-        content_type="application/json",
-        data=json.dumps({"field": "total_obligation", "group": "type", "aggregate": "sum"}),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    results = resp.data["results"]
-    # our data has two different type codes, we should get two summarized items back
-    assert len(results) == 2
-    # check total
-    for result in resp.data["results"]:
-        if result["item"] == "B":
-            assert float(result["aggregate"]) == 2000
-        else:
-            assert float(result["aggregate"]) == 1000
 
 
 @pytest.fixture
@@ -171,12 +71,8 @@ def awards_and_transactions(db):
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
         "cfda_number": 1234,
-        "cfda_title": "Shazam",
+        "cfda_title": "farms",
     }
-
-    parent_unique_award = {"agency_id": "192", "referenced_idv_agency_iden": "168", "piid": "0", "parent_award_id": "1"}
-
-    idv_date_obj = {"end_date": "2025-06-30", "start_date": "2010-09-23", "last_modified_date": "2018-08-24"}
 
     latest_transaction_contract_data = {
         "pk": 2,
@@ -186,7 +82,6 @@ def awards_and_transactions(db):
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "idv_type_description": "IDC",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-        "referenced_idv_agency_iden": None,
         "multiple_or_single_aw_desc": "MULTIPLE AWARD",
         "dod_claimant_program_code": "C9E",
         "clinger_cohen_act_pla_desc": "NO",
@@ -220,6 +115,13 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "materials_supplies_descrip": "NO",
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "ordering_period_end_date": "2025-06-30",
+        "period_of_performance_star": "2010-09-23",
+        "last_modified": "2018-08-24",
+        "agency_id": "192",
+        "referenced_idv_agency_iden": "168",
+        "piid": "0",
+        "parent_award_id": "1",
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
@@ -228,7 +130,6 @@ def awards_and_transactions(db):
         "type": "IDV_B_B",
         "category": "idv",
         "piid": 1234,
-        "parent_unique_award": parent_unique_award,
         "type_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
         "description": "lorem ipsum",
         "generated_unique_award_id": "ASST_AW_3620_-NONE-_1830212.0481163",
@@ -239,7 +140,6 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
-        "idv_dates": idv_date_obj,
     }
 
     award_2_model = {
@@ -259,10 +159,27 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "idv_dates": idv_date_obj,
     }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
+
+
+@pytest.mark.django_db
+def test_no_data_idv_award_endpoint(client):
+    """Test the /v2/awards endpoint."""
+
+    resp = client.get("/api/v2/awards/27254436/", content_type="application/json")
+    assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_null_awards():
+    """Test the award.nonempty command."""
+    mommy.make("awards.Award", total_obligation="2000", _quantity=2)
+    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None, recipient=None)
+
+    assert Award.objects.count() == 3
+    assert Award.nonempty.count() == 2
 
 
 @pytest.mark.django_db
@@ -282,19 +199,7 @@ def test_award_last_updated_endpoint(client):
 
 @pytest.mark.django_db
 def test_award_endpoint_generated_id(client, awards_and_transactions):
-
-    resp = client.get("/api/v2/awards/ASST_AW_3620_-NONE-_1830212.0481163/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
-
-    resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
-
-    # @pytest.mark.django_db
-    # def test_award_endpoint_primary_key(client, awards_and_transactions):
-    """Unable to run these in a new test function, so combining with above test function"""
-    resp = client.get("/api/v2/awards/1/")
+    resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
@@ -308,12 +213,14 @@ expected_response_idv = {
     "parent_award_piid": "1234",
     "description": "lorem ipsum",
     "awarding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
         "office_agency": {"aac_code": None, "name": "office_agency"},
     },
     "funding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
@@ -343,50 +250,33 @@ expected_response_idv = {
     },
     "total_obligation": "1000.00",
     "base_and_all_options_value": "2000.00",
-    "period_of_performance": {
-        "period_of_performance_start_date": "2004-02-04",
-        "period_of_performance_current_end_date": "2005-02-04",
-    },
-    "place_of_performance": {
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "foreign_province": None,
-        "city_name": "Charlotte",
-        "county_name": "BUNCOMBE",
-        "state_code": "NC",
-        "zip5": "12204",
-        "zip4": "122045312",
-        "foreign_postal_code": None,
-        "country_name": "UNITED STATES",
-        "location_country_code": "USA",
-        "congressional_code": "90",
-    },
+    "period_of_performance": {"period_of_performance_current_end_date": None, "period_of_performance_start_date": None},
+    "place_of_performance": None,
     "latest_transaction_contract_data": {
         "idv_type_description": "IDC",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-        "referenced_idv_agency_iden": None,
+        "referenced_idv_agency_iden": "168",
         "multiple_or_single_aw_desc": "MULTIPLE AWARD",
         "solicitation_identifier": None,
         "solicitation_procedures": "NP",
-        "number_of_offers_received": "5",
-        "extent_competed": "A",
+        "number_of_offers_received": None,
+        "extent_competed": "D",
         "other_than_full_and_o_desc": None,
-        "type_set_aside_description": "NO SET ASIDE USED.",
+        "type_set_aside_description": None,
         "commercial_item_acquisitio": "A",
         "commercial_item_test_desc": "NO",
         "evaluated_preference_desc": "NO PREFERENCE USED",
         "fed_biz_opps_description": "YES",
         "small_business_competitive": "False",
         "fair_opportunity_limi_desc": None,
-        "product_or_service_code": "V126",
-        "naics": "336414",
-        "dod_claimant_program_code": None,
-        "program_system_or_equipmen": None,
-        "information_technolog_desc": None,
-        "sea_transportation_desc": None,
+        "product_or_service_code": "4730",
+        "product_or_service_co_desc": None,
+        "naics": "333911",
+        "dod_claimant_program_code": "C9E",
+        "program_system_or_equipmen": "000",
+        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "sea_transportation_desc": "NO",
         "clinger_cohen_act_pla_desc": "NO",
-        "ordering_period_end_date": "2025-06-30",
         "construction_wage_rat_desc": "NO",
         "labor_standards_descrip": "NO",
         "materials_supplies_descrip": "NO",
@@ -394,26 +284,17 @@ expected_response_idv = {
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
         "foreign_funding_desc": "NOT APPLICABLE",
         "interagency_contract_desc": "NOT APPLICABLE",
-        "major_program": "LAUNCH SERVICES PROGRAM",
+        "major_program": None,
         "price_evaluation_adjustmen": None,
-        "program_acronym": "AGVY-LSP",
-        "subcontracting_plan": "C",
-        "multi_year_contract_desc": "YES",
-        "purchase_card_as_paym_desc": None,
-        "consolidated_contract_desc": "NO",
+        "program_acronym": None,
+        "subcontracting_plan": "B",
+        "multi_year_contract_desc": "NO",
+        "purchase_card_as_paym_desc": "NO",
+        "consolidated_contract_desc": "NOT CONSOLIDATED",
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
+        "ordering_period_end_date": "2025-06-30",
     },
-    "executive_details": {
-        "officers": [
-            {"name": "Salvatore T Bruno ", "amount": "2127685.00"},
-            {"name": "Daniel J Collins ", "amount": "1323860.00"},
-            {"name": "Charles G Krisch ", "amount": "560304.00"},
-            {"name": "James J DeNapoli ", "amount": "475534.00"},
-            {"name": "Robbie K Sabathier ", "amount": "463429.00"},
-        ]
-    },
-    "base_exercised_options_val": None,
-    "idv_dates": {"end_date": "2025-06-30", "start_date": "2010-09-23", "last_modified_date": "2018-08-24"},
     "subaward_count": 10,
     "total_subaward_amount": "12345.00",
+    "executive_details": {"officers": []},
 }

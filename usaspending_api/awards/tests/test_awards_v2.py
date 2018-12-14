@@ -37,7 +37,7 @@ def awards_and_transactions(db):
     mommy.make("recipient.DUNS", **duns)
     mommy.make("references.SubtierAgency", **subag)
     mommy.make("references.ToptierAgency", **subag)
-    mommy.make("references.OfficeAgency", name="office_agency")
+    mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
 
     le = {
         "pk": 1,
@@ -181,10 +181,6 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
 
-
-# @pytest.mark.django_db
-# def test_award_endpoint_primary_key(client, awards_and_transactions):
-    """Unable to run these in a new test function, so combining with above test function"""
     resp = client.get('/api/v2/awards/1/')
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
@@ -205,12 +201,14 @@ expected_response_asst = {
     "cfda_number": "1234",
     "cfda_title": "Shazam",
     "awarding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
         "office_agency": {"aac_code": None, "name": "office_agency"},
     },
     "funding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
@@ -271,12 +269,14 @@ expected_response_cont = {
     "parent_award_piid": "1234",
     "description": "lorem ipsum",
     "awarding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
         "office_agency": {"aac_code": None, "name": "office_agency"},
     },
     "funding_agency": {
+        "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff"},
         "office_agency_name": "office_agency",
@@ -343,6 +343,7 @@ expected_response_cont = {
         "small_business_competitive": "False",
         "fair_opportunity_limi_desc": None,
         "product_or_service_code": "4730",
+        "product_or_service_co_desc": None,
         "naics": "333911",
         "dod_claimant_program_code": "C9E",
         "program_system_or_equipmen": "000",
@@ -364,6 +365,7 @@ expected_response_cont = {
         "purchase_card_as_paym_desc": "NO",
         "consolidated_contract_desc": "NOT CONSOLIDATED",
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
+        "ordering_period_end_date": None,
     },
     "subaward_count": 10,
     "total_subaward_amount": "12345.00",
