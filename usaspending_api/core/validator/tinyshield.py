@@ -80,38 +80,80 @@ VALIDATORS = {
 
 class TinyShield:
     """
-    Structure
-    model- dictionary representing a validator
-    {
-        name:
-        key: dict|subitem|all|split|by|pipes
-        type: type of validator
-            array
-            boolean
-            date
-            datetime
-            enum
-            float
-            integer
-            object
-            passthrough
-            text
-            schema
-        text_type:
-            search
-            raw
-            sql
-            url
-            password
-        default:
-            the default value if no key-value is provided for this param
-        allow_nulls:
-            if True, a value of None is allowed
-        optional:
-            If False, then key-value must be present. Overrides `default`
-    }
+    Class to validate/sanity-check request input before use.
 
-    Validated data is stored in self.data, which is a flat dictionary
+    TYPICAL USAGE
+
+    Probably the most common pattern is to define "models" that describe the data expected from a Django or DRF
+    request:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+    Then validate the request using the ".block" method (assuming a Django Rest Framework (DRF) request):
+
+        validated = TinyShield(models).block(request.data)
+
+    This will validate POST/PUT data for the fields "id" and "city" in the request provided.  The validated data will
+    be available in the "validated" variable using the keys provided in the "models" list.
+
+    ALTERNATE USAGE
+
+    Another common usage is to define your own request object as a dictionary:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+        my_request = {
+            'id': 12345,
+            'city': 'French Lick',
+        }
+
+    Then validate my_request as above:
+
+        validated = TinyShield(models).block(my_request)
+
+    INPUT
+
+    "model" is a dictionary representing a validator which is defined as follows:
+
+        {
+            name: this field doesn't seem to actually do anything, but it does need to be unique!
+            key:  dict|subitem|all|split|by|pipes
+            type: type of validator
+                array
+                boolean
+                date
+                datetime
+                enum
+                float
+                integer
+                object
+                passthrough
+                text
+                schema
+            text_type:
+                search
+                raw
+                sql
+                url
+                password
+            default:
+                the default value if no key-value is provided for this param
+            allow_nulls:
+                if True, a value of None is allowed
+            optional:
+                If False, then key-value must be present. Overrides `default`
+        }
+
+    RETURNS
+
+    A dictionary of the validated data keyed on model.key from the input "model" list provided during instantiation.
+    Validated data is also accessible via self.data.
     """
 
     def __init__(self, model_list):
