@@ -292,8 +292,6 @@ class AwardContractSerializerV2(LimitableSerializerV2):
     period_of_performance = serializers.SerializerMethodField("period_of_performance_func")
     latest_transaction_contract_data = serializers.SerializerMethodField('latest_transaction_func')
 
-    # def latest_transaction_func2(self2, award):
-    #     return TransactionFPDSSerializerV2(award.latest_transaction.)
     def latest_transaction_func(self, award):
         return TransactionFPDSSerializerV2(award.latest_transaction.contract_data).data
 
@@ -381,7 +379,6 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
                                  "amount": entity["officers"]["officer_" + str(x) + "_amount"]})
         return {"officers": response}
 
-    # todo: revert parent generated unique id back to its original purpose  -jl
     def parent_unique_id_func(self, award):
         parent_transaction = TransactionFPDS.objects.filter(agency_id=award.fpds_parent_agency_id,
                                                             piid=award.parent_award_piid).values(
