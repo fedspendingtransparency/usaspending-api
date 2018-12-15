@@ -51,23 +51,7 @@ def construct_assistance_response(requested_award):
     )
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
-    response["place_of_performance"] = OrderedDict(
-        [
-            ("location_country_code", transaction["_pop_location_country_code"]),
-            ("country_name", transaction["_pop_country_name"]),
-            ("county_name", transaction["_pop_county_name"]),
-            ("city_name", transaction["_pop_city_name"]),
-            ("state_code", transaction["_pop_state_code"]),
-            ("congressional_code", transaction["_pop_congressional_code"]),
-            ("zip4", transaction["_pop_zip4"]),
-            ("zip5", transaction["_pop_zip5"]),
-            ("address_line1", None),
-            ("address_line2", None),
-            ("address_line3", None),
-            ("foreign_province", transaction["_pop_foreign_province"]),
-            ("foreign_postal_code", None),
-        ]
-    )
+    response["place_of_performance"] = create_place_of_performance_object(transaction)
 
     return delete_keys_from_dict(response)
 
@@ -106,23 +90,7 @@ def construct_contract_response(requested_award):
     )
     response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
-    response["place_of_performance"] = OrderedDict(
-        [
-            ("location_country_code", response["latest_transaction_contract_data"]["_pop_location_country_code"]),
-            ("country_name", response["latest_transaction_contract_data"]["_pop_country_name"]),
-            ("county_name", response["latest_transaction_contract_data"]["_pop_county_name"]),
-            ("city_name", response["latest_transaction_contract_data"]["_pop_city_name"]),
-            ("state_code", response["latest_transaction_contract_data"]["_pop_state_code"]),
-            ("congressional_code", response["latest_transaction_contract_data"]["_pop_congressional_code"]),
-            ("zip4", response["latest_transaction_contract_data"]["_pop_zip4"]),
-            ("zip5", response["latest_transaction_contract_data"]["_pop_zip5"]),
-            ("address_line1", None),
-            ("address_line2", None),
-            ("address_line3", None),
-            ("foreign_province", None),
-            ("foreign_postal_code", None),
-        ]
-    )
+    response["place_of_performance"] = create_place_of_performance_object(response["latest_transaction_contract_data"])
 
     return delete_keys_from_dict(response)
 
@@ -174,23 +142,7 @@ def construct_idv_response(requested_award):
     )
     response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
-    response["place_of_performance"] = OrderedDict(
-        [
-            ("location_country_code", response["latest_transaction_contract_data"]["_pop_location_country_code"]),
-            ("country_name", response["latest_transaction_contract_data"]["_pop_country_name"]),
-            ("county_name", response["latest_transaction_contract_data"]["_pop_county_name"]),
-            ("city_name", response["latest_transaction_contract_data"]["_pop_city_name"]),
-            ("state_code", response["latest_transaction_contract_data"]["_pop_state_code"]),
-            ("congressional_code", response["latest_transaction_contract_data"]["_pop_congressional_code"]),
-            ("zip4", response["latest_transaction_contract_data"]["_pop_zip4"]),
-            ("zip5", response["latest_transaction_contract_data"]["_pop_zip5"]),
-            ("address_line1", None),
-            ("address_line2", None),
-            ("address_line3", None),
-            ("foreign_province", None),
-            ("foreign_postal_code", None),
-        ]
-    )
+    response["place_of_performance"] = create_place_of_performance_object(response["latest_transaction_contract_data"])
 
     return delete_keys_from_dict(response)
 
@@ -229,6 +181,26 @@ def create_recipient_object(db_row_dict):
                     ]
                 ),
             ),
+        ]
+    )
+
+
+def create_place_of_performance_object(db_row_dict):
+    return OrderedDict(
+        [
+            ("location_country_code", db_row_dict["_pop_location_country_code"]),
+            ("country_name", db_row_dict["_pop_country_name"]),
+            ("county_name", db_row_dict["_pop_county_name"]),
+            ("city_name", db_row_dict["_pop_city_name"]),
+            ("state_code", db_row_dict["_pop_state_code"]),
+            ("congressional_code", db_row_dict["_pop_congressional_code"]),
+            ("zip4", db_row_dict["_pop_zip4"]),
+            ("zip5", db_row_dict["_pop_zip5"]),
+            ("address_line1", None),
+            ("address_line2", None),
+            ("address_line3", None),
+            ("foreign_province", db_row_dict.get("_pop_foreign_province")),
+            ("foreign_postal_code", None),
         ]
     )
 
