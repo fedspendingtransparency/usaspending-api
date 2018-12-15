@@ -14,22 +14,17 @@ from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOf
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 
 
-def construct_assistance_response(requested_award):
+def construct_assistance_response(requested_award_dict):
     """
-        [x] base award data
-        [x] awarding_agency
-        [x] funding_agency
-        [x] recipient
-        [x] place_of_performance
-        [x] period_of_performance
+        Build the Python object to return FABS Award summary or meta-data via the API
+
+        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
+        returns: an OrderedDict
     """
-    f = {"generated_unique_award_id": requested_award}
-    if str(requested_award).isdigit():
-        f = {"pk": requested_award}
 
     response = OrderedDict()
 
-    award = fetch_award_details(f, FABS_AWARD_FIELDS)
+    award = fetch_award_details(requested_award_dict, FABS_AWARD_FIELDS)
     if not award:
         return None
     response.update(award)
@@ -56,24 +51,17 @@ def construct_assistance_response(requested_award):
     return delete_keys_from_dict(response)
 
 
-def construct_contract_response(requested_award):
+def construct_contract_response(requested_award_dict):
     """
-        [x] base award data
-        [x] awarding_agency
-        [x] funding_agency
-        [x] recipient
-        [x] place_of_performance
-        [x] executive_details
-        [x] period_of_performance
-        [x] latest_transaction_contract_data
+        Build the Python object to return FPDS Award summary or meta-data via the API
+
+        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
+        returns: an OrderedDict
     """
-    f = {"generated_unique_award_id": requested_award}
-    if str(requested_award).isdigit():
-        f = {"pk": requested_award}
 
     response = OrderedDict()
 
-    award = fetch_award_details(f, FPDS_AWARD_FIELDS)
+    award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
     if not award:
         return None
     response.update(award)
@@ -95,20 +83,13 @@ def construct_contract_response(requested_award):
     return delete_keys_from_dict(response)
 
 
-def construct_idv_response(requested_award):
+def construct_idv_response(requested_award_dict):
     """
-        [x] base award data
-        [x] awarding_agency
-        [x] funding_agency
-        [x] recipient
-        [x] place_of_performance
-        [x] executive_details
-        [x] idv_dates
-        [x] latest_transaction_contract_data
+        Build the Python object to return FPDS IDV summary or meta-data via the API
+
+        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
+        returns: an OrderedDict
     """
-    f = {"generated_unique_award_id": requested_award}
-    if str(requested_award).isdigit():
-        f = {"pk": requested_award}
 
     idv_specific_award_fields = OrderedDict(
         [
@@ -123,7 +104,7 @@ def construct_idv_response(requested_award):
 
     response = OrderedDict()
 
-    award = fetch_award_details(f, FPDS_AWARD_FIELDS)
+    award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
     if not award:
         return None
     response.update(award)
