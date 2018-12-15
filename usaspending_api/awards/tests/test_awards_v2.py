@@ -230,11 +230,11 @@ def test_idv_award_amount_endpoint(client):
 
     resp = client.get('/api/v2/awards/idvs/amounts/3/')
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-    assert json.loads(resp.content.decode('utf-8')) == {'message': 'No IDV award found with this id'}
+    assert json.loads(resp.content.decode('utf-8')) == {'detail': 'No IDV award found with this id'}
 
     resp = client.get('/api/v2/awards/idvs/amounts/BOGUS_ID/')
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-    assert json.loads(resp.content.decode('utf-8')) == {'message': 'No IDV award found with this id'}
+    assert json.loads(resp.content.decode('utf-8')) == {'detail': 'No IDV award found with this id'}
 
     resp = client.get('/api/v2/awards/idvs/amounts/INVALID_ID_&&&/')
     assert resp.status_code == status.HTTP_404_NOT_FOUND

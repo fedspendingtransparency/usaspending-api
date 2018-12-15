@@ -24,7 +24,6 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_loan_value", "total_loan_value"),
         ("total_obligation", "total_obligation"),
         ("base_and_all_options_value", "base_and_all_options_value"),
-        # ("funding_obligated", "funding_obligated"),
         ("base_exercised_options_val", "base_exercised_options"),
         ("non_federal_funding_amount", "non_federal_funding"),
         ("total_funding_amount", "total_funding"),
@@ -73,7 +72,6 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
         ("ultimate_parent_legal_enti", "_parent_recipient_name"),
         ("ultimate_parent_unique_ide", "_parent_recipient_unique_id"),
-
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
@@ -87,7 +85,6 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_zip5", "_rl_zip5"),
         ("legal_entity_foreign_posta", "_rl_foreign_postal_code"),
         ("legal_entity_foreign_provi", "_rl_foreign_province"),
-
         # "Place of Performance" fields below
         ("place_of_perform_country_c", "_pop_location_country_code"),
         ("place_of_perform_country_n", "_pop_country_name"),
@@ -148,15 +145,26 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
         ("ultimate_parent_legal_enti", "_parent_recipient_name"),
         ("ultimate_parent_unique_ide", "_parent_recipient_unique_id"),
+        ("legal_entity_country_code", "_rl_location_country_code"),
+        ("legal_entity_country_name", "_rl_country_name"),
+        ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_city_name", "_rl_city_name"),
+        ("legal_entity_county_name", "_rl_county_name"),
+        ("legal_entity_address_line1", "_rl_address_line1"),
+        ("legal_entity_address_line2", "_rl_address_line2"),
+        ("legal_entity_address_line3", "_rl_address_line3"),
+        ("legal_entity_congressional", "_rl_congressional_code"),
+        ("legal_entity_zip_last4", "_rl_zip4"),
+        ("legal_entity_zip5", "_rl_zip5"),
         # "Place of Performance Location"
-        ("place_of_perform_country_c", "_country_code"),
-        ("place_of_perf_country_desc", "_country_name"),
-        ("place_of_performance_state", "_state_code"),
-        ("place_of_perform_city_name", "_city_name"),
-        ("place_of_perform_county_na", "_county_name"),
-        ("place_of_performance_zip4a", "_zip4"),
-        ("place_of_performance_congr", "_congressional_code"),
-        ("place_of_performance_zip5", "_zip5"),
+        ("place_of_perform_country_c", "_pop_location_country_code"),
+        ("place_of_perf_country_desc", "_pop_country_name"),
+        ("place_of_performance_state", "_pop_state_code"),
+        ("place_of_perform_city_name", "_pop_city_name"),
+        ("place_of_perform_county_na", "_pop_county_name"),
+        ("place_of_performance_zip4a", "_pop_zip4"),
+        ("place_of_performance_congr", "_pop_congressional_code"),
+        ("place_of_performance_zip5", "_pop_zip5"),
     ]
 )
 

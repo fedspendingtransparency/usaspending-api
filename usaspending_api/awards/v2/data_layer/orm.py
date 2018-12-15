@@ -49,41 +49,8 @@ def construct_assistance_response(requested_award):
             ("period_of_performance_current_end_date", award["_end_date"]),
         ]
     )
-    response["recipient"] = OrderedDict(
-        [
-            (
-                "recipient_hash",
-                fetch_recipient_hash_using_name_and_duns(
-                    transaction["_recipient_name"], transaction["_recipient_unique_id"]
-                ),
-            ),
-            ("recipient_name", transaction["_recipient_name"]),
-            ("recipient_unique_id", transaction["_recipient_unique_id"]),
-            ("parent_recipient_unique_id", transaction["_parent_recipient_unique_id"]),
-            ("parent_recipient_name", transaction["_parent_recipient_name"]),
-            ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
-            (
-                "location",
-                OrderedDict(
-                    [
-                        ("legal_entity_country_code", transaction["_rl_location_country_code"]),
-                        ("legal_entity_country_name", transaction["_rl_country_name"]),
-                        ("legal_entity_state_code", transaction["_rl_state_code"]),
-                        ("legal_entity_city_name", transaction["_rl_city_name"]),
-                        ("legal_entity_county_name", transaction["_rl_county_name"]),
-                        ("legal_entity_address_line1", transaction["_rl_address_line1"]),
-                        ("legal_entity_address_line2", transaction["_rl_address_line2"]),
-                        ("legal_entity_address_line3", transaction["_rl_address_line3"]),
-                        ("legal_entity_congressional", transaction["_rl_congressional_code"]),
-                        ("legal_entity_zip_last4", transaction["_rl_zip4"]),
-                        ("legal_entity_zip5", transaction["_rl_zip5"]),
-                        ("legal_entity_foreign_posta", transaction["_rl_foreign_postal_code"]),
-                        ("legal_entity_foreign_provi", transaction["_rl_foreign_province"]),
-                    ]
-                ),
-            ),
-        ]
-    )
+    transaction["_lei"] = award["_lei"]
+    response["recipient"] = create_recipient_object(transaction)
     response["place_of_performance"] = OrderedDict(
         [
             ("location_country_code", transaction["_pop_location_country_code"]),
@@ -137,32 +104,18 @@ def construct_contract_response(requested_award):
             ("period_of_performance_current_end_date", award["_end_date"]),
         ]
     )
-    response["recipient"] = OrderedDict(
-        [
-            (
-                "recipient_hash",
-                fetch_recipient_hash_using_name_and_duns(
-                    response["latest_transaction_contract_data"]["_recipient_name"],
-                    response["latest_transaction_contract_data"]["_recipient_unique_id"],
-                ),
-            ),
-            ("recipient_name", response["latest_transaction_contract_data"]["_recipient_name"]),
-            ("recipient_unique_id", response["latest_transaction_contract_data"]["_recipient_unique_id"]),
-            ("parent_recipient_name", response["latest_transaction_contract_data"]["_parent_recipient_name"]),
-            ("parent_recipient_unique_id", response["latest_transaction_contract_data"]["_parent_recipient_unique_id"]),
-            ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
-        ]
-    )
+    response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
+    response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
     response["place_of_performance"] = OrderedDict(
         [
-            ("location_country_code", response["latest_transaction_contract_data"]["_country_code"]),
-            ("country_name", response["latest_transaction_contract_data"]["_country_name"]),
-            ("county_name", response["latest_transaction_contract_data"]["_county_name"]),
-            ("city_name", response["latest_transaction_contract_data"]["_city_name"]),
-            ("state_code", response["latest_transaction_contract_data"]["_state_code"]),
-            ("congressional_code", response["latest_transaction_contract_data"]["_congressional_code"]),
-            ("zip4", response["latest_transaction_contract_data"]["_zip4"]),
-            ("zip5", response["latest_transaction_contract_data"]["_zip5"]),
+            ("location_country_code", response["latest_transaction_contract_data"]["_pop_location_country_code"]),
+            ("country_name", response["latest_transaction_contract_data"]["_pop_country_name"]),
+            ("county_name", response["latest_transaction_contract_data"]["_pop_county_name"]),
+            ("city_name", response["latest_transaction_contract_data"]["_pop_city_name"]),
+            ("state_code", response["latest_transaction_contract_data"]["_pop_state_code"]),
+            ("congressional_code", response["latest_transaction_contract_data"]["_pop_congressional_code"]),
+            ("zip4", response["latest_transaction_contract_data"]["_pop_zip4"]),
+            ("zip5", response["latest_transaction_contract_data"]["_pop_zip5"]),
             ("address_line1", None),
             ("address_line2", None),
             ("address_line3", None),
@@ -219,32 +172,18 @@ def construct_idv_response(requested_award):
             ("end_date", response["latest_transaction_contract_data"]["_end_date"]),
         ]
     )
-    response["recipient"] = OrderedDict(
-        [
-            (
-                "recipient_hash",
-                fetch_recipient_hash_using_name_and_duns(
-                    response["latest_transaction_contract_data"]["_recipient_name"],
-                    response["latest_transaction_contract_data"]["_recipient_unique_id"],
-                ),
-            ),
-            ("recipient_name", response["latest_transaction_contract_data"]["_recipient_name"]),
-            ("recipient_unique_id", response["latest_transaction_contract_data"]["_recipient_unique_id"]),
-            ("parent_recipient_name", response["latest_transaction_contract_data"]["_parent_recipient_name"]),
-            ("parent_recipient_unique_id", response["latest_transaction_contract_data"]["_parent_recipient_unique_id"]),
-            ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
-        ]
-    )
+    response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
+    response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
     response["place_of_performance"] = OrderedDict(
         [
-            ("location_country_code", response["latest_transaction_contract_data"]["_country_code"]),
-            ("country_name", response["latest_transaction_contract_data"]["_country_name"]),
-            ("county_name", response["latest_transaction_contract_data"]["_county_name"]),
-            ("city_name", response["latest_transaction_contract_data"]["_city_name"]),
-            ("state_code", response["latest_transaction_contract_data"]["_state_code"]),
-            ("congressional_code", response["latest_transaction_contract_data"]["_congressional_code"]),
-            ("zip4", response["latest_transaction_contract_data"]["_zip4"]),
-            ("zip5", response["latest_transaction_contract_data"]["_zip5"]),
+            ("location_country_code", response["latest_transaction_contract_data"]["_pop_location_country_code"]),
+            ("country_name", response["latest_transaction_contract_data"]["_pop_country_name"]),
+            ("county_name", response["latest_transaction_contract_data"]["_pop_county_name"]),
+            ("city_name", response["latest_transaction_contract_data"]["_pop_city_name"]),
+            ("state_code", response["latest_transaction_contract_data"]["_pop_state_code"]),
+            ("congressional_code", response["latest_transaction_contract_data"]["_pop_congressional_code"]),
+            ("zip4", response["latest_transaction_contract_data"]["_pop_zip4"]),
+            ("zip5", response["latest_transaction_contract_data"]["_pop_zip5"]),
             ("address_line1", None),
             ("address_line2", None),
             ("address_line3", None),
@@ -254,6 +193,44 @@ def construct_idv_response(requested_award):
     )
 
     return delete_keys_from_dict(response)
+
+
+def create_recipient_object(db_row_dict):
+    return OrderedDict(
+        [
+            (
+                "recipient_hash",
+                fetch_recipient_hash_using_name_and_duns(
+                    db_row_dict["_recipient_name"], db_row_dict["_recipient_unique_id"]
+                ),
+            ),
+            ("recipient_name", db_row_dict["_recipient_name"]),
+            ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
+            ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
+            ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
+            ("business_categories", fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
+            (
+                "location",
+                OrderedDict(
+                    [
+                        ("legal_entity_country_code", db_row_dict["_rl_location_country_code"]),
+                        ("legal_entity_country_name", db_row_dict["_rl_country_name"]),
+                        ("legal_entity_state_code", db_row_dict["_rl_state_code"]),
+                        ("legal_entity_city_name", db_row_dict["_rl_city_name"]),
+                        ("legal_entity_county_name", db_row_dict["_rl_county_name"]),
+                        ("legal_entity_address_line1", db_row_dict["_rl_address_line1"]),
+                        ("legal_entity_address_line2", db_row_dict["_rl_address_line2"]),
+                        ("legal_entity_address_line3", db_row_dict["_rl_address_line3"]),
+                        ("legal_entity_congressional", db_row_dict["_rl_congressional_code"]),
+                        ("legal_entity_zip_last4", db_row_dict["_rl_zip4"]),
+                        ("legal_entity_zip5", db_row_dict["_rl_zip5"]),
+                        ("legal_entity_foreign_posta", db_row_dict.get("_rl_foreign_postal_code")),
+                        ("legal_entity_foreign_provi", db_row_dict.get("_rl_foreign_province")),
+                    ]
+                ),
+            ),
+        ]
+    )
 
 
 def fetch_award_details(filter_q, mapper_fields):
@@ -327,7 +304,9 @@ def fetch_officers_by_legal_entity_id(legal_entity_id):
 
 
 def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id):
-    recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
+    recipient = None
+    if recipient_unique_id:
+        recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
 
     if not recipient:
         # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
