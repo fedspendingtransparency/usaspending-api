@@ -4,13 +4,13 @@ from collections import OrderedDict
 
 from django.db.models import Max
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-
 from usaspending_api.awards.models import Award, ParentAward
-from usaspending_api.awards.v2.data_layer.orm import construct_idv_response
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2
+from usaspending_api.awards.v2.data_layer.orm import (construct_contract_response, construct_idv_response,
+                                                      construct_assistance_response)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
@@ -65,19 +65,15 @@ class AwardRetrieveViewSet(APIDocumentationView):
             award = Award.objects.get(**{dict_key: request_dict[dict_key]})
         except Award.DoesNotExist:
             logger.info("No Award found with '{}' in '{}'".format(request_dict[dict_key], dict_key))
-            return {"message": "No award found with this id"}  # Consider returning 404 or 410 error code
+            raise NotFound("No Award found with this id: '{}'".format(request_dict[dict_key]))
 
         try:
             if award.category == 'contract':
-                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                serialized = AwardContractSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
+                serialized = construct_contract_response(request_dict[dict_key])
             elif award.category == "idv":
                 serialized = construct_idv_response(request_dict[dict_key])
             else:
-                parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
-                serialized = AwardMiscSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
+                serialized = construct_assistance_response(request_dict[dict_key])
 
         except AttributeError:
             raise UnprocessableEntityException("Unable to complete response due to missing Award data")
@@ -135,10 +131,7 @@ class IDVAmountsViewSet(APIDocumentationView):
             }
         except ParentAward.DoesNotExist:
             logger.info("No IDV Award found where '%s' is '%s'" % next(iter(request_data.items())))
-            return {
-                'data': OrderedDict({'message': 'No IDV award found with this id'}),
-                'status': status.HTTP_404_NOT_FOUND
-            }
+            raise NotFound("No IDV award found with this id")
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:

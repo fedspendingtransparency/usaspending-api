@@ -1,31 +1,177 @@
 import copy
-import logging
-from collections import OrderedDict, MutableMapping
-from django.db.models import F
+from collections import OrderedDict
 
-from usaspending_api.awards.v2.data_layer.orm_mappers import FPDS_CONTRACT_FIELDS, OFFICER_FIELDS, FPDS_AWARD_FIELDS
-from usaspending_api.awards.models import Award, TransactionFPDS, ParentAward
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers
-
-logger = logging.getLogger("console")
-
-
-def delete_keys_from_dict(dictionary):
-    modified_dict = OrderedDict()
-    for key, value in dictionary.items():
-        if not key.startswith("_"):
-            if isinstance(value, MutableMapping):
-                modified_dict[key] = delete_keys_from_dict(value)
-            else:
-                modified_dict[key] = copy.deepcopy(value)
-    return modified_dict
+from usaspending_api.awards.v2.data_layer.orm_mappers import (
+    FABS_AWARD_FIELDS,
+    FPDS_CONTRACT_FIELDS,
+    OFFICER_FIELDS,
+    FPDS_AWARD_FIELDS,
+    FABS_ASSISTANCE_FIELDS,
+)
+from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, ParentAward
+from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
+from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 
 
-def split_mapper_into_qs(mapper):
-    values_list = [k for k, v in mapper.items() if k == v]
-    annotate_dict = {v: F(k) for k, v in mapper.items() if k != v}
+def construct_assistance_response(requested_award):
+    """
+        [x] base award data
+        [x] awarding_agency
+        [x] funding_agency
+        [x] recipient
+        [x] place_of_performance
+        [x] period_of_performance
+    """
+    f = {"generated_unique_award_id": requested_award}
+    if str(requested_award).isdigit():
+        f = {"pk": requested_award}
 
-    return values_list, annotate_dict
+    response = OrderedDict()
+
+    award = fetch_award_details(f, FABS_AWARD_FIELDS)
+    if not award:
+        return None
+    response.update(award)
+
+    transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
+
+    cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
+    response["cfda_number"] = transaction["cfda_number"]
+    response["cfda_objectives"] = cfda_info.get("objectives")
+    response["cfda_title"] = cfda_info.get("program_title")
+
+    response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    response["period_of_performance"] = OrderedDict(
+        [
+            ("period_of_performance_start_date", award["_start_date"]),
+            ("period_of_performance_current_end_date", award["_end_date"]),
+        ]
+    )
+    response["recipient"] = OrderedDict(
+        [
+            (
+                "recipient_hash",
+                fetch_recipient_hash_using_name_and_duns(
+                    transaction["_recipient_name"], transaction["_recipient_unique_id"]
+                ),
+            ),
+            ("recipient_name", transaction["_recipient_name"]),
+            ("recipient_unique_id", transaction["_recipient_unique_id"]),
+            ("parent_recipient_unique_id", transaction["_parent_recipient_unique_id"]),
+            ("parent_recipient_name", transaction["_parent_recipient_name"]),
+            ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
+            (
+                "location",
+                OrderedDict(
+                    [
+                        ("legal_entity_country_code", transaction["_rl_location_country_code"]),
+                        ("legal_entity_country_name", transaction["_rl_country_name"]),
+                        ("legal_entity_state_code", transaction["_rl_state_code"]),
+                        ("legal_entity_city_name", transaction["_rl_city_name"]),
+                        ("legal_entity_county_name", transaction["_rl_county_name"]),
+                        ("legal_entity_address_line1", transaction["_rl_address_line1"]),
+                        ("legal_entity_address_line2", transaction["_rl_address_line2"]),
+                        ("legal_entity_address_line3", transaction["_rl_address_line3"]),
+                        ("legal_entity_congressional", transaction["_rl_congressional_code"]),
+                        ("legal_entity_zip_last4", transaction["_rl_zip4"]),
+                        ("legal_entity_zip5", transaction["_rl_zip5"]),
+                        ("legal_entity_foreign_posta", transaction["_rl_foreign_postal_code"]),
+                        ("legal_entity_foreign_provi", transaction["_rl_foreign_province"]),
+                    ]
+                ),
+            ),
+        ]
+    )
+    response["place_of_performance"] = OrderedDict(
+        [
+            ("location_country_code", transaction["_pop_location_country_code"]),
+            ("country_name", transaction["_pop_country_name"]),
+            ("county_name", transaction["_pop_county_name"]),
+            ("city_name", transaction["_pop_city_name"]),
+            ("state_code", transaction["_pop_state_code"]),
+            ("congressional_code", transaction["_pop_congressional_code"]),
+            ("zip4", transaction["_pop_zip4"]),
+            ("zip5", transaction["_pop_zip5"]),
+            ("address_line1", None),
+            ("address_line2", None),
+            ("address_line3", None),
+            ("foreign_province", transaction["_pop_foreign_province"]),
+            ("foreign_postal_code", None),
+        ]
+    )
+
+    return delete_keys_from_dict(response)
+
+
+def construct_contract_response(requested_award):
+    """
+        [x] base award data
+        [x] awarding_agency
+        [x] funding_agency
+        [x] recipient
+        [x] place_of_performance
+        [x] executive_details
+        [x] period_of_performance
+        [x] latest_transaction_contract_data
+    """
+    f = {"generated_unique_award_id": requested_award}
+    if str(requested_award).isdigit():
+        f = {"pk": requested_award}
+
+    response = OrderedDict()
+
+    award = fetch_award_details(f, FPDS_AWARD_FIELDS)
+    if not award:
+        return None
+    response.update(award)
+
+    response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
+    response["latest_transaction_contract_data"] = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
+    response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    response["period_of_performance"] = OrderedDict(
+        [
+            ("period_of_performance_start_date", award["_start_date"]),
+            ("period_of_performance_current_end_date", award["_end_date"]),
+        ]
+    )
+    response["recipient"] = OrderedDict(
+        [
+            (
+                "recipient_hash",
+                fetch_recipient_hash_using_name_and_duns(
+                    response["latest_transaction_contract_data"]["_recipient_name"],
+                    response["latest_transaction_contract_data"]["_recipient_unique_id"],
+                ),
+            ),
+            ("recipient_name", response["latest_transaction_contract_data"]["_recipient_name"]),
+            ("recipient_unique_id", response["latest_transaction_contract_data"]["_recipient_unique_id"]),
+            ("parent_recipient_name", response["latest_transaction_contract_data"]["_parent_recipient_name"]),
+            ("parent_recipient_unique_id", response["latest_transaction_contract_data"]["_parent_recipient_unique_id"]),
+            ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
+        ]
+    )
+    response["place_of_performance"] = OrderedDict(
+        [
+            ("location_country_code", response["latest_transaction_contract_data"]["_country_code"]),
+            ("country_name", response["latest_transaction_contract_data"]["_country_name"]),
+            ("county_name", response["latest_transaction_contract_data"]["_county_name"]),
+            ("city_name", response["latest_transaction_contract_data"]["_city_name"]),
+            ("state_code", response["latest_transaction_contract_data"]["_state_code"]),
+            ("congressional_code", response["latest_transaction_contract_data"]["_congressional_code"]),
+            ("zip4", response["latest_transaction_contract_data"]["_zip4"]),
+            ("zip5", response["latest_transaction_contract_data"]["_zip5"]),
+            ("address_line1", None),
+            ("address_line2", None),
+            ("address_line3", None),
+            ("foreign_province", None),
+            ("foreign_postal_code", None),
+        ]
+    )
+
+    return delete_keys_from_dict(response)
 
 
 def construct_idv_response(requested_award):
@@ -56,7 +202,7 @@ def construct_idv_response(requested_award):
 
     response = OrderedDict()
 
-    award = fetch_fpds_award(f)
+    award = fetch_award_details(f, FPDS_AWARD_FIELDS)
     if not award:
         return None
     response.update(award)
@@ -68,15 +214,23 @@ def construct_idv_response(requested_award):
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
     response["idv_dates"] = OrderedDict(
         [
-            ("start_date", response["latest_transaction_contract_data"]["_start_date"]),
+            ("start_date", award["_start_date"]),
             ("last_modified_date", response["latest_transaction_contract_data"]["_last_modified_date"]),
             ("end_date", response["latest_transaction_contract_data"]["_end_date"]),
         ]
     )
     response["recipient"] = OrderedDict(
         [
+            (
+                "recipient_hash",
+                fetch_recipient_hash_using_name_and_duns(
+                    response["latest_transaction_contract_data"]["_recipient_name"],
+                    response["latest_transaction_contract_data"]["_recipient_unique_id"],
+                ),
+            ),
             ("recipient_name", response["latest_transaction_contract_data"]["_recipient_name"]),
             ("recipient_unique_id", response["latest_transaction_contract_data"]["_recipient_unique_id"]),
+            ("parent_recipient_name", response["latest_transaction_contract_data"]["_parent_recipient_name"]),
             ("parent_recipient_unique_id", response["latest_transaction_contract_data"]["_parent_recipient_unique_id"]),
             ("business_categories", fetch_business_categories_by_legal_entity_id(award["_lei"])),
         ]
@@ -102,8 +256,8 @@ def construct_idv_response(requested_award):
     return delete_keys_from_dict(response)
 
 
-def fetch_fpds_award(filter_q):
-    vals, ann = split_mapper_into_qs(FPDS_AWARD_FIELDS)
+def fetch_award_details(filter_q, mapper_fields):
+    vals, ann = split_mapper_into_qs(mapper_fields)
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
 
@@ -115,6 +269,11 @@ def fetch_parent_award_id(guai):
     )
 
     return parent_award.get("generated_unique_award_id") if parent_award else None
+
+
+def fetch_fabs_details_by_pk(primary_key, mapper):
+    vals, ann = split_mapper_into_qs(mapper)
+    return TransactionFABS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
 def fetch_fpds_details_by_pk(primary_key, mapper):
@@ -165,3 +324,23 @@ def fetch_officers_by_legal_entity_id(legal_entity_id):
             )
 
     return {"officers": officers}
+
+
+def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id):
+    recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
+
+    if not recipient:
+        # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
+        import hashlib
+        import uuid
+
+        h = hashlib.md5("{}{}".format(recipient_unique_id, recipient_name).upper().encode("utf-8")).hexdigest()
+        return str(uuid.UUID(h))
+    return recipient["recipient_hash"]
+
+
+def fetch_cfda_details_using_cfda_number(cfda):
+    c = Cfda.objects.filter(program_number=cfda).values("program_title", "objectives").first()
+    if not c:
+        return {}
+    return c
