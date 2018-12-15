@@ -9,8 +9,8 @@ from rest_framework.response import Response
 
 
 from usaspending_api.awards.models import Award, ParentAward
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
-    AwardIDVSerializerV2
+from usaspending_api.awards.v2.data_layer.orm import construct_idv_response
+from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
@@ -73,9 +73,7 @@ class AwardRetrieveViewSet(APIDocumentationView):
                 serialized = AwardContractSerializerV2(award).data
                 serialized['recipient']['parent_recipient_name'] = parent_recipient_name
             elif award.category == "idv":
-                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                serialized = AwardIDVSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
+                serialized = construct_idv_response(request_dict[dict_key])
             else:
                 parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
                 serialized = AwardMiscSerializerV2(award).data

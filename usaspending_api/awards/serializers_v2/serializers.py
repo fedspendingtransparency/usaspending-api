@@ -1,11 +1,8 @@
-import logging
 from rest_framework import serializers
 
 from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.references.models import (Agency, LegalEntity, Location, LegalEntityOfficers,
                                                SubtierAgency, ToptierAgency, OfficeAgency)
-
-logger = logging.getLogger("console")
 
 
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
