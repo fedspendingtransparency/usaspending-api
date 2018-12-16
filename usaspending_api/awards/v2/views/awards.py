@@ -88,10 +88,10 @@ class IDVAmountsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:
-        try:
+        if requested_award.isdigit():
             request_dict = {'award_id': int(requested_award)}
             models = [{'key': 'award_id', 'name': 'award_id', 'type': 'integer', 'optional': False}]
-        except ValueError:
+        else:
             request_dict = {'generated_unique_award_id': requested_award.upper()}
             models = [{
                 'key': 'generated_unique_award_id',
