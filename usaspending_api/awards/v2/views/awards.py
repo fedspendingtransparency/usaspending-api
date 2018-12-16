@@ -107,18 +107,15 @@ class IDVAmountsViewSet(APIDocumentationView):
     def _business_logic(request_data: dict) -> dict:
         try:
             parent_award = ParentAward.objects.get(**request_data)
-            return {
-                'data': OrderedDict((
-                    ('award_id', parent_award.award_id),
-                    ('generated_unique_award_id', parent_award.generated_unique_award_id),
-                    ('idv_count', parent_award.direct_idv_count),
-                    ('contract_count', parent_award.direct_contract_count),
-                    ('rollup_total_obligation', parent_award.rollup_total_obligation),
-                    ('rollup_base_and_all_options_value', parent_award.rollup_base_and_all_options_value),
-                    ('rollup_base_exercised_options_val', parent_award.rollup_base_exercised_options_val),
-                )),
-                'status': status.HTTP_200_OK
-            }
+            return OrderedDict((
+                ('award_id', parent_award.award_id),
+                ('generated_unique_award_id', parent_award.generated_unique_award_id),
+                ('idv_count', parent_award.direct_idv_count),
+                ('contract_count', parent_award.direct_contract_count),
+                ('rollup_total_obligation', parent_award.rollup_total_obligation),
+                ('rollup_base_and_all_options_value', parent_award.rollup_base_and_all_options_value),
+                ('rollup_base_exercised_options_val', parent_award.rollup_base_exercised_options_val),
+            ))
         except ParentAward.DoesNotExist:
             logger.info("No IDV Award found where '%s' is '%s'" % next(iter(request_data.items())))
             raise NotFound("No IDV award found with this id")
@@ -127,4 +124,4 @@ class IDVAmountsViewSet(APIDocumentationView):
     def get(self, request: Request, requested_award: str) -> Response:
         """Return IDV counts and sums"""
         request_data = self._parse_and_validate_request(requested_award)
-        return Response(**self._business_logic(request_data))
+        return Response(self._business_logic(request_data))
