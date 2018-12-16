@@ -82,7 +82,7 @@ class AwardRetrieveViewSet(APIDocumentationView):
 
 
 class IDVAmountsViewSet(APIDocumentationView):
-    """Return IDV values from parent_award table.
+    """Returns counts and dollar figures for a specific IDV.
     endpoint_doc: /awards/idvs/amounts.md
     """
 
@@ -103,7 +103,7 @@ class IDVAmountsViewSet(APIDocumentationView):
         return TinyShield(models).block(request_dict)
 
     @staticmethod
-    def _business_logic(request_data: dict) -> dict:
+    def _business_logic(request_data: dict) -> OrderedDict:
         try:
             parent_award = ParentAward.objects.get(**request_data)
             return OrderedDict((
