@@ -27,16 +27,16 @@ def awards_and_transactions(db):
         "foreign_postal_code": None,
         "foreign_province": None,
     }
-    subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
+    sub_agency = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
     trans_asst = {"pk": 1}
     trans_cont = {"pk": 2}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
-    mommy.make("references.SubtierAgency", **subag)
-    mommy.make("references.ToptierAgency", **subag)
+    mommy.make("references.SubtierAgency", **sub_agency)
+    mommy.make("references.ToptierAgency", **sub_agency)
     mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
 
     le = {
