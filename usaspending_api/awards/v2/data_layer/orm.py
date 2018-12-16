@@ -33,8 +33,8 @@ def construct_assistance_response(requested_award_dict):
 
     cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
     response["cfda_number"] = transaction["cfda_number"]
+    response["cfda_title"] = transaction["cfda_title"]
     response["cfda_objectives"] = cfda_info.get("objectives")
-    response["cfda_title"] = cfda_info.get("program_title")
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
@@ -146,19 +146,19 @@ def create_recipient_object(db_row_dict):
                 "location",
                 OrderedDict(
                     [
-                        ("legal_entity_country_code", db_row_dict["_rl_location_country_code"]),
-                        ("legal_entity_country_name", db_row_dict["_rl_country_name"]),
-                        ("legal_entity_state_code", db_row_dict["_rl_state_code"]),
-                        ("legal_entity_city_name", db_row_dict["_rl_city_name"]),
-                        ("legal_entity_county_name", db_row_dict["_rl_county_name"]),
-                        ("legal_entity_address_line1", db_row_dict["_rl_address_line1"]),
-                        ("legal_entity_address_line2", db_row_dict["_rl_address_line2"]),
-                        ("legal_entity_address_line3", db_row_dict["_rl_address_line3"]),
-                        ("legal_entity_congressional", db_row_dict["_rl_congressional_code"]),
-                        ("legal_entity_zip_last4", db_row_dict["_rl_zip4"]),
-                        ("legal_entity_zip5", db_row_dict["_rl_zip5"]),
-                        ("legal_entity_foreign_posta", db_row_dict.get("_rl_foreign_postal_code")),
-                        ("legal_entity_foreign_provi", db_row_dict.get("_rl_foreign_province")),
+                        ("location_country_code", db_row_dict["_rl_location_country_code"]),
+                        ("country_name", db_row_dict["_rl_country_name"]),
+                        ("state_code", db_row_dict["_rl_state_code"]),
+                        ("city_name", db_row_dict["_rl_city_name"]),
+                        ("county_name", db_row_dict["_rl_county_name"]),
+                        ("address_line1", db_row_dict["_rl_address_line1"]),
+                        ("address_line2", db_row_dict["_rl_address_line2"]),
+                        ("address_line3", db_row_dict["_rl_address_line3"]),
+                        ("congressional_code", db_row_dict["_rl_congressional_code"]),
+                        ("zip4", db_row_dict["_rl_zip4"]),
+                        ("zip5", db_row_dict["_rl_zip5"]),
+                        ("foreign_postal_code", db_row_dict.get("_rl_foreign_postal_code")),
+                        ("foreign_province", db_row_dict.get("_rl_foreign_province")),
                     ]
                 ),
             ),
@@ -215,8 +215,10 @@ def fetch_agency_details(agency_id):
     values = [
         "toptier_agency__fpds_code",
         "toptier_agency__name",
+        "toptier_agency__abbreviation",
         "subtier_agency__subtier_code",
         "subtier_agency__name",
+        "subtier_agency__abbreviation",
         "office_agency__name",
     ]
     agency = Agency.objects.filter(pk=agency_id).values(*values).first()
@@ -225,8 +227,16 @@ def fetch_agency_details(agency_id):
     if agency:
         agency_details = {
             "id": agency_id,
-            "toptier_agency": {"name": agency["toptier_agency__name"], "code": agency["toptier_agency__fpds_code"]},
-            "subtier_agency": {"name": agency["subtier_agency__name"], "code": agency["subtier_agency__subtier_code"]},
+            "toptier_agency": {
+                "name": agency["toptier_agency__name"],
+                "code": agency["toptier_agency__fpds_code"],
+                "abbreviation": agency["toptier_agency__abbreviation"],
+            },
+            "subtier_agency": {
+                "name": agency["subtier_agency__name"],
+                "code": agency["subtier_agency__subtier_code"],
+                "abbreviation": agency["subtier_agency__abbreviation"],
+            },
             "office_agency_name": agency["office_agency__name"],
         }
     return agency_details

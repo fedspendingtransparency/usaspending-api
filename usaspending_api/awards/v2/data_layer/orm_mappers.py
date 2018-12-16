@@ -67,6 +67,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
         ("cfda_number", "cfda_number"),
+        ("cfda_title", "cfda_title"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
