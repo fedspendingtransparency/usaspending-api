@@ -121,6 +121,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("product_or_service_code", "product_or_service_code"),
         ("product_or_service_co_desc", "product_or_service_co_desc"),
         ("naics", "naics"),
+        ("naics_description", "naics_description"),
         ("dod_claimant_program_code", "dod_claimant_program_code"),
         ("program_system_or_equipmen", "program_system_or_equipmen"),
         ("information_technolog_desc", "information_technolog_desc"),
