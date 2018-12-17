@@ -109,7 +109,9 @@ def construct_idv_response(requested_award_dict):
         return None
     response.update(award)
 
-    response["parent_generated_unique_award_id"] = fetch_parent_award_id(award["generated_unique_award_id"])
+    parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
+    response["parent_award"] = parent_award
+    response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
     response["latest_transaction_contract_data"] = fetch_fpds_details_by_pk(award["_trx"], mapper)
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
@@ -191,14 +193,44 @@ def fetch_award_details(filter_q, mapper_fields):
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
 
-def fetch_parent_award_id(guai):
-    parent_award = (
+def fetch_parent_award_details(guai):
+    parent_award_ids = (
         ParentAward.objects.filter(generated_unique_award_id=guai)
-        .values("parent_award__generated_unique_award_id")
+        .values("parent_award__award_id", "parent_award__generated_unique_award_id")
         .first()
     )
 
-    return parent_award.get("generated_unique_award_id") if parent_award else None
+    if not parent_award_ids:
+        return None
+
+    parent_award = (
+        Award.objects.filter(id=parent_award_ids["parent_award__award_id"])
+        .values(
+            "latest_transaction__contract_data__agency_id",
+            "latest_transaction__contract_data__idv_type_description",
+            "latest_transaction__contract_data__multiple_or_single_aw_desc",
+            "latest_transaction__contract_data__piid",
+            "latest_transaction__contract_data__type_of_idc_description",
+        )
+        .first()
+    )
+
+    parent_object = OrderedDict(
+        [
+            ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
+            ("award_id", parent_award_ids["parent_award__award_id"]),
+            ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
+            ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
+            (
+                "multiple_or_single_aw_desc",
+                parent_award["latest_transaction__contract_data__multiple_or_single_aw_desc"],
+            ),
+            ("piid", parent_award["latest_transaction__contract_data__piid"]),
+            ("type_of_idc_description", parent_award["latest_transaction__contract_data__type_of_idc_description"]),
+        ]
+    )
+
+    return parent_object
 
 
 def fetch_fabs_details_by_pk(primary_key, mapper):

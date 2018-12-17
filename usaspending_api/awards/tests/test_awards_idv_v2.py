@@ -229,6 +229,7 @@ expected_response_idv = {
     "type_description": "GWAC",
     "piid": "5678",
     "parent_award_piid": "1234",
+    "parent_award": None,
     "description": "lorem ipsum",
     "idv_dates": {"end_date": "2025-06-30", "last_modified_date": "2018-08-24", "start_date": None},
     "awarding_agency": {
