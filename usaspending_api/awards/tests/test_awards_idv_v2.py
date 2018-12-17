@@ -122,14 +122,6 @@ def awards_and_transactions(db):
         "referenced_idv_agency_iden": "168",
         "piid": "0",
         "parent_award_id": "1",
-        "parent_award": {
-            "agency_id": 1,
-            "piid": 2,
-            "idv_type_description": None,
-            "type_of_idc_description": None,
-            "multiple_or_single_aw_desc": None,
-            "award_id": None,
-        },
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
@@ -167,6 +159,14 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
+        "parent_award": {
+            "agency_id": 1,
+            "piid": 1234,
+            "idv_type_description": None,
+            "type_of_idc_description": None,
+            "multiple_or_single_aw_desc": None,
+            "award_id": None,
+        },
     }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
