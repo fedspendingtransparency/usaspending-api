@@ -159,14 +159,6 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "parent_award": {
-            "agency_id": 1,
-            "piid": 1234,
-            "idv_type_description": None,
-            "type_of_idc_description": None,
-            "multiple_or_single_aw_desc": None,
-            "award_id": None,
-        },
     }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
@@ -305,12 +297,4 @@ expected_response_idv = {
     "subaward_count": 10,
     "total_subaward_amount": "12345.00",
     "executive_details": {"officers": []},
-    "parent_award": {
-        "agency_id": 1,
-        "piid": 2,
-        "idv_type_description": None,
-        "type_of_idc_description": None,
-        "multiple_or_single_aw_desc": None,
-        "award_id": None,
-    },
 }
