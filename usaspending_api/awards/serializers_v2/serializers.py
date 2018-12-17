@@ -389,16 +389,10 @@ class AwardIDVSerializerV2(LimitableSerializerV2):
         parent_transaction = self.get_parent_transaction(award)
         if parent_transaction:
             agency_id = parent_transaction["agency_id"]
-            referenced_idv_agency_iden = parent_transaction["referenced_idv_agency_iden"]
             piid = parent_transaction["piid"]
-            parent_award_id = parent_transaction["parent_award_id"]
 
             return {
-                # "award_id": agency_id,
-                # "idv_type_description": parent_transaction.idv_type_description,
-                # "type_of_idc_description": parent_transaction.type_of_idc_description,
                 "agency_id": agency_id,
-                # "multiple_or_single_aw_desc": parent_transaction.multiple_or_single_aw_desc,
                 "piid": piid,
                 "idv_type_description": None,
                 "type_of_idc_description": None,
