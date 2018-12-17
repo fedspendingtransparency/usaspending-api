@@ -74,15 +74,6 @@ def awards_and_transactions(db):
         "cfda_title": "farms",
     }
 
-    parent_award = {
-        "agency_id": 123,
-        "piid": 142,
-        "idv_type_description": "IDV_A",
-        "type_of_idc_description": "idc type description",
-        "multiple_or_single_aw_desc": "MULTIPLE AWARD",
-        "award_id": 3,
-    }
-
     latest_transaction_contract_data = {
         "pk": 2,
         "transaction": TransactionNormalized.objects.get(pk=2),
@@ -131,7 +122,14 @@ def awards_and_transactions(db):
         "referenced_idv_agency_iden": "168",
         "piid": "0",
         "parent_award_id": "1",
-        "parent_award": parent_award,
+        "parent_award": {
+            "agency_id": 1,
+            "piid": 2,
+            "idv_type_description": None,
+            "type_of_idc_description": None,
+            "multiple_or_single_aw_desc": None,
+            "award_id": None,
+        },
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
@@ -308,11 +306,11 @@ expected_response_idv = {
     "total_subaward_amount": "12345.00",
     "executive_details": {"officers": []},
     "parent_award": {
-        "agency_id": 123,
-        "piid": 142,
-        "idv_type_description": "IDV_A",
-        "type_of_idc_description": "idc type description",
-        "multiple_or_single_aw_desc": "MULTIPLE AWARD",
-        "award_id": 3,
+        "agency_id": 1,
+        "piid": 2,
+        "idv_type_description": None,
+        "type_of_idc_description": None,
+        "multiple_or_single_aw_desc": None,
+        "award_id": None,
     },
 }
