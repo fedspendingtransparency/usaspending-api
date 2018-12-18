@@ -66,13 +66,13 @@ class Command(BaseCommand):
             # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
             return (
                 'CONT_AW_'
-                + (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else '-NONE-')
+                + (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else 'NONE')
                 + '_'
-                + (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else '-NONE-')
+                + (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else 'NONE')
                 + '_'
-                + (row['contract_number'].replace('-', '') if row['contract_number'] else '-NONE-')
+                + (row['contract_number'].replace('-', '') if row['contract_number'] else 'NONE')
                 + '_'
-                + (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else '-NONE-')
+                + (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else 'NONE')
             )
         else:
             # For assistance awards, 'ASST_AW_' is NOT prepended because we are unable to build the full unique
@@ -470,7 +470,9 @@ class Command(BaseCommand):
         self.process_subawards(db_cursor, shared_award_mappings, award_type, subaward_type, max_id)
 
     def cleanup_broken_links(self, db_cursor):
+        """ Given a db connection, try to update all the unlinked subawards to their parent awards  """
         broken_links = 0
+        fixed_links = 0
         fixed_ids = set()
         for award_type in ['procurement', 'grant']:
             broken_subawards = Subaward.objects.filter(award_id__isnull=True, award_type=award_type)
@@ -491,8 +493,9 @@ class Command(BaseCommand):
                     broken_subaward.updated_at = datetime.now(timezone.utc)
                     broken_subaward.save()
                     fixed_ids.add(award.id)
+                    fixed_links += 1
         award_update_id_list.update(fixed_ids)
-        logger.info('Fixed {} of {} broken links'.format(len(fixed_ids), broken_links))
+        logger.info('Fixed {} of {} broken links'.format(fixed_links, broken_links))
 
     @transaction.atomic
     def handle(self, *args, **options):

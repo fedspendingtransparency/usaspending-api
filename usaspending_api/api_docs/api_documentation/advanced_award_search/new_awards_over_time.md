@@ -1,4 +1,4 @@
-# State Data
+# New Awards Over Time
 
 **Route:** /api/v2/search/new_awards_over_time/
 

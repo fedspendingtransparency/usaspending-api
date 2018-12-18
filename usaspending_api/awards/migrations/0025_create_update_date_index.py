@@ -12,6 +12,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(sql="CREATE INDEX awards_update_date_desc_idx ON awards (update_date DESC)",
-                          reverse_sql="DROP INDEX awards_update_date_desc_idx")
+        # This is already handled by index defined on awards table in usaspending_api/awards/models.py
+        # Keeping this was causing an error when migrating from scratch.
+        # migrations.RunSQL(sql="CREATE INDEX awards_update_date_desc_idx ON awards (update_date DESC)",
+        #                   reverse_sql="DROP INDEX awards_update_date_desc_idx")
     ]
