@@ -1,6 +1,7 @@
 import logging
 import os.path
 import boto3
+import json
 
 from collections import OrderedDict
 from django.conf import settings
@@ -19,13 +20,18 @@ DB_TO_XLSX_MAPPING = OrderedDict(
         # DB contains a section field which is actually a XLSX header over that column
         ("element", "Element"),
         ("definition", "Definition"),
-        ("fpds_element", "FPDS Element"),
+        ("fpds_element", "FPDS Data Dictionary Element"),
+
+        # "USA Spending Downloads"
         ("award_file", "Award File"),
         ("award_element", "Award Element"),
         ("subaward_file", "Subaward File"),
         ("subaward_element", "Subaward Element"),
         ("account_file", "Account File"),
         ("account_element", "Account Element"),
+
+        # "Legacy USA Spending"
+        ("legacy_award_file", "Award File"),
         ("legacy_award_element", "Award Element"),
         ("legacy_subaward_element", "Subaward Element"),
     ]
@@ -72,7 +78,6 @@ def extract_data_from_source_file(path: str = None) -> dict:
     sheet = wb["Public"]
     last_column = get_column_letter(sheet.max_column)
     cell_range = "A2:{}2".format(last_column)
-    # print(f"cell range {cell_range}")
     headers = [{"column": cell.column, "header": cell.value} for cell in sheet[cell_range][0]]
 
     sections = []
@@ -120,6 +125,6 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         "headers": list({"display": pretty, "raw": raw} for raw, pretty in DB_TO_XLSX_MAPPING.items()),
         "rows": list(row for row in rosetta_object["data"].values()),
     }
-    # print(json.dumps(json_doc))
+    print(json.dumps(json_doc))
     rosetta = Rosetta(document_name="api_response", document=json_doc)
     rosetta.save()
