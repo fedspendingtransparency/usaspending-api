@@ -1,7 +1,6 @@
 import logging
 import os.path
 import boto3
-import json
 
 from collections import OrderedDict
 from django.conf import settings
@@ -125,6 +124,6 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         "headers": list({"display": pretty, "raw": raw} for raw, pretty in DB_TO_XLSX_MAPPING.items()),
         "rows": list(row for row in rosetta_object["data"].values()),
     }
-    print(json.dumps(json_doc))
+    # print(json.dumps(json_doc))
     rosetta = Rosetta(document_name="api_response", document=json_doc)
     rosetta.save()
