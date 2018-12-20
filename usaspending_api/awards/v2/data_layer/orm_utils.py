@@ -4,6 +4,16 @@ from django.db.models import F
 
 
 def delete_keys_from_dict(dictionary):
+    """
+    Recursive function to remove all keys from a dictionary/OrderedDict which
+    start with an underscore: "_"
+
+    parameters:
+        - dictionary:  dictionary/OrderedDict
+
+    return:
+        OrderedDict
+    """
     modified_dict = OrderedDict()
     for key, value in dictionary.items():
         if not key.startswith("_"):
@@ -30,7 +40,7 @@ def split_mapper_into_qs(mapper):
 
         return:
             - values_list: list
-            -annotate_dict:  dictionary/OrderedDict
+            -annotate_dict:  OrderedDict
     """
     values_list = [k for k, v in mapper.items() if k == v]
     annotate_dict = OrderedDict([(v, F(k)) for k, v in mapper.items() if k != v])

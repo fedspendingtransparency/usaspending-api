@@ -199,23 +199,12 @@ def test_null_awards():
 
 
 @pytest.mark.django_db
-def test_award_last_updated_endpoint(client):
-    """Test the awards endpoint."""
-
-    test_date = datetime.datetime.now()
-    test_date_reformatted = test_date.strftime("%m/%d/%Y")
-
-    mommy.make("awards.Award", update_date=test_date)
-    mommy.make("awards.Award", update_date="")
-
-    resp = client.get("/api/v2/awards/last_updated/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["last_updated"] == test_date_reformatted
-
-
-@pytest.mark.django_db
-def test_award_endpoint_generated_id(client, awards_and_transactions):
+def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/", content_type="application/json")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
+
+    resp = client.get("/api/v2/awards/2/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 

@@ -23,7 +23,6 @@ def construct_assistance_response(requested_award_dict):
     """
 
     response = OrderedDict()
-
     award = fetch_award_details(requested_award_dict, FABS_AWARD_FIELDS)
     if not award:
         return None
@@ -60,7 +59,6 @@ def construct_contract_response(requested_award_dict):
     """
 
     response = OrderedDict()
-
     award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
     if not award:
         return None
@@ -103,7 +101,6 @@ def construct_idv_response(requested_award_dict):
     mapper.update(idv_specific_award_fields)
 
     response = OrderedDict()
-
     award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
     if not award:
         return None
@@ -279,7 +276,7 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
 
     if le:
         return le["business_categories"]
-    return None
+    return []
 
 
 def fetch_officers_by_legal_entity_id(legal_entity_id):
