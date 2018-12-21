@@ -118,7 +118,7 @@ def awards_and_transactions(db):
         "place_of_perform_county_na": "Tripoli",
         "place_of_performance_congr": "-0-",
         "place_of_performance_state": "TX",
-        "place_of_performance_zip4a": "2135",
+        "place_of_perform_zip_last4": "2135",
         "place_of_performance_zip5": "40221",
         "price_evaluation_adjustmen": None,
         "product_or_service_code": "4730",

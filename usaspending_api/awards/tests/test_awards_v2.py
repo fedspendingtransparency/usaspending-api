@@ -132,7 +132,7 @@ def awards_and_transactions(db):
         "place_of_perform_county_na": "BUNCOMBE",
         "place_of_performance_congr": "90",
         "place_of_performance_state": "NC",
-        "place_of_performance_zip4a": "5312",
+        "place_of_perform_zip_last4": "5312",
         "place_of_performance_zip5": "12204",
         "price_evaluation_adjustmen": None,
         "product_or_service_co_desc": None,
