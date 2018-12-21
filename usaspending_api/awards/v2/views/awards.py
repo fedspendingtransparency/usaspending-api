@@ -4,15 +4,17 @@ from collections import OrderedDict
 
 from django.db.models import Max
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-
 from usaspending_api.awards.models import Award, ParentAward
-from usaspending_api.awards.serializers_v2.serializers import AwardContractSerializerV2, AwardMiscSerializerV2,\
-    AwardIDVSerializerV2
+from usaspending_api.awards.v2.data_layer.orm import (
+    construct_contract_response,
+    construct_idv_response,
+    construct_assistance_response,
+)
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.tinyshield import TinyShield
 
@@ -40,51 +42,38 @@ class AwardRetrieveViewSet(APIDocumentationView):
     """
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
-        try:
+        request_dict = {"generated_unique_award_id": provided_award_id}
+        models = [
+            {
+                "key": "generated_unique_award_id",
+                "name": "generated_unique_award_id",
+                "type": "text",
+                "text_type": "search",
+                "optional": False,
+            }
+        ]
+        if str(provided_award_id).isdigit():
             request_dict = {"id": int(provided_award_id)}
             models = [{"key": "id", "name": "id", "type": "integer", "optional": False}]
-        except Exception as e:
-            models = [
-                {
-                    "key": "generated_unique_award_id",
-                    "name": "generated_unique_award_id",
-                    "type": "text",
-                    "text_type": "search",
-                    "optional": False,
-                }
-            ]
-            request_dict = {"generated_unique_award_id": provided_award_id}
 
         validated_request_data = TinyShield(models).block(request_dict)
         return validated_request_data
 
     def _business_logic(self, request_dict: dict) -> dict:
-        dict_key = "id" if "id" in request_dict else "generated_unique_award_id"
-
         try:
-            award = Award.objects.get(**{dict_key: request_dict[dict_key]})
+            award = Award.objects.get(**request_dict)
         except Award.DoesNotExist:
-            logger.info("No Award found with '{}' in '{}'".format(request_dict[dict_key], dict_key))
-            return {"message": "No award found with this id"}  # Consider returning 404 or 410 error code
+            logger.info("No Award found with: '{}'".format(request_dict))
+            raise NotFound("No Award found with: '{}'".format(request_dict))
 
-        try:
-            if award.category == 'contract':
-                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                serialized = AwardContractSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
-            elif award.category == "idv":
-                parent_recipient_name = award.latest_transaction.contract_data.ultimate_parent_legal_enti
-                serialized = AwardIDVSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
-            else:
-                parent_recipient_name = award.latest_transaction.assistance_data.ultimate_parent_legal_enti
-                serialized = AwardMiscSerializerV2(award).data
-                serialized['recipient']['parent_recipient_name'] = parent_recipient_name
+        if award.category == "contract":
+            response_content = construct_contract_response(request_dict)
+        elif award.category == "idv":
+            response_content = construct_idv_response(request_dict)
+        else:
+            response_content = construct_assistance_response(request_dict)
 
-        except AttributeError:
-            raise UnprocessableEntityException("Unable to complete response due to missing Award data")
-
-        return serialized
+        return response_content
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:
@@ -102,12 +91,7 @@ class IDVAmountsViewSet(APIDocumentationView):
     def _parse_and_validate_request(requested_award: str) -> dict:
         try:
             request_dict = {'award_id': int(requested_award)}
-            models = [{
-                'key': 'award_id',
-                'name': 'award_id',
-                'type': 'integer',
-                'optional': False,
-            }]
+            models = [{'key': 'award_id', 'name': 'award_id', 'type': 'integer', 'optional': False}]
         except ValueError:
             request_dict = {'generated_unique_award_id': requested_award.upper()}
             models = [{
@@ -137,10 +121,7 @@ class IDVAmountsViewSet(APIDocumentationView):
             }
         except ParentAward.DoesNotExist:
             logger.info("No IDV Award found where '%s' is '%s'" % next(iter(request_data.items())))
-            return {
-                'data': OrderedDict({'message': 'No IDV award found with this id'}),
-                'status': status.HTTP_404_NOT_FOUND
-            }
+            raise NotFound("No IDV award found with this id")
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:
