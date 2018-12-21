@@ -164,7 +164,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_performance_state", "_pop_state_code"),
         ("place_of_perform_city_name", "_pop_city_name"),
         ("place_of_perform_county_na", "_pop_county_name"),
-        ("place_of_performance_zip4a", "_pop_zip4"),
+        ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_congr", "_pop_congressional_code"),
         ("place_of_performance_zip5", "_pop_zip5"),
     ]
