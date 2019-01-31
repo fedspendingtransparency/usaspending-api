@@ -1,6 +1,6 @@
 # Populate Awards IDV Columns
 
-This is a quick an dirty script to populate three IDV related columns in the USAspending Awards table: `fpds_agency_id`, `fpds_parent_agency_id`, and `base_exercised_options_val`.  It was created in lieu of a pure SQL script that took over 24 hours to complete.  Chunking the updates proved to be significantly faster.
+This is a quick and dirty script to populate three IDV related columns in the USAspending Awards table: `fpds_agency_id`, `fpds_parent_agency_id`, and `base_exercised_options_val`.  It was created in lieu of a pure SQL script that took over 24 hours to complete.  Chunking the updates proved to be significantly faster.
 
 # References
 
@@ -10,9 +10,7 @@ This is a quick an dirty script to populate three IDV related columns in the USA
 
 # Getting Started
 
-This script was developed and tested under Python 3.5.6 and psycopg2 2.7.5.
-
-It requires only a single environment variable `DB_CONNECTION` that contains a connection string that points to the database to be updated.
+This script was developed and tested under Python 3.5.6 and psycopg2 2.7.5.  It requires only a single environment variable `DB_CONNECTION` that contains a connection string that points to the database to be updated.
 
 And that's it.
 
@@ -26,7 +24,7 @@ Unfortunately, there's currently no way to start from a specific point, but re-r
 
 # Processing
 
-The general steps are:
+The general steps performed by this script are:
 
 1. If the temp table doesn't already exist:
     1. Create temp table to hold interim results
