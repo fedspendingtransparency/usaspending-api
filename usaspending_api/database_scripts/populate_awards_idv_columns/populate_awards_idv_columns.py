@@ -10,13 +10,16 @@ from threading import Lock
 
 # DEFINE THIS ENVIRONMENT VARIABLE BEFORE RUNNING!
 # Obvs, this is the connection string to the database.
-CONNECTION_STRING = environ['DB_CONNECTION']
+CONNECTION_STRING = environ['DATABASE_URL']
 
 
 MULTIPROCESSING_POOLS = 4  # This was chosen after much fine tuning.  Adding more might slow things down.
 CHUNK_SIZE = 50000
 TEMPORARY_TABLE_NAME = 'temp_awards_ops494'
 
+# Unlogged prevents updates to the log file.  This should be safe even in
+# replication environments because we don't want this table replicated, only
+# the final updates to the Awards tables.  But testing is your friend...
 CREATE_TABLE = """
     create unlogged table "%s" (
         id bigint,
