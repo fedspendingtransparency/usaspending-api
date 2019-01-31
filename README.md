@@ -44,12 +44,13 @@ Your prompt should then look as below to show you are _in_ the virtual environme
 
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
-:bulb: _(try a different WiFi if you're current one blocks dependency downloads)_
+:bulb: _(try a different WiFi if your current one blocks dependency downloads)_
 
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 Set environment variables (fill in the connection string placeholders, e.g. `USER`, `PASSWORD`, `HOST`, `PORT`)
-*note: default port for PostgreSQL is `5432`
+
+_Note: the default port for PostgreSQL is `5432`_
 
 ```shell
 
