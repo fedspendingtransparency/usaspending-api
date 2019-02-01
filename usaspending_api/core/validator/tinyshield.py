@@ -2,8 +2,8 @@ import logging
 import copy
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES
-from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR, MAX_ITEMS
+from usaspending_api.core.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
+from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
 from usaspending_api.core.validator.helpers import validate_array
 from usaspending_api.core.validator.helpers import validate_boolean
 from usaspending_api.core.validator.helpers import validate_datetime
@@ -16,6 +16,11 @@ from usaspending_api.core.validator.helpers import validate_text
 logger = logging.getLogger('console')
 
 VALIDATORS = {
+    'any': {
+        # "any" does not use a "func", rather, it calls funcs for child models
+        'required_fields': ['models'],
+        'defaults': {},
+    },
     'array': {
         'func': validate_array,
         'required_fields': ['array_type'],
@@ -125,6 +130,7 @@ class TinyShield:
             name: this field doesn't seem to actually do anything, but it does need to be unique!
             key:  dict|subitem|all|split|by|pipes
             type: type of validator
+                any *
                 array
                 boolean
                 date
@@ -136,6 +142,8 @@ class TinyShield:
                 passthrough
                 text
                 schema
+            models:
+                {provide sub-models - used for "any" type}
             text_type:
                 search
                 raw
@@ -149,6 +157,18 @@ class TinyShield:
             optional:
                 If False, then key-value must be present. Overrides `default`
         }
+
+    * "any" is a special beast as it contains a collection of models, any one of which may match the value provided.
+    The first model to match is the one that's used.  You could use "any" to, say, accept a field that could be either
+    an integer or a string (like an internal award id vs. a generated award id).  Child models of an "any" rule are
+    always optional and inherit their parent's name and key and, as such, those keys are always ignored.  For example:
+
+        models = [
+            {'key': 'id', 'name': 'id', 'type': 'any', 'optional': False, 'models': [
+                {'type': 'integer'},
+                {'type': 'text', 'text_type': 'search'}
+            ]},
+        ]
 
     RETURNS
 
@@ -165,37 +185,56 @@ class TinyShield:
         self.enforce_rules()
         return self.data
 
-    def check_models(self, models):
+    @staticmethod
+    def check_model(model, in_any=False):
         # Confirm required fields (both baseline and type-specific) are in the model
         base_minimum_fields = ('name', 'key', 'type')
 
+        if not all(field in model.keys() for field in base_minimum_fields):
+            raise Exception('Model {} missing a base required field [{}]'.format(model, base_minimum_fields))
+
+        if model['type'] not in VALIDATORS:
+            raise Exception('Invalid model type [{}] provided in description'.format(model['type']))
+
+        type_description = VALIDATORS[model['type']]
+        required_fields = type_description['required_fields']
+
+        for required_field in required_fields:
+            if required_field not in model:
+                raise Exception('Model {} missing a type required field: {}'.format(model, required_field))
+
+        if model.get('text_type') and model['text_type'] not in SUPPORTED_TEXT_TYPES:
+            msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**model)
+            raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
+
+        for default_key, default_value in type_description['defaults'].items():
+            model[default_key] = model.get(default_key, default_value)
+
+        model['optional'] = model.get('optional', True)
+
+        if model['type'] == 'any':
+            if in_any is True:
+                raise Exception('Nested "any" rules are not supported.')
+            # "any" child models are always optional and inherit their parent's name and key.
+            for sub_model in model['models']:
+                sub_model['name'] = model['name']
+                sub_model['key'] = model['key']
+                sub_model['optional'] = True
+                TinyShield.check_model(sub_model, True)
+
+        return model
+
+    @staticmethod
+    def check_models(models):
+
         for model in models:
-            if not all(field in model.keys() for field in base_minimum_fields):
-                raise Exception('Model {} missing a base required field [{}]'.format(model, base_minimum_fields))
-
-            if model['type'] not in VALIDATORS:
-                raise Exception('Invalid model type [{}] provided in description'.format(model['type']))
-
-            type_description = VALIDATORS[model['type']]
-            required_fields = type_description['required_fields']
-
-            for required_field in required_fields:
-                if required_field not in model:
-                    raise Exception('Model {} missing a type required field: {}'.format(model, required_field))
-
-            if model.get('text_type') and model['text_type'] not in SUPPORTED_TEXT_TYPES:
-                msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**model)
-                raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
-
-            for default_key, default_value in type_description['defaults'].items():
-                model[default_key] = model.get(default_key, default_value)
-
-            model['optional'] = model.get('optional', True)
+            TinyShield.check_model(model)
 
         # Check to ensure unique names for destination dictionary
         keys = [x['name'] for x in models if x['type'] != 'schema']  # ignore schema as they are schema-only
         if len(keys) != len(set(keys)):
             raise Exception('Duplicate destination keys provided. Name values must be unique')
+
         return models
 
     def parse_request(self, request):
@@ -227,7 +266,7 @@ class TinyShield:
     def apply_rule(self, rule):
         if rule.get('allow_nulls', False) and rule['value'] is None:
             return rule['value']
-        elif rule['type'] not in ('array', 'object'):
+        elif rule['type'] not in ('array', 'object', 'any'):
             if rule['type'] in VALIDATORS:
                 return VALIDATORS[rule['type']]['func'](rule)
             else:
@@ -268,6 +307,21 @@ class TinyShield:
                 child_rule = self.promote_subrules(child_rule, v)
                 object_result[k] = self.apply_rule(child_rule)
             return object_result
+        # Any is a "special" type since it is is really a collection of other rules.
+        elif rule['type'] == 'any':
+            for child_rule in rule['models']:
+                child_rule['value'] = rule['value']
+                try:
+                    # First successful rule wins.
+                    return self.apply_rule(child_rule)
+                except Exception:
+                    pass
+            # No rules succeeded.
+            raise UnprocessableEntityException(INVALID_TYPE_MSG.format(
+                key=rule['key'],
+                value=rule['value'],
+                type=', '.join(sorted([m['type'] for m in rule['models']]))
+            ))
 
     def promote_subrules(self, child_rule, source={}):
         param_type = child_rule['type']
@@ -302,3 +356,15 @@ class TinyShield:
             else:
                 mydict[level] = {}
                 self.recurse_append(struct, mydict[level], data)
+
+    @staticmethod
+    def get_model_by_name(models, name):
+        """
+        Little helper function to return a TinyShield model from a list of
+        models given the model's name.  Returns None if the model was not
+        found.
+        """
+        for model in models:
+            if model.get('name') == name:
+                return model
+        return None

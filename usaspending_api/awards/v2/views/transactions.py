@@ -4,6 +4,7 @@ from django.db.models import F
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.award_id_helper import AwardIdType, detect_award_id_type
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
@@ -51,12 +52,13 @@ class TransactionViewSet(APIDocumentationView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        if request_data["award_id"].isdigit():
+        award_id, id_type = detect_award_id_type(request_data['award_id'])
+        if id_type is AwardIdType.internal:
             # Award ID
-            filter = {'award_id': request_data["award_id"]}
+            filter = {'award_id': award_id}
         else:
             # Generated Award ID
-            filter = {'award__generated_unique_award_id': request_data["award_id"]}
+            filter = {'award__generated_unique_award_id': award_id}
 
         queryset = (TransactionNormalized.objects.all()
                     .values(*list(self.transaction_lookup.values()))
