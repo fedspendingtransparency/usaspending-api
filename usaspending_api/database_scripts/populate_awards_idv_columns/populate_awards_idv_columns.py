@@ -38,7 +38,7 @@ POPULATE_TABLE = """
             agency_id,
         max(case when f.transaction_id = a.latest_transaction_id then f.referenced_idv_agency_iden end)
             referenced_idv_agency_iden,
-        sum(cast(f.base_exercised_options_val as numeric)) 
+        sum(cast(f.base_exercised_options_val as numeric))
             base_exercised_options_val
     from
         awards a
