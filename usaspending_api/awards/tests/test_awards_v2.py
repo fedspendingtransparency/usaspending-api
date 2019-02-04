@@ -195,8 +195,22 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
     }
+
+    award_3_model = {
+        "pk": 3,
+        "type": "IDV_A",
+        "type_description": "AN IDV",
+        "category": "idv",
+    }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
+    mommy.make("awards.Award", **award_3_model)
+
+    parent_award_3_model = {
+        "award_id": award_3_model["pk"],
+        "parent_award_id": None
+    }
+    mommy.make("awards.ParentAward", **parent_award_3_model)
 
 
 @pytest.mark.django_db
@@ -232,6 +246,11 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/2/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
+
+    # Bug fix rolled into DEV-2034.  This used to throw an exception because
+    # parent award didn't have a parent.
+    resp = client.get("/api/v2/awards/3/")
+    assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db

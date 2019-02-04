@@ -212,6 +212,9 @@ def fetch_parent_award_details(guai):
         .first()
     )
 
+    if not parent_award:
+        return None
+
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
