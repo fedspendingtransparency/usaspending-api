@@ -201,7 +201,7 @@ def fetch_award_details(filter_q, mapper_fields):
 def fetch_parent_award_details(guai):
     parent_award_ids = (
         ParentAward.objects.filter(generated_unique_award_id=guai)
-        .values("award_id", "generated_unique_award_id")
+        .values("parent_award__award_id", "parent_award__generated_unique_award_id")
         .first()
     )
 
@@ -209,7 +209,7 @@ def fetch_parent_award_details(guai):
         return None
 
     parent_award = (
-        Award.objects.filter(id=parent_award_ids["award_id"])
+        Award.objects.filter(id=parent_award_ids["parent_award__award_id"])
         .values(
             "latest_transaction__contract_data__agency_id",
             "latest_transaction__contract_data__idv_type_description",
@@ -223,8 +223,8 @@ def fetch_parent_award_details(guai):
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
-            ("award_id", parent_award_ids["award_id"]),
-            ("generated_unique_award_id", parent_award_ids["generated_unique_award_id"]),
+            ("award_id", parent_award_ids["parent_award__award_id"]),
+            ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
             (
                 "multiple_or_single_aw_desc",
