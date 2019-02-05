@@ -264,11 +264,12 @@ class TinyShield:
                 self.recurse_append(struct, self.data, self.apply_rule(item))
 
     def apply_rule(self, rule):
+        _return = None
         if rule.get('allow_nulls', False) and rule['value'] is None:
-            return rule['value']
+            _return = rule['value']
         elif rule['type'] not in ('array', 'object', 'any'):
             if rule['type'] in VALIDATORS:
-                return VALIDATORS[rule['type']]['func'](rule)
+                _return = VALIDATORS[rule['type']]['func'](rule)
             else:
                 raise Exception('Invalid Type {} in rule'.format(rule['type']))
         # Array is a "special" type since it is a list of other types which need to be validated
@@ -285,7 +286,7 @@ class TinyShield:
             for v in value:
                 child_rule['value'] = v
                 array_result.append(self.apply_rule(child_rule))
-            return array_result
+            _return = array_result
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
             rule['object_min'] = rule.get('object_min', 1)
@@ -306,7 +307,7 @@ class TinyShield:
                 child_rule['value'] = value
                 child_rule = self.promote_subrules(child_rule, v)
                 object_result[k] = self.apply_rule(child_rule)
-            return object_result
+            _return = object_result
         # Any is a "special" type since it is is really a collection of other rules.
         elif rule['type'] == 'any':
             for child_rule in rule['models']:
@@ -322,6 +323,7 @@ class TinyShield:
                 value=rule['value'],
                 type=', '.join(sorted([m['type'] for m in rule['models']]))
             ))
+        return _return
 
     def promote_subrules(self, child_rule, source={}):
         param_type = child_rule['type']
