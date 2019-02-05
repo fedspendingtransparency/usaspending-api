@@ -1,4 +1,6 @@
 import copy
+import logging
+
 from collections import OrderedDict
 
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
@@ -13,6 +15,9 @@ from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
+
+
+logger = logging.getLogger("console")
 
 
 def construct_assistance_response(requested_award_dict):
@@ -200,7 +205,7 @@ def fetch_award_details(filter_q, mapper_fields):
 
 def fetch_parent_award_details(guai):
     parent_award_ids = (
-        ParentAward.objects.filter(generated_unique_award_id=guai)
+        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
         .values("parent_award__award_id", "parent_award__generated_unique_award_id")
         .first()
     )
@@ -221,6 +226,7 @@ def fetch_parent_award_details(guai):
     )
 
     if not parent_award:
+        logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
         return None
 
     parent_object = OrderedDict(
