@@ -85,6 +85,7 @@ def awards_and_transactions(db):
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_zip5": "40221",
         "place_of_performance_forei": None,
+        "modified_at": "2000-01-02T00:00:00Z"
     }
     cont_data = {
         "awardee_or_recipient_legal": "John's Pizza",
@@ -106,6 +107,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contract_desc": "NOT APPLICABLE",
         "labor_standards_descrip": "NO",
+        "last_modified": "2001-02-03",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -134,6 +136,7 @@ def awards_and_transactions(db):
         "place_of_performance_state": "NC",
         "place_of_perform_zip_last4": "5312",
         "place_of_performance_zip5": "12204",
+        "period_of_perf_potential_e": "2003-04-05",
         "price_evaluation_adjustmen": None,
         "product_or_service_co_desc": None,
         "product_or_service_code": "4730",
@@ -344,6 +347,7 @@ expected_response_asst = {
     "period_of_performance": {
         "period_of_performance_current_end_date": "2005-02-04",
         "period_of_performance_start_date": "2004-02-04",
+        "last_modified_date": "2000-01-02",
     },
     "place_of_performance": {
         "address_line1": None,
@@ -412,6 +416,8 @@ expected_response_cont = {
     "period_of_performance": {
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
+        "last_modified_date": "2001-02-03",
+        "potential_end_date": "2003-04-05",
     },
     "place_of_performance": {
         "address_line1": None,

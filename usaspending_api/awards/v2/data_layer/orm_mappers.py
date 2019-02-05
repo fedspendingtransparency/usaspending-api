@@ -68,6 +68,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
+        ("modified_at", "_modified_at"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
@@ -142,6 +143,8 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("purchase_card_as_paym_desc", "purchase_card_as_paym_desc"),
         ("consolidated_contract_desc", "consolidated_contract_desc"),
         ("type_of_contract_pric_desc", "type_of_contract_pric_desc"),
+        ("last_modified", "_last_modified"),
+        ("period_of_perf_potential_e", "_period_of_perf_potential_e"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
