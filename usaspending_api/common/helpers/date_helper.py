@@ -6,7 +6,7 @@ def get_date_from_datetime(date_time, **kwargs):
     """
     try:
         return date_time.date()
-    except:
+    except Exception:
         return kwargs.get('default', date_time)
 
 
