@@ -358,15 +358,3 @@ class TinyShield:
             else:
                 mydict[level] = {}
                 self.recurse_append(struct, mydict[level], data)
-
-    @staticmethod
-    def get_model_by_name(models, name):
-        """
-        Little helper function to return a TinyShield model from a list of
-        models given the model's name.  Returns None if the model was not
-        found.
-        """
-        for model in models:
-            if model.get('name') == name:
-                return model
-        return None

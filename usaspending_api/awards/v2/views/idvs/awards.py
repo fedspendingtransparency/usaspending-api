@@ -1,16 +1,15 @@
 from collections import OrderedDict
-from copy import deepcopy
 
 from django.db import connection
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.award_id_helper import detect_award_id_type, AwardIdType
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
@@ -84,28 +83,12 @@ def _prepare_tiny_shield_rules():
     Our TinyShield rules never change.  Encapsulate them here and store them
     once in TINY_SHIELD_RULES.
     """
-
-    # This endpoint supports paging.
-    models = deepcopy(PAGINATION)
-
-    # Add the list of sortable columns for validation.
-    sort_rule = TinyShield.get_model_by_name(models, 'sort')
-    sort_rule['type'] = 'enum'
-    sort_rule['enum_values'] = SORTABLE_COLUMNS
-    sort_rule['default'] = DEFAULT_SORT_COLUMN
-
-    # Add additional models for the award id and the idv filter.
+    models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
     models.extend([
-        # Award id can be either an integer or a string depending upon whether
-        # it's an internal id or a unique generated id.
-        {'key': 'award_id', 'name': 'award_id', 'type': 'any', 'optional': False, 'models': [
-            {'type': 'integer'},
-            {'type': 'text', 'text_type': 'search'}
-        ]},
+        get_internal_or_generated_award_id_rule(),
         {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
     ])
-
-    return models
+    return TinyShield(models)
 
 
 TINY_SHIELD_RULES = _prepare_tiny_shield_rules()
@@ -118,12 +101,16 @@ class IDVAwardsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(deepcopy(TINY_SHIELD_RULES)).block(request)
+        return TINY_SHIELD_RULES.block(request)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
-        award_id, award_id_type = detect_award_id_type(request_data['award_id'])
-        award_id_column = 'award_id' if award_id_type is AwardIdType.internal else 'generated_unique_award_id'
+        # By this point, our award_id has been validated and cleaned up by
+        # TinyShield.  We will either have an internal award id that is an
+        # integer or a generated award id that is a string.
+        award_id = request_data['award_id']
+        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+
         sql = GET_IDVS_SQL if request_data['idv'] else GET_CONTRACTS_SQL
         sql = sql.format(
             award_id_column=Identifier(award_id_column),
@@ -134,7 +121,10 @@ class IDVAwardsViewSet(APIDocumentationView):
             offset=Literal((request_data['page'] - 1) * request_data['limit']),
         )
         with connection.cursor() as cursor:
-            cursor.execute(sql, [award_id])
+            # We must convert this to an actual query string else
+            # django-debug-toolbar will blow up since it is assuming a string
+            # instead of a SQL object.
+            cursor.execute(sql.as_string(connection.connection), [award_id])
             return dictfetchall(cursor)
 
     @cache_response()

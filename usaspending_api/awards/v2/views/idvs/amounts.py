@@ -6,14 +6,17 @@ from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.award_id_helper import detect_award_id_type, AwardIdType
 from usaspending_api.awards.models import ParentAward
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 
 logger = logging.getLogger('console')
+
+
+TINY_SHIELD_RULES = TinyShield([get_internal_or_generated_award_id_rule()])
 
 
 class IDVAmountsViewSet(APIDocumentationView):
@@ -23,30 +26,18 @@ class IDVAmountsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:
-        award_id, award_id_type = detect_award_id_type(requested_award)
-        if award_id_type is AwardIdType.internal:
-            request_dict = {'award_id': award_id}
-            models = [{
-                'key': 'award_id',
-                'name': 'award_id',
-                'type': 'integer',
-                'optional': False,
-            }]
-        else:
-            request_dict = {'generated_unique_award_id': award_id}
-            models = [{
-                'key': 'generated_unique_award_id',
-                'name': 'generated_unique_award_id',
-                'type': 'text',
-                'text_type': 'search',
-                'optional': False,
-            }]
-        return TinyShield(models).block(request_dict)
+        return TINY_SHIELD_RULES.block({'award_id': requested_award})
 
     @staticmethod
     def _business_logic(request_data: dict) -> OrderedDict:
+        # By this point, our award_id has been validated and cleaned up by
+        # TinyShield.  We will either have an internal award id that is an
+        # integer or a generated award id that is a string.
+        award_id = request_data['award_id']
+        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+
         try:
-            parent_award = ParentAward.objects.get(**request_data)
+            parent_award = ParentAward.objects.get(**{award_id_column: award_id})
             return OrderedDict((
                 ('award_id', parent_award.award_id),
                 ('generated_unique_award_id', parent_award.generated_unique_award_id),
