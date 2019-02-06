@@ -101,61 +101,60 @@ def test_get_internal_award_id_rule():
 
 
 def test_get_internal_or_generated_award_id_rule():
-    models = [get_generated_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': 'abcd'})
     assert r == {'award_id': 'abcd'}
 
-    models = [get_generated_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': 'A' * MAX_ITEMS})
     assert r == {'award_id': 'A' * MAX_ITEMS}
 
-    models = [get_generated_award_id_rule(key='my_award_id')]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id')]
     r = TinyShield(models).block({'my_award_id': 'abcd'})
     assert r == {'my_award_id': 'abcd'}
 
-    models = [get_generated_award_id_rule(key='my_award_id', name='your_award_id')]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id', name='your_award_id')]
     r = TinyShield(models).block({'my_award_id': 'abcd'})
     assert r == {'my_award_id': 'abcd'}
 
-    models = [get_generated_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
     r = TinyShield(models).block({'my_award_id': 'abcd'})
     assert r == {'my_award_id': 'abcd'}
 
-    models = [get_generated_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
-    r = TinyShield(models).block({})
-    assert r == {}
-
-    models = [get_internal_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': 12345})
     assert r == {'award_id': 12345}
 
-    models = [get_internal_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': '12345'})
     assert r == {'award_id': 12345}
 
-    models = [get_internal_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': MAX_INT})
     assert r == {'award_id': MAX_INT}
 
-    models = [get_internal_award_id_rule()]
+    models = [get_internal_or_generated_award_id_rule()]
     r = TinyShield(models).block({'award_id': MIN_INT})
     assert r == {'award_id': MIN_INT}
 
-    models = [get_internal_award_id_rule(key='my_award_id')]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id')]
     r = TinyShield(models).block({'my_award_id': 12345})
     assert r == {'my_award_id': 12345}
 
-    models = [get_internal_award_id_rule(key='my_award_id', name='your_award_id')]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id', name='your_award_id')]
     r = TinyShield(models).block({'my_award_id': 12345})
     assert r == {'my_award_id': 12345}
 
-    models = [get_internal_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
     r = TinyShield(models).block({'my_award_id': 12345})
     assert r == {'my_award_id': 12345}
 
-    models = [get_internal_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
+    models = [get_internal_or_generated_award_id_rule(key='my_award_id', name='your_award_id', optional=True)]
     r = TinyShield(models).block({})
     assert r == {}
+
+
+def test_get_internal_or_generated_award_id_rule_bad():
 
     # Bad rules.
     ts = TinyShield([get_internal_or_generated_award_id_rule()])
@@ -163,7 +162,7 @@ def test_get_internal_or_generated_award_id_rule():
     with pytest.raises(UnprocessableEntityException):
         ts.block({})
     with pytest.raises(UnprocessableEntityException):
-        ts.block({'award_id': 'A' * (MAX_ITEMS + 1)})
+        ts.block({'award_id': 'B' * (MAX_ITEMS + 1)})
     with pytest.raises(UnprocessableEntityException):
         ts.block({'award_id': MAX_INT + 1})
     with pytest.raises(UnprocessableEntityException):
