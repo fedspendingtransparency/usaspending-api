@@ -130,7 +130,6 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("program_system_or_equ_desc", "dod_acquisition_program_description"),
         ("information_technology_com", "information_technology_commercial_item_category_code"),
         ("information_technolog_desc", "information_technology_commercial_item_category"),
-        ("information_technolog_desc", "information_technolog_desc"),
         ("sea_transportation_desc", "sea_transportation_desc"),
         ("clinger_cohen_act_pla_desc", "clinger_cohen_act_pla_desc"),
         ("construction_wage_rat_desc", "construction_wage_rat_desc"),

@@ -85,7 +85,7 @@ def awards_and_transactions(db):
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_zip5": "40221",
         "place_of_performance_forei": None,
-        "modified_at": "2000-01-02T00:00:00Z"
+        "modified_at": "2000-01-02T00:00:00Z",
     }
     cont_data = {
         "awardee_or_recipient_legal": "John's Pizza",
@@ -175,6 +175,7 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "date_signed": "2005-04-03",
     }
 
     award_2_model = {
@@ -197,6 +198,7 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
+        "date_signed": "2004-03-02",
     }
 
     mommy.make("awards.Award", **award_1_model)
@@ -250,13 +252,14 @@ expected_response_asst = {
     "cfda_objectives": None,
     "cfda_number": "1234",
     "cfda_title": "Shiloh",
-    "base_and_all_options_value": None,
+    "base_and_all_options": None,
     "base_exercised_options": None,
     "non_federal_funding": None,
     "total_funding": None,
     "total_loan_value": None,
     "total_obligation": None,
     "total_subsidy_cost": None,
+    "transaction_obligated_amount": None,
     "awarding_agency": {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
@@ -314,6 +317,7 @@ expected_response_asst = {
         "location_country_code": "PDA",
         "congressional_code": "-0-",
     },
+    "date_signed": "2005-04-03",
 }
 
 
@@ -362,7 +366,7 @@ expected_response_cont = {
         "parent_recipient_name": None,
     },
     "total_obligation": 1000.0,
-    "base_and_all_options_value": 2000.0,
+    "base_and_all_options": 2000.0,
     "base_exercised_options_val": None,
     "period_of_performance": {
         "period_of_performance_start_date": "2004-02-04",
@@ -400,7 +404,6 @@ expected_response_cont = {
         "fed_biz_opps_description": "YES",
         "foreign_funding_desc": "NOT APPLICABLE",
         "idv_type_description": None,
-        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contract_desc": "NOT APPLICABLE",
         "labor_standards_descrip": "NO",
         "major_program": None,
@@ -412,10 +415,12 @@ expected_response_cont = {
         "number_of_offers_received": None,
         "other_than_full_and_o_desc": None,
         "price_evaluation_adjustmen": None,
-        "product_or_service_co_desc": None,
+        "dod_acquisition_program_code": "000",
+        "dod_acquisition_program_description": None,
+        "information_technology_commercial_item_category_code": None,
+        "information_technology_commercial_item_category": "NOT IT PRODUCTS OR SERVICES",
         "product_or_service_code": "4730",
         "program_acronym": None,
-        "program_system_or_equipmen": "000",
         "purchase_card_as_paym_desc": "NO",
         "referenced_idv_agency_iden": "9700",
         "sea_transportation_desc": "NO",
@@ -426,8 +431,10 @@ expected_response_cont = {
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": None,
         "type_set_aside_description": None,
+        "product_or_service_desc": None,
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {"officers": []},
+    "date_signed": "2004-03-02",
 }

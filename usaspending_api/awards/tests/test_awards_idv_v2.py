@@ -155,6 +155,7 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "date_signed": "2005-04-03",
     }
 
     award_2_model = {
@@ -174,6 +175,7 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
+        "date_signed": "2004-03-02",
     }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
@@ -256,7 +258,7 @@ expected_response_idv = {
         "parent_recipient_name": None,
     },
     "total_obligation": 1000.0,
-    "base_and_all_options_value": 2000.0,
+    "base_and_all_options": 2000.0,
     "base_exercised_options_val": None,
     "place_of_performance": {
         "address_line1": None,
@@ -291,12 +293,14 @@ expected_response_idv = {
         "small_business_competitive": False,
         "fair_opportunity_limi_desc": None,
         "product_or_service_code": "4730",
-        "product_or_service_co_desc": None,
+        "product_or_service_desc": None,
         "naics": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "dod_claimant_program_code": "C9E",
-        "program_system_or_equipmen": "000",
-        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "dod_acquisition_program_code": "000",
+        "dod_acquisition_program_description": None,
+        "information_technology_commercial_item_category": "NOT IT PRODUCTS OR SERVICES",
+        "information_technology_commercial_item_category_code": None,
         "sea_transportation_desc": "NO",
         "clinger_cohen_act_pla_desc": "NO",
         "construction_wage_rat_desc": "NO",
@@ -318,4 +322,5 @@ expected_response_idv = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {"officers": []},
+    "date_signed": "2004-03-02",
 }
