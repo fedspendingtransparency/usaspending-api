@@ -2,6 +2,7 @@ import copy
 import logging
 
 from collections import OrderedDict
+from django.db.models import Sum
 
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_AWARD_FIELDS,
@@ -10,7 +11,9 @@ from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FPDS_AWARD_FIELDS,
     FABS_ASSISTANCE_FIELDS,
 )
-from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, ParentAward
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
+)
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
@@ -40,6 +43,7 @@ def construct_assistance_response(requested_award_dict):
     response["cfda_number"] = transaction["cfda_number"]
     response["cfda_title"] = transaction["cfda_title"]
     response["cfda_objectives"] = cfda_info.get("objectives")
+    response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
@@ -332,3 +336,10 @@ def fetch_cfda_details_using_cfda_number(cfda):
     if not c:
         return {}
     return c
+
+
+def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id):
+    _sum = FinancialAccountsByAwards.objects.filter(
+        award_id=internal_award_id).aggregate(Sum('transaction_obligated_amount'))
+    if _sum:
+        return _sum.get('transaction_obligated_amount__sum')

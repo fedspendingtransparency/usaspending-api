@@ -23,7 +23,7 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_subsidy_cost", "total_subsidy_cost"),
         ("total_loan_value", "total_loan_value"),
         ("total_obligation", "total_obligation"),
-        ("base_and_all_options_value", "base_and_all_options_value"),
+        ("base_and_all_options_value", "base_and_all_options"),
         ("base_exercised_options_val", "base_exercised_options"),
         ("non_federal_funding_amount", "non_federal_funding"),
         ("total_funding_amount", "total_funding"),
@@ -34,6 +34,7 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("funding_agency_id", "_funding_agency"),
         ("period_of_performance_start_date", "_start_date"),
         ("period_of_performance_current_end_date", "_end_date"),
+        ("date_signed", "date_signed"),
     ]
 )
 
@@ -50,7 +51,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("description", "description"),
         ("total_obligation", "total_obligation"),
         ("base_exercised_options_val", "base_exercised_options_val"),
-        ("base_and_all_options_value", "base_and_all_options_value"),
+        ("base_and_all_options_value", "base_and_all_options"),
         ("subaward_count", "subaward_count"),
         ("total_subaward_amount", "total_subaward_amount"),
         # extra fields
@@ -60,6 +61,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("funding_agency_id", "_funding_agency"),
         ("period_of_performance_start_date", "_start_date"),
         ("period_of_performance_current_end_date", "_end_date"),
+        ("date_signed", "date_signed"),
     ]
 )
 
@@ -120,11 +122,14 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("small_business_competitive", "small_business_competitive"),
         ("fair_opportunity_limi_desc", "fair_opportunity_limi_desc"),
         ("product_or_service_code", "product_or_service_code"),
-        ("product_or_service_co_desc", "product_or_service_co_desc"),
+        ("product_or_service_co_desc", "product_or_service_desc"),
         ("naics", "naics"),
         ("naics_description", "naics_description"),
         ("dod_claimant_program_code", "dod_claimant_program_code"),
-        ("program_system_or_equipmen", "program_system_or_equipmen"),
+        ("program_system_or_equipmen", "dod_acquisition_program_code"),
+        ("program_system_or_equ_desc", "dod_acquisition_program_description"),
+        ("information_technology_com", "information_technology_commercial_item_category_code"),
+        ("information_technolog_desc", "information_technology_commercial_item_category"),
         ("information_technolog_desc", "information_technolog_desc"),
         ("sea_transportation_desc", "sea_transportation_desc"),
         ("clinger_cohen_act_pla_desc", "clinger_cohen_act_pla_desc"),
