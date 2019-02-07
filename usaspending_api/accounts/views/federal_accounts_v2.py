@@ -1,6 +1,5 @@
 import ast
 from collections import OrderedDict
-
 from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
@@ -15,6 +14,7 @@ from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class ObjectClassFederalAccountsViewSet(APIDocumentationView):
@@ -412,25 +412,29 @@ class FederalAccountsViewSet(APIDocumentationView):
             {'key': 'page', 'name': 'page', 'type': 'integer', 'default': 1, 'min': 1, 'optional': True},
             {'key': 'limit', 'name': 'limit', 'type': 'integer', 'default': 10, 'min': 1, 'max': 100, 'optional': True},
             {'key': 'filters', 'name': 'filters', 'type': 'object', 'optional': True, 'object_keys': {
+                'agency_identifier': {'name': 'agency_identifier', 'type': 'text', 'text_type': 'search',
+                                      'optional': True},
                 'fy': {'type': 'enum', 'enum_values': fy_range, 'optional': True, 'default': last_fy},
             }, 'default': {'fy': last_fy}},
-            {'key': 'keyword', 'name': 'keyword', 'type': 'text', 'text_type': 'search', 'optional': True}
+            {'key': 'keyword', 'name': 'keyword', 'type': 'text', 'text_type': 'search', 'optional': True},
         ]
 
         validated_request_data = TinyShield(request_settings).block(request_dict)
+        validated_request_data["filters"]["fy"] = validated_request_data["filters"].get("fy", last_fy)
         return validated_request_data
 
     @cache_response()
     def post(self, request, format=None):
+
         """ Return all high-level Federal Account information """
         request_data = self._parse_and_validate_request(request.data)
-
         limit = request_data['limit']
         page = request_data['page']
         sort_field = request_data['sort']['field']
         sort_direction = request_data['sort']['direction']
-        fy = request_data['filters']['fy']
         keyword = request_data.get('keyword', None)
+        fy = request_data['filters']['fy']
+        agency_id = request_data['filters'].get('agency_identifier', None)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
@@ -454,6 +458,13 @@ class FederalAccountsViewSet(APIDocumentationView):
                                        Q(account_number__contains=keyword) |
                                        Q(managing_agency__icontains=keyword) |
                                        Q(managing_agency_acronym__contains=keyword.upper()))
+
+        if agency_id is not None:
+            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else [agency_id]
+            tta_filter = Q()
+            for tta in tta_list:
+                    tta_filter |= Q(account_number__startswith=tta)
+            queryset &= queryset.filter(tta_filter)
 
         if sort_direction == 'desc':
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))

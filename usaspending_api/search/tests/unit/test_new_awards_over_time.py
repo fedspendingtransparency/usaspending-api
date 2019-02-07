@@ -114,14 +114,14 @@ def test_new_awards_month(add_award_recipients, client):
         elif i == 10:
             new_award_count = 1
         expected_results.append({
-            'time_period': {'fiscal_year': '2009', 'month': i},
+            'time_period': {'fiscal_year': '2009', 'month': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2010
     for i in range(1, 13):
         new_award_count = 0
         expected_results.append({
-            'time_period': {'fiscal_year': '2010', 'month': i},
+            'time_period': {'fiscal_year': '2010', 'month': str(i)},
             'new_award_count_in_period': new_award_count
         })
     expected_response = {
@@ -148,7 +148,7 @@ def test_new_awards_month(add_award_recipients, client):
         if i == 4:
             new_award_count = 2
         expected_results.append({
-            'time_period': {'fiscal_year': '2008', 'month': i},
+            'time_period': {'fiscal_year': '2008', 'month': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2009
@@ -159,14 +159,14 @@ def test_new_awards_month(add_award_recipients, client):
         elif i == 10:
             new_award_count = 1
         expected_results.append({
-            'time_period': {'fiscal_year': '2009', 'month': i},
+            'time_period': {'fiscal_year': '2009', 'month': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2010
     for i in range(1, 13):
         new_award_count = 0
         expected_results.append({
-            'time_period': {'fiscal_year': '2010', 'month': i},
+            'time_period': {'fiscal_year': '2010', 'month': str(i)},
             'new_award_count_in_period': new_award_count
         })
     expected_response = {
@@ -210,14 +210,14 @@ def test_new_awards_quarter(add_award_recipients, client):
         elif i == 4:
             new_award_count = 1
         expected_results.append({
-            'time_period': {'fiscal_year': '2009', 'quarter': i},
+            'time_period': {'fiscal_year': '2009', 'quarter': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2010
     for i in range(1, 5):
         new_award_count = 0
         expected_results.append({
-            'time_period': {'fiscal_year': '2010', 'quarter': i},
+            'time_period': {'fiscal_year': '2010', 'quarter': str(i)},
             'new_award_count_in_period': new_award_count
         })
     expected_response = {
@@ -234,7 +234,7 @@ def test_new_awards_quarter(add_award_recipients, client):
         if i == 2:
             new_award_count = 2
         expected_results.append({
-            'time_period': {'fiscal_year': '2008', 'quarter': i},
+            'time_period': {'fiscal_year': '2008', 'quarter': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2009
@@ -245,14 +245,14 @@ def test_new_awards_quarter(add_award_recipients, client):
         elif i == 4:
             new_award_count = 1
         expected_results.append({
-            'time_period': {'fiscal_year': '2009', 'quarter': i},
+            'time_period': {'fiscal_year': '2009', 'quarter': str(i)},
             'new_award_count_in_period': new_award_count
         })
     # 2010
     for i in range(1, 5):
         new_award_count = 0
         expected_results.append({
-            'time_period': {'fiscal_year': '2010', 'quarter': i},
+            'time_period': {'fiscal_year': '2010', 'quarter': str(i)},
             'new_award_count_in_period': new_award_count
         })
 

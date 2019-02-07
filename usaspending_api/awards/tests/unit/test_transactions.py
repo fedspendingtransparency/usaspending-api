@@ -47,7 +47,7 @@ def test_specific_award():
     mommy.make('awards.TransactionNormalized', **transaction_1)
     mommy.make('awards.TransactionNormalized', **transaction_2)
     test_payload = {
-        "award_id": 2
+        "award_id": "2"
     }
 
     svs = TransactionViewSet()

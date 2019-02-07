@@ -25,11 +25,11 @@ CREATE TABLE references_legalentityofficers_new AS (
                 high_comp_officer3_full_na AS officer_3_name,
                 high_comp_officer4_full_na AS officer_4_name,
                 high_comp_officer5_full_na AS officer_5_name,
-                NULLIF(high_comp_officer1_amount, '''')::NUMERIC(20, 2) AS officer_1_amount,
-                NULLIF(high_comp_officer2_amount, '''')::NUMERIC(20, 2) AS officer_2_amount,
-                NULLIF(high_comp_officer3_amount, '''')::NUMERIC(20, 2) AS officer_3_amount,
-                NULLIF(high_comp_officer4_amount, '''')::NUMERIC(20, 2) AS officer_4_amount,
-                NULLIF(high_comp_officer5_amount, '''')::NUMERIC(20, 2) AS officer_5_amount
+                NULLIF(high_comp_officer1_amount, '''')::NUMERIC(23, 2) AS officer_1_amount,
+                NULLIF(high_comp_officer2_amount, '''')::NUMERIC(23, 2) AS officer_2_amount,
+                NULLIF(high_comp_officer3_amount, '''')::NUMERIC(23, 2) AS officer_3_amount,
+                NULLIF(high_comp_officer4_amount, '''')::NUMERIC(23, 2) AS officer_4_amount,
+                NULLIF(high_comp_officer5_amount, '''')::NUMERIC(23, 2) AS officer_5_amount
             FROM executive_compensation e
             INNER JOIN (
                 SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate
@@ -55,11 +55,11 @@ CREATE TABLE references_legalentityofficers_new AS (
                 officer_3_name text,
                 officer_4_name text,
                 officer_5_name text,
-                officer_1_amount numeric(20, 2),
-                officer_2_amount numeric(20, 2),
-                officer_3_amount numeric(20, 2),
-                officer_4_amount numeric(20, 2),
-                officer_5_amount numeric(20, 2)
+                officer_1_amount numeric(23, 2),
+                officer_2_amount numeric(23, 2),
+                officer_3_amount numeric(23, 2),
+                officer_4_amount numeric(23, 2),
+                officer_5_amount numeric(23, 2)
             )
             INNER JOIN
             legal_entity ON legal_entity.recipient_unique_id = broker_exec_comp.duns

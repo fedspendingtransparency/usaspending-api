@@ -1,7 +1,8 @@
 from django.conf.urls import url
-from usaspending_api.awards.v2.views.awards import AwardLastUpdatedViewSet, AwardRetrieveViewSet
+from usaspending_api.awards.v2.views.awards import AwardLastUpdatedViewSet, AwardRetrieveViewSet, IDVAmountsViewSet
 
 urlpatterns = [
     url(r'^last_updated', AwardLastUpdatedViewSet.as_view()),
-    url(r'(?P<generated_unique_award_id>[A-Za-z0-9_. -]+)/$', AwardRetrieveViewSet.as_view()),
-    ]
+    url(r'^idvs/amounts/(?P<requested_award>[A-Za-z0-9_. -]+)/$', IDVAmountsViewSet.as_view()),
+    url(r'(?P<requested_award>[A-Za-z0-9_. -]+)/$', AwardRetrieveViewSet.as_view()),
+]

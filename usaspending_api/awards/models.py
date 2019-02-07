@@ -28,72 +28,72 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
     award_type = models.TextField(blank=True, null=True)
-    ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                 blank=True, null=True)
-    ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                 blank=True, null=True)
-    ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                       blank=True, null=True)
-    ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                        blank=True, null=True)
-    ussgl490100_delivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl490100_delivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                               blank=True, null=True)
-    ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                               blank=True, null=True)
-    ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                     blank=True, null=True)
-    ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                       blank=True, null=True)
-    ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                     blank=True, null=True)
-    ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                     blank=True, null=True)
-    ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                        blank=True, null=True)
-    ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                       blank=True, null=True)
-    ussgl490200_delivered_orders_obligations_paid_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    ussgl490200_delivered_orders_obligations_paid_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                             null=True)
-    ussgl490800_authority_outlayed_not_yet_disbursed_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl490800_authority_outlayed_not_yet_disbursed_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                blank=True, null=True)
-    ussgl490800_authority_outlayed_not_yet_disbursed_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl490800_authority_outlayed_not_yet_disbursed_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                blank=True, null=True)
-    ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                     blank=True, null=True)
-    obligations_undelivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    obligations_undelivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                           null=True)
-    obligations_delivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    obligations_delivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                         null=True)
-    obligations_delivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    obligations_delivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                         null=True)
-    gross_outlays_undelivered_orders_prepaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    gross_outlays_undelivered_orders_prepaid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                              blank=True, null=True)
-    gross_outlays_undelivered_orders_prepaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    gross_outlays_undelivered_orders_prepaid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                              blank=True, null=True)
-    gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                         null=True)
-    gross_outlay_amount_by_award_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    gross_outlay_amount_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    obligations_incurred_total_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    gross_outlay_amount_by_award_fyb = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    gross_outlay_amount_by_award_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    obligations_incurred_total_by_award_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                   null=True)
-    ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                        blank=True, null=True)
-    ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                        blank=True, null=True)
-    ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                        blank=True, null=True)
-    ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                       blank=True, null=True)
-    deobligations_recoveries_refunds_of_prior_year_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    deobligations_recoveries_refunds_of_prior_year_by_award_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                       blank=True, null=True)
-    obligations_undelivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+    obligations_undelivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                           blank=True, null=True)
-    gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+    gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2,
                                                                         blank=True, null=True)
     drv_award_id_field_type = models.TextField(blank=True, null=True)
-    drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=21, decimal_places=2, blank=True,
+    drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                   null=True)
-    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    transaction_obligated_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -158,8 +158,8 @@ class Award(DataSourceTrackedModel):
                                       "blanket purchase agreement. It is used to track the contract, and any "
                                       "modifications or transactions related to it. After October 2017, it is "
                                       "between 13 and 17 digits, both letters and numbers.")
-    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True,
-                                     help_text="The parent award, if applicable")
+    fpds_agency_id = models.TextField(blank=True, null=True)
+    fpds_parent_agency_id = models.TextField(blank=True, null=True)
     fain = models.TextField(db_index=True, blank=True, null=True,
                             help_text="An identification code assigned to each financial assistance award tracking "
                                       "purposes. The FAIN is tied to that award (and all future modifications to that "
@@ -168,13 +168,13 @@ class Award(DataSourceTrackedModel):
                                       "stands for Federal Award Identification Number, though the digits are letters, "
                                       "not numbers.")
     uri = models.TextField(db_index=True, blank=True, null=True, help_text="The uri of the award")
-    total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
+    total_obligation = models.DecimalField(max_digits=23, db_index=True, decimal_places=2, null=True,
                                            verbose_name="Total Obligated",
                                            help_text="The amount of money the government is obligated to pay for the "
                                                      "award")
-    total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
+    total_outlay = models.DecimalField(max_digits=23, db_index=True, decimal_places=2, null=True,
                                        help_text="The total amount of money paid out for this award")
-    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
+    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
                                              help_text="The total of the original_loan_subsidy_cost from associated "
                                                        "transactions")
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
@@ -187,8 +187,7 @@ class Award(DataSourceTrackedModel):
     date_signed = models.DateField(null=True, db_index=False, verbose_name="Award Date",
                                    help_text="The date the award was signed")
     recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award", db_index=True)
-    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award",
-                                   db_index=True)
+    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
     period_of_performance_start_date = models.DateField(null=True, db_index=True, verbose_name="Start Date",
                                                         help_text="The start date for the period of performance")
     period_of_performance_current_end_date = models.DateField(null=True, db_index=True, verbose_name="End Date",
@@ -199,13 +198,17 @@ class Award(DataSourceTrackedModel):
                                                        "work is performed. For example, in a manufacturing contract, "
                                                        "this would be the main plant where items are produced.",
                                              db_index=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
+    potential_total_value_of_award = models.DecimalField(max_digits=23, db_index=False, decimal_places=2, blank=True,
                                                          null=True, verbose_name="Potential Total Value of Award",
                                                          help_text="The sum of the potential_value_of_award from "
                                                                    "associated transactions")
-    base_and_all_options_value = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
+    base_and_all_options_value = models.DecimalField(max_digits=23, db_index=False, decimal_places=2, blank=True,
                                                      null=True, verbose_name="Base and All Options Value",
                                                      help_text="The sum of the base_and_all_options_value from "
+                                                               "associated transactions")
+    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True, verbose_name="Combined Base and Exercised Options",
+                                                     help_text="The sum of the base_exercised_options_val from "
                                                                "associated transactions")
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
@@ -215,45 +218,33 @@ class Award(DataSourceTrackedModel):
                                        help_text="The last time this record was updated in the API")
     latest_transaction = models.ForeignKey("awards.TransactionNormalized", related_name="latest_for_award", null=True,
                                            help_text="The latest transaction by action_date associated with this award")
-    parent_award_piid = models.TextField(null=True, verbose_name="Parent Award Piid",
+    parent_award_piid = models.TextField(db_index=True, null=True, verbose_name="Parent Award Piid",
                                          help_text="The piid of the Award's parent Award")
     generated_unique_award_id = models.TextField(blank=False, null=False, default="NONE",
                                                  verbose_name="Generated Unique Award ID")
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     transaction_unique_id = models.TextField(blank=False, null=False, default="NONE",
                                              verbose_name="Transaction Unique ID")
-    total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+    total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                null=True, help_text="A summation of this award's transactions'"
                                                                     " funding amount")
     non_federal_funding_amount = models.DecimalField(
-        max_digits=20, decimal_places=2, null=True, blank=True,
+        max_digits=23, decimal_places=2, null=True, blank=True,
         help_text="A summation of this award's transactions' non-federal funding amount")
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
 
     # Subaward aggregates
-    total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    total_subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, null=True)
     subaward_count = models.IntegerField(default=0)
 
     objects = models.Manager()
     nonempty = AwardManager()
 
-    def manual_hash(self):
-        """Used to manually establish equality between instances.
-
-        Useful for unsaved records where `.id` is not yet set.
-        Possibly this could be converted to __hash__"""
-
-        return hash((self.piid, self.fain, self.uri,
-                    (self.parent_award and
-                     (self.parent_award.piid,
-                      self.parent_award.fain,
-                      self.parent_award.uri))))
-
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_id=None,
+    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_piid=None,
                                     use_cache=False, save=True, agency_toptier_map=None, record_type=None,
                                     generated_unique_award_id=None):
         """
@@ -279,14 +270,8 @@ class Award(DataSourceTrackedModel):
                 lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
             else:
                 # Use the lookup_value is generated unique ID is not available
-                lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+                lookup_kwargs = {"awarding_agency": awarding_agency}
                 lookup_kwargs[lookup_value[1]] = lookup_value[0]
-
-                # Only contracts have parent awards
-                if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
-                    lookup_kwargs["parent_award__piid"] = parent_award_id
-                    if "parent_award" in lookup_kwargs:
-                        del lookup_kwargs["parent_award"]
 
             # Look for an existing award record
             summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
@@ -295,13 +280,13 @@ class Award(DataSourceTrackedModel):
                 return [], summary_award
 
             # Now create the award record for this award transaction
-            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": None,
-                             "parent_award_piid": parent_award_id}
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award_piid": parent_award_piid}
             create_kwargs[lookup_value[1]] = lookup_value[0]
             if generated_unique_award_id:
                 create_kwargs["generated_unique_award_id"] = generated_unique_award_id
                 if generated_unique_award_id.startswith('CONT_AW_'):
                     create_kwargs["is_fpds"] = True
+
             summary_award = Award(**create_kwargs)
 
             if save:
@@ -313,11 +298,15 @@ class Award(DataSourceTrackedModel):
         except ValueError:
             raise ValueError(
                 'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, '
-                'parent_id={}, awarding_agency={}, generated_unique_award_id={}'
-                .format(piid, fain, uri, parent_award_id, awarding_agency, generated_unique_award_id))
+                'parent_award_piid={}, awarding_agency={}, generated_unique_award_id={}'
+                .format(piid, fain, uri, parent_award_piid, awarding_agency, generated_unique_award_id))
 
     class Meta:
         db_table = 'awards'
+        indexes = [
+            models.Index(fields=['-update_date'], name='awards_update_date_desc_idx'),
+            models.Index(fields=['generated_unique_award_id'], name='award_unique_id')
+        ]
 
 
 class TransactionNormalized(models.Model):
@@ -340,11 +329,11 @@ class TransactionNormalized(models.Model):
                                    db_index=True)
     action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
     action_type_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, db_index=False, decimal_places=2, blank=True,
+    federal_action_obligation = models.DecimalField(max_digits=23, db_index=False, decimal_places=2, blank=True,
                                                     null=True,
                                                     help_text="The obligation of the federal government for this "
                                                               "transaction")
-    original_loan_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
                                                      help_text="The original_loan_subsidy_cost for loan type "
                                                                "transactions")
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
@@ -360,10 +349,10 @@ class TransactionNormalized(models.Model):
     description = models.TextField(null=True, help_text="The description of this transaction")
     place_of_performance = models.ForeignKey(Location, null=True,
                                              help_text="The location where the work on this transaction was performed")
-    drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+    drv_award_transaction_usaspend = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                           null=True)
-    drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+    drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                                             null=True)
     last_modified_date = models.DateField(blank=True, null=True,
                                           help_text="The date this transaction was last modified")
@@ -378,10 +367,10 @@ class TransactionNormalized(models.Model):
     generated_unique_award_id = models.TextField(blank=False, null=False, default='NONE',
                                                  verbose_name="Generated Unique Award ID")
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
-    funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True,
+    funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True,
                                          help_text="Assistance data variable.  non_federal_funding_amount + "
                                          "federal_action_obligation")
-    non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+    non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
                                                      null=True, help_text="Assistance Data variable.")
 
     def __str__(self):
@@ -435,8 +424,8 @@ class TransactionFPDS(models.Model):
         TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='contract_data',
         help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
-    detached_award_procurement_id = models.TextField(blank=True, null=True, db_index=True)
-    detached_award_proc_unique = models.TextField(unique=True, null=False)
+    detached_award_procurement_id = models.IntegerField(blank=True, null=True, db_index=True)
+    detached_award_proc_unique = models.TextField(unique=True, null=True)
     piid = models.TextField(blank=True, null=True, db_index=True)
     agency_id = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
@@ -484,7 +473,7 @@ class TransactionFPDS(models.Model):
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     current_total_value_award = models.TextField(blank=True, null=True)
     potential_total_value_awar = models.TextField(blank=True, null=True)
     total_obligated_amount = models.TextField(blank=True, null=True)
@@ -591,7 +580,7 @@ class TransactionFPDS(models.Model):
     sea_transportation_desc = models.TextField(blank=True, null=True)
     labor_standards = models.TextField(blank=True, null=True)
     labor_standards_descrip = models.TextField(blank=True, null=True)
-    small_business_competitive = models.TextField(blank=True, null=True)
+    small_business_competitive = models.NullBooleanField(blank=True)
     solicitation_identifier = models.TextField(blank=True, null=True)
     solicitation_procedures = models.TextField(blank=True, null=True)
     solicitation_procedur_desc = models.TextField(blank=True, null=True)
@@ -610,92 +599,92 @@ class TransactionFPDS(models.Model):
     transaction_number = models.TextField(blank=True, null=True)
     sam_exception = models.TextField(blank=True, null=True)
     sam_exception_description = models.TextField(blank=True, null=True)
-    city_local_government = models.TextField(blank=True, null=True)
-    county_local_government = models.TextField(blank=True, null=True)
-    inter_municipal_local_gove = models.TextField(blank=True, null=True)
-    local_government_owned = models.TextField(blank=True, null=True)
-    municipality_local_governm = models.TextField(blank=True, null=True)
-    school_district_local_gove = models.TextField(blank=True, null=True)
-    township_local_government = models.TextField(blank=True, null=True)
-    us_state_government = models.TextField(blank=True, null=True)
-    us_federal_government = models.TextField(blank=True, null=True)
-    federal_agency = models.TextField(blank=True, null=True)
-    federally_funded_research = models.TextField(blank=True, null=True)
-    us_tribal_government = models.TextField(blank=True, null=True)
-    foreign_government = models.TextField(blank=True, null=True)
-    community_developed_corpor = models.TextField(blank=True, null=True)
-    labor_surplus_area_firm = models.TextField(blank=True, null=True)
-    corporate_entity_not_tax_e = models.TextField(blank=True, null=True)
-    corporate_entity_tax_exemp = models.TextField(blank=True, null=True)
-    partnership_or_limited_lia = models.TextField(blank=True, null=True)
-    sole_proprietorship = models.TextField(blank=True, null=True)
-    small_agricultural_coopera = models.TextField(blank=True, null=True)
-    international_organization = models.TextField(blank=True, null=True)
-    us_government_entity = models.TextField(blank=True, null=True)
-    emerging_small_business = models.TextField(blank=True, null=True)
-    c8a_program_participant = models.TextField(blank=True, null=True)
-    sba_certified_8_a_joint_ve = models.TextField(blank=True, null=True)
-    dot_certified_disadvantage = models.TextField(blank=True, null=True)
-    self_certified_small_disad = models.TextField(blank=True, null=True)
-    historically_underutilized = models.TextField(blank=True, null=True)
-    small_disadvantaged_busine = models.TextField(blank=True, null=True)
-    the_ability_one_program = models.TextField(blank=True, null=True)
-    historically_black_college = models.TextField(blank=True, null=True)
-    c1862_land_grant_college = models.TextField(blank=True, null=True)
-    c1890_land_grant_college = models.TextField(blank=True, null=True)
-    c1994_land_grant_college = models.TextField(blank=True, null=True)
-    minority_institution = models.TextField(blank=True, null=True)
-    private_university_or_coll = models.TextField(blank=True, null=True)
-    school_of_forestry = models.TextField(blank=True, null=True)
-    state_controlled_instituti = models.TextField(blank=True, null=True)
-    tribal_college = models.TextField(blank=True, null=True)
-    veterinary_college = models.TextField(blank=True, null=True)
-    educational_institution = models.TextField(blank=True, null=True)
-    alaskan_native_servicing_i = models.TextField(blank=True, null=True)
-    community_development_corp = models.TextField(blank=True, null=True)
-    native_hawaiian_servicing = models.TextField(blank=True, null=True)
-    domestic_shelter = models.TextField(blank=True, null=True)
-    manufacturer_of_goods = models.TextField(blank=True, null=True)
-    hospital_flag = models.TextField(blank=True, null=True)
-    veterinary_hospital = models.TextField(blank=True, null=True)
-    hispanic_servicing_institu = models.TextField(blank=True, null=True)
-    foundation = models.TextField(blank=True, null=True)
-    woman_owned_business = models.TextField(blank=True, null=True)
-    minority_owned_business = models.TextField(blank=True, null=True)
-    women_owned_small_business = models.TextField(blank=True, null=True)
-    economically_disadvantaged = models.TextField(blank=True, null=True)
-    joint_venture_women_owned = models.TextField(blank=True, null=True)
-    joint_venture_economically = models.TextField(blank=True, null=True)
-    veteran_owned_business = models.TextField(blank=True, null=True)
-    service_disabled_veteran_o = models.TextField(blank=True, null=True)
-    contracts = models.TextField(blank=True, null=True)
-    grants = models.TextField(blank=True, null=True)
-    receives_contracts_and_gra = models.TextField(blank=True, null=True)
-    airport_authority = models.TextField(blank=True, null=True)
-    council_of_governments = models.TextField(blank=True, null=True)
-    housing_authorities_public = models.TextField(blank=True, null=True)
-    interstate_entity = models.TextField(blank=True, null=True)
-    planning_commission = models.TextField(blank=True, null=True)
-    port_authority = models.TextField(blank=True, null=True)
-    transit_authority = models.TextField(blank=True, null=True)
-    subchapter_s_corporation = models.TextField(blank=True, null=True)
-    limited_liability_corporat = models.TextField(blank=True, null=True)
-    foreign_owned_and_located = models.TextField(blank=True, null=True)
-    american_indian_owned_busi = models.TextField(blank=True, null=True)
-    alaskan_native_owned_corpo = models.TextField(blank=True, null=True)
-    indian_tribe_federally_rec = models.TextField(blank=True, null=True)
-    native_hawaiian_owned_busi = models.TextField(blank=True, null=True)
-    tribally_owned_business = models.TextField(blank=True, null=True)
-    asian_pacific_american_own = models.TextField(blank=True, null=True)
-    black_american_owned_busin = models.TextField(blank=True, null=True)
-    hispanic_american_owned_bu = models.TextField(blank=True, null=True)
-    native_american_owned_busi = models.TextField(blank=True, null=True)
-    subcontinent_asian_asian_i = models.TextField(blank=True, null=True)
-    other_minority_owned_busin = models.TextField(blank=True, null=True)
-    for_profit_organization = models.TextField(blank=True, null=True)
-    nonprofit_organization = models.TextField(blank=True, null=True)
-    other_not_for_profit_organ = models.TextField(blank=True, null=True)
-    us_local_government = models.TextField(blank=True, null=True)
+    city_local_government = models.NullBooleanField(blank=True)
+    county_local_government = models.NullBooleanField(blank=True)
+    inter_municipal_local_gove = models.NullBooleanField(blank=True)
+    local_government_owned = models.NullBooleanField(blank=True)
+    municipality_local_governm = models.NullBooleanField(blank=True)
+    school_district_local_gove = models.NullBooleanField(blank=True)
+    township_local_government = models.NullBooleanField(blank=True)
+    us_state_government = models.NullBooleanField(blank=True)
+    us_federal_government = models.NullBooleanField(blank=True)
+    federal_agency = models.NullBooleanField(blank=True)
+    federally_funded_research = models.NullBooleanField(blank=True)
+    us_tribal_government = models.NullBooleanField(blank=True)
+    foreign_government = models.NullBooleanField(blank=True)
+    community_developed_corpor = models.NullBooleanField(blank=True)
+    labor_surplus_area_firm = models.NullBooleanField(blank=True)
+    corporate_entity_not_tax_e = models.NullBooleanField(blank=True)
+    corporate_entity_tax_exemp = models.NullBooleanField(blank=True)
+    partnership_or_limited_lia = models.NullBooleanField(blank=True)
+    sole_proprietorship = models.NullBooleanField(blank=True)
+    small_agricultural_coopera = models.NullBooleanField(blank=True)
+    international_organization = models.NullBooleanField(blank=True)
+    us_government_entity = models.NullBooleanField(blank=True)
+    emerging_small_business = models.NullBooleanField(blank=True)
+    c8a_program_participant = models.NullBooleanField(blank=True)
+    sba_certified_8_a_joint_ve = models.NullBooleanField(blank=True)
+    dot_certified_disadvantage = models.NullBooleanField(blank=True)
+    self_certified_small_disad = models.NullBooleanField(blank=True)
+    historically_underutilized = models.NullBooleanField(blank=True)
+    small_disadvantaged_busine = models.NullBooleanField(blank=True)
+    the_ability_one_program = models.NullBooleanField(blank=True)
+    historically_black_college = models.NullBooleanField(blank=True)
+    c1862_land_grant_college = models.NullBooleanField(blank=True)
+    c1890_land_grant_college = models.NullBooleanField(blank=True)
+    c1994_land_grant_college = models.NullBooleanField(blank=True)
+    minority_institution = models.NullBooleanField(blank=True)
+    private_university_or_coll = models.NullBooleanField(blank=True)
+    school_of_forestry = models.NullBooleanField(blank=True)
+    state_controlled_instituti = models.NullBooleanField(blank=True)
+    tribal_college = models.NullBooleanField(blank=True)
+    veterinary_college = models.NullBooleanField(blank=True)
+    educational_institution = models.NullBooleanField(blank=True)
+    alaskan_native_servicing_i = models.NullBooleanField(blank=True)
+    community_development_corp = models.NullBooleanField(blank=True)
+    native_hawaiian_servicing = models.NullBooleanField(blank=True)
+    domestic_shelter = models.NullBooleanField(blank=True)
+    manufacturer_of_goods = models.NullBooleanField(blank=True)
+    hospital_flag = models.NullBooleanField(blank=True)
+    veterinary_hospital = models.NullBooleanField(blank=True)
+    hispanic_servicing_institu = models.NullBooleanField(blank=True)
+    foundation = models.NullBooleanField(blank=True)
+    woman_owned_business = models.NullBooleanField(blank=True)
+    minority_owned_business = models.NullBooleanField(blank=True)
+    women_owned_small_business = models.NullBooleanField(blank=True)
+    economically_disadvantaged = models.NullBooleanField(blank=True)
+    joint_venture_women_owned = models.NullBooleanField(blank=True)
+    joint_venture_economically = models.NullBooleanField(blank=True)
+    veteran_owned_business = models.NullBooleanField(blank=True)
+    service_disabled_veteran_o = models.NullBooleanField(blank=True)
+    contracts = models.NullBooleanField(blank=True)
+    grants = models.NullBooleanField(blank=True)
+    receives_contracts_and_gra = models.NullBooleanField(blank=True)
+    airport_authority = models.NullBooleanField(blank=True)
+    council_of_governments = models.NullBooleanField(blank=True)
+    housing_authorities_public = models.NullBooleanField(blank=True)
+    interstate_entity = models.NullBooleanField(blank=True)
+    planning_commission = models.NullBooleanField(blank=True)
+    port_authority = models.NullBooleanField(blank=True)
+    transit_authority = models.NullBooleanField(blank=True)
+    subchapter_s_corporation = models.NullBooleanField(blank=True)
+    limited_liability_corporat = models.NullBooleanField(blank=True)
+    foreign_owned_and_located = models.NullBooleanField(blank=True)
+    american_indian_owned_busi = models.NullBooleanField(blank=True)
+    alaskan_native_owned_corpo = models.NullBooleanField(blank=True)
+    indian_tribe_federally_rec = models.NullBooleanField(blank=True)
+    native_hawaiian_owned_busi = models.NullBooleanField(blank=True)
+    tribally_owned_business = models.NullBooleanField(blank=True)
+    asian_pacific_american_own = models.NullBooleanField(blank=True)
+    black_american_owned_busin = models.NullBooleanField(blank=True)
+    hispanic_american_owned_bu = models.NullBooleanField(blank=True)
+    native_american_owned_busi = models.NullBooleanField(blank=True)
+    subcontinent_asian_asian_i = models.NullBooleanField(blank=True)
+    other_minority_owned_busin = models.NullBooleanField(blank=True)
+    for_profit_organization = models.NullBooleanField(blank=True)
+    nonprofit_organization = models.NullBooleanField(blank=True)
+    other_not_for_profit_organ = models.NullBooleanField(blank=True)
+    us_local_government = models.NullBooleanField(blank=True)
     referenced_idv_modificatio = models.TextField(blank=True, null=True)
     undefinitized_action = models.TextField(blank=True, null=True)
     undefinitized_action_desc = models.TextField(blank=True, null=True)
@@ -718,10 +707,14 @@ class TransactionFPDS(models.Model):
     inherently_government_func = models.TextField(blank=True, null=True)
     inherently_government_desc = models.TextField(blank=True, null=True)
     organizational_type = models.TextField(blank=True, null=True)
+    referenced_idv_agency_name = models.TextField(blank=True, null=True)
+    referenced_multi_or_single = models.TextField(blank=True, null=True)
+    place_of_perform_country_n = models.TextField(blank=True, null=True)
+    place_of_perform_state_nam = models.TextField(blank=True, null=True)
 
     # Timestamp field auto generated by broker
     created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
     @classmethod
     def get_or_create_2(cls, transaction, **kwargs):
@@ -741,8 +734,8 @@ class TransactionFABS(models.Model):
     transaction = models.OneToOneField(
         TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
-    published_award_financial_assistance_id = models.TextField(blank=True, null=True, db_index=True)
-    afa_generated_unique = models.TextField(unique=True, null=False)
+    published_award_financial_assistance_id = models.IntegerField(blank=True, null=True, db_index=True)
+    afa_generated_unique = models.TextField(unique=True, null=False, db_index=True)
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)
@@ -783,6 +776,7 @@ class TransactionFABS(models.Model):
     legal_entity_address_line3 = models.TextField(blank=True, null=True)
     legal_entity_city_name = models.TextField(blank=True, null=True)
     legal_entity_city_code = models.TextField(blank=True, null=True)
+    legal_entity_foreign_descr = models.TextField(blank=True, null=True)
     legal_entity_congressional = models.TextField(blank=True, null=True)
     legal_entity_country_code = models.TextField(blank=True, null=True)
     legal_entity_country_name = models.TextField(blank=True, null=True)
@@ -820,10 +814,11 @@ class TransactionFABS(models.Model):
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True, db_index=True)
+    submission_id = models.IntegerField(blank=True, null=True)
 
     # Timestamp field auto generated by broker
     created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
     @classmethod
     def get_or_create_2(cls, transaction, **kwargs):
@@ -856,7 +851,7 @@ class Subaward(DataSourceTrackedModel):
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
 
     subaward_number = models.TextField(db_index=True)
-    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    amount = models.DecimalField(max_digits=23, decimal_places=2)
     description = models.TextField(null=True, blank=True)
 
     recovery_model_question1 = models.TextField(null=True, blank=True)
@@ -960,3 +955,25 @@ class Subaward(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'subaward'
+
+
+class ParentAward(models.Model):
+    award = models.OneToOneField(Award, primary_key=True)
+    generated_unique_award_id = models.TextField(unique=True)
+    parent_award = models.ForeignKey('self', db_index=True, blank=True, null=True)
+
+    direct_idv_count = models.IntegerField()
+    direct_contract_count = models.IntegerField()
+    direct_total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    direct_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
+    direct_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+
+    rollup_idv_count = models.IntegerField()
+    rollup_contract_count = models.IntegerField()
+    rollup_total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    rollup_base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2)
+    rollup_base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2)
+
+    class Meta:
+        managed = True
+        db_table = "parent_award"
