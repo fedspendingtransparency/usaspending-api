@@ -28,7 +28,7 @@ def customize_pagination_with_sort_columns(sortable_columns, default_sort_column
     """
     for s in sortable_columns:
         if type(s) is not str:
-            raise TypeError('sortable_columns must be  string field names')
+            raise TypeError('sortable_columns must be an iterable of string field names')
 
     models = deepcopy(PAGINATION)
 

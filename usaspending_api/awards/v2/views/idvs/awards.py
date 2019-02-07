@@ -46,7 +46,7 @@ GET_IDVS_SQL = SQL("""
         inner join awards ac on ac.id = pac.award_id
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
     where
-        pap.{award_id_column} = %s
+        pap.{award_id_column} = {award_id}
     order by
         {sort_column} {sort_direction}, ac.id {sort_direction}
     limit {limit} offset {offset}
@@ -71,7 +71,7 @@ GET_CONTRACTS_SQL = SQL("""
             ac.type not like 'IDV\_%%'
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
     where
-        pap.{award_id_column} = %s
+        pap.{award_id_column} = {award_id}
     order by
         {sort_column} {sort_direction}, ac.id {sort_direction}
     limit {limit} offset {offset}
@@ -124,7 +124,7 @@ class IDVAwardsViewSet(APIDocumentationView):
             # We must convert this to an actual query string else
             # django-debug-toolbar will blow up since it is assuming a string
             # instead of a SQL object.
-            cursor.execute(sql.as_string(connection.connection), [award_id])
+            cursor.execute(sql.as_string(connection.connection))
             return dictfetchall(cursor)
 
     @cache_response()

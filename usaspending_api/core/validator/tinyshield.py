@@ -185,8 +185,7 @@ class TinyShield:
         self.enforce_rules()
         return self.data
 
-    @staticmethod
-    def check_model(model, in_any=False):
+    def check_model(self, model, in_any=False):
         # Confirm required fields (both baseline and type-specific) are in the model
         base_minimum_fields = ('name', 'key', 'type')
 
@@ -220,15 +219,14 @@ class TinyShield:
                 sub_model['name'] = model['name']
                 sub_model['key'] = model['key']
                 sub_model['optional'] = True
-                TinyShield.check_model(sub_model, True)
+                self.check_model(sub_model, True)
 
         return model
 
-    @staticmethod
-    def check_models(models):
+    def check_models(self, models):
 
         for model in models:
-            TinyShield.check_model(model)
+            self.check_model(model)
 
         # Check to ensure unique names for destination dictionary
         keys = [x['name'] for x in models if x['type'] != 'schema']  # ignore schema as they are schema-only

@@ -35,7 +35,7 @@ def test_get_generate_award_id_rule():
     r = TinyShield(models).block({})
     assert r == {}
 
-    # Bad rules.
+    # Rule violations.
     ts = TinyShield([get_generated_award_id_rule()])
 
     with pytest.raises(UnprocessableEntityException):
@@ -83,7 +83,7 @@ def test_get_internal_award_id_rule():
     r = TinyShield(models).block({})
     assert r == {}
 
-    # Bad rules.
+    # Rule violations.
     ts = TinyShield([get_internal_award_id_rule()])
 
     with pytest.raises(UnprocessableEntityException):
@@ -156,7 +156,7 @@ def test_get_internal_or_generated_award_id_rule():
 
 def test_get_internal_or_generated_award_id_rule_bad():
 
-    # Bad rules.
+    # Rule violations.
     ts = TinyShield([get_internal_or_generated_award_id_rule()])
 
     with pytest.raises(UnprocessableEntityException):
