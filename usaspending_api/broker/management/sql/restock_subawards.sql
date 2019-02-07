@@ -167,8 +167,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
             (
             SELECT
                 fp.id AS broker_award_id,
-                fp.internal_id,
-                fp.contract_number AS piid,
+                UPPER(fp.internal_id) internal_id,
+                UPPER(fp.contract_number) AS piid,
                 UPPER(''CONT_AW_'' ||
                     COALESCE(fp.contract_agency_code,''-NONE-'') || ''_'' ||
                     COALESCE(fp.contract_idv_agency_code,''-NONE-'') || ''_'' ||
@@ -233,7 +233,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
             (
             SELECT
                 fg.id AS broker_award_id,
-                fg.internal_id,
+                UPPER(fg.internal_id) internal_id,
                 NULL AS piid,
                 NULL AS expected_generated_unique_award_id,
                 UPPER(fg.fain) AS fain,
