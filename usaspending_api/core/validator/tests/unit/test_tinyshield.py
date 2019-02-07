@@ -1,5 +1,7 @@
 import copy
+import pytest
 
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.helpers import validate_array
 from usaspending_api.core.validator.helpers import validate_boolean
@@ -23,7 +25,7 @@ FLOAT_RULE = {'name': 'test', 'type': 'float', 'key': 'filters|test',
               'optional': True, 'value': 3.14, 'min': 2, 'max': 4}
 TEXT_RULE = {'name': 'test', 'type': 'text', 'key': 'filters|test',
              'optional': True, 'value': "hello world", "text_type": "search"}
-INTEGER_RULE = {'name': 'test', 'type': 'float', 'key': 'filters|test',
+INTEGER_RULE = {'name': 'test', 'type': 'integer', 'key': 'filters|test',
                 'optional': True, 'value': 3, 'min': 2, 'max': 4}
 OBJECT_RULE = {'name': 'test', 'type': 'object', 'key': 'filters|test',
                'object_keys': {
@@ -107,7 +109,7 @@ FILTER_OBJ = {
 TS = None
 
 '''
-Beacuse these functions all raise Exceptions on failure, all we need to do to write the unit tests is call the function.
+Because these functions all raise Exceptions on failure, all we need to do to write the unit tests is call the function.
 If an exception is raised, the test will fail
 '''
 
@@ -170,3 +172,62 @@ def test_parse_request():
 def test_enforce_rules():
     TS.enforce_rules()
     assert TS.data == FILTER_OBJ
+
+
+# Test the "any" rule.
+def test_any_rule():
+    models = [{
+        'name': 'value',
+        'key': 'value',
+        'type': 'any',
+        'models': [
+            {'type': 'integer'},
+            {'type': 'text', 'text_type': 'search'}
+        ]
+    }]
+
+    # Test integer and random other key.
+    ts = TinyShield(models).block({'value': 1, 'another_value': 2})
+    assert ts['value'] == 1
+    assert ts.get('another_value') is None
+
+    # Test integer masquerading as a string.
+    ts = TinyShield(models).block({'value': '1'})
+    assert ts['value'] == 1
+
+    # Test string.
+    ts = TinyShield(models).block({'value': 'XYZ'})
+    assert ts['value'] == 'XYZ'
+
+    # Test list (which should blow up).
+    with pytest.raises(UnprocessableEntityException):
+        TinyShield(models).block({'value': ['XYZ']})
+
+    # Test with optional 'value' missing.
+    ts = TinyShield(models).block({'another_value': 2})
+    assert ts.get('value') is None
+    assert ts.get('another_value') is None
+
+    # Make 'value' required then run the same tests as above.
+    models[0]['optional'] = False
+
+    # Test integer and random other key.
+    ts = TinyShield(models).block({'value': 1, 'another_value': 2})
+    assert ts['value'] == 1
+    assert ts.get('another_value') is None
+
+    # Test integer masquerading as a string.
+    ts = TinyShield(models).block({'value': '1'})
+    assert ts['value'] == 1
+
+    # Test string.
+    ts = TinyShield(models).block({'value': 'XYZ'})
+    assert ts['value'] == 'XYZ'
+
+    # Test list (which should blow up).
+    with pytest.raises(UnprocessableEntityException):
+        TinyShield(models).block({'value': ['XYZ']})
+
+    # Test with required 'value' missing.
+    with pytest.raises(UnprocessableEntityException):
+        TinyShield(models).block({'another_value': 2})
