@@ -17,8 +17,12 @@ from usaspending_api.broker.helpers import get_business_categories, set_legal_en
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
-from usaspending_api.etl.award_helpers import (update_awards, update_contract_awards, update_award_categories,
-                                               award_types)
+from usaspending_api.etl.award_helpers import (
+    update_awards,
+    update_contract_awards,
+    update_award_categories,
+    award_types,
+)
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
@@ -40,7 +44,7 @@ class Command(BaseCommand):
 
         if settings.IS_LOCAL:
             for file in os.listdir(settings.CSV_LOCAL_PATH):
-                if re.search(regex_str, file) and datetime.strptime(file[:file.find("_")], "%m-%d-%Y").date() >= date:
+                if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= date:
                     with open(settings.CSV_LOCAL_PATH + file, "r") as current_file:
                         # open file, split string to array, skip the header
                         reader = csv.reader(current_file.read().splitlines())
@@ -67,9 +71,9 @@ class Command(BaseCommand):
             for item in file_list:
                 # if the date on the file is the same day as we're checking
                 if (
-                    re.search(regex_str, item) and
-                    "/" not in item and
-                    datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
+                    re.search(regex_str, item)
+                    and "/" not in item
+                    and datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
                 ):
                     s3_item = s3client.get_object(Bucket=fpds_bucket_name, Key=item)
                     reader = csv.reader(s3_item["Body"].read().decode("utf-8").splitlines())
@@ -178,9 +182,14 @@ class Command(BaseCommand):
             fa = query_str.format(delete_award_str_ids)
             # Subawards
             sub = "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(delete_award_str_ids)
+            # Parent Awards
+            pa_updates = "UPDATE parent_award SET parent_award_id = null WHERE parent_award_id IN ({});".format(
+                delete_award_str_ids
+            )
+            pa_deletes = "DELETE FROM parent_award WHERE award_id IN ({});".format(delete_award_str_ids)
             # Delete Subawards
             delete_awards_query = "DELETE FROM awards a WHERE a.id IN ({});".format(delete_award_str_ids)
-            queries.extend([fa, sub, delete_awards_query])
+            queries.extend([fa, sub, pa_updates, pa_deletes, delete_awards_query])
         if queries:
             db_query = "".join(queries)
             db_cursor.execute(db_query, [])
@@ -253,14 +262,14 @@ class Command(BaseCommand):
             # Generate the unique Award ID
             # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
             generated_unique_id = (
-                "CONT_AW_" +
-                (row["agency_id"] if row["agency_id"] else "-NONE-") +
-                "_" +
-                (row["referenced_idv_agency_iden"] if row["referenced_idv_agency_iden"] else "-NONE-") +
-                "_" +
-                (row["piid"] if row["piid"] else "-NONE-") +
-                "_" +
-                (row["parent_award_id"] if row["parent_award_id"] else "-NONE-")
+                "CONT_AW_"
+                + (row["agency_id"] if row["agency_id"] else "-NONE-")
+                + "_"
+                + (row["referenced_idv_agency_iden"] if row["referenced_idv_agency_iden"] else "-NONE-")
+                + "_"
+                + (row["piid"] if row["piid"] else "-NONE-")
+                + "_"
+                + (row["parent_award_id"] if row["parent_award_id"] else "-NONE-")
             )
 
             # Create the summary Award
