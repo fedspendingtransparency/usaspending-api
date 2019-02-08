@@ -99,7 +99,7 @@ def subaward_filter(filters, for_downloads=False):
             queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            queryset &= queryset.filter(Q(type__in=value))
+            queryset &= queryset.filter(Q(prime_award_type__in=value))
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
