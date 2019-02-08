@@ -1,5 +1,8 @@
 import copy
+import logging
+
 from collections import OrderedDict
+from django.db.models import Sum
 
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_AWARD_FIELDS,
@@ -8,10 +11,16 @@ from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FPDS_AWARD_FIELDS,
     FABS_ASSISTANCE_FIELDS,
 )
-from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, ParentAward
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
+)
+from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
+
+
+logger = logging.getLogger("console")
 
 
 def construct_assistance_response(requested_award_dict):
@@ -34,13 +43,15 @@ def construct_assistance_response(requested_award_dict):
     response["cfda_number"] = transaction["cfda_number"]
     response["cfda_title"] = transaction["cfda_title"]
     response["cfda_objectives"] = cfda_info.get("objectives")
+    response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
     response["period_of_performance"] = OrderedDict(
         [
-            ("period_of_performance_start_date", award["_start_date"]),
-            ("period_of_performance_current_end_date", award["_end_date"]),
+            ("start_date", award["_start_date"]),
+            ("end_date", award["_end_date"]),
+            ("last_modified_date", get_date_from_datetime(transaction["_modified_at"])),
         ]
     )
     transaction["_lei"] = award["_lei"]
@@ -64,19 +75,23 @@ def construct_contract_response(requested_award_dict):
         return None
     response.update(award)
 
+    transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
+
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
-    response["latest_transaction_contract_data"] = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
+    response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
     response["period_of_performance"] = OrderedDict(
         [
-            ("period_of_performance_start_date", award["_start_date"]),
-            ("period_of_performance_current_end_date", award["_end_date"]),
+            ("start_date", award["_start_date"]),
+            ("end_date", award["_end_date"]),
+            ("last_modified_date", transaction["_last_modified"]),
+            ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
-    response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
-    response["place_of_performance"] = create_place_of_performance_object(response["latest_transaction_contract_data"])
+    transaction["_lei"] = award["_lei"]
+    response["recipient"] = create_recipient_object(transaction)
+    response["place_of_performance"] = create_place_of_performance_object(transaction)
 
     return delete_keys_from_dict(response)
 
@@ -107,22 +122,25 @@ def construct_idv_response(requested_award_dict):
     response.update(award)
 
     parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
+    transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
+
     response["parent_award"] = parent_award
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
-    response["latest_transaction_contract_data"] = fetch_fpds_details_by_pk(award["_trx"], mapper)
+    response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
-    response["idv_dates"] = OrderedDict(
+    response["period_of_performance"] = OrderedDict(
         [
             ("start_date", award["_start_date"]),
-            ("last_modified_date", response["latest_transaction_contract_data"]["_last_modified_date"]),
-            ("end_date", response["latest_transaction_contract_data"]["_end_date"]),
+            ("end_date", transaction["_end_date"]),
+            ("last_modified_date", transaction["_last_modified_date"]),
+            ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    response["latest_transaction_contract_data"]["_lei"] = award["_lei"]
-    response["recipient"] = create_recipient_object(response["latest_transaction_contract_data"])
-    response["place_of_performance"] = create_place_of_performance_object(response["latest_transaction_contract_data"])
+    transaction["_lei"] = award["_lei"]
+    response["recipient"] = create_recipient_object(transaction)
+    response["place_of_performance"] = create_place_of_performance_object(transaction)
 
     return delete_keys_from_dict(response)
 
@@ -192,7 +210,7 @@ def fetch_award_details(filter_q, mapper_fields):
 
 def fetch_parent_award_details(guai):
     parent_award_ids = (
-        ParentAward.objects.filter(generated_unique_award_id=guai)
+        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
         .values("parent_award__award_id", "parent_award__generated_unique_award_id")
         .first()
     )
@@ -211,6 +229,10 @@ def fetch_parent_award_details(guai):
         )
         .first()
     )
+
+    if not parent_award:
+        logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
+        return None
 
     parent_object = OrderedDict(
         [
@@ -315,3 +337,10 @@ def fetch_cfda_details_using_cfda_number(cfda):
     if not c:
         return {}
     return c
+
+
+def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id):
+    _sum = FinancialAccountsByAwards.objects.filter(
+        award_id=internal_award_id).aggregate(Sum('transaction_obligated_amount'))
+    if _sum:
+        return _sum.get('transaction_obligated_amount__sum')

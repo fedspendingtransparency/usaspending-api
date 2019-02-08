@@ -120,6 +120,7 @@ def awards_and_transactions(db):
         "place_of_performance_state": "TX",
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_zip5": "40221",
+        "period_of_perf_potential_e": "2003-04-05",
         "price_evaluation_adjustmen": None,
         "product_or_service_code": "4730",
         "program_acronym": None,
@@ -155,6 +156,7 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "date_signed": "2005-04-03",
     }
 
     award_2_model = {
@@ -170,10 +172,13 @@ def awards_and_transactions(db):
         "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
         "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
+        "date_signed": "2004-03-02",
     }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
@@ -219,7 +224,12 @@ expected_response_idv = {
     "parent_award_piid": "1234",
     "parent_award": None,
     "description": "lorem ipsum",
-    "idv_dates": {"end_date": "2025-06-30", "last_modified_date": "2018-08-24", "start_date": None},
+    "period_of_performance": {
+        "start_date": "2004-02-04",
+        "end_date": "2025-06-30",
+        "last_modified_date": "2018-08-24",
+        "potential_end_date": "2003-04-05",
+    },
     "awarding_agency": {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
@@ -256,8 +266,8 @@ expected_response_idv = {
         "parent_recipient_name": None,
     },
     "total_obligation": 1000.0,
-    "base_and_all_options_value": 2000.0,
-    "base_exercised_options_val": None,
+    "base_and_all_options": 2000.0,
+    "base_exercised_options": None,
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -291,12 +301,14 @@ expected_response_idv = {
         "small_business_competitive": False,
         "fair_opportunity_limi_desc": None,
         "product_or_service_code": "4730",
-        "product_or_service_co_desc": None,
+        "product_or_service_desc": None,
         "naics": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "dod_claimant_program_code": "C9E",
-        "program_system_or_equipmen": "000",
-        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "dod_acquisition_program_code": "000",
+        "dod_acquisition_program_description": None,
+        "information_technology_commercial_item_category": "NOT IT PRODUCTS OR SERVICES",
+        "information_technology_commercial_item_category_code": None,
         "sea_transportation_desc": "NO",
         "clinger_cohen_act_pla_desc": "NO",
         "construction_wage_rat_desc": "NO",
@@ -318,4 +330,5 @@ expected_response_idv = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {"officers": []},
+    "date_signed": "2004-03-02",
 }

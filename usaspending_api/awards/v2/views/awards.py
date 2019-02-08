@@ -36,7 +36,7 @@ class AwardLastUpdatedViewSet(APIDocumentationView):
 
 class AwardRetrieveViewSet(APIDocumentationView):
     """
-    endpoint_doc: /awards.md
+    endpoint_doc: /awards/awards.md
     """
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
