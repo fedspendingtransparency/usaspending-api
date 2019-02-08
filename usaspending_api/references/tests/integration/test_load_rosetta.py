@@ -13,7 +13,7 @@ from usaspending_api.references.models import Rosetta
 
 @pytest.mark.django_db
 def test_rosetta_fresh_load():
-    test_file_path = os.path.abspath("usaspending_api/references/tests/data/data_transparency_crosswalk_test_file.xlsx")
+    test_file_path = os.path.abspath("usaspending_api/references/tests/data/20181219rosetta-test-file.xlsx")
     all_rows = Rosetta.objects.count()
     assert all_rows == 0, "Table is not empty before testing the loader script. Results will be unexpected"
 
@@ -34,6 +34,7 @@ def test_rosetta_fresh_load():
                 None,
                 None,
                 None,
+                "Contracts",
                 "is1862landgrantcollege",
                 None,
             ]
@@ -41,26 +42,27 @@ def test_rosetta_fresh_load():
         "headers": [
             {"raw": "element", "display": "Element"},
             {"raw": "definition", "display": "Definition"},
-            {"raw": "fpds_element", "display": "FPDS Element"},
+            {"raw": "fpds_element", "display": "FPDS Data Dictionary Element"},
             {"raw": "award_file", "display": "Award File"},
             {"raw": "award_element", "display": "Award Element"},
             {"raw": "subaward_file", "display": "Subaward File"},
             {"raw": "subaward_element", "display": "Subaward Element"},
             {"raw": "account_file", "display": "Account File"},
             {"raw": "account_element", "display": "Account Element"},
+            {"raw": "legacy_award_file", "display": "Award File"},
             {"raw": "legacy_award_element", "display": "Award Element"},
             {"raw": "legacy_subaward_element", "display": "Subaward Element"},
         ],
         "metadata": {
             "total_rows": 1,
-            "total_size": "94.56KB",
-            "total_columns": 11,
+            "total_size": "10.80KB",
+            "total_columns": 12,
             "download_location": None,
         },
         "sections": [
             {"colspan": 3, "section": "Schema Data Label & Description"},
             {"colspan": 6, "section": "USA Spending Downloads"},
-            {"colspan": 2, "section": "Legacy USA Spending"},
+            {"colspan": 3, "section": "Legacy USA Spending"},
         ],
     }
 
