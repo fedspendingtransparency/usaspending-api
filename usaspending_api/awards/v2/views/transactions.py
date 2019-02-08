@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from django.db.models import F
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -8,7 +6,8 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 
@@ -34,27 +33,36 @@ class TransactionViewSet(APIDocumentationView):
         "is_fpds": "is_fpds",
     }
 
-    def _parse_and_validate_request(self, request_dict: dict) -> dict:
-        models = deepcopy(PAGINATION)
-        models.append({"key": "award_id", "name": "award_id", "type": "integer",
-                      "optional": False})
-        for model in models:
-            # Change sort to an enum of the desired values
-            if model["name"] == "sort":
-                model["type"] = "enum"
-                model["enum_values"] = list(self.transaction_lookup.keys())
-                model["default"] = "action_date"
+    def __init__(self):
+        """
+        Our TinyShield rules never change.  Encapsulate them here and store
+        them once in TINY_SHIELD_RULES.
+        """
+        models = customize_pagination_with_sort_columns(TransactionViewSet.transaction_lookup.keys(), 'action_date')
+        models.extend([
+            get_internal_or_generated_award_id_rule(),
+            {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
+        ])
+        self._tiny_shield_rules = TinyShield(models)
+        super(TransactionViewSet, self).__init__()
 
-        validated_request_data = TinyShield(models).block(request_dict)
-        return validated_request_data
+    def _parse_and_validate_request(self, request_dict: dict) -> dict:
+        return self._tiny_shield_rules.block(request_dict)
 
     def _business_logic(self, request_data: dict) -> list:
+        # By this point, our award_id has been validated and cleaned up by
+        # TinyShield.  We will either have an internal award id that is an
+        # integer or a generated award id that is a string.
+        award_id = request_data['award_id']
+        award_id_column = 'award_id' if type(award_id) is int else 'award__generated_unique_award_id'
+        filter = {award_id_column: award_id}
+
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
         queryset = (TransactionNormalized.objects.all()
                     .values(*list(self.transaction_lookup.values()))
-                    .filter(award_id=request_data["award_id"]))
+                    .filter(**filter))
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))

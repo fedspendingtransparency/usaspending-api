@@ -2,8 +2,8 @@ import logging
 import copy
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES
-from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR, MAX_ITEMS
+from usaspending_api.core.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
+from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
 from usaspending_api.core.validator.helpers import validate_array
 from usaspending_api.core.validator.helpers import validate_boolean
 from usaspending_api.core.validator.helpers import validate_datetime
@@ -16,6 +16,11 @@ from usaspending_api.core.validator.helpers import validate_text
 logger = logging.getLogger('console')
 
 VALIDATORS = {
+    'any': {
+        # "any" does not use a "func", rather, it calls funcs for child models
+        'required_fields': ['models'],
+        'defaults': {},
+    },
     'array': {
         'func': validate_array,
         'required_fields': ['array_type'],
@@ -80,38 +85,95 @@ VALIDATORS = {
 
 class TinyShield:
     """
-    Structure
-    model- dictionary representing a validator
-    {
-        name:
-        key: dict|subitem|all|split|by|pipes
-        type: type of validator
-            array
-            boolean
-            date
-            datetime
-            enum
-            float
-            integer
-            object
-            passthrough
-            text
-            schema
-        text_type:
-            search
-            raw
-            sql
-            url
-            password
-        default:
-            the default value if no key-value is provided for this param
-        allow_nulls:
-            if True, a value of None is allowed
-        optional:
-            If False, then key-value must be present. Overrides `default`
-    }
+    Class to validate/sanity-check request input before use.
 
-    Validated data is stored in self.data, which is a flat dictionary
+    TYPICAL USAGE
+
+    Probably the most common pattern is to define "models" that describe the data expected from a Django or DRF
+    request:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+    Then validate the request using the ".block" method (assuming a Django Rest Framework (DRF) request):
+
+        validated = TinyShield(models).block(request.data)
+
+    This will validate POST/PUT data for the fields "id" and "city" in the request provided.  The validated data will
+    be available in the "validated" variable using the keys provided in the "models" list.
+
+    ALTERNATE USAGE
+
+    Another common usage is to define your own request object as a dictionary:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+        my_request = {
+            'id': 12345,
+            'city': 'French Lick',
+        }
+
+    Then validate my_request as above:
+
+        validated = TinyShield(models).block(my_request)
+
+    INPUT
+
+    "model" is a dictionary representing a validator which is defined as follows:
+
+        {
+            name: this field doesn't seem to actually do anything, but it does need to be unique!
+            key:  dict|subitem|all|split|by|pipes
+            type: type of validator
+                any *
+                array
+                boolean
+                date
+                datetime
+                enum
+                float
+                integer
+                object
+                passthrough
+                text
+                schema
+            models:
+                {provide sub-models - used for "any" type}
+            text_type:
+                search
+                raw
+                sql
+                url
+                password
+            default:
+                the default value if no key-value is provided for this param
+            allow_nulls:
+                if True, a value of None is allowed
+            optional:
+                If False, then key-value must be present. Overrides `default`
+        }
+
+    * "any" is a special beast as it contains a collection of models, any one of which may match the value provided.
+    The first model to match is the one that's used.  You could use "any" to, say, accept a field that could be either
+    an integer or a string (like an internal award id vs. a generated award id).  Child models of an "any" rule are
+    always optional and inherit their parent's name and key and, as such, those keys are always ignored.  For example:
+
+        models = [
+            {'key': 'id', 'name': 'id', 'type': 'any', 'optional': False, 'models': [
+                {'type': 'integer'},
+                {'type': 'text', 'text_type': 'search'}
+            ]},
+        ]
+
+    RETURNS
+
+    A dictionary of the validated data keyed on model.key from the input "model" list provided during instantiation.
+    Validated data is also accessible via self.data.
     """
 
     def __init__(self, model_list):
@@ -123,37 +185,54 @@ class TinyShield:
         self.enforce_rules()
         return self.data
 
-    def check_models(self, models):
+    def check_model(self, model, in_any=False):
         # Confirm required fields (both baseline and type-specific) are in the model
         base_minimum_fields = ('name', 'key', 'type')
 
+        if not all(field in model.keys() for field in base_minimum_fields):
+            raise Exception('Model {} missing a base required field [{}]'.format(model, base_minimum_fields))
+
+        if model['type'] not in VALIDATORS:
+            raise Exception('Invalid model type [{}] provided in description'.format(model['type']))
+
+        type_description = VALIDATORS[model['type']]
+        required_fields = type_description['required_fields']
+
+        for required_field in required_fields:
+            if required_field not in model:
+                raise Exception('Model {} missing a type required field: {}'.format(model, required_field))
+
+        if model.get('text_type') and model['text_type'] not in SUPPORTED_TEXT_TYPES:
+            msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**model)
+            raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
+
+        for default_key, default_value in type_description['defaults'].items():
+            model[default_key] = model.get(default_key, default_value)
+
+        model['optional'] = model.get('optional', True)
+
+        if model['type'] == 'any':
+            if in_any is True:
+                raise Exception('Nested "any" rules are not supported.')
+            # "any" child models are always optional and inherit their parent's name and key.
+            for sub_model in model['models']:
+                sub_model['name'] = model['name']
+                sub_model['key'] = model['key']
+                sub_model['optional'] = True
+                self.check_model(sub_model, True)
+
+        return model
+
+    def check_models(self, models):
+
         for model in models:
-            if not all(field in model.keys() for field in base_minimum_fields):
-                raise Exception('Model {} missing a base required field [{}]'.format(model, base_minimum_fields))
-
-            if model['type'] not in VALIDATORS:
-                raise Exception('Invalid model type [{}] provided in description'.format(model['type']))
-
-            type_description = VALIDATORS[model['type']]
-            required_fields = type_description['required_fields']
-
-            for required_field in required_fields:
-                if required_field not in model:
-                    raise Exception('Model {} missing a type required field: {}'.format(model, required_field))
-
-            if model.get('text_type') and model['text_type'] not in SUPPORTED_TEXT_TYPES:
-                msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**model)
-                raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
-
-            for default_key, default_value in type_description['defaults'].items():
-                model[default_key] = model.get(default_key, default_value)
-
-            model['optional'] = model.get('optional', True)
+            self.check_model(model)
 
         # Check to ensure unique names for destination dictionary
         keys = [x['name'] for x in models if x['type'] != 'schema']  # ignore schema as they are schema-only
         if len(keys) != len(set(keys)):
             raise Exception('Duplicate destination keys provided. Name values must be unique')
+
         return models
 
     def parse_request(self, request):
@@ -183,11 +262,12 @@ class TinyShield:
                 self.recurse_append(struct, self.data, self.apply_rule(item))
 
     def apply_rule(self, rule):
+        _return = None
         if rule.get('allow_nulls', False) and rule['value'] is None:
-            return rule['value']
-        elif rule['type'] not in ('array', 'object'):
+            _return = rule['value']
+        elif rule['type'] not in ('array', 'object', 'any'):
             if rule['type'] in VALIDATORS:
-                return VALIDATORS[rule['type']]['func'](rule)
+                _return = VALIDATORS[rule['type']]['func'](rule)
             else:
                 raise Exception('Invalid Type {} in rule'.format(rule['type']))
         # Array is a "special" type since it is a list of other types which need to be validated
@@ -204,7 +284,7 @@ class TinyShield:
             for v in value:
                 child_rule['value'] = v
                 array_result.append(self.apply_rule(child_rule))
-            return array_result
+            _return = array_result
         # Object is a "special" type since it is comprised of other types which need to be validated
         elif rule['type'] == 'object':
             rule['object_min'] = rule.get('object_min', 1)
@@ -225,7 +305,23 @@ class TinyShield:
                 child_rule['value'] = value
                 child_rule = self.promote_subrules(child_rule, v)
                 object_result[k] = self.apply_rule(child_rule)
-            return object_result
+            _return = object_result
+        # Any is a "special" type since it is is really a collection of other rules.
+        elif rule['type'] == 'any':
+            for child_rule in rule['models']:
+                child_rule['value'] = rule['value']
+                try:
+                    # First successful rule wins.
+                    return self.apply_rule(child_rule)
+                except Exception:
+                    pass
+            # No rules succeeded.
+            raise UnprocessableEntityException(INVALID_TYPE_MSG.format(
+                key=rule['key'],
+                value=rule['value'],
+                type=', '.join(sorted([m['type'] for m in rule['models']]))
+            ))
+        return _return
 
     def promote_subrules(self, child_rule, source={}):
         param_type = child_rule['type']

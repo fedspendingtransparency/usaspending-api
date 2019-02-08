@@ -46,10 +46,11 @@ def _check_min(rule):
 
 
 def _verify_int_value(value):
-    try:
-        return int(value)
-    except Exception as e:
-        pass
+    if type(value) in (int, str):
+        try:
+            return int(value)
+        except Exception as e:
+            pass
     return None
 
 
@@ -193,7 +194,7 @@ def validate_text(rule):
     if text_type in ('raw', 'sql', 'password'):
         # TODO: flesh out expectations and constraints for sql and password types
         if text_type in ('sql', 'password'):
-            logger.warn('Caution: text_type \'{}\' not yet fully implemented'.format(text_type))
+            logger.warning('Caution: text_type \'{}\' not yet fully implemented'.format(text_type))
         val = rule['value']
     elif text_type == 'url':
         val = urllib.parse.quote_plus(rule['value'])

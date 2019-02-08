@@ -86,7 +86,7 @@ class Command(load_base.Command):
         submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
         logger.info('Getting File A data')
-        db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
+        db_cursor.execute('SELECT * FROM certified_appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(
             len(appropriation_data)) + ' rows.')
@@ -108,7 +108,8 @@ class Command(load_base.Command):
         logger.info('Getting File C data')
         # we dont have sub-tier agency info, so we'll do our best
         # to match them to the more specific award records
-        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = {0}'.format(submission_id)
+        award_financial_query = 'SELECT * FROM certified_award_financial WHERE submission_id = {0}'.\
+            format(submission_id)
         if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
             award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
         else:  # real data
@@ -408,7 +409,7 @@ def get_file_b(submission_attributes, db_cursor):
     # does this file B have the dupe object class edge case?
     check_dupe_oc = (
         'SELECT count(*) '
-        'FROM object_class_program_activity '
+        'FROM certified_object_class_program_activity '
         'WHERE submission_id = %s '
         'AND length(object_class) = 4 '
         'GROUP BY tas_id, program_activity_code, object_class '
@@ -419,7 +420,8 @@ def get_file_b(submission_attributes, db_cursor):
 
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+        db_cursor.execute('SELECT * FROM certified_object_class_program_activity WHERE submission_id = %s',
+                          [submission_id])
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
@@ -474,7 +476,7 @@ def get_file_b(submission_attributes, db_cursor):
             'SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, '
             'SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, '
             'SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe '
-            'FROM object_class_program_activity '
+            'FROM certified_object_class_program_activity '
             'WHERE submission_id = %s '
             'GROUP BY  '
             'submission_id, '
