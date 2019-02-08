@@ -34,14 +34,18 @@ POPULATE_TABLE = """
         "%s"
     select
         tx.award_id,
-        f.agency_id,
-        f.referenced_idv_agency_iden,
-        sum(cast(f.base_exercised_options_val as numeric)) as base_exercised_options_val
+        max(case when f.transaction_id = a.latest_transaction_id then f.agency_id end)
+            agency_id,
+        max(case when f.transaction_id = a.latest_transaction_id then f.referenced_idv_agency_iden end)
+            referenced_idv_agency_iden,
+        sum(cast(f.base_exercised_options_val as numeric))
+            base_exercised_options_val
     from
-        transaction_fpds as f
-        inner join transaction_normalized as tx on f.transaction_id = tx.id
+        awards a
+        inner join transaction_normalized as tx on tx.award_id = a.id
+        inner join transaction_fpds as f on f.transaction_id = tx.id
     group by
-        tx.award_id, f.agency_id, f.referenced_idv_agency_iden
+        tx.award_id
 """ % TEMPORARY_TABLE_NAME
 
 ADD_PRIMARY_KEY = 'alter table "%s" add primary key (id)' % TEMPORARY_TABLE_NAME
