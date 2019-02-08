@@ -50,7 +50,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("type_description", "type_description"),
         ("description", "description"),
         ("total_obligation", "total_obligation"),
-        ("base_exercised_options_val", "base_exercised_options_val"),
+        ("base_exercised_options_val", "base_exercised_options"),
         ("base_and_all_options_value", "base_and_all_options"),
         ("subaward_count", "subaward_count"),
         ("total_subaward_amount", "total_subaward_amount"),

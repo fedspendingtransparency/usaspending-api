@@ -49,8 +49,8 @@ def construct_assistance_response(requested_award_dict):
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
     response["period_of_performance"] = OrderedDict(
         [
-            ("period_of_performance_start_date", award["_start_date"]),
-            ("period_of_performance_current_end_date", award["_end_date"]),
+            ("start_date", award["_start_date"]),
+            ("end_date", award["_end_date"]),
             ("last_modified_date", get_date_from_datetime(transaction["_modified_at"])),
         ]
     )
@@ -83,8 +83,8 @@ def construct_contract_response(requested_award_dict):
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
     response["period_of_performance"] = OrderedDict(
         [
-            ("period_of_performance_start_date", award["_start_date"]),
-            ("period_of_performance_current_end_date", award["_end_date"]),
+            ("start_date", award["_start_date"]),
+            ("end_date", award["_end_date"]),
             ("last_modified_date", transaction["_last_modified"]),
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
@@ -130,11 +130,12 @@ def construct_idv_response(requested_award_dict):
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
-    response["idv_dates"] = OrderedDict(
+    response["period_of_performance"] = OrderedDict(
         [
             ("start_date", award["_start_date"]),
-            ("last_modified_date", transaction["_last_modified_date"]),
             ("end_date", transaction["_end_date"]),
+            ("last_modified_date", transaction["_last_modified_date"]),
+            ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
     transaction["_lei"] = award["_lei"]

@@ -298,8 +298,8 @@ expected_response_asst = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "period_of_performance": {
-        "period_of_performance_current_end_date": "2005-02-04",
-        "period_of_performance_start_date": "2004-02-04",
+        "start_date": "2004-02-04",
+        "end_date": "2005-02-04",
         "last_modified_date": "2000-01-02",
     },
     "place_of_performance": {
@@ -367,10 +367,10 @@ expected_response_cont = {
     },
     "total_obligation": 1000.0,
     "base_and_all_options": 2000.0,
-    "base_exercised_options_val": None,
+    "base_exercised_options": None,
     "period_of_performance": {
-        "period_of_performance_start_date": "2004-02-04",
-        "period_of_performance_current_end_date": "2005-02-04",
+        "start_date": "2004-02-04",
+        "end_date": "2005-02-04",
         "last_modified_date": "2001-02-03",
         "potential_end_date": "2003-04-05",
     },
