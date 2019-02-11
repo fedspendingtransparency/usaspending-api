@@ -1,6 +1,6 @@
 dry-run: null
 hookfiles: null
-language: !<tag:yaml.org,2002:js/undefined> ''
+language: python
 sandbox: false
 server: python manage.py runserver
 server-wait: 3
