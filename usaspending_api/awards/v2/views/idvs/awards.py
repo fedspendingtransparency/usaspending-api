@@ -1,10 +1,11 @@
 from collections import OrderedDict
 
-from django.db import connection
+from django.db import connections, router
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.models import Award  # We only use this model to get a connection
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
@@ -120,6 +121,10 @@ class IDVAwardsViewSet(APIDocumentationView):
             limit=Literal(request_data['limit'] + 1),
             offset=Literal((request_data['page'] - 1) * request_data['limit']),
         )
+        # Because we use multiple read connections, we need to actually choose
+        # a connection.  Using the default connection won't work in production.
+        # A model is a required parameter for db_for_read.
+        connection = connections[router.db_for_read(Award)]
         with connection.cursor() as cursor:
             # We must convert this to an actual query string else
             # django-debug-toolbar will blow up since it is assuming a string
