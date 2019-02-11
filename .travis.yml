@@ -16,6 +16,9 @@ env:
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
 
+before_install:
+  - npm install dredd --no-optional --global
+
 install:
 - pip install -r requirements/requirements.txt
 - pip install coveralls

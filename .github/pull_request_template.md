@@ -6,7 +6,7 @@ The technical details for the knowledge of other developers. Any detailed caveat
 
 **Requirements for PR merge:**
 
-1. [ ] Definition of Done - Development satisfied
+1. [ ] Definition of Done - Development section appropriately satisfied
 2. [ ] Necessary PR reviewers:
     - [ ] Backend
     - [ ] Frontend <OPTIONAL>
