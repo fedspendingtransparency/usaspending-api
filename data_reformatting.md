@@ -18,7 +18,7 @@ Making sure our location-related fields are as robust and accurate as possible p
 
 We attempt to match incoming records that have partial location data to already-stored unique combinations of _state code_, _state name_, _city code_, _county code_, and _county name_.
 
-For example, if a record has a state code but no state name, we'll pull in state name from our master list of geographical data and add it to the record during the load.
+For example, if a record has a state code but no state name, we'll pull in the state name from our master list of geographical data and add it to the record during the load.
 
 ### Country Codes and Names
 
@@ -50,7 +50,7 @@ The following fields are canonicalized this way:
 **Data Source:** USAspending history  
 **Code:** `etl/helpers.py`
 
-Codes and descriptions in legacy Usaspending data are often stored in the same field. For example, a funding agency column looks like `7300: SMALL BUSINESS ADMINISTRATION`.
+Codes and descriptions in legacy USAspending data are often stored in the same field. For example, a funding agency column looks like `7300: SMALL BUSINESS ADMINISTRATION`.
 
 In these cases, we extract the code to use in our data load. We then use that code to look up the description against a canonical data source. Using a single, central source for code descriptions ensures data consistency.
 

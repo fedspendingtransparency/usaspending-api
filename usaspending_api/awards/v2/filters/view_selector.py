@@ -277,7 +277,6 @@ def spending_by_geography(filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ]
-    model = None
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -291,7 +290,6 @@ def spending_by_geography(filters):
 
 def spending_by_award_count(filters):
     view_chain = ['SummaryAwardView', 'UniversalAwardView']
-    model = None
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -311,7 +309,6 @@ def download_transaction_count(filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ]
-    model = None
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -331,7 +328,6 @@ def transaction_spending_summary(filters):
         'SummaryTransactionView',
         'UniversalTransactionView'
     ]
-    model = None
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -347,8 +343,8 @@ def recipient_totals(filters):
     view_chain = [
         'SummaryTransactionMonthView',
         'SummaryTransactionView',
-        'UniversalTransactionView']
-    model = None
+        'UniversalTransactionView'
+    ]
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)

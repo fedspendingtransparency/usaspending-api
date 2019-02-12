@@ -26,7 +26,7 @@
       "account_number": -99999
     }
   ],
-  "SELECT * FROM award_financial WHERE submission_id = -9999": [
+  "SELECT * FROM certified_award_financial WHERE submission_id = -9999": [
     {
       "created_at": null,
       "updated_at": null,
