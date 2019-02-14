@@ -21,9 +21,6 @@ env:
 before_install:
   - npm install dredd@5.4.1 --global
 
-before_install:
-  - npm install dredd --no-optional --global
-
 install:
   - pip install -r requirements/requirements.txt
   - pip install coveralls
