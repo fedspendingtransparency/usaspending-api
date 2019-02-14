@@ -6,13 +6,22 @@ The technical details for the knowledge of other developers. Any detailed caveat
 
 **Requirements for PR merge:**
 
-1. [ ] Definition of Done - Development section appropriately satisfied
-2. [ ] Necessary PR reviewers:
+1. [ ] Unit & integration tests updated
+2. [ ] API documentation updated
+3. [ ] Necessary PR reviewers:
     - [ ] Backend
     - [ ] Frontend <OPTIONAL>
     - [ ] Operations <OPTIONAL>
-3. [ ] Jira Ticket(s)
-    - [DEV-0](https://federal-spending-transparency.atlassian.net/browse/DEV-0):
+    - [ ] Domain Expert <OPTIONAL>
+4. [ ] Matview impact assessment completed
+5. [ ] Frontend impact assessment completed
+6. [ ] Data validation completed
+7. [ ] Appropriate Operations ticket(s) created
+8. [ ] Jira Ticket [DEV-123](https://federal-spending-transparency.atlassian.net/browse/DEV-123):
+    - [ ] Link to this Pull-Request
+    - [ ] Performance evaluation of affected (API | Script | Download)
+    - [ ] Before / After data comparison
 
-
-Click [here](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/agile_practices/story_definition_of_done.md) for Definition of Done
+**Area for explaining above N/A when needed:**
+```
+```
