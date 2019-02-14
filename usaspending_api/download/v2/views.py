@@ -42,7 +42,7 @@ from usaspending_api.references.models import ToptierAgency
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-                           redirect_dir=settings.BUCK_DOWNLOAD_S3_REDIRECT_DIR)
+                           redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR)
 
     def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
