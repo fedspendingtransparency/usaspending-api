@@ -320,7 +320,11 @@ def fetch_officers_by_legal_entity_id(legal_entity_id):
 def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id):
     recipient = None
     if recipient_unique_id:
-        recipient = RecipientProfile.objects.filter(recipient_unique_id=recipient_unique_id).values("recipient_hash", "recipient_level").first()
+        recipient = (
+            RecipientProfile.objects.filter(recipient_unique_id=recipient_unique_id)
+            .values("recipient_hash", "recipient_level")
+            .first()
+        )
 
     if not recipient:
         # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
@@ -340,7 +344,9 @@ def fetch_cfda_details_using_cfda_number(cfda):
 
 
 def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id):
-    _sum = FinancialAccountsByAwards.objects.filter(
-        award_id=internal_award_id).aggregate(Sum('transaction_obligated_amount'))
+    _sum = (
+        FinancialAccountsByAwards.objects.filter(award_id=internal_award_id)
+        .aggregate(Sum("transaction_obligated_amount"))
+    )
     if _sum:
-        return _sum.get('transaction_obligated_amount__sum')
+        return _sum.get("transaction_obligated_amount__sum")
