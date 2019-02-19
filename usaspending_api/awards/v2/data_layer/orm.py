@@ -14,10 +14,10 @@ from usaspending_api.awards.v2.data_layer.orm_mappers import (
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
 )
-from usaspending_api.common.helpers.date_helper import get_date_from_datetime
-from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
+from usaspending_api.common.helpers.date_helper import get_date_from_datetime
+from usaspending_api.common.recipient_lookups import obtain_recipient_uri
+from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
 
 
 logger = logging.getLogger("console")
@@ -149,9 +149,10 @@ def create_recipient_object(db_row_dict):
     return OrderedDict(
         [
             (
-                "recipient_hash",
-                fetch_recipient_hash_using_name_and_duns(
-                    db_row_dict["_recipient_name"], db_row_dict["_recipient_unique_id"]
+                "recipient_hash", obtain_recipient_uri(
+                    db_row_dict["_recipient_name"],
+                    db_row_dict["_recipient_unique_id"],
+                    db_row_dict["_parent_recipient_unique_id"],
                 ),
             ),
             ("recipient_name", db_row_dict["_recipient_name"]),
@@ -315,25 +316,6 @@ def fetch_officers_by_legal_entity_id(legal_entity_id):
             )
 
     return {"officers": officers}
-
-
-def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id):
-    recipient = None
-    if recipient_unique_id:
-        recipient = (
-            RecipientProfile.objects.filter(recipient_unique_id=recipient_unique_id)
-            .values("recipient_hash", "recipient_level")
-            .first()
-        )
-
-    if not recipient:
-        # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
-        import hashlib
-        import uuid
-
-        h = hashlib.md5("{}{}".format(recipient_unique_id, recipient_name).upper().encode("utf-8")).hexdigest()
-        return "{}-R".format(uuid.UUID(h))
-    return "{recipient_hash}-{recipient_level}".format(**recipient)
 
 
 def fetch_cfda_details_using_cfda_number(cfda):
