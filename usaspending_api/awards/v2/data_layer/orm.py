@@ -15,7 +15,7 @@ from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
 )
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
-from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 
@@ -320,7 +320,7 @@ def fetch_officers_by_legal_entity_id(legal_entity_id):
 def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id):
     recipient = None
     if recipient_unique_id:
-        recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
+        recipient = RecipientProfile.objects.filter(recipient_unique_id=recipient_unique_id).values("recipient_hash", "recipient_level").first()
 
     if not recipient:
         # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
@@ -328,8 +328,8 @@ def fetch_recipient_hash_using_name_and_duns(recipient_name, recipient_unique_id
         import uuid
 
         h = hashlib.md5("{}{}".format(recipient_unique_id, recipient_name).upper().encode("utf-8")).hexdigest()
-        return str(uuid.UUID(h))
-    return recipient["recipient_hash"]
+        return "{}-R".format(uuid.UUID(h))
+    return "{recipient_hash}-{recipient_level}".format(**recipient)
 
 
 def fetch_cfda_details_using_cfda_number(cfda):
