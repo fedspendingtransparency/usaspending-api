@@ -89,7 +89,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 --------------------------------------------------------------------------------
 -- Step 2b, Create rows with data from FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 3a: Adding Recipient records from FPDS and FABS'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 2b: Adding Recipient records from FPDS and FABS'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT
@@ -145,7 +145,7 @@ ON CONFLICT (duns) DO NOTHING;
 --------------------------------------------------------------------------------
 -- Step 3a, Create rows with Parent DUNS + Parent Recipient Names from SAM
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 2b: Adding Recipient records from SAM parent data'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 3a: Adding Recipient records from SAM parent data'; END $$;
 WITH grouped_parent_recipients AS (
     SELECT
       ultimate_parent_unique_ide AS duns,
@@ -234,10 +234,67 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC
 ON CONFLICT (duns) DO NOTHING;
 
+
 --------------------------------------------------------------------------------
--- Step 4b, Create rows with Parent DUNS from SAM
+-- Step 4b, Create rows with DUNS (no recipient name) from FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4a: Adding Recipient records from SAM parent data with no name'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding Recipient records from FPDS and FABS without a name'; END $$;
+WITH transaction_recipients AS (
+    WITH transaction_recipients_inner AS (
+      SELECT
+        tf.awardee_or_recipient_uniqu,
+        tf.ultimate_parent_legal_enti,
+        tf.ultimate_parent_unique_ide,
+        tf.awardee_or_recipient_legal,
+        tf.city,
+        tf.state,
+        tf.zip5,
+        tf.zip4,
+        tf.congressional,
+        tf.address_line1,
+        tf.address_line2,
+        tf.country_code,
+        tf.action_date
+      FROM public.temporary_transaction_recipients_view AS tf
+      WHERE tf.awardee_or_recipient_uniqu IS NOT NULL AND tf.awardee_or_recipient_legal IS NULL
+      ORDER BY tf.action_date DESC
+    )
+    SELECT
+      DISTINCT ON (awardee_or_recipient_uniqu)
+      MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, awardee_or_recipient_legal)))::uuid AS recipient_hash,
+      awardee_or_recipient_uniqu AS duns,
+      ultimate_parent_unique_ide AS parent_duns,
+      ultimate_parent_legal_enti AS parent_legal_business_name,
+      awardee_or_recipient_legal AS legal_business_name,
+      city,
+      state,
+      zip5,
+      zip4,
+      congressional AS congressional_district,
+      address_line1 AS address_line_1,
+      address_line2 AS address_line_2,
+      country_code
+    FROM transaction_recipients_inner
+    ORDER BY awardee_or_recipient_uniqu, action_date DESC
+)
+
+INSERT INTO public.temporary_restock_recipient_lookup (
+    recipient_hash, legal_business_name, duns, parent_duns,
+    parent_legal_business_name, address_line_1, address_line_2, city,
+     state, zip5, zip4, country_code,
+    congressional_district)
+SELECT
+    recipient_hash, legal_business_name, duns, parent_duns,
+    parent_legal_business_name, address_line_1, address_line_2, city,
+    state, zip5, zip4, country_code,
+    congressional_district
+FROM transaction_recipients
+ON CONFLICT (duns) DO NOTHING;
+
+--------------------------------------------------------------------------------
+-- Step 4c, Create rows with Parent DUNS from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4c: Adding Recipient records from SAM parent data with no name'; END $$;
 WITH grouped_parent_recipients AS (
     SELECT
     DISTINCT ON (ultimate_parent_unique_ide)
@@ -260,9 +317,9 @@ ON CONFLICT (duns) DO NOTHING;
 
 
 --------------------------------------------------------------------------------
--- Step 4c, Create rows with Parent DUNS and no namefrom FPDS/FABS
+-- Step 4d, Create rows with Parent DUNS and no namefrom FPDS/FABS
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding Recipient records from FPDS and FABS parents with no name'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4d: Adding Recipient records from FPDS and FABS parents with no name'; END $$;
 WITH transaction_recipients AS (
     WITH transaction_recipients_inner AS (
       SELECT

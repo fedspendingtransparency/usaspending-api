@@ -40,7 +40,7 @@ CREATE TABLE public.temporary_restock_duns AS (
         COALESCE(duns.business_types_codes, ''{}''::text[]) AS business_types_codes,
         duns.entity_structure,
         duns.duns_id,
-        COALESCE(duns.last_sam_mod_date, duns.activation_date, duns.deactivation_date) as record_date
+        COALESCE(duns.activation_date, duns.deactivation_date) as record_date
       FROM
         duns
       ORDER BY
