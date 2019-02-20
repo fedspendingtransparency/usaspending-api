@@ -2,11 +2,34 @@ DROP TABLE IF EXISTS public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 DROP INDEX IF EXISTS public.idx_temporary_restock_recipient_lookup_unique_duns;
 DROP INDEX IF EXISTS public.idx_temporary_restock_recipient_lookup_hash;
+DROP INDEX IF EXISTS public.idx_temporary_restock_recipient_view;
+DROP INDEX IF EXISTS public.idx_temporary_restock_parent_recipient_view;
 
 --------------------------------------------------------------------------------
 -- Step 1, Create temporary table and materialized view
 --------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temporary table and materialized view'; END $$;
+
+CREATE TABLE public.temporary_restock_recipient_lookup (
+    recipient_hash uuid,
+    legal_business_name text,
+    duns text,
+    parent_duns text,
+    parent_legal_business_name text,
+    address_line_1 text,
+    address_line_2 text,
+    city text,
+    state text,
+    zip5 text,
+    zip4 text,
+    country_code text,
+    congressional_district text,
+    business_types_codes text[]
+);
+
+CREATE UNIQUE INDEX idx_temporary_restock_recipient_lookup_unique_duns ON public.temporary_restock_recipient_lookup (duns);
+
+
 CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   SELECT
     COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS awardee_or_recipient_uniqu,
@@ -31,27 +54,9 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   ORDER BY tn.action_date DESC
 );
 
+CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (awardee_or_recipient_uniqu, awardee_or_recipient_legal);
+CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_unique_ide, ultimate_parent_legal_enti);
 VACUUM ANALYZE public.temporary_transaction_recipients_view;
-
-
-CREATE TABLE public.temporary_restock_recipient_lookup (
-    recipient_hash uuid,
-    legal_business_name text,
-    duns text,
-    parent_duns text,
-    parent_legal_business_name text,
-    address_line_1 text,
-    address_line_2 text,
-    city text,
-    state text,
-    zip5 text,
-    zip4 text,
-    country_code text,
-    congressional_district text,
-    business_types_codes text[]
-);
-
-CREATE UNIQUE INDEX idx_temporary_restock_recipient_lookup_unique_duns ON public.temporary_restock_recipient_lookup (duns);
 
 
 --------------------------------------------------------------------------------
@@ -301,8 +306,8 @@ WITH grouped_parent_recipients AS (
       ultimate_parent_unique_ide AS duns,
       ultimate_parent_legal_enti AS legal_business_name
     FROM duns
-    WHERE ultimate_parent_unique_ide IS NOT NULL
-    ORDER BY ultimate_parent_unique_ide DESC
+    WHERE ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NULL
+    ORDER BY ultimate_parent_unique_ide DESC, update_date DESC
 )
 INSERT INTO public.temporary_restock_recipient_lookup (
     recipient_hash, legal_business_name, duns, parent_duns, parent_legal_business_name)
@@ -327,7 +332,7 @@ WITH transaction_recipients AS (
         tf.ultimate_parent_unique_ide,
         tf.action_date
       FROM public.temporary_transaction_recipients_view AS tf
-      WHERE tf.ultimate_parent_unique_ide IS NOT NULL
+      WHERE tf.ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NULL
       ORDER BY tf.action_date DESC
     )
     SELECT
