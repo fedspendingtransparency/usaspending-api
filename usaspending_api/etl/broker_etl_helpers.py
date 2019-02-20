@@ -1,8 +1,10 @@
 import json
-import os
-from django.db import connection, connections
-from collections import OrderedDict
 import logging
+import os
+
+from django.db import connection, connections
+
+from usaspending_api.common.helpers.sql_helpers import fetchall_to_ordered_dictionary
 
 
 logger = logging.getLogger('console')
@@ -13,10 +15,7 @@ def dictfetchall(cursor):
         if not cursor.results:
             return []
         return cursor.results
-    else:
-        "Return all rows from a cursor as a dict"
-        columns = [col[0] for col in cursor.description]
-        return [OrderedDict(zip(columns, row)) for row in cursor.fetchall()]
+    return fetchall_to_ordered_dictionary(cursor)
 
 
 class PhonyCursor:
