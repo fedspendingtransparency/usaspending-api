@@ -36,7 +36,7 @@ class S3Handler:
 
         bucket_url = "https://{}.usaspending.gov/{}/".format(subdomain, self.redirect_dir)
         env_dir = ''
-        if self.redirect_dir == settings.BUCK_DOWNLOAD_S3_REDIRECT_DIR and self.environment != 'production':
+        if self.redirect_dir == settings.BULK_DOWNLOAD_S3_REDIRECT_DIR and self.environment != 'production':
             # currently only downloads have a bucket per environment
             env_dir = '{}/'.format(self.environment)
         generated = '{}{}{}'.format(bucket_url, env_dir, file_name)
