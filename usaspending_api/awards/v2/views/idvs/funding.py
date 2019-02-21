@@ -5,8 +5,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.sql_helpers import build_order_by, fetch_all_as_ordered_dictionary
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
 from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
@@ -97,9 +97,7 @@ TINY_SHIELD_MODEL = _prepare_tiny_shield_model()
 
 
 class IDVFundingViewSet(APIDocumentationView):
-    """Returns funding records associated with the IDV.
-    endpoint_doc: /awards/idvs/funding.md
-    """
+    """Returns File C funding records associated with an IDV."""
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
@@ -112,15 +110,17 @@ class IDVFundingViewSet(APIDocumentationView):
         # integer or a generated award id that is a string.
         award_id = request_data['award_id']
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+
         sql = GET_FUNDING_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get('piid')),
-            order_by=SQL(build_order_by(SORTABLE_COLUMNS[request_data['sort']], request_data['order'])),
+            order_by=build_composable_order_by(SORTABLE_COLUMNS[request_data['sort']], request_data['order']),
             limit=Literal(request_data['limit'] + 1),
             offset=Literal((request_data['page'] - 1) * request_data['limit']),
         )
-        return fetch_all_as_ordered_dictionary(sql)
+
+        return execute_sql_to_ordered_dictionary(sql)
 
     @cache_response()
     def post(self, request: Request) -> Response:
