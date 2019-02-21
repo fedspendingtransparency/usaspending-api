@@ -16,7 +16,7 @@ from usaspending_api.core.validator.tinyshield import TinyShield
 logger = logging.getLogger('console')
 
 
-TINY_SHIELD_RULES = TinyShield([get_internal_or_generated_award_id_rule()])
+TINY_SHIELD_MODEL = [get_internal_or_generated_award_id_rule()]
 
 
 class IDVAmountsViewSet(APIDocumentationView):
@@ -26,7 +26,7 @@ class IDVAmountsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:
-        return TINY_SHIELD_RULES.block({'award_id': requested_award})
+        return TinyShield(TINY_SHIELD_MODEL).block({'award_id': requested_award})
 
     @staticmethod
     def _business_logic(request_data: dict) -> OrderedDict:

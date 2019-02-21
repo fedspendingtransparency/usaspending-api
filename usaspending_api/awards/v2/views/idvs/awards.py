@@ -79,20 +79,16 @@ GET_CONTRACTS_SQL = SQL("""
 """)
 
 
-def _prepare_tiny_shield_rules():
-    """
-    Our TinyShield rules never change.  Encapsulate them here and store them
-    once in TINY_SHIELD_RULES.
-    """
-    models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
-    models.extend([
+def _prepare_tiny_shield_model():
+    model = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
+    model.extend([
         get_internal_or_generated_award_id_rule(),
         {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
     ])
-    return TinyShield(models)
+    return model
 
 
-TINY_SHIELD_RULES = _prepare_tiny_shield_rules()
+TINY_SHIELD_MODEL = _prepare_tiny_shield_model()
 
 
 class IDVAwardsViewSet(APIDocumentationView):
@@ -102,7 +98,7 @@ class IDVAwardsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
-        return TINY_SHIELD_RULES.block(request)
+        return TinyShield(TINY_SHIELD_MODEL).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
