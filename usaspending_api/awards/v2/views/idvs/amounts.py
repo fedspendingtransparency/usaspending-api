@@ -1,6 +1,7 @@
 import logging
 
 from collections import OrderedDict
+from copy import deepcopy
 
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -9,14 +10,14 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import ParentAward
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.core.validator.tinyshield import TinyShield
 
 
 logger = logging.getLogger('console')
 
 
-TINY_SHIELD_MODEL = [get_internal_or_generated_award_id_rule()]
+TINY_SHIELD_MODELS = [get_internal_or_generated_award_id_model()]
 
 
 class IDVAmountsViewSet(APIDocumentationView):
@@ -26,7 +27,7 @@ class IDVAmountsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:
-        return TinyShield(TINY_SHIELD_MODEL).block({'award_id': requested_award})
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block({'award_id': requested_award})
 
     @staticmethod
     def _business_logic(request_data: dict) -> OrderedDict:

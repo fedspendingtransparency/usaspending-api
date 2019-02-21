@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from django.db import connections, router
 from psycopg2.sql import Identifier, Literal, SQL
@@ -9,7 +10,7 @@ from usaspending_api.awards.models import Award  # We only use this model to get
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -79,16 +80,16 @@ GET_CONTRACTS_SQL = SQL("""
 """)
 
 
-def _prepare_tiny_shield_model():
-    model = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
-    model.extend([
-        get_internal_or_generated_award_id_rule(),
+def _prepare_tiny_shield_models():
+    models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
+    models.extend([
+        get_internal_or_generated_award_id_model(),
         {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
     ])
-    return model
+    return models
 
 
-TINY_SHIELD_MODEL = _prepare_tiny_shield_model()
+TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
 class IDVAwardsViewSet(APIDocumentationView):
@@ -98,7 +99,7 @@ class IDVAwardsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(TINY_SHIELD_MODEL).block(request)
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
