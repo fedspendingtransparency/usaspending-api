@@ -82,7 +82,7 @@ GET_FUNDING_SQL = SQL("""
 
 
 def _prepare_tiny_shield_models():
-    models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS.keys(), DEFAULT_SORT_COLUMN)
+    models = customize_pagination_with_sort_columns(list(SORTABLE_COLUMNS.keys()), DEFAULT_SORT_COLUMN)
     models.extend([
         get_internal_or_generated_award_id_rule(),
         {'key': 'piid', 'name': 'piid', 'optional': True, 'type': 'text', 'text_type': 'search'}

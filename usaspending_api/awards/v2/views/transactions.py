@@ -38,7 +38,7 @@ class TransactionViewSet(APIDocumentationView):
         Our TinyShield rules never change.  Encapsulate them here and store
         them once in TINY_SHIELD_RULES.
         """
-        models = customize_pagination_with_sort_columns(TransactionViewSet.transaction_lookup.keys(), 'action_date')
+        models = customize_pagination_with_sort_columns(list(TransactionViewSet.transaction_lookup.keys()), 'action_date')
         models.extend([
             get_internal_or_generated_award_id_rule(),
             {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
