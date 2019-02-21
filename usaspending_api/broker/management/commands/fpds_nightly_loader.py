@@ -115,7 +115,7 @@ class Command(BaseCommand):
             fpds_ids_batch = dap_uid_list[i:max_index]
 
             log_msg = "[{}] Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(datetime.now() - start_time, i, max_index, total_uid_count))
+            logger.info(log_msg.format(datetime.now() - start_time, i + 1, max_index, total_uid_count))
 
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
