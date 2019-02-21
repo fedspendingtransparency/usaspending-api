@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
@@ -29,7 +30,7 @@ for k, v in SORTABLE_COLUMNS.items():
 
 DEFAULT_SORT_COLUMN = 'reporting_fiscal_date'
 
-# Get funding information for child and grandchild contracts of and IDV but
+# Get funding information for child and grandchild contracts of an IDV but
 # not the IDVs themselves.
 GET_FUNDING_SQL = SQL("""
     with cte as (
@@ -80,20 +81,16 @@ GET_FUNDING_SQL = SQL("""
 """)
 
 
-def _prepare_tiny_shield_model():
-    """
-    Our TinyShield rules never change.  Encapsulate them here and store them
-    once in TINY_SHIELD_RULES.
-    """
-    model = customize_pagination_with_sort_columns(SORTABLE_COLUMNS.keys(), DEFAULT_SORT_COLUMN)
-    model.extend([
+def _prepare_tiny_shield_models():
+    models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS.keys(), DEFAULT_SORT_COLUMN)
+    models.extend([
         get_internal_or_generated_award_id_rule(),
         {'key': 'piid', 'name': 'piid', 'optional': True, 'type': 'text', 'text_type': 'search'}
     ])
-    return model
+    return models
 
 
-TINY_SHIELD_MODEL = _prepare_tiny_shield_model()
+TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
 class IDVFundingViewSet(APIDocumentationView):
@@ -101,7 +98,7 @@ class IDVFundingViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(TINY_SHIELD_MODEL).block(request)
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
