@@ -45,9 +45,13 @@ class IDVAwardsTestCase(TestCase):
                 ordering_period_end_date='2018-01-%02d' % transaction_id
             )
 
-        # We'll need some awards.
+        # We'll need some awards (and agencies).
         for award_id in range(1, AWARD_COUNT + 1):
             parent_n = PARENTS.get(award_id)
+            mommy.make(
+                'references.Agency',
+                id=award_id * 12
+            )
             mommy.make(
                 'awards.Award',
                 id=award_id,
@@ -63,6 +67,7 @@ class IDVAwardsTestCase(TestCase):
                 description='description_%s' % award_id,
                 period_of_performance_current_end_date='2018-03-%02d' % award_id,
                 period_of_performance_start_date='2018-02-%02d' % award_id,
+                funding_agency_id=award_id * 12,
             )
 
         # We'll need some parent_awards.
@@ -94,6 +99,7 @@ class IDVAwardsTestCase(TestCase):
                 'award_type': 'type_description_%s' % award_id,
                 'description': 'description_%s' % award_id,
                 'funding_agency': 'funding_agency_name_%s' % award_id,
+                'funding_agency_id': award_id * 12,
                 'generated_unique_award_id': 'GENERATED_UNIQUE_AWARD_ID_%s' % award_id,
                 'last_date_to_order': '2018-01-%02d' % award_id,
                 'obligated_amount': float(award_id * (1000 if award_id in IDVS else 1)),
