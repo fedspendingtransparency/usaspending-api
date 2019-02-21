@@ -1,3 +1,4 @@
+from sys import maxsize
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -11,7 +12,7 @@ AWARD_FILTER = [
     {'name': 'contract_pricing_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'extent_competed_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'keywords', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'text_min': 3},
-    {'name': 'legal_entities', 'type': 'array', 'array_type': 'integer'},
+    {'name': 'legal_entities', 'type': 'array', 'array_type': 'integer', 'array_max': maxsize},
     {'name': 'naics_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'place_of_performance_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
     {'name': 'program_numbers', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
