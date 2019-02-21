@@ -36,7 +36,10 @@ class TransactionViewSet(APIDocumentationView):
     }
 
     def __init__(self):
-        models = customize_pagination_with_sort_columns(TransactionViewSet.transaction_lookup.keys(), 'action_date')
+        models = customize_pagination_with_sort_columns(
+            list(TransactionViewSet.transaction_lookup.keys()),
+            'action_date'
+        )
         models.extend([
             get_internal_or_generated_award_id_model(),
             {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
