@@ -31,10 +31,12 @@ def awards_and_transactions(db):
     sub_agency = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
     trans_asst = {"pk": 1}
     trans_cont = {"pk": 2}
-    duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
+    duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
+    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
+    mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("references.SubtierAgency", **sub_agency)
     mommy.make("references.ToptierAgency", **sub_agency)
     mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
@@ -42,7 +44,6 @@ def awards_and_transactions(db):
     le = {
         "pk": 1,
         "business_categories": ["small_business"],
-        # "location": Location.objects.get(pk=1),
     }
 
     ag = {
@@ -273,7 +274,7 @@ expected_response_asst = {
         "office_agency_name": "office_agency",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367",
+        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "John's Pizza",
         "recipient_unique_id": "456",
         "parent_recipient_unique_id": "123",
@@ -343,7 +344,7 @@ expected_response_cont = {
         "office_agency_name": "office_agency",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367",
+        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "John's Pizza",
         "recipient_unique_id": "456",
         "parent_recipient_unique_id": "123",
