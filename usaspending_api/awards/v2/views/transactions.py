@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.db.models import F
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -6,7 +8,7 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.core.validator.tinyshield import TinyShield
 
@@ -34,23 +36,19 @@ class TransactionViewSet(APIDocumentationView):
     }
 
     def __init__(self):
-        """
-        Our TinyShield rules never change.  Encapsulate them here and store
-        them once in TINY_SHIELD_RULES.
-        """
         models = customize_pagination_with_sort_columns(
             list(TransactionViewSet.transaction_lookup.keys()),
             'action_date'
         )
         models.extend([
-            get_internal_or_generated_award_id_rule(),
+            get_internal_or_generated_award_id_model(),
             {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
         ])
-        self._tiny_shield_rules = TinyShield(models)
+        self._tiny_shield_models = models
         super(TransactionViewSet, self).__init__()
 
     def _parse_and_validate_request(self, request_dict: dict) -> dict:
-        return self._tiny_shield_rules.block(request_dict)
+        return TinyShield(deepcopy(self._tiny_shield_models)).block(request_dict)
 
     def _business_logic(self, request_data: dict) -> list:
         # By this point, our award_id has been validated and cleaned up by

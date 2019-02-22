@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
@@ -8,7 +9,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_rule
+from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.core.validator.tinyshield import TinyShield
 
@@ -33,6 +34,7 @@ GET_IDVS_SQL = SQL("""
         ac.type_description                        award_type,
         ac.description,
         tf.funding_agency_name                     funding_agency,
+        ac.funding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         pac.rollup_total_obligation                obligated_amount,
@@ -57,6 +59,7 @@ GET_CONTRACTS_SQL = SQL("""
         ac.type_description                        award_type,
         ac.description,
         tf.funding_agency_name                     funding_agency,
+        ac.funding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         ac.total_obligation                        obligated_amount,
@@ -77,20 +80,16 @@ GET_CONTRACTS_SQL = SQL("""
 """)
 
 
-def _prepare_tiny_shield_rules():
-    """
-    Our TinyShield rules never change.  Encapsulate them here and store them
-    once in TINY_SHIELD_RULES.
-    """
+def _prepare_tiny_shield_models():
     models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
     models.extend([
-        get_internal_or_generated_award_id_rule(),
+        get_internal_or_generated_award_id_model(),
         {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
     ])
-    return TinyShield(models)
+    return models
 
 
-TINY_SHIELD_RULES = _prepare_tiny_shield_rules()
+TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
 class IDVAwardsViewSet(APIDocumentationView):
@@ -100,7 +99,7 @@ class IDVAwardsViewSet(APIDocumentationView):
 
     @staticmethod
     def _parse_and_validate_request(request: Request) -> dict:
-        return TINY_SHIELD_RULES.block(request)
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
