@@ -5,6 +5,6 @@
 # So if a pull request only touches javascript files, only these owners
 # will be requested to review.
 
-*                                   @tony-sappe
+.github/*                           @tony-sappe
 *.js                                @ebdabbs
-usaspending_api/api_contracts/*     @tony-sappe @ebdabbs
+usaspending_api/api_contracts/**    @tony-sappe @ebdabbs
