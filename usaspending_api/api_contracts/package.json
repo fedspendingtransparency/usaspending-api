@@ -1,0 +1,24 @@
+{
+  "name": "usaspending-contract-testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "node ./scripts/docs/generator.js",
+    "schema": "node ./scripts/schema/schema.js",
+    "provider": "./node_modules/.bin/dredd ./contracts/**/*.md https://dev-api.usaspending.gov",
+    "mock": "node ./scripts/mock/drakov.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aglio": "^2.3.0",
+    "drafter": "^1.2.0",
+    "drakov": "^1.0.4",
+    "dredd": "^5.1.7",
+    "fs-extra": "^6.0.0",
+    "micromatch": "^3.1.10",
+    "node-glob": "^1.2.0"
+  }
+}
