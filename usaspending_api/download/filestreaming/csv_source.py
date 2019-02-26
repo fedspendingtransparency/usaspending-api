@@ -10,15 +10,23 @@ class CsvSource:
         self.source_type = source_type
         self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
         self.human_names = list(self.query_paths.keys())
-        if agency_id == 'all':
-            self.agency_code = 'all'
+        if agency_id == "all":
+            self.agency_code = "all"
         else:
             agency = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first()
             if agency:
                 self.agency_code = agency.cgac_code
             else:
-                raise InvalidParameterException('Agency with that ID does not exist')
+                raise InvalidParameterException("Agency with that ID does not exist")
         self.queryset = None
+
+    def __repr__(self):
+        return "CsvSource('{}', '{}', '{}', '{}')".format(
+            self.model_type, self.file_type, self.source_type, self.agency_code
+        )
+
+    def __str__(self):
+        return self.__repr__()
 
     def values(self, header):
         query_paths = [self.query_paths[hn] for hn in header]

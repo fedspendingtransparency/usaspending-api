@@ -20,8 +20,8 @@ from usaspending_api.download.helpers import (verify_requested_columns_available
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
-DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
-MAX_VISIBILITY_TIMEOUT = 60*60*4
+DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
+MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
@@ -248,7 +248,7 @@ def wait_for_process(process, start_time, download_job, message):
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
 
         if sleep_count < 10:
-            time.sleep(WAIT_FOR_PROCESS_SLEEP/5)
+            time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
             time.sleep(WAIT_FOR_PROCESS_SLEEP)
         sleep_count += 1
@@ -280,8 +280,8 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
 
     # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
-    with open(temp_sql_file_path, 'w') as file:
-        file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
+    with open(temp_sql_file_path, "w") as file:
+        file.write(r"\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
 
     return temp_sql_file, temp_sql_file_path
 
