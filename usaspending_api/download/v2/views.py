@@ -1,33 +1,25 @@
 import boto3
-import copy
 import datetime
 import json
 import os
+import pandas as pd
 import re
 
-import pandas as pd
-
 from django.conf import settings
-from django.db.models import Sum, F
-
-from rest_framework.response import Response
-from usaspending_api.common.views import APIDocumentationView
+from django.db.models import F
 from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
@@ -390,46 +382,6 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: file_name')
 
         return self.get_download_response(file_name=file_name)
-
-
-class DownloadTransactionCountViewSet(APIDocumentationView):
-    """
-    Returns the number of transactions that would be included in a download request for the given filter set.
-
-    endpoint_doc: /download/download_count.md
-    """
-    @cache_response()
-    def post(self, request):
-        """Returns boolean of whether a download request is greater than the max limit. """
-        models = [
-            {'name': 'subawards', 'key': 'subawards', 'type': 'boolean', 'default': False},
-        ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
-        json_request = TinyShield(models).block(request.data)
-
-        # If no filters in request return empty object to return all transactions
-        filters = json_request.get('filters', {})
-
-        is_over_limit = False
-
-        if json_request['subawards']:
-            total_count = subaward_filter(filters).count()
-        else:
-            queryset, model = download_transaction_count(filters)
-            if model in ['UniversalTransactionView']:
-                total_count = queryset.count()
-            else:
-                # "summary" materialized views are pre-aggregated and contain a counts col
-                total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
-
-        if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
-            is_over_limit = True
-
-        result = {
-            "transaction_rows_gt_limit": is_over_limit
-        }
-
-        return Response(result)
 
 
 class DownloadListAgenciesViewSet(APIDocumentationView):
