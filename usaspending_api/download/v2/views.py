@@ -1,9 +1,7 @@
-import boto3
 import datetime
 import json
 import os
 import pandas as pd
-import re
 
 from django.conf import settings
 from django.db.models import F
@@ -47,7 +45,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
         cached_download = DownloadJob.objects. \
             filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp). \
-            exclude(job_status_id=4).values('download_job_id', 'file_name')
+            exclude(job_status_id=JOB_STATUS_DICT["failed"]).values('download_job_id', 'file_name')
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
             write_to_log(message='Generating file from cached download job ID: {}'
@@ -365,25 +363,6 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
         return BaseDownloadViewSet.post(self, request, 'account')
 
 
-class DownloadStatusViewSet(BaseDownloadViewSet):
-    """
-    This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or
-     `v2/download/transaction/` endpoint that same day.
-
-    endpoint_doc: /download/download_status.md
-    """
-
-    def get(self, request):
-        """Obtain status for the download job matching the file name provided"""
-        get_request = request.query_params
-        file_name = get_request.get('file_name')
-
-        if not file_name:
-            raise InvalidParameterException('Missing one or more required query parameters: file_name')
-
-        return self.get_download_response(file_name=file_name)
-
-
 class DownloadListAgenciesViewSet(APIDocumentationView):
     """
     This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
@@ -465,80 +444,3 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
                 .values(federal_account_name=F('account_title'), federal_account_id=F('id'))\
                 .order_by('federal_account_name')
         return Response(response_data)
-
-
-class ListMonthlyDownloadsViewset(APIDocumentationView):
-    """
-    This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
-
-    endpoint_doc: /download/list_downloads.md
-    """
-    s3_handler = S3Handler(bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
-                           redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR)
-
-    # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
-    def post(self, request):
-        """Return list of downloads that match the requested params"""
-        agency_id = request.data.get('agency', None)
-        fiscal_year = request.data.get('fiscal_year', None)
-        type_param = request.data.get('type', None)
-
-        # Check required params
-        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': type_param}
-        for required, param_value in required_params.items():
-            if param_value is None:
-                raise InvalidParameterException('Missing one or more required query parameters: {}'.format(required))
-
-        # Capitalize type_param and retrieve agency information from agency ID
-        download_type = type_param.capitalize()
-        if agency_id == 'all':
-            agency = {'cgac_code': 'all', 'name': 'All', 'abbreviation': None}
-        else:
-            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code', 'name',
-                                                                                            'abbreviation')
-            if agency_check:
-                agency = agency_check[0]
-            else:
-                raise InvalidParameterException('{} agency not found'.format(agency_id))
-
-        # Populate regex
-        monthly_download_prefixes = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], download_type)
-        monthly_download_regex = '{}_Full_.*\.zip'.format(monthly_download_prefixes)
-        delta_download_prefixes = '{}_{}'.format(agency['cgac_code'], download_type)
-        delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
-
-        # Retrieve and filter the files we need
-        bucket = boto3.resource('s3', region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
-        monthly_download_names = list(filter(re.compile(monthly_download_regex).search,
-                                             [key.key for key
-                                              in bucket.objects.filter(Prefix=monthly_download_prefixes)]))
-        delta_download_names = list(filter(re.compile(delta_download_regex).search,
-                                           [key.key for key in bucket.objects.filter(Prefix=delta_download_prefixes)]))
-
-        # Generate response
-        downloads = []
-        for filename in monthly_download_names:
-            downloads.append(self.create_download_response_obj(filename, fiscal_year, type_param, agency))
-        for filename in delta_download_names:
-            downloads.append(self.create_download_response_obj(filename, None, type_param, agency, is_delta=True))
-
-        return Response({'monthly_files': downloads})
-
-    def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
-        """Return a """
-        regex = '(.*)_(.*)_Delta_(.*)\.zip' if is_delta else '(.*)_(.*)_(.*)_Full_(.*)\.zip'
-        filename_data = re.findall(regex, filename)[0]
-
-        # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
-        unformatted_date = filename_data[2 if is_delta else 3]
-        updated_date = '-'.join([unformatted_date[:4], unformatted_date[4:6], unformatted_date[6:]])
-
-        return {
-            'fiscal_year': fiscal_year,
-            'agency_name': agency['name'],
-            'agency_acronym': agency['abbreviation'],
-            'type': type_param,
-            'updated_date': updated_date,
-            'file_name': filename,
-            'url': self.s3_handler.get_simple_url(file_name=filename)
-        }
