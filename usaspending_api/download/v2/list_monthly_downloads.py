@@ -46,9 +46,9 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
 
         # Populate regex
         monthly_download_prefixes = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], download_type)
-        monthly_download_regex = '{}_Full_.*\.zip'.format(monthly_download_prefixes)
+        monthly_download_regex = r'{}_Full_.*\.zip'.format(monthly_download_prefixes)
         delta_download_prefixes = '{}_{}'.format(agency['cgac_code'], download_type)
-        delta_download_regex = '{}_Delta_.*\.zip'.format(delta_download_prefixes)
+        delta_download_regex = r'{}_Delta_.*\.zip'.format(delta_download_prefixes)
 
         # Retrieve and filter the files we need
         bucket = boto3.resource('s3', region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
@@ -69,7 +69,7 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
 
     def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
         """Return a """
-        regex = '(.*)_(.*)_Delta_(.*)\.zip' if is_delta else '(.*)_(.*)_(.*)_Full_(.*)\.zip'
+        regex = r'(.*)_(.*)_Delta_(.*)\.zip' if is_delta else r'(.*)_(.*)_(.*)_Full_(.*)\.zip'
         filename_data = re.findall(regex, filename)[0]
 
         # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
