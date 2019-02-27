@@ -907,7 +907,7 @@ query_paths = {
     'account_balances': {
         'treasury_account': OrderedDict([
             ('allocation_transfer_agency_identifier', 'treasury_account_identifier__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account_identifier__agency_id'),
+            ('agency_identifier', 'treasury_account_identifier__agency_id'),
             ('beginning_period_of_availability', 'treasury_account_identifier__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account_identifier__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account_identifier__availability_type_code'),
@@ -965,7 +965,7 @@ query_paths = {
     'object_class_program_activity': {
         'treasury_account': OrderedDict([
             ('allocation_transfer_agency_identifier', 'treasury_account__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account__agency_id'),
+            ('agency_identifier', 'treasury_account__agency_id'),
             ('beginning_period_of_availability', 'treasury_account__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account__availability_type_code'),
@@ -1010,7 +1010,7 @@ query_paths = {
         'treasury_account': OrderedDict([
             ('submission_period', 'reporting_period_end'),
             ('allocation_transfer_agency_identifier', 'treasury_account__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account__agency_id'),
+            ('agency_identifier', 'treasury_account__agency_id'),
             ('beginning_period_of_availability', 'treasury_account__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account__availability_type_code'),

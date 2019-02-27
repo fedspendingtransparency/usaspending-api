@@ -1,5 +1,6 @@
-import datetime
 import json
+
+from datetime import datetime, timezone
 
 from django.conf import settings
 from rest_framework.exceptions import NotFound
@@ -21,50 +22,60 @@ from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, S
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
                                               ACCOUNT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.download.download_utils import create_unique_filename
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
-    s3_handler = S3Handler(bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-                           redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR)
+    s3_handler = S3Handler(
+        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+        redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+    )
 
     def post(self, request, request_type='award'):
         """Push a message to SQS with the validated request JSON"""
-        json_request = (self.validate_award_request(request.data) if request_type == 'award' else
-                        self.validate_account_request(request.data))
+        if request_type == 'award':
+            json_request = self.validate_award_request(request.data)
+        else:
+            json_request = self.validate_account_request(request.data)
+
         json_request['request_type'] = request_type
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
-        updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
-        cached_download = DownloadJob.objects. \
-            filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp). \
-            exclude(job_status_id=JOB_STATUS_DICT["failed"]).values('download_job_id', 'file_name')
+        updated_date_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d")
+        cached_download = (
+            DownloadJob.objects.filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp)
+            .exclude(job_status_id=JOB_STATUS_DICT["failed"])
+            .values("download_job_id", "file_name")
+            .first()
+        )
+        print("Cached Download: {}".format(cached_download))
+
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(message='Generating file from cached download job ID: {}'
-                         .format(cached_download[0]['download_job_id']))
-            cached_filename = cached_download[0]['file_name']
+            write_to_log(
+                message='Generating file from cached download job ID: {}'.format(cached_download['download_job_id'])
+            )
+            cached_filename = cached_download['file_name']
             return self.get_download_response(file_name=cached_filename)
 
-        # Create download name and timestamped name for uniqueness
-        toptier_agency_filter = ToptierAgency.objects.filter(
-            toptier_agency_id=json_request.get('filters', {}).get('agency', None)).first()
-        download_name = '{}_{}'.format(toptier_agency_filter.cgac_code if toptier_agency_filter else 'all',
-                                       '_'.join(VALUE_MAPPINGS[award_level]['download_name']
-                                                for award_level in json_request['download_types']))
-        timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
+        request_agency = json_request.get('filters', {}).get('agency', None)
+        final_file_name = create_unique_filename(json_request["download_types"], request_agency)
 
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
-                                                  file_name=timestamped_file_name,
+                                                  file_name=final_file_name,
                                                   json_request=ordered_json_request)
 
-        write_to_log(message='Starting new download job'.format(download_job.download_job_id),
-                     download_job=download_job, other_params={'request_addr': get_remote_addr(request)})
+        write_to_log(
+            message='Starting new download job [{}]'.format(download_job.download_job_id),
+            download_job=download_job,
+            other_params={'request_addr': get_remote_addr(request)}
+
+        )
         self.process_request(download_job)
 
-        return self.get_download_response(file_name=timestamped_file_name)
+        return self.get_download_response(file_name=final_file_name)
 
     def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""

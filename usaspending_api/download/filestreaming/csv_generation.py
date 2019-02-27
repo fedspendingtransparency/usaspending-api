@@ -160,7 +160,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
         # Log how many rows we have
-        with open(source_path, 'r') as source_csv:
+        with open(source_path, "rb") as source_csv:
             download_job.number_of_rows += sum(1 for row in csv.reader(source_csv)) - 1
             download_job.save()
 
