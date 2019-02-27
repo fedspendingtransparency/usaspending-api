@@ -1,5 +1,5 @@
 import boto3
-import csv
+
 import os
 import json
 import pandas as pd
@@ -15,6 +15,7 @@ from elasticsearch import TransportError
 from time import perf_counter, sleep
 from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
+from usaspending_api.common.csv_helpers import csv_row_count
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
@@ -557,11 +558,3 @@ def printf(items):
             j = ' (#{})'.format(job)
         print_msg = template.format(time=t, complex=func + j, msg=msg)
     print(print_msg)
-
-
-def csv_row_count(filename, has_header=True):
-    with open(filename, 'r') as f:
-        row_count = sum(1 for row in csv.reader(f))
-    if has_header:
-        row_count -= 1
-    return row_count
