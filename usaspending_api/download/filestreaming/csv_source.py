@@ -39,9 +39,7 @@ class CsvSource:
             result = [header for header in requested if header in self.human_names]
 
         # remove headers that we don't have a query path for
-        result = [header for header in result if header in self.query_paths]
-
-        return result
+        return [header for header in result if header in self.query_paths]
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)

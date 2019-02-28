@@ -12,7 +12,7 @@ import zipfile
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
-from usaspending_api.common.csv_helpers import csv_row_count
+from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
@@ -162,7 +162,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
 
         # Log how many rows we have
         try:
-            download_job.number_of_rows += csv_row_count(filename=source_path, has_header=True)
+            download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
         except Exception as e:
             write_to_log(message="Unable to obtain CSV line count",
                          is_error=True,
