@@ -12,10 +12,10 @@ import zipfile
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
 from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
+from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
@@ -192,7 +192,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
 
         output_template = '{}_%s.csv'.format(source_name)
 
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
+        split_csvs = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
                                output_name_template=output_template)
 
         if download_job:
