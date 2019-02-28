@@ -1,10 +1,11 @@
-from django.conf import settings
-
 import boto3
+import codecs
 import csv
 
+from django.conf import settings
 
-# Used by bulk and baby download
+
+# Used by non-local downloads
 def sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME):
     # stuff that's in get_queue
     sqs = boto3.resource('sqs', region_name=region_name)
@@ -12,14 +13,19 @@ def sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settings.B
     return queue
 
 
-def csv_row_count(filename, has_header=True):
+def csv_row_count(filename, has_header=True, safe=True):
     """
         Simple and efficient utility function to provide the rows in a vald CSV file
         If a header is not present, set head_header parameter to False
+
+        Added `line.replace(r"\0", "")` ... to handle any NUL BYTES in CSV files
     """
-    with open(filename, "r") as f:
-        row_count = sum(1 for row in csv.reader(f))
-    if has_header:
+    with codecs.open(filename, "r") as f:
+        if safe:
+            row_count = sum(1 for row in csv.reader((line.replace(r"\0", "") for line in f)))
+        else:
+            row_count = sum(1 for row in csv.reader(f))
+    if has_header and row_count > 0:
         row_count -= 1
 
-    return row_count if row_count >= 0 else 0
+    return row_count

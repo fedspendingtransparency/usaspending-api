@@ -50,7 +50,6 @@ class BaseDownloadViewSet(APIDocumentationView):
             .values("download_job_id", "file_name")
             .first()
         )
-        print("Cached Download: {}".format(cached_download))
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
@@ -63,16 +62,18 @@ class BaseDownloadViewSet(APIDocumentationView):
         request_agency = json_request.get('filters', {}).get('agency', None)
         final_file_name = create_unique_filename(json_request["download_types"], request_agency)
 
-        download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
-                                                  file_name=final_file_name,
-                                                  json_request=ordered_json_request)
+        download_job = DownloadJob.objects.create(
+            job_status_id=JOB_STATUS_DICT['ready'],
+            file_name=final_file_name,
+            json_request=ordered_json_request
+        )
 
         write_to_log(
             message='Starting new download job [{}]'.format(download_job.download_job_id),
             download_job=download_job,
             other_params={'request_addr': get_remote_addr(request)}
-
         )
+
         self.process_request(download_job)
 
         return self.get_download_response(file_name=final_file_name)
@@ -170,8 +171,9 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         # Validate account_level parameters
         if request_data.get('account_level', None) not in ["federal_account", "treasury_account"]:
-            raise InvalidParameterException('Invalid Parameter: account_level must be either "federal_account" or '
-                                            '"treasury_account"')
+            raise InvalidParameterException(
+                'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
+            )
         json_request['account_level'] = request_data['account_level']
 
         # Validate the filters parameter and its contents
@@ -216,8 +218,10 @@ class BaseDownloadViewSet(APIDocumentationView):
         else:
             # Send a SQS message that will be processed by another server which will eventually run
             # csv_generation.write_csvs(**kwargs) (see generate_zip.py)
-            write_to_log(message='Passing download_job {} to SQS'.format(download_job.download_job_id),
-                         download_job=download_job)
+            write_to_log(
+                message='Passing download_job {} to SQS'.format(download_job.download_job_id),
+                download_job=download_job
+            )
             queue = sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 

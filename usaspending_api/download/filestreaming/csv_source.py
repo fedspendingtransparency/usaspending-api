@@ -11,7 +11,7 @@ class CsvSource:
         self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
         self.human_names = list(self.query_paths.keys())
         if agency_id == "all":
-            self.agency_code = "all"
+            self.agency_code = agency_id
         else:
             agency = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first()
             if agency:
