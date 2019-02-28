@@ -187,12 +187,11 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
     try:
         # Split CSV into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
-
         log_time = time.perf_counter()
 
         output_template = '{}_%s.csv'.format(source_name)
 
-        split_csvs = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
+        list_of_csv_files = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
                                output_name_template=output_template)
 
         if download_job:
@@ -203,8 +202,8 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         log_time = time.perf_counter()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
 
-        for split_csv_part in split_csvs:
-            zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+        for csv_file in list_of_csv_files:
+            zipped_csvs.write(csv_file, os.path.basename(csv_file))
 
         if download_job:
             write_to_log(message='Writing to zipfile took {:.4f} seconds'.format(time.perf_counter() - log_time),
