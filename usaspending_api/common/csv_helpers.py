@@ -1,17 +1,6 @@
-import boto3
 import codecs
 import csv
 import os
-
-from django.conf import settings
-
-
-# Used by non-local downloads
-def sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME):
-    # stuff that's in get_queue
-    sqs = boto3.resource("sqs", region_name=region_name)
-    queue = sqs.get_queue_by_name(QueueName=queue_name)
-    return queue
 
 
 def count_rows_in_csv_file(filename, has_header=True, safe=True):

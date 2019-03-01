@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.csv_helpers import sqs_queue
+from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
@@ -43,6 +43,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
+        # TODO!!! Use external_data_load_date to determine data freshness
         updated_date_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d")
         cached_download = (
             DownloadJob.objects.filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp)
@@ -222,7 +223,7 @@ class BaseDownloadViewSet(APIDocumentationView):
                 message='Passing download_job {} to SQS'.format(download_job.download_job_id),
                 download_job=download_job
             )
-            queue = sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def get_download_response(self, file_name):

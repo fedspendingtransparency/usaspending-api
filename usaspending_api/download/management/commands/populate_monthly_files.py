@@ -7,7 +7,7 @@ import re
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year, order_nested_object
-from usaspending_api.common.csv_helpers import sqs_queue
+from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
@@ -69,7 +69,7 @@ class Command(BaseCommand):
         else:
             # Send a SQS message that will be processed by another server, which will eventually run
             # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
-            queue = sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):
@@ -199,7 +199,7 @@ class Command(BaseCommand):
         if include_all:
             toptier_agencies.append({'name': 'All', 'toptier_agency_id': 'all', 'cgac_code': 'all'})
         if not fiscal_years:
-            fiscal_years = range(2001, generate_fiscal_year(current_date)+1)
+            fiscal_years = range(2001, generate_fiscal_year(current_date) + 1)
 
         # moving it to self.bucket as it may be used in different cases
         bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
@@ -213,10 +213,10 @@ class Command(BaseCommand):
                 if re_match:
                     reuploads.append(re_match[0])
 
-        logger.info('Generating {} files...'.format(len(toptier_agencies)*len(fiscal_years)*2))
+        logger.info('Generating {} files...'.format(len(toptier_agencies) * len(fiscal_years) * 2))
         for agency in toptier_agencies:
             for fiscal_year in fiscal_years:
-                start_date = '{}-10-01'.format(fiscal_year-1)
+                start_date = '{}-10-01'.format(fiscal_year - 1)
                 end_date = '{}-09-30'.format(fiscal_year)
                 for award_type in award_types:
                     file_name = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], award_type.capitalize())
