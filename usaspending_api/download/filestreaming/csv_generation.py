@@ -55,7 +55,7 @@ def generate_csvs(download_job, sqs_message=None):
             parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
-        # Set error message; job_status_id will be set in generate_zip.handle()
+        # Set error message; job_status_id will be set in download_sqs_worker.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
         if isinstance(e, InvalidParameterException):
@@ -77,7 +77,7 @@ def generate_csvs(download_job, sqs_message=None):
             write_to_log(message='Uploading took {} seconds'.format(time.perf_counter() - start_uploading),
                          download_job=download_job)
     except Exception as e:
-        # Set error message; job_status_id will be set in generate_zip.handle()
+        # Set error message; job_status_id will be set in download_sqs_worker.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
         if isinstance(e, InvalidParameterException):

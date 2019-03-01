@@ -213,7 +213,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             csv_generation.generate_csvs(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
-            # csv_generation.write_csvs(**kwargs) (see generate_zip.py)
+            # csv_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
                 message='Passing download_job {} to SQS'.format(download_job.download_job_id),
                 download_job=download_job

@@ -69,7 +69,7 @@ class Command(BaseCommand):
                     logger.info('Deleting {} from bucket'.format(key.key))
         else:
             # Send a SQS message that will be processed by another server, which will eventually run
-            # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
+            # csv_generation.generate_csvs(download_job, message) (see download_sqs_worker.py)
             queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
