@@ -13,7 +13,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
-from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)

@@ -24,10 +24,10 @@ def create_award_level_string(download_types):
     return "_".join(VALUE_MAPPINGS[award_level]["download_name"] for award_level in download_types)
 
 
-def get_timestamped_filename(filename):
+def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
     """
         Gets a Timestamped file name to prevent conflicts on S3 Uploading
         """
-    sans_extension, extension = filename.split(".")
-    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y%m%d%H%M%S%f")
-    return "{}_{}.{}".format(sans_extension, timestamp, extension)
+    file_sans_extension, file_extension = filename.split(".")
+    timestamp = datetime.strftime(datetime.now(timezone.utc), datetime_format)
+    return "{}_{}.{}".format(file_sans_extension, timestamp, file_extension)

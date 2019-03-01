@@ -6,7 +6,7 @@ import time
 from calendar import monthrange, isleap
 from datetime import datetime as dt
 from django.conf import settings
-from django.db import DEFAULT_DB_ALIAS, connection
+from django.db import connection
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
@@ -14,8 +14,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
-
-QUOTABLE_TYPES = (str, datetime.date)
 
 TEMP_SQL_FILES = [
     '../matviews/subaward_view.sql',
@@ -189,27 +187,6 @@ def within_one_year(d1, d2):
         if d1 <= leap_date <= d2:
             days_diff -= 1
     return days_diff <= 365
-
-
-def generate_raw_quoted_query(queryset):
-    """
-    Generates the raw sql from a queryset with quotable types quoted. This function exists cause queryset.query doesn't
-    quote some types such as dates and strings. If Django is updated to fix this, please use that instead.
-    Note: To add types that should be in quotes in queryset.query, add it to QUOTABLE_TYPES above
-    """
-    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
-    str_fix_params = []
-    for param in params:
-        if isinstance(param, QUOTABLE_TYPES):
-            # single quotes are escaped with two '' for strings in sql
-            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
-            str_fix_param = '\'{}\''.format(param)
-        elif isinstance(param, list):
-            str_fix_param = 'ARRAY{}'.format(param)
-        else:
-            str_fix_param = param
-        str_fix_params.append(str_fix_param)
-    return sql % tuple(str_fix_params)
 
 
 def generate_matviews():
