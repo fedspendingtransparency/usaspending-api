@@ -11,7 +11,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import order_nested_object
+from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.filestreaming import csv_generation
@@ -102,8 +102,10 @@ class BaseDownloadViewSet(APIDocumentationView):
         # Overriding all other filters if the keyword filter is provided in year-constraint download
         # Make sure this is after checking the award_levels
         if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
-            json_request['filters'] = {'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
-                                       'award_type_codes': list(award_type_mapping.keys())}
+            json_request['filters'] = {
+                'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
+                'award_type_codes': list(award_type_mapping.keys()),
+            }
             json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
             return json_request
 
@@ -171,10 +173,9 @@ class BaseDownloadViewSet(APIDocumentationView):
                     'Missing one or more required query parameters: {}'.format(required_param))
 
         # Validate account_level parameters
-        if request_data.get('account_level', None) not in ["federal_account", "treasury_account"]:
-            raise InvalidParameterException(
-                'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
-            )
+        valid_account_levels = ["federal_account", "treasury_account"]
+        if request_data.get('account_level', None) not in valid_account_levels:
+            raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
         json_request['account_level'] = request_data['account_level']
 
         # Validate the filters parameter and its contents
@@ -201,10 +202,12 @@ class BaseDownloadViewSet(APIDocumentationView):
             raise InvalidParameterException('quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)')
 
         # Validate submission_type parameters
-        if filters.get('submission_type', None) not in ["account_balances", "object_class_program_activity",
-                                                        "award_financial"]:
-            raise InvalidParameterException('Invalid Parameter: submission_type must be "account_balances", '
-                                            '"object_class_program_activity", or "award_financial"')
+        valid_submissions = ["account_balances", "object_class_program_activity", "award_financial"]
+        submission_type = filters.get('submission_type', None)
+
+        if submission_type not in valid_submissions:
+            raise InvalidParameterException('Invalid Parameter: submission_type must be {}'.format(valid_submissions))
+
         json_request['download_types'] = [filters['submission_type']]
 
         # Validate the rest of the filters
