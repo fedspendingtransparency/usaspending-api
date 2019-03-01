@@ -61,13 +61,17 @@ def get_download_job(queryset_filter):
 
 
 def query_database_for_record(queryset_filter):
-    return DownloadJob.objects.filter(queryset_filter).exclude(
-        job_status_id__in=[JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]], monthly_download=True
-    ).values("download_job_id")
+    return (
+        DownloadJob.objects.filter(queryset_filter)
+        .exclude(job_status_id__in=[JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]], monthly_download=True)
+        .values("download_job_id")
+    )
 
 
 def update_download_job(djob_id, status):
-    DownloadJob.objects.filter(download_job_id=djob_id).update(job_status_id=status, update_date=datetime.now(timezone.utc))
+    DownloadJob.objects.filter(download_job_id=djob_id).update(
+        job_status_id=status, update_date=datetime.now(timezone.utc)
+    )
 
 
 def push_job_to_queue(download_job_id):
