@@ -27,8 +27,8 @@ JOB_STATUS = [
     LookupType(3, 'finished', 'job is complete'),
     LookupType(4, 'failed', 'job failed to complete')
 ]
+
 JOB_STATUS_DICT = {item.name: item.id for item in JOB_STATUS}
-JOB_STATUS_DICT_ID = {item.id: item.name for item in JOB_STATUS}
 
 VALUE_MAPPINGS = {
     # Award Level

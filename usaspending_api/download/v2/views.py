@@ -9,11 +9,11 @@ from rest_framework.response import Response
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.logging import get_remote_addr
+from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.common.views import APIDocumentationView
+from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
@@ -22,7 +22,6 @@ from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, S
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
                                               ACCOUNT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.download_utils import create_unique_filename
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -33,7 +32,6 @@ class BaseDownloadViewSet(APIDocumentationView):
     )
 
     def post(self, request, request_type='award'):
-        """Push a message to SQS with the validated request JSON"""
         if request_type == 'award':
             json_request = self.validate_award_request(request.data)
         else:
@@ -61,23 +59,17 @@ class BaseDownloadViewSet(APIDocumentationView):
             return self.get_download_response(file_name=cached_filename)
 
         request_agency = json_request.get('filters', {}).get('agency', None)
-        final_file_name = create_unique_filename(json_request["download_types"], request_agency)
-
+        final_output_zip_name = create_unique_filename(json_request["download_types"], request_agency)
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT['ready'],
-            file_name=final_file_name,
+            file_name=final_output_zip_name,
             json_request=ordered_json_request
         )
 
-        write_to_log(
-            message='Starting new download job [{}]'.format(download_job.download_job_id),
-            download_job=download_job,
-            other_params={'request_addr': get_remote_addr(request)}
-        )
-
+        log_new_download_job(request, download_job)
         self.process_request(download_job)
 
-        return self.get_download_response(file_name=final_file_name)
+        return self.get_download_response(file_name=final_output_zip_name)
 
     def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
@@ -299,7 +291,11 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
 
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
-    """This route sends a request to begin generating a zipfile of account data in CSV form for download."""
+    """
+    This route sends a request to begin generating a zipfile of account data in CSV form for download.
+
+    endpoint_doc: /download/custom_account_data_download.md
+    """
 
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""

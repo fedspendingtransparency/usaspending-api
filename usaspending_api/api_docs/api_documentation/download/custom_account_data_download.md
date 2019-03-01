@@ -1,5 +1,5 @@
 ## Custom Account Data Download (Beta)
-**Route:** `/api/v2/bulk_download/accounts/`
+**Route:** `/api/v2/download/accounts/`
 
 **Method:** `POST`
 
