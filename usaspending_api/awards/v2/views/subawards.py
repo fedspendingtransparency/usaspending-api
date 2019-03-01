@@ -7,8 +7,8 @@ from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.pagination import PAGINATION
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.pagination import PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 class SubawardsViewSet(APIDocumentationView):

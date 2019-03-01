@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import ParentAward
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 logger = logging.getLogger('console')

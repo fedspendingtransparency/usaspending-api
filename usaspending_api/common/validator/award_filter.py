@@ -2,7 +2,7 @@ from sys import maxsize
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
 
 
 AWARD_FILTER = [

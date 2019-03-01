@@ -8,8 +8,8 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 class DownloadTransactionCountViewSet(APIDocumentationView):

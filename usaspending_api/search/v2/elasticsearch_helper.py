@@ -6,7 +6,7 @@ from django.conf import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-from usaspending_api.core.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.client import es_client_query
 
 logger = logging.getLogger("console")
 

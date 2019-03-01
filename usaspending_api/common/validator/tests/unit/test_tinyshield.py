@@ -2,16 +2,16 @@ import copy
 import pytest
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.helpers import validate_array
-from usaspending_api.core.validator.helpers import validate_boolean
-from usaspending_api.core.validator.helpers import validate_datetime
-from usaspending_api.core.validator.helpers import validate_enum
-from usaspending_api.core.validator.helpers import validate_float
-from usaspending_api.core.validator.helpers import validate_integer
-from usaspending_api.core.validator.helpers import validate_object
-from usaspending_api.core.validator.helpers import validate_text
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.helpers import validate_array
+from usaspending_api.common.validator.helpers import validate_boolean
+from usaspending_api.common.validator.helpers import validate_datetime
+from usaspending_api.common.validator.helpers import validate_enum
+from usaspending_api.common.validator.helpers import validate_float
+from usaspending_api.common.validator.helpers import validate_integer
+from usaspending_api.common.validator.helpers import validate_object
+from usaspending_api.common.validator.helpers import validate_text
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 ARRAY_RULE = {'name': 'test', 'type': 'array', 'key': 'filters|test',

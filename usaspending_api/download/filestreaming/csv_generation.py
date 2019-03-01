@@ -192,7 +192,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         output_template = '{}_%s.csv'.format(source_name)
 
         list_of_csv_files = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
-                               output_name_template=output_template)
+                                                     output_name_template=output_template)
 
         if download_job:
             write_to_log(message='Splitting csvs took {:.4f} seconds'.format(time.perf_counter() - log_time),
@@ -342,8 +342,10 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         subprocess.check_output(['psql', '-o', source_path, retrieve_db_string(), '-v', 'ON_ERROR_STOP=1'],
                                 stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
-        write_to_log(message='Wrote {}, took {:.4f} seconds'.format(os.path.basename(source_path), time.perf_counter() - log_time),
-                     download_job=download_job)
+        duration = time.perf_counter() - log_time
+        write_to_log(
+            message='Wrote {}, took {:.4f} seconds'.format(os.path.basename(source_path), duration),
+            download_job=download_job)
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
         e.cmd = '[redacted]'
