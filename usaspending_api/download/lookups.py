@@ -25,7 +25,8 @@ JOB_STATUS = [
     LookupType(1, 'ready', 'job is ready to be run'),
     LookupType(2, 'running', 'job is currently in progress'),
     LookupType(3, 'finished', 'job is complete'),
-    LookupType(4, 'failed', 'job failed to complete')
+    LookupType(4, 'failed', 'job failed to complete'),
+    LookupType(5, 'queued', 'job sent to queue for async processing'),
 ]
 
 JOB_STATUS_DICT = {item.name: item.id for item in JOB_STATUS}
