@@ -20,21 +20,20 @@ class Command(BaseCommand):
             "--id",
             dest="download_job_id",
             type=int,
-            help="Provide the DownloadJob ID from the USAspending DB to restart a download",
+            help="A DownloadJob ID from a USAspending DB to restart a download",
         )
         group.add_argument(
             "-f",
             "--filename",
             dest="file_name",
             type=str,
-            help="Provide a filename to search by the final zip product name of a DownloadJob to restart a download",
+            help="A string to search on the final zip product filename of a DownloadJob to restart a download",
         )
 
     def handle(self, *args, **options):  # used by parent class
         logger.info("Beginning management command")
         self.search_downloads(**self.get_custom_arguments(**options))
-        self.process_download_job()
-        logger.info("OK\n")
+        self.restart_download_operation()
 
     @staticmethod
     def get_custom_arguments(**options):
@@ -61,14 +60,13 @@ class Command(BaseCommand):
         elif self.download_job.monthly_download is True:
             report_and_exit("DownloadJob is a monthly download. Aborting")
 
-    def process_download_job(self):
+    def restart_download_operation(self):
         if process_is_local():
             self.update_download_job(status=JOB_STATUS_DICT["ready"], error_message=None)
             csv_generation.generate_csvs(download_job=self.download_job)
         else:
             self.push_job_to_queue()
             self.update_download_job(status=JOB_STATUS_DICT["queued"], error_message=None)
-            logger.info("DownloadJob successfully pushed to queue")
 
     def update_download_job(self, **kwargs):
         for field, value in kwargs.items():
@@ -78,6 +76,7 @@ class Command(BaseCommand):
     def push_job_to_queue(self):
         queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
         queue.send_message(MessageBody=str(self.download_job.download_job_id))
+        logger.info("DownloadJob successfully pushed to queue")
 
 
 def query_database_for_record(queryset_filter):
@@ -87,9 +86,9 @@ def query_database_for_record(queryset_filter):
         report_and_exit("DownloadJob not found")
 
 
-def report_and_exit(msg):
-    logger.error(msg)
-    raise SystemExit(1)
+def report_and_exit(log_message, exit_code=1):
+    logger.error(log_message)
+    raise SystemExit(exit_code)
 
 
 def process_is_local():
