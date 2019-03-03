@@ -1,18 +1,21 @@
 import logging
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.v2.lithe_download import LitheDownload
 
 logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
+    help = " ".join([
+        "Restart a 'frozen' download job.",
+        "  (frozen signifies it didn't complete or fail, and is not a monthly download job)"
+        "Provide a DownloadJob ID or filename to restart the download process.",
+        "Depending on environment settings, this will either re-queue the download or process locally",
+    ])
+
     def add_arguments(self, parser):  # used by parent class
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
@@ -32,64 +35,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):  # used by parent class
         logger.info("Beginning management command")
-        self.search_downloads(**self.get_custom_arguments(**options))
-        self.restart_download_operation()
+        self.get_custom_arguments(**options)
+
+        self.download = LitheDownload()
+        self.download.search_downloads(**self.get_custom_arguments(**options))
+        self.validate_download_job()
+        self.download.restart_download_operation()
 
     @staticmethod
     def get_custom_arguments(**options):
         return {field: value for field, value in options.items() if field in ["download_job_id", "file_name"] and value}
 
-    def search_downloads(self, **kwargs):
-        queryset_filter = self.craft_queryset_filter(**kwargs)
-        self.get_download_job(queryset_filter)
-
-    @staticmethod
-    def craft_queryset_filter(**kwargs):
-        if len(kwargs) == 0:
-            report_and_exit("An invalid value was provided to the argument")
-        return Q(**kwargs)
-
-    def get_download_job(self, queryset_filter):
-        self.download_job = query_database_for_record(queryset_filter)
-        logger.info("DownloadJob record found")
-        self.validate_download_job()
-
     def validate_download_job(self):
-        if self.download_job.job_status_id in [JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]]:
-            report_and_exit("DownloadJob invalid job_state_id: {}. Aborting".format(self.download_job.job_status_id))
-        elif self.download_job.monthly_download is True:
+        if self.download.download_job.job_status_id in [JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]]:
+            report_and_exit("DownloadJob invalid job_state_id: {}. Aborting".format(self.download.download_job.job_status_id))
+        elif self.download.download_job.monthly_download is True:
             report_and_exit("DownloadJob is a monthly download. Aborting")
-
-    def restart_download_operation(self):
-        if process_is_local():
-            self.update_download_job(status=JOB_STATUS_DICT["ready"], error_message=None)
-            csv_generation.generate_csvs(download_job=self.download_job)
-        else:
-            self.push_job_to_queue()
-            self.update_download_job(status=JOB_STATUS_DICT["queued"], error_message=None)
-
-    def update_download_job(self, **kwargs):
-        for field, value in kwargs.items():
-            setattr(self.download_job, field, value)
-        self.download_job.save()
-
-    def push_job_to_queue(self):
-        queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-        queue.send_message(MessageBody=str(self.download_job.download_job_id))
-        logger.info("DownloadJob successfully pushed to queue")
-
-
-def query_database_for_record(queryset_filter):
-    try:
-        return DownloadJob.objects.get(queryset_filter)
-    except Exception as e:
-        report_and_exit("DownloadJob not found")
 
 
 def report_and_exit(log_message, exit_code=1):
     logger.error(log_message)
     raise SystemExit(exit_code)
-
-
-def process_is_local():
-    return settings.IS_LOCAL
