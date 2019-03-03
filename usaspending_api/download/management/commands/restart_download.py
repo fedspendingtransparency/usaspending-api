@@ -11,7 +11,7 @@ logger = logging.getLogger("console")
 class Command(BaseCommand):
     help = " ".join([
         "Restart a 'frozen' download job.",
-        "  (frozen signifies it didn't complete or fail, and is not a monthly download job)"
+        "  (frozen signifies it didn't complete or fail, and is not a monthly download job)",
         "Provide a DownloadJob ID or filename to restart the download process.",
         "Depending on environment settings, this will either re-queue the download or process locally",
     ])
@@ -38,7 +38,7 @@ class Command(BaseCommand):
         self.get_custom_arguments(**options)
 
         self.download = LitheDownload()
-        self.download.search_downloads(**self.get_custom_arguments(**options))
+        self.download.search_for_a_download(**self.get_custom_arguments(**options))
         self.validate_download_job()
         self.download.restart_download_operation()
 

@@ -11,7 +11,7 @@ class LitheDownload():
     def __init__(self):
         self.download_job = None
 
-    def search_downloads(self, **kwargs):
+    def search_for_a_download(self, **kwargs):
         queryset_filter = self.craft_queryset_filter(**kwargs)
         self.get_download_job(queryset_filter)
 
