@@ -6,8 +6,8 @@ import pytest
 from copy import deepcopy
 
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns, PAGINATION
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns, PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 def test_default_pagination():

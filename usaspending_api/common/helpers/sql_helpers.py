@@ -1,8 +1,10 @@
+import datetime
 import logging
 import os
 
 from collections import OrderedDict
 from django.db import connections, router
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
 from psycopg2.sql import Composable, Identifier, SQL
 
@@ -11,6 +13,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 
 logger = logging.getLogger('console')
+
+TYPES_TO_QUOTE_IN_SQL = (str, datetime.date)
 
 
 def read_sql_file(file_path):
@@ -21,12 +25,36 @@ def read_sql_file(file_path):
         raise InvalidParameterException("Invalid file provided. A file with extension '.sql' is required.")
 
     # Open and read the file as a single buffer
-    fd = open(file_path, 'r')
-    sql_file = fd.read()
-    fd.close()
+    with open(file_path, 'r') as fd:
+        sql_file = fd.read()
 
     # all SQL commands (split on ';') and trimmed for whitespaces
     return [command.strip() for command in sql_file.split(';') if command]
+
+
+def generate_raw_quoted_query(queryset):
+    """
+    Generates the raw sql from a queryset with quotable types quoted.
+    This function provided benefit since the Django queryset.query doesn't quote
+        some types such as dates and strings. If Django is updated to fix this,
+        please use that instead.
+
+    Note: To add new python data types that should be quoted in queryset.query output,
+        add them to TYPES_TO_QUOTE_IN_SQL global
+    """
+    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
+    str_fix_params = []
+    for param in params:
+        if isinstance(param, TYPES_TO_QUOTE_IN_SQL):
+            # single quotes are escaped with two '' for strings in sql
+            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
+            str_fix_param = '\'{}\''.format(param)
+        elif isinstance(param, list):
+            str_fix_param = 'ARRAY{}'.format(param)
+        else:
+            str_fix_param = param
+        str_fix_params.append(str_fix_param)
+    return sql % tuple(str_fix_params)
 
 
 class FiscalMonth(Func):

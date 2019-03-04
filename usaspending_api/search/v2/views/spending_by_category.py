@@ -13,9 +13,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.pagination import PAGINATION
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.pagination import PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, StateData
 from usaspending_api.references.models import Agency, Cfda, LegalEntity, NAICS, PSC, RefCountryCode
 

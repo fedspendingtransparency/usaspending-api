@@ -10,8 +10,8 @@ from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
 from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
 from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear

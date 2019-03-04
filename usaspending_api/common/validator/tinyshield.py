@@ -2,16 +2,16 @@ import logging
 import copy
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.core.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
-from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
-from usaspending_api.core.validator.helpers import validate_array
-from usaspending_api.core.validator.helpers import validate_boolean
-from usaspending_api.core.validator.helpers import validate_datetime
-from usaspending_api.core.validator.helpers import validate_enum
-from usaspending_api.core.validator.helpers import validate_float
-from usaspending_api.core.validator.helpers import validate_integer
-from usaspending_api.core.validator.helpers import validate_object
-from usaspending_api.core.validator.helpers import validate_text
+from usaspending_api.common.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
+from usaspending_api.common.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
+from usaspending_api.common.validator.helpers import validate_array
+from usaspending_api.common.validator.helpers import validate_boolean
+from usaspending_api.common.validator.helpers import validate_datetime
+from usaspending_api.common.validator.helpers import validate_enum
+from usaspending_api.common.validator.helpers import validate_float
+from usaspending_api.common.validator.helpers import validate_integer
+from usaspending_api.common.validator.helpers import validate_object
+from usaspending_api.common.validator.helpers import validate_text
 
 logger = logging.getLogger('console')
 

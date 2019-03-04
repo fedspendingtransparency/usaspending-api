@@ -8,20 +8,20 @@ import subprocess
 import tempfile
 import time
 import zipfile
-import csv
 
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
-from usaspending_api.common.helpers.generic_helper import generate_raw_quoted_query
+from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
+from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
+from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
-DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
-MAX_VISIBILITY_TIMEOUT = 60*60*4
+DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
+MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
@@ -30,7 +30,7 @@ logger = logging.getLogger('console')
 
 def generate_csvs(download_job, sqs_message=None):
     """Derive the relevant file location and write CSVs to it"""
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
@@ -55,7 +55,7 @@ def generate_csvs(download_job, sqs_message=None):
             parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
-        # Set error message; job_status_id will be set in generate_zip.handle()
+        # Set error message; job_status_id will be set in download_sqs_worker.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
         if isinstance(e, InvalidParameterException):
@@ -72,12 +72,12 @@ def generate_csvs(download_job, sqs_message=None):
         if not settings.IS_LOCAL:
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
-            start_uploading = time.time()
+            start_uploading = time.perf_counter()
             multipart_upload(bucket, region, file_path, os.path.basename(file_path))
-            write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
+            write_to_log(message='Uploading took {} seconds'.format(time.perf_counter() - start_uploading),
                          download_job=download_job)
     except Exception as e:
-        # Set error message; job_status_id will be set in generate_zip.handle()
+        # Set error message; job_status_id will be set in download_sqs_worker.handle()
         download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
         download_job.save()
         if isinstance(e, InvalidParameterException):
@@ -147,7 +147,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     # Generate the query file; values, limits, dates fixed
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     try:
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job,))
@@ -159,10 +159,15 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         #  in case the visibility times out before then
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+
         # Log how many rows we have
-        with open(source_path, 'r') as source_csv:
-            download_job.number_of_rows += sum(1 for row in csv.reader(source_csv)) - 1
-            download_job.save()
+        try:
+            download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
+        except Exception as e:
+            write_to_log(message="Unable to obtain CSV line count",
+                         is_error=True,
+                         download_job=download_job)
+        download_job.save()
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
@@ -182,27 +187,26 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
     try:
         # Split CSV into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
-
-        log_time = time.time()
+        log_time = time.perf_counter()
 
         output_template = '{}_%s.csv'.format(source_name)
 
-        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT,
-                               output_name_template=output_template)
+        list_of_csv_files = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
+                                                     output_name_template=output_template)
 
         if download_job:
-            write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time),
+            write_to_log(message='Splitting csvs took {:.4f} seconds'.format(time.perf_counter() - log_time),
                          download_job=download_job)
 
         # Zip the split CSVs into one zipfile
-        log_time = time.time()
+        log_time = time.perf_counter()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
 
-        for split_csv_part in split_csvs:
-            zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+        for csv_file in list_of_csv_files:
+            zipped_csvs.write(csv_file, os.path.basename(csv_file))
 
         if download_job:
-            write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
+            write_to_log(message='Writing to zipfile took {:.4f} seconds'.format(time.perf_counter() - log_time),
                          download_job=download_job)
 
     except Exception as e:
@@ -239,21 +243,21 @@ def finish_download(download_job):
 
 def wait_for_process(process, start_time, download_job, message):
     """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
-    log_time = time.time()
+    log_time = time.perf_counter()
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
-    while process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
+    while process.is_alive() and (time.perf_counter() - start_time) < MAX_VISIBILITY_TIMEOUT:
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
 
         if sleep_count < 10:
-            time.sleep(WAIT_FOR_PROCESS_SLEEP/5)
+            time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
             time.sleep(WAIT_FOR_PROCESS_SLEEP)
         sleep_count += 1
 
-    if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
+    if (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(message='Attempting to terminate process (pid {})'.format(process.pid),
@@ -267,7 +271,7 @@ def wait_for_process(process, start_time, download_job, message):
 
         raise e
 
-    return time.time() - log_time
+    return time.perf_counter() - log_time
 
 
 def generate_temp_query_file(source_query, limit, source, download_job, columns):
@@ -275,13 +279,16 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
         source_query = source_query[:limit]
     csv_query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
 
-    write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
-                 is_debug=True)
+    write_to_log(
+        message='Creating PSQL Query: {}'.format(csv_query_annotated),
+        download_job=download_job,
+        is_debug=True
+    )
 
     # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
-    with open(temp_sql_file_path, 'w') as file:
-        file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
+    with open(temp_sql_file_path, "w") as file:
+        file.write(r"\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
 
     return temp_sql_file, temp_sql_file_path
 
@@ -299,13 +306,13 @@ def apply_annotations_to_sql(raw_query, aliases):
     query_before_from = re.sub("SELECT ", "", ' FROM'.join(re.split(' FROM', query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall('SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)', raw_query)[0]
+    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)", raw_query)[0]
     just_selects = selects_str[0] if selects_str[1] == 'FROM' else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
     remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall('(CASE|CONCAT|SUM|\(SELECT|)(.*?) AS (.*?)( |$)', remove_selects)
+    deriv_str_lookup = re.findall(r"(CASE|CONCAT|SUM|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
@@ -329,14 +336,16 @@ def apply_annotations_to_sql(raw_query, aliases):
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:
-        log_time = time.time()
+        log_time = time.perf_counter()
 
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
         subprocess.check_output(['psql', '-o', source_path, retrieve_db_string(), '-v', 'ON_ERROR_STOP=1'],
                                 stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
-        write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), time.time() - log_time),
-                     download_job=download_job)
+        duration = time.perf_counter() - log_time
+        write_to_log(
+            message='Wrote {}, took {:.4f} seconds'.format(os.path.basename(source_path), duration),
+            download_job=download_job)
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
         e.cmd = '[redacted]'

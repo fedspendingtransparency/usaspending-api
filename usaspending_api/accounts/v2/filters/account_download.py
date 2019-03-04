@@ -206,7 +206,7 @@ def retrieve_fyq_filters(account_type, account_level, filters):
         reporting_period_start = '{}__gte'.format(reporting_period_start)
         reporting_period_end = '{}__lte'.format(reporting_period_end)
         if str(filters['quarter']) != '1':
-            start_date = datetime.date(filters['fy']-1, 10, 1)
+            start_date = datetime.date(filters['fy'] - 1, 10, 1)
     else:
         raise InvalidParameterException('fy and quarter are required parameters')
 

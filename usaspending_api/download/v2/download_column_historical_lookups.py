@@ -12,66 +12,6 @@ Code to generate these from spreadsheets:
 tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' >
 d2_columns.csv
 
-
-def find_column(col_name, model_classes):
-    for (model_class, prefix) in model_classes:
-        if hasattr(model_class, col_name):
-            return '{}{}'.format(prefix, col_name)
-    return None
-
-query_paths = {'transaction': {'d1': {}, 'd2': {}}, 'award': {'d1': {}, 'd2': {}}}
-human_names = {'transaction': {'d1': [], 'd2': []}, 'award': {'d1': [], 'd2': []}}
-
-models_award_d1 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'),
-                    (TransactionFPDS, 'latest_transaction__contract_data__'))
-models_transaction_d1 = ((TransactionNormalized, ''), (TransactionFPDS, 'contract_data__'), (Award, 'award__'))
-models_award_d2 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'),
-                    (TransactionFABS, 'latest_transaction__assistance_data__'))
-models_transaction_d2 = ((TransactionNormalized, ''), (TransactionFABS, 'assistance_data__'), (Award, 'award__'))
-
-def set_if_found(dl_name, path, model, file):
-    if path:
-        if dl_name in ('fain', 'piid', 'uri'):
-            dl_name = 'award_id_' + dl_name
-        query_paths[model][file][dl_name] = path
-        human_names[model][file].append(dl_name)
-    else:
-        print('Not found: {}: {}: {}'.format(model, file, dl_name))
-
-for row in d1:
-    if len(row['Download Name']) <= 1:
-        continue
-    if len(row['Database Tag']) <= 1:
-        continue
-    if row['Award Level'] == 'Y':
-        path = find_column(row['Database Tag'], models_award_d1)
-        set_if_found(row['Download Name'], path, 'award', 'd1')
-    if row['Transaction Level'] == 'Y':
-        path = find_column(row['Database Tag'], models_transaction_d1)
-        set_if_found(row['Download Name'], path, 'transaction', 'd1')
-
-# no database tags supplied for d2
-for row in d2:
-    if len(row['Download Name']) <= 1:
-        continue
-    if row['Award Level?'] == 'Y':
-        path = find_column(row['Download Name'], models_award_d2)
-        if not path:
-            # try what it was for D1
-            path = query_paths['award']['d1'].get(row['Download Name'])
-            if path:
-                col_name = path.split('__')[-1]
-                path = find_column(col_name, models_award_d2)
-        set_if_found(row['Download Name'], path, 'award', 'd2')
-    if row['Transaction Level?'] == 'Y':
-        path = find_column(row['Download Name'], models_transaction_d2)
-        if not path:
-            # try what it was for D1
-            path = query_paths['transaction']['d1'].get(row['Download Name'])
-            if path:
-                col_name = path.split('__')[-1]
-                path = find_column(col_name, models_transaction_d2)
-        set_if_found(row['Download Name'], path, 'transaction', 'd2')
 """
 
 query_paths = {
@@ -967,7 +907,7 @@ query_paths = {
     'account_balances': {
         'treasury_account': OrderedDict([
             ('allocation_transfer_agency_identifier', 'treasury_account_identifier__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account_identifier__agency_id'),
+            ('agency_identifier', 'treasury_account_identifier__agency_id'),
             ('beginning_period_of_availability', 'treasury_account_identifier__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account_identifier__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account_identifier__availability_type_code'),
@@ -1025,7 +965,7 @@ query_paths = {
     'object_class_program_activity': {
         'treasury_account': OrderedDict([
             ('allocation_transfer_agency_identifier', 'treasury_account__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account__agency_id'),
+            ('agency_identifier', 'treasury_account__agency_id'),
             ('beginning_period_of_availability', 'treasury_account__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account__availability_type_code'),
@@ -1070,7 +1010,7 @@ query_paths = {
         'treasury_account': OrderedDict([
             ('submission_period', 'reporting_period_end'),
             ('allocation_transfer_agency_identifier', 'treasury_account__allocation_transfer_agency_id'),
-            ('agency_identifer', 'treasury_account__agency_id'),
+            ('agency_identifier', 'treasury_account__agency_id'),
             ('beginning_period_of_availability', 'treasury_account__beginning_period_of_availability'),
             ('ending_period_of_availability', 'treasury_account__ending_period_of_availability'),
             ('availability_type_code', 'treasury_account__availability_type_code'),
