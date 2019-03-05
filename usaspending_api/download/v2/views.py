@@ -98,8 +98,8 @@ class BaseDownloadViewSet(APIDocumentationView):
                 "optional": False,
             },
             {"key": "filters", "name": "filters", "type": "schema", "optional": False},
-            {"key": "columns", "name": "columns", "type": "array", "optional": True, "default": list()},
-            {"key": "file_format", "name": "file_format", "type": "text", "optional": True, "default": "csv"},
+            {"key": "columns", "name": "columns", "type": "array", "array_type": "text", "optional": True, "default": list(), "array_min": 0, "min": 0},
+            {"key": "file_format", "name": "file_format", "type": "enum", "enum_values": ("csv"), "optional": True, "default": "csv"},
             {
                 "key": "limit",
                 "name": "limit",
@@ -119,6 +119,7 @@ class BaseDownloadViewSet(APIDocumentationView):
                 "key": "filters|agencies",
                 "name": "filters|agencies",
                 "type": "array",
+                "array_type": "object",
                 "optional": True,
                 "default": list(),
             },
@@ -126,6 +127,7 @@ class BaseDownloadViewSet(APIDocumentationView):
                 "key": "filters|time_period",
                 "name": "filters|time_period",
                 "type": "array",
+                "array_type": "object",
                 "optional": True,
                 "default": list(),
             },
@@ -152,7 +154,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         # if 'state' not in fields and('county' in fields or 'district' in fields):
         #     raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
 
-        self.validated_data = TinyShield(models).block(request_data)
+        # self.validated_data = TinyShield(models).block(request_data)
 
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
