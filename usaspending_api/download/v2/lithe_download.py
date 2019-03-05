@@ -32,17 +32,17 @@ class LitheDownload():
             self.push_job_to_queue()
             self.update_download_job(status=JOB_STATUS_DICT["queued"], error_message=None)
 
-    def update_download_job(self, **kwargs):  # Candidiate for separate object or file
+    def update_download_job(self, **kwargs):  # Candidate for separate object or file
         for field, value in kwargs.items():
             setattr(self.download_job, field, value)
         self.download_job.save()
 
-    def push_job_to_queue(self):  # Candidiate for separate object or file
+    def push_job_to_queue(self):  # Candidate for separate object or file
         queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
         queue.send_message(MessageBody=str(self.download_job.download_job_id))
 
 
-def query_database_for_record(queryset_filter, raise_on_empty_result=True):  # Candidiate for separate object or file
+def query_database_for_record(queryset_filter, raise_on_empty_result=True):  # Candidate for separate object or file
     result = None
     try:
         result = DownloadJob.objects.get(queryset_filter)
@@ -52,5 +52,5 @@ def query_database_for_record(queryset_filter, raise_on_empty_result=True):  # C
     return result
 
 
-def process_is_local():  # Candidiate for separate object or file
+def process_is_local():  # Candidate for separate object or file
     return settings.IS_LOCAL

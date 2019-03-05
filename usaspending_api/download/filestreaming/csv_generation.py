@@ -54,14 +54,15 @@ def generate_csvs(download_job, sqs_message=None):
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
+    except InvalidParameterException as e:
+        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
+        download_job.save()
+        raise InvalidParameterException(e)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
         download_job.save()
-        if isinstance(e, InvalidParameterException):
-            raise InvalidParameterException(e)
-        else:
-            raise Exception(download_job.error_message) from e
+        raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -144,6 +145,8 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
+    write_to_log(message='Preparing to download data as {}'.format(source_name), download_job=download_job)
+
     # Generate the query file; values, limits, dates fixed
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
 
@@ -161,6 +164,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
 
         # Log how many rows we have
+        write_to_log(message='Counting rows in CSV', download_job=download_job)
         try:
             download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
         except Exception as e:
@@ -190,15 +194,21 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         log_time = time.perf_counter()
 
         output_template = '{}_%s.csv'.format(source_name)
-
+        write_to_log(message='Beginning the CSV file partition', download_job=download_job)
         list_of_csv_files = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
                                                      output_name_template=output_template)
 
         if download_job:
-            write_to_log(message='Splitting csvs took {:.4f} seconds'.format(time.perf_counter() - log_time),
-                         download_job=download_job)
+            write_to_log(
+                message='Partitioning CSV file into {} files took {:.4f} seconds'.format(
+                    len(list_of_csv_files),
+                    time.perf_counter() - log_time
+                ),
+                download_job=download_job
+            )
 
         # Zip the split CSVs into one zipfile
+        write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
 

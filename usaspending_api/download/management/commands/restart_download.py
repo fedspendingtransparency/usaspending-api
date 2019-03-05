@@ -41,6 +41,7 @@ class Command(BaseCommand):
         self.download.search_for_a_download(**self.get_custom_arguments(**options))
         self.validate_download_job()
         self.download.restart_download_operation()
+        logger.info("OK")
 
     @staticmethod
     def get_custom_arguments(**options):
@@ -48,7 +49,9 @@ class Command(BaseCommand):
 
     def validate_download_job(self):
         if self.download.download_job.job_status_id in [JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]]:
-            report_and_exit("DownloadJob invalid job_state_id: {}. Aborting".format(self.download.download_job.job_status_id))
+            report_and_exit(
+                "DownloadJob invalid job_state_id: {}. Aborting".format(self.download.download_job.job_status_id)
+            )
         elif self.download.download_job.monthly_download is True:
             report_and_exit("DownloadJob is a monthly download. Aborting")
 

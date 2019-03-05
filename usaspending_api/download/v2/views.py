@@ -12,23 +12,32 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
-                                              write_to_download_log as write_to_log)
-from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_AWARD_FILTER_DEFAULTS,
-                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
-                                              ACCOUNT_FILTER_DEFAULTS)
+from usaspending_api.download.helpers import (
+    check_types_and_assign_defaults,
+    parse_limit,
+    validate_time_periods,
+    write_to_download_log as write_to_log,
+)
+from usaspending_api.download.lookups import (
+    JOB_STATUS_DICT,
+    VALUE_MAPPINGS,
+    SHARED_AWARD_FILTER_DEFAULTS,
+    YEAR_CONSTRAINT_FILTER_DEFAULTS,
+    ROW_CONSTRAINT_FILTER_DEFAULTS,
+    ACCOUNT_FILTER_DEFAULTS,
+)
 from usaspending_api.download.models import DownloadJob
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-        redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
 
     def post(self, request, request_type='award'):
@@ -61,9 +70,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         request_agency = json_request.get('filters', {}).get('agency', None)
         final_output_zip_name = create_unique_filename(json_request["download_types"], request_agency)
         download_job = DownloadJob.objects.create(
-            job_status_id=JOB_STATUS_DICT['ready'],
-            file_name=final_output_zip_name,
-            json_request=ordered_json_request
+            job_status_id=JOB_STATUS_DICT['ready'], file_name=final_output_zip_name, json_request=ordered_json_request
         )
 
         log_new_download_job(request, download_job)
@@ -73,6 +80,80 @@ class BaseDownloadViewSet(APIDocumentationView):
 
     def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
+        models = [
+            {
+                "key": "constraint_type",
+                "name": "constraint_type",
+                "type": "enum",
+                "enum_values": ("year", "row_count"),
+                "default": None,
+            },
+            {
+                "key": "award_levels",
+                "name": "download_types",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": list(VALUE_MAPPINGS.keys()),
+                "min": 1,
+                "optional": False,
+            },
+            {"key": "filters", "name": "filters", "type": "schema", "optional": False},
+            {"key": "columns", "name": "columns", "type": "array", "optional": True, "default": list()},
+            {"key": "file_format", "name": "file_format", "type": "text", "optional": True, "default": "csv"},
+            {
+                "key": "limit",
+                "name": "limit",
+                "type": "integer",
+                "max": settings.MAX_DOWNLOAD_LIMIT,
+                "optional": True,
+                "default": settings.MAX_DOWNLOAD_LIMIT,
+            },
+            {
+                "key": "filters|award_type_codes",
+                "name": "filters|award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": list(award_type_mapping.keys()),
+            },
+            {
+                "key": "filters|agencies",
+                "name": "filters|agencies",
+                "type": "array",
+                "optional": True,
+                "default": list(),
+            },
+            {
+                "key": "filters|time_period",
+                "name": "filters|time_period",
+                "type": "array",
+                "optional": True,
+                "default": list(),
+            },
+            {
+                "key": "filters|place_of_performance_locations",
+                "name": "filters|place_of_performance_locations",
+                "type": "array",
+                "array_type": "object",
+                "optional": True,
+                "default": list(),
+            },
+            {
+                "key": "filters|recipient_locations",
+                "name": "filters|recipient_locations",
+                "type": "array",
+                "array_type": "object",
+                "optional": True,
+                "default": list(),
+            },
+        ]
+        #     if 'country' not in fields:
+        #     raise InvalidParameterException('Invalid filter:  Missing necessary location field: country.')
+
+        # if 'state' not in fields and('county' in fields or 'district' in fields):
+        #     raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
+
+        self.validated_data = TinyShield(models).block(request_data)
+
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
 
@@ -80,7 +161,8 @@ class BaseDownloadViewSet(APIDocumentationView):
         for required_param in ['award_levels', 'filters']:
             if required_param not in request_data:
                 raise InvalidParameterException(
-                    'Missing one or more required query parameters: {}'.format(required_param))
+                    'Missing one or more required query parameters: {}'.format(required_param)
+                )
 
         if not isinstance(request_data['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
@@ -162,7 +244,8 @@ class BaseDownloadViewSet(APIDocumentationView):
         for required_param in ["account_level", "filters"]:
             if required_param not in request_data:
                 raise InvalidParameterException(
-                    'Missing one or more required query parameters: {}'.format(required_param))
+                    'Missing one or more required query parameters: {}'.format(required_param)
+                )
 
         # Validate account_level parameters
         valid_account_levels = ["federal_account", "treasury_account"]
@@ -215,8 +298,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             # Send a SQS message that will be processed by another server which will eventually run
             # csv_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
-                message='Passing download_job {} to SQS'.format(download_job.download_job_id),
-                download_job=download_job
+                message='Passing download_job {} to SQS'.format(download_job.download_job_id), download_job=download_job
             )
             queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
@@ -244,7 +326,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             'total_size': download_job.file_size / 1000 if download_job.file_size else None,
             'total_columns': download_job.number_of_columns,
             'total_rows': download_job.number_of_rows,
-            'seconds_elapsed': download_job.seconds_elapsed()
+            'seconds_elapsed': download_job.seconds_elapsed(),
         }
 
         return Response(response)
