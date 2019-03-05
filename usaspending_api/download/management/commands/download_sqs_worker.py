@@ -3,6 +3,7 @@ import logging
 import signal
 import os
 
+from multiprocessing import Process, Queue, Value
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -20,7 +21,7 @@ logger = logging.getLogger("console")
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # signal.signal(signal.SIGINT, halt_command_handler)
+        # signal.signal(signal.SIGINT, halt_command_handler)  # route signal handling to custom function
         download_service_app()
         print("Bye")
 
@@ -51,7 +52,8 @@ def download_service_app():
                     csv_generation.generate_csvs(download_job=download_job, sqs_message=sqs_message)
 
                     # If successful, remove message from queue
-                    sqs_message.delete()
+                    if remove_message_from_sqs(sqs_message):
+                        sqs_message = None
 
         except KeyboardInterrupt as e:
             write_to_log(message="Process received external SIGNAL to terminate.", download_job=download_job)
@@ -64,7 +66,7 @@ def download_service_app():
 
         except FatalError as e:
             write_to_log(message=str(e), download_job=download_job, is_error=True)
-            raise SystemExit
+            raise SystemExit(1)
 
         except Exception as e:
             logger.error(e)
@@ -93,8 +95,8 @@ def poll_sqs_for_message(queue_name, wait_time=10):
             MaxNumberOfMessages=1
         )
     except botocore.exceptions.ClientError:
-        logger.exception()
-        raise SystemExit
+        logger.exception("SQS connection issue. Investigate")
+        raise SystemExit(1)
 
     return sqs_message[0] if sqs_message else None
 
@@ -103,8 +105,8 @@ def remove_message_from_sqs(message):
     try:
         message.delete()
     except botocore.exceptions.ClientError:
-        logger.exception()
-        raise SystemExit
+        logger.exception("Unable to delete SQS message. Investigate")
+        raise SystemExit(1)
 
 
 def set_sqs_message_visibility(message, new_visibility):
@@ -114,3 +116,34 @@ def set_sqs_message_visibility(message, new_visibility):
     except botocore.exceptions.ClientError as e:
         logger.exception()
         raise FatalError(e)
+
+
+def process_guarddog(process_list):
+    """
+        pass in a list of multiprocess Process objects.
+        If one errored then terminate the others and return True
+    """
+    for proc in process_list:
+        # If exitcode is None, process is still running. exit code 0 is normal
+        if proc.exitcode not in (None, 0):
+            msg = 'TERMINATING ALL PROCESSES AND QUITTING!!! ' + \
+                '{} exited with error. Returned {}'.format(proc.name, proc.exitcode)
+            logger.info(msg)
+            [x.terminate() for x in process_list]
+            return True
+    return False
+
+
+# process_list.append(Process(
+#             name='Download Proccess',
+#             target=download_db_records,
+#             args=(download_queue, es_ingest_queue, self.config)))
+
+
+# while True:
+#             sleep(10)
+#             if process_guarddog(process_list):
+#                 raise SystemExit(1)
+#             elif all([not x.is_alive() for x in process_list]):
+#                 printf({'msg': 'All ETL processes completed execution with no error codes'})
+#                 break
