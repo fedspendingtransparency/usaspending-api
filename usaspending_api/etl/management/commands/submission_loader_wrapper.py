@@ -15,8 +15,6 @@ exception_logger = logging.getLogger("exceptions")
 
 class Command(BaseCommand):
 
-    # Give it a fiscal year and a quarter. Will list missing subs/agencies and their recent certified dates.
-
     def strtobool(arg):
         try:
             return validate_boolean(arg)
