@@ -55,7 +55,10 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 4,
                         "piid": "15B30518FTM230002",
+                        "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
+                        "agency_id": "015",
+                        "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
                         "program_activity_code": "0002",
                         "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
@@ -69,7 +72,10 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 3,
                         "piid": "15B30518FTM230002",
+                        "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
+                        "agency_id": "015",
+                        "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
                         "program_activity_code": "0002",
                         "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
@@ -83,7 +89,10 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 2,
                         "piid": "15B30518FTM230002",
+                        "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
+                        "agency_id": "015",
+                        "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
                         "program_activity_code": "0002",
                         "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
@@ -97,7 +106,10 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 1,
                         "piid": "15B30518FTM230002",
+                        "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
+                        "agency_id": "015",
+                        "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
                         "program_activity_code": "0002",
                         "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
@@ -107,11 +119,11 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                     }
                 ],
                 "page_metadata": {
-                    "next": null,
                     "page": 1,
-                    "hasPrevious": false,
                     "previous": null,
-                    "hasNext": false
+                    "hasPrevious": false,
+                    "hasNext": false,
+                    "next": null
                 }
             }
 
@@ -131,12 +143,14 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
     Unique internal natural identifier for an award.
 + `reporting_fiscal_year` (required, number, nullable)
     Fiscal year of the submission date.
-+ `reporting_fiscal_period` (required, number, nullable)
-    Fiscal period of the submission date.
++ `reporting_fiscal_quarter` (required, number, nullable)
+    Fiscal quarter of the submission date.
 + `piid` (required, string, nullable)
     Procurement Instrument Identifier (PIID).
 + `reporting_agency_id` (required, string, nullable)
 + `reporting_agency_name` (required, string, nullable)
++ `agency_id` (required, string, nullable)
++ `main_account_code` (required, string, nullable)
 + `account_title` (required, string, nullable)
     Federal Account Title
 + `program_activity_code` (required, string, nullable)
