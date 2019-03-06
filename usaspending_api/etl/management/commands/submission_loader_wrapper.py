@@ -8,6 +8,7 @@ from django.core.management import call_command
 
 from usaspending_api.common.validator.helpers import validate_boolean
 from usaspending_api.common.helpers.generic_helper import create_full_time_periods
+from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -29,8 +30,8 @@ class Command(BaseCommand):
 
         if options['all_time']:
             now = datetime.datetime.now()
-            start = datetime.datetime(2017,1,1,0,0,0)
-            time_periods = create_full_time_periods(start,now,"q",{})
+            start = datetime.datetime(2017, 1, 1, 0, 0, 0)
+            time_periods = create_full_time_periods(start, now, "q", {})
             all_periods = [(period['time_period']['fy'], period['time_period']['q']) for period in time_periods]
             for idx, val in enumerate(all_periods):
                 fy = val[0]
@@ -51,4 +52,3 @@ class Command(BaseCommand):
                 except CommandError:
                     logger.info('Skipping submission ID {} due to CommandError (bad ID)'.format(idx))
                     continue
-
