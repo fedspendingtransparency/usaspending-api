@@ -55,6 +55,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 4,
                         "piid": "15B30518FTM230002",
+                        "funding_agency_id": 259,
                         "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
                         "agency_id": "015",
@@ -72,6 +73,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 3,
                         "piid": "15B30518FTM230002",
+                        "funding_agency_id": 259,
                         "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
                         "agency_id": "015",
@@ -89,6 +91,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 2,
                         "piid": "15B30518FTM230002",
+                        "funding_agency_id": 259,
                         "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
                         "agency_id": "015",
@@ -106,6 +109,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 1,
                         "piid": "15B30518FTM230002",
+                        "funding_agency_id": 259,
                         "reporting_agency_id": "015",
                         "reporting_agency_name": "Department of Justice",
                         "agency_id": "015",
@@ -119,11 +123,11 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                     }
                 ],
                 "page_metadata": {
-                    "page": 1,
-                    "previous": null,
-                    "hasPrevious": false,
                     "hasNext": false,
-                    "next": null
+                    "hasPrevious": false,
+                    "next": null,
+                    "page": 1,
+                    "previous": null
                 }
             }
 
@@ -147,9 +151,13 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
     Fiscal quarter of the submission date.
 + `piid` (required, string, nullable)
     Procurement Instrument Identifier (PIID).
++ `funding_agency_id` (required, number, nullable)
+    Internal surrogate identifier of the funding agency.
 + `reporting_agency_id` (required, string, nullable)
+    CGAC of the reporting agency.
 + `reporting_agency_name` (required, string, nullable)
 + `agency_id` (required, string, nullable)
+    CGAC of the funding agency.
 + `main_account_code` (required, string, nullable)
 + `account_title` (required, string, nullable)
     Federal Account Title
