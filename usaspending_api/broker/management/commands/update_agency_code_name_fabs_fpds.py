@@ -154,7 +154,33 @@ class Command(BaseCommand):
         logger.info('Finished updating {}FY{} transaction {} rows in {}s'.format(year_range or '', fiscal_year,
                                                                                  table_type, end - start))
 
+    def process_single_year(self, year, table_types, sub_tier):
+        """ Process single year """
+        for table_type in table_types:
+            self.run_updates(year, table_type, sub_tier)
+
+    def process_multiple_years(self, table_types, sub_tier):
+        """ Process all years option """
+        curr_year = datetime.datetime.now().year
+        year_list = [i for i in range(2000, curr_year)]
+
+        for table_type in table_types:
+            self.run_updates(year_list[0], table_type, sub_tier, year_range='pre')
+
+        for fy in year_list:
+            for table_type in table_types:
+                self.run_updates(fy, table_type, sub_tier)
+
+        for table_type in table_types:
+            self.run_updates(year_list[-1], table_type, sub_tier, year_range='post')
+
     def add_arguments(self, parser):
+        parser.add_argument(
+            '--fiscal-year',
+            type=int,
+            dest='fiscal-year',
+            help='Fiscal year to pull from Broker. If not provided, pulls all years'
+        )
         parser.add_argument(
             '--type',
             choices=['fabs', 'fpds', 'both'],
@@ -164,20 +190,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--sub-tier',
             type=str,
+            dest='sub-tier',
             help='Sub tier to update agencies related to if this is to be used for sub tier changes'
-        )
-        group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument(
-            '--fiscal-year',
-            type=int,
-            dest='fiscal-year',
-            help='Fiscal year to chose to pull from Broker'
-        )
-        group.add_argument(
-            '--all-years',
-            action='store_true',
-            dest='all-years',
-            help='Pull all years from Broker'
         )
 
     def handle(self, *args, **options):
@@ -185,7 +199,6 @@ class Command(BaseCommand):
         Updates the agency codes in the website transaction tables from broker where code or name don't match
         """
         fiscal_year = options.get('fiscal-year')
-        all_years = options.get('all-years')
         table_option = options.get('type')
         sub_tier = options.get('sub-tier')
 
@@ -194,11 +207,6 @@ class Command(BaseCommand):
 
         logger.info('Starting script to update agency codes from broker')
 
-        year_list = []
-        if all_years:
-            curr_year = datetime.datetime.now().year
-            year_list = [i for i in range(2000, curr_year)]
-
         table_types = []
         if table_option in ('fpds', 'both'):
             table_types.append('fpds')
@@ -206,15 +214,6 @@ class Command(BaseCommand):
             table_types.append('fabs')
 
         if fiscal_year:
-            for table_type in table_types:
-                self.run_updates(fiscal_year, table_type, sub_tier)
+            self.process_single_year(fiscal_year, table_types, sub_tier)
         else:
-            for table_type in table_types:
-                self.run_updates(year_list[0], table_type, sub_tier, year_range='pre')
-
-            for fy in year_list:
-                for table_type in table_types:
-                    self.run_updates(fy, table_type, sub_tier)
-
-            for table_type in table_types:
-                self.run_updates(year_list[-1], table_type, sub_tier, year_range='post')
+            self.process_multiple_years(table_types, sub_tier)
