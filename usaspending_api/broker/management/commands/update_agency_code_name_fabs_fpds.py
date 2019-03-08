@@ -1,5 +1,5 @@
 import logging
-import timeit
+import time
 import datetime
 
 from django.core.management.base import BaseCommand, CommandError
@@ -135,37 +135,26 @@ class Command(BaseCommand):
 
         logger.info('Retrieving {} rows to update from broker for {}FY{}'.format(table_type.upper(),
                                                                                  year_range or '', fiscal_year))
-        start = timeit.default_timer()
+        start = time.perf_counter()
 
         # Comparing broker rows with website for a specific fiscal year
         db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range))
 
-        end = timeit.default_timer()
+        end = time.perf_counter()
         logger.info('Finished retrieving {}FY{} data from broker {} to update in website in {}s'.format(
             year_range or '', fiscal_year, table_type.upper(), end - start))
 
         logger.info('Updating transaction_{} rows agency codes and names'.format(table_type))
-        start = timeit.default_timer()
+        start = time.perf_counter()
 
         # Updates website rows with agency code 999
         db_cursor.execute(self.update_website(fiscal_year, table_type, sub_tier, year_range))
 
-        end = timeit.default_timer()
+        end = time.perf_counter()
         logger.info('Finished updating {}FY{} transaction {} rows in {}s'.format(year_range or '', fiscal_year,
                                                                                  table_type, end - start))
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--fiscal_year',
-            type=int,
-            help='Fiscal year to chose to pull from Broker'
-        )
-        parser.add_argument(
-            '--all_years',
-            action='store_true',
-            default=False,
-            help='Pull all years from Broker'
-        )
         parser.add_argument(
             '--type',
             choices=['fabs', 'fpds', 'both'],
@@ -173,24 +162,32 @@ class Command(BaseCommand):
             help='Which table to make corrections for'
         )
         parser.add_argument(
-            '--sub_tier',
-            nargs=1,
+            '--sub-tier',
+            type=str,
             help='Sub tier to update agencies related to if this is to be used for sub tier changes'
+        )
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            '--fiscal-year',
+            type=int,
+            dest='fiscal-year',
+            help='Fiscal year to chose to pull from Broker'
+        )
+        group.add_argument(
+            '--all-years',
+            action='store_true',
+            dest='all-years',
+            help='Pull all years from Broker'
         )
 
     def handle(self, *args, **options):
         """
         Updates the agency codes in the website transaction tables from broker where code or name don't match
         """
-        fiscal_year = options.get('fiscal_year')
-        all_years = options.get('all_years')
+        fiscal_year = options.get('fiscal-year')
+        all_years = options.get('all-years')
         table_option = options.get('type')
-        sub_tier = options.get('sub_tier')
-        if sub_tier:
-            sub_tier = sub_tier[0]
-
-        if (not fiscal_year and not all_years) or (fiscal_year and all_years):
-            raise CommandError('Must specify --fiscal_year or --all_years, not both or neither')
+        sub_tier = options.get('sub-tier')
 
         if sub_tier and not len(sub_tier) == 4:
             raise CommandError('When provided, sub tier code must be 4 characters long.')
@@ -200,10 +197,7 @@ class Command(BaseCommand):
         year_list = []
         if all_years:
             curr_year = datetime.datetime.now().year
-            year_to_add = 2000
-            while year_to_add <= curr_year:
-                year_list.append(year_to_add)
-                year_to_add += 1
+            year_list = [i for i in range(2000, curr_year)]
 
         table_types = []
         if table_option in ('fpds', 'both'):
