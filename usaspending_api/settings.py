@@ -334,7 +334,7 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-    'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions'],
+    'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions', 'recipient'],
     'show_fields': False,
     'exclude': {},
     'show_proxy': False,
