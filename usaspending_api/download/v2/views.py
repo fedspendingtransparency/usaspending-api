@@ -12,7 +12,6 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import csv_generation
@@ -80,82 +79,6 @@ class BaseDownloadViewSet(APIDocumentationView):
 
     def validate_award_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
-        models = [
-            {
-                "key": "constraint_type",
-                "name": "constraint_type",
-                "type": "enum",
-                "enum_values": ("year", "row_count"),
-                "default": None,
-            },
-            {
-                "key": "award_levels",
-                "name": "download_types",
-                "type": "array",
-                "array_type": "enum",
-                "enum_values": list(VALUE_MAPPINGS.keys()),
-                "min": 1,
-                "optional": False,
-            },
-            {"key": "filters", "name": "filters", "type": "schema", "optional": False},
-            {"key": "columns", "name": "columns", "type": "array", "array_type": "text", "optional": True, "default": list(), "array_min": 0, "min": 0},
-            {"key": "file_format", "name": "file_format", "type": "enum", "enum_values": ("csv"), "optional": True, "default": "csv"},
-            {
-                "key": "limit",
-                "name": "limit",
-                "type": "integer",
-                "max": settings.MAX_DOWNLOAD_LIMIT,
-                "optional": True,
-                "default": settings.MAX_DOWNLOAD_LIMIT,
-            },
-            {
-                "key": "filters|award_type_codes",
-                "name": "filters|award_type_codes",
-                "type": "array",
-                "array_type": "enum",
-                "enum_values": list(award_type_mapping.keys()),
-            },
-            {
-                "key": "filters|agencies",
-                "name": "filters|agencies",
-                "type": "array",
-                "array_type": "object",
-                "optional": True,
-                "default": list(),
-            },
-            {
-                "key": "filters|time_period",
-                "name": "filters|time_period",
-                "type": "array",
-                "array_type": "object",
-                "optional": True,
-                "default": list(),
-            },
-            {
-                "key": "filters|place_of_performance_locations",
-                "name": "filters|place_of_performance_locations",
-                "type": "array",
-                "array_type": "object",
-                "optional": True,
-                "default": list(),
-            },
-            {
-                "key": "filters|recipient_locations",
-                "name": "filters|recipient_locations",
-                "type": "array",
-                "array_type": "object",
-                "optional": True,
-                "default": list(),
-            },
-        ]
-        #     if 'country' not in fields:
-        #     raise InvalidParameterException('Invalid filter:  Missing necessary location field: country.')
-
-        # if 'state' not in fields and('county' in fields or 'district' in fields):
-        #     raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
-
-        # self.validated_data = TinyShield(models).block(request_data)
-
         json_request = {}
         constraint_type = request_data.get('constraint_type', None)
 

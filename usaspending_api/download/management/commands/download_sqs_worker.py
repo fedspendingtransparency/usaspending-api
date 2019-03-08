@@ -17,10 +17,8 @@ from usaspending_api.download.models import DownloadJob
 
 CURRENT_MESSAGE = None
 DEFAULT_VISIBILITY_TIMEOUT = 60
-MONITOR_SLEEP_TIME = 5  # must be significantly less than DEFAULT_VISIBILITY_TIMEOUT
 LONG_POLL_SECONDS = 10
-
-# logger = logging.getLogger("console")
+MONITOR_SLEEP_TIME = 5  # must be significantly less than DEFAULT_VISIBILITY_TIMEOUT
 
 
 class Command(BaseCommand):
@@ -30,12 +28,11 @@ class Command(BaseCommand):
             signal.signal(sig, signal_handler)
 
         download_service_manager()
-        logger.info("Bye")
 
 
 def signal_handler(signum, frame):
     write_to_log({"message": "Received signal ({}). Releasing job to Queue".format(signum)})
-    set_sqs_message_visibility(CURRENT_MESSAGE, 0)
+    release_sqs_message(CURRENT_MESSAGE)
     raise SystemExit
 
 
@@ -60,11 +57,11 @@ def download_service_manager():
             if download_app.exitcode == 0:  # If Process exits with 0, success. remove from queue
                 if remove_message_from_sqs(CURRENT_MESSAGE):
                     CURRENT_MESSAGE = None
-            elif download_app.exitcode not in (None, 0):  # If process exits with error/raises exception, release message
+            elif download_app.exitcode not in (None, 0):   # If process exits with error, don't retry
                 update_download_record(download_job_id, "failed")
             elif not download_app.is_alive():  # Process dies
                 update_download_record(download_job_id, "ready")
-                set_sqs_message_visibility(CURRENT_MESSAGE, 0)
+                release_sqs_message(CURRENT_MESSAGE)
                 time.sleep(MONITOR_SLEEP_TIME)  # allow the system to breathe before starting another job
             else:
                 # Monitor process. Send heartbeats to SQS
@@ -97,9 +94,7 @@ def poll_sqs_for_message(queue_name, wait_time):
 
 def create_and_start_new_process(download_job_id):
     download_app = Process(
-        name="Download Service Worker Proccess",
-        target=download_service_app,
-        args=(download_job_id,),
+        name="Download Service Worker Proccess", target=download_service_app, args=(download_job_id,)
     )
     download_app.start()
 
@@ -121,7 +116,6 @@ def remove_message_from_sqs(message):
         return
     try:
         message.delete()
-    # except botocore.exceptions.ClientError:
     except Exception as e:
         write_to_log(message="Unable to delete SQS message. Message might have been previously released or removed")
 
@@ -132,7 +126,13 @@ def set_sqs_message_visibility(message, new_visibility):
     try:
         message.change_visibility(VisibilityTimeout=new_visibility)
     except botocore.exceptions.ClientError as e:
-        write_to_log(message="Unable to edit SQS message VisibilityTimeout. Might have already been released or removed")
+        write_to_log(
+            message="Unable to edit SQS message VisibilityTimeout. Might have already been released or removed"
+        )
+
+
+def release_sqs_message(message):
+    set_sqs_message_visibility(message, 0)
 
 
 def retrive_download_job_from_db(download_job_id):

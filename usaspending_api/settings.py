@@ -19,7 +19,7 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Default timeout for SQL statements in Django. Set to 5 min (in seconds).
 DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get('DEFAULT_DB_TIMEOUT_IN_SECONDS') or 0
-CONNECTION_MAX_AGE_IN_SECONDS = 10
+CONNECTION_MAX_SECONDS = 10
 
 API_MAX_DATE = '2020-09-30'         # End of FY2020
 API_MIN_DATE = '2000-10-01'         # Beginning of FY2001
@@ -32,7 +32,7 @@ API_SEARCH_MIN_DATE = '2007-10-01'  # Beginning of FY2008
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -165,20 +165,23 @@ DEFAULT_DB_OPTIONS = {
 }
 
 DATABASES = {
-    'default': {**dj_database_url.config(conn_max_age=CONNECTION_MAX_AGE_IN_SECONDS), **DEFAULT_DB_OPTIONS}
+    'default': {**dj_database_url.config(conn_max_age=CONNECTION_MAX_SECONDS), **DEFAULT_DB_OPTIONS}
 }
 
 # read replica env vars... if not set, default DATABASE_URL will get used
 # if only one set, this will error out (single DB should use DATABASE_URL)
 if os.environ.get('DB_SOURCE') or os.environ.get('DB_R1'):
-    DATABASES['db_source'] = dj_database_url.parse(os.environ.get('DB_SOURCE'), conn_max_age=CONNECTION_MAX_AGE_IN_SECONDS)
-    DATABASES['db_r1'] = dj_database_url.parse(os.environ.get('DB_R1'), conn_max_age=CONNECTION_MAX_AGE_IN_SECONDS)
+    DATABASES['db_source'] = dj_database_url.parse(os.environ.get('DB_SOURCE'), conn_max_age=CONNECTION_MAX_SECONDS)
+    DATABASES['db_r1'] = dj_database_url.parse(os.environ.get('DB_R1'), conn_max_age=CONNECTION_MAX_SECONDS)
     DATABASE_ROUTERS = ['usaspending_api.routers.replicas.ReadReplicaRouter']
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
-    DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=CONNECTION_MAX_AGE_IN_SECONDS)
+    DATABASES['data_broker'] = dj_database_url.parse(
+        os.environ.get('DATA_BROKER_DATABASE_URL'),
+        conn_max_age=CONNECTION_MAX_SECONDS
+    )
 
 
 # Password validation
