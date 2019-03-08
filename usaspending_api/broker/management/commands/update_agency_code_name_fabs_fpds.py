@@ -162,7 +162,7 @@ class Command(BaseCommand):
     def process_multiple_years(self, table_types, sub_tier):
         """ Process all years option """
         curr_year = datetime.datetime.now().year
-        year_list = [i for i in range(2000, curr_year)]
+        year_list = [i for i in range(2000, curr_year + 1)]
 
         for table_type in table_types:
             self.run_updates(year_list[0], table_type, sub_tier, year_range='pre')
