@@ -28,7 +28,7 @@ WAIT_FOR_PROCESS_SLEEP = 5
 logger = logging.getLogger('console')
 
 
-def generate_csvs(download_job, sqs_message=None):
+def generate_csvs(download_job):
     """Derive the relevant file location and write CSVs to it"""
     start_time = time.perf_counter()
 
@@ -52,7 +52,7 @@ def generate_csvs(download_job, sqs_message=None):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
+            parse_source(source, columns, download_job, working_dir, start_time, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
     except InvalidParameterException as e:
         download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
@@ -131,7 +131,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
+def parse_source(source, columns, download_job, working_dir, start_time, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
              'federal_account': 'federal_account'}
@@ -155,13 +155,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job,))
         psql_process.start()
-        wait_for_process(psql_process, start_time, download_job, message)
-
-        # The process below modifies the download job and thus cannot be in a separate process
-        # Assuming the process to count the number of lines in a CSV file takes less than DOWNLOAD_VISIBILITY_TIMEOUT
-        #  in case the visibility times out before then
-        if message:
-            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+        wait_for_process(psql_process, start_time, download_job)
 
         # Log how many rows we have
         write_to_log(message='Counting rows in CSV', download_job=download_job)
@@ -177,7 +171,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
                                                                                download_job))
         zip_process.start()
-        wait_for_process(zip_process, start_time, download_job, message)
+        wait_for_process(zip_process, start_time, download_job)
         download_job.save()
     except Exception as e:
         raise e
@@ -251,16 +245,13 @@ def finish_download(download_job):
     return download_job.file_name
 
 
-def wait_for_process(process, start_time, download_job, message):
+def wait_for_process(process, start_time, download_job):
     """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
     log_time = time.perf_counter()
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive() and (time.perf_counter() - start_time) < MAX_VISIBILITY_TIMEOUT:
-        if message:
-            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
