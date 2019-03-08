@@ -16,15 +16,9 @@ exception_logger = logging.getLogger("exceptions")
 
 class Command(BaseCommand):
 
-    def strtobool(arg):
-        try:
-            return validate_boolean(arg)
-        except InvalidParameterException:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
-
     def add_arguments(self, parser):
-        parser.add_argument('--all_time', action="store_true", help='all quarters and fiscal years.')
-        parser.add_argument('--ids', nargs=1, help='comma-separated list of ids to load', type=str)
+        parser.add_argument('--all-time', action="store_true", dest="all_time", help='all quarters and fiscal years.')
+        parser.add_argument('--ids', nargs="+", help='list of ids to load', type=int)
 
     def handle(self, *args, **options):
 
@@ -43,10 +37,9 @@ class Command(BaseCommand):
                     logger.info('Error with fy/q combination')
                     logger.info(str(e))
                     continue
-        elif options['ids'][0]:
-            ids = options['ids'][0].split(",")
-            logger.info("Running submission load for submitted ids...")
-            for idx in ids:
+        elif options['ids']:
+            for idx in options['ids']:
+                logger.info("Running submission load for submission id {}".format(idx))
                 try:
                     call_command('load_submission', '--noclean', '--nosubawards', idx)
                 except CommandError:
