@@ -27,7 +27,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     parent_award_id = models.TextField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
-    award_type = models.TextField(blank=True, null=True)
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2,
                                                                                 blank=True, null=True)
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2,
