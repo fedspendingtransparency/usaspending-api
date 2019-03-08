@@ -11,7 +11,6 @@ from usaspending_api.common.helpers.generic_helper import create_full_time_perio
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger('console')
-exception_logger = logging.getLogger("exceptions")
 
 
 class Command(BaseCommand):
@@ -34,8 +33,7 @@ class Command(BaseCommand):
                     logger.info('Running submission load for fy {}, quarter {}...'.format(fy, q))
                     call_command('load_multiple_submissions', int(fy), int(q))
                 except CommandError as e:
-                    logger.info('Error with fy/q combination')
-                    logger.info(str(e))
+                    logger.info('Error reported using fy/q combination: {} {}'.format(fy, q))
                     continue
         elif options['ids']:
             for idx in options['ids']:
