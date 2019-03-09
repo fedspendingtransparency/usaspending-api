@@ -67,7 +67,7 @@ GET_FUNDING_SQL = SQL("""
         inner join awards ca on
             ca.parent_award_piid = pa.piid and
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
-            ca.type not like 'IDV\_%'
+            ca.type not like 'IDV%'
         inner join financial_accounts_by_awards faba on
             faba.award_id = ca.id
         left outer join submission_attributes sa on

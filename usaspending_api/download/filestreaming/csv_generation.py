@@ -163,7 +163,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         # Log how many rows we have
         try:
             download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
-        except Exception as e:
+        except Exception:
             write_to_log(message="Unable to obtain CSV line count",
                          is_error=True,
                          download_job=download_job)
@@ -296,7 +296,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
 def apply_annotations_to_sql(raw_query, aliases):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
-    want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
+    want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
     aliases_copy = list(aliases)

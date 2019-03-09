@@ -63,7 +63,7 @@ class Command(BaseCommand):
         FROM   transaction_normalized"""
 
 
-QUERIES = """
+QUERIES = r"""
 DROP TABLE IF EXISTS transaction_location_data CASCADE;
 
 
