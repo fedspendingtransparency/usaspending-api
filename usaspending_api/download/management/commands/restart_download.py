@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.v2.lithe_download import LitheDownload
+from usaspending_api.download.v2.download_admin import DownloadAdministrator
 
 logger = logging.getLogger("console")
 
@@ -37,7 +37,7 @@ class Command(BaseCommand):
         logger.info("Beginning management command")
         self.get_custom_arguments(**options)
 
-        self.download = LitheDownload()
+        self.download = DownloadAdministrator()
         self.download.search_for_a_download(**self.get_custom_arguments(**options))
         self.validate_download_job()
         self.download.restart_download_operation()

@@ -7,7 +7,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
 
-class LitheDownload():
+class DownloadAdministrator():
     def __init__(self):
         self.download_job = None
 

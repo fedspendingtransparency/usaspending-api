@@ -8,7 +8,7 @@ from django.db.models import Q
 
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.lithe_download import LitheDownload
+from usaspending_api.download.v2.download_admin import DownloadAdministrator
 
 logger = logging.getLogger("console")
 
@@ -75,7 +75,7 @@ class Command(BaseCommand):
             logger.info("Sleeping {}s before restarting job #{}".format(options["rate-limit"], download_job_id))
             time.sleep(options["rate-limit"])
 
-            download = LitheDownload()
+            download = DownloadAdministrator()
             download.search_for_a_download(download_job_id=download_job_id)
             download.restart_download_operation()
 
