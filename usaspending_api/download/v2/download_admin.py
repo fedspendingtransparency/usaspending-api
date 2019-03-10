@@ -26,11 +26,11 @@ class DownloadAdministrator:
 
     def restart_download_operation(self):
         if process_is_local():
-            self.update_download_job(status=JOB_STATUS_DICT["ready"], error_message=None)
+            self.update_download_job(job_status_id=JOB_STATUS_DICT["ready"], error_message=None)
             csv_generation.generate_csvs(download_job=self.download_job)
         else:
             self.push_job_to_queue()
-            self.update_download_job(status=JOB_STATUS_DICT["queued"], error_message=None)
+            self.update_download_job(job_status_id=JOB_STATUS_DICT["queued"], error_message=None)
 
     def update_download_job(self, **kwargs):
         for field, value in kwargs.items():

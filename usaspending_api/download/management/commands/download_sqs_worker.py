@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
 
 def signal_handler(signum, frame):
-    write_to_log({"message": "Received signal ({}). Releasing job to Queue".format(signum)})
+    write_to_log({"message": "Received signal ({}). Gracefully stopping Download Job".format(signum)})
     release_sqs_message(CURRENT_MESSAGE)
     raise SystemExit
 
@@ -47,7 +47,6 @@ def download_service_manager():
 
         download_job_id = int(CURRENT_MESSAGE.body)
 
-        # If job, pass ID to new process
         write_to_log(message="Message Received: {}".format(CURRENT_MESSAGE))
         download_app = create_and_start_new_process(download_job_id)
 
@@ -59,15 +58,15 @@ def download_service_manager():
                 set_sqs_message_visibility(CURRENT_MESSAGE, DEFAULT_VISIBILITY_TIMEOUT)
                 time.sleep(MONITOR_SLEEP_TIME)
                 monitor_process = True
-            elif download_app.exitcode == 0:  # If Process exits with 0, success. remove from queue
+            elif download_app.exitcode == 0:  # If process exits with 0: success! Remove from queue
                 remove_message_from_sqs(CURRENT_MESSAGE)
                 CURRENT_MESSAGE = None
-            elif download_app.exitcode > 0:  # If process exits with error, don't retry
+            elif download_app.exitcode > 0:  # If process exits with positive code, there was an error. Don't retry
                 update_download_record(download_job_id, "failed")
-            elif download_app.exitcode < 0:  # Process terminated by signal
+            elif download_app.exitcode < 0:  # If process exits with negative code, process terminated by signal
                 update_download_record(download_job_id, "ready")
                 release_sqs_message(CURRENT_MESSAGE)
-                time.sleep(MONITOR_SLEEP_TIME)  # allow the system to breathe before starting another job
+                time.sleep(MONITOR_SLEEP_TIME)  # Wait. System might be shutting down.
 
 
 def poll_queue(long_poll_time):
@@ -106,9 +105,13 @@ def download_service_app(download_job_id):
     write_to_log(message="Starting new Download Service App with pid {}".format(os.getpid()), download_job=download_job)
 
     # Retrieve the data and write to the CSV(s)
-    csv_generation.generate_csvs(download_job=download_job)
+    try:
+        csv_generation.generate_csvs(download_job=download_job)
+    except Exception as e:
+        write_to_log(message="Caught exception", download_job=download_job, is_error=True)
+        return 11  # arbitrary positive integer
 
-    return True
+    return 0
 
 
 def remove_message_from_sqs(message):
