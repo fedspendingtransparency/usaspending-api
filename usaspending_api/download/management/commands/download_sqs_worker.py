@@ -54,20 +54,20 @@ def download_service_manager():
         monitor_process = True
         while monitor_process:
             monitor_process = False
-            if download_app.exitcode == 0:  # If Process exits with 0, success. remove from queue
-                if remove_message_from_sqs(CURRENT_MESSAGE):
-                    CURRENT_MESSAGE = None
-            elif download_app.exitcode not in (None, 0):   # If process exits with error, don't retry
-                update_download_record(download_job_id, "failed")
-            elif not download_app.is_alive():  # Process dies
-                update_download_record(download_job_id, "ready")
-                release_sqs_message(CURRENT_MESSAGE)
-                time.sleep(MONITOR_SLEEP_TIME)  # allow the system to breathe before starting another job
-            else:
+            if download_app.is_alive():
                 # Monitor process. Send heartbeats to SQS
                 set_sqs_message_visibility(CURRENT_MESSAGE, DEFAULT_VISIBILITY_TIMEOUT)
                 time.sleep(MONITOR_SLEEP_TIME)
                 monitor_process = True
+            elif download_app.exitcode == 0:  # If Process exits with 0, success. remove from queue
+                remove_message_from_sqs(CURRENT_MESSAGE)
+                CURRENT_MESSAGE = None
+            elif download_app.exitcode > 0:  # If process exits with error, don't retry
+                update_download_record(download_job_id, "failed")
+            elif download_app.exitcode < 0:  # Process terminated by signal
+                update_download_record(download_job_id, "ready")
+                release_sqs_message(CURRENT_MESSAGE)
+                time.sleep(MONITOR_SLEEP_TIME)  # allow the system to breathe before starting another job
 
 
 def poll_queue(long_poll_time):
@@ -117,18 +117,17 @@ def remove_message_from_sqs(message):
     try:
         message.delete()
     except Exception as e:
-        write_to_log(message="Unable to delete SQS message. Message might have been previously released or removed")
+        write_to_log(message="Unable to delete SQS message. Message might have previously been released or removed")
 
 
 def set_sqs_message_visibility(message, new_visibility):
     if message is None:
+        write_to_log(message="No SQS message to modify. Message might have previously been released or removed")
         return
     try:
         message.change_visibility(VisibilityTimeout=new_visibility)
     except botocore.exceptions.ClientError as e:
-        write_to_log(
-            message="Unable to edit SQS message VisibilityTimeout. Might have already been released or removed"
-        )
+        write_to_log(message="Unable to set VisibilityTimeout. Message might have previously been released or removed")
 
 
 def release_sqs_message(message):

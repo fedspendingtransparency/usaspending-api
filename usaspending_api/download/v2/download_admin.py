@@ -7,7 +7,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
 
-class DownloadAdministrator():
+class DownloadAdministrator:
     def __init__(self):
         self.download_job = None
 
@@ -32,7 +32,7 @@ class DownloadAdministrator():
             self.push_job_to_queue()
             self.update_download_job(status=JOB_STATUS_DICT["queued"], error_message=None)
 
-    def update_download_job(self, **kwargs):  # Candidate for separate object or file
+    def update_download_job(self, **kwargs):
         for field, value in kwargs.items():
             setattr(self.download_job, field, value)
         self.download_job.save()

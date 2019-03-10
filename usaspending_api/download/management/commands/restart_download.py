@@ -9,12 +9,14 @@ logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
-    help = " ".join([
-        "Restart a 'frozen' download job.",
-        "  (frozen signifies it didn't complete or fail, and is not a monthly download job)",
-        "Provide a DownloadJob ID or filename to restart the download process.",
-        "Depending on environment settings, this will either re-queue the download or process locally",
-    ])
+    help = " ".join(
+        [
+            "Restart a 'frozen' download job.",
+            "  (frozen signifies it didn't complete or fail, and is not a monthly download job)",
+            "Provide a DownloadJob ID or filename to restart the download process.",
+            "Depending on environment settings, this will either re-queue the download or process locally",
+        ]
+    )
 
     def add_arguments(self, parser):  # used by parent class
         group = parser.add_mutually_exclusive_group(required=True)
