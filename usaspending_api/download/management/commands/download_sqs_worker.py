@@ -18,7 +18,7 @@ from usaspending_api.download.models import DownloadJob
 current_message = None
 DEFAULT_VISIBILITY_TIMEOUT = 60
 LONG_POLL_SECONDS = 10
-MONITOR_SLEEP_TIME = 5  # must be significantly less than DEFAULT_VISIBILITY_TIMEOUT
+MONITOR_SLEEP_TIME = DEFAULT_VISIBILITY_TIMEOUT / 20  # This needs to be less than DEFAULT_VISIBILITY_TIMEOUT
 
 
 class Command(BaseCommand):
@@ -31,9 +31,27 @@ class Command(BaseCommand):
 
 
 def signal_handler(signum, frame):
-    write_to_log({"message": "Received signal ({}). Gracefully stopping Download Job".format(signum)})
+    """
+        Inserts custom code to execute when the process receives a signal.
+        Allows the script update/release jobs and then gracefully exit.
+    """
+    bsd_signals = {
+        1: "SIGHUP (Hangup detected on controlling terminal or death of controlling process)",
+        2: "SIGINT (Interrupt from keyboard)",
+        3: "SIGQUIT (Quit from keyboard)",
+        4: "SIGILL (Illegal Instruction)",
+        6: "SIGABRT (Abort signal from abort(3))",
+        8: "SIGFPE (Floating point exception)",
+        9: "SIGKILL (non-catchable, non-ignorable kill)",
+        11: "SIGSEGV (Invalid memory reference)",
+        14: "SIGALRM (Timer signal from alarm(2))",
+        15: "SIGTERM (software termination signal)",
+    }
+    write_to_log(
+        {"message": "Received signal ({}). Gracefully stopping Download Job".format(bsd_signals.get(signum, signum))}
+    )
     release_sqs_message(current_message)
-    raise SystemExit
+    raise SystemExit  # quietly end process
 
 
 def download_service_manager():
@@ -140,7 +158,7 @@ def set_sqs_message_visibility(message, new_visibility):
 
 
 def release_sqs_message(message):
-    set_sqs_message_visibility(message, 0)
+    set_sqs_message_visibility(message, 0)  # Allows any other client to see message immediately
 
 
 def retrieve_download_job_from_db(download_job_id):
@@ -150,11 +168,11 @@ def retrieve_download_job_from_db(download_job_id):
     return download_job
 
 
-def update_download_record(download_job_id, status, message=None):
+def update_download_record(download_job_id, status, error_message=None):
     download_job = retrieve_download_job_from_db(download_job_id)
 
     download_job.job_status_id = JOB_STATUS_DICT[status]
-    if message:
-        download_job.error_message = str(message)
+    if error_message:
+        download_job.error_message = str(error_message)
 
     download_job.save()
