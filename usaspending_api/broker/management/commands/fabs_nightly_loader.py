@@ -78,12 +78,12 @@ class Command(BaseCommand):
         for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
             start_time = time.perf_counter()
             max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
-            fpds_ids_batch = dap_uid_list[i:max_index]
+            fabs_ids_batch = dap_uid_list[i:max_index]
 
             log_msg = "Fetching {}-{} out of {} records from broker"
             logger.info(log_msg.format(i + 1, max_index, total_uid_count))
 
-            db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
+            db_cursor.execute(db_query.format(",".join(str(id) for id in fabs_ids_batch)))
             logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 

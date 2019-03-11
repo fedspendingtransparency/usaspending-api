@@ -47,7 +47,6 @@ class IDVAwardsTestCase(TestCase):
             assert json.loads(response.content.decode('utf-8')) == expected_response
 
     def test_awards_idvs_amounts_v2(self):
-
         self._test_get(1, EXPECTED_GOOD_OUTPUT)
         self._test_get('CONT_AW_2', EXPECTED_GOOD_OUTPUT)
         self._test_get(3, {'detail': 'No IDV award found with this id'}, status.HTTP_404_NOT_FOUND)
