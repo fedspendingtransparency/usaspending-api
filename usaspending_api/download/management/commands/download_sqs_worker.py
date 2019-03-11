@@ -62,8 +62,14 @@ def download_service_manager():
                 remove_message_from_sqs(CURRENT_MESSAGE)
                 CURRENT_MESSAGE = None
             elif download_app.exitcode > 0:  # If process exits with positive code, there was an error. Don't retry
+                write_to_log(
+                    message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
+                )
                 update_download_record(download_job_id, "failed")
             elif download_app.exitcode < 0:  # If process exits with negative code, process terminated by signal
+                write_to_log(
+                    message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
+                )
                 update_download_record(download_job_id, "ready")
                 release_sqs_message(CURRENT_MESSAGE)
                 time.sleep(MONITOR_SLEEP_TIME)  # Wait. System might be shutting down.

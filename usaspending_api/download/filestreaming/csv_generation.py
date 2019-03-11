@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import traceback
 import zipfile
 
 from django.conf import settings
@@ -55,12 +56,16 @@ def generate_csvs(download_job):
             parse_source(source, columns, download_job, working_dir, start_time, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
     except InvalidParameterException as e:
-        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
+        stack_trace = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
+        download_job.error_message = '{}:\n{}'.format(exc_msg, stack_trace)
         download_job.save()
         raise InvalidParameterException(e)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
+        stack_trace = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        exc_msg = "An exception was raised while attempting to process the DownloadJob"
+        download_job.error_message = '{}:\n{}'.format(exc_msg, stack_trace)
         download_job.save()
         raise Exception(download_job.error_message) from e
     finally:
@@ -79,7 +84,9 @@ def generate_csvs(download_job):
                          download_job=download_job)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
-        download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
+        stack_trace = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        exc_msg = "An exception was raised while attempting to upload the file"
+        download_job.error_message = '{}:\n{}'.format(exc_msg, stack_trace)
         download_job.save()
         if isinstance(e, InvalidParameterException):
             raise InvalidParameterException(e)
