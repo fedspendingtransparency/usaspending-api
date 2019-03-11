@@ -83,11 +83,11 @@ class Command(BaseCommand):
         filter_set = Q(job_status=JOB_STATUS_DICT[kwargs["status"]])
         filter_set &= Q(monthly_download=kwargs["monthly"])
         if kwargs["start"]:
-            filter_set &= Q(update_date__gte=kwargs["start"].replace(tzinfo=pytz.UTC))
+            filter_set &= Q(create_date__gte=kwargs["start"].replace(tzinfo=pytz.UTC))
         if kwargs["end"]:
-            filter_set &= Q(update_date__lt=kwargs["end"].replace(tzinfo=pytz.UTC))
+            filter_set &= Q(create_date__lt=kwargs["end"].replace(tzinfo=pytz.UTC))
 
         return filter_set
 
     def search_for_downloads(self, filters):
-        return DownloadJob.objects.filter(filters).order_by("update_date").values_list("download_job_id", flat=True)
+        return DownloadJob.objects.filter(filters).order_by("create_date").values_list("download_job_id", flat=True)
