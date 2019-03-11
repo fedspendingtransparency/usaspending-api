@@ -1,9 +1,7 @@
 class FatalError(Exception):
+    """Custom exception which is used when the exeption should terminate the script
+
+        (It would be better if a generic unexpected Exception could do this,
+        however that would require a refactor)
+    """
     pass
-    # def __init__(self, message, errors):
-
-    #     # Call the base class constructor with the parameters it needs
-    #     super().__init__(message)
-
-    #     # Now for your custom code...
-    #     self.errors = errors

@@ -15,7 +15,7 @@ from usaspending_api.download.helpers import write_to_download_log as write_to_l
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
-CURRENT_MESSAGE = None
+current_message = None
 DEFAULT_VISIBILITY_TIMEOUT = 60
 LONG_POLL_SECONDS = 10
 MONITOR_SLEEP_TIME = 5  # must be significantly less than DEFAULT_VISIBILITY_TIMEOUT
@@ -32,22 +32,22 @@ class Command(BaseCommand):
 
 def signal_handler(signum, frame):
     write_to_log({"message": "Received signal ({}). Gracefully stopping Download Job".format(signum)})
-    release_sqs_message(CURRENT_MESSAGE)
+    release_sqs_message(current_message)
     raise SystemExit
 
 
 def download_service_manager():
-    global CURRENT_MESSAGE
+    global current_message
 
     while True:
-        CURRENT_MESSAGE = poll_queue(long_poll_time=LONG_POLL_SECONDS)
+        current_message = poll_queue(long_poll_time=LONG_POLL_SECONDS)
 
-        if not CURRENT_MESSAGE:
+        if not current_message:
             continue
 
-        download_job_id = int(CURRENT_MESSAGE.body)
+        download_job_id = int(current_message.body)
 
-        write_to_log(message="Message Received: {}".format(CURRENT_MESSAGE))
+        write_to_log(message="Message Received: {}".format(current_message))
         download_app = create_and_start_new_process(download_job_id)
 
         monitor_process = True
@@ -55,12 +55,12 @@ def download_service_manager():
             monitor_process = False
             if download_app.is_alive():
                 # Monitor process. Send heartbeats to SQS
-                set_sqs_message_visibility(CURRENT_MESSAGE, DEFAULT_VISIBILITY_TIMEOUT)
+                set_sqs_message_visibility(current_message, DEFAULT_VISIBILITY_TIMEOUT)
                 time.sleep(MONITOR_SLEEP_TIME)
                 monitor_process = True
             elif download_app.exitcode == 0:  # If process exits with 0: success! Remove from queue
-                remove_message_from_sqs(CURRENT_MESSAGE)
-                CURRENT_MESSAGE = None
+                remove_message_from_sqs(current_message)
+                current_message = None
             elif download_app.exitcode > 0:  # If process exits with positive code, there was an error. Don't retry
                 write_to_log(
                     message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
@@ -71,7 +71,7 @@ def download_service_manager():
                     message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
                 )
                 update_download_record(download_job_id, "ready")
-                release_sqs_message(CURRENT_MESSAGE)
+                release_sqs_message(current_message)
                 time.sleep(MONITOR_SLEEP_TIME)  # Wait. System might be shutting down.
 
 
@@ -107,7 +107,7 @@ def create_and_start_new_process(download_job_id):
 
 
 def download_service_app(download_job_id):
-    download_job = retrive_download_job_from_db(download_job_id)
+    download_job = retrieve_download_job_from_db(download_job_id)
     write_to_log(message="Starting new Download Service App with pid {}".format(os.getpid()), download_job=download_job)
 
     # Retrieve the data and write to the CSV(s)
@@ -143,7 +143,7 @@ def release_sqs_message(message):
     set_sqs_message_visibility(message, 0)
 
 
-def retrive_download_job_from_db(download_job_id):
+def retrieve_download_job_from_db(download_job_id):
     download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
     if download_job is None:
         raise FatalError("Download Job {} record missing in DB!".format(download_job_id))
@@ -151,7 +151,7 @@ def retrive_download_job_from_db(download_job_id):
 
 
 def update_download_record(download_job_id, status, message=None):
-    download_job = retrive_download_job_from_db(download_job_id)
+    download_job = retrieve_download_job_from_db(download_job_id)
 
     download_job.job_status_id = JOB_STATUS_DICT[status]
     if message:

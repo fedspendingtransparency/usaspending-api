@@ -91,12 +91,3 @@ class Command(BaseCommand):
 
     def search_for_downloads(self, filters):
         return DownloadJob.objects.filter(filters).order_by("update_date").values_list("download_job_id", flat=True)
-
-    def filter_downloads(self, **kwargs):
-        queryset_filter = self.craft_queryset_filter(**kwargs)
-        self.get_download_jobs(queryset_filter)
-
-
-def report_and_exit(log_message, exit_code=1):
-    logger.error(log_message)
-    raise SystemExit(exit_code)
