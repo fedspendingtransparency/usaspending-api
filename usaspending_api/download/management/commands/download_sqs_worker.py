@@ -30,11 +30,14 @@ BSD_SIGNALS = {
 current_message = None
 DEFAULT_VISIBILITY_TIMEOUT = 60
 LONG_POLL_SECONDS = 10
-MONITOR_SLEEP_TIME = DEFAULT_VISIBILITY_TIMEOUT / 20  # This needs to be less than DEFAULT_VISIBILITY_TIMEOUT
+MONITOR_SLEEP_TIME = 5  # This needs to be less than DEFAULT_VISIBILITY_TIMEOUT
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        if MONITOR_SLEEP_TIME >= DEFAULT_VISIBILITY_TIMEOUT:
+            msg = "MONITOR_SLEEP_TIME must be less than DEFAULT_VISIBILITY_TIMEOUT. Otherwise job duplication can occur"
+            raise Exception(msg)
         for sig in [signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]:
             signal.signal(sig, signal_handler)  # route signal handling to custom function
         download_service_manager()
