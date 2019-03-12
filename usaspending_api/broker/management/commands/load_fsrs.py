@@ -6,7 +6,7 @@ from django.db import connections, transaction
 from django.db.models import F, Func, Max, Value
 
 from usaspending_api.awards.models import Award, Subaward, TransactionFPDS
-from usaspending_api.common.helpers.generic_helper import upper_case_dict_values
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models import Agency, Cfda, RefCountryCode, RefCityCountyCode, LegalEntity

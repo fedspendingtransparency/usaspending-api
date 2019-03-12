@@ -14,9 +14,9 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.pagination import PAGINATION
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.pagination import PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 
 

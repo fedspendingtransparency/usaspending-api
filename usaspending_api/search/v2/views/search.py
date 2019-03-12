@@ -18,9 +18,9 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (award_contracts_m
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.pagination import PAGINATION
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.pagination import PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

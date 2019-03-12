@@ -9,9 +9,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 SORTABLE_COLUMNS = {
@@ -49,7 +49,11 @@ GET_FUNDING_SQL = SQL("""
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
         ca.piid,
+        ca.funding_agency_id,
+        taa.reporting_agency_id,
         taa.reporting_agency_name,
+        taa.agency_id,
+        taa.main_account_code,
         taa.account_title,
         rpa.program_activity_code,
         rpa.program_activity_name,

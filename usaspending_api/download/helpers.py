@@ -1,5 +1,4 @@
 import boto3
-import csv
 import logging
 import math
 import os
@@ -135,59 +134,14 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
         logger.info(log_dict)
 
 
-# Split csv function mostly copied from Jordi Rivero's solution
-# https://gist.github.com/jrivero/1085501
-def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv',
-              keep_headers=True):
-    """Splits a CSV file into multiple pieces.
-
-    A quick bastardization of the Python CSV library.
-    Arguments:
-        `row_limit`: The number of rows you want in each output file. 10,000 by default.
-        `output_name_template`: A %s-style template for the numbered output files.
-        `keep_headers`: Whether or not to print the headers in each output file.
-    Example usage:
-        >> from toolbox import csv_splitter;
-        >> csv_splitter.split('/home/ben/input.csv');
-    """
-    split_csvs = []
-    output_path = os.path.dirname(file_path)
-    reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
-    current_piece = 1
-    current_out_path = os.path.join(
-        output_path,
-        output_name_template % current_piece
-    )
-    split_csvs.append(current_out_path)
-    current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
-    current_limit = row_limit
-    if keep_headers:
-        headers = next(reader)
-        current_out_writer.writerow(headers)
-    for i, row in enumerate(reader):
-        if i + 1 > current_limit:
-            current_piece += 1
-            current_limit = row_limit * current_piece
-            current_out_path = os.path.join(
-                output_path,
-                output_name_template % current_piece
-            )
-            split_csvs.append(current_out_path)
-            current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
-            if keep_headers:
-                current_out_writer.writerow(headers)
-        current_out_writer.writerow(row)
-    return split_csvs
-
-
 def pull_modified_agencies_cgacs():
     # Get a cgac_codes from the modified_agencies_list
-    cgac_codes = []
     file_path = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     with open(file_path, encoding='Latin-1') as modified_agencies_list_csv:
         mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
+
     mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE']]
     mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
-    for _, row in mod_gencies_list_df.iterrows():
-        cgac_codes.append(row['CGAC AGENCY CODE'])
-    return cgac_codes
+
+    # Return list of CGAC codes
+    return [row['CGAC AGENCY CODE'] for _, row in mod_gencies_list_df.iterrows()]

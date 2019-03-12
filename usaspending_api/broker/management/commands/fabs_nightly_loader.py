@@ -12,8 +12,9 @@ from usaspending_api.awards.models import TransactionFABS, TransactionNormalized
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers import get_business_categories
 from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer, upper_case_dict_values
+from usaspending_api.common.helpers.generic_helper import fy, timer
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location

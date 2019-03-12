@@ -642,7 +642,6 @@
           "parent_award_id": null,
           "fain": null,
           "uri": null,
-          "award_type": null,
           "ussgl480100_undelivered_orders_obligations_unpaid_fyb": "0.00",
           "ussgl480100_undelivered_orders_obligations_unpaid_cpe": "0.00",
           "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe": "0.00",

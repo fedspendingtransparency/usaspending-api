@@ -39,6 +39,11 @@ class IDVFundingTestCase(TestCase):
             _sid = str(_id).zfill(3)
 
             mommy.make(
+                'references.Agency',
+                id=9000 + _id
+            )
+
+            mommy.make(
                 'awards.Award',
                 id=_id,
                 generated_unique_award_id='GENERATED_UNIQUE_AWARD_ID_%s' % _sid,
@@ -46,7 +51,8 @@ class IDVFundingTestCase(TestCase):
                 piid='piid_%s' % _sid,
                 fpds_agency_id='fpds_agency_id_%s' % _sid,
                 parent_award_piid='piid_%s' % _spid if _spid else None,
-                fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None
+                fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None,
+                funding_agency_id=9000 + _id
             )
 
             if _id in IDVS:
@@ -67,7 +73,10 @@ class IDVFundingTestCase(TestCase):
             mommy.make(
                 'accounts.TreasuryAppropriationAccount',
                 treasury_account_identifier=_id,
+                reporting_agency_id=str(_id).zfill(3),
                 reporting_agency_name='reporting agency name %s' % _sid,
+                agency_id=str(_id).zfill(3),
+                main_account_code=str(_id).zfill(4),
                 account_title='account title %s' % _sid
             )
 
@@ -117,7 +126,11 @@ class IDVFundingTestCase(TestCase):
                 'reporting_fiscal_year': 2000 + _id,
                 'reporting_fiscal_quarter': _id % 4 + 1,
                 'piid': 'piid_%s' % _sid,
+                'funding_agency_id': 9000 + _id,
+                'reporting_agency_id': _sid.zfill(3),
                 'reporting_agency_name': 'reporting agency name %s' % _sid,
+                'agency_id': _sid.zfill(3),
+                'main_account_code': _sid.zfill(4),
                 'account_title': 'account title %s' % _sid,
                 'program_activity_code': _sid,
                 'program_activity_name': 'program activity %s' % _sid,

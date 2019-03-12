@@ -765,8 +765,7 @@ class SubawardView(models.Model):
     award_report_fy_month = models.IntegerField()
     award_report_fy_year = models.IntegerField()
 
-    # award = models.OneToOneField(Award, primary_key=True)
-    award = models.OneToOneField(Award, primary_key=True)
+    award = models.OneToOneField(Award, null=True)
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
