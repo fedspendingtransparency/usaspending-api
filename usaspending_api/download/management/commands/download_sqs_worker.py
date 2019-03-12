@@ -15,6 +15,18 @@ from usaspending_api.download.helpers import write_to_download_log as write_to_l
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
+BSD_SIGNALS = {
+    1: "SIGHUP [1] (Hangup detected on controlling terminal or death of controlling process)",
+    2: "SIGINT [2] (Interrupt from keyboard)",
+    3: "SIGQUIT [3] (Quit from keyboard)",
+    4: "SIGILL [4] (Illegal Instruction)",
+    6: "SIGABRT [6] (Abort signal from abort(3))",
+    8: "SIGFPE [8] (Floating point exception)",
+    9: "SIGKILL [9] (non-catchable, non-ignorable kill)",
+    11: "SIGSEGV [11] (Invalid memory reference)",
+    14: "SIGALRM [12] (Timer signal from alarm(2))",
+    15: "SIGTERM [15] (software termination signal)",
+}
 current_message = None
 DEFAULT_VISIBILITY_TIMEOUT = 60
 LONG_POLL_SECONDS = 10
@@ -23,35 +35,21 @@ MONITOR_SLEEP_TIME = DEFAULT_VISIBILITY_TIMEOUT / 20  # This needs to be less th
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # route signal handling to custom function
         for sig in [signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]:
-            signal.signal(sig, signal_handler)
-
+            signal.signal(sig, signal_handler)  # route signal handling to custom function
         download_service_manager()
 
 
 def signal_handler(signum, frame):
     """
-        Inserts custom code to execute when the process receives a signal.
-        Allows the script update/release jobs and then gracefully exit.
+        Custom handler code to execute when the process receives a signal.
+        Allows the script to update/release jobs and then gracefully exit.
     """
-    bsd_signals = {
-        1: "SIGHUP (Hangup detected on controlling terminal or death of controlling process)",
-        2: "SIGINT (Interrupt from keyboard)",
-        3: "SIGQUIT (Quit from keyboard)",
-        4: "SIGILL (Illegal Instruction)",
-        6: "SIGABRT (Abort signal from abort(3))",
-        8: "SIGFPE (Floating point exception)",
-        9: "SIGKILL (non-catchable, non-ignorable kill)",
-        11: "SIGSEGV (Invalid memory reference)",
-        14: "SIGALRM (Timer signal from alarm(2))",
-        15: "SIGTERM (software termination signal)",
-    }
-    write_to_log(
-        {"message": "Received signal ({}). Gracefully stopping Download Job".format(bsd_signals.get(signum, signum))}
-    )
-    release_sqs_message(current_message)
-    raise SystemExit  # quietly end process
+    # If the signal is in BSD_SIGNALS, use the human-readable string, otherwise use the signal value
+    signal_or_human = BSD_SIGNALS.get(signum, signum)
+    write_to_log({"message": "Received signal ({}). Gracefully stopping Download Job".format(signal_or_human)})
+    surrender_sqs_message_to_other_clients(current_message)
+    raise SystemExit  # quietly end parent process
 
 
 def download_service_manager():
@@ -84,12 +82,17 @@ def download_service_manager():
                     message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
                 )
                 update_download_record(download_job_id, "failed")
-            elif download_app.exitcode < 0:  # If process exits with negative code, process terminated by signal
+            elif download_app.exitcode < 0:
+                """ If process exits with a negative code, process was terminated by a signal since
+                a Python subprocess returns the negative value of the signal.
+                If the signal is in BSD_SIGNALS, use the human-readable string, otherwise use the signal value"""
+                signum = download_app.exitcode * -1
+                signal_or_human = BSD_SIGNALS.get(signum, signum)
                 write_to_log(
-                    message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
+                    message="Download Job ({}) Process existed with {}.".format(download_job_id, signal_or_human)
                 )
                 update_download_record(download_job_id, "ready")
-                release_sqs_message(current_message)
+                surrender_sqs_message_to_other_clients(current_message)
                 time.sleep(MONITOR_SLEEP_TIME)  # Wait. System might be shutting down.
 
 
@@ -157,8 +160,9 @@ def set_sqs_message_visibility(message, new_visibility):
         write_to_log(message="Unable to set VisibilityTimeout. Message might have previously been released or removed")
 
 
-def release_sqs_message(message):
-    set_sqs_message_visibility(message, 0)  # Allows any other client to see message immediately
+def surrender_sqs_message_to_other_clients(message):
+    # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
+    set_sqs_message_visibility(message, 0)
 
 
 def retrieve_download_job_from_db(download_job_id):
