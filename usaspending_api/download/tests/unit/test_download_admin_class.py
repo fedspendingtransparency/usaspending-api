@@ -1,4 +1,5 @@
 # Stdlib imports
+import json
 import pytest
 
 # Core Django imports
@@ -8,6 +9,20 @@ from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.download.v2.download_admin import DownloadAdministrator
+
+
+EXAMPLE_JSON_REQUEST = {
+    "columns": [],
+    "download_types": ["awards", "sub_awards"],
+    "file_format": "csv",
+    "filters": {
+        "award_type_codes": ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "A", "B", "C", "D"],
+        "recipient_search_text": ["806536462"],
+        "time_period": [{"date_type": "action_date", "end_date": "2019-09-30", "start_date": "2007-10-01"}],
+    },
+    "limit": 500000,
+    "request_type": "award",
+}
 
 
 @pytest.mark.django_db
@@ -41,7 +56,12 @@ def test_download_admin_restart_pass():
     ]
     for j in job_status_rows:
         mommy.make("download.JobStatus", **j)
-    download_job_row = {"download_job_id": 90, "file_name": "download_example_file.hdf5", "job_status_id": 1}
+    download_job_row = {
+        "download_job_id": 90,
+        "file_name": "download_example_file.hdf5",
+        "job_status_id": 1,
+        "json_request": json.dumps(EXAMPLE_JSON_REQUEST),
+    }
     mommy.make("download.DownloadJob", **download_job_row)
 
     d = DownloadAdministrator()
