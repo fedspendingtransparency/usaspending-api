@@ -1,7 +1,5 @@
 import json
 
-from django.db import connection
-from django.db.models import Max
 from django.test import TestCase
 from model_mommy import mommy
 from rest_framework import status
