@@ -14,7 +14,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 
-FUNDING_ROLLUP_SQL = SQL("""
+FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
         select    award_id
         from      parent_award
@@ -26,9 +26,7 @@ FUNDING_ROLLUP_SQL = SQL("""
         where     ppa.{award_id_column} = {award_id}
     )
     select
-        sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
-        count(distinct ca.awarding_agency_id) awarding_agency_count,
-        count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count
+        {columns}
     from
         cte
         inner join awards pa on
@@ -40,7 +38,7 @@ FUNDING_ROLLUP_SQL = SQL("""
         inner join financial_accounts_by_awards faba on
             faba.award_id = ca.id
         left outer join treasury_appropriation_account taa on
-            taa.treasury_account_identifier = faba.treasury_account_id;""")
+            taa.treasury_account_identifier = faba.treasury_account_id {group_by};""")
 
 
 
@@ -60,7 +58,44 @@ class IDVFundingRollupViewSet(APIDocumentationView):
         award_id = request_data['award_id']
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
-        sql = FUNDING_ROLLUP_SQL.format(
+        sql = FUNDING_TREEMAP_SQL.format(
+            columns =Literal("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
+                     count(distinct ca.awarding_agency_id) awarding_agency_count,
+                     count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""),
+            award_id_column=Identifier(award_id_column),
+            award_id=Literal(award_id),
+            group_by=Literal("")
+        )
+        return execute_sql_to_ordered_dictionary(sql)
+
+    @cache_response()
+    def post(self, request: Request) -> Response:
+        request_data = self._parse_and_validate_request(request.data)
+        results = self._business_logic(request_data)
+
+        response = OrderedDict((
+            ('results', results),
+        ))
+
+        return Response(response)
+
+
+class IDVFundingTreemapViewSet(APIDocumentationView):
+    """Returns File C funding totals associated with an IDV's children."""
+
+    @staticmethod
+    def _parse_and_validate_request(request: Request) -> dict:
+        return TinyShield(deepcopy([get_internal_or_generated_award_id_model()])).block(request)
+
+    @staticmethod
+    def _business_logic(request_data: dict) -> list:
+        # By this point, our award_id has been validated and cleaned up by
+        # TinyShield.  We will either have an internal award id that is an
+        # integer or a generated award id that is a string.
+        award_id = request_data['award_id']
+        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+
+        sql = FUNDING_TREEMAP_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
         )
