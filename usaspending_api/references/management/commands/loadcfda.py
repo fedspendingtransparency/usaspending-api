@@ -9,10 +9,16 @@ from django.core.management.base import BaseCommand
 
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
+from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.references.models import Cfda
 
 
 logger = logging.getLogger("console")
+Reporter = OpsReporter(
+    iso_start_datetime=datetime.now(timezone.utc).isoformat(),
+    job_name="loadcfda.py",
+)
+
 
 DATA_CLEANING_MAP = {
     "program_title": "program_title",
@@ -68,7 +74,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("Loading data into pandas DataFrames")
-        start_time = datetime.now(timezone.utc).isoformat()
         start = perf_counter()
         external_data_df = load_from_url(options["cfda-data-uri"])
         database_df = load_cfda_table_into_pandas()
@@ -80,8 +85,10 @@ class Command(BaseCommand):
         logger.info("Comparing DataFrames")
         raise_status_code_3 = not load_cfda(database_df, external_data_df)
 
-        logger.info("Script started at {} and took {:.4f}s".format(start_time, perf_counter() - start))
+        Reporter["duration"] = perf_counter() - start
+        Reporter["end_status"] = 3 if raise_status_code_3 else 0
 
+        logger.info(Reporter.json_dump())
         if raise_status_code_3:
             raise SystemExit(3)
 
@@ -113,6 +120,8 @@ def clean_col_names(field):
 
 def load_cfda_table_into_pandas():
     database_records = list(Cfda.objects.all().values())
+    if not database_records:
+        return pd.DataFrame()
     df = pd.DataFrame(database_records, dtype=str)
     del df["id"]
     del df["create_date"]
@@ -121,6 +130,8 @@ def load_cfda_table_into_pandas():
 
 
 def fully_order_pandas_dataframe(df, sort_column):
+    if df.empty:
+        return df
     df.sort_values(sort_column, inplace=True)  # sort the rows using the provided column
     df = df[sorted(df.columns.tolist())]  # order the dataframe columns
     df.reset_index(drop=True, inplace=True)  # reset the pandas indexes so they match the new row order
@@ -129,19 +140,19 @@ def fully_order_pandas_dataframe(df, sort_column):
 
 def load_cfda(original_df, new_df):
     if new_df.equals(original_df):
-        logger.info("Skipping CFDA load, no new data.")
+        logger.info("Skipping CFDA load, no new data")
         return False
 
-    new_record_count, updated_record_count = 0, 0
+    Reporter["new_record_count"], Reporter["updated_record_count"] = 0, 0
 
-    logger.info("Inserting new CFDA data.")
+    logger.info("Inserting new CFDA data")
     for row in new_df.itertuples():
         record = row._asdict()
         del record["Index"]
         _, created = Cfda.objects.update_or_create(program_number=record["program_number"], defaults=record)
         if created:
-            new_record_count += 1
+            Reporter["new_record_count"] += 1
         else:
-            updated_record_count += 1
-    logger.info("Completed loading new data. New: {}, Updated: {}".format(new_record_count, updated_record_count))
+            Reporter["updated_record_count"] += 1
+    logger.info("Completed data load")
     return True
