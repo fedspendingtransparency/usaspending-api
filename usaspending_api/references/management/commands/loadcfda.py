@@ -1,12 +1,14 @@
 import logging
 import pandas as pd
 
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from time import perf_counter
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.url_helpers import RetrieveFileFromUri, DISPLAY_ALL_SCHEMAS
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
 from usaspending_api.references.models import Cfda
 
 
@@ -61,21 +63,21 @@ class Command(BaseCommand):
     help = "Load new CFDA data into references_cfda from the provided source CSV file"
 
     def add_arguments(self, parser):
-        arg_help = "Provide a valid RFC URL for a CFDA file: {}"
-        parser.add_argument("cfda-data-url", type=str, help=arg_help.format(DISPLAY_ALL_SCHEMAS))
+        arg_help = "A RFC URL to the CFDA data file. ({})"
+        parser.add_argument("cfda-data-uri", type=str, help=arg_help.format(SCHEMA_HELP_TEXT))
 
     def handle(self, *args, **options):
-        logger.info("Starting Script. Loading data into pandas DataFrames")
+        logger.info("Loading data into pandas DataFrames")
         start_time = datetime.now(timezone.utc).isoformat()
         start = perf_counter()
-        external_data_df = load_from_url(options["cfda-data-url"])
+        external_data_df = load_from_url(options["cfda-data-uri"])
         database_df = load_cfda_table_into_pandas()
 
-        logger.info("Remodel DataFrames for comparision")
+        logger.info("Remodeling DataFrames for comparision")
         external_data_df = fully_order_pandas_dataframe(external_data_df, "program_number")
         database_df = fully_order_pandas_dataframe(database_df, "program_number")
 
-        logger.info("Compare DataFrames")
+        logger.info("Comparing DataFrames")
         raise_status_code_3 = not load_cfda(database_df, external_data_df)
 
         logger.info("Script started at {} and took {:.4f}s".format(start_time, perf_counter() - start))
@@ -119,9 +121,9 @@ def load_cfda_table_into_pandas():
 
 
 def fully_order_pandas_dataframe(df, sort_column):
-    df.sort_values(sort_column, inplace=True)  # sort the values using the provided column
+    df.sort_values(sort_column, inplace=True)  # sort the rows using the provided column
     df = df[sorted(df.columns.tolist())]  # order the dataframe columns
-    df.reset_index(drop=True, inplace=True)  # reset the indexes to match the new order
+    df.reset_index(drop=True, inplace=True)  # reset the pandas indexes so they match the new row order
     return df
 
 

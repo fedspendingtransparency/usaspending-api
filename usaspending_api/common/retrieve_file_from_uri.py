@@ -6,29 +6,36 @@ import urllib
 from usaspending_api import settings
 
 VALID_SCHEMES = ("http", "https", "s3", "file", "")
-DISPLAY_ALL_SCHEMAS = ",".join(["{}://".format(s) for s in VALID_SCHEMES])
+SCHEMA_HELP_TEXT = (
+    "Internet RFC on Relative Uniform Resource Locators " +
+    "Format: scheme://netloc/path;parameters?query#fragment " +
+    "List of supported schemes: " +
+    ", ".join(["{}://".format(s) for s in VALID_SCHEMES if s])
+)
 
 
 class RetrieveFileFromUri:
-    def __init__(self, rfc_url, logger=None, binary_data=True):
-        self.url = rfc_url
-        self.logger = logger
-        self.mode = "r"
-
-        if binary_data:
-            self.mode = "rb"
+    def __init__(self, ruri, binary_data=True):
+        self.uri = ruri  # Relative Uniform Resource Locator
+        self.mode = "rb" if binary_data else "r"
         self._validate_url()
 
     def _validate_url(self):
-        self.parsed_url_obj = urllib.parse.urlparse(self.url)
+        self.parsed_url_obj = urllib.parse.urlparse(self.uri)
         self._test_approved_scheme()
 
     def _test_approved_scheme(self):
         if self.parsed_url_obj.scheme not in VALID_SCHEMES:
-            msg = "Scheme '{}' isn't an accepted type. Try one of these: {}"
+            msg = "Scheme '{}' isn't supported. Try one of these: {}"
             raise NotImplementedError(msg.format(self.parsed_url_obj.scheme, VALID_SCHEMES))
 
     def get_file_object(self):
+        """
+            return a file object (aka file handler) to either:
+                the local file,
+                a temporary file that was loaded from the pulled exernal file
+            Recommendation is to use this method as a context manager
+        """
         if self.parsed_url_obj.scheme == "s3":
             return self._handle_s3()
         elif self.parsed_url_obj.scheme.startswith("http"):
@@ -49,7 +56,7 @@ class RetrieveFileFromUri:
         return f
 
     def _handle_http(self):
-        r = requests.get(self.url, allow_redirects=True)
+        r = requests.get(self.uri, allow_redirects=True)
         f = tempfile.SpooledTemporaryFile()
         f.write(r.content)
         f.seek(0)  # go to beginning of file for reading
@@ -58,7 +65,7 @@ class RetrieveFileFromUri:
     def _handle_file(self):
         if self.parsed_url_obj == "file":
             file_path = self.parsed_url_obj.netloc
-        else:  # no schema provided, treat it as a relative file path
+        else:  # if no schema provided, treat it as a relative file path
             file_path = self.parsed_url_obj.path
 
         return open(file_path, self.mode)
