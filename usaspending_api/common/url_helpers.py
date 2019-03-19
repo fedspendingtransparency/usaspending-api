@@ -1,13 +1,15 @@
+import boto3
 import requests
 import tempfile
 import urllib
 
+from usaspending_api import settings
 
 VALID_SCHEMES = ("http", "https", "s3", "file", "")
 DISPLAY_ALL_SCHEMAS = ",".join(["{}://".format(s) for s in VALID_SCHEMES])
 
 
-class FileFromUrl:
+class RetrieveFileFromUri:
     def __init__(self, rfc_url, logger=None, binary_data=True):
         self.url = rfc_url
         self.logger = logger
@@ -26,47 +28,37 @@ class FileFromUrl:
             msg = "Scheme '{}' isn't an accepted type. Try one of these: {}"
             raise NotImplementedError(msg.format(self.parsed_url_obj.scheme, VALID_SCHEMES))
 
-    def fetch_data_from_source(self, return_file_handle=False):
+    def get_file_object(self):
         if self.parsed_url_obj.scheme == "s3":
-            return self._handle_s3(return_file_handle)
+            return self._handle_s3()
         elif self.parsed_url_obj.scheme.startswith("http"):
-            return self._handle_http(return_file_handle)
+            return self._handle_http()
         elif self.parsed_url_obj.scheme in ("file", ""):
-            return self._handle_file(return_file_handle)
+            return self._handle_file()
         else:
-            raise NotImplementedError("No handler for scheme!")
+            raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
-    def _handle_s3(self, return_file_handle):
-        raise NotImplementedError("No handler for s3 scheme (yet)")
+    def _handle_s3(self):
+        file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
+        boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
+        s3_bucket = boto3_s3.Bucket(self.parsed_url_obj.netloc)
 
-    def _handle_http(self, return_file_handle):
+        f = tempfile.SpooledTemporaryFile()  # Must be in binary mode (default)
+        s3_bucket.download_fileobj(file_path, f)
+        f.seek(0)  # go to beginning of file for reading
+        return f
+
+    def _handle_http(self):
         r = requests.get(self.url, allow_redirects=True)
+        f = tempfile.SpooledTemporaryFile()
+        f.write(r.content)
+        f.seek(0)  # go to beginning of file for reading
+        return f
 
-        if return_file_handle:
-            f = tempfile.SpooledTemporaryFile()
-            f.write(r.content)
-            f.seek(0)
-            return f
-        else:
-            raise NotImplementedError
-
-    def _handle_file(self, return_file_handle):
+    def _handle_file(self):
         if self.parsed_url_obj == "file":
             file_path = self.parsed_url_obj.netloc
         else:  # no schema provided, treat it as a relative file path
             file_path = self.parsed_url_obj.path
 
-        if return_file_handle:
-            print("Returning file handle")
-            return self._return_local_file_handle(file_path)
-        else:
-            print("Returning file data generator")
-            return self._return_local_file_gen(file_path)
-
-    def _return_local_file_handle(self, file_path):
         return open(file_path, self.mode)
-
-    def _return_local_file_gen(self, file_path):
-        with open(file_path, self.mode) as f:
-            for row in f:
-                yield f

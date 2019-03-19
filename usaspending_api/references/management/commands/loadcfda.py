@@ -1,10 +1,14 @@
 import logging
 import pandas as pd
 
+from datetime import datetime, timezone
+from time import perf_counter
+
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.url_helpers import FileFromUrl, DISPLAY_ALL_SCHEMAS
+from usaspending_api.common.url_helpers import RetrieveFileFromUri, DISPLAY_ALL_SCHEMAS
 from usaspending_api.references.models import Cfda
+
 
 logger = logging.getLogger("console")
 
@@ -54,26 +58,34 @@ DATA_CLEANING_MAP = {
 
 class Command(BaseCommand):
 
-    help = ""
+    help = "Load new CFDA data into references_cfda from the provided source CSV file"
 
     def add_arguments(self, parser):
         arg_help = "Provide a valid RFC URL for a CFDA file: {}"
         parser.add_argument("cfda-data-url", type=str, help=arg_help.format(DISPLAY_ALL_SCHEMAS))
 
     def handle(self, *args, **options):
+        logger.info("Starting Script. Loading data into pandas DataFrames")
+        start_time = datetime.now(timezone.utc).isoformat()
+        start = perf_counter()
         external_data_df = load_from_url(options["cfda-data-url"])
         database_df = load_cfda_table_into_pandas()
 
+        logger.info("Remodel DataFrames for comparision")
         external_data_df = fully_order_pandas_dataframe(external_data_df, "program_number")
         database_df = fully_order_pandas_dataframe(database_df, "program_number")
 
-        if not load_cfda(database_df, external_data_df):
+        logger.info("Compare DataFrames")
+        raise_status_code_3 = not load_cfda(database_df, external_data_df)
+
+        logger.info("Script started at {} and took {:.4f}s".format(start_time, perf_counter() - start))
+
+        if raise_status_code_3:
             raise SystemExit(3)
 
 
 def load_from_url(rfc_path_string):
-    file_opener = FileFromUrl(rfc_path_string)
-    with file_opener.fetch_data_from_source(return_file_handle=True) as data_file_handle:
+    with RetrieveFileFromUri(rfc_path_string).get_file_object() as data_file_handle:
         return load_cfda_csv_into_pandas(data_file_handle)
 
 
