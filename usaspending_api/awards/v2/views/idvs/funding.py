@@ -59,7 +59,7 @@ GET_FUNDING_SQL = SQL("""
         rpa.program_activity_name,
         oc.object_class,
         oc.object_class_name,
-        faba.transaction_obligated_amount
+        nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount
     from
         cte
         inner join awards pa on
@@ -101,8 +101,8 @@ class IDVFundingViewSet(APIDocumentationView):
     """Returns File C funding records associated with an IDV."""
 
     @staticmethod
-    def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request)
+    def _parse_and_validate_request(request_data: dict) -> dict:
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:

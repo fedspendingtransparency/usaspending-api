@@ -3,6 +3,7 @@ import json
 from django.test import TestCase
 from model_mommy import mommy
 from rest_framework import status
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.views.idvs.funding import SORTABLE_COLUMNS
 
 
@@ -318,3 +319,21 @@ class IDVFundingTestCase(TestCase):
             {'award_id': 2, 'piid': 'piid_013', 'limit': 3, 'page': 1, 'sort': 'piid', 'order': 'asc'},
             (None, None, 1, False, False, 13)
         )
+
+    def test_dev_2307(self):
+
+        # Make one of the transaction_obligated_amount values NaN.  Going from
+        # the drawing above, if we update contract 12, we should see this
+        # record for IDV 7.
+        FinancialAccountsByAwards.objects.filter(pk=12).update(transaction_obligated_amount='NaN')
+
+        # Retrieve the NaN value.
+        response = self.client.post(
+            ENDPOINT,
+            {'award_id': 7, 'sort': 'transaction_obligated_amount', 'order': 'desc'}
+        )
+        assert response.status_code == 200
+        result = json.loads(response.content.decode('utf-8'))
+        assert len(result['results']) == 2
+        for r in result['results']:
+            assert r['transaction_obligated_amount'] in (None, 110011.11)
