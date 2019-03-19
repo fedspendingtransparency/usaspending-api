@@ -1,15 +1,67 @@
-import csv
 import logging
-from datetime import datetime
+import pandas as pd
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.url_helpers import FileFromUrl, DISPLAY_ALL_SCHEMAS
 from usaspending_api.references.models import Cfda
 
-
 logger = logging.getLogger("console")
+
+DATA_CLEANING_MAP = {
+    "program_title": "program_title",
+    "program_number": "program_number",
+    "popular_name_(020)": "popular_name",
+    "federal_agency_(030)": "federal_agency",
+    "authorization_(040)": "authorization",
+    "objectives_(050)": "objectives",
+    "types_of_assistance_(060)": "types_of_assistance",
+    "uses_and_use_restrictions_(070)": "uses_and_use_restrictions",
+    "applicant_eligibility_(081)": "applicant_eligibility",
+    "beneficiary_eligibility_(082)": "beneficiary_eligibility",
+    "credentials/documentation_(083)": "credentials_documentation",
+    "preapplication_coordination_(091)": "pre_application_coordination",
+    "application_procedures_(092)": "application_procedures",
+    "award_procedure_(093)": "award_procedure",
+    "deadlines_(094)": "deadlines",
+    "range_of_approval/disapproval_time_(095)": "range_of_approval_disapproval_time",
+    "appeals_(096)": "appeals",
+    "renewals_(097)": "renewals",
+    "formula_and_matching_requirements_(101)": "formula_and_matching_requirements",
+    "length_and_time_phasing_of_assistance_(102)": "length_and_time_phasing_of_assistance",
+    "reports_(111)": "reports",
+    "audits_(112)": "audits",
+    "records_(113)": "records",
+    "account_identification_(121)": "account_identification",
+    "obligations_(122)": "obligations",
+    "range_and_average_of_financial_assistance_(123)": "range_and_average_of_financial_assistance",
+    "program_accomplishments_(130)": "program_accomplishments",
+    "regulations__guidelines__and_literature_(140)": "regulations_guidelines_and_literature",
+    "regional_or__local_office_(151)": "regional_or_local_office",
+    "headquarters_office_(152)": "headquarters_office",
+    "website_address_(153)": "website_address",
+    "related_programs_(160)": "related_programs",
+    "examples_of_funded_projects_(170)": "examples_of_funded_projects",
+    "criteria_for_selecting_proposals_(180)": "criteria_for_selecting_proposals",
+    "url": "url",
+    "recovery": "recovery",
+    "omb_agency_code": "omb_agency_code",
+    "omb_bureau_code": "omb_bureau_code",
+    "published_date": "published_date",
+    "archived_date": "archived_date",
+}
+
+
+def clean_col_names(field):
+    """Define some data-munging functions that can be applied to pandas
+    dataframes as necessary"""
+    return str(field).lower().strip().replace(" ", "_").replace(",", "_")
+
+
+def insert_dataframe(df, table, engine):
+    """Inserts a dataframe to the specified database table."""
+    df.to_sql(table, engine, index=False, if_exists="append")
+    return len(df.index)
 
 
 class Command(BaseCommand):
@@ -23,82 +75,78 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         file_opener = FileFromUrl(options["cfda-data-url"])
-        load_cfda(file_opener.fetch_data_generator())
+        with file_opener.fetch_data_from_source(return_file_handle=True) as data_stream:
+            regenerated_df = load_cfda_csv_into_pandas(data_stream)
+
+        database_df = load_cfda_table_into_pandas()
+
+        regenerated_df = fully_order_pandas_dataframe(regenerated_df, "program_number")
+        database_df = fully_order_pandas_dataframe(database_df, "program_number")
+        if not load_cfda(database_df, regenerated_df):
+            raise SystemExit(3)
 
 
-def load_cfda(data_stream):
-    """
-    """
-    return
-    try:
-        with open(abs_path, errors="backslashreplace") as csvfile:
+def load_cfda_csv_into_pandas(data_stream):
+    df = pd.read_csv(data_stream, dtype=str, encoding="latin1", na_filter=False)
+    df.rename(columns=clean_col_names, inplace=True)
 
-            reader = csv.DictReader(csvfile, delimiter=",", quotechar='"', skipinitialspace="true")
+    for field in DATA_CLEANING_MAP.keys():
+        if field not in list(df.columns):
+            raise ValueError("{} is required for loading table".format(field))
 
-            rows = list(reader)
-            total_rows = len(rows)
+    # toss out any columns from the csv that aren't in the fieldMap parameter
+    df = df[list(DATA_CLEANING_MAP.keys())]
 
-            for index, row in enumerate(rows, 1):
+    # rename columns as specified in fieldMap
+    df = df.rename(columns=DATA_CLEANING_MAP)
 
-                if not (index % 100):
-                    logger.info("CFDA loading/updating row {} of {}".format(index, total_rows))
+    df["data_source"] = "USA"
+    return df
 
-                cfda_program, created = Cfda.objects.get_or_create(program_number=row["Program Number"])
 
-                cfda_program.data_source = "USA"
-                cfda_program.program_title = row["Program Title"]
-                cfda_program.popular_name = row["Popular Name (020)"]
-                cfda_program.federal_agency = row["Federal Agency (030)"]
-                cfda_program.authorization = row["Authorization (040)"]
-                cfda_program.objectives = row["Objectives (050)"]
-                cfda_program.types_of_assistance = row["Types of Assistance (060)"]
-                cfda_program.uses_and_use_restrictions = row["Uses and Use Restrictions (070)"]
-                cfda_program.applicant_eligibility = row["Applicant Eligibility (081)"]
-                cfda_program.beneficiary_eligibility = row["Beneficiary Eligibility (082)"]
-                cfda_program.credentials_documentation = row["Credentials/Documentation (083)"]
-                cfda_program.pre_application_coordination = row["Preapplication Coordination (091)"]
-                cfda_program.application_procedures = row["Application Procedures (092)"]
-                cfda_program.award_procedure = row["Award Procedure (093)"]
-                cfda_program.deadlines = row["Deadlines (094)"]
-                cfda_program.range_of_approval_disapproval_time = row["Range of Approval/Disapproval Time (095)"]
-                cfda_program.appeals = row["Appeals (096)"]
-                cfda_program.renewals = row["Renewals (097)"]
-                cfda_program.formula_and_matching_requirements = row["Formula and Matching Requirements (101)"]
-                cfda_program.length_and_time_phasing_of_assistance = row["Length and Time Phasing of Assistance (102)"]
-                cfda_program.reports = row["Reports (111)"]
-                cfda_program.audits = row["Audits (112)"]
-                cfda_program.records = row["Records (113)"]
-                cfda_program.account_identification = row["Account Identification (121)"]
-                cfda_program.obligations = row["Obligations (122)"]
-                cfda_program.range_and_average_of_financial_assistance = row[
-                    "Range and Average of " "Financial Assistance (123)"
-                ]
-                cfda_program.program_accomplishments = row["Program Accomplishments (130)"]
-                cfda_program.regulations_guidelines_and_literature = row[
-                    "Regulations, Guidelines, " "and Literature (140)"
-                ]
-                cfda_program.regional_or_local_office = row["Regional or, Local Office (151)"]
-                cfda_program.headquarters_office = row["Headquarters Office (152)"]
-                cfda_program.website_address = row["Website Address (153)"]
-                cfda_program.related_programs = row["Related Programs (160)"]
-                cfda_program.examples_of_funded_projects = row["Examples of Funded Projects (170)"]
-                cfda_program.criteria_for_selecting_proposals = row["Criteria for Selecting Proposals (180)"]
-                cfda_program.url = row["URL"]
-                cfda_program.recovery = row["Recovery"]
-                cfda_program.omb_agency_code = row["OMB Agency Code"]
-                cfda_program.omb_bureau_code = row["OMB Bureau Code"]
-                if row["Published Date"]:
-                    cfda_program.published_date = datetime.strptime(row["Published Date"], "%b %d,%Y")
-                if row["Archived Date"]:
-                    cfda_program.archived_date = datetime.strptime(row["Archived Date"], "%b %d,%Y")
+def load_cfda_table_into_pandas():
+    source_data = list(Cfda.objects.all().values())
+    database_records = pd.DataFrame(source_data, dtype=str)
+    del database_records["id"]
+    del database_records["create_date"]
+    del database_records["update_date"]
+    return database_records
 
-                # TODO: add way to check/print out any cfda codes that got updated (not just created)
-                if created:
-                    logger.info(
-                        "Created a new cfda code for {} ({})".format(row["Program Number"], row["Program Title"])
-                    )
 
-                cfda_program.save()
+def fully_order_pandas_dataframe(df, sort_column):
+    df.sort_values(sort_column, inplace=True)  # sort the values using the provided column
+    df[sorted(df.columns.tolist())]  # order the dataframe columns
+    df.reset_index(drop=True, inplace=True)  # reset the indexes to match the new order
+    return df
 
-    except IOError:
-        logger.info("Could not open file to load: {}".format(abs_path))
+
+def load_cfda(original_df, new_df):
+    if new_df.equals(original_df):
+        logger.info("Skipping CFDA load, no new data.")
+        return False
+
+    new_record_count = 0
+    updated_record_count = 0
+    deleted_record_count = 0
+
+    # logger.info("Deleting CFDA data.")
+    # for cfda in Cfda.objects.all():
+    #     if cfda.program_number not in new_df["program_number"]:
+    #         cfda.delete()
+    #         deleted_record_count += 1
+    # logger.info("Completed removing stale data.")
+
+    logger.info("Inserting new CFDA data.")
+    for row in new_df.itertuples():
+        record = row._asdict()
+        del record["Index"]
+        _, created = Cfda.objects.update_or_create(program_number=record["program_number"], defaults=record)
+        if created:
+            new_record_count += 1
+        else:
+            updated_record_count += 1
+    logger.info("Completed loading new data.")
+    logger.info(
+        "New: {}, Removed: {}, Updated: {}".format(new_record_count, deleted_record_count, updated_record_count)
+    )
+    return True
