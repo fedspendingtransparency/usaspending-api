@@ -52,70 +52,63 @@ DATA_CLEANING_MAP = {
 }
 
 
-def clean_col_names(field):
-    """Define some data-munging functions that can be applied to pandas
-    dataframes as necessary"""
-    return str(field).lower().strip().replace(" ", "_").replace(",", "_")
-
-
-def insert_dataframe(df, table, engine):
-    """Inserts a dataframe to the specified database table."""
-    df.to_sql(table, engine, index=False, if_exists="append")
-    return len(df.index)
-
-
 class Command(BaseCommand):
 
     help = ""
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "cfda-data-url", type=str, help="Provide a valid RFC URL for a CFDA file: {}".format(DISPLAY_ALL_SCHEMAS)
-        )
+        arg_help = "Provide a valid RFC URL for a CFDA file: {}"
+        parser.add_argument("cfda-data-url", type=str, help=arg_help.format(DISPLAY_ALL_SCHEMAS))
 
     def handle(self, *args, **options):
-        file_opener = FileFromUrl(options["cfda-data-url"])
-        with file_opener.fetch_data_from_source(return_file_handle=True) as data_stream:
-            regenerated_df = load_cfda_csv_into_pandas(data_stream)
-
+        external_data_df = load_from_url(options["cfda-data-url"])
         database_df = load_cfda_table_into_pandas()
 
-        regenerated_df = fully_order_pandas_dataframe(regenerated_df, "program_number")
+        external_data_df = fully_order_pandas_dataframe(external_data_df, "program_number")
         database_df = fully_order_pandas_dataframe(database_df, "program_number")
-        if not load_cfda(database_df, regenerated_df):
+
+        if not load_cfda(database_df, external_data_df):
             raise SystemExit(3)
 
 
-def load_cfda_csv_into_pandas(data_stream):
-    df = pd.read_csv(data_stream, dtype=str, encoding="latin1", na_filter=False)
+def load_from_url(rfc_path_string):
+    file_opener = FileFromUrl(rfc_path_string)
+    with file_opener.fetch_data_from_source(return_file_handle=True) as data_file_handle:
+        return load_cfda_csv_into_pandas(data_file_handle)
+
+
+def load_cfda_csv_into_pandas(data_file_handle):
+    df = pd.read_csv(data_file_handle, dtype=str, encoding="latin1", na_filter=False)
     df.rename(columns=clean_col_names, inplace=True)
 
     for field in DATA_CLEANING_MAP.keys():
         if field not in list(df.columns):
             raise ValueError("{} is required for loading table".format(field))
 
-    # toss out any columns from the csv that aren't in the fieldMap parameter
-    df = df[list(DATA_CLEANING_MAP.keys())]
-
-    # rename columns as specified in fieldMap
-    df = df.rename(columns=DATA_CLEANING_MAP)
-
+    df = df[list(DATA_CLEANING_MAP.keys())]  # toss out any columns from the csv that aren't in the fieldMap parameter
+    df = df.rename(columns=DATA_CLEANING_MAP)  # rename columns as specified in fieldMap
     df["data_source"] = "USA"
     return df
 
 
+def clean_col_names(field):
+    """Define some data-munging functions that can be applied to pandas
+    dataframes as necessary"""
+    return str(field).lower().strip().replace(" ", "_").replace(",", "_")
+
+
 def load_cfda_table_into_pandas():
-    source_data = list(Cfda.objects.all().values())
-    database_records = pd.DataFrame(source_data, dtype=str)
-    del database_records["id"]
-    del database_records["create_date"]
-    del database_records["update_date"]
-    return database_records
+    database_records = list(Cfda.objects.all().values())
+    df = pd.DataFrame(database_records, dtype=str)
+    del df["id"]
+    del df["create_date"]
+    del df["update_date"]
+    return df
 
 
 def fully_order_pandas_dataframe(df, sort_column):
     df.sort_values(sort_column, inplace=True)  # sort the values using the provided column
-    df[sorted(df.columns.tolist())]  # order the dataframe columns
+    df = df[sorted(df.columns.tolist())]  # order the dataframe columns
     df.reset_index(drop=True, inplace=True)  # reset the indexes to match the new order
     return df
 
@@ -125,16 +118,7 @@ def load_cfda(original_df, new_df):
         logger.info("Skipping CFDA load, no new data.")
         return False
 
-    new_record_count = 0
-    updated_record_count = 0
-    deleted_record_count = 0
-
-    # logger.info("Deleting CFDA data.")
-    # for cfda in Cfda.objects.all():
-    #     if cfda.program_number not in new_df["program_number"]:
-    #         cfda.delete()
-    #         deleted_record_count += 1
-    # logger.info("Completed removing stale data.")
+    new_record_count, updated_record_count = 0, 0
 
     logger.info("Inserting new CFDA data.")
     for row in new_df.itertuples():
@@ -145,8 +129,5 @@ def load_cfda(original_df, new_df):
             new_record_count += 1
         else:
             updated_record_count += 1
-    logger.info("Completed loading new data.")
-    logger.info(
-        "New: {}, Removed: {}, Updated: {}".format(new_record_count, deleted_record_count, updated_record_count)
-    )
+    logger.info("Completed loading new data. New: {}, Updated: {}".format(new_record_count, updated_record_count))
     return True

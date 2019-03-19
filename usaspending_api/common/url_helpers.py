@@ -41,12 +41,14 @@ class FileFromUrl:
 
     def _handle_http(self, return_file_handle):
         r = requests.get(self.url, allow_redirects=True)
-        with tempfile.SpooledTemporaryFile() as f:
+
+        if return_file_handle:
+            f = tempfile.SpooledTemporaryFile()
             f.write(r.content)
             f.seek(0)
-            for row in f:
-                print(row)
-                yield row
+            return f
+        else:
+            raise NotImplementedError
 
     def _handle_file(self, return_file_handle):
         if self.parsed_url_obj == "file":
