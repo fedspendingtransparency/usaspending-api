@@ -324,7 +324,7 @@ class IDVFundingRollupTestCase(TestCase):
 
         # Retrieve the NaN value.
         response = self.client.post(
-            ENDPOINT,
+            DETAIL_ENDPOINT,
             {'award_id': 7, 'sort': 'transaction_obligated_amount', 'order': 'desc'}
         )
         assert response.status_code == 200
