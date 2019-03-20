@@ -14,13 +14,9 @@ Returns aggregated count of awarding agencies, federal accounts, and total trans
 
 ```
 {
-    "results": [
-        {
-            "total_transaction_obligated_amount": 42946881.56,
-            "awarding_agency_count": 27,
-            "federal_account_count": 47
-        }
-    ]
+    "total_transaction_obligated_amount": 212038930.38,
+    "awarding_agency_count": 3,
+    "federal_account_count": 4
 }
 ```
 

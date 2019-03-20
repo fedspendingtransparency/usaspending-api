@@ -67,12 +67,7 @@ class IDVFundingRollupViewSet(APIDocumentationView):
     def post(self, request: Request) -> Response:
         request_data = self._parse_and_validate_request(request.data)
         results = self._business_logic(request_data)
-
-        response = OrderedDict((
-            ('results', results),
-        ))
-
-        return Response(response)
+        return Response(results[0])
 
 
 # THIS IS A STUB FOR DEV-2237

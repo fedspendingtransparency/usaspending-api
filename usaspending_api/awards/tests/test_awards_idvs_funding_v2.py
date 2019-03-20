@@ -232,6 +232,24 @@ class IDVFundingTestCase(TestCase):
             (None, None, 1, False, False, 13)
             )
 
+    def test_dev_2307(self):
+
+        # Make one of the transaction_obligated_amount values NaN.  Going from
+        # the drawing above, if we update contract 12, we should see this
+        # record for IDV 7.
+        FinancialAccountsByAwards.objects.filter(pk=12).update(transaction_obligated_amount='NaN')
+
+        # Retrieve the NaN value.
+        response = self.client.post(
+            DETAIL_ENDPOINT,
+            {'award_id': 7, 'sort': 'transaction_obligated_amount', 'order': 'desc'}
+        )
+        assert response.status_code == 200
+        result = json.loads(response.content.decode('utf-8'))
+        assert len(result['results']) == 2
+        for r in result['results']:
+            assert r['transaction_obligated_amount'] in (None, 110011.11)
+
 
 class IDVFundingRollupTestCase(TestCase):
 
@@ -251,7 +269,6 @@ class IDVFundingRollupTestCase(TestCase):
         example, IDVs have obligated amounts in the thousands whereas contracts
         have obligated amounts in the single digits and teens.
         """
-        results = []
         children = [k for k in PARENTS if PARENTS[k] == award_id and award_id in IDVS]
         grandchildren = [k for k in PARENTS if PARENTS[k] in children and PARENTS[k] in IDVS]
         non_idv_children = [k for k in children if k not in IDVS]
@@ -262,13 +279,13 @@ class IDVFundingRollupTestCase(TestCase):
         even_agency_child_count = len([k for k in non_idv_children if k % 2 == 0])
         even_agency_grandchildren_count = len([k for k in non_idv_grandchildren if k % 2 == 0])
         _id = sum(non_idv_children) + sum(non_idv_grandchildren)
-        results.append({
+        results = {
             'total_transaction_obligated_amount': _id * 10000 + _id + _id / 100,
             'awarding_agency_count': even_agency_grandchildren_count + even_agency_child_count + odd_agency_count,
             'federal_account_count': len(non_idv_children) + len(non_idv_grandchildren)
-        })
+        }
 
-        return {'results': results}
+        return results
 
     def _test_post(self, request, expected_response_parameters_tuple=None, expected_status_code=status.HTTP_200_OK):
         """
@@ -314,21 +331,3 @@ class IDVFundingRollupTestCase(TestCase):
             {'award_id': None},
             (0,)
         )
-
-    def test_dev_2307(self):
-
-        # Make one of the transaction_obligated_amount values NaN.  Going from
-        # the drawing above, if we update contract 12, we should see this
-        # record for IDV 7.
-        FinancialAccountsByAwards.objects.filter(pk=12).update(transaction_obligated_amount='NaN')
-
-        # Retrieve the NaN value.
-        response = self.client.post(
-            DETAIL_ENDPOINT,
-            {'award_id': 7, 'sort': 'transaction_obligated_amount', 'order': 'desc'}
-        )
-        assert response.status_code == 200
-        result = json.loads(response.content.decode('utf-8'))
-        assert len(result['results']) == 2
-        for r in result['results']:
-            assert r['transaction_obligated_amount'] in (None, 110011.11)
