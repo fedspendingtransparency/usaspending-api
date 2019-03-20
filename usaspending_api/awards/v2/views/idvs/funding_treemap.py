@@ -11,9 +11,6 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
 
-
-
-
 FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
         select    award_id
@@ -41,8 +38,6 @@ FUNDING_TREEMAP_SQL = SQL("""
             taa.treasury_account_identifier = faba.treasury_account_id {group_by};""")
 
 
-
-
 class IDVFundingRollupViewSet(APIDocumentationView):
     """Returns File C funding totals associated with an IDV's children."""
 
@@ -59,12 +54,12 @@ class IDVFundingRollupViewSet(APIDocumentationView):
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
         sql = FUNDING_TREEMAP_SQL.format(
-            columns =Literal("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
+            columns=SQL("""coalesce(sum(nullif(faba.transaction_obligated_amount, 'NaN')), 0.0) total_transaction_obligated_amount,
                      count(distinct ca.awarding_agency_id) awarding_agency_count,
                      count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""),
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
-            group_by=Literal("")
+            group_by=SQL(""),
         )
         return execute_sql_to_ordered_dictionary(sql)
 
@@ -79,6 +74,8 @@ class IDVFundingRollupViewSet(APIDocumentationView):
 
         return Response(response)
 
+
+# THIS IS A STUB FOR DEV-2237
 
 class IDVFundingTreemapViewSet(APIDocumentationView):
     """Returns File C funding totals associated with an IDV's children."""
@@ -96,8 +93,12 @@ class IDVFundingTreemapViewSet(APIDocumentationView):
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
         sql = FUNDING_TREEMAP_SQL.format(
+            columns=SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
+                            taa.agency_id || '-' || taa.main_account_code federal_account,
+                               ca.awarding_agency_id agency_id"""),
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
+            group_by=SQL("group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code"),
         )
         return execute_sql_to_ordered_dictionary(sql)
 
