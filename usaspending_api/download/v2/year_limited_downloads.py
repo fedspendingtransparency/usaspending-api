@@ -1,14 +1,7 @@
-from copy import deepcopy
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings, idv_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.views import BaseDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
-
-
-# For this endpoint, we need to add IDVs to the all_award_types_mappings.  This
-# will allow us to support IDVs on the backend for bulk downloads as per DEV-1844.
-ALL_AWARD_TYPES_MAPPINGS = deepcopy(all_award_types_mappings)
-ALL_AWARD_TYPES_MAPPINGS['idvs'] = list(idv_type_mapping)
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
@@ -50,8 +43,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         filters['award_type_codes'] = []
         try:
             for award_type_code in filters['award_types']:
-                if award_type_code in ALL_AWARD_TYPES_MAPPINGS:
-                    filters['award_type_codes'].extend(ALL_AWARD_TYPES_MAPPINGS[award_type_code])
+                if award_type_code in all_award_types_mappings:
+                    filters['award_type_codes'].extend(all_award_types_mappings[award_type_code])
                 else:
                     raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
             del filters['award_types']
