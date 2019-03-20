@@ -38,7 +38,8 @@ FUNDING_TREEMAP_SQL = SQL("""
             taa.treasury_account_identifier = faba.treasury_account_id {group_by};""")
 
 
-class IDVFundingRollupViewSet(APIDocumentationView):
+class IDVFundingBaseViewSet(APIDocumentationView):
+
     """Returns File C funding totals associated with an IDV's children."""
 
     @staticmethod
@@ -46,7 +47,7 @@ class IDVFundingRollupViewSet(APIDocumentationView):
         return TinyShield(deepcopy([get_internal_or_generated_award_id_model()])).block(request)
 
     @staticmethod
-    def _business_logic(request_data: dict) -> list:
+    def _business_logic(request_data: dict, columns: str, group_by: str) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
@@ -54,53 +55,39 @@ class IDVFundingRollupViewSet(APIDocumentationView):
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
         sql = FUNDING_TREEMAP_SQL.format(
-            columns=SQL("""coalesce(sum(nullif(faba.transaction_obligated_amount, 'NaN')), 0.0) total_transaction_obligated_amount,
-                     count(distinct ca.awarding_agency_id) awarding_agency_count,
-                     count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""),
+            columns=SQL(columns),
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
-            group_by=SQL(""),
+            group_by=SQL(group_by),
         )
         return execute_sql_to_ordered_dictionary(sql)
 
+
+class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
+
     @cache_response()
     def post(self, request: Request) -> Response:
+        columns = """coalesce(sum(nullif(faba.transaction_obligated_amount, 'NaN')), 0.0) total_transaction_obligated_amount,
+                     count(distinct ca.awarding_agency_id) awarding_agency_count,
+                     count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""
+        group_by = ""
         request_data = self._parse_and_validate_request(request.data)
-        results = self._business_logic(request_data)
+        results = self._business_logic(request_data, columns, group_by)
         return Response(results[0])
 
 
 # THIS IS A STUB FOR DEV-2237
 
-class IDVFundingTreemapViewSet(APIDocumentationView):
-    """Returns File C funding totals associated with an IDV's children."""
-
-    @staticmethod
-    def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(deepcopy([get_internal_or_generated_award_id_model()])).block(request)
-
-    @staticmethod
-    def _business_logic(request_data: dict) -> list:
-        # By this point, our award_id has been validated and cleaned up by
-        # TinyShield.  We will either have an internal award id that is an
-        # integer or a generated award id that is a string.
-        award_id = request_data['award_id']
-        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
-
-        sql = FUNDING_TREEMAP_SQL.format(
-            columns=SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
-                            taa.agency_id || '-' || taa.main_account_code federal_account,
-                               ca.awarding_agency_id agency_id"""),
-            award_id_column=Identifier(award_id_column),
-            award_id=Literal(award_id),
-            group_by=SQL("group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code"),
-        )
-        return execute_sql_to_ordered_dictionary(sql)
+class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+        group_by = "group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code"
+        columns = """sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
+                      taa.agency_id || '-' || taa.main_account_code federal_account,
+                      ca.awarding_agency_id agency_id"""
         request_data = self._parse_and_validate_request(request.data)
-        results = self._business_logic(request_data)
+        results = self._business_logic(request_data, columns, group_by)
 
         response = OrderedDict((
             ('results', results),
