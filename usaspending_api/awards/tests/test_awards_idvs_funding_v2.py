@@ -223,7 +223,7 @@ class IDVFundingTestCase(TestCase):
             {'award_id': 2, 'order': 'BOGUS ORDER'},
             expected_status_code=status.HTTP_400_BAD_REQUEST
         )
-        
+
     def test_complete_queries(self):
 
         self._test_post(
