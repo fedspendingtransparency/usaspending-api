@@ -2,38 +2,44 @@ import json
 
 
 class OpsReporter:
-    required_files = ("job_name", "duration", "iso_start_datetime", "end_status")
+    """
+        Object to load useful operational metrics during routine script executions
+        When instantiating a new OpsReporter class, metrics can be loaded as keyword args
+        Later, additional data can be added just like adding/updating values in a dictionary.
+        At the end of the script, send the JSON to the intended destination.
+    """
+    required_keys = ("job_name", "duration", "iso_start_datetime", "end_status")
 
     def __init__(self, **kwargs):
-        self.internal_dict = {}
+        self._internal_dict = {}
         if kwargs:
-            self.internal_dict = kwargs
+            self._internal_dict = kwargs
 
     def __getattr__(self, key):
         try:
-            return self.internal_dict[key]
+            return self._internal_dict[key]
         except KeyError:
             raise AttributeError(key)
 
     def __getitem__(self, key):
         try:
-            return self.internal_dict[key]
+            return self._internal_dict[key]
         except KeyError:
             raise AttributeError(key)
 
     def __setitem__(self, key, value):
-        self.internal_dict[key] = value
+        self._internal_dict[key] = value
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        return ",".join(["{}:{}".format(k, v) for k, v in self.internal_dict.items()])
+        return "OpsReporter({})".format(", ".join(["{}:{}".format(k, v) for k, v in self._internal_dict.items()]))
 
     def json_dump(self):
-        self._verify_required_fields()
-        return json.dumps(self.internal_dict)
+        self._verify_required_keys()
+        return json.dumps(self._internal_dict)
 
-    def _verify_required_fields(self):
-        for field in self.required_files:
-            self.internal_dict[field]
+    def _verify_required_keys(self):
+        if set(self.required_keys) > set(self._internal_dict.keys()):
+            raise Exception("Failed to populate all of the required keys: {}".format(self.required_keys))
