@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Funding Roll-up [/api/v2/awards/idvs/funding-rollup/]
+# IDV Funding Roll-up [/api/v2/awards/idvs/funding_rollup/]
 
 This end point returns award metadata specifying the total transaction obligations, awarding agencies, and federal accounts.
 
