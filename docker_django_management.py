@@ -168,7 +168,7 @@ def wait_for_db(max_attempts=15, seconds_between_attempts=1):
     info("Connection to database established.")
 
 
-def execute_from_command_line(argv):  # type: (List[str]) -> None
+def execute_from_command_line(argv):  # type: (list[str]) -> None
     '''
     This is like django.core.management.execute_from_command_line,
     but if the django package is unavailable, the script executes itself
@@ -250,7 +250,7 @@ def does_uid_exist(uid):  # type: (int) -> bool
         return False
 
 
-def entrypoint(argv):  # type: (List[str]) -> None
+def entrypoint(argv):  # type: (list[str]) -> None
     '''
     This is a Docker entrypoint that configures the container to run
     as the same uid of the user on the host container, rather than

@@ -294,7 +294,7 @@ class TinyShield:
             for k, v in rule['object_keys'].items():
                 try:
                     value = provided_object[k]
-                except KeyError as e:
+                except KeyError:
                     if "optional" in v and v['optional'] is False:
                         raise UnprocessableEntityException('Required object fields: {}'.format(k))
                     else:

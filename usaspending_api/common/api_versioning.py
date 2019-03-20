@@ -19,7 +19,7 @@ def api_transformations(api_version, function_list):
                 for func in function_list:
                     try:
                         request = func(request, api_version)
-                    except InvalidParameterException as e:
+                    except InvalidParameterException:
                         raise
                 return function(request, *args, **kwargs)
             return wrap
