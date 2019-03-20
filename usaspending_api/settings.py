@@ -64,9 +64,7 @@ if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
 STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get('STATE_DATA_BUCKET')
-CFDA_BUCKET_NAME = ""
-CFDA_REGION = ""
-CFDA_FILE_PATH = ""
+
 ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
 
 # Elasticsearch
