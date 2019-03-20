@@ -11,8 +11,7 @@ This end point returns award metadata specifying the total transaction obligatio
     + Attributes (object)
         + award_id: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-` (required, string)
 + Response 200 (application/json)
-    + Attributes
-        + results (required, array[IDVFundingRollUpResponse])
+    + Attributes (IDVFundingRollUpResponse)
 
 # Data Structures
 
