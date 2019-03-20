@@ -304,7 +304,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 if state_obj:
                     self.state_name = state_obj['name']
 
-    zip_code_pattern = re.compile('^(\d{5})\-?(\d{4})?$')
+    zip_code_pattern = re.compile(r'^(\d{5})\-?(\d{4})?$')
 
     def fill_missing_zip5(self):
         """Where zip5 is blank, fill from a valid zip4, if avaliable"""

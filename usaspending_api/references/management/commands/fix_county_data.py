@@ -90,7 +90,7 @@ class Command(BaseCommand):
 
         # FPDS LE 5-digit
         sess.execute(
-            """UPDATE transaction_fpds AS dap
+            r"""UPDATE transaction_fpds AS dap
                 SET legal_entity_county_code = sc.county_number,
                     legal_entity_county_name = CASE WHEN dap.legal_entity_county_name IS NOT NULL
                                                     THEN dap.legal_entity_county_name
@@ -139,7 +139,7 @@ class Command(BaseCommand):
 
         # FPDS PPOP 5-digit
         sess.execute(
-            """UPDATE transaction_fpds AS dap
+            r"""UPDATE transaction_fpds AS dap
                 SET place_of_perform_county_co = sc.county_number,
                     place_of_perform_county_na = CASE WHEN dap.place_of_perform_county_na IS NOT NULL
                                                       THEN dap.place_of_perform_county_na
@@ -223,7 +223,7 @@ class Command(BaseCommand):
 
         # FABS PPOP 5-digit
         sess.execute(
-            """UPDATE transaction_fabs AS pafa
+            r"""UPDATE transaction_fabs AS pafa
                 SET place_of_perform_county_co = sc.county_number,
                     place_of_perform_county_na = CASE WHEN pafa.place_of_perform_county_na IS NOT NULL
                                                       THEN pafa.place_of_perform_county_na

@@ -5,7 +5,7 @@ import os
 import pytest
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def endpoint_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
