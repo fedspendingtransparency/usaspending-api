@@ -28,7 +28,7 @@ class Command(BaseCommand):
                 try:
                     logger.info('Running submission load for fy {}, quarter {}...'.format(fy, q))
                     call_command('load_multiple_submissions', int(fy), int(q))
-                except CommandError as e:
+                except CommandError:
                     logger.info('Error reported using fy/q combination: {} {}'.format(fy, q))
                     continue
         elif options['ids']:

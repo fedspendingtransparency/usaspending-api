@@ -589,8 +589,8 @@ def find_matching_award(piid=None, parent_piid=None, fain=None, uri=None):
         if parent_piid:
             filters['parent_award_piid'] = parent_piid
     elif fain and not uri:
-            # if only the fain is populated, filter on that
-            filters['fain'] = fain
+        # if only the fain is populated, filter on that
+        filters['fain'] = fain
     elif not fain and uri:
         # if only the uri is populated, filter on that
         filters['uri'] = uri

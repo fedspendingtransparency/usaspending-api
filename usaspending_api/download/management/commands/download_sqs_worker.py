@@ -137,7 +137,7 @@ def download_service_app(download_job_id):
     # Retrieve the data and write to the CSV(s)
     try:
         csv_generation.generate_csvs(download_job=download_job)
-    except Exception as e:
+    except Exception:
         write_to_log(message="Caught exception", download_job=download_job, is_error=True)
         return 11  # arbitrary positive integer
 
@@ -149,7 +149,7 @@ def remove_message_from_sqs(message):
         return
     try:
         message.delete()
-    except Exception as e:
+    except Exception:
         write_to_log(message="Unable to delete SQS message. Message might have previously been released or removed")
 
 
@@ -159,7 +159,7 @@ def set_sqs_message_visibility(message, new_visibility):
         return
     try:
         message.change_visibility(VisibilityTimeout=new_visibility)
-    except botocore.exceptions.ClientError as e:
+    except botocore.exceptions.ClientError:
         write_to_log(message="Unable to set VisibilityTimeout. Message might have previously been released or removed")
 
 
