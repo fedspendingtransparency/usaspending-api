@@ -223,11 +223,13 @@ class IDVFundingTestCase(TestCase):
             {'award_id': 2, 'order': 'BOGUS ORDER'},
             expected_status_code=status.HTTP_400_BAD_REQUEST
         )
-    def test_complete_queries(self):
         
+    def test_complete_queries(self):
+
         self._test_post(
             {'award_id': 2, 'piid': 'piid_013', 'limit': 3, 'page': 1, 'sort': 'piid', 'order': 'asc'},
             (None, None, 1, False, False, 13)
+            )
 
 
 class IDVFundingRollupTestCase(TestCase):
