@@ -218,6 +218,7 @@ def state_breakdown_result():
     expected_result = [{'type': 'contracts', 'amount': 0, 'count': 0},
                        {'type': 'direct_payments', 'amount': 0, 'count': 0},
                        {'type': 'grants', 'amount': 0, 'count': 0},
+                       {'type': 'idvs', 'amount': 0, 'count': 0},
                        {'type': 'loans', 'amount': 0, 'count': 0},
                        {'type': 'other_financial_assistance', 'amount': 0, 'count': 0}]
 
