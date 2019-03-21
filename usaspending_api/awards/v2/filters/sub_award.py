@@ -64,8 +64,9 @@ def subaward_filter(filters, for_downloads=False):
                 # award_ts_vector = piid + fain + uri + subaward_number
                 filter_obj = Q(keyword_ts_vector=keyword) | \
                     Q(award_ts_vector=keyword)
-                if keyword.isnumeric():
-                    filter_obj |= Q(naics_code__contains=keyword)
+                # Commenting out until NAICS is associated with subawards
+                # if keyword.isnumeric():
+                #     filter_obj |= Q(naics_code__contains=keyword)
                 if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
                     filter_obj |= Q(product_or_service_code__iexact=keyword)
 
