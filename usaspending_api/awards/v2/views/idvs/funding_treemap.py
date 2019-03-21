@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from copy import deepcopy
 
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
@@ -10,6 +9,7 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 
 FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
@@ -31,7 +31,7 @@ FUNDING_TREEMAP_SQL = SQL("""
         inner join awards ca on
             ca.parent_award_piid = pa.piid and
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
-            ca.type not like 'IDV\_%'
+            ca.type not like 'IDV%'
         inner join financial_accounts_by_awards faba on
             faba.award_id = ca.id
         left outer join treasury_appropriation_account taa on
@@ -43,8 +43,8 @@ class IDVFundingBaseViewSet(APIDocumentationView):
     """Returns File C funding totals associated with an IDV's children."""
 
     @staticmethod
-    def _parse_and_validate_request(request: Request) -> dict:
-        return TinyShield(deepcopy([get_internal_or_generated_award_id_model()])).block(request)
+    def _parse_and_validate_request(request: dict) -> dict:
+        return TinyShield([get_internal_or_generated_award_id_model()]).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict, columns: str, group_by: str) -> list:
@@ -82,15 +82,18 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+
         group_by = "group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code"
         columns = """sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
                       taa.agency_id || '-' || taa.main_account_code federal_account,
                       ca.awarding_agency_id agency_id"""
         request_data = self._parse_and_validate_request(request.data)
         results = self._business_logic(request_data, columns, group_by)
+        page_metadata = get_simple_pagination_metadata(len(results), request_data['limit'], request_data['page'])
 
         response = OrderedDict((
-            ('results', results),
+            ('results', results[:request_data['limit']]),
+            ('page_metadata', page_metadata)
         ))
 
         return Response(response)

@@ -10,5 +10,5 @@ urlpatterns = [
     url(r'^funding/$', IDVFundingViewSet.as_view()),
     url(r'^funding-rollup/$', IDVFundingRollupViewSet.as_view()),
     # This is a stub for the tree map endpoint fo DEV-2237
-    # url(r'^funding-treemap/$', IDVFundingTreemapViewSet.as_view()),
+    # url(r'^accounts/$', IDVFundingTreemapViewSet.as_view()),
 ]
