@@ -40,7 +40,11 @@ FUNDING_TREEMAP_SQL = SQL("""
 
 class IDVFundingBaseViewSet(APIDocumentationView):
 
-    """Returns File C funding totals associated with an IDV's children."""
+    """
+    Returns File C funding totals associated with an IDV's children.
+
+    endpoint_doc: /awards/idvs/funding_rollup.md
+    """
 
     @staticmethod
     def _parse_and_validate_request(request: dict) -> dict:
