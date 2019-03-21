@@ -226,9 +226,10 @@ assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, 
                            **other_type_mapping}
 non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}
 all_award_types_mappings = {
-    'contracts': list(contract_type_mapping.keys()),
-    'grants': list(grant_type_mapping.keys()),
-    'direct_payments': list(direct_payment_type_mapping.keys()),
-    'loans': list(loan_type_mapping.keys()),
-    'other_financial_assistance': list(other_type_mapping.keys())
+    'contracts': list(contract_type_mapping),
+    'direct_payments': list(direct_payment_type_mapping),
+    'grants': list(grant_type_mapping),
+    'idvs': list(idv_type_mapping),
+    'loans': list(loan_type_mapping),
+    'other_financial_assistance': list(other_type_mapping)
 }
