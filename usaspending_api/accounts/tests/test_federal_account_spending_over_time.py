@@ -7,10 +7,6 @@ from rest_framework import status
 
 @pytest.fixture
 def financial_spending_data(db):
-
-    # ta1 = mommy.make('TreasuryAppropriationAccount', treasury_account_identifier=1, federal_account__id=1)
-    # ta2 = mommy.make('TreasuryAppropriationAccount', treasury_account_identifier=2, federal_account__id=2)
-
     ta1 = mommy.make('TreasuryAppropriationAccount', federal_account__id=1, federal_account_id=1)
     mommy.make(
         'FinancialAccountsByProgramActivityObjectClass',

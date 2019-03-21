@@ -49,7 +49,7 @@ def _verify_int_value(value):
     if type(value) in (int, str):
         try:
             return int(value)
-        except Exception as e:
+        except Exception:
             pass
     return None
 
@@ -57,7 +57,7 @@ def _verify_int_value(value):
 def _verify_float_value(value):
     try:
         return float(value)
-    except Exception as e:
+    except Exception:
         pass
     return None
 
@@ -95,7 +95,7 @@ def validate_datetime(rule):
         dt_format = '%Y-%m-%dT%H:%M:%SZ'
     try:
         value = datetime.datetime.strptime(val, dt_format)
-    except ValueError as e:
+    except ValueError:
         error_message = INVALID_TYPE_MSG.format(**rule) + '. Expected format: ({})'.format(dt_format)
         raise InvalidParameterException(error_message)
 
