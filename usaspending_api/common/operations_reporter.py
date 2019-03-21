@@ -41,5 +41,6 @@ class OpsReporter:
         return json.dumps(self._internal_dict)
 
     def _verify_required_keys(self):
-        if set(self.required_keys) > set(self._internal_dict.keys()):
-            raise Exception("Failed to populate all of the required keys: {}".format(self.required_keys))
+        missing_required_keys = set(self.required_keys) - set(self._internal_dict.keys())
+        if missing_required_keys:
+            raise Exception("Missing required keys: {}".format(missing_required_keys))
