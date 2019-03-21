@@ -15,7 +15,7 @@ def test_glossary_endpoint(client, glossary_data):
 
     resp = client.get('/api/v1/references/glossary/?limit=9999')  # get all glossary terms
     assert resp.status_code == 200
-    assert len(resp.data["results"]) == 120
+    assert len(resp.data["results"]) == 128
 
     resp = client.get(
         '/api/v1/references/glossary/agency-identifier/')

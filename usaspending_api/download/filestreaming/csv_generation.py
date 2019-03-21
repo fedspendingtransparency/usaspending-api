@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import traceback
 import zipfile
 
 from django.conf import settings
@@ -28,7 +29,7 @@ WAIT_FOR_PROCESS_SLEEP = 5
 logger = logging.getLogger('console')
 
 
-def generate_csvs(download_job, sqs_message=None):
+def generate_csvs(download_job):
     """Derive the relevant file location and write CSVs to it"""
     start_time = time.perf_counter()
 
@@ -52,16 +53,17 @@ def generate_csvs(download_job, sqs_message=None):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
+            parse_source(source, columns, download_job, working_dir, start_time, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
+    except InvalidParameterException as e:
+        exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
+        write_stack_trace_to_download_job(download_job, e, exc_msg)
+        raise InvalidParameterException(e)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(str(e))
-        download_job.save()
-        if isinstance(e, InvalidParameterException):
-            raise InvalidParameterException(e)
-        else:
-            raise Exception(download_job.error_message) from e
+        exc_msg = "An exception was raised while attempting to process the DownloadJob"
+        write_stack_trace_to_download_job(download_job, e, exc_msg)
+        raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
         if os.path.exists(working_dir):
@@ -78,8 +80,8 @@ def generate_csvs(download_job, sqs_message=None):
                          download_job=download_job)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
-        download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(str(e))
-        download_job.save()
+        exc_msg = "An exception was raised while attempting to upload the file"
+        write_stack_trace_to_download_job(download_job, e, exc_msg)
         if isinstance(e, InvalidParameterException):
             raise InvalidParameterException(e)
         else:
@@ -130,7 +132,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
+def parse_source(source, columns, download_job, working_dir, start_time, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
              'federal_account': 'federal_account'}
@@ -144,6 +146,8 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     source_query = source.row_emitter(columns)
     source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
+    write_to_log(message='Preparing to download data as {}'.format(source_name), download_job=download_job)
+
     # Generate the query file; values, limits, dates fixed
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
 
@@ -152,28 +156,21 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job,))
         psql_process.start()
-        wait_for_process(psql_process, start_time, download_job, message)
-
-        # The process below modifies the download job and thus cannot be in a separate process
-        # Assuming the process to count the number of lines in a CSV file takes less than DOWNLOAD_VISIBILITY_TIMEOUT
-        #  in case the visibility times out before then
-        if message:
-            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+        wait_for_process(psql_process, start_time, download_job)
 
         # Log how many rows we have
+        write_to_log(message='Counting rows in CSV', download_job=download_job)
         try:
             download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
-        except Exception as e:
-            write_to_log(message="Unable to obtain CSV line count",
-                         is_error=True,
-                         download_job=download_job)
+        except Exception:
+            write_to_log(message="Unable to obtain CSV line count", is_error=True, download_job=download_job)
         download_job.save()
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
                                                                                download_job))
         zip_process.start()
-        wait_for_process(zip_process, start_time, download_job, message)
+        wait_for_process(zip_process, start_time, download_job)
         download_job.save()
     except Exception as e:
         raise e
@@ -190,15 +187,21 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         log_time = time.perf_counter()
 
         output_template = '{}_%s.csv'.format(source_name)
-
+        write_to_log(message='Beginning the CSV file partition', download_job=download_job)
         list_of_csv_files = partition_large_csv_file(source_path, row_limit=EXCEL_ROW_LIMIT,
                                                      output_name_template=output_template)
 
         if download_job:
-            write_to_log(message='Splitting csvs took {:.4f} seconds'.format(time.perf_counter() - log_time),
-                         download_job=download_job)
+            write_to_log(
+                message='Partitioning CSV file into {} files took {:.4f} seconds'.format(
+                    len(list_of_csv_files),
+                    time.perf_counter() - log_time
+                ),
+                download_job=download_job
+            )
 
         # Zip the split CSVs into one zipfile
+        write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
 
@@ -210,6 +213,9 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
                          download_job=download_job)
 
     except Exception as e:
+        message = "Exception while partitioning CSV"
+        write_stack_trace_to_download_job(download_job, e, message)
+        write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
         raise e
     finally:
@@ -241,16 +247,13 @@ def finish_download(download_job):
     return download_job.file_name
 
 
-def wait_for_process(process, start_time, download_job, message):
+def wait_for_process(process, start_time, download_job):
     """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
     log_time = time.perf_counter()
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive() and (time.perf_counter() - start_time) < MAX_VISIBILITY_TIMEOUT:
-        if message:
-            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
@@ -296,7 +299,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
 def apply_annotations_to_sql(raw_query, aliases):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
-    want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
+    want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
     aliases_copy = list(aliases)
@@ -306,13 +309,13 @@ def apply_annotations_to_sql(raw_query, aliases):
     query_before_from = re.sub("SELECT ", "", ' FROM'.join(re.split(' FROM', query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|\(SELECT|FROM)", raw_query)[0]
+    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|\(SELECT|FROM)", raw_query)[0]
     just_selects = selects_str[0] if selects_str[1] == 'FROM' else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(',')]
 
     # Create a list from the derived values between SELECT and FROM
     remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall(r"(CASE|CONCAT|SUM|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects)
+    deriv_str_lookup = re.findall(r"(CASE|CONCAT|SUM|COALESCE|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
@@ -369,3 +372,11 @@ def retrieve_db_string():
 
 def strip_file_extension(file_name):
     return os.path.splitext(os.path.basename(file_name))[0]
+
+
+def write_stack_trace_to_download_job(download_job, exception, message):
+    stack_trace = "".join(
+        traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
+    )
+    download_job.error_message = '{}:\n{}'.format(message, stack_trace)
+    download_job.save()

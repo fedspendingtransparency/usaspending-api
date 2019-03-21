@@ -425,7 +425,6 @@ class FederalAccountsViewSet(APIDocumentationView):
 
     @cache_response()
     def post(self, request, format=None):
-
         """ Return all high-level Federal Account information """
         request_data = self._parse_and_validate_request(request.data)
         limit = request_data['limit']
@@ -463,7 +462,7 @@ class FederalAccountsViewSet(APIDocumentationView):
             tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else [agency_id]
             tta_filter = Q()
             for tta in tta_list:
-                    tta_filter |= Q(account_number__startswith=tta)
+                tta_filter |= Q(account_number__startswith=tta)
             queryset &= queryset.filter(tta_filter)
 
         if sort_direction == 'desc':

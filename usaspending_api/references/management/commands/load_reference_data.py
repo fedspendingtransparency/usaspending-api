@@ -43,7 +43,7 @@ class Command(BaseCommand):
         RefCityCountyCode.canonicalize()
 
         self.logger.info("Loading CFDA data")
-        call_command('loadcfda')
+        call_command('loadcfda', 'https://files.usaspending.gov/reference_data/cfda.csv')
 
         self.logger.info("Loading descriptions of commonly used terms")
         call_command('load_glossary')

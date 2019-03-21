@@ -3,6 +3,7 @@ import json
 from django.test import TestCase
 from model_mommy import mommy
 from rest_framework import status
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.views.idvs.funding import SORTABLE_COLUMNS
 
 
@@ -39,6 +40,11 @@ class IDVFundingTestCase(TestCase):
             _sid = str(_id).zfill(3)
 
             mommy.make(
+                'references.Agency',
+                id=9000 + _id
+            )
+
+            mommy.make(
                 'awards.Award',
                 id=_id,
                 generated_unique_award_id='GENERATED_UNIQUE_AWARD_ID_%s' % _sid,
@@ -46,7 +52,8 @@ class IDVFundingTestCase(TestCase):
                 piid='piid_%s' % _sid,
                 fpds_agency_id='fpds_agency_id_%s' % _sid,
                 parent_award_piid='piid_%s' % _spid if _spid else None,
-                fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None
+                fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None,
+                funding_agency_id=9000 + _id
             )
 
             if _id in IDVS:
@@ -67,7 +74,10 @@ class IDVFundingTestCase(TestCase):
             mommy.make(
                 'accounts.TreasuryAppropriationAccount',
                 treasury_account_identifier=_id,
+                reporting_agency_id=str(_id).zfill(3),
                 reporting_agency_name='reporting agency name %s' % _sid,
+                agency_id=str(_id).zfill(3),
+                main_account_code=str(_id).zfill(4),
                 account_title='account title %s' % _sid
             )
 
@@ -117,7 +127,11 @@ class IDVFundingTestCase(TestCase):
                 'reporting_fiscal_year': 2000 + _id,
                 'reporting_fiscal_quarter': _id % 4 + 1,
                 'piid': 'piid_%s' % _sid,
+                'funding_agency_id': 9000 + _id,
+                'reporting_agency_id': _sid.zfill(3),
                 'reporting_agency_name': 'reporting agency name %s' % _sid,
+                'agency_id': _sid.zfill(3),
+                'main_account_code': _sid.zfill(4),
                 'account_title': 'account title %s' % _sid,
                 'program_activity_code': _sid,
                 'program_activity_name': 'program activity %s' % _sid,
@@ -305,3 +319,21 @@ class IDVFundingTestCase(TestCase):
             {'award_id': 2, 'piid': 'piid_013', 'limit': 3, 'page': 1, 'sort': 'piid', 'order': 'asc'},
             (None, None, 1, False, False, 13)
         )
+
+    def test_dev_2307(self):
+
+        # Make one of the transaction_obligated_amount values NaN.  Going from
+        # the drawing above, if we update contract 12, we should see this
+        # record for IDV 7.
+        FinancialAccountsByAwards.objects.filter(pk=12).update(transaction_obligated_amount='NaN')
+
+        # Retrieve the NaN value.
+        response = self.client.post(
+            ENDPOINT,
+            {'award_id': 7, 'sort': 'transaction_obligated_amount', 'order': 'desc'}
+        )
+        assert response.status_code == 200
+        result = json.loads(response.content.decode('utf-8'))
+        assert len(result['results']) == 2
+        for r in result['results']:
+            assert r['transaction_obligated_amount'] in (None, 110011.11)

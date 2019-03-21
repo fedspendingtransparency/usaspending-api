@@ -1,7 +1,7 @@
 import datetime
 
 from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
-from django.db.models.functions import Concat
+from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
@@ -147,7 +147,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 
     # Derive recipient_parent_name
     if account_type == 'award_financial':
-        derived_fields = award_financial_recipient_parent_derivation(derived_fields)
+        derived_fields = award_financial_derivations(derived_fields)
 
     return queryset.annotate(**derived_fields)
 
@@ -168,7 +168,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
 
     # Derive recipient_parent_name for award_financial downloads
     if account_type == 'award_financial':
-        derived_fields = award_financial_recipient_parent_derivation(derived_fields)
+        derived_fields = award_financial_derivations(derived_fields)
 
     queryset = queryset.annotate(**derived_fields)
 
@@ -213,11 +213,19 @@ def retrieve_fyq_filters(account_type, account_level, filters):
     return reporting_period_start, reporting_period_end, start_date, end_date
 
 
-def award_financial_recipient_parent_derivation(derived_fields):
+def award_financial_derivations(derived_fields):
     derived_fields['recipient_parent_name'] = Case(
         When(award__latest_transaction__type__in=list(contract_type_mapping.keys()),
              then='award__latest_transaction__contract_data__ultimate_parent_legal_enti'),
         default='award__latest_transaction__assistance_data__ultimate_parent_legal_enti',
         output_field=CharField()
+    )
+    derived_fields['award_type_code'] = Coalesce(
+        'award__latest_transaction__contract_data__contract_award_type',
+        'award__latest_transaction__assistance_data__assistance_type'
+    )
+    derived_fields['award_type'] = Coalesce(
+        'award__latest_transaction__contract_data__contract_award_type_desc',
+        'award__latest_transaction__assistance_data__assistance_type_desc'
     )
     return derived_fields

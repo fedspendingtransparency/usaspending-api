@@ -16,15 +16,16 @@ testing suites
 '''
 
 
-@pytest.fixture(scope="session")
-def documentation_test_data():
+@pytest.fixture()
+@pytest.mark.django_db
+def documentation_test_data(db):
     mommy.make('awards.Award', _quantity=1, _fill_optional=True)
 
 
 @pytest.mark.parametrize("url, req", [
     ("/api/v1/awards/", {"filters": []}),
-    ("/api/v1/awards/", {"filters":  [{"field": "date_signed", "operation": "greater_than_or_equal",
-                                       "value": "2016-06-01"}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal",
+                                      "value": "2016-06-01"}]}),
     ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal",
                                       "value": "2016-06-01"}, {"field": "date_signed", "operation": "less_than",
                                                                "value": "2017-06-01"}]}),

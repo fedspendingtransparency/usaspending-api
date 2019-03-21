@@ -3,10 +3,10 @@ For more information on this file: https://docs.djangoproject.com/en/1.11/topics
 For the full list of settings and their values: https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
+from django.utils.crypto import get_random_string
 import dj_database_url
 import os
 import sys
-from django.utils.crypto import get_random_string
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,13 +19,14 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Default timeout for SQL statements in Django. Set to 5 min (in seconds).
 DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get('DEFAULT_DB_TIMEOUT_IN_SECONDS') or 0
+CONNECTION_MAX_SECONDS = 10
 
-API_MAX_DATE = '2020-09-30'
-API_MIN_DATE = '2000-10-01'
-API_SEARCH_MIN_DATE = '2007-10-01'
+API_MAX_DATE = '2020-09-30'         # End of FY2020
+API_MIN_DATE = '2000-10-01'         # Beginning of FY2001
+API_SEARCH_MIN_DATE = '2007-10-01'  # Beginning of FY2008
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_random_string()
@@ -63,9 +64,7 @@ if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
 STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get('STATE_DATA_BUCKET')
-CFDA_BUCKET_NAME = ""
-CFDA_REGION = ""
-CFDA_FILE_PATH = ""
+
 ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
 
 # Elasticsearch
@@ -152,7 +151,7 @@ WSGI_APPLICATION = 'usaspending_api.wsgi.application'
 CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 # Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
@@ -164,24 +163,27 @@ DEFAULT_DB_OPTIONS = {
 }
 
 DATABASES = {
-    'default': {**dj_database_url.config(conn_max_age=10), **DEFAULT_DB_OPTIONS}
+    'default': {**dj_database_url.config(conn_max_age=CONNECTION_MAX_SECONDS), **DEFAULT_DB_OPTIONS}
 }
 
 # read replica env vars... if not set, default DATABASE_URL will get used
 # if only one set, this will error out (single DB should use DATABASE_URL)
 if os.environ.get('DB_SOURCE') or os.environ.get('DB_R1'):
-    DATABASES['db_source'] = dj_database_url.parse(os.environ.get('DB_SOURCE'), conn_max_age=10)
-    DATABASES['db_r1'] = dj_database_url.parse(os.environ.get('DB_R1'), conn_max_age=10)
+    DATABASES['db_source'] = dj_database_url.parse(os.environ.get('DB_SOURCE'), conn_max_age=CONNECTION_MAX_SECONDS)
+    DATABASES['db_r1'] = dj_database_url.parse(os.environ.get('DB_R1'), conn_max_age=CONNECTION_MAX_SECONDS)
     DATABASE_ROUTERS = ['usaspending_api.routers.replicas.ReadReplicaRouter']
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
-    DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
+    DATABASES['data_broker'] = dj_database_url.parse(
+        os.environ.get('DATA_BROKER_DATABASE_URL'),
+        conn_max_age=CONNECTION_MAX_SECONDS
+    )
 
 
 # Password validation
-# https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -207,7 +209,7 @@ REST_FRAMEWORK = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.10/topics/i18n/
+# https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -216,7 +218,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.10/howto/static-files/
+# https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'usaspending_api/static/')
@@ -334,7 +336,7 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-    'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions'],
+    'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions', 'recipient'],
     'show_fields': False,
     'exclude': {},
     'show_proxy': False,
