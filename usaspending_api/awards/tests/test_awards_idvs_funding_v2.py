@@ -9,7 +9,7 @@ from usaspending_api.awards.tests.data.idv_funding_data import create_funding_da
 
 DETAIL_ENDPOINT = '/api/v2/awards/idvs/funding/'
 
-AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding-rollup/'
+AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding_rollup/'
 
 
 class IDVFundingTestCase(TestCase):
