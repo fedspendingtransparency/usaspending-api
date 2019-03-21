@@ -43,7 +43,6 @@ class IDVFundingBaseViewSet(APIDocumentationView):
     """
     Returns File C funding totals associated with an IDV's children.
 
-    endpoint_doc: /awards/idvs/funding_rollup.md
     """
 
     @staticmethod
@@ -68,6 +67,10 @@ class IDVFundingBaseViewSet(APIDocumentationView):
 
 
 class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
+
+    """
+    endpoint_doc: /awards/idvs/funding_rollup.md
+    """
 
     @cache_response()
     def post(self, request: Request) -> Response:
