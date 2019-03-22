@@ -15,6 +15,99 @@ from usaspending_api.common.validator.helpers import validate_integer
 from usaspending_api.common.validator.helpers import validate_object
 from usaspending_api.common.validator.helpers import validate_text
 
+
+''' TINYSHIELD V2
+
+
+    TYPICAL USAGE
+
+    Probably the most common pattern is to define "models" that describe the data expected from a Django or DRF
+    request:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+    Then validate the request using the ".block" method (assuming a Django Rest Framework (DRF) request):
+
+        validated = TinyShield(models).block(request.data)
+
+    This will validate POST/PUT data for the fields "id" and "city" in the request provided.  The validated data will
+    be available in the "validated" variable using the keys provided in the "models" list.
+
+    ALTERNATE USAGE
+
+    Another common usage is to define your own request object as a dictionary:
+
+        models = [
+           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
+           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
+        ]
+
+        my_request = {
+            'id': 12345,
+            'city': 'French Lick',
+        }
+
+    Then validate my_request as above:
+
+        validated = TinyShield(models).block(my_request)
+
+    INPUT
+
+    "model" is a dictionary representing a validator which is defined as follows:
+
+        {
+            name: this field doesn't seem to actually do anything, but it does need to be unique!
+            key:  dict|subitem|all|split|by|pipes
+            type: type of validator
+                any *
+                array
+                boolean
+                date
+                datetime
+                enum
+                float
+                integer
+                object
+                passthrough
+                text
+                schema
+            models:
+                {provide sub-models - used for "any" type}
+            text_type:
+                search
+                raw
+                sql
+                url
+                password
+            default:
+                the default value if no key-value is provided for this param
+            allow_nulls:
+                if True, a value of None is allowed
+            optional:
+                If False, then key-value must be present. Overrides `default`
+        }
+
+    * "any" is a special beast as it contains a collection of models, any one of which may match the value provided.
+    The first model to match is the one that's used.  You could use "any" to, say, accept a field that could be either
+    an integer or a string (like an internal award id vs. a generated award id).  Child models of an "any" rule are
+    always optional and inherit their parent's name and key and, as such, those keys are always ignored.  For example:
+
+        models = [
+            {'key': 'id', 'name': 'id', 'type': 'any', 'optional': False, 'models': [
+                {'type': 'integer'},
+                {'type': 'text', 'text_type': 'search'}
+            ]},
+        ]
+
+    RETURNS
+
+    A dictionary of the validated data keyed on model.key from the input "model" list provided during instantiation.
+    Validated data is also accessible via self.data.
+'''
+
 logger = logging.getLogger('console')
 
 VALIDATORS = {
@@ -85,7 +178,7 @@ VALIDATORS = {
 }
 
 
-# decorator
+# Decorator
 def validate_request(model_list):
     def class_based_decorator(ClassBasedView):
         def view_func(function):
@@ -105,8 +198,8 @@ def validation_function(request, model_list):
     for key in list(request.data.keys()):
         if key not in new_request_data.keys():
             del request.data[key]
-        else:
-            request.data[key] = new_request_data[key]
+    for key in new_request_data.keys():
+        request.data[key] = new_request_data[key]
     return request
 
 
