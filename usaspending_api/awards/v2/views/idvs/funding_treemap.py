@@ -10,6 +10,9 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.validator.tinyshield_v2 import validate_request
+from usaspending_api.common.validator.pagination import PAGINATION
+import copy
 
 FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
@@ -38,16 +41,13 @@ FUNDING_TREEMAP_SQL = SQL("""
             taa.treasury_account_identifier = faba.treasury_account_id {group_by};""")
 
 
+
 class IDVFundingBaseViewSet(APIDocumentationView):
 
     """
     Returns File C funding totals associated with an IDV's children.
 
     """
-
-    @staticmethod
-    def _parse_and_validate_request(request: dict) -> dict:
-        return TinyShield([get_internal_or_generated_award_id_model()]).block(request)
 
     @staticmethod
     def _business_logic(request_data: dict, columns: str, group_by: str) -> list:
@@ -66,6 +66,7 @@ class IDVFundingBaseViewSet(APIDocumentationView):
         return execute_sql_to_ordered_dictionary(sql)
 
 
+@validate_request([get_internal_or_generated_award_id_model()]+copy.deepcopy(PAGINATION))
 class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
 
     """
@@ -78,8 +79,7 @@ class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
                      count(distinct ca.awarding_agency_id) awarding_agency_count,
                      count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""
         group_by = ""
-        request_data = self._parse_and_validate_request(request.data)
-        results = self._business_logic(request_data, columns, group_by)
+        results = self._business_logic(request.data, columns, group_by)
         return Response(results[0])
 
 
