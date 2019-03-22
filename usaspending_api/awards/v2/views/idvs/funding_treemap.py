@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 
 from psycopg2.sql import Identifier, Literal, SQL
@@ -8,11 +9,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield_v2 import validate_request
 from usaspending_api.common.validator.pagination import PAGINATION
-import copy
+
 
 FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
@@ -39,7 +39,6 @@ FUNDING_TREEMAP_SQL = SQL("""
             faba.award_id = ca.id
         left outer join treasury_appropriation_account taa on
             taa.treasury_account_identifier = faba.treasury_account_id {group_by};""")
-
 
 
 class IDVFundingBaseViewSet(APIDocumentationView):

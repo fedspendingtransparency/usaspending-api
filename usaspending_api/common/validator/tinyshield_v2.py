@@ -85,7 +85,6 @@ VALIDATORS = {
 }
 
 
-
 # decorator
 def validate_request(model_list):
     def class_based_decorator(ClassBasedView):
@@ -108,14 +107,14 @@ def validation_function(request, model_list):
             del request.data[key]
         else:
             request.data[key] = new_request_data[key]
+    return request
 
-
-    return request    
 
 def block(request, rules):
     rules = parse_request(request, rules)
     data = enforce_rules(rules)
     return data
+
 
 def check_model(model, in_any=False):
     # Confirm required fields (both baseline and type-specific) are in the model
@@ -155,6 +154,7 @@ def check_model(model, in_any=False):
 
     return model
 
+
 def check_models(models):
 
     for model in models:
@@ -166,6 +166,7 @@ def check_models(models):
         raise Exception('Duplicate destination keys provided. Name values must be unique')
 
     return models
+
 
 def parse_request(request, rules):
     for item in rules:
@@ -188,6 +189,7 @@ def parse_request(request, rules):
             item['value'] = ...
     return rules
 
+
 def enforce_rules(rules):
     data = {}
     for item in rules:
@@ -195,6 +197,7 @@ def enforce_rules(rules):
             struct = item['key'].split(TINY_SHIELD_SEPARATOR)
             recurse_append(struct, data, apply_rule(item))
     return data
+
 
 def apply_rule(rule):
     _return = None
@@ -258,6 +261,7 @@ def apply_rule(rule):
         ))
     return _return
 
+
 def promote_subrules(child_rule, source={}):
     param_type = child_rule['type']
     if "text_type" in source:
@@ -279,6 +283,7 @@ def promote_subrules(child_rule, source={}):
     except KeyError as e:
         raise Exception("Invalid Rule: {} type requires {}".format(param_type, e))
     return child_rule
+
 
 def recurse_append(struct, mydict, data):
     if len(struct) == 1:
