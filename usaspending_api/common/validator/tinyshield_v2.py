@@ -16,7 +16,9 @@ from usaspending_api.common.validator.helpers import validate_object
 from usaspending_api.common.validator.helpers import validate_text
 
 
-''' TINYSHIELD V2
+''' 
+
+    TINYSHIELD V2
 
 
     TYPICAL USAGE
@@ -29,30 +31,31 @@ from usaspending_api.common.validator.helpers import validate_text
            {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
         ]
 
-    Then validate the request using the ".block" method (assuming a Django Rest Framework (DRF) request):
+    Then validate the request using the validate_request decorator, which gets applied to a class-based view and affixes itself to the 'post' function:
+    e.g., 
 
-        validated = TinyShield(models).block(request.data)
+        @validate_request(models)
+        class ClassBasedViewSet(BaseViewSet):
 
-    This will validate POST/PUT data for the fields "id" and "city" in the request provided.  The validated data will
-    be available in the "validated" variable using the keys provided in the "models" list.
+            def post(request):
+                ...
+                -> use request.data here, which will have the validated request
+                ...
+    
 
     ALTERNATE USAGE
 
-    Another common usage is to define your own request object as a dictionary:
+    If you want to use a method rather than a decorator, you can use 'validation_function' and pass it both the request and the model object:
 
-        models = [
-           {'key': 'id', 'name': 'id', 'type': 'integer', 'optional': False},
-           {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
-        ]
+    e.g.,
 
-        my_request = {
-            'id': 12345,
-            'city': 'French Lick',
-        }
+          class ClassBasedViewSet(BaseViewSet):
 
-    Then validate my_request as above:
-
-        validated = TinyShield(models).block(my_request)
+            def post(request):
+                request = validation_function(request, models)
+                ...
+                -> use request.data here, which will have the validated request
+                ...
 
     INPUT
 
@@ -104,8 +107,8 @@ from usaspending_api.common.validator.helpers import validate_text
 
     RETURNS
 
-    A dictionary of the validated data keyed on model.key from the input "model" list provided during instantiation.
-    Validated data is also accessible via self.data.
+    A modified Request object that has had its 'data'  attribute validated and sanitized.
+
 '''
 
 logger = logging.getLogger('console')
