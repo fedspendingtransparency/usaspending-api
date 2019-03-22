@@ -16,7 +16,7 @@ from usaspending_api.common.validator.helpers import validate_object
 from usaspending_api.common.validator.helpers import validate_text
 
 
-''' 
+'''
 
     TINYSHIELD V2
 
@@ -31,8 +31,10 @@ from usaspending_api.common.validator.helpers import validate_text
            {'key': 'city', 'name': 'city', 'type': 'string', 'text_type': 'sql', 'default': None, 'optional': True},
         ]
 
-    Then validate the request using the validate_request decorator, which gets applied to a class-based view and affixes itself to the 'post' function:
-    e.g., 
+    Then validate the request using the validate_request decorator, which gets applied to a class-based view
+    and affixes itself to the 'post' function:
+
+    e.g.,
 
         @validate_request(models)
         class ClassBasedViewSet(BaseViewSet):
@@ -41,11 +43,12 @@ from usaspending_api.common.validator.helpers import validate_text
                 ...
                 -> use request.data here, which will have the validated request
                 ...
-    
+
 
     ALTERNATE USAGE
 
-    If you want to use a method rather than a decorator, you can use 'validation_function' and pass it both the request and the model object:
+    If you want to use a method rather than a decorator, you can use 'validation_function' and
+    pass it both the request and the model object:
 
     e.g.,
 
