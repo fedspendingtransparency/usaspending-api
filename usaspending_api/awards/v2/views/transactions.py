@@ -8,9 +8,9 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.core.validator.pagination import customize_pagination_with_sort_columns
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 class TransactionViewSet(APIDocumentationView):

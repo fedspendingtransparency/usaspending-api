@@ -1,5 +1,5 @@
 import boto3
-import csv
+
 import os
 import json
 import pandas as pd
@@ -15,6 +15,7 @@ from elasticsearch import TransportError
 from time import perf_counter, sleep
 from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
+from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
@@ -214,7 +215,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-    download_count = csv_row_count(filename)
+    download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
     if count != download_count:
         msg = 'Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}'
         printf({
@@ -557,11 +558,3 @@ def printf(items):
             j = ' (#{})'.format(job)
         print_msg = template.format(time=t, complex=func + j, msg=msg)
     print(print_msg)
-
-
-def csv_row_count(filename, has_header=True):
-    with open(filename, 'r') as f:
-        row_count = sum(1 for row in csv.reader(f))
-    if has_header:
-        row_count -= 1
-    return row_count

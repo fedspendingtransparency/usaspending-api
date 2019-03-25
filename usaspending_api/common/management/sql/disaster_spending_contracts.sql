@@ -1,7 +1,7 @@
 SELECT
     "financial_accounts_by_awards"."reporting_period_end" AS "submission_period",
     "treasury_appropriation_account"."allocation_transfer_agency_id" AS "allocation_transfer_agency_identifier",
-    "treasury_appropriation_account"."agency_id" AS "agency_identifer",
+    "treasury_appropriation_account"."agency_id" AS "agency_identifier",
     "treasury_appropriation_account"."beginning_period_of_availability" AS "beginning_period_of_availability",
     "treasury_appropriation_account"."ending_period_of_availability" AS "ending_period_of_availability",
     "treasury_appropriation_account"."availability_type_code" AS "availability_type_code",

@@ -13,7 +13,7 @@ from usaspending_api.awards.v2.data_layer.orm import (
 )
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
-from usaspending_api.core.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 logger = logging.getLogger("console")
