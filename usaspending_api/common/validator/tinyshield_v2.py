@@ -314,40 +314,10 @@ def apply_rule(rule):
             raise Exception('Invalid Type {} in rule'.format(rule['type']))
     # Array is a "special" type since it is a list of other types which need to be validated
     elif rule['type'] == 'array':
-        rule['array_min'] = rule.get('array_min', 1)
-        rule['array_max'] = rule.get('array_max', MAX_ITEMS)
-        value = VALIDATORS[rule['type']]['func'](rule)
-        child_rule = copy.copy(rule)
-        child_rule['type'] = rule['array_type']
-        child_rule['min'] = rule.get('array_min')
-        child_rule['max'] = rule.get('array_max')
-        child_rule = promote_subrules(child_rule, child_rule)
-        array_result = []
-        for v in value:
-            child_rule['value'] = v
-            array_result.append(apply_rule(child_rule))
-        _return = array_result
+        _return =  array_processor(rule);
     # Object is a "special" type since it is comprised of other types which need to be validated
     elif rule['type'] == 'object':
-        rule['object_min'] = rule.get('object_min', 1)
-        rule['object_max'] = rule.get('object_max', MAX_ITEMS)
-        provided_object = VALIDATORS[rule['type']]['func'](rule)
-        object_result = {}
-        for k, v in rule['object_keys'].items():
-            try:
-                value = provided_object[k]
-            except KeyError:
-                if "optional" in v and v['optional'] is False:
-                    raise UnprocessableEntityException('Required object fields: {}'.format(k))
-                else:
-                    continue
-            # Start with the sub-rule definition and supplement with parent's key-values as needed
-            child_rule = copy.copy(v)
-            child_rule['key'] = rule['key']
-            child_rule['value'] = value
-            child_rule = promote_subrules(child_rule, v)
-            object_result[k] = apply_rule(child_rule)
-        _return = object_result
+        _return = object_processor(rule)
     # Any is a "special" type since it is is really a collection of other rules.
     elif rule['type'] == 'any':
         for child_rule in rule['models']:
@@ -364,6 +334,43 @@ def apply_rule(rule):
             type=', '.join(sorted([m['type'] for m in rule['models']]))
         ))
     return _return
+
+
+def array_processor(rule):
+    rule['array_min'] = rule.get('array_min', 1)
+    rule['array_max'] = rule.get('array_max', MAX_ITEMS)
+    value = VALIDATORS[rule['type']]['func'](rule)
+    child_rule = copy.copy(rule)
+    child_rule['type'] = rule['array_type']
+    child_rule['min'] = rule.get('array_min')
+    child_rule['max'] = rule.get('array_max')
+    child_rule = promote_subrules(child_rule, child_rule)
+    array_result = []
+    for v in value:
+        child_rule['value'] = v
+        array_result.append(apply_rule(child_rule))
+    return array_result
+
+def object_processor(rule):
+    rule['object_min'] = rule.get('object_min', 1)
+    rule['object_max'] = rule.get('object_max', MAX_ITEMS)
+    provided_object = VALIDATORS[rule['type']]['func'](rule)
+    object_result = {}
+    for k, v in rule['object_keys'].items():
+        try:
+            value = provided_object[k]
+        except KeyError:
+            if "optional" in v and v['optional'] is False:
+                raise UnprocessableEntityException('Required object fields: {}'.format(k))
+            else:
+                continue
+        # Start with the sub-rule definition and supplement with parent's key-values as needed
+        child_rule = copy.copy(v)
+        child_rule['key'] = rule['key']
+        child_rule['value'] = value
+        child_rule = promote_subrules(child_rule, v)
+        object_result[k] = apply_rule(child_rule)
+    return object_result
 
 
 def promote_subrules(child_rule, source={}):
