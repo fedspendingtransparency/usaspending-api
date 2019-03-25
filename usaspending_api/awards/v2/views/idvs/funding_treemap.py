@@ -1,4 +1,3 @@
-import copy
 from collections import OrderedDict
 
 from psycopg2.sql import Identifier, Literal, SQL
@@ -62,7 +61,6 @@ class IDVFundingBaseViewSet(APIDocumentationView):
             group_by=SQL(group_by),
         )
         return execute_sql_to_ordered_dictionary(sql)
-
 
 
 @validate_post_request([get_internal_or_generated_award_id_model()])

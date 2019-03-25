@@ -85,14 +85,13 @@ VALIDATORS = {
 }
 
 
-
 # Decorator
 
 # Note: Because we are using class based views, this is the only way to create a decorator that takes arguments.
 # With CBVs, the 'post' function recieves an instance of the CBV itself, rather than a request object
 # As a result, this decorator specifies that it decorates the 'post' function using the method_decorator
 # util function. In later iterations, we will need to add GET decorators that handle the GET data
-# somewhat differently. 
+# somewhat differently.
 def validate_post_request(model_list):
     def class_based_decorator(ClassBasedView):
         def view_func(function):
@@ -106,7 +105,7 @@ def validate_post_request(model_list):
 
 
 # Main entrypoint
-def validation_function(request, model_list):   
+def validation_function(request, model_list):
     new_request_data = TinyShield(copy.deepcopy(model_list)).block(request.data)
     if hasattr(request.data, "_mutable"):
         mutable = request.data._mutable
