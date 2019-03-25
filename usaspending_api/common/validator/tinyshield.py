@@ -1,6 +1,8 @@
 import logging
 import copy
 
+from django.utils.decorators import method_decorator
+
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
 from usaspending_api.common.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
@@ -81,6 +83,42 @@ VALIDATORS = {
         }
     }
 }
+
+
+
+# Decorator
+
+# Note: Because we are using class based views, this is the only way to create a decorator that takes arguments.
+# With CBVs, the 'post' function recieves an instance of the CBV itself, rather than a request object
+# As a result, this decorator specifies that it decorates the 'post' function using the method_decorator
+# util function. In later iterations, we will need to add GET decorators that handle the GET data
+# somewhat differently. 
+def validate_post_request(model_list):
+    def class_based_decorator(ClassBasedView):
+        def view_func(function):
+            def wrap(request, *args, **kwargs):
+                request = validation_function(request, model_list)
+                return function(request, *args, **kwargs)
+            return wrap
+        ClassBasedView.post = method_decorator(view_func)(ClassBasedView.post)
+        return ClassBasedView
+    return class_based_decorator
+
+
+# Main entrypoint
+def validation_function(request, model_list):   
+    new_request_data = TinyShield(copy.deepcopy(model_list)).block(request.data)
+    if hasattr(request.data, "_mutable"):
+        mutable = request.data._mutable
+        request.data._mutable = True
+    for key in list(request.data.keys()):
+        if key not in new_request_data.keys():
+            del request.data[key]
+    for key in new_request_data.keys():
+        request.data[key] = new_request_data[key]
+    if hasattr(request.data, "_mutable"):
+        request.data._mutable = mutable
+    return request
 
 
 class TinyShield:
