@@ -201,11 +201,16 @@ def validate_request(model_list):
 def validation_function(request, model_list):
     rules = check_models(model_list)
     new_request_data = block(request.data, rules)
+    if hasattr(request.data, "_mutable"):
+        mutable = request.data._mutable
+        request.data._mutable = True
     for key in list(request.data.keys()):
         if key not in new_request_data.keys():
             del request.data[key]
     for key in new_request_data.keys():
         request.data[key] = new_request_data[key]
+    if hasattr(request.data, "_mutable"):
+        request.data._mutable = mutable
     return request
 
 
