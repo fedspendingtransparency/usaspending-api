@@ -314,7 +314,7 @@ def apply_rule(rule):
             raise Exception('Invalid Type {} in rule'.format(rule['type']))
     # Array is a "special" type since it is a list of other types which need to be validated
     elif rule['type'] == 'array':
-        _return =  array_processor(rule);
+        _return = array_processor(rule)
     # Object is a "special" type since it is comprised of other types which need to be validated
     elif rule['type'] == 'object':
         _return = object_processor(rule)
@@ -350,6 +350,7 @@ def array_processor(rule):
         child_rule['value'] = v
         array_result.append(apply_rule(child_rule))
     return array_result
+
 
 def object_processor(rule):
     rule['object_min'] = rule.get('object_min', 1)
