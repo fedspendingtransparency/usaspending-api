@@ -8,8 +8,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.validator.tinyshield import validate_post_request
+
 
 FUNDING_TREEMAP_SQL = SQL("""
     with cte as (
@@ -46,10 +47,6 @@ class IDVFundingBaseViewSet(APIDocumentationView):
     """
 
     @staticmethod
-    def _parse_and_validate_request(request: dict) -> dict:
-        return TinyShield([get_internal_or_generated_award_id_model()]).block(request)
-
-    @staticmethod
     def _business_logic(request_data: dict, columns: str, group_by: str) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
@@ -66,6 +63,7 @@ class IDVFundingBaseViewSet(APIDocumentationView):
         return execute_sql_to_ordered_dictionary(sql)
 
 
+@validate_post_request([get_internal_or_generated_award_id_model()])
 class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
 
     """
@@ -78,8 +76,7 @@ class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
                      count(distinct ca.awarding_agency_id) awarding_agency_count,
                      count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count"""
         group_by = ""
-        request_data = self._parse_and_validate_request(request.data)
-        results = self._business_logic(request_data, columns, group_by)
+        results = self._business_logic(request.data, columns, group_by)
         return Response(results[0])
 
 
