@@ -292,7 +292,7 @@ def swap_aliases(client, index):
             client.indices.close(old_index)
             printf({'msg': 'Removing aliases & closing "{}"'.format(old_index),
                     'job': None, 'f': 'ES Alias Drop'})
-    except Exception as e:
+    except Exception:
         printf({'msg': 'ERROR: no aliases found for {}'.format(alias_patterns),
                 'f': 'ES Alias Drop'})
 

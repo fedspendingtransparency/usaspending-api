@@ -162,18 +162,18 @@ class DataLoaderThread(Process):
 
                 if collision_instance is not None:
                     behavior = self.references["collision_behavior"]
-                    if behavior is "delete":  # Delete the row from the data store and load new row
+                    if behavior == "delete":  # Delete the row from the data store and load new row
                         collision_instance.delete()
-                    if behavior is "update":  # Update the row in the data store with new values from the CSV
+                    if behavior == "update":  # Update the row in the data store with new values from the CSV
                         update = True
-                    if behavior is "skip":  # Skip the row
+                    if behavior == "skip":  # Skip the row
                         self.data_queue.task_done()
                         continue
-                    if behavior is "skip_and_complain":  # Log a warning and skip the row
+                    if behavior == "skip_and_complain":  # Log a warning and skip the row
                         self.references['logger'].warning('Hit a collision on row %s' % (row))
                         self.data_queue.task_done()
                         continue
-                    if behavior is "die":  # Raise an exception and cease execution
+                    if behavior == "die":  # Raise an exception and cease execution
                         raise Exception("Hit collision on row %s" % (row))
 
             if not update:
