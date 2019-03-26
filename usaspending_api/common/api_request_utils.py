@@ -11,6 +11,7 @@ from usaspending_api.references.models import Location
 
 class FiscalYear():
     """Represents a federal fiscal year."""
+
     def __init__(self, fy):
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
@@ -19,10 +20,6 @@ class FiscalYear():
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
         self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
-    """
-    Creates a filter object using date field, will return a Q object such that
-    Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
-    """
     def get_filter_object(self, date_field, as_dict=False):
         """
         Create a filter object using date field, will return a Q object
@@ -39,7 +36,16 @@ class FiscalYear():
 
 
 class FilterGenerator():
-    """Support for multiple methods of dynamically creating filter queries."""
+    """
+    Creating the class requires a filter map - this maps one parameter filter
+    key to another, for instance you could map "fpds_code" to "subtier_agency__fpds_code"
+    This is useful for allowing users to filter on a fk relationship without
+    having to specify the more complicated filter
+    Additionally, ignored parameters specifies parameters to ignore. Always includes
+    to ["page", "limit", "last"]
+    """
+
+    # Support for multiple methods of dynamically creating filter queries.
     operators = {
         # Django standard operations
         'equals': '',
@@ -64,14 +70,6 @@ class FilterGenerator():
         'range_intersect': 'range_intersect'
     }
 
-    """
-    Creating the class requires a filter map - this maps one parameter filter
-    key to another, for instance you could map "fpds_code" to "subtier_agency__fpds_code"
-    This is useful for allowing users to filter on a fk relationship without
-    having to specify the more complicated filter
-    Additionally, ignored parameters specifies parameters to ignore. Always includes
-    to ["page", "limit", "last"]
-    """
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
@@ -176,7 +174,7 @@ class FilterGenerator():
                 value_format = filt['value_format']
 
             # Special multi-field case for full-text search
-            if isinstance(field, list) and operation is '__search':
+            if isinstance(field, list) and operation == '__search':
                 # We create the search vector and attach it to this object
                 sv = SearchVector(*field)
                 self.search_vectors.append(sv)
@@ -188,12 +186,12 @@ class FilterGenerator():
                 return Q(**q_kwargs)
 
             # Handle special operations
-            if operation is 'fy':
+            if operation == 'fy':
                 fy = FiscalYear(value)
                 if negate:
                     return ~fy.get_filter_object(field)
                 return fy.get_filter_object(field)
-            if operation is 'range_intersect':
+            if operation == 'range_intersect':
                 # If we have a value_format and it is fy, convert it to the
                 # date range for that fiscal year
                 if value_format and value_format == 'fy':
@@ -202,7 +200,7 @@ class FilterGenerator():
                 if negate:
                     return ~self.range_intersect(field, value)
                 return self.range_intersect(field, value)
-            if operation is 'in':
+            if operation == 'in':
                 # make in operation case insensitive for string fields
                 if self.is_string_field(field):
                     q_obj = Q()
@@ -217,12 +215,12 @@ class FilterGenerator():
                 else:
                     # Otherwise, use built in django in
                     operation = "__in"
-            if operation is '__icontains' and isinstance(value, list):
+            if operation == '__icontains' and isinstance(value, list):
                 # In cases where we have a list of contains (e.g. ArrayField searches)
                 # we need to not do this case insensitive, as ArrayField's don't have
                 # icontains implemented like contains
                 operation = "__contains"
-            if operation is '' and self.is_string_field(field):
+            if operation == '' and self.is_string_field(field):
                 # If we're doing a simple comparison, we need to use iexact for
                 # string fields
                 operation = "__iexact"
@@ -251,7 +249,7 @@ class FilterGenerator():
                 else:
                     if 'field' in filt and 'operation' in filt and 'value' in filt:
                         if filt['operation'] not in FilterGenerator.operators and\
-                                filt['operation'][:4] is not 'not_' and\
+                                filt['operation'][:4] != 'not_' and\
                                 filt['operation'][4:] not in FilterGenerator.operators:
                             raise InvalidParameterException("Invalid operation: " + filt['operation'])
                         if filt['operation'] == 'in':
@@ -291,22 +289,23 @@ class FilterGenerator():
 
     # Special operation functions follow
 
-    """
-    Range intersect function - evaluates if a range defined by two fields overlaps
-    a range of values
-    Here's a picture:
-                    f1 - - - f2
-                          r1 - - - r2     - Case 1
-                r1 - - - r2               - Case 2
-                    r1 - - - r2           - Case 3
-    All of the ranges defined by [r1,r2] intersect [f1,f2]
-    i.e. f1 <= r2 && r1 <= f2 we intersect!
-    Returns: Q object to perform this operation
-    Parameters - Make sure these are in order:
-              fields - A list defining the fields forming the first range (in order)
-              values - A list of the values which define the second range (in order)
-    """
     def range_intersect(self, fields, values):
+        """
+        Range intersect function - evaluates if a range defined by two fields overlaps
+        a range of values
+        Here's a picture:
+                        f1 - - - f2
+                              r1 - - - r2     - Case 1
+                    r1 - - - r2               - Case 2
+                        r1 - - - r2           - Case 3
+        All of the ranges defined by [r1,r2] intersect [f1,f2]
+        i.e. f1 <= r2 && r1 <= f2 we intersect!
+        Returns: Q object to perform this operation
+        Parameters - Make sure these are in order:
+                  fields - A list defining the fields forming the first range (in order)
+                  values - A list of the values which define the second range (in order)
+        """
+
         # Create the Q filter case
         q_case = {}
         q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
