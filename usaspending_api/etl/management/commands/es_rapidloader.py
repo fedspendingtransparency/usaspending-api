@@ -9,8 +9,8 @@ from time import perf_counter
 from time import sleep
 
 from usaspending_api import settings
+from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
-from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
@@ -168,7 +168,7 @@ class Command(BaseCommand):
                 if os.path.exists(filename):
                     # This is mostly for testing. If previous CSVs still exist skip the download for that file
                     if self.config['stale']:
-                        new_job.count = csv_row_count(filename)
+                        new_job.count = count_rows_in_csv_file(filename, has_header=True, safe=False)
                         printf({
                             'msg': 'Using existing file: {} | count {}'.format(filename, new_job.count),
                             'job': new_job.name,
