@@ -15,10 +15,10 @@ from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
-from usaspending_api.etl.es_etl_helpers import swap_aliases
-from usaspending_api.etl.es_etl_helpers import take_snapshot
 from usaspending_api.etl.es_etl_helpers import printf
 from usaspending_api.etl.es_etl_helpers import process_guarddog
+from usaspending_api.etl.es_etl_helpers import swap_aliases
+from usaspending_api.etl.es_etl_helpers import take_snapshot
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
