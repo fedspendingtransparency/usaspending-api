@@ -70,7 +70,7 @@ GET_CONTRACTS_SQL = SQL("""
         parent_award pap
         inner join awards ap on ap.id = pap.award_id
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
-            ac.type not like 'IDV\_%%'
+            ac.type not like 'IDV%%'
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
     where
         pap.{award_id_column} = {award_id}

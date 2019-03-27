@@ -13,7 +13,7 @@ class Command(BaseCommand):
     logger = logging.getLogger('console')
 
     LIMIT = 10000
-    regexp = '^(\d{5})\-?(\d{4})?$'
+    regexp = r'^(\d{5})\-?(\d{4})?$'
 
     fixable_rows = """
               SELECT location_id
