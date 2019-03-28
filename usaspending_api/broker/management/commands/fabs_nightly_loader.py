@@ -414,10 +414,15 @@ class Command(BaseCommand):
         else:
             logger.info('Nothing to insert...')
 
-        # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).delete()
-        ExternalDataLoadDate(
-            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
-        ).save()
+        # If an end date was provided, do NOT save the last_load_date.
+        # last_load_date is designed for incremental, periodic updates,
+        # not targeted time periods.
+        if load_to_date is None:
+
+            # Update the date for the last time the data load was run
+            ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).delete()
+            ExternalDataLoadDate(
+                last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
+            ).save()
 
         logger.info('FABS UPDATE FINISHED!')
