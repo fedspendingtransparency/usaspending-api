@@ -27,7 +27,7 @@ logger = logging.getLogger('console')
 AWARD_MAPPINGS = {
     'Contracts': {
         'agency_field': 'agency_id',
-        'award_types': ['contracts'],
+        'award_types': ['contracts', 'idvs'],
         'column_headers': {
             0: 'agency_id', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
             4: 'parent_award_id', 5: 'transaction_number'
