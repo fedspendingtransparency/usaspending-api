@@ -31,35 +31,34 @@ class Command(BaseCommand):
     help = "Update FABS data in USAspending from a Broker DB"
 
     @staticmethod
-    def get_fabs_records_to_delete(date):
+    def get_fabs_records_to_delete(date, end_date):
         db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join(
-            [
-                "SELECT UPPER(afa_generated_unique) as afa_generated_unique",
-                "FROM published_award_financial_assistance",
-                "WHERE created_at >= %s",
-                "AND UPPER(correction_delete_indicatr) = 'D'",
-            ]
-        )
+        db_query = """
+            SELECT UPPER(afa_generated_unique) AS afa_generated_unique
+            FROM   published_award_financial_assistance
+            WHERE  created_at >= %(start_date)s
+            AND    (created_at < %(end_date)s OR %(end_date)s is null)
+            AND    UPPER(correction_delete_indicatr) = 'D'
+        """
 
-        db_cursor.execute(db_query, [date])
+        db_cursor.execute(db_query, {'start_date': date, 'end_date': end_date})
         db_rows = [id[0] for id in db_cursor.fetchall()]
         logger.info("Number of records to delete: %s" % str(len(db_rows)))
         return db_rows
 
     @staticmethod
-    def get_fabs_transaction_ids(date):
+    def get_fabs_transaction_ids(date, end_date):
         db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join(
-            [
-                "SELECT published_award_financial_assistance_id",
-                "FROM published_award_financial_assistance",
-                "WHERE created_at >= %s",
-                "AND is_active IS True",  # add UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D' ?
-            ]
-        )
+        db_query = """
+            SELECT published_award_financial_assistance_id
+            FROM   published_award_financial_assistance
+            WHERE  created_at >= %(start_date)s
+            AND    (created_at < %(end_date)s OR %(end_date)s is null)
+            AND    is_active IS True
+            AND    UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D'
+        """
 
-        db_cursor.execute(db_query, [date])
+        db_cursor.execute(db_query, {'start_date': date, 'end_date': end_date})
         db_rows = [id[0] for id in db_cursor.fetchall()]
         logger.info("Number of records to insert/update: %s" % str(len(db_rows)))
         return db_rows
@@ -346,10 +345,19 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--date',
-            dest="date",
-            nargs='+',
-            type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY",
+            help="(OPTIONAL) Run the loader for FABS submissions created on or after this date. "
+                 "Omitting this value will cause submissions created since the last run to be loaded. "
+                 "Expected format: MM/DD/YYYY",
+            metavar='START_DATE',
+            required=False
+        )
+
+        parser.add_argument(
+            '--end-date',
+            help="(OPTIONAL) Run the loader for FABS submissions created before this date. "
+                 "Omitting this value will result in all submissions created from START_DATE onward to be loaded. "
+                 "Expected format: MM/DD/YYYY",
+            required=False
         )
 
     def handle(self, *args, **options):
@@ -360,19 +368,22 @@ class Command(BaseCommand):
         data_load_date_obj = ExternalDataLoadDate.objects.filter(external_data_type_id=fabs_load_db_id).first()
 
         if options.get("date"):  # if provided, use cli data
-            load_from_date = options.get("date")[0]
+            load_from_date = options.get("date")
         elif data_load_date_obj:  # else if last run is in DB, use that
             load_from_date = data_load_date_obj.last_load_date
         else:  # Default is yesterday at midnight
             load_from_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
 
-        logger.info('Processing data for FABS starting from %s' % load_from_date)
+        load_to_date = options.get("end_date")
+
+        end_log = ' ending before %s' % load_to_date if load_to_date else ''
+        logger.info('Processing data for FABS starting from %s%s' % (load_from_date, end_log))
 
         with timer('retrieving/diff-ing FABS Data', logger.info):
-            upsert_transactions = self.get_fabs_transaction_ids(date=load_from_date)
+            upsert_transactions = self.get_fabs_transaction_ids(load_from_date, load_to_date)
 
         with timer("obtaining delete records", logger.info):
-            ids_to_delete = self.get_fabs_records_to_delete(date=load_from_date)
+            ids_to_delete = self.get_fabs_records_to_delete(load_from_date, load_to_date)
 
         if ids_to_delete:
             self.store_deleted_fabs(ids_to_delete)
