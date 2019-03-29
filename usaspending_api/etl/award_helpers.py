@@ -124,17 +124,22 @@ def update_contract_awards(award_tuple=None):
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
     # Gather additional fpds fields such as agency_ids and types
+    # Indefinite Delivery Contract
     extra_fpds_fields = (
         "extra_fpds_fields AS ("
         "  SELECT"
         "    tx.award_id,"
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type "
         "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
         "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
         "      WHEN idv_type = 'B' AND "
         "        (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') "
         "        THEN type_of_idc_description "
+        "      WHEN idv_type = 'B' THEN 'INDEFINITE DELIVERY CONTRACT' "
         "      ELSE idv_type_description END AS type_description, "
         "    agency_id,"
         "    referenced_idv_agency_iden"
@@ -354,6 +359,12 @@ def award_types(row):
         award_type = row.get("contract_award_type")
     elif idv_type == "B" and type_of_idc is not None:
         award_type = "IDV_B_{}".format(type_of_idc)
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / REQUIREMENTS":
+        award_type = "IDV_B_A"
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / INDEFINITE QUANTITY":
+        award_type = "IDV_B_B"
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / DEFINITE QUANTITY":
+        award_type = "IDV_B_C"
     else:
         award_type = "IDV_{}".format(idv_type)
 
@@ -361,6 +372,8 @@ def award_types(row):
         award_type_desc = row.get("contract_award_type_desc")
     elif idv_type == "B" and type_of_idc_description not in (None, "NAN"):
         award_type_desc = type_of_idc_description
+    elif idv_type == "B":
+        award_type_desc = "INDEFINITE DELIVERY CONTRACT"
     else:
         award_type_desc = row.get("idv_type_description")
 
