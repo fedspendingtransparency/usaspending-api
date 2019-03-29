@@ -37,7 +37,7 @@ class Command(BaseCommand):
             SELECT UPPER(afa_generated_unique) AS afa_generated_unique
             FROM   published_award_financial_assistance
             WHERE  created_at >= %(start_date)s
-            AND    (created_at < %(end_date)s OR %(end_date)s is null)
+            AND    (created_at < %(end_date)s OR %(end_date)s IS NULL)
             AND    UPPER(correction_delete_indicatr) = 'D'
         """
 
@@ -53,8 +53,8 @@ class Command(BaseCommand):
             SELECT published_award_financial_assistance_id
             FROM   published_award_financial_assistance
             WHERE  created_at >= %(start_date)s
-            AND    (created_at < %(end_date)s OR %(end_date)s is null)
-            AND    is_active IS True
+            AND    (created_at < %(end_date)s OR %(end_date)s IS NULL)
+            AND    is_active IS TRUE
             AND    UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D'
         """
 
