@@ -131,9 +131,12 @@ def update_contract_awards(award_tuple=None):
         "    tx.award_id,"
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type "
         "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
         "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
         "      WHEN idv_type = 'B' AND "
@@ -316,37 +319,6 @@ def get_awarding_agency(row):
         # No matching transaction found, so find/create Award by using toptier agency only, since CGAC code is the only
         # piece of awarding agency info that we have.
         return Agency.get_by_toptier(row.agency_identifier)
-
-
-def update_idv_awards(award_tuple=None):
-    award_predicate = ""
-    sql = """
-UPDATE awards a
-SET
-  type = CASE
-        WHEN t.idv_type = 'B' AND t.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', t.type_of_idc::text)
-        ELSE CONCAT('IDV_', t.idv_type::text) END,
-  type_description = CASE
-        WHEN t.idv_type = 'B' AND
-            (t.type_of_idc_description IS DISTINCT FROM NULL AND t.type_of_idc_description <> 'NAN')
-            THEN t.type_of_idc_description
-        ELSE t.idv_type_description END
-FROM transaction_fpds t
-WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
-
-    if award_tuple:
-        award_predicate = " AND award_id IN %s"
-
-    with connection.cursor() as cursor:
-        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
-        # list (even if it uses the same one!)
-        if award_tuple:
-            cursor.execute(sql.format(award_predicate), [award_tuple])
-        else:
-            cursor.execute(sql.format(award_predicate))
-        rows = cursor.rowcount
-
-    return rows
 
 
 def award_types(row):

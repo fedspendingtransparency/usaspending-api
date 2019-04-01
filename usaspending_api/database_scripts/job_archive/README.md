@@ -4,9 +4,8 @@ Store one-off Python and SQL scripts used for data change operations.
 
 # Mandatory header for all script files in this directory
 ```
-Created Date: YYYY-MM-DD
-Last Modified: YYY-MM-DD
-Expected CLI: $ <   >
+Jira Ticket Number(s): <DEV-..., >
+Expected CLI: $ <psql .... | python3.5 ....>
 Purpose: <a sentence to paragraph on the changes this script performs and expected outcome>
 ```
 
