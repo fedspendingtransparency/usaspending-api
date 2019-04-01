@@ -124,7 +124,6 @@ def update_contract_awards(award_tuple=None):
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
     # Gather additional fpds fields such as agency_ids and types
-    # Indefinite Delivery Contract
     extra_fpds_fields = (
         "extra_fpds_fields AS ("
         "  SELECT"
@@ -322,6 +321,19 @@ def get_awarding_agency(row):
 
 
 def award_types(row):
+    """
+        "Award Type" for FPDS transactions
+            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type`
+            elif `idv_type` == B &`type_of_idc` is present: use "IDV_B_" + `type_of_idc`
+            elif `idv_type` == B & ("case" for type_of_idc_description for specific IDC type): use IDV_B_*
+            else use "IDV_" + `idv_type`
+
+        "Award Type Description" for FPDS transactions
+            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type_desc`
+            elif `idv_type` == B & `type_of_idc_description` <> null/NAN: use `type_of_idc_description`
+            elif `idv_type` == B: use "INDEFINITE DELIVERY CONTRACT"
+            else: use `idv_type_description`
+    """
     pulled_from = row.get("pulled_from", None)
     idv_type = row.get("idv_type", None)
     type_of_idc = row.get("type_of_idc", None)
