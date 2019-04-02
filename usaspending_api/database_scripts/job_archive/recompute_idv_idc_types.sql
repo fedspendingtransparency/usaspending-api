@@ -1,6 +1,5 @@
--- Created Date: 2018-11-26 (jira ticket)
--- Last Modified: 2019-04-01
--- Expected CLI: psql -v ON_ERROR_STOP=1 -c '\timing' -f recompute_idv_types.sql $DATABASE_URL
+-- DEV-2226
+-- Expected CLI: psql -v ON_ERROR_STOP=1 -c '\timing' -f recompute_idv_idc_types.sql $DATABASE_URL
 --
 -- Purpose: Recalculate the IDV IDC sub-types (IDV_B_*) using `type_of_idc_description` which is
 --    more populated than `type_of_idc`. Fallback is to store IDV_B as currently.
@@ -28,12 +27,10 @@ WHERE t.transaction_id = tn.id AND t.pulled_from = 'IDV' and t.idv_type = 'B';
 DO $$ BEGIN RAISE NOTICE 'Completed transaction_normalized'; END $$;
 DO $$ BEGIN RAISE NOTICE 'Updating awards'; END $$;
 
-WITH temp_type_and_category AS (
-    SELECT
-        tn.id,
-        tn.type,
-        tn.type_description,
-        CASE
+
+UPDATE awards a
+SET
+    category =  CASE
             WHEN tn.type = '09' THEN 'insurance'
             WHEN tn.type = '11' THEN 'other'
             WHEN tn.type in ('06', '10') THEN 'direct payment'
@@ -41,19 +38,15 @@ WITH temp_type_and_category AS (
             WHEN tn.type IN ('A', 'B', 'C', 'D') THEN 'contract'
             WHEN tn.type IN ('02', '03', '04', '05') THEN 'grant'
             WHEN tn.type ~~ 'IDV%' THEN 'idv'
-            ELSE NULL END AS category
-    FROM transaction_normalized tn
-)
-UPDATE awards a
-SET
-    category = t.category,
-    type = t.type,
-    type_description = t.type_description
+            ELSE NULL END,
+    type = tn.type,
+    type_description = tn.type_description
 FROM
-    temp_type_and_category t
+    transaction_normalized tn
 WHERE
-    t.id = a.latest_transaction_id AND
-    (t.category IS DISTINCT FROM a.category OR t.type IS DISTINCT FROM a.type);
+    tn.type ILIKE 'IDV%' AND
+    tn.id = a.latest_transaction_id AND
+    (tn.type_description IS DISTINCT FROM a.type_description OR tn.type IS DISTINCT FROM a.type);
 
 DO $$ BEGIN RAISE NOTICE 'Completed awards'; END $$;
 DO $$ BEGIN RAISE NOTICE 'Updating subaward'; END $$;
