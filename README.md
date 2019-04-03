@@ -76,6 +76,11 @@ To a directory outside your project. From that directory, run:
 
     `cat *.sql | psql $DATABASE_URL -f -`
 
+You should still get an error that the role "readonly" does not exist. To fix this, we add it manually:
+
+    `psql $DATABASE_URL`
+    `CREATE ROLE readonly;`
+
 ## API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
