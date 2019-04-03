@@ -91,7 +91,7 @@ def subaward_filter(filters, for_downloads=False):
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(latest_transaction_id__isnull=False)
             queryset &= queryset.extra(
-                where=['"latest_transaction_id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+                where=['"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
             min_date = API_SEARCH_MIN_DATE
