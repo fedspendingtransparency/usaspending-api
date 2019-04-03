@@ -78,8 +78,7 @@ To a directory outside your project. From that directory, run:
 
 You should still get an error that the role "readonly" does not exist. To fix this, we add it manually:
 
-    `psql $DATABASE_URL`
-    `CREATE ROLE readonly;`
+    `psql $DATABASE_URL -c "CREATE ROLE readonly"`
 
 ## API
 
