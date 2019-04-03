@@ -66,7 +66,13 @@ Start up the site
 
     (usaspending-api) $ ./manage.py runserver
 
-The application will be available at `http://localhost:8000`
+The application will be available at `http://localhost:8000`, but some endpoints won't work because they are dependent on materialized views to run. To create them, run from your usaspending-api folder:
+
+    `python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=<destination dir>`
+    
+To a directory outside your project. From that directory, run:
+
+    `cat *.sql | psql $DATABASE_URL -f -`
 
 ## API
 
