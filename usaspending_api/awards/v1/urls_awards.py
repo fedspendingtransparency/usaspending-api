@@ -9,9 +9,13 @@ award_detail = views.AwardRetrieveViewSet.as_view({
     'get': 'retrieve', 'post': 'retrieve'})
 award_total = views.AwardAggregateViewSet.as_view({
     'get': 'list', 'post': 'list'})
+faba_list = views.FinancialAccountsByAwardsListViewset.as_view({
+    'get': 'list', 'post': 'list'
+    })
 
 urlpatterns = [
     url(r'^$', award_list, name='award-list'),
     url(r'(?P<pk>[0-9]+)/$', award_detail, name='award-detail'),
-    url(r'^total/', award_total, name='award-total')
+    url(r'^total/', award_total, name='award-total'),
+    url(r'^faba/', faba_list, name='faba-list')
 ]
