@@ -42,23 +42,19 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/naics](/api/v2/autocomplete/naics)|POST| Returns NAICS objects matching the specified search text|
 |[/api/v2/autocomplete/psc](/api/v2/autocomplete/psc)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.|
 |[/api/v2/autocomplete/recipient](/api/v2/autocomplete/recipient)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list od legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
-|[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/)|POST| Returns all award spending by recipient for a given fiscal year and agency id
-    endpoint_doc: /award_spending/recipient.md|
+|[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/)|POST| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/AWARD_ID/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
 |[/api/v2/awards/idvs/amounts/AWARD_ID/](/api/v2/awards/idvs/amounts/69309317)|GET| Returns the direct children of an IDV|
 |[/api/v2/awards/idvs/awards/](/api/v2/awards/idvs/awards/)|POST| Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle award (IDV)|
 |[/api/v2/awards/idvs/funding/](/api/v2/awards/idvs/funding/)|POST| Returns File C funding records associated with an IDV|
 |[/api/v2/awards/last_updated](/api/v2/awards/last_updated)|GET| Returns date of last update|
 |[/api/v2/budget_functions/list_budget_functions/](/api/v2/budget_functions/list_budget_functions/)|GET| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
-|[/api/v2/budget_functions/list_budget_subfunctions/](/api/v2/budget_functions/list_budget_subfunctions/)|???| Returns all Budget Functions associated with a TAS, ordered by Budget
-        Function code|
+|[/api/v2/budget_functions/list_budget_subfunctions/](/api/v2/budget_functions/list_budget_subfunctions/)|POST| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
 |[/api/v2/bulk_download/awards](/api/v2/bulk_download/awards)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/bulk_download/list_agencies](/api/v2/bulk_download/list_agencies)|POST| Lists all the agencies and the subagencies or federal accounts associated under specific agencies.|
 |[/api/v2/bulk_download/list_monthly_files](/api/v2/bulk_download/list_monthly_files)|POST| Lists the monthly files associated with the requested params|
-|[/api/v2/bulk_download/status](/api/v2/bulk_download/status)|GET| Returns the current status of a download job that that has been requested with the `v2/download/awards/` or
-     `v2/download/transaction/` endpoint that same day.|
-|[/api/v2/bulk_download/status](/api/v2/bulk_download/status)|POST| Returns the current status of a download job that that has been requested with the `v2/download/awards/` or
-     `v2/download/transaction/` endpoint that same day.|
+|[/api/v2/bulk_download/status](/api/v2/bulk_download/status)|GET| Returns the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.|
+|[/api/v2/bulk_download/status](/api/v2/bulk_download/status)|POST| Returns the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.|
 |[/api/v2/download/accounts](/api/v2/download/accounts)|POST| Generates zip file for download of account data in CSV format|
 |[/api/v2/download/awards](/api/v2/download/awards)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count](/api/v2/download/count)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
