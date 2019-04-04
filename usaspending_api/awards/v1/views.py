@@ -4,7 +4,8 @@ from rest_framework import viewsets
 
 from usaspending_api.awards.models import Award, Subaward, FinancialAccountsByAwards
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializer, TransactionNormalizedSerializer, FinancialAccountsByAwardsSerializer
+from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializer, TransactionNormalizedSerializer,  \
+                                               FinancialAccountsByAwardsSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
@@ -185,6 +186,7 @@ class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
+
 class FABAFilter(filters.FilterSet):
 
     class Meta:
@@ -192,13 +194,14 @@ class FABAFilter(filters.FilterSet):
         # You can create any relationships you want here using ORM notation
         fields = ('piid', 'treasury_account__agency_id')
 
+
 class FinancialAccountsByAwardsListViewset(viewsets.ReadOnlyModelViewSet):
 
     '''
         I spent a lot of time investigating the serializers here trying to come up with a better solution. However
         ultimately I determined that the LimitableSerializer class which we base all our serializers on is actually
         fairly well put together. It handles prefetching well, so that the nested serializers don't prompt new queries,
-        and it doesn't really mess with the core functionality of the serializer as written in DRF. My main objection 
+        and it doesn't really mess with the core functionality of the serializer as written in DRF. My main objection
         to them is having to specify default_fields unless verbose is set. If I was ultimately going to rewrite this,
         I might switch that around so that verbose is the default. I did not feel that that was worth investing time in
         for this investigation however.
@@ -220,7 +223,6 @@ class FinancialAccountsByAwardsListViewset(viewsets.ReadOnlyModelViewSet):
 
         return queryset
 
-
     def get_queryset(self):
 
         queryset = FinancialAccountsByAwards.objects.all()
@@ -229,23 +231,11 @@ class FinancialAccountsByAwardsListViewset(viewsets.ReadOnlyModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        try:
-            # Get the queryset (this will handle filtering and ordering)
-            queryset = self.filter_queryset(self.get_queryset())
-            # Grab the page of data
-            page = self.paginate_queryset(queryset)
-            # Serialize the page
-            serializer = self.get_serializer(page, read_only=True, many=True)
-            # Return the paginated response
-            return self.get_paginated_response(serializer.data)
-        except InvalidParameterException as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_400_BAD_REQUEST
-            self.exception_logger.exception(e)
-            return Response(response, status=status_code)
-        except Exception as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            self.exception_logger.exception(e)
-            return Response(response, status=status_code)
-
+        # Get the queryset (this will handle filtering and ordering)
+        queryset = self.filter_queryset(self.get_queryset())
+        # Grab the page of data
+        page = self.paginate_queryset(queryset)
+        # Serialize the page
+        serializer = self.get_serializer(page, read_only=True, many=True)
+        # Return the paginated response
+        return self.get_paginated_response(serializer.data)
