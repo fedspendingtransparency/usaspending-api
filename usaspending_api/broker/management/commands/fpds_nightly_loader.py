@@ -13,7 +13,8 @@ from django.db.models import Count
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
