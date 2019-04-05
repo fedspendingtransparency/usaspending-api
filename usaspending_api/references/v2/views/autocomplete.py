@@ -215,7 +215,6 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
                 'term':glossary_terms.count()
             }
         }
-
         return Response(response)
 
 
