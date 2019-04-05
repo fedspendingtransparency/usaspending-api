@@ -91,7 +91,8 @@ def subaward_filter(filters, for_downloads=False):
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(latest_transaction_id__isnull=False)
 
-            sql_fragment = '"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'
+            # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
+            sql_fragment = '"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
             queryset &= queryset.extra(where=[sql_fragment.format(','.join(transaction_ids))])
 
         elif key == "time_period":
