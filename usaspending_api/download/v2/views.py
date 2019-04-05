@@ -16,19 +16,27 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
-                                              write_to_download_log as write_to_log)
-from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_AWARD_FILTER_DEFAULTS,
-                                              YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS,
-                                              ACCOUNT_FILTER_DEFAULTS)
+from usaspending_api.download.helpers import (
+    check_types_and_assign_defaults,
+    parse_limit,
+    validate_time_periods,
+    write_to_download_log as write_to_log,
+)
+from usaspending_api.download.lookups import (
+    JOB_STATUS_DICT,
+    VALUE_MAPPINGS,
+    SHARED_AWARD_FILTER_DEFAULTS,
+    YEAR_CONSTRAINT_FILTER_DEFAULTS,
+    ROW_CONSTRAINT_FILTER_DEFAULTS,
+    ACCOUNT_FILTER_DEFAULTS,
+)
 from usaspending_api.download.models import DownloadJob
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-        redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
 
     def post(self, request, request_type='award'):
@@ -61,9 +69,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         request_agency = json_request.get('filters', {}).get('agency', None)
         final_output_zip_name = create_unique_filename(json_request["download_types"], request_agency)
         download_job = DownloadJob.objects.create(
-            job_status_id=JOB_STATUS_DICT['ready'],
-            file_name=final_output_zip_name,
-            json_request=ordered_json_request
+            job_status_id=JOB_STATUS_DICT['ready'], file_name=final_output_zip_name, json_request=ordered_json_request
         )
 
         log_new_download_job(request, download_job)
@@ -80,7 +86,8 @@ class BaseDownloadViewSet(APIDocumentationView):
         for required_param in ['award_levels', 'filters']:
             if required_param not in request_data:
                 raise InvalidParameterException(
-                    'Missing one or more required query parameters: {}'.format(required_param))
+                    'Missing one or more required query parameters: {}'.format(required_param)
+                )
 
         if not isinstance(request_data['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
@@ -162,7 +169,8 @@ class BaseDownloadViewSet(APIDocumentationView):
         for required_param in ["account_level", "filters"]:
             if required_param not in request_data:
                 raise InvalidParameterException(
-                    'Missing one or more required query parameters: {}'.format(required_param))
+                    'Missing one or more required query parameters: {}'.format(required_param)
+                )
 
         # Validate account_level parameters
         valid_account_levels = ["federal_account", "treasury_account"]
@@ -215,8 +223,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             # Send a SQS message that will be processed by another server which will eventually run
             # csv_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
-                message='Passing download_job {} to SQS'.format(download_job.download_job_id),
-                download_job=download_job
+                message='Passing download_job {} to SQS'.format(download_job.download_job_id), download_job=download_job
             )
             queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
@@ -244,7 +251,7 @@ class BaseDownloadViewSet(APIDocumentationView):
             'total_size': download_job.file_size / 1000 if download_job.file_size else None,
             'total_columns': download_job.number_of_columns,
             'total_rows': download_job.number_of_rows,
-            'seconds_elapsed': download_job.seconds_elapsed()
+            'seconds_elapsed': download_job.seconds_elapsed(),
         }
 
         return Response(response)

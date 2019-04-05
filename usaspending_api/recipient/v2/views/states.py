@@ -1,5 +1,7 @@
 import logging
+
 from collections import OrderedDict
+from copy import deepcopy
 from datetime import datetime
 
 from django.contrib.postgres.aggregates import StringAgg
@@ -8,7 +10,7 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as ats
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
@@ -145,6 +147,16 @@ class StateMetaDataViewSet(APIDocumentationView):
         return Response(result)
 
 
+# The StateAwardBreakdownViewSet endpoint is not yet ready to support IDVs.
+# We will remove "idvs" from the global all_award_types_mappings so that this
+# endpoint continues to behave normally.  When ready to support idvs, remove
+# this bit here and replace the reference to _all_award_types_mappings below
+# with all_award_types_mappings.
+_all_award_types_mappings = deepcopy(all_award_types_mappings)
+if "idvs" in _all_award_types_mappings:
+    del _all_award_types_mappings["idvs"]
+
+
 class StateAwardBreakdownViewSet(APIDocumentationView):
 
     @cache_response()
@@ -154,7 +166,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
         fips = validate_fips(fips)
 
         results = []
-        for award_type, award_type_codes in ats.items():
+        for award_type, award_type_codes in _all_award_types_mappings.items():
             result = obtain_state_totals(fips, year=year, award_type_codes=award_type_codes)
             results.append({
                 'type': award_type,

@@ -23,15 +23,15 @@ award_contract_update_id_list = []
 subtier_agency_map = {
     subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
     for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
-    }
+}
 subtier_to_agency_map = {
     agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
     for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
-    }
+}
 toptier_agency_map = {
     toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
     for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
-    }
+}
 
 
 class Command(BaseCommand):
@@ -188,52 +188,51 @@ class Command(BaseCommand):
 
         logger.info('Getting award objects for {} rows...'.format(len(award_financial_assistance_data)))
         for index, row in enumerate(award_financial_assistance_data, 1):
+            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+            # use the sub tier code to look it up. This code assumes that all incoming
+            # records will supply an awarding subtier agency code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                row['awarding_agency_code'] = awarding_cgac_code
 
-                # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
-                # use the sub tier code to look it up. This code assumes that all incoming
-                # records will supply an awarding subtier agency code
-                if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                    awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
-                    awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
-                    awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
-                    row['awarding_agency_code'] = awarding_cgac_code
+            # If funding toptier agency code (aka CGAC) is empty, try using the sub
+            # tier funding code to look it up. Unlike the awarding agency, we can't
+            # assume that the funding agency subtier code will always be present.
+            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                if funding_subtier_agency_id is not None:
+                    funding_toptier_agency_id = \
+                        subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                else:
+                    funding_cgac_code = None
+                row['funding_agency_code'] = funding_cgac_code
 
-                # If funding toptier agency code (aka CGAC) is empty, try using the sub
-                # tier funding code to look it up. Unlike the awarding agency, we can't
-                # assume that the funding agency subtier code will always be present.
-                if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                    funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
-                    if funding_subtier_agency_id is not None:
-                        funding_toptier_agency_id = \
-                            subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
-                        funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
-                    else:
-                        funding_cgac_code = None
-                    row['funding_agency_code'] = funding_cgac_code
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = Agency.get_by_toptier_subtier(
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
+            )
+            funding_agency = Agency.get_by_toptier_subtier(
+                row['funding_agency_code'],
+                row["funding_sub_tier_agency_co"]
+            )
 
-                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-                awarding_agency = Agency.get_by_toptier_subtier(
-                    row['awarding_agency_code'],
-                    row["awarding_sub_tier_agency_c"]
-                )
-                funding_agency = Agency.get_by_toptier_subtier(
-                    row['funding_agency_code'],
-                    row["funding_sub_tier_agency_co"]
-                )
+            awarding_agency_list.append(awarding_agency)
+            funding_agency_list.append(funding_agency)
 
-                awarding_agency_list.append(awarding_agency)
-                funding_agency_list.append(funding_agency)
+            # award.save() is called in Award.get_or_create_summary_award by default
+            created, award = Award.get_or_create_summary_award(
+                awarding_agency=awarding_agency,
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                save=False
+            )
 
-                # award.save() is called in Award.get_or_create_summary_award by default
-                created, award = Award.get_or_create_summary_award(
-                    awarding_agency=awarding_agency,
-                    fain=row.get('fain'),
-                    uri=row.get('uri'),
-                    save=False
-                )
-
-                award_bulk.append(award)
-                award_update_id_list.append(award.id)
+            award_bulk.append(award)
+            award_update_id_list.append(award.id)
 
         logger.info('Bulk creating {} award rows...'.format(len(award_bulk)))
         try:

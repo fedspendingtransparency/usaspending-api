@@ -14,6 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         logger = logging.getLogger('console')
+        JobStatus.objects.all().delete()
 
         for status in lookups.JOB_STATUS:
             logger.info('Updating status: {}'.format(status))

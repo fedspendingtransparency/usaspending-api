@@ -480,7 +480,7 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     for field in fields:
         # Let's handle the data source field here for all objects
-        if field is 'data_source':
+        if field == 'data_source':
             store_value(mod, field, 'DBR', reverse)
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to

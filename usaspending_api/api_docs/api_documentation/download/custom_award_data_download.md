@@ -54,7 +54,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 * `award_levels` - *required* - list of award levels ["prime_awards", "sub_awards"]
 * `filters` - *required* - a JSON filter object with the following fields
     * `keyword` - *optional* - string to search the elastic search on (overrides all other filters)
-    * `award_types` - *optional* - list of award types ("contracts", "grants", "direct_payments", "loans", and "other_financial_assistance") (default is all)
+    * `award_types` - *optional* - list of award types ("contracts", "grants", "direct_payments", "idvs", "loans", and "other_financial_assistance") (default is all)
     * `agency` - *optional* - agency database id to include, 'all' is also an option to include all agencies
     * `sub_agency` - *optional* - sub-agency name to include (based on the agency filter)
     * `date_type` - *optional* - choice between two types: "action_date", "last_modified_date"
