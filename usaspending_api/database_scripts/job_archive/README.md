@@ -11,7 +11,7 @@ Purpose: <a sentence to paragraph on the changes this script performs and expect
 
 # FAQ
 1. Why store them in a repository?
-    * While it might seem that storing these scripts in Jira tickets, it is easy to lose them or to not know they exist.
+    * While it might seem better to store these scripts in Jira tickets, it is easy to lose them or to not know they exist.
     * Additionally, it is frequency beneficial to have them in a repository for CI/CD pipelines to pull.
 1. Why use this repository?
     * Often the changes performed by these scripts are tied to code changes.

@@ -1,4 +1,4 @@
--- DEV-2226
+-- Jira Ticket Number: DEV-2226
 -- Expected CLI: psql -v ON_ERROR_STOP=1 -c '\timing' -f recompute_idv_idc_types.sql $DATABASE_URL
 --
 -- Purpose: Recalculate the IDV IDC sub-types (IDV_B_*) using `type_of_idc_description` which is
@@ -33,8 +33,8 @@ SET
     category =  CASE
             WHEN tn.type = '09' THEN 'insurance'
             WHEN tn.type = '11' THEN 'other'
-            WHEN tn.type in ('06', '10') THEN 'direct payment'
-            WHEN tn.type in ('07', '08') THEN 'loans'
+            WHEN tn.type IN ('06', '10') THEN 'direct payment'
+            WHEN tn.type IN ('07', '08') THEN 'loans'
             WHEN tn.type IN ('A', 'B', 'C', 'D') THEN 'contract'
             WHEN tn.type IN ('02', '03', '04', '05') THEN 'grant'
             WHEN tn.type ~~ 'IDV%' THEN 'idv'
