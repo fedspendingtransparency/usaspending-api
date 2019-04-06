@@ -193,29 +193,27 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
         return Response(response)
 
+
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        
+
         search_text, limit = self.get_request_payload(request)
 
         queryset = Definition.objects.all()
-        
+
         glossary_terms = queryset.filter(slug__icontains=search_text)
 
         response = {
-            'results':{
-                'search_text':search_text,
+            'results': {
+                'search_text': search_text,
                 'term':
                     glossary_terms.values_list('term', flat=True)[:limit]
 
             },
-            'counts':{
-                'term':min(glossary_terms.count(), limit)
+            'counts': {
+                'term': min(glossary_terms.count(), limit)
             }
         }
         return Response(response)
-
-
-

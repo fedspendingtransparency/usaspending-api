@@ -39,6 +39,6 @@ def test_glossary_endpoint(client, glossary_data):
         assert 'congress' in itm['plain'].lower()
 
     # This should probably be broken out into a new file once we sunset v1
-    resp = client.get('/api/v2/references/glossary/?limit=9999')  
+    resp = client.get('/api/v2/references/glossary/?limit=9999')
     assert resp.status_code == 200
     assert len(resp.data["results"]) == 128

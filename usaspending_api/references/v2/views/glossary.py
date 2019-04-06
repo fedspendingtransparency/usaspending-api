@@ -36,16 +36,8 @@ class GlossaryViewSet(APIDocumentationView):
 
         serializer = DefinitionSerializer(queryset, many=True)
         response = {
-            "page_metadata":pagination,
-            "results":serializer.data
+            "page_metadata": pagination,
+            "results": serializer.data
         }
 
         return Response(response)
-
-
-
-
-
-
-
-
