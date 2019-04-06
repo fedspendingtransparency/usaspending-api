@@ -208,11 +208,11 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
             'results':{
                 'search_text':search_text,
                 'term':
-                    glossary_terms.values_list('term', flat=True)
+                    glossary_terms.values_list('term', flat=True)[:limit]
 
             },
             'counts':{
-                'term':glossary_terms.count()
+                'term':min(glossary_terms.count(), limit)
             }
         }
         return Response(response)
