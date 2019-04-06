@@ -14,13 +14,11 @@ def glossary_data(db):
     mommy.make(
         Definition,
         term='Word',
-        slug="ab",
         plain='Plaintext response.',
         official='Official language.')
     mommy.make(
         Definition,
         term='Word2',
-        slug="aa",
         plain='Plaintext response. 2',
         official='Official language. 2')
     mommy.make(
