@@ -12,8 +12,10 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
-from usaspending_api.broker.helpers.delete_fabs_transactions import delete_stale_fabs, store_deleted_fabs
+from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
+from usaspending_api.broker.helpers.store_deleted_fabs import store_deleted_fabs
 from usaspending_api.common.helpers.generic_helper import timer
+
 
 logger = logging.getLogger('console')
 
