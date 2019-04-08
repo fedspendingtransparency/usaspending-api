@@ -342,7 +342,8 @@ class Command(BaseCommand):
             date = options.get("date")[0]
             date = datetime.strptime(date, "%Y-%m-%d").date()
         else:
-            date = get_last_load_date("fpds", default=datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+            default_last_load_date = datetime.utcnow() - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).strftime("%Y-%m-%d")
         start_date = datetime.utcnow().strftime("%Y-%m-%d")
 
         logger.info("Processing data for FPDS starting from %s" % date)
