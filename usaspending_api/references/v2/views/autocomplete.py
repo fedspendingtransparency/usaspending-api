@@ -210,7 +210,7 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
         response = {
             'search_text': search_text,
-            'results':glossary_terms.values_list('term', flat=True)[:limit],
+            'results': glossary_terms.values_list('term', flat=True)[:limit],
             'count':  min(glossary_terms.count(), limit),
             'matched_terms':
                 serializer.data
