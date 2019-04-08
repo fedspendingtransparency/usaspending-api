@@ -59,8 +59,8 @@ def test_glossary_v2_autocomplete(client):
         data=json.dumps({"search_text": "ab"}))
     json_response = json.loads(resp.content.decode("utf-8"))
     assert resp.status_code == status.HTTP_200_OK
-    assert json_response['results']['search_text'] == "ab"
-    assert json_response['results']['term'] == ["Abacus"]
+    assert json_response['search_text'] == "ab"
+    assert json_response['results'] == ["Abacus"]
 
     resp = client.post(
         '/api/v2/autocomplete/glossary/',
@@ -68,8 +68,8 @@ def test_glossary_v2_autocomplete(client):
         data=json.dumps({"search_text": "aa"}))
     json_response = json.loads(resp.content.decode("utf-8"))
     assert resp.status_code == status.HTTP_200_OK
-    assert json_response['results']['search_text'] == "aa"
-    assert json_response['results']['term'] == ["Aardvark"]
+    assert json_response['search_text'] == "aa"
+    assert json_response['results'] == ["Aardvark"]
 
     resp = client.post(
         '/api/v2/autocomplete/glossary/',
@@ -77,8 +77,26 @@ def test_glossary_v2_autocomplete(client):
         data=json.dumps({"search_text": "a"}))
     json_response = json.loads(resp.content.decode("utf-8"))
     assert resp.status_code == status.HTTP_200_OK
-    assert json_response['results']['search_text'] == "a"
-    assert sorted(json_response['results']['term']) == ["Aardvark", "Abacus"]
+    assert json_response['search_text'] == "a"
+    assert sorted(json_response['results']) == ["Aardvark", "Abacus"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "b"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "b"
+    assert sorted(json_response['results']) == ["Abacus"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "aab"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "aab"
+    assert sorted(json_response['results']) == []
 
 
 @pytest.mark.django_db
