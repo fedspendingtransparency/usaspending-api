@@ -90,8 +90,6 @@ Finally, go back to the usaspending directory and start up the site
 
     (usaspending-api) $ ./manage.py runserver
 
-TESTING
-
 The application will now be available at `http://localhost:8000`!
 
 ## API
