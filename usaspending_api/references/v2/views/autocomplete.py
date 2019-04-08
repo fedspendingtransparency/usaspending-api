@@ -8,6 +8,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
 from usaspending_api.references.v1.serializers import AgencySerializer
 
+from usaspending_api.references.v2.views.glossary import DefinitionSerializer
+
 
 class BaseAutocompleteViewSet(APIView):
 
@@ -204,16 +206,13 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
         queryset = Definition.objects.all()
 
         glossary_terms = queryset.filter(slug__icontains=search_text)
+        serializer = DefinitionSerializer(glossary_terms[:limit], many=True)
 
         response = {
-            'results': {
-                'search_text': search_text,
-                'term':
-                    glossary_terms.values_list('term', flat=True)[:limit]
-
-            },
-            'counts': {
-                'term': min(glossary_terms.count(), limit)
-            }
+            'search_text': search_text,
+            'results':glossary_terms.values_list('term', flat=True)[:limit],
+            'count':  min(glossary_terms.count(), limit),
+            'matched_terms':
+                serializer.data
         }
         return Response(response)
