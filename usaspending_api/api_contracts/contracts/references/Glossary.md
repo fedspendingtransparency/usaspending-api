@@ -71,13 +71,10 @@ This endpoint returns glossary autocomplete data for submitted text snippet.
 + resources: Learn More: Circular No. A-11 (required, string, nullable)
 
 ## GlossaryAutocompleteObject (object)
-+ results: (GlossaryTerms, fixed-type)
-+ counts: (required, CountObject, fixed-type)
-
-
-## GlossaryTerms (object)
++ results: (required, array[string])
++ count: 4 (required, number)
 + search_text: ab (required, string)
-+ term: (required, array[string])
++ matched_terms:(required, array[GlossaryListing])
 
 ## CountObject (object)
 + term: 4 (required, number)
