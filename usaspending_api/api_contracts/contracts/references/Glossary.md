@@ -75,6 +75,3 @@ This endpoint returns glossary autocomplete data for submitted text snippet.
 + count: 4 (required, number)
 + search_text: ab (required, string)
 + matched_terms:(required, array[GlossaryListing])
-
-## CountObject (object)
-+ term: 4 (required, number)
