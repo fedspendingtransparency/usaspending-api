@@ -40,7 +40,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/funding_agency](/api/v2/autocomplete/funding_agency)|POST| Returns funding agencies matching the specified search text|
 |[/api/v2/autocomplete/naics](/api/v2/autocomplete/naics)|POST| Returns NAICS objects matching the specified search text|
 |[/api/v2/autocomplete/psc](/api/v2/autocomplete/psc)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.|
-|[/api/v2/autocomplete/recipient](/api/v2/autocomplete/recipient)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list od legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
+|[/api/v2/autocomplete/recipient](/api/v2/autocomplete/recipient)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/)|POST| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
 |[/api/v2/awards/idvs/amounts/<AWARD_ID\>/](/api/v2/awards/idvs/amounts/69309317)|GET| Returns the direct children of an IDV|
@@ -56,9 +56,9 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/download/accounts](/api/v2/download/accounts)|POST| Generates zip file for download of account data in CSV format|
 |[/api/v2/download/awards](/api/v2/download/awards)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count](/api/v2/download/count)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
-|[/api/v2/download/status](/api/v2/download/status)|GET| gets the current status of a download job that that has been requested with the v2/download/awards/ or v2/download/transaction/ endpoint that same day|
+|[/api/v2/download/status](/api/v2/download/status)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day|
 |[/api/v2/download/transactions](/api/v2/download/transactions)|POST|Generates zip file for download of award data in CSV format|
-|[/api/v2/federal_accounts/](/api/v2/federal_accounts/)|POST| Returns financial spending data by object class``|
+|[/api/v2/federal_accounts/](/api/v2/federal_accounts/)|POST| Returns financial spending data by object class|
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/](/api/v2/federal_accounts/020-0550/)|GET| Returns a federal account based on its federal account code|
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/available_object_classes](/api/v2/federal_accounts/4324/available_object_classes)|GET| Returns financial spending data by object class based on account's internal ID|
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/fiscal_year_snapshot](/api/v2/federal_accounts/4324/fiscal_year_snapshot)|GET| Returns budget information for a federal account for the most recent year based on account's internal ID|
@@ -67,9 +67,9 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/financial_balances/agencies/](/api/v2/financial_balances/agencies?fiscal_year=2017&funding_agency_id=4324)|GET| Returns financial balances by agency and the latest quarter for the given fiscal year|
 |[/api/v2/financial_spending/major_object_class/](/api/v2/financial_spending/major_object_class?fiscal_year=2017&funding_agency_id=4324)|GET| Returns financial spending data by object class for the latest quarter based on the given fiscal year |
 |[/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class?fiscal_year=2017&funding_agency_id=4324&major_object_class_code=20)|GET| Returns financial spending data by object class for the latest quarter based on the given fiscal year|
-|[/api/v2/recipient/children/<DUNS_NUMBER\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number|
+|[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number|
 |[/api/v2/recipient/duns/](/api/v2/recipient/duns/)|POST| Returns a list of recipients in USAspending DB|
-|[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/HASH/)|GET| Returns a high-level overview of a specific recipient, given its id|
+|[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/42c19cbe-ced7-5d41-2f80-cd27a22b1575-P/)|GET| Returns a high-level overview of a specific recipient, given its id|
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/recipient/state/<FIPS\>/](/api/v2/recipient/state/51/)|GET| Returns basic information about the specified state|
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS|
