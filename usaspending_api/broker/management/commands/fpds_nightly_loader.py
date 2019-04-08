@@ -11,11 +11,10 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
-from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.find_related_awards import find_related_awards
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
-from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer
@@ -343,13 +342,7 @@ class Command(BaseCommand):
             date = options.get("date")[0]
             date = datetime.strptime(date, "%Y-%m-%d").date()
         else:
-            data_load_date_obj = ExternalDataLoadDate.objects.filter(
-                external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-            ).first()
-            if not data_load_date_obj:
-                date = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
-            else:
-                date = data_load_date_obj.last_load_date
+            date = get_last_load_date("fpds", default=datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
         start_date = datetime.utcnow().strftime("%Y-%m-%d")
 
         logger.info("Processing data for FPDS starting from %s" % date)
@@ -390,9 +383,6 @@ class Command(BaseCommand):
             logger.info("No FPDS records to insert or modify at this juncture")
 
         # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]).delete()
-        ExternalDataLoadDate(
-            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-        ).save()
+        update_last_load_date("fpds", start_date)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")

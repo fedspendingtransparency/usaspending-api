@@ -1,12 +1,13 @@
 import logging
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from django.db import connections
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
+from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.generic_helper import timer
@@ -20,7 +21,8 @@ SUBMISSION_LOOKBACK_MINUTES = 15
 
 def get_last_load_date():
     """
-    Retrieve the last_load_date from the USAspending database.
+    Wraps the get_load_load_date helper which is responsible for grabbing the
+    last load date from the database.
 
     Without getting into too much detail, SUBMISSION_LOOKBACK_MINUTES is used
     to counter a very rare race condition where database commits are saved ever
@@ -33,22 +35,17 @@ def get_last_load_date():
     be clear, the original fabs loader did this as well, just in a way that did
     not always prevent skips.
     """
-    external_data_type_id = lookups.EXTERNAL_DATA_TYPE_DICT["fabs"]
-    last_load_date = ExternalDataLoadDate.objects.filter(
-        external_data_type_id=external_data_type_id).values_list("last_load_date", flat=True).first()
+    from usaspending_api.broker.helpers.last_load_date import get_last_load_date
+
+    last_load_date = get_last_load_date("fabs", SUBMISSION_LOOKBACK_MINUTES)
     if last_load_date is None:
+        external_data_type_id = lookups.EXTERNAL_DATA_TYPE_DICT["fabs"]
         raise RuntimeError(
             "Unable to find last_load_date in table {} for external_data_type_id={}. "
             "If this is expected and the goal is to reload all submissions, supply the "
             "--reload-all switch on the command line.".format(
                 ExternalDataLoadDate.objects.model._meta.db_table, external_data_type_id))
-    return last_load_date - timedelta(minutes=SUBMISSION_LOOKBACK_MINUTES)
-
-
-def update_last_load_date(last_load_date):
-    ExternalDataLoadDate.objects.update_or_create(
-        external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fabs"],
-        defaults={"last_load_date": last_load_date})
+    return last_load_date
 
 
 def get_new_submission_ids(last_load_date):
@@ -190,6 +187,6 @@ class Command(BaseCommand):
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
-            update_last_load_date(processing_start_datetime)
+            update_last_load_date("fabs", processing_start_datetime)
 
         logger.info("FABS UPDATE FINISHED!")
