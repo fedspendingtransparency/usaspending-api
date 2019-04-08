@@ -12,7 +12,7 @@ class CustomCacheResponse(CacheResponse):
         response = None
         try:
             response = self.cache.get(key)
-        except Exception as e:
+        except Exception:
             msg = 'Problem while retrieving key [{k}] from cache for path:\'{p}\''
             logger.exception(msg.format(k=key, p=str(request.path)))
 
@@ -28,7 +28,7 @@ class CustomCacheResponse(CacheResponse):
                 try:
                     self.cache.set(key, response, self.timeout)
                     response['Cache-Trace'] = 'set-cache'
-                except Exception as e:
+                except Exception:
                     msg = 'Problem while writing to cache: path:\'{p}\' data:\'{d}\''
                     logger.exception(msg.format(p=str(request.path), d=str(request.data)))
         else:

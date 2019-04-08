@@ -13,13 +13,13 @@ from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.views import YearLimitedDownloadViewSet
+from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger('console')
 
 award_mappings = {
-    'contracts': ['contracts'],
+    'contracts': ['contracts', 'idvs'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 
@@ -68,8 +68,6 @@ class Command(BaseCommand):
                     key.delete()
                     logger.info('Deleting {} from bucket'.format(key.key))
         else:
-            # Send a SQS message that will be processed by another server, which will eventually run
-            # csv_generation.generate_csvs(download_job, message) (see download_sqs_worker.py)
             queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 

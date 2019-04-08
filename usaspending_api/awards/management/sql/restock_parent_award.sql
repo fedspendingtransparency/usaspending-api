@@ -194,11 +194,11 @@ from
     left outer join awards p on
         p.piid = c.parent_award_piid and
         p.fpds_agency_id = c.fpds_parent_agency_id and
-        p.type like 'IDV\_%' and
+        p.type like 'IDV%' and
         p.id != c.id
 
 where
-    c.type like 'IDV\_%';
+    c.type like 'IDV%';
 
 
 
@@ -226,11 +226,11 @@ set
 from (
         select
             p.id,
-            sum(case when c.type like 'IDV\_%' then 1 else 0 end)                                            direct_idv_count,
-            sum(case when c.type like 'IDV\_%' then 0 else 1 end)                                            direct_contract_count,
-            sum(case when c.type like 'IDV\_%' then 0 else c.total_obligation end)::numeric(23, 2)           direct_total_obligation,
-            sum(case when c.type like 'IDV\_%' then 0 else c.base_and_all_options_value end)::numeric(23, 2) direct_base_and_all_options_value,
-            sum(case when c.type like 'IDV\_%' then 0 else c.base_exercised_options_val end)::numeric(23, 2) direct_base_exercised_options_val
+            sum(case when c.type like 'IDV%' then 1 else 0 end)                                            direct_idv_count,
+            sum(case when c.type like 'IDV%' then 0 else 1 end)                                            direct_contract_count,
+            sum(case when c.type like 'IDV%' then 0 else c.total_obligation end)::numeric(23, 2)           direct_total_obligation,
+            sum(case when c.type like 'IDV%' then 0 else c.base_and_all_options_value end)::numeric(23, 2) direct_base_and_all_options_value,
+            sum(case when c.type like 'IDV%' then 0 else c.base_exercised_options_val end)::numeric(23, 2) direct_base_exercised_options_val
         from
             awards p
             inner join awards c on
@@ -238,7 +238,7 @@ from (
                 c.parent_award_piid = p.piid and
                 c.id != p.id
         where
-            p.type like 'IDV\_%'
+            p.type like 'IDV%'
         group by
             p.id
     ) t
