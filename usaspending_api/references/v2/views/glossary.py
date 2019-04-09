@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.request import Request
 
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.helpers.generic_helper import get_pagination
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
@@ -26,10 +27,17 @@ class GlossaryViewSet(APIDocumentationView):
         """
         Accepts only pagination-related query parameters
         """
+        models = [
+            {'name': 'page', 'key':'page', 'type': 'integer', 'default': 1, 'min': 1},
+            {'name': 'limit', 'key':'limit', 'type': 'integer', 'default': 500, 'min': 1, 'max': 500},
+        ]
 
-        get_request = request.query_params
-        limit = get_request.get('limit', 500)
-        page = get_request.get('page', 1)
+        
+        # Can't use the TinyShield decorator (yet) because this is a GET request only
+        request_dict = request.query_params
+        validated_request_data = TinyShield(models).block(request_dict)
+        limit = validated_request_data["limit"]
+        page = validated_request_data["page"]
 
         queryset = Definition.objects.all()
         queryset, pagination = get_pagination(queryset, int(limit), int(page))
