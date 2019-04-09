@@ -4,11 +4,6 @@ from rest_framework.routers import DefaultRouter
 from usaspending_api.references.v1 import views
 from usaspending_api.references.v2.views import agency, toptier_agencies, data_dictionary, glossary
 
-
-# This does not appear to be used and looks like its an artifact from a copy-pasta of v1 urls. Can probably delete?
-glossary_router = DefaultRouter()
-glossary_router.register('glossary', views.GlossaryViewSet)
-
 mode_list = {'get': 'list', 'post': 'list'}
 mode_detail = {'get': 'retrieve', 'post': 'retrieve'}
 
