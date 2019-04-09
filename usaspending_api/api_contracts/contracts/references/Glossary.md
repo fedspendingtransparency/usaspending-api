@@ -22,31 +22,6 @@ This endpoint returns a list of glossary data.
 + Response 200 (application/json)
     + Attributes (GlossaryListingObject)
 
-## Glossary Autocomplete [/api/v2/autocomplete/glossary/]
-
-This endpoint returns glossary autocomplete data for submitted text snippet.
-
-
-+ Parameters
-    + search_text: `ab` (required, string)
-        The text snippet that you are trying to autocomplete using a glossary term.
-    + limit: `10` (optional, integer)
-        Maximum number to return
-
-### List Autocomplete Glossary [POST]
-
-+ Request (application/json)
-
-    + Attributes
-
-        + search_text: `ab` (required, string)
-        The text snippet that you are trying to autocomplete using a glossary term.
-        + limit: `10` (optional, number)
-        Maximum number to return
-        
-+ Response 200 (application/json)
-    + Attributes (GlossaryAutocompleteObject)
-
 
 # Data Structures
 
