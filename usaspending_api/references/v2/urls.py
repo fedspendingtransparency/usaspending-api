@@ -1,7 +1,5 @@
 from django.conf.urls import url
-from rest_framework.routers import DefaultRouter
 
-from usaspending_api.references.v1 import views
 from usaspending_api.references.v2.views import agency, toptier_agencies, data_dictionary, glossary
 
 mode_list = {'get': 'list', 'post': 'list'}

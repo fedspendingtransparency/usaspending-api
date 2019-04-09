@@ -28,11 +28,10 @@ class GlossaryViewSet(APIDocumentationView):
         Accepts only pagination-related query parameters
         """
         models = [
-            {'name': 'page', 'key':'page', 'type': 'integer', 'default': 1, 'min': 1},
-            {'name': 'limit', 'key':'limit', 'type': 'integer', 'default': 500, 'min': 1, 'max': 500},
+            {'name': 'page', 'key': 'page', 'type': 'integer', 'default': 1, 'min': 1},
+            {'name': 'limit', 'key': 'limit', 'type': 'integer', 'default': 500, 'min': 1, 'max': 500},
         ]
 
-        
         # Can't use the TinyShield decorator (yet) because this is a GET request only
         request_dict = request.query_params
         validated_request_data = TinyShield(models).block(request_dict)
