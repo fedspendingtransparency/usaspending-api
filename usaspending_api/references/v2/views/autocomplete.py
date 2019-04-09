@@ -205,13 +205,13 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = Definition.objects.all()
 
-        glossary_terms = queryset.filter(slug__icontains=search_text)
-        serializer = DefinitionSerializer(glossary_terms[:limit], many=True)
+        glossary_terms = queryset.filter(slug__icontains=search_text)[:limit]
+        serializer = DefinitionSerializer(glossary_terms, many=True)
 
         response = {
             'search_text': search_text,
-            'results': glossary_terms.values_list('term', flat=True)[:limit],
-            'count':  min(glossary_terms.count(), limit),
+            'results': glossary_terms.values_list('term', flat=True),
+            'count':  glossary_terms.count(),
             'matched_terms':
                 serializer.data
         }
