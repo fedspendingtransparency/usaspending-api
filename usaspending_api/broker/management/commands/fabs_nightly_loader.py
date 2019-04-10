@@ -64,11 +64,14 @@ def get_new_submission_ids(last_load_date):
         return tuple(row[0] for row in cursor.fetchall())
 
 
-def _get_ids(sql, submission_ids, start_datetime, end_datetime):
+def _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime):
     params = []
     if submission_ids:
         sql += " and submission_id in %s"
         params.append(tuple(submission_ids))
+    if afa_ids:
+        sql += " and afa_generated_unique in %s"
+        params.append(tuple(afa_ids))
     if start_datetime:
         sql += " and updated_at >= %s"
         params.append(cast_datetime_to_naive(start_datetime))
@@ -80,18 +83,18 @@ def _get_ids(sql, submission_ids, start_datetime, end_datetime):
         return tuple(row[0] for row in cursor.fetchall())
 
 
-def get_fabs_transaction_ids(submission_ids, start_datetime, end_datetime):
+def get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime):
     sql = """
         select  published_award_financial_assistance_id
         from    published_award_financial_assistance
         where   is_active is true
     """
-    ids = _get_ids(sql, submission_ids, start_datetime, end_datetime)
+    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
     logger.info("Number of records to insert/update: {:,}".format(len(ids)))
     return ids
 
 
-def get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime):
+def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime):
     sql = """
         select  distinct upper(afa_generated_unique)
         from    published_award_financial_assistance p
@@ -102,13 +105,15 @@ def get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime):
                     where   afa_generated_unique = p.afa_generated_unique and is_active is true
                 )
     """
-    ids = _get_ids(sql, submission_ids, start_datetime, end_datetime)
+    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
     logger.info("Number of records to delete: {:,}".format(len(ids)))
     return ids
 
 
 class Command(BaseCommand):
-    help = "Update FABS data in USAspending from Broker"
+    help = "Update FABS data in USAspending from Broker. Command line parameters " \
+           "are ANDed together so, for example, providing a transaction id and a " \
+           "submission id that do not overlap will result no new FABs records."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -126,6 +131,18 @@ class Command(BaseCommand):
             nargs="+",
             type=int,
             help="Broker submission IDs to reload. Nonexistent IDs will be ignored."
+        )
+
+        parser.add_argument(
+            "--afa-ids",
+            metavar="ID",
+            nargs="+",
+            type=str,
+            help='Broker transaction IDs (afa_generated_unique) to reload. Nonexistent '
+                 'IDs will be ignored. IMPORTANT: Due to a limitation with command line '
+                 'parameters, any transaction IDs that start with a dash should be '
+                 'wrapped in quotes and include a leading space, for example: '
+                 '" -none-_1234_5678_-none-"'
         )
 
         parser.add_argument(
@@ -162,15 +179,22 @@ class Command(BaseCommand):
         reload_all = options["reload_all"]
         if reload_all:
             submission_ids = None
+            afa_ids = None
             start_datetime = None
             end_datetime = None
         else:
             submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
+            # Need to trim spaces on afa ids due to a limitation of command line
+            # parameters that are preceded with a dash.  The workaround is to wrap
+            # the value in quotes with a leading space.  This means we need to trim
+            # that space.  The downside is that afa ids that actually start with
+            # or end with spaces will never be found... but currently this never happens...
+            afa_ids = tuple(o.strip() for o in options["afa_ids"]) if options["afa_ids"] else None
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 
         # If no other processing options were provided than this is an incremental load.
-        is_incremental_load = not any((reload_all, submission_ids, start_datetime, end_datetime))
+        is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
             last_load_date = get_last_load_date()
@@ -178,10 +202,10 @@ class Command(BaseCommand):
             logger.info('Processing data for FABS starting from %s' % last_load_date)
 
         with timer("obtaining delete records", logger.info):
-            ids_to_delete = get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime)
+            ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
-            ids_to_upsert = get_fabs_transaction_ids(submission_ids, start_datetime, end_datetime)
+            ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
         update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
