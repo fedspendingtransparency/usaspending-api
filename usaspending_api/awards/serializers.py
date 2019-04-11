@@ -38,6 +38,7 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "kwargs": {
                     "read_only": True,
                     "default_fields": [
+                        "agency_id",
                         "treasury_account_identifier",
                         "tas_rendering_label",
                         "account_title",
