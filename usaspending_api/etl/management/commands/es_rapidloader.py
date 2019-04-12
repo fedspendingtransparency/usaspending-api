@@ -36,117 +36,116 @@ ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
 
 class Command(BaseCommand):
-    help = ''''''
+    help = """"""
 
     # used by parent class
     def add_arguments(self, parser):
+        parser.add_argument("fiscal_years", nargs="+", type=int)
         parser.add_argument(
-            'fiscal_years',
-            nargs='+',
-            type=int)
-        parser.add_argument(
-            '--since',
+            "--since",
             default=None,
             type=str,
-            help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
+            help="Start date for computing the delta of changed transactions [YYYY-MM-DD]",
+        )
         parser.add_argument(
-            '--days',
+            "--days",
             default=None,
             type=int,
-            help='Like `--since` but subtracts X days from today instead of a specific date')
+            help="Like `--since` but subtracts X days from today instead of a specific date",
+        )
         parser.add_argument(
-            '--dir',
+            "--dir",
             default=os.path.dirname(os.path.abspath(__file__)),
             type=str,
-            help='Set for a custom location of output files')
+            help="Set for a custom location of output files",
+        )
         parser.add_argument(
-            '--index_name',
-            type=str,
-            help='Set an index name to ingest data into',
-            default='staging_transactions')
+            "--index_name", type=str, help="Set an index name to ingest data into", default="staging_transactions"
+        )
+        parser.add_argument("-d", "--deleted", action="store_true", help="Flag to include deleted transactions from S3")
         parser.add_argument(
-            '-d',
-            '--deleted',
-            action='store_true',
-            help='Flag to include deleted transactions from S3')
+            "--stale",
+            action="store_true",
+            help="Flag allowed existing CSVs (if they exist) to be used instead of downloading new data",
+        )
+        parser.add_argument("--keep", action="store_true", help="CSV files are not deleted after they are uploaded")
         parser.add_argument(
-            '--stale',
-            action='store_true',
-            help='Flag allowed existing CSVs (if they exist) to be used instead of downloading new data')
+            "-w",
+            "--swap",
+            action="store_true",
+            help="Flag allowed to put aliases to index and close all indices with aliases associated",
+        )
         parser.add_argument(
-            '--keep',
-            action='store_true',
-            help='CSV files are not deleted after they are uploaded')
-        parser.add_argument(
-            '-w',
-            '--swap',
-            action='store_true',
-            help='Flag allowed to put aliases to index and close all indices with aliases associated')
-        parser.add_argument(
-            '-s',
-            '--snapshot',
-            action='store_true',
-            help='Take a snapshot of the current cluster and save to S3')
+            "-s", "--snapshot", action="store_true", help="Take a snapshot of the current cluster and save to S3"
+        )
 
     # used by parent class
     def handle(self, *args, **options):
-        ''' Script execution of custom code starts in this method'''
+        """ Script execution of custom code starts in this method"""
         start = perf_counter()
-        printf({'msg': 'Starting script\n{}'.format('=' * 56)})
+        printf({"msg": "Starting script\n{}".format("=" * 56)})
 
         self.config = set_config()
-        self.config['verbose'] = True if options['verbosity'] > 1 else False
-        self.config['fiscal_years'] = options['fiscal_years']
-        self.config['directory'] = options['dir'] + os.sep
-        self.config['provide_deleted'] = options['deleted']
-        self.config['stale'] = options['stale']
-        self.config['swap'] = options['swap']
-        self.config['keep'] = options['keep']
-        self.config['snapshot'] = options['snapshot']
-        self.config['index_name'] = options['index_name']
+        self.config["verbose"] = True if options["verbosity"] > 1 else False
+        self.config["fiscal_years"] = options["fiscal_years"]
+        self.config["directory"] = options["dir"] + os.sep
+        self.config["provide_deleted"] = options["deleted"]
+        self.config["stale"] = options["stale"]
+        self.config["swap"] = options["swap"]
+        self.config["keep"] = options["keep"]
+        self.config["snapshot"] = options["snapshot"]
+        self.config["index_name"] = options["index_name"]
 
-        mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
+        mappingfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_transaction_mapping.json")
         with open(mappingfile) as f:
             mapping_dict = json.load(f)
-            self.config['mapping'] = json.dumps(mapping_dict)
-        self.config['doc_type'] = str(list(mapping_dict['mappings'].keys())[0])
-        self.config['max_query_size'] = mapping_dict['settings']['index.max_result_window']
+            self.config["mapping"] = json.dumps(mapping_dict)
+        self.config["doc_type"] = str(list(mapping_dict["mappings"].keys())[0])
+        self.config["max_query_size"] = mapping_dict["settings"]["index.max_result_window"]
 
-        does_index_exist = ES.indices.exists(self.config['index_name'])
+        does_index_exist = ES.indices.exists(self.config["index_name"])
 
         if not does_index_exist:
-            printf({'msg': '"{}" does not exist, skipping deletions for ths load,\
-                             provide_deleted overwritten to False'.format(self.config['index_name'])})
-            self.config['provide_deleted'] = False
+            printf(
+                {
+                    "msg": '"{}" does not exist, skipping deletions for ths load,\
+                             provide_deleted overwritten to False'.format(
+                        self.config["index_name"]
+                    )
+                }
+            )
+            self.config["provide_deleted"] = False
 
-        if not options['since']:
-            if not options['days']:
+        if not options["since"]:
+            if not options["days"]:
                 # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
                 #   before the earliest records in S3 and when Postgres records were updated.
                 #   Choose the beginning of FY2008, and made it timezone-award for S3
-                self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+                self.config["starting_date"] = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
             else:
                 # If --days is provided, go back X days into the past
-                self.config['starting_date'] = datetime.now(timezone.utc) - timedelta(days=options['days'])
+                self.config["starting_date"] = datetime.now(timezone.utc) - timedelta(days=options["days"])
         else:
-            self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
+            self.config["starting_date"] = datetime.strptime(options["since"] + "+0000", "%Y-%m-%d%z")
 
-        if not os.path.isdir(self.config['directory']):
-            printf({'msg': 'Provided directory does not exist'})
+        if not os.path.isdir(self.config["directory"]):
+            printf({"msg": "Provided directory does not exist"})
             raise SystemExit
 
-        if does_index_exist and (not options['since'] and not options['days']):
-            print('''
+        if does_index_exist and (not options["since"] and not options["days"]):
+            print(
+                """
                   Bad mix of parameters! Index exists and
                   full data load implied. Choose a different
                   index_name or load a subset of data using --since
-                  ''')
+                  """
+            )
             raise SystemExit
 
         self.controller()
-        printf({'msg': '---------------------------------------------------------------'})
-        printf({'msg': 'Script completed in {} seconds'.format(perf_counter() - start)})
-        printf({'msg': '---------------------------------------------------------------'})
+        printf({"msg": "---------------------------------------------------------------"})
+        printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
+        printf({"msg": "---------------------------------------------------------------"})
 
     def controller(self):
 
@@ -154,25 +153,27 @@ class Command(BaseCommand):
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_id = 0
-        for fy in self.config['fiscal_years']:
+        for fy in self.config["fiscal_years"]:
             for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
                 job_id += 1
-                index = self.config['index_name']
-                filename = '{dir}{fy}_transactions_{type}.csv'.format(
-                    dir=self.config['directory'],
-                    fy=fy,
-                    type=awd_cat_idx.replace(' ', ''))
+                index = self.config["index_name"]
+                filename = "{dir}{fy}_transactions_{type}.csv".format(
+                    dir=self.config["directory"], fy=fy, type=awd_cat_idx.replace(" ", "")
+                )
 
                 new_job = DataJob(job_id, index, fy, awd_cat_idx, filename)
 
                 if os.path.exists(filename):
                     # This is mostly for testing. If previous CSVs still exist skip the download for that file
-                    if self.config['stale']:
+                    if self.config["stale"]:
                         new_job.count = count_rows_in_csv_file(filename, has_header=True, safe=False)
-                        printf({
-                            'msg': 'Using existing file: {} | count {}'.format(filename, new_job.count),
-                            'job': new_job.name,
-                            'f': 'Download'})
+                        printf(
+                            {
+                                "msg": "Using existing file: {} | count {}".format(filename, new_job.count),
+                                "job": new_job.name,
+                                "f": "Download",
+                            }
+                        )
                         # Add job directly to the Elasticsearch ingest queue since the CSV exists
                         es_ingest_queue.put(new_job)
                         continue
@@ -180,28 +181,31 @@ class Command(BaseCommand):
                         os.remove(filename)
                 download_queue.put(new_job)
 
-        printf({'msg': 'There are {} jobs to process'.format(job_id)})
+        printf({"msg": "There are {} jobs to process".format(job_id)})
 
         process_list = []
-        process_list.append(Process(
-            name='Download Proccess',
-            target=download_db_records,
-            args=(download_queue, es_ingest_queue, self.config)))
-        process_list.append(Process(
-            name='ES Index Process',
-            target=es_data_loader,
-            args=(ES, download_queue, es_ingest_queue, self.config)))
+        process_list.append(
+            Process(
+                name="Download Proccess",
+                target=download_db_records,
+                args=(download_queue, es_ingest_queue, self.config),
+            )
+        )
+        process_list.append(
+            Process(
+                name="ES Index Process", target=es_data_loader, args=(ES, download_queue, es_ingest_queue, self.config)
+            )
+        )
 
         process_list[0].start()  # Start Download process
 
-        if self.config['provide_deleted']:
-            process_list.append(Process(
-                name='S3 Deleted Records Scrapper Process',
-                target=deleted_transactions,
-                args=(ES, self.config)))
+        if self.config["provide_deleted"]:
+            process_list.append(
+                Process(name="S3 Deleted Records Scrapper Process", target=deleted_transactions, args=(ES, self.config))
+            )
             process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
-                printf({'msg': 'Waiting to start ES ingest until S3 deletes are complete'})
+                printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
                 sleep(7)
 
         process_list[1].start()  # start ES ingest process
@@ -211,22 +215,22 @@ class Command(BaseCommand):
             if process_guarddog(process_list):
                 raise SystemExit(1)
             elif all([not x.is_alive() for x in process_list]):
-                printf({'msg': 'All ETL processes completed execution with no error codes'})
+                printf({"msg": "All ETL processes completed execution with no error codes"})
                 break
 
-        if self.config['swap']:
-            printf({'msg': 'Closing old indices and adding aliases'})
-            swap_aliases(ES, self.config['index_name'])
+        if self.config["swap"]:
+            printf({"msg": "Closing old indices and adding aliases"})
+            swap_aliases(ES, self.config["index_name"])
 
-        if self.config['snapshot']:
-            printf({'msg': 'Taking snapshot'})
-            take_snapshot(ES, self.config['index_name'], settings.ES_REPOSITORY)
+        if self.config["snapshot"]:
+            printf({"msg": "Taking snapshot"})
+            take_snapshot(ES, self.config["index_name"], settings.ES_REPOSITORY)
 
 
 def set_config():
     return {
-        'aws_region': settings.USASPENDING_AWS_REGION,
-        's3_bucket': settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-        'root_index': settings.TRANSACTIONS_INDEX_ROOT,
-        'formatted_now': datetime.utcnow().strftime('%Y%m%dT%H%M%SZ'),  # ISO8601
+        "aws_region": settings.USASPENDING_AWS_REGION,
+        "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
+        "root_index": settings.TRANSACTIONS_INDEX_ROOT,
+        "formatted_now": datetime.utcnow().strftime("%Y%m%dT%H%M%SZ"),  # ISO8601
     }
