@@ -3,7 +3,8 @@ const drakov = require('drakov');
 const drakovOptions  = {
     sourceFiles: './contracts/**/*.md',
     serverPort: 5000,
-    autoOptions: true
+    autoOptions: true,
+    delay: 10000 // 10 seconds
 };
 
 
