@@ -193,7 +193,7 @@ def get_sum_and_count_aggregation_results(keyword):
             )
             return results
         except KeyError:
-            logger.error("Unexpected Response")
+            logger.exception("Unexpected Response")
     else:
         return None
 

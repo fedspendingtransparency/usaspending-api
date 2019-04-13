@@ -9,8 +9,8 @@ from time import perf_counter
 from time import sleep
 
 from usaspending_api import settings
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file
-from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date
+from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
@@ -63,11 +63,6 @@ class Command(BaseCommand):
             "--index_name", type=str, help="Set an index name to ingest data into", default="staging_transactions"
         )
         parser.add_argument("-d", "--deleted", action="store_true", help="Flag to include deleted transactions from S3")
-        parser.add_argument(
-            "--stale",
-            action="store_true",
-            help="Flag allowed existing CSVs (if they exist) to be used instead of downloading new data",
-        )
         parser.add_argument("--keep", action="store_true", help="CSV files are not deleted after they are uploaded")
         parser.add_argument(
             "-w",
@@ -90,7 +85,6 @@ class Command(BaseCommand):
         self.config["fiscal_years"] = options["fiscal_years"]
         self.config["directory"] = options["dir"] + os.sep
         self.config["provide_deleted"] = options["deleted"]
-        self.config["stale"] = options["stale"]
         self.config["swap"] = options["swap"]
         self.config["keep"] = options["keep"]
         self.config["snapshot"] = options["snapshot"]
@@ -152,36 +146,21 @@ class Command(BaseCommand):
         download_queue = Queue()  # Queue for jobs whch need a csv downloaded
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
-        job_id = 0
+        job_number = 0
         for fy in self.config["fiscal_years"]:
-            for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
-                job_id += 1
-                index = self.config["index_name"]
-                filename = "{dir}{fy}_transactions_{type}.csv".format(
-                    dir=self.config["directory"], fy=fy, type=awd_cat_idx.replace(" ", "")
-                )
+            job_number += 1
+            index = self.config["index_name"]
+            filename = "{dir}{fy}_transactions.csv".format(
+                dir=self.config["directory"], fy=fy
+            )
 
-                new_job = DataJob(job_id, index, fy, awd_cat_idx, filename)
+            new_job = DataJob(job_number, index, fy, filename)
 
-                if os.path.exists(filename):
-                    # This is mostly for testing. If previous CSVs still exist skip the download for that file
-                    if self.config["stale"]:
-                        new_job.count = count_rows_in_csv_file(filename, has_header=True, safe=False)
-                        printf(
-                            {
-                                "msg": "Using existing file: {} | count {}".format(filename, new_job.count),
-                                "job": new_job.name,
-                                "f": "Download",
-                            }
-                        )
-                        # Add job directly to the Elasticsearch ingest queue since the CSV exists
-                        es_ingest_queue.put(new_job)
-                        continue
-                    else:
-                        os.remove(filename)
-                download_queue.put(new_job)
+            if os.path.exists(filename):
+                os.remove(filename)
+            download_queue.put(new_job)
 
-        printf({"msg": "There are {} jobs to process".format(job_id)})
+        printf({"msg": "There are {} jobs to process".format(job_number)})
 
         process_list = []
         process_list.append(

@@ -46,6 +46,7 @@ VIEW_COLUMNS = [
     "action_date",
     "period_of_performance_start_date",
     "period_of_performance_current_end_date",
+    "ordering_period_end_date",
     "transaction_fiscal_year",
     "award_fiscal_year",
     "award_amount",
@@ -87,18 +88,14 @@ VIEW_COLUMNS = [
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
-CATEGORY_SQL = " AND award_category = '{}'"
-
-CONTRACTS_IDV_SQL = " AND (award_category = '{}' OR award_category IS NULL AND pulled_from = 'IDV')"
-
 COUNT_SQL = """SELECT COUNT(*) AS count
 FROM transaction_delta_view
-WHERE transaction_fiscal_year={fy}{update_date}{award_category};"""
+WHERE transaction_fiscal_year={fy}{update_date};"""
 
 COPY_SQL = """"COPY (
     SELECT *
     FROM transaction_delta_view
-    WHERE transaction_fiscal_year={fy}{update_date}{award_category}
+    WHERE transaction_fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -137,8 +134,7 @@ class DataJob:
         self.name = args[0]
         self.index = args[1]
         self.fy = args[2]
-        self.category = args[3]
-        self.csv = args[4]
+        self.csv = args[3]
         self.count = None
 
 
@@ -169,18 +165,12 @@ def configure_sql_strings(config, filename, deleted_ids):
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-    award_type_str = ""
-    if config["award_category"]:
-        if config["award_category"] == "contract":
-            award_type_str = CONTRACTS_IDV_SQL.format(config["award_category"])
-        else:
-            award_type_str = CATEGORY_SQL.format(config["award_category"])
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, award_category=award_type_str, filename=filename
+        fy=config["fiscal_year"], update_date=update_date_str, filename=filename
     )
 
-    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, award_category=award_type_str)
+    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
 
     if deleted_ids and config["provide_deleted"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
@@ -222,7 +212,6 @@ def download_db_records(fetch_jobs, done_jobs, config):
             sql_config = {
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
-                "award_category": job.category,
                 "provide_deleted": config["provide_deleted"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
@@ -242,7 +231,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             sleep(1)
 
     # This "Null Job" is used to notify the other (ES data load) process this is the final job
-    done_jobs.put(DataJob(None, None, None, None, None))
+    done_jobs.put(DataJob(None, None, None, None))
     printf({"msg": "All downloads from Postgres completed", "f": "Download"})
     return
 
@@ -316,7 +305,6 @@ def swap_aliases(client, index):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
 
-    indices_to_award_types["contracts"] += ("NULL",)
     alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + "*"
 
     try:
@@ -348,8 +336,8 @@ def swap_aliases(client, index):
 
     client.indices.put_settings(index_settings, index)
     client.indices.refresh(index)
-    for setting_, value_ in index_settings.items():
-        message = 'Changing "{}" from {} to {}'.format(setting_, current_settings.get(setting_), value_)
+    for setting, value in index_settings.items():
+        message = 'Changing "{}" from {} to {}'.format(setting, current_settings.get(setting), value)
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
