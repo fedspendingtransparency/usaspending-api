@@ -219,7 +219,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             if os.path.isfile(job.csv):
                 os.remove(job.csv)
 
-            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["verbose"])
+            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["fast"], config["verbose"])
             done_jobs.put(job)
             printf(
                 {
@@ -236,17 +236,22 @@ def download_db_records(fetch_jobs, done_jobs, config):
     return
 
 
-def download_csv(count_sql, copy_sql, filename, job_id, verbose):
-    count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
-    printf({"msg": "Writing {} transactions to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
+def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
+    if fast:
+        count = None
+        printf({"msg": "Skipping count checks. Writing file: {}".format(filename), "job": job_id, "f": "Download"})
+    else:
+        count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
+        printf({"msg": "Writing {} to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-    download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
-    if count != download_count:
-        msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
-        printf({"msg": msg.format(count, download_count, filename), "job": job_id, "f": "Download"})
-        raise SystemExit(1)
+    if not fast:
+        download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
+        if count != download_count:
+            msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
+            printf({"msg": msg.format(count, download_count, filename), "job": job_id, "f": "Download"})
+            raise SystemExit(1)
     return count
 
 

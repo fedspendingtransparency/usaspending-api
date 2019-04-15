@@ -44,50 +44,59 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("fiscal_years", nargs="+", type=str, metavar="fiscal-years")
         parser.add_argument(
+            "--reload-all",
+            action="store_true",
+            help="Load all transactions. It will close existing indexes "
+            "and set aliases used by API logic to the new index",
+        )
+        parser.add_argument(
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=False),
             help="Processes transactions updated on or after the UTC date/time "
             "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
-            "quotes if date/time contains spaces."
+            "quotes if date/time contains spaces.",
         )
         parser.add_argument(
             "--dir",
             default=os.path.dirname(os.path.abspath(__file__)),
             type=str,
             help="Set for a custom location of output files",
+            dest="directory",
         )
+        parser.add_argument("--index-name", type=str, help="Set the index name to index new data", required=True)
         parser.add_argument(
-            "--index-name", type=str, help="Set the index name to index new data", required=True
-        )
-        parser.add_argument("-d", "--deleted", action="store_true", help="Flag to include deleted transactions from S3")
-        parser.add_argument(
-            "-w",
-            "--swap",
+            "-d",
+            "--deleted",
             action="store_true",
-            help="Flag allowed to put aliases to index and close all indices with aliases associated",
+            help="When this flag is set, the script will include the process to "
+            "obtain records of deleted transactions from S3 and remove from the index",
+            dest="provide_deleted",
         )
         parser.add_argument(
             "-s", "--snapshot", action="store_true", help="Take a snapshot of the current cluster and save to S3"
+        )
+        parser.add_argument(
+            "--fast",
+            action="store_true",
+            help="When this flag is set, the ETL process will skip the record counts to reduce operation time",
         )
 
     # used by parent class
     def handle(self, *args, **options):
         """ Script execution of custom code starts in this method"""
         start = perf_counter()
-        processing_start_datetime = datetime.now(timezone.utc)
         printf({"msg": "Starting script\n{}".format("=" * 56)})
 
-        self.config = set_config()
-        self.config["verbose"] = True if options["verbosity"] > 1 else False
-        if "all" in options["fiscal_years"]:
+        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast")
+        self.config = set_config(simple_args, options)
+
+        if "all" in options["fiscal_years"] or self.config["reload_all"]:
             self.config["fiscal_years"] = create_fiscal_year_list(start_year=2008)
         else:
             self.config["fiscal_years"] = [int(x) for x in options["fiscal_years"]]
-        self.config["directory"] = options["dir"] + os.sep
-        self.config["provide_deleted"] = options["deleted"]
-        self.config["swap"] = options["swap"]
-        self.config["snapshot"] = options["snapshot"]
-        self.config["index_name"] = options["index_name"].lower()
+
+        self.config["directory"] = self.config["directory"] + os.sep
+        self.config["index_name"] = self.config["index_name"].lower()
 
         mappingfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_transaction_mapping.json")
         with open(mappingfile) as f:
@@ -96,25 +105,21 @@ class Command(BaseCommand):
         self.config["doc_type"] = str(list(mapping_dict["mappings"].keys())[0])
         self.config["max_query_size"] = mapping_dict["settings"]["index.max_result_window"]
 
-        does_index_exist = ES.indices.exists(self.config["index_name"])
-        is_incremental_load = False
-
-        if not does_index_exist:
-            msg = '"{}" does not exist, skipping deletions for ths load, provide_deleted overwritten to False'
-            printf({"msg": msg.format(self.config["index_name"])})
-            self.config["provide_deleted"] = False
-
         default_datetime = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
 
-        if options["start_datetime"]:
+        if self.config["reload_all"]:
+            self.config["starting_date"] = default_datetime
+        elif options["start_datetime"]:
             self.config["starting_date"] = options["start_datetime"]
-            is_incremental_load = True
         else:
-            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
-            #   before the earliest records in S3 and when Postgres records were updated.
+            # Due to the queries used for fetching postgres data,
+            #  `starting_date` needs to be present and a date before:
+            #      - The earliest records in S3.
+            #      - When all transaction records in the USAspending SQL database were updated.
             #   Choose the beginning of FY2008, and make it timezone-award for S3
             self.config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
 
+        does_index_exist = ES.indices.exists(self.config["index_name"])
         is_incremental_load = self.config["starting_date"] != default_datetime
 
         if not os.path.isdir(self.config["directory"]):
@@ -126,6 +131,9 @@ class Command(BaseCommand):
         elif does_index_exist and not is_incremental_load:
             printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
             raise SystemExit(1)
+        elif not does_index_exist or self.config["reload_all"]:
+            printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
+            self.config["provide_deleted"] = False
 
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**self.config)})
@@ -133,8 +141,8 @@ class Command(BaseCommand):
         self.controller()
 
         if is_incremental_load:
-            printf({"msg": "Updating Last Load record with {}".format(processing_start_datetime)})
-            update_last_load_date("es_transactions", processing_start_datetime)
+            printf({"msg": "Updating Last Load record with {}".format(self.config["processing_start_datetime"])})
+            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
         printf({"msg": "---------------------------------------------------------------"})
         printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
         printf({"msg": "---------------------------------------------------------------"})
@@ -148,9 +156,7 @@ class Command(BaseCommand):
         for fy in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = "{dir}{fy}_transactions.csv".format(
-                dir=self.config["directory"], fy=fy
-            )
+            filename = "{dir}{fy}_transactions.csv".format(dir=self.config["directory"], fy=fy)
 
             new_job = DataJob(job_number, index, fy, filename)
 
@@ -195,7 +201,7 @@ class Command(BaseCommand):
                 printf({"msg": "All ETL processes completed execution with no error codes"})
                 break
 
-        if self.config["swap"]:
+        if self.config["reload_all"]:
             printf({"msg": "Closing old indices and adding aliases"})
             swap_aliases(ES, self.config["index_name"])
 
@@ -204,10 +210,18 @@ class Command(BaseCommand):
             take_snapshot(ES, self.config["index_name"], settings.ES_REPOSITORY)
 
 
-def set_config():
-    return {
+def set_config(args, arg_parse_options):
+    # Set values based on script start config
+    config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
         "root_index": settings.TRANSACTIONS_INDEX_ROOT,
-        "formatted_now": datetime.utcnow().strftime("%Y%m%dT%H%M%SZ"),  # ISO8601
+        "processing_start_datetime": datetime.now(timezone.utc),
     }
+
+    config["verbose"] = True if arg_parse_options["verbosity"] > 1 else False
+
+    # simple 1-to-1 transfer from argParse to internal config dict
+    for arg in args:
+        config[arg] = arg_parse_options[arg]
+    return config
