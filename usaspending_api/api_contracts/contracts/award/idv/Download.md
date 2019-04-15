@@ -1,19 +1,34 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Download [/api/v2/awards/idvs/download/]
+# IDV Download [/api/v2/download/idvs/]
 
 This end point returns a zipped file containing IDV data.
 
-## GET
+## POST
 
 + Request (application/json)
     + Parameters
         + `award_id`: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-` (required, string)
 + Response 200 (application/json)
-    + Attributes (IDVDownloadResponse)
+    + Attributes
+        + results (IDVDownloadResponse)
 
 # Data Structures
 
 ## IDVDownloadResponse (object)
-+ url: www.maxwellkendall.com (required, string)
++ total_size: 35.055 (required, number)
+    The total size of the file being returned
++ file_name: `012_account_balances_20180613140845.zip` (required, string)
++ total_rows: 652 (required, number)
++ total_columns: 27 (required, number)
++ url: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
+    Where the file lives in S3
++ message (optional, nullable)
++ status: `finished` (required, enum[string])
+    + Members
+        + ready
+        + running
+        + finished
+        + failed
++ seconds_elapsed `10.061132` (required, string)
