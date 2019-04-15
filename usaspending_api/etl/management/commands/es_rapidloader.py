@@ -1,7 +1,7 @@
 import os
 import json
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
@@ -11,6 +11,8 @@ from time import sleep
 from usaspending_api import settings
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
@@ -40,18 +42,13 @@ class Command(BaseCommand):
 
     # used by parent class
     def add_arguments(self, parser):
-        parser.add_argument("fiscal_years", nargs="+", type=int)
+        parser.add_argument("fiscal_years", nargs="+", type=str, metavar="fiscal-years")
         parser.add_argument(
-            "--since",
-            default=None,
-            type=str,
-            help="Start date for computing the delta of changed transactions [YYYY-MM-DD]",
-        )
-        parser.add_argument(
-            "--days",
-            default=None,
-            type=int,
-            help="Like `--since` but subtracts X days from today instead of a specific date",
+            "--start-datetime",
+            type=datetime_command_line_argument_type(naive=False),
+            help="Processes transactions updated on or after the UTC date/time "
+            "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
+            "quotes if date/time contains spaces."
         )
         parser.add_argument(
             "--dir",
@@ -60,10 +57,9 @@ class Command(BaseCommand):
             help="Set for a custom location of output files",
         )
         parser.add_argument(
-            "--index_name", type=str, help="Set an index name to ingest data into", default="staging_transactions"
+            "--index-name", type=str, help="Set the index name to index new data", required=True
         )
         parser.add_argument("-d", "--deleted", action="store_true", help="Flag to include deleted transactions from S3")
-        parser.add_argument("--keep", action="store_true", help="CSV files are not deleted after they are uploaded")
         parser.add_argument(
             "-w",
             "--swap",
@@ -78,17 +74,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """ Script execution of custom code starts in this method"""
         start = perf_counter()
+        processing_start_datetime = datetime.now(timezone.utc)
         printf({"msg": "Starting script\n{}".format("=" * 56)})
 
         self.config = set_config()
         self.config["verbose"] = True if options["verbosity"] > 1 else False
-        self.config["fiscal_years"] = options["fiscal_years"]
+        if "all" in options["fiscal_years"]:
+            self.config["fiscal_years"] = create_fiscal_year_list(start_year=2008)
+        else:
+            self.config["fiscal_years"] = [int(x) for x in options["fiscal_years"]]
         self.config["directory"] = options["dir"] + os.sep
         self.config["provide_deleted"] = options["deleted"]
         self.config["swap"] = options["swap"]
-        self.config["keep"] = options["keep"]
         self.config["snapshot"] = options["snapshot"]
-        self.config["index_name"] = options["index_name"]
+        self.config["index_name"] = options["index_name"].lower()
 
         mappingfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_transaction_mapping.json")
         with open(mappingfile) as f:
@@ -98,45 +97,44 @@ class Command(BaseCommand):
         self.config["max_query_size"] = mapping_dict["settings"]["index.max_result_window"]
 
         does_index_exist = ES.indices.exists(self.config["index_name"])
+        is_incremental_load = False
 
         if not does_index_exist:
-            printf(
-                {
-                    "msg": '"{}" does not exist, skipping deletions for ths load,\
-                             provide_deleted overwritten to False'.format(
-                        self.config["index_name"]
-                    )
-                }
-            )
+            msg = '"{}" does not exist, skipping deletions for ths load, provide_deleted overwritten to False'
+            printf({"msg": msg.format(self.config["index_name"])})
             self.config["provide_deleted"] = False
 
-        if not options["since"]:
-            if not options["days"]:
-                # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
-                #   before the earliest records in S3 and when Postgres records were updated.
-                #   Choose the beginning of FY2008, and made it timezone-award for S3
-                self.config["starting_date"] = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
-            else:
-                # If --days is provided, go back X days into the past
-                self.config["starting_date"] = datetime.now(timezone.utc) - timedelta(days=options["days"])
+        default_datetime = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
+
+        if options["start_datetime"]:
+            self.config["starting_date"] = options["start_datetime"]
+            is_incremental_load = True
         else:
-            self.config["starting_date"] = datetime.strptime(options["since"] + "+0000", "%Y-%m-%d%z")
+            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
+            #   before the earliest records in S3 and when Postgres records were updated.
+            #   Choose the beginning of FY2008, and make it timezone-award for S3
+            self.config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
+
+        is_incremental_load = self.config["starting_date"] != default_datetime
 
         if not os.path.isdir(self.config["directory"]):
             printf({"msg": "Provided directory does not exist"})
-            raise SystemExit
+            raise SystemExit(1)
+        elif self.config["starting_date"] < default_datetime:
+            printf({"msg": "`start-datetime` is too early. Set to after {}".format(default_datetime)})
+            raise SystemExit(1)
+        elif does_index_exist and not is_incremental_load:
+            printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
+            raise SystemExit(1)
 
-        if does_index_exist and (not options["since"] and not options["days"]):
-            print(
-                """
-                  Bad mix of parameters! Index exists and
-                  full data load implied. Choose a different
-                  index_name or load a subset of data using --since
-                  """
-            )
-            raise SystemExit
+        start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
+        printf({"msg": start_msg.format(**self.config)})
 
         self.controller()
+
+        if is_incremental_load:
+            printf({"msg": "Updating Last Load record with {}".format(processing_start_datetime)})
+            update_last_load_date("es_transactions", processing_start_datetime)
         printf({"msg": "---------------------------------------------------------------"})
         printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
         printf({"msg": "---------------------------------------------------------------"})

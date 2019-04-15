@@ -202,7 +202,7 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     while not fetch_jobs.empty():
         if done_jobs.full():
-            printf({"msg": "Paused downloading new CSVs so ES index process can catch up", "f": "Download"})
+            printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
             sleep(60)
         else:
             start = perf_counter()
@@ -268,7 +268,7 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 
             printf({"msg": "Starting new job", "job": job.name, "f": "ES Ingest"})
             post_to_elasticsearch(client, job, config)
-            if os.path.exists(job.csv) and not config["keep"]:
+            if os.path.exists(job.csv):
                 os.remove(job.csv)
         else:
             printf({"msg": "No Job. Sleeping 45s", "f": "ES Ingest"})
@@ -501,7 +501,7 @@ def delete_query(response):
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i:i + n]
 
 
 def delete_transactions_from_es(client, id_list, job_id, config, index=None):
