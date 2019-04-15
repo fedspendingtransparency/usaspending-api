@@ -8,7 +8,7 @@ This end point returns a zipped file containing IDV data.
 ## GET
 
 + Request (application/json)
-    + Attributes (object)
+    + Parameters
         + `award_id`: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-` (required, string)
 + Response 200 (application/json)
     + Attributes (IDVDownloadResponse)
