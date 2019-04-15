@@ -201,11 +201,15 @@ class Command(BaseCommand):
             submission_ids = get_new_submission_ids(last_load_date)
             logger.info('Processing data for FABS starting from %s' % last_load_date)
 
-        with timer("obtaining delete records", logger.info):
-            ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
+        if is_incremental_load and not submission_ids:
+            logger.info("No new submissions. Exiting.")
 
-        with timer("retrieving/diff-ing FABS Data", logger.info):
-            ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
+        else:
+            with timer("obtaining delete records", logger.info):
+                ids_to_delete = get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime)
+
+            with timer("retrieving/diff-ing FABS Data", logger.info):
+                ids_to_upsert = get_fabs_transaction_ids(submission_ids, start_datetime, end_datetime)
 
         update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
