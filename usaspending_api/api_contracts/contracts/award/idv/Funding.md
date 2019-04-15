@@ -13,12 +13,12 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `piid`: `15B30518FTM230002` (optional, string)
             `Award ID` to further refine results.  All File C financial data for this award is returned if omitted.
-        + `limit`: 5 (optional, number)
+        + `limit`: `5` (optional, number)
             The number of results to include per page.
-            + Default: 10
-        + `page`: 1 (optional, number)
+            + Default: `10`
+        + `page`: `1` (optional, number)
             The page of results to return based on `limit`.
-            + Default: 1
+            + Default: `1`
         + `sort` (optional, enum[string])
             The field on which to order results.
             + Default: `reporting_fiscal_date`
@@ -42,8 +42,8 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 
 + Response 200 (application/json)
     + Attributes
-        + results (required, array[IDVFundingResponse])
-        + page_metadata (required, PageMetaDataObject, fixed-type)
+        + `results` (required, array[`IDVFundingResponse`])
+        + `page_metadata` (required, `PageMetaDataObject`, fixed-type)
 
     + Body
 
@@ -134,35 +134,35 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
-+ next: null (required, string, nullable)
-+ previous: null (required, string, nullable)
++ `page`: `2` (required, number)
++ `hasNext`: `false` (required, boolean)
++ `hasPrevious`: `false` (required, boolean)
++ `next`: `3` (required, number, nullable)
++ `previous`: `1` (required, number, nullable)
 
 ## IDVFundingResponse (object)
-+ `award_id` (required, number)
++ `award_id`: `5531118` (required, number)
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
-+ `generated_unique_award_id` (required, string)
++ `generated_unique_award_id`: `CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L` (required, string)
     Unique internal natural identifier for an award.
-+ `reporting_fiscal_year` (required, number, nullable)
++ `reporting_fiscal_year`: `2018` (required, number, nullable)
     Fiscal year of the submission date.
-+ `reporting_fiscal_quarter` (required, number, nullable)
++ `reporting_fiscal_quarter`: `1` (required, number, nullable)
     Fiscal quarter of the submission date.
-+ `piid` (required, string, nullable)
++ `piid`: `15B30518FTM230002` (required, string, nullable)
     Procurement Instrument Identifier (PIID).
-+ `funding_agency_id` (required, number, nullable)
++ `funding_agency_id`: `259` (required, number, nullable)
     Internal surrogate identifier of the funding agency.
-+ `reporting_agency_id` (required, string, nullable)
++ `reporting_agency_id`: `015` (required, string, nullable)
     CGAC of the reporting agency.
-+ `reporting_agency_name` (required, string, nullable)
-+ `agency_id` (required, string, nullable)
++ `reporting_agency_name`: `Department of Justice` (required, string, nullable)
++ `agency_id`: `015` (required, string, nullable)
     CGAC of the funding agency.
-+ `main_account_code` (required, string, nullable)
-+ `account_title` (required, string, nullable)
++ `main_account_code`: `1060` (required, string, nullable)
++ `account_title`: `Salaries and Expenses, Federal Prison System, Justice` (required, string, nullable)
     Federal Account Title
-+ `program_activity_code` (required, string, nullable)
-+ `program_activity_name` (required, string, nullable)
-+ `object_class` (required, string, nullable)
-+ `object_class_name` (required, string, nullable)
-+ `transaction_obligated_amount` (required, number, nullable)
++ `program_activity_code`: `0002` (required, string, nullable)
++ `program_activity_name`: `INSTITUTION SECURITY AND ADMINISTRATION` (required, string, nullable)
++ `object_class`: `220` (required, string, nullable)
++ `object_class_name`: `Transportation of things` (required, string, nullable)
++ `transaction_obligated_amount`: `192.64` (required, number, nullable)
