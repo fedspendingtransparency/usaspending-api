@@ -66,7 +66,7 @@ def get_new_submission_ids(last_load_date):
 
 def _get_ids(sql, submission_ids, start_datetime, end_datetime):
     params = []
-    if submission_ids:
+    if submission_ids is not None:
         sql += " and submission_id in %s"
         params.append(tuple(submission_ids))
     if start_datetime:
@@ -175,16 +175,20 @@ class Command(BaseCommand):
         if is_incremental_load:
             last_load_date = get_last_load_date()
             submission_ids = get_new_submission_ids(last_load_date)
-            logger.info('Processing data for FABS starting from %s' % last_load_date)
+            logger.info("Processing data for FABS starting from %s" % last_load_date)
 
-        with timer("obtaining delete records", logger.info):
-            ids_to_delete = get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime)
+        if is_incremental_load and not submission_ids:
+            logger.info("No new submissions. Exiting.")
 
-        with timer("retrieving/diff-ing FABS Data", logger.info):
-            ids_to_upsert = get_fabs_transaction_ids(submission_ids, start_datetime, end_datetime)
+        else:
+            with timer("obtaining delete records", logger.info):
+                ids_to_delete = get_fabs_records_to_delete(submission_ids, start_datetime, end_datetime)
 
-        update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
-        upsert_fabs_transactions(ids_to_upsert, update_award_ids)
+            with timer("retrieving/diff-ing FABS Data", logger.info):
+                ids_to_upsert = get_fabs_transaction_ids(submission_ids, start_datetime, end_datetime)
+
+            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
             update_last_load_date("fabs", processing_start_datetime)
