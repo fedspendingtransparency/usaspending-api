@@ -6,11 +6,12 @@ from django.db import connections
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
-from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 
 logger = logging.getLogger("console")
@@ -111,8 +112,8 @@ def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_date
 
 
 def read_afa_ids_from_file(afa_id_file_path):
-    with open(afa_id_file_path) as f:
-        return tuple(l.rstrip() for l in f)
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return tuple(l.decode('utf-8').rstrip() for l in f)
 
 
 class Command(BaseCommand):
