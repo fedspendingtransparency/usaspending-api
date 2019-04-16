@@ -4,7 +4,7 @@ import re
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 from usaspending_api.common.elasticsearch.client import es_client_query
 
@@ -69,7 +69,7 @@ def search_transactions(request_data, lower_limit, limit):
         "sort": [{query_sort: {"order": request_data["order"]}}],
     }
 
-    for index, award_types in indices_to_award_types.items():
+    for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
             index_name = "{}-{}*".format(TRANSACTIONS_INDEX_ROOT, index)
             break
@@ -105,7 +105,7 @@ def spending_by_transaction_count(request_data):
     keyword = request_data["filters"]["keywords"]
     response = {}
 
-    for category in indices_to_award_types.keys():
+    for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
         total = get_total_results(keyword, category)
         if total is not None:
             if category == "directpayments":

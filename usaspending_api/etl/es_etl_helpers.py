@@ -1,7 +1,6 @@
 import boto3
-
-import os
 import json
+import os
 import pandas as pd
 import subprocess
 import tempfile
@@ -11,10 +10,10 @@ from datetime import datetime
 from django.db import connection
 from elasticsearch import helpers
 from elasticsearch import TransportError
-
 from time import perf_counter, sleep
+
 from usaspending_api import settings
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 
 # ==============================================================================
@@ -321,7 +320,7 @@ def swap_aliases(client, index):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    for award_type, award_type_codes in indices_to_award_types.items():
+    for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
         printf(
             {
