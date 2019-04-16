@@ -190,9 +190,6 @@ class Command(BaseCommand):
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 
-        print(afa_ids)
-        exit(0)
-
         # If no other processing options were provided than this is an incremental load.
         is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
 
