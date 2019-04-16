@@ -32,9 +32,11 @@ from usaspending_api.etl.es_etl_helpers import take_snapshot
 # 3. Take a snapshot of the index reloaded
 #
 # IF RELOADING ---
-# [command] --index_name=NEWINDEX --swap --snapshot
+# [command] --index_name=NEWINDEX --reload-all
 
+DEFAULT_DATETIME = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
 ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
 
 
 class Command(BaseCommand):
@@ -44,17 +46,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("fiscal_years", nargs="+", type=str, metavar="fiscal-years")
         parser.add_argument(
-            "--reload-all",
+            "--deleted",
             action="store_true",
-            help="Load all transactions. It will close existing indexes "
-            "and set aliases used by API logic to the new index",
-        )
-        parser.add_argument(
-            "--start-datetime",
-            type=datetime_command_line_argument_type(naive=False),
-            help="Processes transactions updated on or after the UTC date/time "
-            "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
-            "quotes if date/time contains spaces.",
+            help="When this flag is set, the script will include the process to "
+            "obtain records of deleted transactions from S3 and remove from the index",
+            dest="provide_deleted",
         )
         parser.add_argument(
             "--dir",
@@ -63,22 +59,34 @@ class Command(BaseCommand):
             help="Set for a custom location of output files",
             dest="directory",
         )
-        parser.add_argument("--index-name", type=str, help="Set the index name to index new data", required=True)
-        parser.add_argument(
-            "-d",
-            "--deleted",
-            action="store_true",
-            help="When this flag is set, the script will include the process to "
-            "obtain records of deleted transactions from S3 and remove from the index",
-            dest="provide_deleted",
-        )
-        parser.add_argument(
-            "-s", "--snapshot", action="store_true", help="Take a snapshot of the current cluster and save to S3"
-        )
         parser.add_argument(
             "--fast",
             action="store_true",
             help="When this flag is set, the ETL process will skip the record counts to reduce operation time",
+        )
+        parser.add_argument(
+            "--index-name",
+            type=str,
+            help="Provide the target index which will be indexed with the new data and process deletes (if --deleted)",
+            required=True,
+        )
+        parser.add_argument(
+            "--reload-all",
+            action="store_true",
+            help="Load all transactions. It will close existing indexes "
+            "and set aliases used by API logic to the new index",
+        )
+        parser.add_argument(
+            "--snapshot",
+            action="store_true",
+            help="Create a new Elasticsearch snapshot of the current index state which is stored in S3",
+        )
+        parser.add_argument(
+            "--start-datetime",
+            type=datetime_command_line_argument_type(naive=False),
+            help="Processes transactions updated on or after the UTC date/time "
+            "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
+            "quotes if date/time contains spaces.",
         )
 
     # used by parent class
@@ -87,28 +95,30 @@ class Command(BaseCommand):
         start = perf_counter()
         printf({"msg": "Starting script\n{}".format("=" * 56)})
 
+        self.transform_cli_arguments(options)
+
+        start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
+        printf({"msg": start_msg.format(**self.config)})
+
+        self.controller()
+
+        if self.config["is_incremental_load"]:
+            printf({"msg": "Updating Last Load record with {}".format(self.config["processing_start_datetime"])})
+            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
+        printf({"msg": "---------------------------------------------------------------"})
+        printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
+        printf({"msg": "---------------------------------------------------------------"})
+
+    def transform_cli_arguments(self, options):
         simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast")
         self.config = set_config(simple_args, options)
 
-        if "all" in options["fiscal_years"] or self.config["reload_all"]:
-            self.config["fiscal_years"] = create_fiscal_year_list(start_year=2008)
-        else:
-            self.config["fiscal_years"] = [int(x) for x in options["fiscal_years"]]
-
+        self.config["fiscal_years"] = fiscal_years_for_processing(options)
         self.config["directory"] = self.config["directory"] + os.sep
         self.config["index_name"] = self.config["index_name"].lower()
 
-        mappingfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_transaction_mapping.json")
-        with open(mappingfile) as f:
-            mapping_dict = json.load(f)
-            self.config["mapping"] = json.dumps(mapping_dict)
-        self.config["doc_type"] = str(list(mapping_dict["mappings"].keys())[0])
-        self.config["max_query_size"] = mapping_dict["settings"]["index.max_result_window"]
-
-        default_datetime = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
-
         if self.config["reload_all"]:
-            self.config["starting_date"] = default_datetime
+            self.config["starting_date"] = DEFAULT_DATETIME
         elif options["start_datetime"]:
             self.config["starting_date"] = options["start_datetime"]
         else:
@@ -116,36 +126,26 @@ class Command(BaseCommand):
             #  `starting_date` needs to be present and a date before:
             #      - The earliest records in S3.
             #      - When all transaction records in the USAspending SQL database were updated.
-            #   Choose the beginning of FY2008, and make it timezone-award for S3
-            self.config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
+            #   And keep it timezone-award for S3
+            self.config["starting_date"] = get_last_load_date("es_transactions", default=DEFAULT_DATETIME)
+
+        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing()
 
         does_index_exist = ES.indices.exists(self.config["index_name"])
-        is_incremental_load = self.config["starting_date"] != default_datetime
+        self.config["is_incremental_load"] = self.config["starting_date"] != DEFAULT_DATETIME
 
         if not os.path.isdir(self.config["directory"]):
             printf({"msg": "Provided directory does not exist"})
             raise SystemExit(1)
-        elif self.config["starting_date"] < default_datetime:
-            printf({"msg": "`start-datetime` is too early. Set to after {}".format(default_datetime)})
+        elif self.config["starting_date"] < DEFAULT_DATETIME:
+            printf({"msg": "`start-datetime` is too early. Set to after {}".format(DEFAULT_DATETIME)})
             raise SystemExit(1)
-        elif does_index_exist and not is_incremental_load:
+        elif does_index_exist and not self.config["is_incremental_load"]:
             printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
             raise SystemExit(1)
         elif not does_index_exist or self.config["reload_all"]:
             printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
             self.config["provide_deleted"] = False
-
-        start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
-        printf({"msg": start_msg.format(**self.config)})
-
-        self.controller()
-
-        if is_incremental_load:
-            printf({"msg": "Updating Last Load record with {}".format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
-        printf({"msg": "---------------------------------------------------------------"})
-        printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
-        printf({"msg": "---------------------------------------------------------------"})
 
     def controller(self):
 
@@ -210,8 +210,8 @@ class Command(BaseCommand):
             take_snapshot(ES, self.config["index_name"], settings.ES_REPOSITORY)
 
 
-def set_config(args, arg_parse_options):
-    # Set values based on script start config
+def set_config(copy_args, arg_parse_options):
+    # Set values based on env vars and when the script started
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
@@ -219,9 +219,27 @@ def set_config(args, arg_parse_options):
         "processing_start_datetime": datetime.now(timezone.utc),
     }
 
-    config["verbose"] = True if arg_parse_options["verbosity"] > 1 else False
+    # convert the management command's levels of verbosity to a boolean
+    config["verbose"] = arg_parse_options["verbosity"] > 1
 
     # simple 1-to-1 transfer from argParse to internal config dict
-    for arg in args:
+    for arg in copy_args:
         config[arg] = arg_parse_options[arg]
     return config
+
+
+def fiscal_years_for_processing(options):
+    if options["reload_all"] or "all" in options["fiscal_years"]:
+        return create_fiscal_year_list(start_year=2008)
+    return [int(x) for x in options["fiscal_years"]]
+
+
+def mapping_data_for_processing():
+    mappingfile = os.path.join(settings.BASE_DIR, INDEX_MAPPING_FILE)
+    with open(mappingfile) as f:
+        mapping_dict = json.load(f)
+        mapping = json.dumps(mapping_dict)
+    doc_type = str(list(mapping_dict["mappings"].keys())[0])
+    max_query_size = mapping_dict["settings"]["index.max_result_window"]
+
+    return mapping, doc_type, max_query_size
