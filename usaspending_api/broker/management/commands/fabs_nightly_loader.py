@@ -112,8 +112,8 @@ def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_date
 
 
 def read_afa_ids_from_file(afa_id_file_path):
-    with RetrieveFileFromUri(afa_id_file_path, False).get_file_object() as f:
-        return tuple(l.rstrip() for l in f if l)
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return tuple(l.decode('utf-8').rstrip() for l in f if l)
 
 
 class Command(BaseCommand):
