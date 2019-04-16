@@ -6,11 +6,12 @@ from django.db import connections
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
-from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 
 logger = logging.getLogger("console")
@@ -110,6 +111,11 @@ def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_date
     return ids
 
 
+def read_afa_ids_from_file(afa_id_file_path):
+    with RetrieveFileFromUri(afa_id_file_path, False).get_file_object() as f:
+        return tuple(l.rstrip() for l in f if l)
+
+
 class Command(BaseCommand):
     help = "Update FABS data in USAspending from Broker. Command line parameters " \
            "are ANDed together so, for example, providing a transaction id and a " \
@@ -134,15 +140,11 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--afa-ids",
-            metavar="ID",
-            nargs="+",
+            "--afa-id-file",
+            metavar="FILEPATH",
             type=str,
-            help='Broker transaction IDs (afa_generated_unique) to reload. Nonexistent '
-                 'IDs will be ignored. IMPORTANT: Due to a limitation with command line '
-                 'parameters, any transaction IDs that start with a dash should be '
-                 'wrapped in quotes and include a leading space, for example: '
-                 '" -none-_1234_5678_-none-"'
+            help='A file containing only broker transaction IDs (afa_generated_unique) '
+                 'to reload, one ID per line. Nonexistent IDs will be ignored.'
         )
 
         parser.add_argument(
@@ -184,12 +186,7 @@ class Command(BaseCommand):
             end_datetime = None
         else:
             submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
-            # Need to trim spaces on afa ids due to a limitation of command line
-            # parameters that are preceded with a dash.  The workaround is to wrap
-            # the value in quotes with a leading space.  This means we need to trim
-            # that space.  The downside is that afa ids that actually start with
-            # or end with spaces will never be found... but currently this never happens...
-            afa_ids = tuple(o.strip() for o in options["afa_ids"]) if options["afa_ids"] else None
+            afa_ids = read_afa_ids_from_file(options['afa_id_file']) if options['afa_id_file'] else None
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 
