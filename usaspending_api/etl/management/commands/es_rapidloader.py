@@ -44,7 +44,13 @@ class Command(BaseCommand):
 
     # used by parent class
     def add_arguments(self, parser):
-        parser.add_argument("fiscal_years", nargs="+", type=str, metavar="fiscal-years")
+        parser.add_argument(
+            "fiscal_years",
+            nargs="+",
+            type=str,
+            metavar="fiscal-years",
+            help="Provide a list of fiscal years to process. For convenience, provide 'all' for FY2008 to current FY",
+        )
         parser.add_argument(
             "--deleted",
             action="store_true",
