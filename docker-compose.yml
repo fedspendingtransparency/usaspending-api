@@ -2,14 +2,6 @@ version: '2'
 services:
   app:
     build: .
-    volumes:
-      - .:/dockermount
     ports:
       - 8000:8000
-    entrypoint: ["python", "/dockermount/docker_django_management.py"]
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-    environment:
-      - DDM_IS_RUNNING_IN_DOCKER=0
-      - DATABASE_URL=postgres://usaspending:usaspender@host.docker.internal:5432/usaspending_db
-      - DDM_HOST_USER=usaspending
-      - PYTHONUNBUFFERED=0

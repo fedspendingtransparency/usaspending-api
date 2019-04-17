@@ -1,18 +1,19 @@
 # Basic Dockerfile for the USASpendingAPI
 
-## 0) Add your DATABASE_URL on the ENV line below
-## 1) Build:
+## 0) Add your DATABASE_URL on the ENV line below. Use host.docker.internal instead of localhost.
+## 1) Run server w/docker-compose, check port 8000:
+#        docker-compose up --build
+## Optional) Run ad-hoc commands:
 #        docker build . -t usaspendingapi
-## 2) Run (include -p flag and ports)
-#        docker run -p 127.0.0.1:8000:8000 usaspendingapi
+#        docker run -p 127.0.0.1:8000:8000 usaspendingapi <command>
 
-# This will forward port 8000 of the container to your localhost:8000 and start a new container for the API.
 # Rebuild and run when code in /usaspending-api changes
 
 FROM python:3.5.3
 
 WORKDIR /dockermount
 
+# For "Wrong sources.list entry or malformed file" re: main/binary-amd64/Packages, revisit
 RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
 
 RUN apt-get update -y
@@ -22,13 +23,12 @@ RUN apt-get install -y \
 	libmemcached-dev
 
 ADD requirements/requirements.txt /dockermount/requirements/requirements.txt
-
 RUN pip install -r requirements/requirements.txt
 
-ADD . /dockermount
+COPY . /dockermount
 
-ENV DATABASE_URL postgres://user@database_info:5432/db_name
+ENV DATABASE_URL postgres://willjackson@host.docker.internal:5432/data_store_api
+
+ENV PYTHONUNBUFFERED=0
 
 EXPOSE 8000
-
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
