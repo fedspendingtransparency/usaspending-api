@@ -1,0 +1,58 @@
+FORMAT: 1A
+HOST: https://api.usaspending.gov
+
+# Funding Treemap
+
+These endpoints are used to power USAspending.gov's IDV Summary Funding Treemap component.
+
+## List Federal Accounts [/api/v2/awards/idvs/accounts/]
+
+This endpoint returns a list of federal accounts under a given IDV.
+
++ Parameters
+    + `award_id`:`CONT_AW_4732_-NONE-_GS30FHA006_-NONE-` (required, string) 
+       IDV to return accounts for
+    + `page`: `1` (optional, integer)
+        Page number to return
+    + `limit`: `10` (optional, integer)
+        Maximum number to return
+    + `order`: `desc` (optional, string)
+        Direction of sort
+    + `sort`:`total_transaction_obligated_amount` (optional, string)
+        The field to sort on
+          
+
+### List Federal Accounts [POST]
++ Request (application/json)
+    + Attributes
+        + `award_id`:`CONT_AW_4732_-NONE-_GS30FHA006_-NONE-` (required, string) 
+            IDV to return accounts for
+        + `page`: `1` (optional, number)
+            Page number to return
+        + `limit`: `10` (optional, number)
+            Maximum number to return
+        + `order`: `desc` (optional, string)
+            Direction of sort
+        + `sort`:`total_transaction_obligated_amount` (optional, string)
+            The field to sort on
+
++ Response 200 (application/json)
+    + Attributes (AccountsListingObject)
+
+
+# Data Structures
+
+## PageMetadata (object)
++ page: 1 (required, number)
++ next: 2 (required, number, nullable)
++ previous: 1 (required, number, nullable)
++ hasNext: true (required, boolean)
++ hasPrevious: false (required, boolean)
+
+## AccountsListingObject (object)
++ page_metadata:(required, PageMetadata)
++ results:(required, array[AccountListing])
+
+## AccountListing (object)
++ total_transaction_obligated_amount: 1234.56 (required, number)
++ federal_acount: 1301 (required, string)
