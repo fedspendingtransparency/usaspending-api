@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary, build_composable_order_by
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
