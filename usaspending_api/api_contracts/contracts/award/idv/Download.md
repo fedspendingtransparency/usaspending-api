@@ -22,7 +22,7 @@ This end point returns a zipped file containing IDV data.
 + file_name: `012_account_balances_20180613140845.zip` (required, string)
 + total_rows: 652 (required, number)
 + total_columns: 27 (required, number)
-+ url: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
++ url: `xyz/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
     Where the file lives in S3
 + message (optional, nullable)
 + status: `finished` (required, enum[string])
