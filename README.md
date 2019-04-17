@@ -34,10 +34,11 @@ Now, navigate to the base file directory for the USAspending repositories
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
-We will be creating usaspending-api using the Dockerfile and docker-compose.  For more information on these consult the following
+We will be creating usaspending-api using the Dockerfile and docker-compose.  For more information on these consult the following:
  - ['Docker-Installation'](https://docs.docker.com/install/)
  - ['Docker-Compose'](https://docs.docker.com/compose/)
 
+Go into the dockerfile and make the required variable changes to match your information.
 Run the following command to buildout the docker container in the usaspending-api directory
 
     $ docker build . -t usaspendingapi
