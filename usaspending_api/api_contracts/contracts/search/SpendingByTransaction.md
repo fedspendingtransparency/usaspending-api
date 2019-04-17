@@ -187,14 +187,33 @@ List of filterable award types
 List of column names to request
 
 ### Sample
-- Award ID
-- Mod
-- Recipient Name
 - Action Date
-- Transaction Amount
+- Award ID
+- Award Type
 - Awarding Agency
 - Awarding Sub Agency
+- Mod
+- Recipient Name
+- Transaction Amount
+
+### Default
+- Action Date
+- Award ID
 - Award Type
+- Awarding Agency
+- Awarding Sub Agency
+- awarding_agency_id
+- Funding Agency
+- Funding Sub Agency
+- internal_id
+- Issued Date
+- Last Date to Order
+- Loan Value
+- Mod
+- Recipient Name
+- Subsidy Cost
+- Transaction Amount
+
 
 ## FilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)
