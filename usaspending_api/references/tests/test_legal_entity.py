@@ -5,7 +5,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.references.models import LegalEntity
-from usaspending_api.broker.helpers import get_business_categories
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
 
 @pytest.fixture

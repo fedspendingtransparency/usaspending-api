@@ -1,12 +1,13 @@
 import logging
 
-from usaspending_api.references.models import LegalEntity, LegalEntityOfficers
+from datetime import datetime, timezone
+from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.broker import lookups
-from datetime import datetime
+from usaspending_api.references.models import LegalEntity, LegalEntityOfficers
+
 
 logger = logging.getLogger("console")
+
 
 # We join DUNS and exec comp data, but ignore any empty data sets. Expected count from broker is < 5000.
 EXEC_COMP_QUERY = """
@@ -44,7 +45,7 @@ def load_executive_compensation(db_cursor, date, start_date):
     total_rows = len(exec_comp_query_dict)
     logger.info('Updating Executive Compensation Data, {} rows coming from the Broker...'.format(total_rows))
 
-    start_time = datetime.now()
+    start_time = datetime.now(timezone.utc)
 
     for index, row in enumerate(exec_comp_query_dict, 1):
 
@@ -91,6 +92,4 @@ def load_executive_compensation(db_cursor, date, start_date):
             leo.save()
 
     # Update the date for the last time the data load was run
-    ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).delete()
-    ExternalDataLoadDate(last_load_date=start_date,
-                         external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).save()
+    update_last_load_date("exec_comp", start_date)

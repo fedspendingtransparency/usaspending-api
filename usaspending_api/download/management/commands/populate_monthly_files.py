@@ -19,7 +19,7 @@ from usaspending_api.references.models import ToptierAgency
 logger = logging.getLogger('console')
 
 award_mappings = {
-    'contracts': ['contracts'],
+    'contracts': ['contracts', 'idvs'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 
