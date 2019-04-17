@@ -17,11 +17,11 @@ This end point returns a zipped file containing IDV data.
 # Data Structures
 
 ## IDVDownloadResponse (object)
-+ total_size: 35.055 (required, number)
++ total_size: 35.055 (nullable, number)
     The total size of the file being returned
 + file_name: `012_account_balances_20180613140845.zip` (required, string)
-+ total_rows: 652 (required, number)
-+ total_columns: 27 (required, number)
++ total_rows: 652 (nullable, number)
++ total_columns: 27 (nullable, number)
 + url: `xyz/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
     Where the file lives in S3
 + message (optional, nullable)
