@@ -108,11 +108,11 @@ Returns transaction records which match the keyword and award type code filters.
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
-+ next (required, number, nullable)
-+ previous (required, number, nullable)
++ `page`: 1 (required, number)
++ `hasNext`: false (required, boolean)
++ `hasPrevious`: false (required, boolean)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 
 ## TransactionResponse (object)
 
@@ -146,44 +146,42 @@ Returns transaction records which match the keyword and award type code filters.
 + `Transaction Amount`: `40000000.00` (required, string, nullable)
 
 
-# Data Structures
-
 ## FilterObjectAwardTypes (array)
 List of filterable award types
 
 ### Sample
-- `IDV_A`
-- `IDV_B`
-- `IDV_B_A`
-- `IDV_B_B`
-- `IDV_B_C`
-- `IDV_C`
-- `IDV_D`
-- `IDV_E`
+- IDV_A
+- IDV_B
+- IDV_B_A
+- IDV_B_B
+- IDV_B_C
+- IDV_C
+- IDV_D
+- IDV_E
 
 ### Default
-- `02`
-- `03`
-- `04`
-- `05`
-- `06`
-- `07`
-- `08`
-- `09`
-- `10`
-- `11`
-- `A`
-- `B`
-- `C`
-- `D`
-- `IDV_A`
-- `IDV_B`
-- `IDV_B_A`
-- `IDV_B_B`
-- `IDV_B_C`
-- `IDV_C`
-- `IDV_D`
-- `IDV_E`
+- 02
+- 03
+- 04
+- 05
+- 06
+- 07
+- 08
+- 09
+- 10
+- 11
+- A
+- B
+- C
+- D
+- IDV_A
+- IDV_B
+- IDV_B_A
+- IDV_B_B
+- IDV_B_C
+- IDV_C
+- IDV_D
+- IDV_E
 
 ## FieldNameObject (array)
 List of column names to request
@@ -199,7 +197,7 @@ List of column names to request
 - Award Type
 
 ## FilterObject (object)
-+ `keywords`: lockheed (required, array[string], fixed-type)
++ `keywords`: `lockheed` (required, array[string], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
