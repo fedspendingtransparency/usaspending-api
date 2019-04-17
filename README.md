@@ -11,9 +11,6 @@ _This API is utilized by USAspending.gov to obtain all federal spending data whi
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-- [`python3`](https://docs.python-guide.org/starting/installation/#python-3-installation-guides)
-- [`pyenv`](https://github.com/pyenv/pyenv/#installation) using Python 3.5.x
-  - _NOTE: Read full install. `brew install` needs to be followed by additional steps to modify and source your `~/.bash_profile`_
 - [`PostgreSQL`](https://www.postgresql.org/download/) 10.x (with a dedicated `data_store_api` database)
 - [`direnv`](https://github.com/direnv/direnv#install)
   - For Mac OSX, be sure to put the hook in your `~/.bash_profile`, not `~/.bashrc`
@@ -24,71 +21,64 @@ Ensure the following dependencies are installed and working prior to continuing:
   - OSX users will use [`Homebrew`](https://brew.sh/)
 
 ### Setup
-Navigate to the base file directory for the USAspending repositories
+Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults.  If you are confused on how to do this consult: 
+ - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
+
+Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
+
+    postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
+
+Now, navigate to the base file directory for the USAspending repositories
 
     $ mkdir -p usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
-Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`, currently 3.5.5)
+We will be creating usaspending-api using the Dockerfile and docker-compose.  For more information on these consult the following
+ - ['Docker-Installation'](https://docs.docker.com/install/)
+ - ['Docker-Compose'](https://docs.docker.com/compose/)
 
-    $ pyenv install 3.5.5
-    $ pyenv local 3.5.5
-    $ python -m venv .venv/usaspending-api
-    $ source .venv/usaspending-api/bin/activate
+Run the following command to buildout the docker container in the usaspending-api directory
 
+    $ docker build . -t usaspendingapi
 
-Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
+Once the docker image has been built run docker-compose up to initialize the container
 
-    (usaspending-api) $ 
+    $ docker-compose up
 
-[`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
+For now the rest of the commands need to be run inside the docker container. Run the following command to create a bash session inside the container:
 
-:bulb: _(try a different WiFi if your current WiFi blocks any of the dependency downloads)_
-
-    (usaspending-api) $ pip install -r requirements/requirements.txt
-
-Set environment variables (fill in the connection string placeholders, e.g. `USER`, `PASSWORD`, `HOST`, `PORT`)
-
-_Note: the default port for PostgreSQL is `5432`_
-
-```shell
-
-(usaspending-api) $ echo "export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/data_store_api'" >> .envrc
-
-```
-
-Make sure to source your .envrc file if the DATABASE_URL does not return the above url you included in the previous step when you echo the variable
+    $ docker exec -it <container-name> /bin/bash
 
 Next, test the database connection and upate the `data_store_api` schema
 
-    (usaspending-api) $ ./manage.py migrate
+    (container-name) # ./manage.py migrate
 
 Right now, some endpoints won't work because they are dependent on materialized views to run. To create them, run the following from your usaspending-api folder:
 
-    psql -f usaspending_api/database_scripts/matviews/functions_and_enums.sql $DATABASE_URL
+    (container-name) # psql -f usaspending_api/database_scripts/matviews/functions_and_enums.sql $DATABASE_URL
 
-This should output something similar to the following:
+The above command should output something similar to the following (if you get an error about not being a superuser or not having the right permissions then go into your local postgres database and make sure that you properly assigned the user you created in the data_store_api database to have superuser permissions):
 
     CREATE EXTENSION
     DO
     CREATE FUNCTION
 
-Once the command has finished create a directory outside the usaspending-api folder and run the following within the usaspending-api folder:
+Once the command has finished create a directory anywhere outside the usaspending-api directory and run the following within the usaspending-api directory:
 
-    python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=<destination dir>
+    (container-name) # python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=<destination dir>
 
 Now we need to create a readonly role in order to properly load the schema into our database:
 
-    psql $DATABASE_URL -c "CREATE ROLE readonly"
+    (container-name) # psql $DATABASE_URL -c "CREATE ROLE readonly"
 
-CD into the directory you created in the previous step and run:
+Change your directory path to be the directory you created in the previous step and run:
 
-    cat *.sql | psql $DATABASE_URL -f -
+    (container-name) # cat *.sql | psql $DATABASE_URL -f -
 
 Finally, go back to the usaspending directory and start up the site
 
-    (usaspending-api) $ ./manage.py runserver
+    (container-name) # ./manage.py runserver
 
 The application will now be available at `http://localhost:8000`!
 
