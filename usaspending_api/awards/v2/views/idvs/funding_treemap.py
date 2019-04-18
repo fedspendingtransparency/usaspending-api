@@ -151,7 +151,7 @@ class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
                       taa.agency_id || '-' || taa.main_account_code federal_account,""")
 
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
-        paginated_results, age_metadata = get_pagination(results, request.data['limit'], request.data['page'])
+        paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
 
         response = OrderedDict((
             ('results', paginated_results),

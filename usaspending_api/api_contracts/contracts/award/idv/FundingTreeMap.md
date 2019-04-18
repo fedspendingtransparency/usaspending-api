@@ -35,6 +35,7 @@ This endpoint returns a list of federal accounts under a given IDV.
 ## PageMetadata (object)
 + page: 1 (required, number)
 + next: 2 (required, number, nullable)
++ count: 4 (required, number)
 + previous: 1 (required, number, nullable)
 + hasNext: true (required, boolean)
 + hasPrevious: false (required, boolean)
