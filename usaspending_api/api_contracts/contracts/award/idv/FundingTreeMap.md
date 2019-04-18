@@ -25,7 +25,9 @@ This endpoint returns a list of federal accounts under a given IDV.
             The field to sort on
 
 + Response 200 (application/json)
-    + Attributes (AccountsListingObject)
+    + Attributes 
+       + page_metadata: (required, PageMetadata)
+       + results: (required, array[AccountListing])
 
 
 # Data Structures
@@ -36,10 +38,6 @@ This endpoint returns a list of federal accounts under a given IDV.
 + previous: 1 (required, number, nullable)
 + hasNext: true (required, boolean)
 + hasPrevious: false (required, boolean)
-
-## AccountsListingObject (object)
-+ page_metadata: (required, PageMetadata)
-+ results: (required, array[AccountListing])
 
 ## AccountListing (object)
 + total_transaction_obligated_amount: 1234.56 (required, number)

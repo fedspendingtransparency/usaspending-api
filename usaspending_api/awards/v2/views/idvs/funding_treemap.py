@@ -8,7 +8,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_pagination
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
 
@@ -121,10 +121,10 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
                       fa.account_title""")
 
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
-        page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
+        paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
 
         response = OrderedDict((
-            ('results', results[:request.data['limit']]),
+            ('results', paginated_results),
             ('page_metadata', page_metadata)
         ))
 
@@ -151,10 +151,10 @@ class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
                       taa.agency_id || '-' || taa.main_account_code federal_account,""")
 
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
-        page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
+        paginated_results, age_metadata = get_pagination(results, request.data['limit'], request.data['page'])
 
         response = OrderedDict((
-            ('results', results[:request.data['limit']]),
+            ('results', paginated_results),
             ('page_metadata', page_metadata)
         ))
 
