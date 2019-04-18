@@ -305,4 +305,3 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
         }))
     # One result is returned when searching for "Foreign" recipients
     assert len(resp.data['results']) == 1
-
