@@ -9,18 +9,6 @@ These endpoints are used to power USAspending.gov's IDV Summary Funding Treemap 
 
 This endpoint returns a list of federal accounts under a given IDV.
 
-+ Parameters
-    + `award_id`:`CONT_AW_4732_-NONE-_GS30FHA006_-NONE-` (required, string) 
-       IDV to return accounts for
-    + `page`: `1` (optional, integer)
-        Page number to return
-    + `limit`: `10` (optional, integer)
-        Maximum number to return
-    + `order`: `desc` (optional, string)
-        Direction of sort
-    + `sort`:`total_transaction_obligated_amount` (optional, string)
-        The field to sort on
-          
 
 ### List Federal Accounts [POST]
 + Request (application/json)
@@ -50,9 +38,9 @@ This endpoint returns a list of federal accounts under a given IDV.
 + hasPrevious: false (required, boolean)
 
 ## AccountsListingObject (object)
-+ page_metadata:(required, PageMetadata)
-+ results:(required, array[AccountListing])
++ page_metadata: (required, PageMetadata)
++ results: (required, array[AccountListing])
 
 ## AccountListing (object)
 + total_transaction_obligated_amount: 1234.56 (required, number)
-+ federal_acount: 1301 (required, string)
++ federal_acount: 075-1301 (required, string)

@@ -14,9 +14,9 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 
 
 SORTABLE_COLUMNS = {
-    'federal_account':'taa.main_account_code',
+    'federal_account':'federal_account',
     'total_transaction_obligated_amount':'total_transaction_obligated_amount',
-    'agency': 'taa.agency_id'
+    'agency': 'ca.awarding_agency_id'
 }
 
 '''for k, v in SORTABLE_COLUMNS.items():
@@ -113,9 +113,9 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
         limit = SQL("limit {}". format(request.data['limit'] + 1))
         offset = SQL("offset {}".format((request.data['page'] - 1) * request.data['limit']))
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
-        group_by = SQL("group by taa.main_account_code")
+        group_by = SQL("group by federal_account")
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
-                      taa.main_account_code federal_account""")
+                      taa.agency_id || '-' || taa.main_account_code federal_account""")
         
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
         page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
@@ -130,7 +130,7 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
 # STUB FOR DEV-2238
 
-#@validate_post_request(TREEMAP_MODELS.extend([{'key': 'account', 'name': 'account', 'optional': False, 'type': 'text', 'text_type': 'search'}]))
+@validate_post_request(TREEMAP_MODELS + [{'key': 'account', 'name': 'account', 'optional': False, 'type': 'text', 'text_type': 'search'}])
 class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
