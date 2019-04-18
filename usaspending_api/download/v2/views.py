@@ -6,8 +6,9 @@ from django.conf import settings
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
@@ -42,6 +43,8 @@ class BaseDownloadViewSet(APIDocumentationView):
     def post(self, request, request_type='award'):
         if request_type == 'award':
             json_request = self.validate_award_request(request.data)
+        elif request_type == 'idv':
+            json_request = self.validate_idv_request(request.data)
         else:
             json_request = self.validate_account_request(request.data)
 
@@ -160,6 +163,62 @@ class BaseDownloadViewSet(APIDocumentationView):
 
         return json_request
 
+    @staticmethod
+    def validate_idv_request(request_data):
+        """
+        Analyze request and raise any formatting errors as Exceptions.  As of this writing,
+        IDVs do not accept any filters other than the top level IDV award id (either
+        awards.id integer surrogate key or awards.generated_unique_award_id string natural key).
+        """
+        json_request = {'filters': {}}
+
+        # Validate required parameters
+        for required_param in ['award_id']:
+            if required_param not in request_data:
+                raise InvalidParameterException(
+                    'Missing one or more required query parameters: {}'.format(required_param)
+                )
+
+        # Validate account_level parameters
+        valid_account_levels = ["treasury_account"]
+        if request_data.get('account_level', None) not in valid_account_levels:
+            raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
+        json_request['account_level'] = request_data['account_level']
+
+        award_id = request_data.get('award_id')
+        if award_id is None:
+            raise InvalidParameterException("Award id may not be null")
+        award_id_type = type(award_id)
+        if award_id_type not in (str, int):
+            raise InvalidParameterException("Award id must be either a string or an integer")
+
+        # Let's also ensure that this is a valid award id and convert it to the
+        # internal, surrogate, integer id.
+        if award_id_type is int or award_id.isdigit():
+            award_id = Award.objects.filter(id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
+        else:
+            award_id = Award.objects.filter(generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
+        if award_id is None:
+            raise InvalidParameterException("Unable to find an IDV matching the provided award id")
+
+        json_request['filters']['idv_award_id'] = award_id
+        json_request['filters']['award_type_codes'] = tuple(set(contract_type_mapping.keys()) | set(idv_type_mapping.keys()))
+
+        if not isinstance(request_data['award_levels'], list):
+            raise InvalidParameterException('Award levels parameter not provided as a list')
+        elif len(request_data['award_levels']) == 0:
+            raise InvalidParameterException('At least one award level is required.')
+        for award_level in request_data['award_levels']:
+            if award_level not in VALUE_MAPPINGS:
+                raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+        json_request['download_types'] = request_data['award_levels']
+
+        # Set defaults of non-required parameters
+        json_request['file_format'] = request_data.get('file_format', 'csv')
+        json_request['limit'] = parse_limit(request_data)
+
+        return json_request
+
     def validate_account_request(self, request_data):
         json_request = {}
 
@@ -268,6 +327,21 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
         request.data['award_levels'] = ['awards', 'sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request, 'award')
+
+
+class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of IDV data in CSV form for download.
+
+    endpoint_doc: /download/idv_download.md
+    """
+
+    def post(self, request):
+        request.data['award_levels'] = ['idv_orders', 'idv_transactions', 'idv_treasury_account_funding']
+        request.data['constraint_type'] = 'row_count'
+        request.data['account_level'] = 'treasury_account'
+
+        return BaseDownloadViewSet.post(self, request, 'idv')
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
