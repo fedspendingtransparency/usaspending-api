@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from psycopg2.sql import Identifier, Literal, SQL, Composed
+from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -14,8 +14,8 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 
 
 SORTABLE_COLUMNS = {
-    'federal_account':'federal_account',
-    'total_transaction_obligated_amount':'total_transaction_obligated_amount',
+    'federal_account': 'federal_account',
+    'total_transaction_obligated_amount': 'total_transaction_obligated_amount',
     'agency': 'ca.awarding_agency_id'
 }
 
@@ -51,8 +51,8 @@ FUNDING_TREEMAP_SQL = SQL("""
             taa.treasury_account_identifier = faba.treasury_account_id
         left outer join federal_account fa on
             taa.agency_id || '-' || taa.main_account_code =  fa.federal_account_code
-        {group_by} 
-        {order_by} 
+        {group_by}
+        {order_by}
         {limit}
          {offset};""")
 
@@ -65,7 +65,8 @@ class IDVFundingBaseViewSet(APIDocumentationView):
     """
 
     @staticmethod
-    def _business_logic(request_data: dict, columns: object, group_by: object, limit: object, order_by: object, offset: object) -> list:
+    def _business_logic(request_data: dict, columns: object, group_by: object,
+                        limit: object, order_by: object, offset: object) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
@@ -84,7 +85,7 @@ class IDVFundingBaseViewSet(APIDocumentationView):
         return execute_sql_to_ordered_dictionary(sql)
 
 
-@validate_post_request([get_internal_or_generated_award_id_model(),])
+@validate_post_request([get_internal_or_generated_award_id_model(), ])
 class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
 
     """
@@ -107,6 +108,7 @@ class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
 TREEMAP_MODELS = customize_pagination_with_sort_columns(list(SORTABLE_COLUMNS.keys()), DEFAULT_SORT_COLUMN)
 TREEMAP_MODELS.append(get_internal_or_generated_award_id_model())
 
+
 @validate_post_request(TREEMAP_MODELS)
 class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
@@ -119,7 +121,7 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
                       taa.agency_id || '-' || taa.main_account_code federal_account,
                       fa.account_title""")
-        
+
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
         page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
 
@@ -133,7 +135,12 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
 # STUB FOR DEV-2238
 
-@validate_post_request(TREEMAP_MODELS + [{'key': 'account', 'name': 'account', 'optional': False, 'type': 'text', 'text_type': 'search'}])
+@validate_post_request(TREEMAP_MODELS +
+                       [{'key': 'account',
+                         'name': 'account',
+                         'optional': False,
+                         'type': 'text',
+                         'text_type': 'search'}])
 class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
@@ -144,7 +151,7 @@ class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
                       taa.agency_id || '-' || taa.main_account_code federal_account,""")
-        
+
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
         page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
 

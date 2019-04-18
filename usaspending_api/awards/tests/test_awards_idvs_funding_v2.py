@@ -334,6 +334,7 @@ class IDVFundingRollupTestCase(TestCase):
             (0,)
         )
 
+
 class IDVFundingTreemapTestCase(TestCase):
 
     @classmethod
@@ -360,12 +361,11 @@ class IDVFundingTreemapTestCase(TestCase):
         response = self.client.post(FEDERAL_ACCOUNT_ENDPOINT, request)
         assert response.status_code == expected_status_code
 
-
     def test_complete_queries(self):
         for _id in range(1, AWARD_COUNT + 1):
             self._test_post(
                 {'award_id': _id}
-            ) 
+            )
 
     def test_with_nonexistent_id(self):
 
@@ -382,4 +382,3 @@ class IDVFundingTreemapTestCase(TestCase):
         self._test_post(
             {'award_id': None},
         )
-
