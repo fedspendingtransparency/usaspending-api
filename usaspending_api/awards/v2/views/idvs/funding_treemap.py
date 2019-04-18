@@ -20,9 +20,6 @@ SORTABLE_COLUMNS = {
     'account_title': 'fa.account_title'
 }
 
-'''for k, v in SORTABLE_COLUMNS.items():
-    v.append('faba.financial_accounts_by_awards_id')'''
-
 DEFAULT_SORT_COLUMN = 'federal_account'
 
 FUNDING_TREEMAP_SQL = SQL("""
