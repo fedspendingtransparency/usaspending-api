@@ -340,8 +340,19 @@ def test_spending_by_award_subawards_fail(client, refresh_matviews):
 @pytest.mark.django_db
 def test_spending_by_award_subawards(client, mock_matviews_qs): 
 
-    mock_model_0 = MockModel(fain="", prime_award_type="IDV_B", award_ts_vector="", award_id=121658, subaward_number="EP-W-13-028-3", award_type="procurement", recipient_name="WESTON SOLUTIONS HOLDINGS, INC.", action_date="2013-10-01", amount=125000, awarding_toptier_agency_name="Environmental Protection Agency", awarding_subtier_agency_name="Environmental Protection Agency", piid="EPW13028", prime_recipient_name="TECHLAW, INC.")
-    mock_model_1 = MockModel(fain="", prime_award_type="IDV_A", award_ts_vector="", award_id=121659, subaward_number="EP-W-13-028-1", award_type="procurement", recipient_name="ENVIRONMENTAL COMPLIANCE CONSULTANTS, INC", action_date="2013-09-01", amount=102432, awarding_toptier_agency_name="Environmental Protection Agency", awarding_subtier_agency_name="Environmental Protection Agency", piid="EPW13028", prime_recipient_name="TECHLAW, INC.")
+    mock_model_0 = MockModel(fain="", prime_award_type="IDV_B", award_ts_vector="",
+                            subaward_number="EP-W-13-028-3", award_type="procurement",
+                            recipient_name="WESTON SOLUTIONS HOLDINGS, INC.", action_date="2013-10-01",
+                            amount=125000, awarding_toptier_agency_name="Environmental Protection Agency",
+                            awarding_subtier_agency_name="Environmental Protection Agency", piid="EPW13028",
+                            prime_recipient_name="TECHLAW, INC.")
+
+    mock_model_1 = MockModel(fain="", prime_award_type="IDV_A", award_ts_vector="",
+                            subaward_number="EP-W-13-028-1", award_type="procurement",
+                            recipient_name="ENVIRONMENTAL COMPLIANCE CONSULTANTS, INC", action_date="2013-09-01",
+                            amount=102432, awarding_toptier_agency_name="Environmental Protection Agency",
+                            awarding_subtier_agency_name="Environmental Protection Agency", piid="EPW13028",
+                            prime_recipient_name="TECHLAW, INC.")
     add_to_mock_objects(mock_matviews_qs, [mock_model_0, mock_model_1])
     resp = client.post(
         '/api/v2/search/spending_by_award',
