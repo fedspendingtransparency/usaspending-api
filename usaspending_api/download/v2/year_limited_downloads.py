@@ -1,6 +1,6 @@
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.v2.views import BaseDownloadViewSet
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
 
