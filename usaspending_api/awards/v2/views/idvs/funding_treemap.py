@@ -16,7 +16,8 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 SORTABLE_COLUMNS = {
     'federal_account': 'federal_account',
     'total_transaction_obligated_amount': 'total_transaction_obligated_amount',
-    'agency': 'ca.awarding_agency_id'
+    'agency': 'ca.awarding_agency_id',
+    'account_title': 'fa.account_title'
 }
 
 '''for k, v in SORTABLE_COLUMNS.items():
