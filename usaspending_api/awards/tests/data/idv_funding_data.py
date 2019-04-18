@@ -85,6 +85,12 @@ def create_funding_data_tree():
         )
 
         mommy.make(
+            'accounts.FederalAccount',
+            account_title='account title %s' % _sid,
+            federal_account_code=str(_id).zfill(3)+"-"+str(_id).zfill(4),
+            )
+
+        mommy.make(
             'references.RefProgramActivity',
             id=_id,
             program_activity_code=_sid,

@@ -48,7 +48,9 @@ FUNDING_TREEMAP_SQL = SQL("""
         inner join financial_accounts_by_awards faba on
             faba.award_id = ca.id
         left outer join treasury_appropriation_account taa on
-            taa.treasury_account_identifier = faba.treasury_account_id 
+            taa.treasury_account_identifier = faba.treasury_account_id
+        left outer join federal_account fa on
+            taa.agency_id || '-' || taa.main_account_code =  fa.federal_account_code
         {group_by} 
         {order_by} 
         {limit}
@@ -113,9 +115,10 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
         limit = SQL("limit {}". format(request.data['limit'] + 1))
         offset = SQL("offset {}".format((request.data['page'] - 1) * request.data['limit']))
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
-        group_by = SQL("group by federal_account")
+        group_by = SQL("group by federal_account, fa.account_title ")
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
-                      taa.agency_id || '-' || taa.main_account_code federal_account""")
+                      taa.agency_id || '-' || taa.main_account_code federal_account,
+                      fa.account_title""")
         
         results = self._business_logic(request.data, columns, group_by, limit, order_by, offset)
         page_metadata = get_simple_pagination_metadata(len(results), request.data['limit'], request.data['page'])
