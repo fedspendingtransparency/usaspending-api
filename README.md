@@ -21,6 +21,11 @@ Ensure the following dependencies are installed and working prior to continuing:
   - OSX users will use [`Homebrew`](https://brew.sh/)
 
 ### Setup
+There are two options for how you want to setup your database in order to buildout the API.  You can:
+    1. Use your own local postgres database for the API Application to use
+    2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database
+
+#### Using a Locally Hosted Postgres Database
 Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults.  If you are confused on how to do this consult: 
  - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
@@ -28,7 +33,15 @@ Make sure to grant whatever user you created for the data_store api database sup
 
     postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
 
-Now, navigate to the base file directory for the USAspending repositories
+Also, be sure to remove the **db** section from the services list in the docker-compose.yml file so that your app container does not try connecting to the docker postgres database and change the DATABASE_URL connection strings to match your local database connection.
+
+:bulb: HINT: Be sure to also change the HOST section of the database url to be host.docker.interal in order to point docker to your localhost and not the localhost address of the app container
+
+#### Use the docker-compose Postgres Database
+If you would like to use docker-compose to run the database for you be sure to update your docker-compose file to include a pointer to an empty directory on your host machine where you want to store your postgres database information
+
+### Clone the Repository
+Now, navigate to the base file directory where you will store the USAspending repositories
 
     $ mkdir -p usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git

@@ -1,15 +1,42 @@
-version: '2'
+version: '3.2'
 services:
+  db:
+    container_name: usaspending-db
+    image: postgres:10.6-alpine
+    volumes:
+      - type: bind
+        source: <<add_source directory where postgres will live>>
+        target: /var/lib/postgresql/data
+    restart: on-failure:3 # Will attempt to start the db 3 times
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=usaspending
+      - POSTGRES_PASSWORD=usaspender
+      - POSTGRES_DB=data_store_api
   app:
     build: .
+    depends_on:
+     - db
     volumes:
       - .:/dockermount
     ports:
       - 8000:8000
-    entrypoint: ["python", "/dockermount/docker_django_management.py"]
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     environment:
       - DDM_IS_RUNNING_IN_DOCKER=0
-      - DATABASE_URL=postgres://usaspending:usaspender@host.docker.internal:5432/usaspending_db
+      - DATABASE_URL=postgres://usaspending:usaspender@usaspending-db:5432/data_store_api
       - DDM_HOST_USER=usaspending
       - PYTHONUNBUFFERED=0
+  migrate:
+    build: .
+    depends_on:
+      - db 
+      - app
+    volumes:
+     - .:/dockermount
+    links:
+     - db
+    command: ["python", "manage.py", "migrate"]
+    environment:
+      - DATABASE_URL=postgres://usaspending:usaspender@usaspending-db:5432/data_store_api
