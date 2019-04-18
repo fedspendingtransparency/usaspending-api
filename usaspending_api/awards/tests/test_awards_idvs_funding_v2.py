@@ -46,7 +46,7 @@ class IDVFundingTestCase(TestCase):
                 'reporting_agency_name': 'reporting agency name %s' % _sid,
                 'agency_id': _sid.zfill(3),
                 'main_account_code': _sid.zfill(4),
-                'account_title': 'account title %s' % _sid,
+                'account_title': 'FederalAccount account title %s' % _sid,
                 'program_activity_code': _sid,
                 'program_activity_name': 'program activity %s' % _sid,
                 'object_class': '1' + _sid,
