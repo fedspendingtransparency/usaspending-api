@@ -35,7 +35,7 @@ Make sure to grant whatever user you created for the data_store api database sup
 
 Also, be sure to remove the **db** section from the services list in the docker-compose.yml file so that your app container does not try connecting to the docker postgres database and change the DATABASE_URL connection strings to match your local database connection.
 
-:bulb: HINT: Be sure to also change the HOST section of the database url to be host.docker.interal in order to point docker to your localhost and not the localhost address of the app container
+:bulb: _(HINT: Be sure to also change the HOST section of the database url to be host.docker.interal in order to point docker to your localhost and not the localhost address of the app container)_
 
 #### Use the docker-compose Postgres Database
 If you would like to use docker-compose to run the database for you be sure to update your docker-compose file to include a pointer to an empty directory on your host machine where you want to store your postgres database information
