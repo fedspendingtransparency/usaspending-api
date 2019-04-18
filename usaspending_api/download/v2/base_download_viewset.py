@@ -16,7 +16,8 @@ from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.base_download_validations import validate_award_request, validate_idv_request, validate_account_request
+from usaspending_api.download.v2.base_download_validations import (
+    validate_award_request, validate_idv_request, validate_account_request)
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
