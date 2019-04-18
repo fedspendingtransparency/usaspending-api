@@ -9,8 +9,8 @@ from django_mock_queries.query import MockModel
 
     
 @pytest.mark.django_db
-def test_spending_by_award_idv_subawards_success(client, refresh_matviews): 
-    # test idv subawards
+def test_spending_by_award_subawards_success(client, refresh_matviews): 
+    # test idv subawards search
     resp = client.post(
         '/api/v2/search/spending_by_award',
         content_type='application/json',
