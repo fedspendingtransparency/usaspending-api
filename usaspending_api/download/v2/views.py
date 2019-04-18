@@ -195,14 +195,16 @@ class BaseDownloadViewSet(APIDocumentationView):
         # Let's also ensure that this is a valid award id and convert it to the
         # internal, surrogate, integer id.
         if award_id_type is int or award_id.isdigit():
-            award_id = Award.objects.filter(id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
+            award_id = Award.objects.filter(
+                id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
         else:
-            award_id = Award.objects.filter(generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
+            award_id = Award.objects.filter(
+                generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
         if award_id is None:
             raise InvalidParameterException("Unable to find an IDV matching the provided award id")
 
         json_request['filters']['idv_award_id'] = award_id
-        json_request['filters']['award_type_codes'] = tuple(set(contract_type_mapping.keys()) | set(idv_type_mapping.keys()))
+        json_request['filters']['award_type_codes'] = tuple(set(contract_type_mapping) | set(idv_type_mapping))
 
         if not isinstance(request_data['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
