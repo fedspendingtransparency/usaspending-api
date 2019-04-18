@@ -89,7 +89,7 @@ def test_spending_by_award_subawards(client, mock_matviews_qs):
                              amount=125000, awarding_toptier_agency_name="Environmental Protection Agency",
                              awarding_subtier_agency_name="Environmental Protection Agency", piid="EPW13028",
                              prime_recipient_name="Tom Bombadil")
-    
+
     mock_model_7 = MockModel(fain="", prime_award_type="IDV_B_C", award_ts_vector="",
                              subaward_number="EP-W-13-028-7", award_type="procurement",
                              recipient_name="Sauron", action_date="2013-10-01",
