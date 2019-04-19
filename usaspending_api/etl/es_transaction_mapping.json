@@ -118,6 +118,10 @@
           "format": "yyyy-MM-dd",
           "index": false
         },
+        "ordering_period_end_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
         "transaction_fiscal_year": {
           "type": "integer",
           "index": false

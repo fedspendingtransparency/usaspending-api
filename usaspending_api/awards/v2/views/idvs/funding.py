@@ -15,7 +15,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 SORTABLE_COLUMNS = {
-    'account_title': ['taa.account_title'],
+    'account_title': ['fa.account_title'],
     'object_class': ['oc.object_class_name', 'oc.object_class'],
     'piid': ['ca.piid'],
     'program_activity': ['rpa.program_activity_code', 'rpa.program_activity_name'],
@@ -54,7 +54,7 @@ GET_FUNDING_SQL = SQL("""
         taa.reporting_agency_name,
         taa.agency_id,
         taa.main_account_code,
-        taa.account_title,
+        fa.account_title,
         rpa.program_activity_code,
         rpa.program_activity_name,
         oc.object_class,
@@ -74,6 +74,8 @@ GET_FUNDING_SQL = SQL("""
             sa.submission_id = faba.submission_id
         left outer join treasury_appropriation_account taa on
             taa.treasury_account_identifier = faba.treasury_account_id
+        left outer join federal_account fa on
+            fa.id = taa.federal_account_id
         left outer join ref_program_activity rpa on
             rpa.id = faba.program_activity_id
         left outer join object_class oc on

@@ -1,5 +1,7 @@
 """
 Some shortcuts for generating "standardized" basic award id TinyShield models.
+These functions return your own personal copy of the TinyShield model so no
+need to deepcopy!  Unless you're incorporating them into another model...
 """
 
 
