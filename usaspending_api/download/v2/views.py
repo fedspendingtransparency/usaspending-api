@@ -86,7 +86,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         for required_param in ['award_levels', 'filters']:
             if required_param not in request_data:
                 raise InvalidParameterException(
-                    'Missing one or more required query parameters: {}'.format(required_param)
+                    'Missing one or more required body parameters: {}'.format(required_param)
                 )
 
         if not isinstance(request_data['award_levels'], list):
