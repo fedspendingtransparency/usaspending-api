@@ -25,7 +25,7 @@ This end point returns a zipped file containing IDV data.
 + url: `xyz/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
     Where the file lives in S3
 + message (optional, nullable)
-+ status: `finished` (required, enum[string])
++ status: (required, enum[string])
     + Members
         + ready
         + running
