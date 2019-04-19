@@ -24,7 +24,10 @@ def _get_idv_award_id(filters):
 
 def idv_order_filter(filters):
     idv_award_id = _get_idv_award_id(filters)
-    return Award.objects.filter(id__in=get_descendant_award_ids(idv_award_id, True))
+    descendant_award_ids = get_descendant_award_ids(idv_award_id, True)
+    if len(descendant_award_ids) < 1:
+        raise InvalidParameterException('Provided IDV award id has no descendants')
+    return Award.objects.filter(id__in=descendant_award_ids)
 
 
 def idv_transaction_filter(filters):
@@ -36,6 +39,9 @@ def idv_treasury_account_funding_filter(account_type, download_table, filters, a
     if account_level != "treasury_account":
         raise InvalidParameterException("Only treasury level account reporting is supported at this time")
     idv_award_id = _get_idv_award_id(filters)
-    queryset = download_table.objects.filter(award_id__in=get_descendant_award_ids(idv_award_id, False))
+    descendant_award_ids = get_descendant_award_ids(idv_award_id, False)
+    if len(descendant_award_ids) < 1:
+        raise InvalidParameterException('Provided IDV award id has no descendants')
+    queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
     queryset = generate_treasury_account_query(queryset, 'award_financial', account_level)
     return queryset

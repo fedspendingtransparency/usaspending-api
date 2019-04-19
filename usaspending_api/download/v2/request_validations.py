@@ -90,7 +90,7 @@ def validate_account_request(request_data):
     json_request = {'columns': request_data.get('columns', []), 'filters': {}}
 
     _validate_required_parameters(request_data, ["account_level", "filters"])
-    json_request['account_level'] = _validate_required_parameters(request_data, ["federal_account", "treasury_account"])
+    json_request['account_level'] = _validate_account_level(request_data, ["federal_account", "treasury_account"])
 
     filters = _validate_filters(request_data)
 
@@ -137,10 +137,10 @@ def _validate_award_id(request_data):
         raise InvalidParameterException("Award id must be either a string or an integer")
     if award_id_type is int or award_id.isdigit():
         award_id = Award.objects.filter(
-            id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
+            id=int(award_id), type__startswith="IDV").values_list("id", flat=True).first()
     else:
         award_id = Award.objects.filter(
-            generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
+            generated_unique_award_id=award_id, type__startswith="IDV").values_list("id", flat=True).first()
     if award_id is None:
         raise InvalidParameterException("Unable to find an IDV matching the provided award id")
     return award_id
