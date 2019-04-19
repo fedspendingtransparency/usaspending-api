@@ -51,7 +51,7 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
         post_data = request.data
         if post_data:
             if 'agency' not in post_data:
-                raise InvalidParameterException('Missing one or more required query parameters: agency')
+                raise InvalidParameterException('Missing one or more required body parameters: agency')
             agency_id = post_data['agency']
 
         # Get all the top tier agencies

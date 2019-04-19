@@ -168,20 +168,30 @@ class IDVAwardsTestCase(TestCase):
             (None, None, 1, False, False)
         )
 
-    def test_idv_flag(self):
+    def test_type(self):
 
         self._test_post(
-            {'award_id': 1, 'idv': True},
+            {'award_id': 1, 'type': 'child_idvs'},
             (None, None, 1, False, False, 5, 4, 3)
         )
 
         self._test_post(
-            {'award_id': 1, 'idv': False},
+            {'award_id': 1, 'type': 'child_awards'},
             (None, None, 1, False, False, 6)
         )
 
         self._test_post(
-            {'award_id': 1, 'idv': 'BOGUS IDV'},
+            {'award_id': 1, 'type': 'grandchild_awards'},
+            (None, None, 1, False, False)
+        )
+
+        self._test_post(
+            {'award_id': 2, 'type': 'grandchild_awards'},
+            (None, None, 1, False, False, 14, 13, 12, 11)
+        )
+
+        self._test_post(
+            {'award_id': 1, 'type': 'BOGUS TYPE'},
             expected_status_code=status.HTTP_400_BAD_REQUEST
         )
 
@@ -278,47 +288,47 @@ class IDVAwardsTestCase(TestCase):
     def test_complete_queries(self):
 
         self._test_post(
-            {'award_id': 1, 'idv': True, 'limit': 3, 'page': 1, 'sort': 'description', 'order': 'asc'},
+            {'award_id': 1, 'type': 'child_idvs', 'limit': 3, 'page': 1, 'sort': 'description', 'order': 'asc'},
             (None, None, 1, False, False, 3, 4, 5)
         )
 
         self._test_post(
-            {'award_id': 1, 'idv': False, 'limit': 3, 'page': 1, 'sort': 'description', 'order': 'asc'},
+            {'award_id': 1, 'type': 'child_awards', 'limit': 3, 'page': 1, 'sort': 'description', 'order': 'asc'},
             (None, None, 1, False, False, 6)
         )
 
     def test_no_grandchildren_returned(self):
 
         self._test_post(
-            {'award_id': 2, 'idv': True},
+            {'award_id': 2, 'type': 'child_idvs'},
             (None, None, 1, False, False, 8, 7)
         )
 
         self._test_post(
-            {'award_id': 2, 'idv': False},
+            {'award_id': 2, 'type': 'child_awards'},
             (None, None, 1, False, False, 10, 9)
         )
 
     def test_no_parents_returned(self):
 
         self._test_post(
-            {'award_id': 7, 'idv': True},
+            {'award_id': 7, 'type': 'child_idvs'},
             (None, None, 1, False, False)
         )
 
         self._test_post(
-            {'award_id': 7, 'idv': False},
+            {'award_id': 7, 'type': 'child_awards'},
             (None, None, 1, False, False, 12, 11)
         )
 
     def test_nothing_returned_for_bogus_contract_relationship(self):
 
         self._test_post(
-            {'award_id': 9, 'idv': True},
+            {'award_id': 9, 'type': 'child_idvs'},
             (None, None, 1, False, False)
         )
 
         self._test_post(
-            {'award_id': 9, 'idv': False},
+            {'award_id': 9, 'type': 'child_awards'},
             (None, None, 1, False, False)
         )
