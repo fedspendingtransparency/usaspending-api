@@ -22,10 +22,6 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['idv_orders', 'idv_transactions', 'idv_treasury_account_funding']
-        request.data['constraint_type'] = 'row_count'
-        request.data['account_level'] = 'treasury_account'
-
         return BaseDownloadViewSet.post(self, request, 'idv')
 
 

@@ -20,56 +20,31 @@ from usaspending_api.download.lookups import (
 
 def validate_award_request(request_data):
     """Analyze request and raise any formatting errors as Exceptions"""
-    json_request = {}
-    constraint_type = request_data.get('constraint_type', None)
 
-    # Validate required parameters
-    for required_param in ['award_levels', 'filters']:
-        if required_param not in request_data:
-            raise InvalidParameterException(
-                'Missing one or more required query parameters: {}'.format(required_param)
-            )
+    _validate_required_parameters(request_data, ['award_levels', 'filters'])
+    filters = _validate_filters(request_data)
+    award_levels = _validate_award_levels(request_data)
 
-    if not isinstance(request_data['award_levels'], list):
-        raise InvalidParameterException('Award levels parameter not provided as a list')
-    elif len(request_data['award_levels']) == 0:
-        raise InvalidParameterException('At least one award level is required.')
-    for award_level in request_data['award_levels']:
-        if award_level not in VALUE_MAPPINGS:
-            raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
-    json_request['download_types'] = request_data['award_levels']
+    json_request = {'download_types': award_levels, 'filters': {}}
 
     # Overriding all other filters if the keyword filter is provided in year-constraint download
     # Make sure this is after checking the award_levels
-    if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
+    constraint_type = request_data.get('constraint_type')
+    if constraint_type == 'year' and 'elasticsearch_keyword' in filters:
         json_request['filters'] = {
-            'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
+            'elasticsearch_keyword': filters['elasticsearch_keyword'],
             'award_type_codes': list(award_type_mapping.keys()),
         }
         json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
         return json_request
 
-    if not isinstance(request_data['filters'], dict):
-        raise InvalidParameterException('Filters parameter not provided as a dict')
-    elif len(request_data['filters']) == 0:
-        raise InvalidParameterException('At least one filter is required.')
-    json_request['filters'] = {}
-
     # Set defaults of non-required parameters
     json_request['columns'] = request_data.get('columns', [])
     json_request['file_format'] = request_data.get('file_format', 'csv')
 
-    # Validate shared filter types and assign defaults
-    filters = request_data['filters']
     check_types_and_assign_defaults(filters, json_request['filters'], SHARED_AWARD_FILTER_DEFAULTS)
 
-    # Validate award type types
-    if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
-        filters['award_type_codes'] = list(award_type_mapping.keys())
-    for award_type_code in filters['award_type_codes']:
-        if award_type_code not in award_type_mapping:
-            raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
-    json_request['filters']['award_type_codes'] = filters['award_type_codes']
+    json_request['filters']['award_type_codes'] = _validate_award_type_codes(filters)
 
     # Validate locations
     for location_filter in ['place_of_performance_locations', 'recipient_locations']:
@@ -103,86 +78,28 @@ def validate_award_request(request_data):
 
 
 def validate_idv_request(request_data):
-    """
-    Analyze request and raise any formatting errors as Exceptions.  As of this writing,
-    IDVs do not accept any filters other than the top level IDV award id (either
-    awards.id integer surrogate key or awards.generated_unique_award_id string natural key).
-    """
-    json_request = {'filters': {}}
+    _validate_required_parameters(request_data, ["award_id"])
+    award_id = _validate_award_id(request_data)
 
-    # Validate required parameters
-    for required_param in ['award_id']:
-        if required_param not in request_data:
-            raise InvalidParameterException(
-                'Missing one or more required query parameters: {}'.format(required_param)
-            )
-
-    # Validate account_level parameters
-    valid_account_levels = ["treasury_account"]
-    if request_data.get('account_level', None) not in valid_account_levels:
-        raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
-    json_request['account_level'] = request_data['account_level']
-
-    award_id = request_data.get('award_id')
-    if award_id is None:
-        raise InvalidParameterException("Award id may not be null")
-    award_id_type = type(award_id)
-    if award_id_type not in (str, int):
-        raise InvalidParameterException("Award id must be either a string or an integer")
-
-    # Let's also ensure that this is a valid award id and convert it to the
-    # internal, surrogate, integer id.
-    if award_id_type is int or award_id.isdigit():
-        award_id = Award.objects.filter(
-            id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
-    else:
-        award_id = Award.objects.filter(
-            generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
-    if award_id is None:
-        raise InvalidParameterException("Unable to find an IDV matching the provided award id")
-
-    json_request['filters']['idv_award_id'] = award_id
-    json_request['filters']['award_type_codes'] = tuple(set(contract_type_mapping) | set(idv_type_mapping))
-
-    if not isinstance(request_data['award_levels'], list):
-        raise InvalidParameterException('Award levels parameter not provided as a list')
-    elif len(request_data['award_levels']) == 0:
-        raise InvalidParameterException('At least one award level is required.')
-    for award_level in request_data['award_levels']:
-        if award_level not in VALUE_MAPPINGS:
-            raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
-    json_request['download_types'] = request_data['award_levels']
-
-    # Set defaults of non-required parameters
-    json_request['file_format'] = request_data.get('file_format', 'csv')
-    json_request['limit'] = parse_limit(request_data)
-
-    return json_request
+    return {
+        "account_level": "treasury_account",
+        "download_types": ["idv_orders", "idv_transactions", "idv_treasury_account_funding"],
+        "file_format": request_data.get("file_format", "csv"),
+        "filters": {
+            "idv_award_id": award_id,
+            "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
+        },
+        "limit": parse_limit(request_data),
+    }
 
 
 def validate_account_request(request_data):
-    json_request = {'columns': request_data.get('columns', [])}
+    json_request = {'columns': request_data.get('columns', []), 'filters': {}}
 
-    # Validate required parameters
-    for required_param in ["account_level", "filters"]:
-        if required_param not in request_data:
-            raise InvalidParameterException(
-                'Missing one or more required query parameters: {}'.format(required_param)
-            )
+    _validate_required_parameters(request_data, ["account_level", "filters"])
+    json_request['account_level'] = _validate_required_parameters(request_data, ["federal_account", "treasury_account"])
 
-    # Validate account_level parameters
-    valid_account_levels = ["federal_account", "treasury_account"]
-    if request_data.get('account_level', None) not in valid_account_levels:
-        raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
-    json_request['account_level'] = request_data['account_level']
-
-    # Validate the filters parameter and its contents
-    json_request['filters'] = {}
-    filters = request_data['filters']
-    if not isinstance(filters, dict):
-        raise InvalidParameterException('Filters parameter not provided as a dict')
-    elif len(filters) == 0:
-        raise InvalidParameterException('At least one filter is required.')
+    filters = _validate_filters(request_data)
 
     # Validate required filters
     for required_filter in ["fy", "quarter"]:
@@ -212,3 +129,71 @@ def validate_account_request(request_data):
     check_types_and_assign_defaults(filters, json_request['filters'], ACCOUNT_FILTER_DEFAULTS)
 
     return json_request
+
+
+def _validate_award_id(request_data):
+    """
+    Validate that we were provided a valid award_id and, in the process, convert
+    generated_unique_award_id to an internal, surrogate, integer award id.
+    """
+    award_id = request_data.get('award_id')
+    if award_id is None:
+        raise InvalidParameterException("Award id must be provided and may not be null")
+    award_id_type = type(award_id)
+    if award_id_type not in (str, int):
+        raise InvalidParameterException("Award id must be either a string or an integer")
+    if award_id_type is int or award_id.isdigit():
+        award_id = Award.objects.filter(
+            id=int(award_id), type__startswith='IDV').values_list("id", flat=True).first()
+    else:
+        award_id = Award.objects.filter(
+            generated_unique_award_id=award_id, type__startswith='IDV').values_list("id", flat=True).first()
+    if award_id is None:
+        raise InvalidParameterException("Unable to find an IDV matching the provided award id")
+    return award_id
+
+
+def _validate_account_level(request_data, valid_account_levels):
+    account_level = request_data.get('account_level')
+    if account_level not in valid_account_levels:
+        raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
+    return account_level
+
+
+def _validate_award_levels(request_data):
+    award_levels = request_data.get('award_levels')
+    if not isinstance(award_levels, list):
+        raise InvalidParameterException('Award levels parameter not provided as a list')
+    elif len(award_levels) == 0:
+        raise InvalidParameterException('At least one award level is required.')
+    for award_level in award_levels:
+        if award_level not in VALUE_MAPPINGS:
+            raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+    return award_levels
+
+
+def _validate_award_type_codes(filters):
+    award_type_codes = filters.get('award_type_codes')
+    if not award_type_codes or len(award_type_codes) < 1:
+        award_type_codes = list(award_type_mapping)
+    for award_type_code in award_type_codes:
+        if award_type_code not in award_type_mapping:
+            raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
+    return award_type_codes
+
+
+def _validate_filters(request_data):
+    filters = request_data.get('filters')
+    if not isinstance(filters, dict):
+        raise InvalidParameterException('Filters parameter not provided as a dict')
+    elif len(filters) == 0:
+        raise InvalidParameterException('At least one filter is required.')
+    return filters
+
+
+def _validate_required_parameters(request_data, required_parameters):
+    for required_param in required_parameters:
+        if required_param not in request_data:
+            raise InvalidParameterException(
+                'Missing one or more required query parameters: {}'.format(required_param)
+            )
