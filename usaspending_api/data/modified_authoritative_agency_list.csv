@@ -168,7 +168,7 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 050,5000,Securities and Exchange Commission,SEC,YES,NO,OMB File,5000,Securities and Exchange Commission,SEC,,,5000,Securities and Exchange Commission,GPO Acronym List,,,,,FALSE,,,
 054,5400,Federal Labor Relations Authority,FLRA,YES,NO,OMB File,5400,Federal Labor Relations Authority,FLRA,,,5400,Federal Labor Relations Authority,GPO Acronym List,,,,,FALSE,,,
 417,5920,National Endowment for the Arts,NEA,YES,YES,OMB File,5920,National Endowment for the Arts,NEA,,,5901,National Endowment for the Arts,,,YES,,,FALSE,,,
-418,5940,National Endowment for the Humanities,NEH,YES,YES,OMB File,5940,National Endowment for the Humanities,NEH,,,5902,National Endowment for the Humanities,,,YES,,,FALSE,,,
+418,4340,National Endowment for the Humanities,NEH,YES,YES,GSA,4340,National Endowment for the Humanities,NEH,,,5902,National Endowment for the Humanities,,,YES,,,FALSE,"The National Endowment for the Humanities serves and strengthens our nation by supporting high quality projects and programs in the humanities and by making the humanities available to all Americans.",https://www.neh.gov/,
 060,6000,Railroad Retirement Board,RRB,YES,YES,OMB File,6000,Railroad Retirement Board,RRB,,,6000,Railroad Retirement Board,GPO Acronym List,,YES,,,FALSE,,,
 061,6100,Consumer Product Safety Commission,CPSC,YES,YES,OMB File,6100,Consumer Product Safety Commission,CPSC,,,6100,Consumer Product Safety Commission,GPO Acronym List,,YES,,,FALSE,,,
 062,6201,Office of Special Counsel,OSC,YES,NO,OMB File,6201,Office of Special Counsel,OSC,,,6200,Office of Special Counsel,GPO Acronym List,,,,,FALSE,,,

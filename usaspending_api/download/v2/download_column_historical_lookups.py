@@ -1108,3 +1108,14 @@ query_paths = {
         ])
     }
 }
+
+# IDV Orders are nearly identical to awards but start from the Awards table
+# instead of from UniversalAwardView materialized view so we need to lop off
+# the leading "award__" bit.
+query_paths['idv_orders'] = {"d1": OrderedDict(
+    [(k, v[7:] if v.startswith('award__') else v) for k, v in query_paths['award']['d1'].items()])}
+
+# Likewise, IDV Transactions start directly in TransactionFPDS instead of
+# UniversalTransactionView.
+query_paths['idv_transactions'] = {"d1": OrderedDict(
+    [(k, v[13:] if v.startswith('transaction__') else v) for k, v in query_paths['transaction']['d1'].items()])}
