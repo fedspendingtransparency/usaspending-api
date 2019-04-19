@@ -5,7 +5,7 @@ services:
     image: postgres:10.6-alpine
     volumes:
       - type: bind
-        source: ${DATABASE_DIRECTORY} 
+        source: ${POSTGRES_DIRECTORY} 
         target: /var/lib/postgresql/data
     restart: on-failure:3 # Will attempt to start the db 3 times
     ports:
@@ -22,7 +22,7 @@ services:
       - .:/dockermount
     ports:
       - 8000:8000
-    command: ["sleep", "15s", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: /bin/sh -c "sleep 20s; python manage.py runserver 0.0.0.0:8000"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
       PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
@@ -33,7 +33,7 @@ services:
       - app
     volumes:
      - .:/dockermount
-    command: ["sleep", "15s", "python", "manage.py", "migrate"]
+    command: /bin/sh -c "sleep 15s; python manage.py migrate"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
       PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
