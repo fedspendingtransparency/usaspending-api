@@ -13,7 +13,7 @@ from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.base_download_validations import validate_award_request
+from usaspending_api.download.v2.request_validations import validate_award_request
 from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
