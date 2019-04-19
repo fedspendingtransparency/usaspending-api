@@ -1,14 +1,14 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Download [/api/v2/download/idvs/]
+# IDV Download [/api/v2/download/idv/]
 
 This end point returns a zipped file containing IDV data.
 
 ## POST
 
 + Request (application/json)
-    + Parameters
+    + Attributes
         + `award_id`: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-` (required, string)
 + Response 200 (application/json)
     + Attributes
