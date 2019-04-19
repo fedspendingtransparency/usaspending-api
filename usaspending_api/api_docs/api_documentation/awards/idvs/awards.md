@@ -8,7 +8,7 @@ Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle a
 ## Request Parameters
 
 - award_id: (required) ID of award to retrieve. This can either be `generated_unique_award_id` or `id` from awards table.
-- idv: (optional, default: True) True to return related IDVs or False to return related contracts.
+- type: (optional, default: "child_idvs") "child_idvs" to return child IDVs of the award indicated, "child_awards" to return child awards, or "grandchild_awards" to return grandchild awards.
 - limit: (optional, default: 10) The number of records to return.
 - page: (optional, default: 1) The page number to return.
 - sort: (optional, default: `period_of_performance_start_date`) The field on which to sort results.  Can be one of: `award_type`, `description`, `funding_agency`, `last_date_to_order`, `obligated_amount`, `period_of_performance_current_end_date`, `period_of_performance_start_date`, or `piid`.
