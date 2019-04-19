@@ -46,14 +46,7 @@ def validate_award_request(request_data):
 
     json_request['filters']['award_type_codes'] = _validate_award_type_codes(filters)
 
-    # Validate locations
-    for location_filter in ['place_of_performance_locations', 'recipient_locations']:
-        if filters.get(location_filter):
-            for location_dict in filters[location_filter]:
-                if not isinstance(location_dict, dict):
-                    raise InvalidParameterException('Location is not a dictionary: {}'.format(location_dict))
-                location_error_handling(location_dict.keys())
-            json_request['filters'][location_filter] = filters[location_filter]
+    _validate_and_update_locations(filters, json_request)
 
     # Validate time periods
     total_range_count = validate_time_periods(filters, json_request)
@@ -189,6 +182,18 @@ def _validate_filters(request_data):
     elif len(filters) == 0:
         raise InvalidParameterException('At least one filter is required.')
     return filters
+
+
+def _validate_and_update_locations(filters, json_request):
+    if 'filters' not in json_request:
+        json_request['filters'] = {}
+    for location_filter in ['place_of_performance_locations', 'recipient_locations']:
+        if filters.get(location_filter):
+            for location_dict in filters[location_filter]:
+                if not isinstance(location_dict, dict):
+                    raise InvalidParameterException('Location is not a dictionary: {}'.format(location_dict))
+                location_error_handling(location_dict.keys())
+            json_request['filters'][location_filter] = filters[location_filter]
 
 
 def _validate_required_parameters(request_data, required_parameters):
