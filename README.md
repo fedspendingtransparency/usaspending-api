@@ -6,7 +6,7 @@ _This API is utilized by USAspending.gov to obtain all federal spending data whi
 
 ![USAspending Landing Page](readme.jpg?raw=true "Readme")
 
-## Install
+## Creating a Development Environment
 
 Ensure the following dependencies are installed and working prior to continuing:
 
@@ -20,89 +20,62 @@ Ensure the following dependencies are installed and working prior to continuing:
   - Windows' WSL bash uses `apt-get`
   - OSX users will use [`Homebrew`](https://brew.sh/)
 
-### Setup
-There are two options for how you want to setup your database in order to buildout the API.  You can:
-    1. Use your own local postgres database for the API Application to use
-    2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database
-
-#### Using a Locally Hosted Postgres Database
-Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults.  If you are confused on how to do this consult: 
- - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
-
-Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
-
-    postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
-
-Also, be sure to remove the **db** section from the services list in the docker-compose.yml file so that your app container does not try connecting to the docker postgres database and change the DATABASE_URL connection strings to match your local database connection.
-
-:bulb: _(HINT: Be sure to also change the HOST section of the database url to be host.docker.interal in order to point docker to your localhost and not the localhost address of the app container)_
-
-#### Use the docker-compose Postgres Database
-If you would like to use docker-compose to run the database for you be sure to update your docker-compose file to include a pointer to an empty directory on your host machine where you want to store your postgres database information
-
-### Clone the Repository
+### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
 
     $ mkdir -p usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
-We will be creating usaspending-api using the Dockerfile and docker-compose.  For more information on these consult the following:
- - ['Docker-Installation'](https://docs.docker.com/install/)
- - ['Docker-Compose'](https://docs.docker.com/compose/)
+## Database Setup
+There are two options for how you want to setup your database in order to buildout the API.  You can:  
+    1. Use your own local postgres database for the API Application to use.  
+    2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database
 
-Go into the dockerfile and make the required variable changes to match your information.
-Run the following command to buildout the docker container in the usaspending-api directory
+#### Option 1: Using a Locally Hosted Postgres Database
+Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult: 
+ - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
-    $ docker build . -t usaspendingapi
+Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
 
-Once the docker image has been built run docker-compose up to initialize the container
+    postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
 
-    $ docker-compose up
+#### Option 2: Using the Docker Compose Postgres Database
+See below for basic setup instructions. For help with Docker Compose:  
+ - [Docker Installation](https://docs.docker.com/install/)  
+ - [Docker Compose](https://docs.docker.com/compose/)  
 
-For now the rest of the commands need to be run inside the docker container. Run the following command to create a bash session inside the container:
 
-    $ docker exec -it <container-name> /bin/bash
+### Database Setup and Initialization w/Docker Compose
+- Do these steps in order to provision a fresh database
 
-Next, test the database connection and upate the `data_store_api` schema
+- **If you run a local database**, set `DATABASE_URL` in `docker-compose.yaml` to `postgres://<username>:<password>@host.docker.internal:<port>/data_store_api`
 
-    (container-name) # ./manage.py migrate
+- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.  
 
-Right now, some endpoints won't work because they are dependent on materialized views to run. To create them, run the following from your usaspending-api folder:
+- `docker-compose up usaspending-db-migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/]().
 
-    (container-name) # psql -f usaspending_api/database_scripts/matviews/functions_and_enums.sql $DATABASE_URL
+- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
 
-The above command should output something similar to the following (if you get an error about not being a superuser or not having the right permissions then go into your local postgres database and make sure that you properly assigned the user you created in the data_store_api database to have superuser permissions):
+#### Manual Database Setup
+- `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
-    CREATE EXTENSION
-    DO
-    CREATE FUNCTION
 
-Once the command has finished create a directory anywhere outside the usaspending-api directory and run the following within the usaspending-api directory:
+## Running the API
+`docker-compose up usaspending-api`
 
-    (container-name) # python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=<destination dir>
+The application will now be available at `http://localhost:8000`.
 
-Now we need to create a readonly role in order to properly load the schema into our database:
-
-    (container-name) # psql $DATABASE_URL -c "CREATE ROLE readonly"
-
-Change your directory path to be the directory you created in the previous step and run:
-
-    (container-name) # cat *.sql | psql $DATABASE_URL -f -
-
-Finally, go back to the usaspending directory and start up the site
-
-    (container-name) # ./manage.py runserver
-
-The application will now be available at `http://localhost:8000`!
-
-## API
+## Using the API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
 Deployed production API endpoints and docs are found by following links here: `https://api.usaspending.gov`
 
 ## Loading Data
+
+_Note: it is possible to run ad-hoc commands out of a Docker container once you get the hang of it, see the comments in the Dockerfile._
+
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 
@@ -113,3 +86,4 @@ For details on how our data loaders modify incoming data, see [data_changes.md](
 This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the CC0 1.0 Universal public domain dedication.
 
 All contributions to this project will be released under the CC0 dedication. By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
+got
