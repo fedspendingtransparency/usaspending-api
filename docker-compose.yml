@@ -1,19 +1,19 @@
-version: '3.2'
+version: '3.7'
 services:
   db:
     container_name: usaspending-db
     image: postgres:10.6-alpine
     volumes:
       - type: bind
-        source: <<add_source directory where postgres will live>>
+        source: ${DATABASE_DIRECTORY} 
         target: /var/lib/postgresql/data
     restart: on-failure:3 # Will attempt to start the db 3 times
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_USER=usaspending
-      - POSTGRES_PASSWORD=usaspender
-      - POSTGRES_DB=data_store_api
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: data_store_api
   app:
     build: .
     depends_on:
@@ -22,21 +22,18 @@ services:
       - .:/dockermount
     ports:
       - 8000:8000
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["sleep", "15s", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     environment:
-      - DDM_IS_RUNNING_IN_DOCKER=0
-      - DATABASE_URL=postgres://usaspending:usaspender@usaspending-db:5432/data_store_api
-      - DDM_HOST_USER=usaspending
-      - PYTHONUNBUFFERED=0
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
   migrate:
     build: .
     depends_on:
-      - db 
+      - db
       - app
     volumes:
      - .:/dockermount
-    links:
-     - db
-    command: ["python", "manage.py", "migrate"]
+    command: ["sleep", "15s", "python", "manage.py", "migrate"]
     environment:
-      - DATABASE_URL=postgres://usaspending:usaspender@usaspending-db:5432/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
