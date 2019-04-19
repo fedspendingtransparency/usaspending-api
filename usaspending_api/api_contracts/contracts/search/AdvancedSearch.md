@@ -17,18 +17,18 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Request (application/json)
     + Attributes (object)
-        + filters (optional, FilterObject)
-        + fields (optional, SpendingByAwardFields)
+        + `filters` (optional, FilterObject)
+        + `fields` (required, SpendingByAwardFields)
             See options at https://github.com/fedspendingtransparency/usaspending-api/blob/stg/usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award.md#fields
-        + limit: 60 (optional, number)
+        + `limit`: 60 (optional, number)
             How many results are returned. If no limit is specified, the limit is set to 10.
-        + order: `desc` (optional, string)
+        + `order`: `desc` (optional, string)
             Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order. Defaults to asc.
-        + page: 1 (optional, number)
+        + `page`: 1 (optional, number)
             The page number that is currently returned.
-        + sort: `Award Amount` (optional, string)
+        + `sort`: `Award Amount` (optional, string)
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
-        + subawards: false (optional, boolean)
+        + `subawards`: false (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
 
 + Response 200 (application/json)
@@ -141,7 +141,7 @@ Generates a hash for URL, based on selected filter criteria.
 
 + Response 200 (application/json)
     + Attributes
-        + hash : `96982f90346b1360dc5fb0a97d4b23fa` (required, string)
+        + hash : `5703c297b902ac3b76088c5c275b53f9` (required, string)
 
 
 ## Restore Filters From URL Hash [/api/v1/references/hash/]
@@ -151,40 +151,77 @@ Restores selected filter criteria, based on URL hash.
 ### Restore Filters From URL Hash Data [POST]
 + Request (application/json)
     + Attributes (object)
-        + hash : `96982f90346b1360dc5fb0a97d4b23fa` (required, string)
+        + hash : `5703c297b902ac3b76088c5c275b53f9` (required, string)
 
 + Response 200 (application/json)
     + Attributes
         + filter (optional, object)
             + filters (optional, object)
-                + recipientDomesticForeign : `all` (required, string)
-                + selectedFundingAgencies (required, object)
-                + selectedPSC (required, object)
                 + awardAmounts (required, object)
-                + selectedNAICS (required, object)
-                + timePeriodFY : `2019` (required, array[string])
-                + selectedRecipients (required, array[string])
-                + recipientType (required, array[string])
-                + timePeriodEnd (required, string)
-                + selectedRecipientLocations (required, object)
-                + timePeriodStart (required, string)
-                + locationDomesticForeign : `all` (required, string)
-                + extentCompeted (required, array[string])
-                + selectedAwardingAgencies (required, object)
-                + setAside (required, array[string])
-                + pricingType (required, array[string])
                 + awardType (required, array[string])
-                + timePeriodType : `fy` (required, string)
-                + selectedCFDA (required, object)
+                + extentCompeted (required, array[string])
                 + keyword (required, object)
+                + locationDomesticForeign : `all` (required, string)
+                + pricingType (required, array[string])
+                + recipientDomesticForeign : `all` (required, string)
+                + recipientType (required, array[string])
                 + selectedAwardIDs (required, object)
+                + selectedAwardingAgencies (required, object)
+                + selectedCFDA (required, object)
+                + selectedFundingAgencies (required, object)
                 + selectedLocations (required, object)
+                + selectedNAICS (required, object)
+                + selectedPSC (required, object)
+                + selectedRecipientLocations (required, object)
+                + selectedRecipients (required, array[string])
+                + setAside (required, array[string])
+                + timePeriodEnd (required, string, nullable)
+                + timePeriodFY : `2019` (required, array[string])
+                + timePeriodStart (required, string, nullable)
+                + timePeriodType : `fy` (required, string)
             + version: `2017-11-21` (optional, string)
+
+    + Body
+            {
+              "filter": {
+                "filters": {
+                  "awardAmounts": {},
+                  "awardType": [],
+                  "extentCompeted": [],
+                  "keyword": {},
+                  "locationDomesticForeign": "all",
+                  "pricingType": [],
+                  "recipientDomesticForeign": "all",
+                  "recipientType": [],
+                  "selectedAwardIDs": {},
+                  "selectedAwardingAgencies": {},
+                  "selectedCFDA": {},
+                  "selectedFundingAgencies": {},
+                  "selectedLocations": {},
+                  "selectedNAICS": {},
+                  "selectedPSC": {},
+                  "selectedRecipientLocations": {},
+                  "selectedRecipients": [],
+                  "setAside": [],
+                  "timePeriodEnd": null,
+                  "timePeriodFY": ["2019"],
+                  "timePeriodStart": null,
+                  "timePeriodType": "fy"
+                },
+                "version": "2017-11-21"
+              }
+            }
 
 # Data Structures
 
 ## FilterObjectAwardTypes (array)
 List of filterable award types
+
+### Sample
+- A
+- B
+- C
+- D
 
 ### Default
 - 02
@@ -201,11 +238,6 @@ List of filterable award types
 - B
 - C
 - D
-- E
-- F
-- G
-- S
-- T
 - IDV_A
 - IDV_B
 - IDV_B_A
@@ -215,11 +247,21 @@ List of filterable award types
 - IDV_D
 - IDV_E
 
-### Items
-- (string)
-
 ## SpendingByAwardFields (array)
 List of table columns
+
+### Sample
+- Award ID
+- Recipient Name
+- Start Date
+- End Date
+- Award Amount
+- Awarding Agency
+- Awarding Sub Agency
+- Contract Award Type
+- Award Type
+- Funding Agency
+- Funding Sub Agency
 
 ### Default
 - Award ID
@@ -233,9 +275,6 @@ List of table columns
 - Award Type
 - Funding Agency
 - Funding Sub Agency
-
-### Items
-- (string)
 
 ## SpendingByAwardResponse (object)
 + Recipient Name : `MULTIPLE RECIPIENTS` (optional, string)
@@ -295,36 +334,35 @@ List of table columns
 ## PageMetadataObject (object)
 + page: 1 (required, number)
 + hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
 
 ## FilterObject (object)
-+ keywords: pizza (optional, array[string])
-+ time_period (optional, array[TimePeriodObject], fixed-type)
-+ place_of_performance_scope: domestic (optional, enum[string])
++ `keywords` (optional, array[string])
++ `time_period` (optional, array[TimePeriodObject], fixed-type)
++ `place_of_performance_scope`: `domestic` (optional, enum[string])
     + domestic
     + foreign
-+ place_of_performance_locations (optional, array[LocationObject], fixed-type)
-+ agencies (optional, array[AgencyObject])
-+ recipient_search_text: Hampton (optional, array[string])
-+ recipient_id (optional, string)
++ `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
++ `agencies` (optional, array[AgencyObject])
++ `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_id` (optional, string)
     A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
-+ recipient_scope: domestic (optional, enum[string])
++ `recipient_scope`: domestic (optional, enum[string])
     + domestic
     + foreign
-+ recipient_locations (optional, array[LocationObject])
-+ recipient_type_names: `category_business` (optional, array[string])
++ `recipient_locations` (optional, array[LocationObject])
++ `recipient_type_names`: `category_business` (optional, array[string])
     See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
-+ award_type_codes (optional, FilterObjectAwardTypes)
++ `award_type_codes` (optional, FilterObjectAwardTypes)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
-+ award_ids: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
-+ award_amounts (optional, array[AwardAmounts])
-+ program_numbers: 10.331 (optional, array[string])
-+ naics_codes: 311812 (optional, array[string])
-+ psc_codes: 8940, 8910 (optional, array[string])
-+ contract_pricing_type_codes: J (optional, array[string])
-+ set_aside_type_codes: NONE (optional, array[string])
-+ extent_competed_type_codes: A (optional, array[string])
++ `award_ids`: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
++ `award_amounts` (optional, array[AwardAmounts])
++ `program_numbers`: `10.331` (optional, array[string])
++ `naics_codes`: 311812 (optional, array[string])
++ `psc_codes`: 8940, 8910 (optional, array[string])
++ `contract_pricing_type_codes`: `J` (optional, array[string])
++ `set_aside_type_codes`: `NONE` (optional, array[string])
++ `extent_competed_type_codes`: `A` (optional, array[string])
 
 ## TimePeriodObject (object)
 + start_date: `2017-10-01` (required, string)
