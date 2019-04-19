@@ -25,7 +25,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # Validate filter parameter
         filters = request_data.get('filters', None)
         if not filters:
-            raise InvalidParameterException('Missing one or more required query parameters: filters')
+            raise InvalidParameterException('Missing one or more required body parameters: filters')
 
         # Validate keyword search first, remove all other filters
         keyword_filter = filters.get('keyword', None) or filters.get('keywords', None)
@@ -36,7 +36,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # Validate other parameters previously required by the Bulk Download endpoint
         for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
             if required_param not in filters:
-                raise InvalidParameterException('Missing one or more required query parameters: {}'.
+                raise InvalidParameterException('Missing one or more required body parameters: {}'.
                                                 format(required_param))
 
         # Replacing award_types with award_type_codes

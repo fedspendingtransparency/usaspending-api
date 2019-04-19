@@ -200,5 +200,5 @@ def _validate_required_parameters(request_data, required_parameters):
     for required_param in required_parameters:
         if required_param not in request_data:
             raise InvalidParameterException(
-                'Missing one or more required query parameters: {}'.format(required_param)
+                'Missing one or more required body parameters: {}'.format(required_param)
             )

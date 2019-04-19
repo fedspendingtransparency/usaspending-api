@@ -342,9 +342,9 @@ class Command(BaseCommand):
             date = options.get("date")[0]
             date = datetime.strptime(date, "%Y-%m-%d").date()
         else:
-            default_last_load_date = datetime.utcnow() - timedelta(days=1)
-            date = get_last_load_date("fpds", default=default_last_load_date).strftime("%Y-%m-%d")
-        start_date = datetime.utcnow().strftime("%Y-%m-%d")
+            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).date()
+        processing_start_datetime = datetime.now(timezone.utc)
 
         logger.info("Processing data for FPDS starting from %s" % date)
 
@@ -384,6 +384,6 @@ class Command(BaseCommand):
             logger.info("No FPDS records to insert or modify at this juncture")
 
         # Update the date for the last time the data load was run
-        update_last_load_date("fpds", start_date)
+        update_last_load_date("fpds", processing_start_datetime)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
