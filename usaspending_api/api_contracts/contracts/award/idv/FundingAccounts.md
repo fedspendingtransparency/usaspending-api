@@ -15,9 +15,9 @@ This endpoint returns a list of federal accounts under a given IDV.
     + Attributes
         + `award_id`:`CONT_AW_4732_-NONE-_GS30FHA006_-NONE-` (required, string) 
             IDV to return accounts for
-        + `page`: `1` (optional, number)
+        + `page`: 1 (optional, number)
             Page number to return
-        + `limit`: `10` (optional, number)
+        + `limit`: 10 (optional, number)
             Maximum number to return
         + `order`: `desc` (optional, string)
             Direction of sort
