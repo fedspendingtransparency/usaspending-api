@@ -26,7 +26,7 @@ def idv_order_filter(filters):
     idv_award_id = _get_idv_award_id(filters)
     descendant_award_ids = get_descendant_award_ids(idv_award_id, True)
     if len(descendant_award_ids) < 1:
-        raise InvalidParameterException('Provided IDV award id has no descendants')
+        raise InvalidParameterException('Provided IDV award id has no descendant orders')
     return Award.objects.filter(id__in=descendant_award_ids)
 
 
