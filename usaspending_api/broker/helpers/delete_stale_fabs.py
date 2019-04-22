@@ -49,7 +49,7 @@ def delete_stale_fabs(ids_to_delete):
         delete_awards_query = 'DELETE FROM "legal_entity" le WHERE le."legal_entity_id" IN ({});'
         queries.extend([delete_awards_query.format(delete_le_str_ids)])
     if delete_loc_str_ids:
-        # Delete unused legal entities
+        # Delete unused locations
         delete_awards_query = 'DELETE FROM "references_location" loc WHERE loc."location_id" IN ({});'
         queries.extend([delete_awards_query.format(delete_loc_str_ids)])
 
