@@ -44,7 +44,7 @@ Your prompt should then look as below to show you are _in_ the virtual environme
 
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
-:bulb: _(try a different WiFi if your current one blocks dependency downloads)_
+:bulb: _(try a different WiFi if your current WiFi blocks any of the dependency downloads)_
 
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
@@ -58,15 +58,39 @@ _Note: the default port for PostgreSQL is `5432`_
 
 ```
 
-Test the database connection and upate the `data_store_api` schema
+Make sure to source your .envrc file if the DATABASE_URL does not return the above url you included in the previous step when you echo the variable
+
+Next, test the database connection and upate the `data_store_api` schema
 
     (usaspending-api) $ ./manage.py migrate
 
-Start up the site
+Right now, some endpoints won't work because they are dependent on materialized views to run. To create them, run the following from your usaspending-api folder:
+
+    psql -f usaspending_api/database_scripts/matviews/functions_and_enums.sql $DATABASE_URL
+
+This should output something similar to the following:
+
+    CREATE EXTENSION
+    DO
+    CREATE FUNCTION
+
+Once the command has finished create a directory outside the usaspending-api folder and run the following within the usaspending-api folder:
+
+    python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=<destination dir>
+
+Now we need to create a readonly role in order to properly load the schema into our database:
+
+    psql $DATABASE_URL -c "CREATE ROLE readonly"
+
+CD into the directory you created in the previous step and run:
+
+    cat *.sql | psql $DATABASE_URL -f -
+
+Finally, go back to the usaspending directory and start up the site
 
     (usaspending-api) $ ./manage.py runserver
 
-The application will be available at `http://localhost:8000`
+The application will now be available at `http://localhost:8000`!
 
 ## API
 

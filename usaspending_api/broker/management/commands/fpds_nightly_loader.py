@@ -9,12 +9,12 @@ from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
-from django.db.models import Count
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
-from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
-from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.broker.helpers.find_related_awards import find_related_awards
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy, timer
@@ -121,41 +121,13 @@ class Command(BaseCommand):
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
-    def find_related_awards(self, transactions):
-        related_award_ids = [result[0] for result in transactions.values_list("award_id")]
-        tn_count = (
-            TransactionNormalized.objects.filter(award_id__in=related_award_ids)
-            .values("award_id")
-            .annotate(transaction_count=Count("id"))
-            .values_list("award_id", "transaction_count")
-        )
-        tn_count_filtered = (
-            transactions.values("award_id")
-            .annotate(transaction_count=Count("id"))
-            .values_list("award_id", "transaction_count")
-        )
-        tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
-        tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
-        # only delete awards if and only if all their transactions are deleted, otherwise update the award
-        update_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] != transaction_count
-        ]
-        delete_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] == transaction_count
-        ]
-        return update_awards, delete_awards
-
     def delete_stale_fpds(self, ids_to_delete):
         logger.info("Starting deletion of stale FPDS data")
 
         transactions = TransactionNormalized.objects.filter(
             contract_data__detached_award_procurement_id__in=ids_to_delete
         )
-        update_award_ids, delete_award_ids = self.find_related_awards(transactions)
+        update_award_ids, delete_award_ids = find_related_awards(transactions)
 
         delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list("id")]
         delete_transaction_str_ids = ",".join([str(deleted_result) for deleted_result in delete_transaction_ids])
@@ -370,14 +342,9 @@ class Command(BaseCommand):
             date = options.get("date")[0]
             date = datetime.strptime(date, "%Y-%m-%d").date()
         else:
-            data_load_date_obj = ExternalDataLoadDate.objects.filter(
-                external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-            ).first()
-            if not data_load_date_obj:
-                date = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
-            else:
-                date = data_load_date_obj.last_load_date
-        start_date = datetime.utcnow().strftime("%Y-%m-%d")
+            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).date()
+        processing_start_datetime = datetime.now(timezone.utc)
 
         logger.info("Processing data for FPDS starting from %s" % date)
 
@@ -417,9 +384,6 @@ class Command(BaseCommand):
             logger.info("No FPDS records to insert or modify at this juncture")
 
         # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]).delete()
-        ExternalDataLoadDate(
-            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-        ).save()
+        update_last_load_date("fpds", processing_start_datetime)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
