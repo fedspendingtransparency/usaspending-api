@@ -59,6 +59,7 @@ def delete_stale_fabs(ids_to_delete):
         db_cursor.execute(db_query, [])
 
     # Update Awards
-    update_awards(tuple(update_award_ids))
+    if update_award_ids:
+        update_awards(tuple(update_award_ids))
 
     return update_award_ids
