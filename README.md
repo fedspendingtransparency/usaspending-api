@@ -49,7 +49,7 @@ See below for basic setup instructions. For help with Docker Compose:
 ### Database Setup and Initialization w/Docker Compose
 - Do these steps in order to provision a fresh database.
 
-- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.**
+- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
 
 - **If you run a local database**, set `POSTGRES_HOST_PORT` in `.env` to `host.docker.internal:<port>`.
 
@@ -67,6 +67,8 @@ See below for basic setup instructions. For help with Docker Compose:
 
 ## Running the API
 `docker-compose up usaspending-api`
+
+- You can update environment variables in `settings.py` (buckets, elasticsearch, local paths) and they will be mounted and used when you run this.
 
 The application will now be available at `http://localhost:8000`.
 
