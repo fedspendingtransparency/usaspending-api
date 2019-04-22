@@ -12,8 +12,6 @@ DETAIL_ENDPOINT = '/api/v2/awards/idvs/funding/'
 AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding_rollup/'
 
 
-
-
 class IDVFundingTestCase(TestCase):
 
     @classmethod
@@ -333,6 +331,3 @@ class IDVFundingRollupTestCase(TestCase):
             {'award_id': None},
             (0,)
         )
-
-
-

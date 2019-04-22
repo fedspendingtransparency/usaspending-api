@@ -55,7 +55,6 @@ FUNDING_TREEMAP_SQL = SQL("""
          {offset};""")
 
 
-
 class IDVFundingBaseViewSet(APIDocumentationView):
 
     """
@@ -65,7 +64,7 @@ class IDVFundingBaseViewSet(APIDocumentationView):
 
     @staticmethod
     def _business_logic(request_data: dict, columns: object, group_by: object,
-                        order_by: object, offset: object, sql: object ) -> list:
+                        order_by: object, offset: object, sql: object) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
@@ -119,7 +118,8 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
         group_by = SQL("group by federal_account, fa.account_title, cte.award_id, ca.funding_agency_id ")
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
                       taa.agency_id || '-' || taa.main_account_code federal_account,
-                      sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'))) over (partition by cte.award_id) as total,
+                      sum(sum(nullif(faba.transaction_obligated_amount, 'NaN')))
+                           over (partition by cte.award_id) as total,
                       fa.account_title,
                       ca.funding_agency_id""")
 
@@ -139,16 +139,15 @@ class IDVFundingTreemapViewSet(IDVFundingBaseViewSet):
 
 # STUB FOR DEV-2238
 
-ACCOUNT_MODEL = [{'key': 'account','name': 'account','optional': False,'type': 'text',
+ACCOUNT_MODEL = [{'key': 'account', 'name': 'account', 'optional': False, 'type': 'text',
                   'text_type': 'search'}]
 
 
-@validate_post_request(TREEMAP_MODELS + ACCOUNT_MODEL)                     
+@validate_post_request(TREEMAP_MODELS + ACCOUNT_MODEL)
 class IDVFundingTreemapDrillDownViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        limit = SQL("limit {}".format(request.data['limit'] + 1))
         offset = SQL("offset {}".format((request.data['page'] - 1) * request.data['limit']))
         group_by = SQL("group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code")
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
