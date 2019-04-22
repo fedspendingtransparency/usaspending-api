@@ -3,7 +3,7 @@ from usaspending_api.awards.models import TransactionNormalized
 
 
 def find_related_legal_entities(transactions):
-    related_le_ids = [result[0] for result in transactions.values_list('recipient_id')]
+    related_le_ids = transactions.values_list('recipient_id', flat=True)
     tn_count = (
         TransactionNormalized.objects.filter(recipient_id__in=related_le_ids)
         .values('recipient_id')
@@ -15,12 +15,8 @@ def find_related_legal_entities(transactions):
         .annotate(transaction_count=Count('id'))
         .values_list('recipient_id', 'transaction_count')
     )
-    tn_count_mapping = {le_id: transaction_count for le_id, transaction_count in tn_count}
-    tn_count_filtered_mapping = {le_id: transaction_count for le_id, transaction_count in tn_count_filtered}
+    tn_count_mapping = dict(tn_count)
+    tn_count_filtered_mapping = dict(tn_count_filtered)
     # only delete legal entities if and only if all their transactions are deleted
-    delete_les = [
-        le_id
-        for le_id, transaction_count in tn_count_mapping.items()
-        if tn_count_filtered_mapping[le_id] == transaction_count
-    ]
+    delete_les = list(dict(tn_count_mapping.items() & tn_count_filtered_mapping.items()))
     return delete_les
