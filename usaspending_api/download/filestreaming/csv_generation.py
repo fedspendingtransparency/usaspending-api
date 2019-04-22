@@ -57,12 +57,12 @@ def generate_csvs(download_job):
         download_job.file_size = os.stat(file_path).st_size
     except InvalidParameterException as e:
         exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
-        write_stack_trace_to_download_job(download_job, e, exc_msg)
+        fail_download(download_job, e, exc_msg)
         raise InvalidParameterException(e)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
         exc_msg = "An exception was raised while attempting to process the DownloadJob"
-        write_stack_trace_to_download_job(download_job, e, exc_msg)
+        fail_download(download_job, e, exc_msg)
         raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
@@ -81,7 +81,7 @@ def generate_csvs(download_job):
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
         exc_msg = "An exception was raised while attempting to upload the file"
-        write_stack_trace_to_download_job(download_job, e, exc_msg)
+        fail_download(download_job, e, exc_msg)
         if isinstance(e, InvalidParameterException):
             raise InvalidParameterException(e)
         else:
@@ -214,7 +214,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
 
     except Exception as e:
         message = "Exception while partitioning CSV"
-        write_stack_trace_to_download_job(download_job, e, message)
+        fail_download(download_job, e, message)
         write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
         raise e
@@ -374,9 +374,10 @@ def strip_file_extension(file_name):
     return os.path.splitext(os.path.basename(file_name))[0]
 
 
-def write_stack_trace_to_download_job(download_job, exception, message):
+def fail_download(download_job, exception, message):
     stack_trace = "".join(
         traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
     )
     download_job.error_message = '{}:\n{}'.format(message, stack_trace)
+    download_job.job_status_id = JOB_STATUS_DICT['failed']
     download_job.save()
