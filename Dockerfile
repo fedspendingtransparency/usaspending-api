@@ -1,15 +1,22 @@
 # Basic Dockerfile for the USASpendingAPI
 
-## 0) Add your DATABASE_URL on the ENV line below. Use host.docker.internal instead of localhost.
-## 1) Run server w/docker-compose, check port 8000:
-#        docker-compose up --build
+## 0) Add your DATABASE_URL on the ENV line below. Use host.docker.internal instead of localhost (overidden with Docker compose)
+##
+## 1) Init/run order w/Docker compose:
+##       docker-compose up usaspending-db (leave running)
+##       docker-compose up usaspending-db-migrate
+##       docker-compose up usaspending-db-sql
+##       docker-compose up usaspending-db-init
+##    Then run/re-run using the db you just created:
+##       docker-compose up usaspending-api
+##
 ## Optional) Run ad-hoc commands:
 #        docker build . -t usaspendingapi
 #        docker run -p 127.0.0.1:8000:8000 usaspendingapi <command>
 
 # Rebuild and run when code in /usaspending-api changes
 
-FROM python:3.5.3
+FROM python:3.5
 
 WORKDIR /dockermount
 
