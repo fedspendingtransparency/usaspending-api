@@ -11,7 +11,7 @@ services:
         target: /var/lib/postgresql/data
     restart: on-failure:3 # Will attempt to start the db 3 times
     ports:
-      - 5432:5432
+      - ${POSTGRES_PORT}:5432
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -23,7 +23,7 @@ services:
      - .:/dockermount
     command: /bin/sh -c "python -u manage.py migrate"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-db-sql:
     build: .
@@ -42,7 +42,7 @@ services:
     command: >
       /bin/sh -c "python -u manage.py load_reference_data"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-db-init:
     image: postgres:10.6-alpine
@@ -55,7 +55,7 @@ services:
       cat $$MATVIEW_SQL_DIR/*.sql | psql $$DATABASE_URL -f -"
     environment:
       MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-api:
     build: .
@@ -65,4 +65,4 @@ services:
       - 8000:8000
     command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api

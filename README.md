@@ -51,7 +51,7 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
 
-- **If you run a local database**, set `POSTGRES_HOST_PORT` in `.env` to `host.docker.internal:<port>`.
+- **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
 	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.  
 
