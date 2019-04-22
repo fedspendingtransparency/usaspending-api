@@ -11,13 +11,17 @@ from collections import namedtuple, OrderedDict
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
-from usaspending_api.awards.v2.filters.matview_filters import (universal_award_matview_filter,
-                                                               universal_transaction_matview_filter)
+from usaspending_api.awards.v2.filters.idv_filters import (
+    idv_order_filter, idv_transaction_filter, idv_treasury_account_funding_filter)
+from usaspending_api.awards.v2.filters.matview_filters import (
+    universal_award_matview_filter, universal_transaction_matview_filter)
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+
 
 LookupType = namedtuple('LookupType', ['id', 'name', 'desc'])
 
@@ -87,7 +91,30 @@ VALUE_MAPPINGS = {
         'table_name': 'award_financial',
         'download_name': 'account_breakdown_by_award',
         'filter_function': account_download_filter
-    }
+    },
+    'idv_orders': {
+        'source_type': 'award',
+        'table': Award,
+        'table_name': 'idv_orders',
+        'download_name': 'idv_orders',
+        'contract_data': 'latest_transaction__contract_data',
+        'filter_function': idv_order_filter
+    },
+    'idv_treasury_account_funding': {
+        'source_type': 'account',
+        'table': FinancialAccountsByAwards,
+        'table_name': 'award_financial',
+        'download_name': 'idv_account_funding',
+        'filter_function': idv_treasury_account_funding_filter
+    },
+    'idv_transactions': {
+        'source_type': 'award',
+        'table': TransactionNormalized,
+        'table_name': 'idv_transactions',
+        'download_name': 'idv_transactions',
+        'contract_data': 'contract_data',
+        'filter_function': idv_transaction_filter
+    },
 }
 
 # Bulk Download still uses "prime awards" instead of "transactions"
