@@ -25,10 +25,6 @@ RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://ar
 
 RUN apt-get update -y
 
-RUN apt-get install -y \
-	memcached \
-	libmemcached-dev
-
 COPY requirements/requirements.txt /dockermount/requirements/requirements.txt
 RUN pip install -r requirements/requirements.txt
 
