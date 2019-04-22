@@ -12,7 +12,7 @@ from usaspending_api.references.models import ToptierAgency
 
 class ListMonthlyDownloadsViewset(APIDocumentationView):
     """
-    This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
+     Returns a list of the current versions of generated archive files for a given fiscal year and agency.
 
     endpoint_doc: /download/list_downloads.md
     """
