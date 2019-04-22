@@ -23,7 +23,7 @@ services:
      - .:/dockermount
     command: /bin/sh -c "python -u manage.py migrate"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
 
   usaspending-db-sql:
     build: .
@@ -34,6 +34,15 @@ services:
       python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=$$MATVIEW_SQL_DIR"
     environment:
       MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
+
+  usaspending-ref-data:
+    build: .
+    volumes:
+     - .:/dockermount
+    command: >
+      /bin/sh -c "python -u manage.py load_reference_data"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
 
   usaspending-db-init:
     image: postgres:10.6-alpine
@@ -46,7 +55,7 @@ services:
       cat $$MATVIEW_SQL_DIR/*.sql | psql $$DATABASE_URL -f -"
     environment:
       MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api
 
   usaspending-api:
     build: .
@@ -56,4 +65,4 @@ services:
       - 8000:8000
     command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@usaspending-db:5432/data_store_api
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST_PORT}/data_store_api

@@ -47,15 +47,19 @@ See below for basic setup instructions. For help with Docker Compose:
 
 
 ### Database Setup and Initialization w/Docker Compose
-- Do these steps in order to provision a fresh database
+- Do these steps in order to provision a fresh database.
 
-- **If you run a local database**, set `DATABASE_URL` in `docker-compose.yaml` to `postgres://<username>:<password>@host.docker.internal:<port>/data_store_api`
+- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.**
 
-- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.  
+- **If you run a local database**, set `POSTGRES_HOST_PORT` in `.env` to `host.docker.internal:<port>`.
 
-- `docker-compose up usaspending-db-migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/]().
+	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.  
 
-- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
+	- `docker-compose up usaspending-db-migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/]().
+
+	- `docker-compose up usaspending-ref-data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+
+	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
 
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
@@ -75,7 +79,6 @@ Deployed production API endpoints and docs are found by following links here: `h
 ## Loading Data
 
 _Note: it is possible to run ad-hoc commands out of a Docker container once you get the hang of it, see the comments in the Dockerfile._
-
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 

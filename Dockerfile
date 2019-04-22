@@ -30,6 +30,7 @@ RUN pip install -r requirements/requirements.txt
 
 COPY . /dockermount
 
+# Compose overrides DATABASE_URL
 ENV DATABASE_URL postgres://username@host.docker.internal:5432/data_store_api
 
 ENV PYTHONUNBUFFERED=0
