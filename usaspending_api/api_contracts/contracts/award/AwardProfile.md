@@ -314,7 +314,7 @@ This endpoint returns a list of sub-awards, their amount, action date, recipient
         + results (array[SubAwardResult], fixed-type)
         + page_metadata (PageMetaDataObject)
 
-## Transactions [/api/v1/transactions/]
+## Transactions [/api/v2/transactions/]
 
 This endpoint returns a list of transactions, their amount, type, action date, action type, modification number, and description.
 
