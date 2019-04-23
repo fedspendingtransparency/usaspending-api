@@ -104,30 +104,32 @@ def get_csv_sources(json_request):
         if VALUE_MAPPINGS[download_type]['source_type'] == 'award':
             # Award downloads
             queryset = filter_function(json_request['filters'])
-            award_type_codes = set(json_request['filters']['award_type_codes'])
+            if queryset is not None:
+                award_type_codes = set(json_request['filters']['award_type_codes'])
 
-            if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
-                # only generate d1 files if the user is asking for contract data
-                d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
-                d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
-                d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
-                csv_sources.append(d1_source)
+                if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
+                    # only generate d1 files if the user is asking for contract data
+                    d1_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd1', download_type, agency_id)
+                    d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['contract_data']): False}
+                    d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
+                    csv_sources.append(d1_source)
 
-            if award_type_codes & set(assistance_type_mapping.keys()):
-                # only generate d2 files if the user is asking for assistance data
-                d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
-                d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
-                d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
-                csv_sources.append(d2_source)
+                if award_type_codes & set(assistance_type_mapping.keys()):
+                    # only generate d2 files if the user is asking for assistance data
+                    d2_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], 'd2', download_type, agency_id)
+                    d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[download_type]['assistance_data']): False}
+                    d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
+                    csv_sources.append(d2_source)
 
-            verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', []))
+                verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', []))
         elif VALUE_MAPPINGS[download_type]['source_type'] == 'account':
             # Account downloads
             account_source = CsvSource(VALUE_MAPPINGS[download_type]['table_name'], json_request['account_level'],
                                        download_type, agency_id)
             account_source.queryset = filter_function(download_type, VALUE_MAPPINGS[download_type]['table'],
                                                       json_request['filters'], json_request['account_level'])
-            csv_sources.append(account_source)
+            if account_source.queryset is not None:
+                csv_sources.append(account_source)
 
     return csv_sources
 
