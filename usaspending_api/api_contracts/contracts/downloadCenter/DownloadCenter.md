@@ -17,7 +17,7 @@ This endpoint returns the generated file's metadata.
 
 + Request (application/json)
     + Attributes (object)
-        + account_level: `treasury_account` (required, enum[string])
+        + account_level: (required, enum[string])
             The account level is used to filter for a specific type of file.
             + Members
                 + treasury_account
@@ -70,7 +70,7 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
     + Default: `all`
 + federal_account: `212` (optional, string)
     This field is an internal id.
-+ submission_type: `award_financial` (required, enum[string])
++ submission_type: (required, enum[string])
     + Members
         + account_balances
         + object_class_program_activity
