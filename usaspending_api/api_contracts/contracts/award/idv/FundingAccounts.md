@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Funding Accounts
 
-These endpoints are used to power USAspending.gov's IDV Summary Funding Treemap component.
+These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
 
 ## List Federal Accounts [/api/v2/awards/idvs/accounts/]
 
