@@ -13,13 +13,17 @@ Returns counts and dollar figures for a specific Indefinite Delivery Vehicle awa
 
 ```
 {
-    "award_id": 12345,
-    "generated_unique_award_id": "CONT_AW_1540_-NONE-_DJB30605051_-NONE-",
-    "idv_count": 0,
-    "contract_count": 2,
-    "rollup_total_obligation": 106321.1,
-    "rollup_base_and_all_options_value": 106321.1,
-    "rollup_base_exercised_options_val": 0.0
+    "award_id": 68841198,
+    "generated_unique_award_id": "CONT_AW_4730_-NONE-_GS10F0201R_-NONE-",
+    "child_idv_count": 2,
+    "child_award_count": 25,
+    "child_award_total_obligation": 363410.59,
+    "child_award_base_and_all_options_value": 297285.59,
+    "child_award_base_exercised_options_val": 297285.59,
+    "grandchild_award_count": 54,
+    "grandchild_award_total_obligation": 377145.57,
+    "grandchild_award_base_and_all_options_value": 306964.49,
+    "grandchild_award_base_exercised_options_val": 311020.57
 }
 ```
 
@@ -27,11 +31,15 @@ Returns counts and dollar figures for a specific Indefinite Delivery Vehicle awa
 
 - `award_id`: Internal primary key of Award.
 - `generated_unique_award_id`: Natural key of Award.
-- `idv_count`: Count of child IDVs.
-- `contract_count`: Count of direct child contracts.  Does not include grandchildren.
-- `rollup_total_obligation`: Sum of `total_obligation` for all child and grandchild contracts.
-- `rollup_base_and_all_options_value`: Sum of `base_and_all_options_value` for all child and grandchild contracts.
-- `rollup_base_exercised_options_val`: Sum of `base_exercised_options_val` for all child and grandchild contracts.
+- `child_idv_count`: Count of child IDVs.
+- `child_award_count`: Count of child awards.
+- `child_award_total_obligation`: Sum of `total_obligation` for child awards.
+- `child_award_base_and_all_options_value`: Sum of `base_and_all_options_value` for child awards.
+- `child_award_base_exercised_options_val`: Sum of `base_exercised_options_val` for child awards.
+- `grandchild_award_count`: Count of grandchild awards.
+- `grandchild_award_total_obligation`: Sum of `total_obligation` for grandchild awards.
+- `grandchild_award_base_and_all_options_value`: Sum of `base_and_all_options_value` for grandchild awards.
+- `grandchild_award_base_exercised_options_val`: Sum of `base_exercised_options_val` for grandchild awards.
 
 
 ### Errors

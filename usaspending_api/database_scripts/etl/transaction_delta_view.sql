@@ -38,9 +38,10 @@ SELECT
   UTM.parent_recipient_unique_id,
   UTM.recipient_name,
 
-  UTM.action_date::date,
+  UTM.action_date,
   UAM.period_of_performance_start_date,
   UAM.period_of_performance_current_end_date,
+  UAM.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
   UAM.fiscal_year AS award_fiscal_year,
   UAM.total_obligation AS award_amount,
