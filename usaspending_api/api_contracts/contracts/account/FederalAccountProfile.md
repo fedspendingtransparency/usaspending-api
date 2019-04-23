@@ -19,7 +19,7 @@ This endpoint returns a list of federal accounts, their number, name, managing a
         + filters (optional, TimeFilterObject)
             The filter takes a fiscal year, but if one is not provided, it defaults to the last certified fiscal year.
         + sort (optional, SortObject)
-        + limit: 50 (optional, number)
+        + limit: 1 (optional, number)
             The number of results to include per page.
             + Default: 50
         + page: 1 (optional, number)
