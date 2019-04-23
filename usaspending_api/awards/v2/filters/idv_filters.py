@@ -27,8 +27,7 @@ def idv_order_filter(filters):
     descendant_award_ids = get_descendant_award_ids(idv_award_id, True)
     if len(descendant_award_ids) < 1:
         return None
-    else:
-        return Award.objects.filter(id__in=descendant_award_ids)
+    return Award.objects.filter(id__in=descendant_award_ids)
 
 
 def idv_transaction_filter(filters):
@@ -43,7 +42,6 @@ def idv_treasury_account_funding_filter(account_type, download_table, filters, a
     descendant_award_ids = get_descendant_award_ids(idv_award_id, False)
     if len(descendant_award_ids) < 1:
         return None
-    else:
-        queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
-        queryset = generate_treasury_account_query(queryset, 'award_financial', account_level)
-        return queryset
+    queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
+    queryset = generate_treasury_account_query(queryset, 'award_financial', account_level)
+    return queryset
