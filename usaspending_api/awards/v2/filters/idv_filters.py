@@ -26,7 +26,10 @@ def idv_order_filter(filters):
     idv_award_id = _get_idv_award_id(filters)
     descendant_award_ids = get_descendant_award_ids(idv_award_id, True)
     if len(descendant_award_ids) < 1:
-        return None
+        # If there are no descendant awards, we need a condition that cannot
+        # possibly be true since we cannot pass an empty list into an __in
+        # statement (well, we can but it'll throw an exception later).
+        return Award.objects.filter(id__isnull=True)
     return Award.objects.filter(id__in=descendant_award_ids)
 
 
@@ -41,7 +44,11 @@ def idv_treasury_account_funding_filter(account_type, download_table, filters, a
     idv_award_id = _get_idv_award_id(filters)
     descendant_award_ids = get_descendant_award_ids(idv_award_id, False)
     if len(descendant_award_ids) < 1:
-        return None
-    queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
+        # If there are no descendant awards, we need a condition that cannot
+        # possibly be true since we cannot pass an empty list into an __in
+        # statement (well, we can but it'll throw an exception later).
+        queryset = download_table.objects.filter(financial_accounts_by_awards_id__isnull=True)
+    else:
+        queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
     queryset = generate_treasury_account_query(queryset, 'award_financial', account_level)
     return queryset
