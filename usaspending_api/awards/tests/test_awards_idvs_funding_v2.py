@@ -44,7 +44,7 @@ class IDVFundingTestCase(TestCase):
                 'reporting_agency_name': 'reporting agency name %s' % _sid,
                 'agency_id': _sid.zfill(3),
                 'main_account_code': _sid.zfill(4),
-                'account_title': 'account title %s' % _sid,
+                'account_title': 'FederalAccount account title %s' % _sid,
                 'program_activity_code': _sid,
                 'program_activity_name': 'program activity %s' % _sid,
                 'object_class': '1' + _sid,
@@ -304,7 +304,7 @@ class IDVFundingRollupTestCase(TestCase):
         assert response.status_code == expected_status_code
         if expected_response_parameters_tuple is not None:
             expected_response = self._generate_expected_response(*expected_response_parameters_tuple)
-        assert json.loads(response.content.decode('utf-8')) == expected_response
+            assert json.loads(response.content.decode('utf-8')) == expected_response
 
     def test_complete_queries(self):
         for _id in range(1, AWARD_COUNT + 1):
