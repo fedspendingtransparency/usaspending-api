@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Funding Treemap
+# Funding Accounts
 
 These endpoints are used to power USAspending.gov's IDV Summary Funding Treemap component.
 
