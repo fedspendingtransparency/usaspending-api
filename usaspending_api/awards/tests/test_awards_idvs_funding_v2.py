@@ -304,7 +304,7 @@ class IDVFundingRollupTestCase(TestCase):
         assert response.status_code == expected_status_code
         if expected_response_parameters_tuple is not None:
             expected_response = self._generate_expected_response(*expected_response_parameters_tuple)
-        assert json.loads(response.content.decode('utf-8')) == expected_response
+            assert json.loads(response.content.decode('utf-8')) == expected_response
 
     def test_complete_queries(self):
         for _id in range(1, AWARD_COUNT + 1):
