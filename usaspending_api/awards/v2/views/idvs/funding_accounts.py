@@ -50,8 +50,7 @@ FUNDING_TREEMAP_SQL = SQL("""
         left outer join federal_account fa on
             taa.agency_id || '-' || taa.main_account_code =  fa.federal_account_code
         {group_by}
-        {order_by}
-         {offset};""")
+        {order_by};""")
 
 
 class IDVFundingBaseViewSet(APIDocumentationView):
@@ -63,7 +62,7 @@ class IDVFundingBaseViewSet(APIDocumentationView):
 
     @staticmethod
     def _business_logic(request_data: dict, columns: object, group_by: object,
-                        order_by: object, offset: object) -> list:
+                        order_by: object) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
@@ -76,7 +75,6 @@ class IDVFundingBaseViewSet(APIDocumentationView):
             award_id=Literal(award_id),
             group_by=group_by,
             order_by=order_by,
-            offset=offset,
         )
         return execute_sql_to_ordered_dictionary(sql)
 
@@ -91,12 +89,11 @@ class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
     @cache_response()
     def post(self, request: Request) -> Response:
         order_by = SQL("")
-        offset = SQL("")
         columns = SQL("""coalesce(sum(nullif(faba.transaction_obligated_amount, 'NaN')), 0.0) total_transaction_obligated_amount,
                      count(distinct ca.awarding_agency_id) awarding_agency_count,
                      count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count""")
         group_by = SQL("")
-        results = self._business_logic(request.data, columns, group_by, order_by, offset)
+        results = self._business_logic(request.data, columns, group_by, order_by)
         return Response(results[0])
 
 
@@ -109,7 +106,6 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        offset = SQL("offset {}".format((request.data['page'] - 1) * request.data['limit']))
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
         group_by = SQL("""group by federal_account, fa.account_title, cte.award_id""")
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
@@ -119,7 +115,7 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
                       fa.account_title
                     """)
 
-        results = self._business_logic(request.data, columns, group_by, order_by, offset)
+        results = self._business_logic(request.data, columns, group_by, order_by)
         paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
         total = paginated_results[0]['total'] if len(paginated_results) > 0 else 0
         for item in paginated_results:
@@ -144,13 +140,12 @@ class IDVFundingAccountDrillDownViewSet(IDVFundingBaseViewSet):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        offset = SQL("offset {}".format((request.data['page'] - 1) * request.data['limit']))
         group_by = SQL("group by ca.awarding_agency_id, taa.agency_id || '-' || taa.main_account_code")
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
         columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
                       taa.agency_id || '-' || taa.main_account_code federal_account,""")
 
-        results = self._business_logic(request.data, columns, group_by, order_by, offset)
+        results = self._business_logic(request.data, columns, group_by, order_by)
         paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
 
         response = OrderedDict((
