@@ -28,8 +28,8 @@ Now, navigate to the base file directory where you will store the USAspending re
     $ cd usaspending-api
 
 ## Database Setup
-There are two options for how you want to setup your database in order to buildout the API.  You can:  
-    1. Use your own local postgres database for the API Application to use.  
+There are two options for how you want to setup your database in order to run the API.  You can:  
+    1. Use your own local postgres database for the API to use.  
     2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database
 
 #### Option 1: Using a Locally Hosted Postgres Database
@@ -47,7 +47,6 @@ See below for basic setup instructions. For help with Docker Compose:
 
 
 ### Database Setup and Initialization w/Docker Compose
-- Do these steps in order to provision a fresh database.
 
 - **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
 
