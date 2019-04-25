@@ -1117,5 +1117,5 @@ query_paths['idv_orders'] = {"d1": OrderedDict(
 
 # Likewise, IDV Transactions start directly in TransactionFPDS instead of
 # UniversalTransactionView.
-query_paths['idv_transactions'] = {"d1": OrderedDict(
+query_paths['idv_transaction_history'] = {"d1": OrderedDict(
     [(k, v[13:] if v.startswith('transaction__') else v) for k, v in query_paths['transaction']['d1'].items()])}

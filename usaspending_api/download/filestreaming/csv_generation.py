@@ -14,11 +14,14 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
-from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
+from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.include_file_description import build_file_description
+from usaspending_api.download.filestreaming.include_file_description import include_file_description_in_zip
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)
-from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
@@ -37,6 +40,7 @@ def generate_csvs(download_job):
     json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
     limit = json_request.get('limit', None)
+    piid = json_request.get('piid', None)
 
     file_name = start_download(download_job)
     try:
@@ -53,7 +57,15 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, file_path, limit)
+            parse_source(source, columns, download_job, working_dir, piid, file_path, limit)
+        file_description_path = json_request.get('include_file_description')
+        if file_description_path:
+            include_file_description_in_zip(
+                build_file_description(file_description_path["source"], sources),
+                file_description_path["destination"],
+                working_dir,
+                file_path
+            )
         download_job.file_size = os.stat(file_path).st_size
     except InvalidParameterException as e:
         exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
@@ -132,7 +144,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, zipfile_path, limit):
+def parse_source(source, columns, download_job, working_dir, piid, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
              'federal_account': 'federal_account'}
@@ -140,11 +152,15 @@ def parse_source(source, columns, download_job, working_dir, start_time, zipfile
         # Use existing detailed filename from parent file for monthly files
         # e.g. `019_Assistance_Delta_20180917_%s.csv`
         source_name = strip_file_extension(download_job.file_name)
+    elif source.is_for_idv:
+        file_name_pattern = VALUE_MAPPINGS[source.source_type]['download_name']
+        source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
     else:
-        source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
-                                        VALUE_MAPPINGS[source.source_type]['download_name'])
+        source_name = '{}_{}_{}'.format(
+            source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
-    source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
+    source.file_name = '{}.csv'.format(source_name)
+    source_path = os.path.join(working_dir, source.file_name)
 
     write_to_log(message='Preparing to download data as {}'.format(source_name), download_job=download_job)
 

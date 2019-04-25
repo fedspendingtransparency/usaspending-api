@@ -106,30 +106,30 @@ def test_idv_orders_csv_sources():
 
 
 def test_idv_transactions_csv_sources():
-    original = VALUE_MAPPINGS['idv_transactions']['filter_function']
-    VALUE_MAPPINGS['idv_transactions']['filter_function'] = MagicMock(returned_value='')
+    original = VALUE_MAPPINGS['idv_transaction_history']['filter_function']
+    VALUE_MAPPINGS['idv_transaction_history']['filter_function'] = MagicMock(returned_value='')
     csv_sources = csv_generation.get_csv_sources({
-        "download_types": ["idv_transactions"],
+        "download_types": ["idv_transaction_history"],
         "filters": {'award_id': 0, 'award_type_codes': tuple(set(contract_type_mapping) | set(idv_type_mapping))}
     })
     assert len(csv_sources) == 1
-    VALUE_MAPPINGS['idv_transactions']['filter_function'] = original
+    VALUE_MAPPINGS['idv_transaction_history']['filter_function'] = original
     assert csv_sources[0].file_type == 'd1'
-    assert csv_sources[0].source_type == 'idv_transactions'
+    assert csv_sources[0].source_type == 'idv_transaction_history'
 
 
 def test_idv_treasury_account_funding_csv_sources():
-    original = VALUE_MAPPINGS['idv_treasury_account_funding']['filter_function']
-    VALUE_MAPPINGS['idv_treasury_account_funding']['filter_function'] = MagicMock(returned_value='')
+    original = VALUE_MAPPINGS['idv_federal_account_funding']['filter_function']
+    VALUE_MAPPINGS['idv_federal_account_funding']['filter_function'] = MagicMock(returned_value='')
     csv_sources = csv_generation.get_csv_sources({
-        "download_types": ["idv_treasury_account_funding"],
+        "download_types": ["idv_federal_account_funding"],
         "account_level": "treasury_account",
         "filters": {'award_id': 0}
     })
     assert len(csv_sources) == 1
-    VALUE_MAPPINGS['idv_treasury_account_funding']['filter_function'] = original
+    VALUE_MAPPINGS['idv_federal_account_funding']['filter_function'] = original
     assert csv_sources[0].file_type == 'treasury_account'
-    assert csv_sources[0].source_type == 'idv_treasury_account_funding'
+    assert csv_sources[0].source_type == 'idv_federal_account_funding'
 
 
 def test_apply_annotations_to_sql_just_values():
