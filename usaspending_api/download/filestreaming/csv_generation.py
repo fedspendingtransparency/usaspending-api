@@ -34,7 +34,6 @@ logger = logging.getLogger('console')
 
 def generate_csvs(download_job):
     """Derive the relevant file location and write CSVs to it"""
-    start_time = time.perf_counter()
 
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
