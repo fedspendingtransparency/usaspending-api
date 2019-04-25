@@ -136,6 +136,7 @@ class TransactionNormalized(models.Model):
     non_federal_funding_amount = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, help_text="Assistance Data variable."
     )
+    unique_award_key = models.TextField(null=True, db_index=True)  # From broker.
 
     def __str__(self):
         return "%s award: %s" % (self.type_description, self.award)

@@ -284,6 +284,7 @@ class Command(BaseCommand):
                 "is_fpds": True,
                 "type": award_type,
                 "type_description": award_type_desc,
+                "unique_award_key": row['unique_award_key'],
             }
 
             contract_field_map = {"description": "award_description"}
