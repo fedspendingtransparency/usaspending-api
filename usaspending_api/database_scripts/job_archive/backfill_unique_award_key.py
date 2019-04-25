@@ -18,53 +18,53 @@ CHUNK_SIZE = 50000
 
 UPDATE_SQL = """
 update  transaction_fabs
-set     unique_award_key = upper(
-            'ASST_AGG' || '_' ||
-            coalesce(uri, '-NONE-') || '_' ||
-            coalesce(awarding_sub_tier_agency_c, '-NONE-')
-        )
-where   record_type = 1 and transaction_id between {minid} and {maxid};
-
-
-update  transaction_fabs
-set     unique_award_key = upper(
-            'ASST_NON' || '_' ||
-            coalesce(fain, '-NONE-') || '_' ||
-            coalesce(awarding_sub_tier_agency_c, '-NONE-')
-        )
-where   record_type is distinct from 1 and transaction_id between {minid} and {maxid};
-
-
-update  transaction_fpds
-set     unique_award_key = upper(
-            'CONT_AWD' || '_' ||
-            coalesce(piid, '-NONE-') || '_' ||
-            coalesce(agency_id, '-NONE-') || '_' ||
-            coalesce(parent_award_id, '-NONE-') || '_' ||
-            coalesce(referenced_idv_agency_iden, '-NONE-')
-        )
-where   pulled_from = 'AWARD' and transaction_id between {minid} and {maxid};
+set     unique_award_key = case
+            when record_type = 1 then
+                upper(
+                    'ASST_AGG' || '_' ||
+                    coalesce(uri, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+            else
+                upper(
+                    'ASST_NON' || '_' ||
+                    coalesce(fain, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+        end
+where   transaction_id between {minid} and {maxid};
 
 
 update  transaction_fpds
-set     unique_award_key = upper(
-            'CONT_IDV' || '_' ||
-            coalesce(piid, '-NONE-') || '_' ||
-            coalesce(agency_id, '-NONE-')
-        )
-where   pulled_from is distinct from 'AWARD' and transaction_id between {minid} and {maxid};
+set     unique_award_key = case
+            when pulled_from = 'IDV' then
+                upper(
+                    'CONT_IDV' || '_' ||
+                    coalesce(piid, '-NONE-') || '_' ||
+                    coalesce(agency_id, '-NONE-')
+                )
+            else
+                 upper(
+                    'CONT_AWD' || '_' ||
+                    coalesce(piid, '-NONE-') || '_' ||
+                    coalesce(agency_id, '-NONE-') || '_' ||
+                    coalesce(parent_award_id, '-NONE-') || '_' ||
+                    coalesce(referenced_idv_agency_iden, '-NONE-')
+                )
+            end
+where   transaction_id between {minid} and {maxid};
 
 
 update  transaction_normalized
 set     unique_award_key = t.unique_award_key
-from    transaction_fabs t
-where   t.transaction_id = transaction_normalized.id and t.transaction_id between {minid} and {maxid};
-
-
-update  transaction_normalized
-set     unique_award_key = t.unique_award_key
-from    transaction_fpds t
-where   t.transaction_id = transaction_normalized.id and t.transaction_id between {minid} and {maxid};
+from    (
+            select  tn.id, coalesce(fabs.unique_award_key, fpds.unique_award_key) unique_award_key
+            from    transaction_normalized tn
+                    left outer join transaction_fabs fabs on fabs.transaction_id = tn.id
+                    left outer join transaction_fpds fpds on fpds.transaction_id = tn.id
+            where   tn.id between {minid} and {maxid}
+         ) t
+where   transaction_normalized.id = t.id;
 """
 
 
