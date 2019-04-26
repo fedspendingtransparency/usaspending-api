@@ -41,8 +41,8 @@ GET_CHILD_IDVS_SQL = SQL("""
         ac.id                                      award_id,
         ac.type_description                        award_type,
         ac.description,
-        tf.funding_agency_name                     funding_agency,
-        ac.funding_agency_id,
+        ta.name                                    funding_agency,
+        ta.toptier_agency_id                       funding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         pac.rollup_total_obligation                obligated_amount,
@@ -54,6 +54,8 @@ GET_CHILD_IDVS_SQL = SQL("""
         inner join parent_award pac on pac.parent_award_id = pap.award_id
         inner join awards ac on ac.id = pac.award_id
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join agency a on a.id = ac.funding_agency_id
+        inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     where
         pap.{award_id_column} = {award_id}
     order by
@@ -67,8 +69,8 @@ GET_CHILD_AWARDS_SQL = SQL("""
         ac.id                                      award_id,
         ac.type_description                        award_type,
         ac.description,
-        tf.funding_agency_name                     funding_agency,
-        ac.funding_agency_id,
+        ta.name                                    funding_agency,
+        ta.toptier_agency_id                       funding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         ac.total_obligation                        obligated_amount,
@@ -81,6 +83,8 @@ GET_CHILD_AWARDS_SQL = SQL("""
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join agency a on a.id = ac.funding_agency_id
+        inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     where
         pap.{award_id_column} = {award_id}
     order by
@@ -94,8 +98,8 @@ GET_GRANDCHILD_AWARDS_SQL = SQL("""
         ac.id                                      award_id,
         ac.type_description                        award_type,
         ac.description,
-        tf.funding_agency_name                     funding_agency,
-        ac.funding_agency_id,
+        ta.name                                    funding_agency,
+        ta.toptier_agency_id                       funding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         ac.total_obligation                        obligated_amount,
@@ -109,6 +113,8 @@ GET_GRANDCHILD_AWARDS_SQL = SQL("""
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join agency a on a.id = ac.funding_agency_id
+        inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     where
         pap.{award_id_column} = {award_id}
     order by
