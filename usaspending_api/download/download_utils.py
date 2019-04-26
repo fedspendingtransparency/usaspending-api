@@ -8,7 +8,7 @@ from usaspending_api.references.models import ToptierAgency
 
 def create_unique_filename(json_request, request_agency=None):
     if json_request.get("is_for_idv"):
-        download_name = "idv_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
+        download_name = "IDV_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
     else:
         download_types = json_request["download_types"]
         prefix = obtain_filename_prefix_from_agency_id(request_agency)
