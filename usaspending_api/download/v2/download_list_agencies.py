@@ -19,8 +19,9 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
 
     endpoint_doc: /download/list_agencies.md
     """
+    # Get list of agencies without duplicates
     modified_agencies_list = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
-                                          'modified_authoritative_agency_list.csv')
+                                          'user_selectable_agency_list.csv')
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
