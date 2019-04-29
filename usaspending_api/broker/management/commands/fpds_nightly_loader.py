@@ -349,8 +349,7 @@ class Command(BaseCommand):
         logger.info("Processing data for FPDS starting from %s" % date)
 
         with timer("retrieval of deleted FPDS IDs", logger.info):
-            # ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
-            ids_to_delete = []
+            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
 
         if len(ids_to_delete) > 0:
             with timer("deletion of all stale FPDS data", logger.info):
@@ -359,8 +358,7 @@ class Command(BaseCommand):
             logger.info("No FPDS records to delete at this juncture")
 
         with timer("retrieval of new/modified FPDS data ID list", logger.info):
-            # total_insert = self.get_fpds_transaction_ids(date=date)
-            total_insert = [55974243]
+            total_insert = self.get_fpds_transaction_ids(date=date)
 
         if len(total_insert) > 0:
             # Add FPDS records
