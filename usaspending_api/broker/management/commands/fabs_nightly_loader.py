@@ -8,12 +8,12 @@ from copy import copy
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
-from usaspending_api.common.helpers.etl_helpers import upsert_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.generic_helper import timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.broker.helpers.upsert_fabs_transactions import insert_all_new_fabs
+from usaspending_api.common.helpers.etl_helpers import upsert_transactions
 
 
 logger = logging.getLogger("console")
@@ -219,7 +219,7 @@ class Command(BaseCommand):
                 with timer("inserting new FABS data", logger.info):
                     update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
-        upsert_fabs_transactions(update_award_ids, "assistance")
+        upsert_transactions(update_award_ids, "assistance")
 
         if is_incremental_load:
             update_last_load_date("fabs", processing_start_datetime)

@@ -5,7 +5,7 @@ from django.db import connection
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import read_sql_file
-from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.common.helpers.generic_helper import timer
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 logger = logging.getLogger('console')

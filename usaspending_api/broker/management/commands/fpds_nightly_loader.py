@@ -19,9 +19,7 @@ from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import upsert_transactions
 from usaspending_api.common.helpers.generic_helper import fy, timer
 from usaspending_api.etl.award_helpers import (
-    update_awards,
     update_contract_awards,
-    update_award_categories,
     award_types,
 )
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
