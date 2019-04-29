@@ -396,7 +396,6 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": row['modified_at'],
-                "unique_award_key": row['unique_award_key'],
             }
 
             fad_field_map = {

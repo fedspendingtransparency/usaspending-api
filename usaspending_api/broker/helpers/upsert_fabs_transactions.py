@@ -166,7 +166,6 @@ def insert_new_fabs(to_insert):
             "type_description": row['assistance_type_desc'],
             "transaction_unique_id": row['afa_generated_unique'],
             "generated_unique_award_id": generated_unique_id,
-            "unique_award_key": row['unique_award_key'],
         }
 
         fad_field_map = {
