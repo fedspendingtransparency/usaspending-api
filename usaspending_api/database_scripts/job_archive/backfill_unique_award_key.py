@@ -1,3 +1,17 @@
+"""
+Jira Ticket Number(s): DEV-2273
+
+    As a user/developer/tester I want a unified award key across Broker and USAspending so that when I am using
+    the websites I can quickly find the data in the other system
+
+Expected CLI:
+
+    $ python usasepending_api/database_scripts/job_archive/backfill_unique_award_key.py
+
+Purpose:
+
+    Generates unique_award_keys for all transaction_fabs, transaction_fpds, and transaction_normalized records.
+"""
 import math
 import psycopg2
 import time
