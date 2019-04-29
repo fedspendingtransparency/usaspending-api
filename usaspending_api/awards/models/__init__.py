@@ -7,11 +7,11 @@ from usaspending_api.awards.models.transaction_fpds import TransactionFPDS
 from usaspending_api.awards.models.transaction_normalized import TransactionNormalized
 
 __all__ = [
-    'Award',
-    'FinancialAccountsByAwards',
-    'ParentAward',
-    'Subaward',
-    'TransactionFABS',
-    'TransactionFPDS',
-    'TransactionNormalized',
+    "Award",
+    "FinancialAccountsByAwards",
+    "ParentAward",
+    "Subaward",
+    "TransactionFABS",
+    "TransactionFPDS",
+    "TransactionNormalized",
 ]
