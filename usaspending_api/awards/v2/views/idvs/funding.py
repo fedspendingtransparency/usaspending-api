@@ -49,7 +49,7 @@ GET_FUNDING_SQL = SQL("""
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
         ca.piid,
-        tta.toptier_agency_id funding_agency_id,
+        funding_agency_id,
         taa.reporting_agency_id,
         taa.reporting_agency_name,
         taa.agency_id,
@@ -70,10 +70,6 @@ GET_FUNDING_SQL = SQL("""
             ca.type not like 'IDV%'
         inner join financial_accounts_by_awards faba on
             faba.award_id = ca.id
-        inner join agency a on
-            a.id = ca.funding_agency_id
-        inner join toptier_agency tta on
-            tta.toptier_agency_id = a.toptier_agency_id
         left outer join submission_attributes sa on
             sa.submission_id = faba.submission_id
         left outer join treasury_appropriation_account taa on
