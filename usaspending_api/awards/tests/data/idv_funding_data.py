@@ -35,13 +35,28 @@ def create_funding_data_tree():
 
         mommy.make(
             'references.Agency',
-            id=9000 + _id
+            id=9000 + _id,
+            toptier_agency_id=9500 + _id
+        )
+
+        mommy.make(
+            'references.ToptierAgency',
+            toptier_agency_id=9500 + _id,
+            name='toptier_funding_agency_name_%s' % (9500 + _id),
         )
 
         mommy.make(
             'references.Agency',
-            id=8000 + _id
+            id=8000 + _id,
+            toptier_agency_id=8500 + _id
         )
+
+        mommy.make(
+            'references.ToptierAgency',
+            toptier_agency_id=8500 + _id,
+            name='toptier_funding_agency_name_%s' % (8500 + _id),
+        )
+
         # Kirk and I have no idea why agency_id has to be done this way instead of passing
         # it inline like all the other if/else's below, but it definitely breaks
         # if you don't... bug in model mommy maybe? Inquiring minds want to know...
