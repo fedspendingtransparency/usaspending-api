@@ -1,4 +1,4 @@
-# This file is included in the IDV download zip file.  File names are substituted based on the tags:
+# This file is included in the IDV download zip file.
 #
 # Lines starting with # are ignored.
 ========ABOUT THESE FILES========
