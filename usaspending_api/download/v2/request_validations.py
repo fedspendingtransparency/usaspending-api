@@ -55,14 +55,14 @@ def validate_award_request(request_data):
         # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
         json_request['limit'] = parse_limit(request_data)
 
-        # Validate row_count-constrainted filter types and assign defaults
+        # Validate row_count-constrained filter types and assign defaults
         check_types_and_assign_defaults(filters, json_request['filters'], ROW_CONSTRAINT_FILTER_DEFAULTS)
     elif constraint_type == 'year':
         # Validate combined total dates within one year (allow for leap years)
         if total_range_count > 366:
             raise InvalidParameterException('Invalid Parameter: time_period total days must be within a year')
 
-        # Validate year-constrainted filter types and assign defaults
+        # Validate year-constrained filter types and assign defaults
         check_types_and_assign_defaults(filters, json_request['filters'], YEAR_CONSTRAINT_FILTER_DEFAULTS)
     else:
         raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
@@ -72,12 +72,18 @@ def validate_award_request(request_data):
 
 def validate_idv_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id = _validate_award_id(request_data)
+    award_id, piid = _validate_award_id(request_data)
 
     return {
         "account_level": "treasury_account",
-        "download_types": ["idv_orders", "idv_transactions", "idv_treasury_account_funding"],
+        "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
         "file_format": request_data.get("file_format", "csv"),
+        "include_file_description": {
+            "source": settings.IDV_DOWNLOAD_README_FILE_PATH,
+            "destination": "readme.txt"
+        },
+        "piid": piid,
+        "is_for_idv": True,
         "filters": {
             "idv_award_id": award_id,
             "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
@@ -128,6 +134,8 @@ def _validate_award_id(request_data):
     """
     Validate that we were provided a valid award_id and, in the process, convert
     generated_unique_award_id to an internal, surrogate, integer award id.
+
+    Returns the surrogate award id and piid.
     """
     award_id = request_data.get('award_id')
     if award_id is None:
@@ -136,14 +144,14 @@ def _validate_award_id(request_data):
     if award_id_type not in (str, int):
         raise InvalidParameterException("Award id must be either a string or an integer")
     if award_id_type is int or award_id.isdigit():
-        award_id = Award.objects.filter(
-            id=int(award_id), type__startswith="IDV").values_list("id", flat=True).first()
+        award = Award.objects.filter(
+            id=int(award_id), type__startswith="IDV").values_list("id", "piid").first()
     else:
-        award_id = Award.objects.filter(
-            generated_unique_award_id=award_id, type__startswith="IDV").values_list("id", flat=True).first()
-    if award_id is None:
+        award = Award.objects.filter(
+            generated_unique_award_id=award_id, type__startswith="IDV").values_list("id", "piid").first()
+    if not award:
         raise InvalidParameterException("Unable to find an IDV matching the provided award id")
-    return award_id
+    return award
 
 
 def _validate_account_level(request_data, valid_account_levels):
