@@ -39,7 +39,7 @@ class IDVFundingTestCase(TestCase):
                 'reporting_fiscal_year': 2000 + _id,
                 'reporting_fiscal_quarter': _id % 4 + 1,
                 'piid': 'piid_%s' % _sid,
-                'funding_agency_id': 9000 + _id,
+                'funding_agency_id': 9500 + _id,
                 'reporting_agency_id': _sid.zfill(3),
                 'reporting_agency_name': 'reporting agency name %s' % _sid,
                 'agency_id': _sid.zfill(3),
