@@ -611,12 +611,14 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
-    if field.endswith('date') and isinstance(value, str): # turn datetimes into dates
+    # turn datetimes into dates
+    if field.endswith('date') and isinstance(value, str):
         try:
             value = dateutil.parser.parse(value).date()
         except (TypeError, ValueError):
             pass
 
+    # handle sorting in reverse order
     if reverse and reverse.search(field):
         try:
             value = -1 * Decimal(value)
