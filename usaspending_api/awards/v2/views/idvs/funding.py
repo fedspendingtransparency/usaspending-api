@@ -49,7 +49,7 @@ GET_FUNDING_SQL = SQL("""
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
         ca.piid,
-        funding_agency_id,
+        ca.funding_agency_id,
         taa.reporting_agency_id,
         taa.reporting_agency_name,
         taa.agency_id,
