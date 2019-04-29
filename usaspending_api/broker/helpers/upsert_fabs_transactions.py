@@ -214,4 +214,3 @@ def insert_new_fabs(to_insert):
         legal_entity.save()
 
     return update_award_ids
-
