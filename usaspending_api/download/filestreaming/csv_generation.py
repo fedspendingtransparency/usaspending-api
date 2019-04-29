@@ -8,17 +8,19 @@ import subprocess
 import tempfile
 import time
 import traceback
-import zipfile
 
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
-from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
+from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)
-from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
@@ -31,18 +33,18 @@ logger = logging.getLogger('console')
 
 def generate_csvs(download_job):
     """Derive the relevant file location and write CSVs to it"""
-    start_time = time.perf_counter()
 
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
     limit = json_request.get('limit', None)
+    piid = json_request.get('piid', None)
 
     file_name = start_download(download_job)
     try:
         # Create temporary files and working directory
-        file_path = settings.CSV_LOCAL_PATH + file_name
-        working_dir = os.path.splitext(file_path)[0]
+        zip_file_path = settings.CSV_LOCAL_PATH + file_name
+        working_dir = os.path.splitext(zip_file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
 
@@ -53,8 +55,15 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, file_path, limit)
-        download_job.file_size = os.stat(file_path).st_size
+            parse_source(source, columns, download_job, working_dir, piid, zip_file_path, limit)
+        include_file_description = json_request.get('include_file_description')
+        if include_file_description:
+            write_to_log(message="Adding file description to zip file")
+            file_description = build_file_description(include_file_description["source"], sources)
+            file_description_path = save_file_description(
+                working_dir, include_file_description["destination"], file_description)
+            append_files_to_zip_file([file_description_path], zip_file_path)
+        download_job.file_size = os.stat(zip_file_path).st_size
     except InvalidParameterException as e:
         exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
         fail_download(download_job, e, exc_msg)
@@ -75,7 +84,7 @@ def generate_csvs(download_job):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.USASPENDING_AWS_REGION
             start_uploading = time.perf_counter()
-            multipart_upload(bucket, region, file_path, os.path.basename(file_path))
+            multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(message='Uploading took {} seconds'.format(time.perf_counter() - start_uploading),
                          download_job=download_job)
     except Exception as e:
@@ -88,8 +97,8 @@ def generate_csvs(download_job):
             raise Exception(download_job.error_message) from e
     finally:
         # Remove generated file
-        if not settings.IS_LOCAL and os.path.exists(file_path):
-            os.remove(file_path)
+        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+            os.remove(zip_file_path)
 
     return finish_download(download_job)
 
@@ -132,7 +141,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, zipfile_path, limit):
+def parse_source(source, columns, download_job, working_dir, piid, zip_file_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance', 'treasury_account': 'treasury_account',
              'federal_account': 'federal_account'}
@@ -140,11 +149,15 @@ def parse_source(source, columns, download_job, working_dir, start_time, zipfile
         # Use existing detailed filename from parent file for monthly files
         # e.g. `019_Assistance_Delta_20180917_%s.csv`
         source_name = strip_file_extension(download_job.file_name)
+    elif source.is_for_idv:
+        file_name_pattern = VALUE_MAPPINGS[source.source_type]['download_name']
+        source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
     else:
-        source_name = '{}_{}_{}'.format(source.agency_code, d_map[source.file_type],
-                                        VALUE_MAPPINGS[source.source_type]['download_name'])
+        source_name = '{}_{}_{}'.format(
+            source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
-    source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
+    source.file_name = '{}.csv'.format(source_name)
+    source_path = os.path.join(working_dir, source.file_name)
 
     write_to_log(message='Preparing to download data as {}'.format(source_name), download_job=download_job)
 
@@ -167,7 +180,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, zipfile
         download_job.save()
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
-        zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
+        zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zip_file_path, source_path, source_name,
                                                                                download_job))
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -180,7 +193,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, zipfile
         os.remove(temp_file_path)
 
 
-def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None):
+def split_and_zip_csvs(zip_file_path, source_path, source_name, download_job=None):
     try:
         # Split CSV into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
@@ -203,10 +216,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         # Zip the split CSVs into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
-        zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', compression=zipfile.ZIP_DEFLATED, allowZip64=True)
-
-        for csv_file in list_of_csv_files:
-            zipped_csvs.write(csv_file, os.path.basename(csv_file))
+        append_files_to_zip_file(list_of_csv_files, zip_file_path)
 
         if download_job:
             write_to_log(message='Writing to zipfile took {:.4f} seconds'.format(time.perf_counter() - log_time),
@@ -218,9 +228,6 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job=None
         write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
         raise e
-    finally:
-        if zipped_csvs:
-            zipped_csvs.close()
 
 
 def start_download(download_job):
