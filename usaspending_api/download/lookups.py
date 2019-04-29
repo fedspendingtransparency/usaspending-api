@@ -102,7 +102,7 @@ VALUE_MAPPINGS = {
         'source_type': 'award',
         'table': Award,
         'table_name': 'idv_orders',
-        'download_name': 'idv_{piid}_orders',
+        'download_name': 'IDV_{piid}_Orders',
         'contract_data': 'latest_transaction__contract_data',
         'filter_function': idv_order_filter,
         'is_for_idv': True
@@ -111,7 +111,7 @@ VALUE_MAPPINGS = {
         'source_type': 'account',
         'table': FinancialAccountsByAwards,
         'table_name': 'award_financial',
-        'download_name': 'idv_{piid}_federal_account_funding',
+        'download_name': 'IDV_{piid}_FederalAccountFunding',
         'filter_function': idv_treasury_account_funding_filter,
         'is_for_idv': True
     },
@@ -119,7 +119,7 @@ VALUE_MAPPINGS = {
         'source_type': 'award',
         'table': TransactionNormalized,
         'table_name': 'idv_transaction_history',
-        'download_name': 'idv_{piid}_transaction_history',
+        'download_name': 'IDV_{piid}_TransactionHistory',
         'contract_data': 'contract_data',
         'filter_function': idv_transaction_filter,
         'is_for_idv': True
