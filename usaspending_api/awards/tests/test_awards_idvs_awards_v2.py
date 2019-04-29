@@ -41,7 +41,7 @@ class IDVAwardsTestCase(TestCase):
             mommy.make(
                 'awards.TransactionFPDS',
                 transaction_id=transaction_id,
-                funding_agency_name='funding_agency_name_%s' % transaction_id,
+                funding_agency_name='subtier_funding_agency_name_%s' % transaction_id,
                 ordering_period_end_date='2018-01-%02d' % transaction_id
             )
 
@@ -50,7 +50,13 @@ class IDVAwardsTestCase(TestCase):
             parent_n = PARENTS.get(award_id)
             mommy.make(
                 'references.Agency',
-                id=award_id * 12
+                id=award_id * 12,
+                toptier_agency_id=award_id * 12
+            )
+            mommy.make(
+                'references.ToptierAgency',
+                toptier_agency_id=award_id * 12,
+                name='toptier_funding_agency_name_%s' % (award_id * 12),
             )
             mommy.make(
                 'awards.Award',
@@ -98,7 +104,7 @@ class IDVAwardsTestCase(TestCase):
                 'award_id': award_id,
                 'award_type': 'type_description_%s' % award_id,
                 'description': 'description_%s' % award_id,
-                'funding_agency': 'funding_agency_name_%s' % award_id,
+                'funding_agency': 'toptier_funding_agency_name_%s' % (award_id * 12),
                 'funding_agency_id': award_id * 12,
                 'generated_unique_award_id': 'GENERATED_UNIQUE_AWARD_ID_%s' % award_id,
                 'last_date_to_order': '2018-01-%02d' % award_id,
