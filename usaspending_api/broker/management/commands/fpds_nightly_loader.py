@@ -16,7 +16,7 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
-from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
+from usaspending_api.common.helpers.etl_helpers import upsert_transactions
 from usaspending_api.common.helpers.generic_helper import fy, timer
 from usaspending_api.etl.award_helpers import (
     update_awards,
@@ -336,7 +336,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        logger.info("==== Starting FPDS nightly data load ====")
+        logger.info("==== Starting FPDS nightly update ====")
 
         if options.get("date"):
             date = options.get("date")[0]
@@ -345,8 +345,8 @@ class Command(BaseCommand):
             default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
             date = get_last_load_date("fpds", default=default_last_load_date).date()
         processing_start_datetime = datetime.now(timezone.utc)
-
         logger.info("Processing data for FPDS starting from %s" % date)
+
 
         with timer("retrieval of deleted FPDS IDs", logger.info):
             ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
@@ -360,26 +360,18 @@ class Command(BaseCommand):
         with timer("retrieval of new/modified FPDS data ID list", logger.info):
             total_insert = self.get_fpds_transaction_ids(date=date)
 
+
         if len(total_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
                 self.insert_all_new_fpds(total_insert)
 
-            # Update Awards based on changed FPDS records
-            with timer("updating awards to reflect their latest associated transaction info", logger.info):
-                update_awards(tuple(AWARD_UPDATE_ID_LIST))
-
             # Update FPDS-specific Awards based on the info in child transactions
             with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
                 update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
 
-            # Update AwardCategories based on changed FPDS records
-            with timer("updating award category variables", logger.info):
-                update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+            upsert_transactions(AWARD_UPDATE_ID_LIST, "contract")
 
-            # Check the linkages from file C to FPDS records and update any that are missing
-            with timer("updating C->D linkages", logger.info):
-                update_c_to_d_linkages("contract")
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
 

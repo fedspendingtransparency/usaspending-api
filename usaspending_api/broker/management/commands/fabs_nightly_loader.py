@@ -4,14 +4,16 @@ from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from django.db import connections
 
+from copy import copy
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
-from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
+from usaspending_api.common.helpers.etl_helpers import upsert_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.generic_helper import timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.broker.helpers.upsert_fabs_transactions import insert_all_new_fabs
 
 
 logger = logging.getLogger("console")
@@ -171,9 +173,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        processing_start_datetime = datetime.now(timezone.utc)
+        logger.info("==== Starting FABS nightly update ====")
 
-        logger.info("Starting FABS data load script...")
+        processing_start_datetime = datetime.now(timezone.utc)
 
         do_not_log_deletions = options["do_not_log_deletions"]
 
@@ -200,18 +202,26 @@ class Command(BaseCommand):
 
         if is_incremental_load and not submission_ids:
             logger.info("No new submissions. Exiting.")
+            return
 
-        else:
-            with timer("obtaining delete records", logger.info):
-                ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
+        with timer("obtaining delete records", logger.info):
+            ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
 
-            with timer("retrieving/diff-ing FABS Data", logger.info):
-                ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
+        update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
 
-            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
-            upsert_fabs_transactions(ids_to_upsert, update_award_ids)
+        with timer("retrieving/diff-ing FABS Data", logger.info):
+            ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
+
+        if ids_to_upsert or update_award_ids:
+            update_award_ids = copy(update_award_ids)
+
+            if ids_to_upsert:
+                with timer("inserting new FABS data", logger.info):
+                    update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
+
+        upsert_fabs_transactions(update_award_ids, "assistance")
 
         if is_incremental_load:
             update_last_load_date("fabs", processing_start_datetime)
 
-        logger.info("FABS UPDATE FINISHED!")
+        logger.info("FABS NIGHTLY UPDATE COMPLETE")

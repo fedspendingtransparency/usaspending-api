@@ -62,7 +62,7 @@ services:
     volumes:
       - .:/dockermount
     ports:
-      - 8000:8000
+      - 8500:8000
     command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api

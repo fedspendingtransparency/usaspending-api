@@ -499,7 +499,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        logger.info('Starting FSRS data load...')
+        logger.info("==== Starting FSRS nightly update ====")
 
         db_cursor = connections['data_broker'].cursor()
 
@@ -520,7 +520,7 @@ class Command(BaseCommand):
         update_award_subawards(tuple(award_update_id_list))
         logger.info('Finished updating award metadata...')
 
-        logger.info('Load FSRS Script Complete!')
+        logger.info('FSRS NIGHTLY UPDATE COMPLETE')
 
 
 def get_valid_awarding_agency(row):

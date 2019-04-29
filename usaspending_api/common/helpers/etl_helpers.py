@@ -5,7 +5,8 @@ from django.db import connection
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import read_sql_file
-
+from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 logger = logging.getLogger('console')
 ETL_SQL_FILE_PATH = 'usaspending_api/etl/management/sql/c_file_linkage/'
@@ -59,3 +60,19 @@ def update_c_to_d_linkages(type):
     logger.info('Count of unlinked %s records after updates: %s' % (type, str(ending_unlinked_count)))
 
     logger.info('Finished all queries in %s seconds' % str(datetime.now() - total_start))
+
+
+def upsert_transactions(ids, linkage_type):
+
+    if ids:
+        update_award_ids = tuple(set(ids))  # Convert to tuple and remove duplicates.
+        with timer("updating awards to reflect their latest associated transaction info", logger.info):
+            update_awards(update_award_ids)
+        with timer("updating award category variables", logger.info):
+            update_award_categories(update_award_ids)
+
+        with timer("updating C->D linkages", logger.info):
+            update_c_to_d_linkages(linkage_type)
+
+    else:
+        logger.info("Nothing to insert...")
