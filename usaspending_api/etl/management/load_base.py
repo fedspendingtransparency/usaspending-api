@@ -12,7 +12,6 @@ from copy import copy
 from django import db
 from django.core.management.base import BaseCommand
 from django.db import connections
-from django.core.cache import caches
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
@@ -27,7 +26,6 @@ from usaspending_api.references.abbreviations import territory_country_codes
 award_update_id_list = []
 award_contract_update_id_list = []
 
-awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
@@ -58,7 +56,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        awards_cache.clear()
 
         # Grab the data broker database connections
         if not options['test']:
