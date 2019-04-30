@@ -38,7 +38,7 @@ class TransactionDeltaManager(models.Manager):
 
                 # Perform upserts in chunks.
                 for chunk_start in range(0, len(transaction_ids), CHUNK_SIZE):
-                    chunk_of_ids = transaction_ids[chunk_start : chunk_start + CHUNK_SIZE]
+                    chunk_of_ids = transaction_ids[chunk_start: chunk_start + CHUNK_SIZE]
                     chunk_of_inserts = tuple(
                         TransactionDelta(transaction_id=transaction_id, created_at=created_at)
                         for transaction_id in chunk_of_ids

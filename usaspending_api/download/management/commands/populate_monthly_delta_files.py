@@ -66,7 +66,7 @@ def clean_out_transaction_deltas(connection_string):
     database.
     """
     # Get the max create_at from the transaction_delta in the current database.
-    max_created_at = TransactionDelta.objects.get_max_created_at()
+    max_created_at = TransactionDelta.objects.get_max_created_at()['created_at__max']
     if max_created_at:
 
         logger.info('Removing transaction_deltas <= {}'.format(max_created_at))
@@ -78,13 +78,14 @@ def clean_out_transaction_deltas(connection_string):
             with connection.cursor() as cursor:
                 cursor.execute(
                     SQL('delete from transaction_delta where created_at <= {}').format(Literal(max_created_at)))
+
     else:
         logger.info('Nothing to remove from transaction_delta')
 
 
 def ping_database(connection_string):
     """
-    This is just a sanity check to ensure we can connect to the provided
+    This is just a sanity check to ensure we can connect with the provided
     connection string and it has the table we'll need.
     """
     with psycopg2.connect(connection_string) as connection:
@@ -327,6 +328,7 @@ class Command(BaseCommand):
         parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True,
                             help='Date of last Delta file creation.')
         parser.add_argument('--remove_transaction_deltas',
+                            action='store_true',
                             help='Empties out transactions from the transaction_deltas file in the '
                             'database indicated by the TRANSACTION_DELTA_URL environment variable. '
                             'This will typically be a staging or production database.')
@@ -343,7 +345,7 @@ class Command(BaseCommand):
             if not transaction_delta_url:
                 raise EnvironmentError(
                     'remove_transaction_deltas switch was provided on the command line but '
-                    'TRANSACTION_DELTA_URL was not defined as an environment variable')
+                    'TRANSACTION_DELTA_URL has not been defined as an environment variable')
             logger.info('remove_transaction_deltas command line parameter provided.  transaction_delta '
                         'records will be removed from the database specified by TRANSACTION_DELTA_URL.')
             logger.info('Ensuring we can establish a connection to TRANSACTION_DELTA_URL')
