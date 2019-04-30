@@ -208,7 +208,7 @@ class Command(BaseCommand):
                 ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
             externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
-            
+
             if ids_to_upsert or externally_updated_award_ids:
                 update_award_ids = copy(externally_updated_award_ids)
 
