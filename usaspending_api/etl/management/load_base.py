@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from decimal import Decimal
 
-import dateutil
+from dateutil import parser
 from copy import copy
 from django import db
 from django.core.management.base import BaseCommand
@@ -611,7 +611,7 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
     # turn datetimes into dates
     if field.endswith('date') and isinstance(value, str):
         try:
-            value = dateutil.parser.parse(value).date()
+            value = parser.parse(value).date()
         except (TypeError, ValueError):
             pass
 

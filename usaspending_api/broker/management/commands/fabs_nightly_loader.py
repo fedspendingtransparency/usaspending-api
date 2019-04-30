@@ -212,9 +212,9 @@ class Command(BaseCommand):
             if ids_to_upsert or update_award_ids:
                 update_award_ids = copy(update_award_ids)
 
-               if ids_to_upsert:
-                   with timer("inserting new FABS data", logger.info):
-                       update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
+                if ids_to_upsert:
+                    with timer("inserting new FABS data", logger.info):
+                        update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
             upsert_transactions(update_award_ids, "assistance")
         else:
