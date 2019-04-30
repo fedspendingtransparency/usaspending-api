@@ -5,7 +5,6 @@ import os
 from collections import OrderedDict
 
 from django.db import transaction
-from django.core.cache import caches
 import pandas as pd
 
 from usaspending_api.awards.models import TransactionFPDS
@@ -18,7 +17,6 @@ TAS_ID_TO_ACCOUNT = {}
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
 
-awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
