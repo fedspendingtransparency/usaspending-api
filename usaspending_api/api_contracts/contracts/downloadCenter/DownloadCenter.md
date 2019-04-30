@@ -17,15 +17,15 @@ This endpoint returns the generated file's metadata.
 
 + Request (application/json)
     + Attributes (object)
-        + account_level: `treasury_account` (required, enum[string])
+        + `account_level`: (required, enum[string])
             The account level is used to filter for a specific type of file.
             + Members
                 + treasury_account
                 + federal_account
-        + file_format: `csv` (optional, string)
+        + `file_format`: `csv` (optional, string)
             The file format that should be returned.
             + Default: `csv`
-        + filters: (required, FilterObject)
+        + `filters`: (required, FilterObject)
             The filters used to filter the data
 
 + Response 200 (application/json)
@@ -48,29 +48,29 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
 # Data Structures
 
 ## CustomDataResult (object)
-+ total_size: 35.055 (required, number)
++ `total_size`: 35.055 (required, number)
     The total size of the file being returned
-+ file_name: `012_account_balances_20180613140845.zip` (required, string)
-+ total_rows: 652 (required, number)
-+ total_columns: 27 (required, number)
-+ url: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
++ `file_name`: `012_account_balances_20180613140845.zip` (required, string)
++ `total_rows`: 652 (required, number)
++ `total_columns`: 27 (required, number)
++ `url`: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
     Where the file lives in S3
 + message (optional, nullable)
-+ status: `finished` (required, enum[string])
++ `status`: `finished` (required, enum[string])
     + Members
         + ready
         + running
         + finished
         + failed
-+ seconds_elapsed `10.061132` (required, string)
++ `seconds_elapsed`: `10.061132` (required, string)
 
 ## FilterObject (object)
 + agency: `all` (optional, string)
     The agency to filter by. This field is an internal id.
     + Default: `all`
-+ federal_account: `212` (optional, string)
++ `federal_account`: `212` (optional, string)
     This field is an internal id.
-+ submission_type: `award_financial` (required, enum[string])
++ `submission_type`: (required, enum[string])
     + Members
         + account_balances
         + object_class_program_activity
@@ -100,7 +100,7 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
 + display: `Award File` (required, string)
 
 ## DictionaryMetadata (object)
-+ total_rows: 393 (required, number)
-+ total_columns: 12 (required, number)
-+ total_size: `119.32KB` (required, string)
-+ download_location: `http://files-nonprod.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx` (required, string)
++ `total_rows`: 393 (required, number)
++ `total_columns`: 12 (required, number)
++ `total_size`: `119.32KB` (required, string)
++ `download_location`: `http://files-nonprod.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx` (required, string)

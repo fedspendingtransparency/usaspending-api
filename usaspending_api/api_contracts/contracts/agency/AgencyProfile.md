@@ -127,9 +127,13 @@ This endpoint returns the amount that the specific agency has obligated to vario
 # Data Structures
 
 ## PageMetadataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
++ count (required, number)
++ page (required, number)
++ has_next_page (required, boolean)
++ has_previous_page (required, boolean)
++ next (required, nullable , string)
++ current (required, string)
++ previous (required, nullable, string)
 
 ## AgencyOverview (object)
 + active_fy: `2017` (required, string)
@@ -164,7 +168,8 @@ This endpoint returns the amount that the specific agency has obligated to vario
 + obligated_amount: 209728763.65 (required, string)
 
 ## FederalAccount (object)
-+ account_title: `Refunding Internal Revenue Collections (Indefinite), Treasury` (required, string)
-+ id: 1105 (required, string)
++ account_title (required, string)
++ account_number (required, string)
++ id (required, string)
     The USAspending.gov unique identifier for the federal account. You will need to use this ID when making API requests for details about specific federal accounts.
-+ obligated_amount: 185853348344.60 (required, string)
++ obligated_amount (required, string)
