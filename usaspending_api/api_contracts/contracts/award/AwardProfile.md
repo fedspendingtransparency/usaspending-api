@@ -350,43 +350,6 @@ This endpoint returns a list of transactions, their amount, type, action date, a
         + results (array[TransactionResult], fixed-type)
         + page_metadata (PageMetaDataObject)
 
-## Financial System Details [/api/v2/accounts/awards/]
-
-This endpoint returns financial accounts by award.
-
-## Financial System Details [POST]
-
-+ Request (application/json)
-    + Attributes (object)
-        + award_id: `12178065` (required, string)
-            The internal id of the award to filter on.
-         + limit: 15 (optional, number)
-            The number of results to include per page.
-            + Default: 10
-        + page: 1 (optional, number)
-            The page of results to return based on the limit.
-            + Default: 1
-        + sort: `submission_date` (optional, enum[string])
-            The field results are sorted by.
-            + Default: `submission_date`
-            + Members
-                + `submission_date`
-                + `federal_account_name`
-                + `treasury_account_symbol`
-                + `program_activity_name`
-                + `object_class_name`
-                + `obligated_amount`
-        + order: desc (optional, string)
-            The direction results are sorted by. `asc` for ascending, `desc` for descending.
-            + Default: desc
-
-+ Response 200 (application/json)
-    + Attributes
-        + results (array[FinancialSystemDetailsResult], fixed-type)
-        + page_metadata (PageMetaDataObject)
-        + award_id: `12178065` (required, string)
-            The award id sent in the request.
-
 # Data Structures
 
 ## SubAwardResult (object)
