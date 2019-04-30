@@ -615,7 +615,6 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
         except (TypeError, ValueError):
             pass
 
-    # handle sorting in reverse order
     if reverse and reverse.search(field):
         try:
             value = -1 * Decimal(value)

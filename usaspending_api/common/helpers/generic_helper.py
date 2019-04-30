@@ -188,7 +188,6 @@ def within_one_year(d1, d2):
             days_diff -= 1
     return days_diff <= 365
 
-
 def generate_matviews():
     with connection.cursor() as c:
         c.execute(CREATE_READONLY_SQL)
