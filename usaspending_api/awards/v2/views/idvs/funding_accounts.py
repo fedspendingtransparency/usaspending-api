@@ -22,35 +22,41 @@ SORTABLE_COLUMNS = {
 
 DEFAULT_SORT_COLUMN = 'federal_account'
 
-FUNDING_TREEMAP_SQL = SQL("""
-    with cte as (
-        select    award_id
-        from      parent_award
-        where     {award_id_column} = {award_id}
-        union all
-        select    cpa.award_id
-        from      parent_award ppa
-                  inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
-        where     ppa.{award_id_column} = {award_id}
-    )
-    select
-        {columns}
-    from
-        cte
-        inner join awards pa on
-            pa.id = cte.award_id
-        inner join awards ca on
-            ca.parent_award_piid = pa.piid and
-            ca.fpds_parent_agency_id = pa.fpds_agency_id and
-            ca.type not like 'IDV%'
-        inner join financial_accounts_by_awards faba on
-            faba.award_id = ca.id
-        left outer join treasury_appropriation_account taa on
-            taa.treasury_account_identifier = faba.treasury_account_id
-        left outer join federal_account fa on
-            taa.agency_id || '-' || taa.main_account_code =  fa.federal_account_code
-        {group_by}
-        {order_by};""")
+
+
+F=
+
+FUNDING_TREEMAP_SQL = SQL("""with cte as (
+    select      award_id
+    from        parent_award
+    where       {award_id_column} = {award_id}
+    union all
+    select      cpa.award_id
+    from        parent_award ppa
+                inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
+    where       ppa.{award_id_column} = {award_id}
+)
+select      {columns}
+from        cte
+            inner join awards pa on
+                pa.id = cte.award_id
+            inner join awards ca on
+                ca.parent_award_piid = pa.piid and
+                ca.fpds_parent_agency_id = pa.fpds_agency_id and
+                ca.type not like 'IDV%'
+            inner join financial_accounts_by_awards faba on
+                faba.award_id = ca.id
+            inner join agency a on
+                a.id = ca.funding_agency_id
+            inner join toptier_agency ta on
+                ta.toptier_agency_id = a.toptier_agency_id
+            left outer join treasury_appropriation_account taa on
+                taa.treasury_account_identifier = faba.treasury_account_id
+            left outer join federal_account fa on
+                fa.agency_identifier = taa.agency_id and
+                fa.main_account_code = taa.main_account_code
+                {group_by}
+                {order_by};""")
 
 
 class IDVFundingBaseViewSet(APIDocumentationView):
@@ -108,12 +114,14 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
     def post(self, request: Request) -> Response:
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
         group_by = SQL("""group by federal_account, fa.account_title, cte.award_id""")
-        columns = SQL("""sum(nullif(faba.transaction_obligated_amount, 'NaN')) total_transaction_obligated_amount,
-                      taa.agency_id || '-' || taa.main_account_code federal_account,
-                      sum(sum(nullif(faba.transaction_obligated_amount, 'NaN')))
-                           over (partition by cte.award_id) as total,
-                      fa.account_title
-                    """)
+        columns = SQL('''sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric)) total_transaction_obligated_amount,
+            taa.agency_id || '-' || taa.main_account_code federal_account,
+            sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))) over (partition by cte.award_id) as total,
+            fa.account_title,
+            ca.funding_agency_id,
+            ta.abbreviation,
+            ta.name,
+            a.id agency_id''')
 
         results = self._business_logic(request.data, columns, group_by, order_by)
         paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
