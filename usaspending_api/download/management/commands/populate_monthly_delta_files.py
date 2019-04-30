@@ -2,6 +2,7 @@ import boto3
 import logging
 import os
 import pandas as pd
+import psycopg2
 import re
 import shutil
 import subprocess
@@ -12,6 +13,7 @@ from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField
+from psycopg2.sql import Literal, SQL
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
@@ -21,6 +23,8 @@ from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
+from usaspending_api.awards.models import TransactionDelta
+
 
 logger = logging.getLogger('console')
 
@@ -55,6 +59,39 @@ AWARD_MAPPINGS = {
 }
 
 
+def clean_out_transaction_deltas(connection_string):
+    """
+    Delete transaction_delta records from the database pointed to by connection_string
+    that are <= the max created_at date in the transaction_delta table in the current
+    database.
+    """
+    # Get the max create_at from the transaction_delta in the current database.
+    max_created_at = TransactionDelta.objects.get_max_created_at()
+    if max_created_at:
+
+        logger.info('Removing transaction_deltas <= {}'.format(max_created_at))
+
+        # We are deleting things from an entirely different database so we'll just
+        # use straight up psycopg SQL queries.
+        with psycopg2.connect(connection_string) as connection:
+            connection.autocommit = True  # We are not concerned with transactions.
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    SQL('delete from transaction_delta where created_at <= {}').format(Literal(max_created_at)))
+    else:
+        logger.info('Nothing to remove from transaction_delta')
+
+
+def ping_database(connection_string):
+    """
+    This is just a sanity check to ensure we can connect to the provided
+    connection string and it has the table we'll need.
+    """
+    with psycopg2.connect(connection_string) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute('select 1 from transaction_delta where 0 = 1')
+
+
 class Command(BaseCommand):
 
     def download(self, award_type, agency='all', generate_since=None):
@@ -84,9 +121,14 @@ class Command(BaseCommand):
             source.queryset = source.queryset. \
                 annotate(correction_delete_ind=Case(When(transaction__contract_data__created_at__lt=generate_since,
                                                     then=Value('C')), default=Value(''), output_field=CharField()))
+
+        qs = source.queryset
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
+
+        # UNION the normal results to the transaction_delta results.
+        source.queryset = source.queryset.union(qs.filter(transaction__transactiondelta__isnull=False))
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
@@ -284,12 +326,28 @@ class Command(BaseCommand):
                                            'Defaults to both.')
         parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True,
                             help='Date of last Delta file creation.')
+        parser.add_argument('--remove_transaction_deltas',
+                            help='Empties out transactions from the transaction_deltas file in the '
+                            'database indicated by the TRANSACTION_DELTA_URL environment variable. '
+                            'This will typically be a staging or production database.')
 
     def handle(self, *args, **options):
         """ Run the application. """
         agencies = options['agencies']
         award_types = options['award_types']
         last_date = options['last_date']
+        remove_transaction_deltas = options['remove_transaction_deltas']
+        transaction_delta_url = os.environ.get('TRANSACTION_DELTA_URL')
+
+        if remove_transaction_deltas:
+            if not transaction_delta_url:
+                raise EnvironmentError(
+                    'remove_transaction_deltas switch was provided on the command line but '
+                    'TRANSACTION_DELTA_URL was not defined as an environment variable')
+            logger.info('remove_transaction_deltas command line parameter provided.  transaction_delta '
+                        'records will be removed from the database specified by TRANSACTION_DELTA_URL.')
+            logger.info('Ensuring we can establish a connection to TRANSACTION_DELTA_URL')
+            ping_database(transaction_delta_url)
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
@@ -307,3 +365,6 @@ class Command(BaseCommand):
         for agency in toptier_agencies:
             for award_type in award_types:
                 self.download(award_type.capitalize(), agency, last_date)
+
+        if remove_transaction_deltas:
+            clean_out_transaction_deltas(transaction_delta_url)
