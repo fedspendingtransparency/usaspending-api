@@ -207,11 +207,11 @@ class Command(BaseCommand):
         with timer("obtaining delete records", logger.info):
             ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
 
-        update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
-
         with timer("retrieving/diff-ing FABS Data", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
+        update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            
         if ids_to_upsert or update_award_ids:
             update_award_ids = copy(update_award_ids)
 
