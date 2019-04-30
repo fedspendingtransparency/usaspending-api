@@ -93,9 +93,10 @@ class IDVFundingRollupViewSet(IDVFundingBaseViewSet):
     @cache_response()
     def post(self, request: Request) -> Response:
         order_by = SQL("")
-        # TODO: To avoid breaking the frontend, we did not change awarding_agency_count to be funding_agency_count. However,
-        # the value it is reporting IS the funding agency count. There is a ticket to add awarding agency at a later time, DEV-2576, 
-        # when that happens, the name should be switched.
+        # TODO: To avoid breaking the frontend, we did not change awarding_agency_count to be
+        # funding_agency_count. However, the value it is reporting IS the funding agency count.
+        # There is a ticket to add awarding agency at a later time, DEV-2576, when that happens,
+        # the name should be switched.
         columns = SQL("""coalesce(sum(nullif(faba.transaction_obligated_amount, 'NaN')), 0.0) total_transaction_obligated_amount,
                      count(distinct ta.toptier_agency_id) awarding_agency_count,
                      count(distinct taa.agency_id || '-' || taa.main_account_code) federal_account_count""")
@@ -117,7 +118,8 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
         group_by = SQL("""group by federal_account, fa.account_title, cte.award_id, ta.abbreviation, ta.name, a.id""")
         columns = SQL('''sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric)) total_transaction_obligated_amount,
             taa.agency_id || '-' || taa.main_account_code federal_account,
-            sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))) over (partition by cte.award_id) as total,
+            sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))) over (partition by cte.award_id) as
+            total,
             fa.account_title,
             ta.abbreviation,
             ta.name,
