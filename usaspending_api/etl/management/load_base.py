@@ -434,7 +434,7 @@ def load_file_d2(
 
 def format_date(date_string):
     try:
-        return dateutil.parser.parse(date_string).date()
+        return parser.parse(date_string).date()
     except (TypeError, ValueError):
         return None
 

@@ -207,10 +207,10 @@ class Command(BaseCommand):
             with timer("retrieving/diff-ing FABS Data", logger.info):
                 ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
-            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
             
-            if ids_to_upsert or update_award_ids:
-                update_award_ids = copy(update_award_ids)
+            if ids_to_upsert or externally_updated_award_ids:
+                update_award_ids = copy(externally_updated_award_ids)
 
                 if ids_to_upsert:
                     with timer("inserting new FABS data", logger.info):
