@@ -1,9 +1,9 @@
 import logging
 
 from django.db import connection
-from usaspending_api.awards.models import Award, Agency
-from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
+from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger('console')

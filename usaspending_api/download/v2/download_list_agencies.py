@@ -6,7 +6,7 @@ from django.db.models import F
 from rest_framework.response import Response
 
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.awards.models import Agency
+from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.lookups import CFO_CGACS
