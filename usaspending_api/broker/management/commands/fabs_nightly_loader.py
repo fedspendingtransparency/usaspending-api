@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from django.db import connections
 
-from copy import copy
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
@@ -185,8 +184,10 @@ class Command(BaseCommand):
             return_dict['start_datetime'] = None
             return_dict['end_datetime'] = None
         else:
-            return_dict['submission_ids'] = tuple(option_dict["submission_ids"]) if option_dict["submission_ids"] else None
-            return_dict['afa_ids'] = read_afa_ids_from_file(option_dict['afa_id_file']) if option_dict['afa_id_file'] else None
+            return_dict['submission_ids'] = tuple(option_dict["submission_ids"]) if option_dict["submission_ids"] \
+                else None
+            return_dict['afa_ids'] = read_afa_ids_from_file(option_dict['afa_id_file']) if option_dict['afa_id_file'] \
+                else None
             return_dict['start_datetime'] = option_dict["start_datetime"]
             return_dict['end_datetime'] = option_dict["end_datetime"]
 
