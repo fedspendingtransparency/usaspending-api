@@ -1,5 +1,4 @@
 from usaspending_api.etl.management.load_base import store_value
-import re
 
 
 def test_store_basic_values():
@@ -34,7 +33,7 @@ def test_store_unlabeled_dates():
 
 def test_store_bad_dates():
     test_dict = {'test_bad_date': 3, 'y': 6}
-    bad_date = [4,7]
+    bad_date = [4, 7]
     store_value(test_dict, 'test_date_not', bad_date)
     assert test_dict['test_date_not'] == [4, 7]
     assert test_dict['y'] == 6

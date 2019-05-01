@@ -172,28 +172,33 @@ class Command(BaseCommand):
                  "transactions for clients to download."
         )
 
+    def resolve_flags(self, option_dict):
+        return_dict = {}
+        return_dict['processing_start_datetime'] = datetime.now(timezone.utc)
+        return_dict['do_not_log_deletions'] = option_dict["do_not_log_deletions"]
+
+        # "Reload all" supersedes all other processing options.
+        return_dict['reload_all'] = option_dict["reload_all"]
+        if return_dict['reload_all']:
+            return_dict['submission_ids'] = None
+            return_dict['afa_ids'] = None
+            return_dict['start_datetime'] = None
+            return_dict['end_datetime'] = None
+        else:
+            return_dict['submission_ids'] = tuple(option_dict["submission_ids"]) if option_dict["submission_ids"] else None
+            return_dict['afa_ids'] = read_afa_ids_from_file(option_dict['afa_id_file']) if option_dict['afa_id_file'] else None
+            return_dict['start_datetime'] = option_dict["start_datetime"]
+            return_dict['end_datetime'] = option_dict["end_datetime"]
+
+        return return_dict
+
     def handle(self, *args, **options):
         logger.info("==== Starting FABS nightly update ====")
 
-        processing_start_datetime = datetime.now(timezone.utc)
-
-        do_not_log_deletions = options["do_not_log_deletions"]
-
-        # "Reload all" supersedes all other processing options.
-        reload_all = options["reload_all"]
-        if reload_all:
-            submission_ids = None
-            afa_ids = None
-            start_datetime = None
-            end_datetime = None
-        else:
-            submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
-            afa_ids = read_afa_ids_from_file(options['afa_id_file']) if options['afa_id_file'] else None
-            start_datetime = options["start_datetime"]
-            end_datetime = options["end_datetime"]
+        flags = self.resolve_flags(options)
 
         # If no other processing options were provided than this is an incremental load.
-        is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
+        is_incremental_load = not any((flags['reload_all'], flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime']))
 
         if is_incremental_load:
             last_load_date = get_last_load_date()
@@ -202,12 +207,12 @@ class Command(BaseCommand):
 
         if not is_incremental_load or submission_ids:
             with timer("obtaining delete records", logger.info):
-                ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
+                ids_to_delete = get_fabs_records_to_delete(flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime'])
 
             with timer("retrieving/diff-ing FABS Data", logger.info):
-                ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
+                ids_to_upsert = get_fabs_transaction_ids(flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime'])
 
-            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, flags['do_not_log_deletions'])
 
             if ids_to_upsert or externally_updated_award_ids:
                 update_award_ids = copy(externally_updated_award_ids)
@@ -216,11 +221,11 @@ class Command(BaseCommand):
                     with timer("inserting new FABS data", logger.info):
                         update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
-            upsert_transactions(update_award_ids, "assistance")
+                upsert_transactions(update_award_ids, "assistance")
         else:
             logger.info("No new submissions.")
 
         if is_incremental_load:
-            update_last_load_date("fabs", processing_start_datetime)
+            update_last_load_date("fabs", flags['processing_start_datetime'])
 
         logger.info("FABS NIGHTLY UPDATE COMPLETE")
