@@ -1,4 +1,4 @@
-from usaspending_api.etl.management.load_base import store_value
+from usaspending_api.etl.management.store_value import store_value
 
 
 def test_store_basic_values():
