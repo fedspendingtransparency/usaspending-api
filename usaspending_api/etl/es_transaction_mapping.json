@@ -214,19 +214,16 @@
           "index": false
         },
         "pop_country_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_country_name": {
           "type": "text"
         },
         "pop_state_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_county_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_county_name": {
           "type": "text"
@@ -248,22 +245,20 @@
               "preserve_separators": true
             }
           }
+
         },
 
         "recipient_location_country_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_country_name": {
           "type": "text"
         },
         "recipient_location_state_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_county_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_county_name": {
           "type": "text"
@@ -275,6 +270,7 @@
           "type": "text"
         },
         "recipient_location_city_name": {
+
           "type": "text",
           "fields": {
             "suggest": {
@@ -285,6 +281,7 @@
               "preserve_separators": true
             }
           }
+
         },
         "type": {
           "type": "keyword",
