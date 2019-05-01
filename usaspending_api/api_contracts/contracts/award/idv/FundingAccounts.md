@@ -27,7 +27,7 @@ This endpoint returns a list of federal accounts under a given IDV.
 + Response 200 (application/json)
     + Attributes 
        + page_metadata (required, PageMetadata)
-       + results (required, array[AccountListing])
+       + results (required, array[AccountListing], fixed-type)
 
 
 # Data Structures
@@ -42,5 +42,8 @@ This endpoint returns a list of federal accounts under a given IDV.
 
 ## AccountListing (object)
 + total_transaction_obligated_amount: 1234.56 (required, number)
-+ federal_acount: `075-1301` (required, string)
-+ account_title: `National Institutes of Health` (required, string)
++ federal_account: `075-1301` (required, string)
++ account_title: `Bureau of Consumer Financial Protection Fund` (required, string)
++ abbreviation: `NIH` (required, string)
++ name: `National Institutes of Health` (required, string)
++ agency_id: 123 (required, number)
