@@ -608,6 +608,10 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
+    x=5
+    print(x)
+    if value is None:
+        return
     if field.endswith('date'):  # turn datetimes into dates
         if isinstance(value, str):
             try:
