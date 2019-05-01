@@ -606,4 +606,3 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     else:
         # record had no location information at all
         return None, None
-
