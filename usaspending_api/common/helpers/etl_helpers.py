@@ -62,7 +62,7 @@ def update_c_to_d_linkages(type):
     logger.info('Finished all queries in %s seconds' % str(datetime.now() - total_start))
 
 
-def upsert_transactions(ids, linkage_type):
+def upsert_awards(ids, linkage_type):
 
     if ids:
         update_award_ids = tuple(set(ids))  # Convert to tuple and remove duplicates.

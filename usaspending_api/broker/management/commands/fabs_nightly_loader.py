@@ -13,7 +13,7 @@ from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, d
 from usaspending_api.common.helpers.generic_helper import timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.broker.helpers.upsert_fabs_transactions import insert_all_new_fabs
-from usaspending_api.common.helpers.etl_helpers import upsert_transactions
+from usaspending_api.common.helpers.etl_helpers import upsert_awards
 
 
 logger = logging.getLogger("console")
@@ -224,7 +224,7 @@ class Command(BaseCommand):
                 with timer("inserting new FABS data", logger.info):
                     update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
-            upsert_transactions(update_award_ids, "assistance")
+            upsert_awards(update_award_ids, "assistance")
         else:
             logger.info("No new submissions.")
 

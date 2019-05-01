@@ -16,7 +16,7 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
-from usaspending_api.common.helpers.etl_helpers import upsert_transactions
+from usaspending_api.common.helpers.etl_helpers import upsert_awards
 from usaspending_api.common.helpers.generic_helper import fy, timer
 from usaspending_api.etl.award_helpers import (
     update_contract_awards,
@@ -366,7 +366,7 @@ class Command(BaseCommand):
             with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
                 update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
 
-            upsert_transactions(AWARD_UPDATE_ID_LIST, "contract")
+            upsert_awards(AWARD_UPDATE_ID_LIST, "contract")
 
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
