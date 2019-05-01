@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from django.db import connections
 
+from copy import copy
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
@@ -219,13 +220,14 @@ class Command(BaseCommand):
             with timer("retrieving/diff-ing FABS Data", logger.info):
                 ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
-            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
 
-            if ids_to_upsert:
+            if ids_to_upsert or externally_updated_award_ids:
+                update_award_ids = copy(externally_updated_award_ids)
                 with timer("inserting new FABS data", logger.info):
                     update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
-            upsert_awards(update_award_ids, "assistance")
+                upsert_awards(update_award_ids, "assistance")
         else:
             logger.info("No new submissions.")
 
