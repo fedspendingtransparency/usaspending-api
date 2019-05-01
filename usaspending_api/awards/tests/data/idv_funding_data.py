@@ -36,14 +36,14 @@ def create_funding_data_tree():
         mommy.make(
             'references.Agency',
             id=9000 + _id,
-            toptier_flag = True,
+            toptier_flag=True,
             toptier_agency_id=9500 + _id
         )
 
         mommy.make(
             'references.ToptierAgency',
             toptier_agency_id=9500 + _id,
-            cgac_code = str(_id).zfill(3),
+            cgac_code=str(_id).zfill(3),
             name='toptier_funding_agency_name_%s' % (9500 + _id),
         )
 
@@ -62,7 +62,6 @@ def create_funding_data_tree():
         # Kirk and I have no idea why agency_id has to be done this way instead of passing
         # it inline like all the other if/else's below, but it definitely breaks
         # if you don't... bug in model mommy maybe? Inquiring minds want to know...
-        #_agency_id = 8000 + _id if _id % 2 == 0 else 12000
         mommy.make(
             'awards.Award',
             id=_id,
@@ -73,7 +72,7 @@ def create_funding_data_tree():
             parent_award_piid='piid_%s' % _spid if _spid else None,
             fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None,
             funding_agency_id=9000 + _id,
-            awarding_agency_id=8000 + _id#_agency_id,
+            awarding_agency_id=8000 + _id
         )
 
         if _id in IDVS:
