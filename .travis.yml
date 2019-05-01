@@ -13,6 +13,7 @@ addons:
 env:
   global:
     - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
+    - DATA_BROKER_DATABASE_URL='foobar'
     - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
     - ES_HOSTNAME='http://localhost:9200'
     - FUNCS_AND_ENUMS='usaspending_api/database_scripts/matviews/functions_and_enums.sql'
