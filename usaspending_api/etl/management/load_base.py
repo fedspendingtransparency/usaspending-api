@@ -21,6 +21,7 @@ from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import (Agency, LegalEntity, Cfda, Location, )
 from usaspending_api.references.abbreviations import territory_country_codes
+from usaspending_api.etl.management.store_value import store_value
 
 # Lists to store for update_awards and update_contract_awards
 award_update_id_list = []
@@ -606,22 +607,3 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
         # record had no location information at all
         return None, None
 
-
-def store_value(model_instance_or_dict, field, value, reverse=None):
-    # turn datetimes into dates
-    if field.endswith('date') and isinstance(value, str):
-        try:
-            value = parser.parse(value).date()
-        except (TypeError, ValueError):
-            pass
-
-    if reverse and reverse.search(field):
-        try:
-            value = -1 * Decimal(value)
-        except TypeError:
-            pass
-
-    if isinstance(model_instance_or_dict, dict):
-        model_instance_or_dict[field] = value
-    else:
-        setattr(model_instance_or_dict, field, value)
