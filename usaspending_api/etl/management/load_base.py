@@ -5,9 +5,7 @@ Code for loaders in management/commands to inherit from or share.
 import logging
 import time
 from datetime import datetime
-from decimal import Decimal
 
-from dateutil import parser
 from copy import copy
 from django import db
 from django.core.management.base import BaseCommand
