@@ -9,7 +9,8 @@ from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin
-from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
+from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, DeprecatedCachedDetailViewSet, \
+    AutocompleteView, DeprecatedAutocompleteView
 from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
@@ -210,7 +211,7 @@ class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-class GlossaryViewSet(FilterQuerysetMixin, CachedDetailViewSet):
+class GlossaryViewSet(FilterQuerysetMixin, DeprecatedCachedDetailViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -225,7 +226,7 @@ class GlossaryViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return filtered_queryset
 
 
-class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
+class GlossaryAutocomplete(FilterQuerysetMixin, DeprecatedAutocompleteView):
     """
     Autocomplete support for legal entity (recipient) objects.
     """
