@@ -196,9 +196,15 @@ class Command(BaseCommand):
         logger.info("==== Starting FABS nightly update ====")
 
         flags = self.resolve_flags(options)
+        reload_all = flags['reload_all']
+        submission_ids = flags['submission_ids']
+        afa_ids = flags['afa_ids']
+        start_datetime = flags['start_datetime']
+        end_datetime = flags['end_datetime']
+        do_not_log_deletions = flags['do_not_log_deletions']
 
         # If no other processing options were provided than this is an incremental load.
-        is_incremental_load = not any((flags['reload_all'], flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime']))
+        is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
             last_load_date = get_last_load_date()
@@ -207,12 +213,12 @@ class Command(BaseCommand):
 
         if not is_incremental_load or submission_ids:
             with timer("obtaining delete records", logger.info):
-                ids_to_delete = get_fabs_records_to_delete(flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime'])
+                ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
 
             with timer("retrieving/diff-ing FABS Data", logger.info):
-                ids_to_upsert = get_fabs_transaction_ids(flags['submission_ids'], flags['afa_ids'], flags['start_datetime'], flags['end_datetime'])
+                ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
-            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, flags['do_not_log_deletions'])
+            externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
 
             if ids_to_upsert or externally_updated_award_ids:
                 update_award_ids = copy(externally_updated_award_ids)
