@@ -1,8 +1,7 @@
-def deprecated(func, *args, **kwargs):
-    def wrapper_deprecated(*args, **kwargs):
-        response = func(*args, **kwargs)
-        response['Warning 299'] = "Deprecated API"
-        # if response.status_code == 200:
-        #     response.status_code = 299
+def deprecated(function):
+    """Add deprecation warning to endpoint"""
+    def wrap(request, *args, **kwargs):
+        response = function(request, *args, **kwargs)
+        response["X-API-Warn"] = "Deprecated API"
         return response
-    return wrapper_deprecated
+    return wrap

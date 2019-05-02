@@ -10,7 +10,6 @@ from usaspending_api.common.mixins import AutocompleteResponseMixin
 from usaspending_api.common.exceptions import InvalidParameterException
 
 import logging
-from usaspending_api.decorators import deprecated
 
 
 class AutocompleteView(AutocompleteResponseMixin,
@@ -22,34 +21,6 @@ class AutocompleteView(AutocompleteResponseMixin,
         context = super(AutocompleteView, self).get_serializer_context()
         return {**context}
 
-    @cache_response()
-    def post(self, request, *args, **kwargs):
-        try:
-            response = self.build_response(
-                request, queryset=self.get_queryset(), serializer=self.serializer_class)
-            status_code = status.HTTP_200_OK
-        except InvalidParameterException as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_400_BAD_REQUEST
-            self.exception_logger.exception(e)
-        except Exception as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            self.exception_logger.exception(e)
-        finally:
-            return Response(response, status=status_code)
-
-
-class DeprecatedAutocompleteView(AutocompleteResponseMixin,
-                                 APIView):
-
-    exception_logger = logging.getLogger("exceptions")
-
-    def get_serializer_context(self):
-        context = super(AutocompleteView, self).get_serializer_context()
-        return {**context}
-
-    @deprecated
     @cache_response()
     def post(self, request, *args, **kwargs):
         try:
@@ -114,21 +85,6 @@ class CachedDetailViewSet(DetailViewSet):
     def list(self, request, *args, **kwargs):
         return super(DetailViewSet, self).list(request, *args, **kwargs)
 
-    @cache_response()
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
-
-
-class DeprecatedCachedDetailViewSet(DetailViewSet):
-    """
-    Caches the responses for some specific views that use DetailViewSet
-    """
-    @deprecated
-    @cache_response()
-    def list(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).list(request, *args, **kwargs)
-
-    @deprecated
     @cache_response()
     def retrieve(self, request, *args, **kwargs):
         return super(DetailViewSet, self).retrieve(request, *args, **kwargs)

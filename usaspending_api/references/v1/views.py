@@ -9,14 +9,17 @@ from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin
-from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, DeprecatedCachedDetailViewSet, \
-    AutocompleteView, DeprecatedAutocompleteView
+from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
 from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
+from usaspending_api.decorators import deprecated
+from django.utils.decorators import method_decorator
 
 
+@method_decorator(deprecated, name='post')
 class FilterEndpoint(APIView):
+    """DEPRECATED"""
     serializer_class = FilterSerializer
 
     def post(self, request, format=None):
@@ -48,7 +51,9 @@ class FilterEndpoint(APIView):
         return Response({'hash': hash})
 
 
+@method_decorator(deprecated, name='post')
 class HashEndpoint(APIView):
+    """DEPRECATED"""
     serializer_class = HashSerializer
 
     def post(self, request, format=None):
@@ -69,8 +74,11 @@ class HashEndpoint(APIView):
                 "The FilterHash Object with that has does not exist. DoesNotExist Error Thrown.")
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class LocationEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return an agency
     """
     serializer_class = LocationSerializer
@@ -86,8 +94,10 @@ class LocationEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='post')
 class LocationGeoCompleteEndpoint(APIView):
     """
+    DEPRECATED
     Return location information.
     """
 
@@ -104,8 +114,10 @@ class LocationGeoCompleteEndpoint(APIView):
         return Response(response_data)
 
 
+@method_decorator(deprecated, name='post')
 class AgencyAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
+    DEPRECATED
     Autocomplete support for agency objects.
     """
     serializer_class = AgencySerializer
@@ -119,8 +131,11 @@ class AgencyAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return an agency
     """
     serializer_class = AgencySerializer
@@ -134,8 +149,11 @@ class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class CfdaListEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return information about CFDA Programs
     """
     serializer_class = CfdaSerializer
@@ -150,8 +168,11 @@ class CfdaListEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class CfdaRetrieveEndpoint(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     Return information about CFDA Programs
     """
     serializer_class = CfdaSerializer
@@ -166,8 +187,11 @@ class CfdaRetrieveEndpoint(FilterQuerysetMixin, DetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class RecipientListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Returns information about award recipients and vendors
     """
     serializer_class = LegalEntitySerializer
@@ -181,8 +205,11 @@ class RecipientListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class RecipientRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     Returns information about award recipients and vendors
     """
     serializer_class = LegalEntitySerializer
@@ -196,8 +223,10 @@ class RecipientRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name='post')
 class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
+    DEPRECATED
     Autocomplete support for legal entity (recipient) objects.
     """
     serializer_class = LegalEntitySerializer
@@ -211,8 +240,11 @@ class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-class GlossaryViewSet(FilterQuerysetMixin, DeprecatedCachedDetailViewSet):
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
+class GlossaryViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     This viewset automatically provides `list` and `detail` actions.
     """
     queryset = Definition.objects.all()
@@ -226,8 +258,10 @@ class GlossaryViewSet(FilterQuerysetMixin, DeprecatedCachedDetailViewSet):
         return filtered_queryset
 
 
-class GlossaryAutocomplete(FilterQuerysetMixin, DeprecatedAutocompleteView):
+@method_decorator(deprecated, name='post')
+class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
+    DEPRECATED
     Autocomplete support for legal entity (recipient) objects.
     """
     serializer_class = DefinitionSerializer

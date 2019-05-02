@@ -12,6 +12,7 @@ AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated award information.
     """
     serializer_class = AggregateSerializer
@@ -26,6 +27,7 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
 
 class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
@@ -48,6 +50,7 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
 
 class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
@@ -70,6 +73,7 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
 
 class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated award information.
     """
     serializer_class = AggregateSerializer
@@ -84,6 +88,7 @@ class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, Cach
 
 class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
+    DEPRECATED
     Autocomplete support for subaward objects.
     """
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
@@ -102,6 +107,7 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
 
 class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
     """
@@ -120,6 +126,7 @@ class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
 
 class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
     """
@@ -138,6 +145,7 @@ class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
 
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated transaction information.
     """
     serializer_class = AggregateSerializer
@@ -152,6 +160,7 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
 
 class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Handles requests for award transaction data.
     """
     serializer_class = TransactionNormalizedSerializer
@@ -169,6 +178,7 @@ class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
 
 class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     Handles requests for award transaction data.
     """
     serializer_class = TransactionNormalizedSerializer
