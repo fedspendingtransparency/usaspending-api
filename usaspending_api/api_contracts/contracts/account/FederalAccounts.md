@@ -2,9 +2,7 @@ FORMAT: 1A
 HOST: https://api.usaspending.gov
 
 
-# Federal Account Profile
-
-# Group Landing Page
+# Federal Account Landing Page
 
 This endpoint supports the federal account landing page, which provides a list of all federal accounts for which individual federal accounts pages are available on USAspending.gov.
 
