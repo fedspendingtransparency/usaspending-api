@@ -222,12 +222,10 @@ class Command(BaseCommand):
 
             externally_updated_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
 
-            if ids_to_upsert or externally_updated_award_ids:
-                update_award_ids = copy(externally_updated_award_ids)
-                with timer("inserting new FABS data", logger.info):
-                    update_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
+            with timer("inserting new FABS data", logger.info):
+                externally_updated_award_ids.extend(insert_all_new_fabs(ids_to_upsert))
 
-                upsert_awards(update_award_ids, "assistance")
+                upsert_awards(externally_updated_award_ids, "assistance")
         else:
             logger.info("No new submissions.")
 
