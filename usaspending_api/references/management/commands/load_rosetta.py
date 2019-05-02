@@ -40,7 +40,7 @@ DB_TO_XLSX_MAPPING = OrderedDict(
 class Command(BaseCommand):
     help = "Loads an Excel spreadsheet of DATA Act/USAspending data names across the various systems into <>"
 
-    s3_public_url = "http://files{}.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx"
+    s3_public_url = "https://files{}.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx"
 
     def add_arguments(self, parser):
         parser.add_argument("-p", "--path", help="filepath to a local Excel spreadsheet to load", default=None)
