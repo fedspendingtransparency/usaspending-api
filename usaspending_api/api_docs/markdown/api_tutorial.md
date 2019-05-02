@@ -28,7 +28,7 @@ Welcome to the introductory USAspending API tutorial. This tutorial is designed 
 
 _API_ stands for _Application Programmer Interface_. APIs make it easy for computer programs to request and receive information in a format they can understand.
 
-If you're looking for federal spending data that's designed to be read by humans instead of computers, you should head to <a href="https://beta.usaspending.gov">our website</a>.
+If you're looking for federal spending data that's designed to be read by humans instead of computers, you should head to <a href="https://www.usaspending.gov">our website</a>.
 
 ## Using the API <a name="using-the-api"></a>
 
