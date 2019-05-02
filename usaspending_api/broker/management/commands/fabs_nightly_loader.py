@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from django.db import connections
 
-from copy import copy
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
