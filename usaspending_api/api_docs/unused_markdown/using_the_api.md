@@ -366,13 +366,13 @@ The endpoints described in this section generate files that reflect the site's u
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://www.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
 
 #### Generating Download Files
 
 **Reminder**: Before using these endpoints, check the  [Award Data Archive](https://usaspending.gov/#/download_center/award_data_archive) for pre-generated files
 
-There are several downloadable endpoints, all with different features/constraints. 
+There are several downloadable endpoints, all with different features/constraints.
 
 ##### Row Constraint Downloads
 
@@ -416,7 +416,7 @@ To check to see whether that request is complete, use the [Status Endpoint](http
   * `date_part`: Applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
   * `show_nulls`: Whether to display results where the `group` data or the aggregate field data is null. In effect, this sets `show_null_aggregates` and `show_null_groups` to true. Defaults to false.
   * `show_null_groups`: Whether to display aggregates where all the `group` data is null. Defaults to false.
-  * `show_null_aggregates`: Whether to display entries where the aggregate is null. 
+  * `show_null_aggregates`: Whether to display entries where the aggregate is null.
 
   Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
