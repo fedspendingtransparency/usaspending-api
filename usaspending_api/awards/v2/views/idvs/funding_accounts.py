@@ -121,9 +121,9 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
             sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))) over (partition by cte.award_id) as
             total,
             fa.account_title,
-            ta.abbreviation,
-            ta.name,
-            a.id agency_id''')
+            ta.abbreviation funding_agency_abbreviation,
+            ta.name funding_agency_name,
+            a.id funding_agency_id''')
         results = self._business_logic(request.data, columns, group_by, order_by)
         paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
         total = paginated_results[0]['total'] if len(paginated_results) > 0 else 0
