@@ -6,7 +6,7 @@ from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializ
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
-from usaspending_api.decorators import deprecated
+from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
 

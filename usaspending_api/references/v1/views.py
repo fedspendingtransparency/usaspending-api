@@ -13,7 +13,7 @@ from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, Aut
 from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
-from usaspending_api.decorators import deprecated
+from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
 
