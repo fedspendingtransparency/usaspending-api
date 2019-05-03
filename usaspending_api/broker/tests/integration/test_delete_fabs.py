@@ -81,17 +81,3 @@ def test_delete_fabs_success():
                                       transactions_fabs_left])
     expected_transaction_fabs_afas_left = {'C', 'D'}
     assert expected_transaction_fabs_afas_left == transaction_fabs_afas_left
-
-    # Legal Entities
-    les_left = LegalEntity.objects.all()
-
-    le_ids_left = set([le.legal_entity_id for le in les_left])
-    expected_le_ids_left = {3, 4}
-    assert le_ids_left == expected_le_ids_left
-
-    # Locations
-    locs_left = Location.objects.all()
-
-    loc_ids_left = set([loc.location_id for loc in locs_left])
-    expected_loc_ids_left = {4, 6, 7, 8}
-    assert loc_ids_left == expected_loc_ids_left

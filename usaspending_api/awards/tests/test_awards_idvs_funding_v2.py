@@ -273,15 +273,10 @@ class IDVFundingRollupTestCase(TestCase):
         grandchildren = [k for k in PARENTS if PARENTS[k] in children and PARENTS[k] in IDVS]
         non_idv_children = [k for k in children if k not in IDVS]
         non_idv_grandchildren = [k for k in grandchildren if k not in IDVS]
-        odd_agency_in_children = True if sum([1 for k in non_idv_children if k % 2 != 0]) > 0 else False
-        odd_agency_in_grandchildren = True if sum([1 for k in non_idv_grandchildren if k % 2 != 0]) > 0 else False
-        odd_agency_count = 1 if odd_agency_in_grandchildren or odd_agency_in_children else 0
-        even_agency_child_count = len([k for k in non_idv_children if k % 2 == 0])
-        even_agency_grandchildren_count = len([k for k in non_idv_grandchildren if k % 2 == 0])
         _id = sum(non_idv_children) + sum(non_idv_grandchildren)
         results = {
             'total_transaction_obligated_amount': _id * 10000 + _id + _id / 100,
-            'awarding_agency_count': even_agency_grandchildren_count + even_agency_child_count + odd_agency_count,
+            'awarding_agency_count': len(non_idv_children) + len(non_idv_grandchildren),
             'federal_account_count': len(non_idv_children) + len(non_idv_grandchildren)
         }
 
