@@ -36,7 +36,8 @@ def deprecated(function):
     def wrap(request, *args, **kwargs):
         response = function(request, *args, **kwargs)
         logger.warning('Endpoint "{}" is deprecated. Please move to v2 endpoints.'.format(request.path))
-        response["X-API-Warn"] = "WARNING! You are using a deprecated version of the API"
-        response["X-API-Warn"] += " which may be unstable and will be removed in the future."
+        msg = ("WARNING! You are using a deprecated version of the API"
+               " which may be unstable and will be removed in the future.")
+        response["X-API-Warn"] = msg
         return response
     return wrap
