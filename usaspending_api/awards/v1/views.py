@@ -6,10 +6,15 @@ from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializ
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
+from usaspending_api.decorators import deprecated
+from django.utils.decorators import method_decorator
+
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -25,6 +30,8 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -48,6 +55,8 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -71,6 +80,8 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -86,6 +97,7 @@ class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, Cach
         return queryset
 
 
+@method_decorator(deprecated, name='post')
 class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     DEPRECATED
@@ -105,6 +117,8 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -124,6 +138,8 @@ class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -143,6 +159,8 @@ class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -158,6 +176,8 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -176,6 +196,8 @@ class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name='list')
+@method_decorator(deprecated, name='retrieve')
 class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
