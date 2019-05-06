@@ -89,10 +89,12 @@ class Command(BaseCommand):
                     default=Value(''),
                     output_field=CharField()))
         else:
+            indicator_field = F('transaction__assistance_data__correction_delete_indicatr')
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
+                    When(transaction__assistance_data__updated_at__gt=generate_since, then=indicator_field),
                     When(transaction__transactiondelta__isnull=False, then=Value('C')),
-                    default=F('transaction__assistance_data__correction_delete_indicatr'),
+                    default=indicator_field,
                     output_field=CharField()))
 
         transaction_delta_queryset = source.queryset
