@@ -11,7 +11,7 @@ from collections import OrderedDict
 from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Case, When, Value, CharField
+from django.db.models import Case, When, Value, CharField, F
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
@@ -47,7 +47,7 @@ AWARD_MAPPINGS = {
         'column_headers': {
             0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
         },
-        'correction_delete_ind': 'transaction__assistance_data__correction_delete_indicatr',
+        'correction_delete_ind': 'correction_delete_ind',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
@@ -81,19 +81,28 @@ class Command(BaseCommand):
         # Apply filters to the queryset
         filters, agency_code = self.parse_filters(award_map['award_types'], agency)
         source.queryset = VALUE_MAPPINGS['transactions']['filter_function'](filters)
-        if award_type == 'Contracts':
-            # Derive the correction_delete_ind from the created_at of the records
-            source.queryset = source.queryset. \
-                annotate(correction_delete_ind=Case(When(transaction__contract_data__created_at__lt=generate_since,
-                                                    then=Value('C')), default=Value(''), output_field=CharField()))
 
-        qs = source.queryset
+        if award_type == 'Contracts':
+            source.queryset = source.queryset.annotate(
+                correction_delete_ind=Case(
+                    When(transaction__contract_data__created_at__lt=generate_since, then=Value('C')),
+                    default=Value(''),
+                    output_field=CharField()))
+        else:
+            source.queryset = source.queryset.annotate(
+                correction_delete_ind=Case(
+                    When(transaction__transactiondelta__isnull=False, then=Value('C')),
+                    default=F('transaction__assistance_data__correction_delete_indicatr'),
+                    output_field=CharField()))
+
+        transaction_delta_queryset = source.queryset
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
 
         # UNION the normal results to the transaction_delta results.
-        source.queryset = source.queryset.union(qs.filter(transaction__transactiondelta__isnull=False))
+        source.queryset = source.queryset.union(
+            transaction_delta_queryset.filter(transaction__transactiondelta__isnull=False))
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
