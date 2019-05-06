@@ -32,7 +32,7 @@ def clean_out_transaction_deltas(connection_string):
         logger.info('Nothing to remove from transaction_delta')
 
 
-def ping_transaction_delta(connection_string, sql):
+def ping_transaction_delta(connection_string):
     """
     This is just a sanity check to ensure we can connect with the provided
     connection string and it has the table we'll need.
