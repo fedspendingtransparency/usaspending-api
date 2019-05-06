@@ -2,7 +2,6 @@ import boto3
 import logging
 import os
 import pandas as pd
-import psycopg2
 import re
 import shutil
 import subprocess
@@ -13,17 +12,16 @@ from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField
-from psycopg2.sql import Literal, SQL
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
 from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.helpers import clean_out_transaction_deltas, ping_transaction_delta
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
-from usaspending_api.awards.models import TransactionDelta
 
 
 logger = logging.getLogger('console')
@@ -57,40 +55,6 @@ AWARD_MAPPINGS = {
         'unique_iden': 'afa_generated_unique'
     }
 }
-
-
-def clean_out_transaction_deltas(connection_string):
-    """
-    Delete transaction_delta records from the database pointed to by connection_string
-    that are <= the max created_at date in the transaction_delta table in the current
-    database.
-    """
-    # Get the max create_at from the transaction_delta in the current database.
-    max_created_at = TransactionDelta.objects.get_max_created_at()['created_at__max']
-    if max_created_at:
-
-        logger.info('Removing transaction_deltas <= {}'.format(max_created_at))
-
-        # We are deleting things from an entirely different database so we'll just
-        # use straight up psycopg SQL queries.
-        with psycopg2.connect(connection_string) as connection:
-            connection.autocommit = True  # We are not concerned with transactions.
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    SQL('delete from transaction_delta where created_at <= {}').format(Literal(max_created_at)))
-
-    else:
-        logger.info('Nothing to remove from transaction_delta')
-
-
-def ping_database(connection_string):
-    """
-    This is just a sanity check to ensure we can connect with the provided
-    connection string and it has the table we'll need.
-    """
-    with psycopg2.connect(connection_string) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute('select 1 from transaction_delta where 0 = 1')
 
 
 class Command(BaseCommand):
@@ -349,7 +313,7 @@ class Command(BaseCommand):
             logger.info('remove_transaction_deltas command line parameter provided.  transaction_delta '
                         'records will be removed from the database specified by TRANSACTION_DELTA_URL.')
             logger.info('Ensuring we can establish a connection to TRANSACTION_DELTA_URL')
-            ping_database(transaction_delta_url)
+            ping_transaction_delta(transaction_delta_url)
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True

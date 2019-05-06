@@ -14,7 +14,18 @@ class TransactionDeltaTestCase(TransactionTestCase):
             mommy.make('awards.TransactionFPDS', transaction_id=_id)
             mommy.make('awards.Award', id=_id, latest_transaction_id=_id)
 
-    def test_stuff(self):
+    @staticmethod
+    def test_get_max_created_at():
+        assert TransactionDelta.objects.count() == 0
+
+        TransactionDelta.objects.update_or_create_transaction(1)
+        sleep(0.1)
+        TransactionDelta.objects.update_or_create_transaction(2)
+        max_created_at = TransactionDelta.objects.get(pk=2).created_at
+
+        assert TransactionDelta.objects.get_max_created_at() == max_created_at
+
+    def test_update_or_create_transaction(self):
         assert TransactionDelta.objects.count() == 0
 
         TransactionDelta.objects.update_or_create_transaction(1)
@@ -28,6 +39,17 @@ class TransactionDeltaTestCase(TransactionTestCase):
             TransactionDelta.objects.update_or_create_transaction('A')
         with self.assertRaises(IntegrityError):
             TransactionDelta.objects.update_or_create_transaction(-1)
+
+        # Get the created_at for transaction 1.  Sleep half a tick.
+        # Update transaction 1.  Make sure new timestamp is newer.
+        created_at = TransactionDelta.objects.get(pk=1).created_at
+        sleep(0.1)
+        TransactionDelta.objects.update_or_create_transaction(1)
+        new_created_at = TransactionDelta.objects.get(pk=1).created_at
+        assert new_created_at > created_at
+
+    def test_update_or_create_transactions(self):
+        assert TransactionDelta.objects.count() == 0
 
         TransactionDelta.objects.update_or_create_transactions([1])
         assert TransactionDelta.objects.count() == 1
@@ -52,16 +74,15 @@ class TransactionDeltaTestCase(TransactionTestCase):
         # Update transaction 1.  Make sure new timestamp is newer.
         created_at = TransactionDelta.objects.get(pk=1).created_at
         sleep(0.1)
-        TransactionDelta.objects.update_or_create_transaction(1)
+        TransactionDelta.objects.update_or_create_transactions([1])
         new_created_at = TransactionDelta.objects.get(pk=1).created_at
         assert new_created_at > created_at
 
+        # We only save unique transaction ids so there should be only three.
         TransactionDelta.objects.update_or_create_transactions([3] * (CHUNK_SIZE * 2))
         assert TransactionDelta.objects.count() == 3
 
+        # None of these should be saved since one will fail.
         with self.assertRaises(IntegrityError):
             TransactionDelta.objects.update_or_create_transactions([4] * (CHUNK_SIZE * 2) + [-1])
-
-        # NONE of the previous transactions should have succeeded so there should be
-        # no 4 in the database.
         assert TransactionDelta.objects.filter(pk=4).first() is None

@@ -24,6 +24,16 @@ CHUNK_SIZE = 5000
 
 
 class TransactionDeltaManager(models.Manager):
+    def get_max_created_at(self):
+        return self.get_queryset().aggregate(models.Max('created_at'))['created_at__max']
+
+    def update_or_create_transaction(self, transaction_id):
+        """
+        Update or create the specified transaction id.
+        """
+        if transaction_id:
+            self.update_or_create_transactions([transaction_id])
+
     @staticmethod
     def update_or_create_transactions(transaction_ids):
         """
@@ -47,16 +57,6 @@ class TransactionDeltaManager(models.Manager):
                     # Fake an upsert by first deleting transactions then inserting.
                     TransactionDelta.objects.filter(pk__in=chunk_of_ids).delete()
                     TransactionDelta.objects.bulk_create(chunk_of_inserts)
-
-    def update_or_create_transaction(self, transaction_id):
-        """
-        Update or create the specified transaction id.
-        """
-        if transaction_id:
-            self.update_or_create_transactions([transaction_id])
-
-    def get_max_created_at(self):
-        return self.get_queryset().aggregate(models.Max('created_at'))
 
 
 class TransactionDelta(models.Model):
