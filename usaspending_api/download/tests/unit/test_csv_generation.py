@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
@@ -90,6 +90,46 @@ def test_get_award_financial_csv_sources():
     assert len(csv_sources) == 1
     assert csv_sources[0].file_type == 'treasury_account'
     assert csv_sources[0].source_type == 'award_financial'
+
+
+def test_idv_orders_csv_sources():
+    original = VALUE_MAPPINGS['idv_orders']['filter_function']
+    VALUE_MAPPINGS['idv_orders']['filter_function'] = MagicMock(returned_value='')
+    csv_sources = csv_generation.get_csv_sources({
+        "download_types": ["idv_orders"],
+        "filters": {'award_id': 0, 'award_type_codes': tuple(set(contract_type_mapping) | set(idv_type_mapping))}
+    })
+    assert len(csv_sources) == 1
+    VALUE_MAPPINGS['idv_orders']['filter_function'] = original
+    assert csv_sources[0].file_type == 'd1'
+    assert csv_sources[0].source_type == 'idv_orders'
+
+
+def test_idv_transactions_csv_sources():
+    original = VALUE_MAPPINGS['idv_transaction_history']['filter_function']
+    VALUE_MAPPINGS['idv_transaction_history']['filter_function'] = MagicMock(returned_value='')
+    csv_sources = csv_generation.get_csv_sources({
+        "download_types": ["idv_transaction_history"],
+        "filters": {'award_id': 0, 'award_type_codes': tuple(set(contract_type_mapping) | set(idv_type_mapping))}
+    })
+    assert len(csv_sources) == 1
+    VALUE_MAPPINGS['idv_transaction_history']['filter_function'] = original
+    assert csv_sources[0].file_type == 'd1'
+    assert csv_sources[0].source_type == 'idv_transaction_history'
+
+
+def test_idv_treasury_account_funding_csv_sources():
+    original = VALUE_MAPPINGS['idv_federal_account_funding']['filter_function']
+    VALUE_MAPPINGS['idv_federal_account_funding']['filter_function'] = MagicMock(returned_value='')
+    csv_sources = csv_generation.get_csv_sources({
+        "download_types": ["idv_federal_account_funding"],
+        "account_level": "treasury_account",
+        "filters": {'award_id': 0}
+    })
+    assert len(csv_sources) == 1
+    VALUE_MAPPINGS['idv_federal_account_funding']['filter_function'] = original
+    assert csv_sources[0].file_type == 'treasury_account'
+    assert csv_sources[0].source_type == 'idv_federal_account_funding'
 
 
 def test_apply_annotations_to_sql_just_values():
