@@ -608,16 +608,19 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
-    if value is None:
-        return
-    if field.endswith('date'):  # turn datetimes into dates
-        if isinstance(value, str):
-            try:
-                value = dateutil.parser.parse(value).date()
-            except (TypeError, ValueError):
-                pass
+    # turn datetimes into dates
+    if field.endswith('date') and isinstance(value, str):
+        try:
+            value = dateutil.parser.parse(value).date()
+        except (TypeError, ValueError):
+            pass
+
     if reverse and reverse.search(field):
-        value = -1 * Decimal(value)
+        try:
+            value = -1 * Decimal(value)
+        except TypeError:
+            pass
+
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:
