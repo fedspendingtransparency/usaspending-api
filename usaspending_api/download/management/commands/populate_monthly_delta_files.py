@@ -18,7 +18,6 @@ from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
 from usaspending_api.download.filestreaming.csv_source import CsvSource
-from usaspending_api.download.helpers import clean_out_transaction_deltas, ping_transaction_delta
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
@@ -302,29 +301,12 @@ class Command(BaseCommand):
                                            'Defaults to both.')
         parser.add_argument('--last_date', dest='last_date', default=None, type=str, required=True,
                             help='Date of last Delta file creation.')
-        parser.add_argument('--remove_transaction_deltas',
-                            action='store_true',
-                            help='Empties out transactions from the transaction_deltas file in the '
-                            'database indicated by the TRANSACTION_DELTA_URL environment variable. '
-                            'This will typically be a staging or production database.')
 
     def handle(self, *args, **options):
         """ Run the application. """
         agencies = options['agencies']
         award_types = options['award_types']
         last_date = options['last_date']
-        remove_transaction_deltas = options['remove_transaction_deltas']
-        transaction_delta_url = os.environ.get('TRANSACTION_DELTA_URL')
-
-        if remove_transaction_deltas:
-            if not transaction_delta_url:
-                raise EnvironmentError(
-                    'remove_transaction_deltas switch was provided on the command line but '
-                    'TRANSACTION_DELTA_URL has not been defined as an environment variable')
-            logger.info('remove_transaction_deltas command line parameter provided.  transaction_delta '
-                        'records will be removed from the database specified by TRANSACTION_DELTA_URL.')
-            logger.info('Ensuring we can establish a connection to TRANSACTION_DELTA_URL')
-            ping_transaction_delta(transaction_delta_url)
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
@@ -343,5 +325,6 @@ class Command(BaseCommand):
             for award_type in award_types:
                 self.download(award_type.capitalize(), agency, last_date)
 
-        if remove_transaction_deltas:
-            clean_out_transaction_deltas(transaction_delta_url)
+        logger.info(
+            'IMPORTANT: Be sure to run synchronize_transaction_delta management command '
+            'after a successful monthly delta run')

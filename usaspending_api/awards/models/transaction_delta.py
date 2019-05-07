@@ -24,6 +24,10 @@ CHUNK_SIZE = 5000
 
 
 class TransactionDeltaManager(models.Manager):
+    def delete_by_created_at(self, max_created_at):
+        delete_count, _ = self.get_queryset(created_at__lte=max_created_at).delete()
+        return delete_count
+
     def get_max_created_at(self):
         return self.get_queryset().aggregate(models.Max('created_at'))['created_at__max']
 
