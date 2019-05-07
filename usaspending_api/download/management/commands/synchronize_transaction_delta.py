@@ -33,7 +33,7 @@ class Command(BaseCommand):
         with psycopg2.connect(dsn=snapshot_db) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("select max(created_at) from transaction_delta")
-                return cursor.results[0][0]
+                return cursor.fetchall()[0][0]
 
     def handle(self, *args, **options):
         snapshot_db = os.environ.get("DOWNLOAD_DATABASE_URL")
