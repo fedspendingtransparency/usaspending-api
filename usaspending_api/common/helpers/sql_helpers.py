@@ -28,7 +28,7 @@ def get_database_dsn_string(force_default=False):
         It is possible to force the "default" database by setting `force_default`
     """
 
-    db = settings.DATABASES["db_source"]  # Primary DB connection in a deployed environment
+    db = settings.DATABASES.get("db_source")  # Primary DB connection in a deployed environment
     if settings.IS_LOCAL or force_default:
         db = settings.DATABASES["default"]
 
