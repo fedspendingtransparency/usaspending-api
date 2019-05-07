@@ -138,10 +138,15 @@ class Command(BaseCommand):
         with open(temp_sql_file_path, 'w') as file:
             file.write('\\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
 
+        logger.info('Generated temp SQL file {}'.format(temp_sql_file_path))
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
-                                 'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        try:
+            subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
+                                     'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            logger.exception(e.output)
+            raise e
 
         # Append deleted rows to the end of the file
         self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
