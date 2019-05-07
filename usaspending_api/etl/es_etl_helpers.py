@@ -2,12 +2,12 @@ import boto3
 import json
 import os
 import pandas as pd
+import psycopg2
 import subprocess
 import tempfile
 
 from collections import defaultdict
 from datetime import datetime
-from django.db import connection
 from elasticsearch import helpers
 from elasticsearch import TransportError
 from time import perf_counter, sleep
@@ -185,10 +185,13 @@ def execute_sql_statement(cmd, results=False, verbose=False):
     rows = None
     if verbose:
         print(cmd)
-    with connection.cursor() as cursor:
-        cursor.execute(cmd)
-        if results:
-            rows = db_rows_to_dict(cursor)
+    dsn = "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**settings.DATABASES["default"])
+    with psycopg2.connect(dsn=dsn) as connection:
+        connection.autocommit = True
+        with connection.cursor() as cursor:
+            cursor.execute(cmd)
+            if results:
+                rows = db_rows_to_dict(cursor)
     return rows
 
 
