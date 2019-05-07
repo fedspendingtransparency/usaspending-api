@@ -7,14 +7,15 @@ import subprocess
 import tempfile
 
 from collections import defaultdict
+from django.conf import settings
 from datetime import datetime
 from elasticsearch import helpers
 from elasticsearch import TransportError
 from time import perf_counter, sleep
 
-from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -185,8 +186,8 @@ def execute_sql_statement(cmd, results=False, verbose=False):
     rows = None
     if verbose:
         print(cmd)
-    dsn = "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**settings.DATABASES["default"])
-    with psycopg2.connect(dsn=dsn) as connection:
+
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             cursor.execute(cmd)

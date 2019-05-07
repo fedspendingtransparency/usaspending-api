@@ -3,6 +3,7 @@ import logging
 import os
 
 from collections import OrderedDict
+from django.conf import settings
 from django.db import connections, router
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
@@ -15,6 +16,14 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger('console')
 
 TYPES_TO_QUOTE_IN_SQL = (str, datetime.date)
+
+
+def get_database_dsn_string(force_default=False):
+    if settings.IS_LOCAL or force_default:
+        db = settings.DATABASES["default"]
+    else:
+        db = settings.DATABASES["db_source"]
+    return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db)
 
 
 def read_sql_file(file_path):
