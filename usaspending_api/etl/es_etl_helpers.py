@@ -182,7 +182,7 @@ def configure_sql_strings(config, filename, deleted_ids):
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
-    """ Simple function to execute SQL using the Django DB connection"""
+    """ Simple function to execute SQL using a psycopg2 connection"""
     rows = None
     if verbose:
         print(cmd)
