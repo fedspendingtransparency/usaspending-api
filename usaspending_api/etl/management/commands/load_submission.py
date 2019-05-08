@@ -6,7 +6,6 @@ import signal
 from django.core.management.base import CommandError
 from django.core.management import call_command
 from django.db import connections, transaction
-from django.core.cache import caches
 import pandas as pd
 import numpy as np
 
@@ -33,7 +32,6 @@ TAS_ID_TO_ACCOUNT = {}
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
 
-awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
@@ -700,8 +698,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
-
-    awards_cache.clear()
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)

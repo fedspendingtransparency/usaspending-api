@@ -41,7 +41,7 @@ class IDVAwardsTestCase(TestCase):
             mommy.make(
                 'awards.TransactionFPDS',
                 transaction_id=transaction_id,
-                funding_agency_name='funding_agency_name_%s' % transaction_id,
+                funding_agency_name='subtier_funding_agency_name_%s' % transaction_id,
                 ordering_period_end_date='2018-01-%02d' % transaction_id
             )
 
@@ -50,7 +50,13 @@ class IDVAwardsTestCase(TestCase):
             parent_n = PARENTS.get(award_id)
             mommy.make(
                 'references.Agency',
-                id=award_id * 12
+                id=award_id * 12,
+                toptier_agency_id=award_id * 12
+            )
+            mommy.make(
+                'references.ToptierAgency',
+                toptier_agency_id=award_id * 12,
+                name='toptier_funding_agency_name_%s' % (award_id * 12),
             )
             mommy.make(
                 'awards.Award',
@@ -98,7 +104,7 @@ class IDVAwardsTestCase(TestCase):
                 'award_id': award_id,
                 'award_type': 'type_description_%s' % award_id,
                 'description': 'description_%s' % award_id,
-                'funding_agency': 'funding_agency_name_%s' % award_id,
+                'funding_agency': 'toptier_funding_agency_name_%s' % (award_id * 12),
                 'funding_agency_id': award_id * 12,
                 'generated_unique_award_id': 'GENERATED_UNIQUE_AWARD_ID_%s' % award_id,
                 'last_date_to_order': '2018-01-%02d' % award_id,
@@ -332,3 +338,40 @@ class IDVAwardsTestCase(TestCase):
             {'award_id': 9, 'type': 'child_awards'},
             (None, None, 1, False, False)
         )
+
+    def test_missing_agency(self):
+        # A bug was found where awards wouldn't show up if the funding agency was
+        # null.  This will reproduce that situation.
+        _id = 99999
+
+        mommy.make(
+            'awards.TransactionNormalized',
+            id=_id
+        )
+        mommy.make(
+            'awards.TransactionFPDS',
+            transaction_id=_id,
+            funding_agency_name='subtier_funding_agency_name_%s' % _id
+        )
+        parent_n = PARENTS.get(3)  # Use use parent information for I3
+        mommy.make(
+            'awards.Award',
+            id=_id,
+            generated_unique_award_id='GENERATED_UNIQUE_AWARD_ID_%s' % _id,
+            type='CONTRACT_%s' % _id,
+            total_obligation=_id,
+            piid='piid_%s' % _id,
+            fpds_agency_id='fpds_agency_id_%s' % _id,
+            parent_award_piid='piid_%s' % parent_n,
+            fpds_parent_agency_id='fpds_agency_id_%s' % parent_n,
+            latest_transaction_id=_id,
+            type_description='type_description_%s' % _id,
+            description='description_%s' % _id,
+            period_of_performance_current_end_date='2018-03-28',
+            period_of_performance_start_date='2018-02-28'
+        )
+
+        response = self.client.post(ENDPOINT, {'award_id': parent_n, 'type': 'child_awards'})
+
+        # This should return two results.  Prior to the bug, only one result would be returned.
+        assert len(response.data['results']) == 2

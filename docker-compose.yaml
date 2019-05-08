@@ -1,0 +1,68 @@
+version: '3.7'
+
+services:
+
+  usaspending-db:
+    container_name: usaspending-db
+    image: postgres:10.6-alpine
+    volumes:
+      - type: bind
+        source: ${POSTGRES_CLUSTER_DIR}
+        target: /var/lib/postgresql/data
+    restart: on-failure:3 # Will attempt to start the db 3 times
+    ports:
+      - ${POSTGRES_PORT}:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: data_store_api
+
+  usaspending-db-migrate:
+    build: .
+    volumes:
+     - .:/dockermount
+    command: /bin/sh -c "python -u manage.py migrate"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+
+  usaspending-db-sql:
+    build: .
+    volumes:
+     - .:/dockermount
+    command: >
+      /bin/sh -c "mkdir $$MATVIEW_SQL_DIR &&
+      python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=$$MATVIEW_SQL_DIR"
+    environment:
+      MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
+
+  usaspending-ref-data:
+    build: .
+    volumes:
+     - .:/dockermount
+    command: >
+      /bin/sh -c "python -u manage.py load_reference_data"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+
+  usaspending-db-init:
+    image: postgres:10.6-alpine
+    volumes:
+     - .:/dockermount
+    command: >
+      /bin/sh -c "cd /dockermount &&
+      psql $$DATABASE_URL -c 'CREATE ROLE readonly' || true &&
+      psql $$DATABASE_URL -f usaspending_api/database_scripts/matviews/functions_and_enums.sql &&
+      cat $$MATVIEW_SQL_DIR/*.sql | psql $$DATABASE_URL -f -"
+    environment:
+      MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+
+  usaspending-api:
+    build: .
+    volumes:
+      - .:/dockermount
+    ports:
+      - 8000:8000
+    command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
