@@ -115,23 +115,17 @@ class IDVFundingAccountViewSet(IDVFundingBaseViewSet):
     @cache_response()
     def post(self, request: Request) -> Response:
         order_by = SQL("order by {} {}".format(SORTABLE_COLUMNS[request.data['sort']], request.data['order']))
-        group_by = SQL("""group by federal_account, fa.account_title, cte.award_id, ta.abbreviation, ta.name, a.id""")
+        group_by = SQL("""group by federal_account, fa.account_title, ta.abbreviation, ta.name, a.id""")
         columns = SQL('''sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric)) total_transaction_obligated_amount,
             taa.agency_id || '-' || taa.main_account_code federal_account,
-            sum(sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))) over (partition by cte.award_id) as
-            total,
             fa.account_title,
             ta.abbreviation funding_agency_abbreviation,
             ta.name funding_agency_name,
             a.id funding_agency_id''')
         results = self._business_logic(request.data, columns, group_by, order_by)
         paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
-        total = paginated_results[0]['total'] if len(paginated_results) > 0 else 0
-        for item in paginated_results:
-            del item['total']
         response = OrderedDict((
             ('results', paginated_results),
-            ('total', total),
             ('page_metadata', page_metadata)
         ))
 
