@@ -13,6 +13,12 @@ def test_save_file_description():
         assert file_path == f.name
         assert f.read().decode("utf-8") == "this is a test"
 
+    with NamedTemporaryFile() as f:
+        working_dir, file_name = os.path.split(f.name)
+        file_path = save_file_description(working_dir, file_name, "this\ris\na\r\ntest")
+        assert file_path == f.name
+        assert f.read().decode("utf-8") == "this\r\nis\r\na\r\ntest"
+
 
 def test_build_file_description():
 
