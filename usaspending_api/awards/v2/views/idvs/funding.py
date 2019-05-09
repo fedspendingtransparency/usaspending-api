@@ -16,10 +16,11 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 
 SORTABLE_COLUMNS = {
     'account_title': ['fa.account_title'],
+    'awarding_agency_name': ['awarding_agency_name'],
+    'funding_agency_name': ['funding_agency_name'],
     'object_class': ['oc.object_class_name', 'oc.object_class'],
     'piid': ['ca.piid'],
     'program_activity': ['rpa.program_activity_code', 'rpa.program_activity_name'],
-    'reporting_agency_name': ['taa.reporting_agency_name'],
     'reporting_fiscal_date': ['sa.reporting_fiscal_year', 'sa.reporting_fiscal_quarter'],
     'transaction_obligated_amount': ['faba.transaction_obligated_amount']
 }
@@ -44,14 +45,15 @@ GET_FUNDING_SQL = SQL("""
         where     ppa.{award_id_column} = {award_id}
     )
     select
-        ca.id award_id,
+        ca.id                           award_id,
         ca.generated_unique_award_id,
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
         ca.piid,
-        ca.funding_agency_id,
-        taa.reporting_agency_id,
-        taa.reporting_agency_name,
+        aa.id                           awarding_agency_id,
+        ttaa.name                       awarding_agency_name,
+        af.id                           funding_agency_id,
+        ttaf.name                       funding_agency_name,
         taa.agency_id,
         taa.main_account_code,
         fa.account_title,
@@ -80,6 +82,16 @@ GET_FUNDING_SQL = SQL("""
             rpa.id = faba.program_activity_id
         left outer join object_class oc on
             oc.id = faba.object_class_id
+        left outer join toptier_agency ttaf on
+            ttaf.toptier_agency_id = taa.funding_toptier_agency_id
+        left outer join agency af on
+            af.toptier_agency_id = taa.funding_toptier_agency_id and
+            af.toptier_flag is true
+        left outer join toptier_agency ttaa on
+            ttaa.toptier_agency_id = taa.awarding_toptier_agency_id
+        left outer join agency aa on
+            aa.toptier_agency_id = taa.awarding_toptier_agency_id and
+            aa.toptier_flag is true
     where
         (ca.piid = {piid} or {piid} is null)
     {order_by}
