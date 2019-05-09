@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from usaspending_api.awards.v2.views.idvs.accounts import IDVFundingAccountViewSet
+from usaspending_api.awards.v2.views.idvs.accounts import IDVFundingAccountsViewSet
 from usaspending_api.awards.v2.views.idvs.amounts import IDVAmountsViewSet
 from usaspending_api.awards.v2.views.idvs.awards import IDVAwardsViewSet
 from usaspending_api.awards.v2.views.idvs.funding import IDVFundingViewSet
@@ -11,5 +11,5 @@ urlpatterns = [
     url(r"^awards/$", IDVAwardsViewSet.as_view()),
     url(r"^funding/$", IDVFundingViewSet.as_view()),
     url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
-    url(r"^accounts/$", IDVFundingAccountViewSet.as_view()),
+    url(r"^accounts/$", IDVFundingAccountsViewSet.as_view()),
 ]

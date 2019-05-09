@@ -74,7 +74,7 @@ TINYSHIELD_MODELS.append(get_internal_or_generated_award_id_model())
 
 
 @validate_post_request(TINYSHIELD_MODELS)
-class IDVFundingAccountViewSet(APIDocumentationView):
+class IDVFundingAccountsViewSet(APIDocumentationView):
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
