@@ -18,19 +18,20 @@ logger = logging.getLogger('console')
 TYPES_TO_QUOTE_IN_SQL = (str, datetime.date)
 
 
-def get_database_dsn_string(force_default=False):
+def get_database_dsn_string():
     """
         This function parses the Django database configuration in settings.py and
         returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
         a PostgreSQL database
-
         Will return a different database configuration for local vs deployed.
-        It is possible to force the "default" database by setting `force_default`
     """
 
-    db = settings.DATABASES.get("db_source")  # Primary DB connection in a deployed environment
-    if settings.IS_LOCAL or force_default:
+    if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
+        db = settings.DATABASES["db_source"]
+    elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
         db = settings.DATABASES["default"]
+    else:
+        raise Exception("No valid database connection is configured")
 
     return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db)
 
