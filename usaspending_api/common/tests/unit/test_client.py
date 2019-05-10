@@ -2,6 +2,7 @@ from usaspending_api.common.elasticsearch.client import mock_es_client, _es_sear
 from usaspending_api.common.elasticsearch.mock_elasticsearch import stored_values
 from elasticsearch import ConnectionError
 
+
 def test_basic_response():
     mock_es_client("simple_search_by_city")
     value = _es_search("index","{isabody:true}",1)
