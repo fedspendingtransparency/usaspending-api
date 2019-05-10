@@ -16,7 +16,7 @@ from usaspending_api.common.views import APIDocumentationView
 SORTABLE_COLUMNS = {
     'federal_account': 'federal_account',
     'total_transaction_obligated_amount': 'total_transaction_obligated_amount',
-    'agency': 'ca.awarding_agency_id',
+    'agency': 'funding_agency_name',
     'account_title': 'fa.account_title'
 }
 
@@ -24,46 +24,54 @@ SORTABLE_COLUMNS = {
 DEFAULT_SORT_COLUMN = 'federal_account'
 
 
+# As per direction from the product owner, agency data is to be retrieved from
+# the File D (awards) data not File C (financial_accounts_by_awards).  Also,
+# even though this query structure looks terrible, it managed to boost
+# performance a bit.
 ACCOUNTS_SQL = SQL("""
-    with cte as (
-        select      award_id
-        from        parent_award
-        where       {award_id_column} = {award_id}
+    with gather_award_ids as (
+        select  award_id
+        from    parent_award
+        where   {award_id_column} = {award_id}
         union all
-        select      cpa.award_id
-        from        parent_award ppa
-                    inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
-        where       ppa.{award_id_column} = {award_id}
+        select  cpa.award_id
+        from    parent_award ppa
+                inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
+        where   ppa.{award_id_column} = {award_id}
+    ), gather_awards as (
+        select  ca.id award_id,
+                ca.funding_agency_id
+        from    gather_award_ids gaids
+                inner join awards pa on pa.id = gaids.award_id
+                inner join awards ca on
+                    ca.parent_award_piid = pa.piid and
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id and
+                    ca.type not like 'IDV%'
+    ), gather_financial_accounts_by_awards as (
+        select  ga.funding_agency_id,
+                nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
+                faba.treasury_account_id
+        from    gather_awards ga
+                inner join financial_accounts_by_awards faba on faba.award_id = ga.award_id
     )
     select
-        sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))  total_transaction_obligated_amount,
-        taa.agency_id || '-' || taa.main_account_code                   federal_account,
+        sum(gfaba.transaction_obligated_amount)         total_transaction_obligated_amount,
+        taa.agency_id || '-' || taa.main_account_code   federal_account,
         fa.account_title,
-        tta.abbreviation                                                funding_agency_abbreviation,
-        tta.name                                                        funding_agency_name,
-        a.id                                                            funding_agency_id
+        tta.abbreviation                                funding_agency_abbreviation,
+        tta.name                                        funding_agency_name,
+        af.id                                           funding_agency_id
     from
-        cte
-        inner join awards pa on
-            pa.id = cte.award_id
-        inner join awards ca on
-            ca.parent_award_piid = pa.piid and
-            ca.fpds_parent_agency_id = pa.fpds_agency_id and
-            ca.type not like 'IDV%'
-        inner join financial_accounts_by_awards faba on
-            faba.award_id = ca.id
+        gather_financial_accounts_by_awards gfaba
+        left outer join agency af on af.id = gfaba.funding_agency_id
+        left outer join toptier_agency tta on tta.toptier_agency_id = af.toptier_agency_id
         left outer join treasury_appropriation_account taa on
-            taa.treasury_account_identifier = faba.treasury_account_id
-        left outer join toptier_agency tta on
-            tta.toptier_agency_id = taa.funding_toptier_agency_id
-        left outer join agency a on
-            a.toptier_agency_id = taa.funding_toptier_agency_id and
-            a.toptier_flag is true
+            taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join federal_account fa on
             fa.agency_identifier = taa.agency_id and
             fa.main_account_code = taa.main_account_code
     group by
-        federal_account, fa.account_title, tta.abbreviation, tta.name, a.id
+        federal_account, fa.account_title, tta.abbreviation, tta.name, af.id
     order by
         {order_by} {order_direction}
 """)
@@ -87,7 +95,7 @@ class IDVAccountsViewSet(APIDocumentationView):
         sql = ACCOUNTS_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
-            order_by=Identifier(SORTABLE_COLUMNS[request_data['sort']]),
+            order_by=SQL(SORTABLE_COLUMNS[request_data['sort']]),
             order_direction=SQL(request_data['order'])
         )
 

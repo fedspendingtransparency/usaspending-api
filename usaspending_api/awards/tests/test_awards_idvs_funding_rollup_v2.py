@@ -2,7 +2,7 @@ import json
 
 from django.test import TestCase
 from rest_framework import status
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.awards.models import Award
 from usaspending_api.awards.tests.data.idv_funding_data import create_funding_data_tree, PARENTS, IDVS, AWARD_COUNT
 
 
@@ -98,9 +98,9 @@ class IDVFundingRollupTestCase(TestCase):
         funding_agency_count = response.data['funding_agency_count']
 
         # Grab the treasury appropriation account for C14 and null out its agency values.
-        TreasuryAppropriationAccount.objects.filter(financialaccountsbyawards__award_id=14).update(
-            awarding_toptier_agency_id=None,
-            funding_toptier_agency_id=None)
+        Award.objects.filter(pk=14).update(
+            awarding_agency_id=None,
+            funding_agency_id=None)
 
         # Now re-grab the rollup values and ensure they are decremented accordingly.
         response = self.client.post(AGGREGATE_ENDPOINT, {'award_id': 2})

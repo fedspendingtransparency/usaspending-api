@@ -19,39 +19,69 @@ SORTABLE_COLUMNS = {
     'awarding_agency_name': ['awarding_agency_name'],
     'funding_agency_name': ['funding_agency_name'],
     'object_class': ['oc.object_class_name', 'oc.object_class'],
-    'piid': ['ca.piid'],
+    'piid': ['gfaba.piid'],
     'program_activity': ['rpa.program_activity_code', 'rpa.program_activity_name'],
     'reporting_fiscal_date': ['sa.reporting_fiscal_year', 'sa.reporting_fiscal_quarter'],
-    'transaction_obligated_amount': ['faba.transaction_obligated_amount']
+    'transaction_obligated_amount': ['gfaba.transaction_obligated_amount']
 }
 
 # Add a unique id to every sort key so results are deterministic.
 for k, v in SORTABLE_COLUMNS.items():
-    v.append('faba.financial_accounts_by_awards_id')
+    v.append('gfaba.financial_accounts_by_awards_id')
 
 DEFAULT_SORT_COLUMN = 'reporting_fiscal_date'
 
 # Get funding information for child and grandchild contracts of an IDV but
-# not the IDVs themselves.
+# not the IDVs themselves.  As per direction from the product owner, agency
+# data is to be retrieved from the File D (awards) data not File C
+# (financial_accounts_by_awards).  Also, even though this query structure looks
+# terrible, it managed to boost performance a bit.
 GET_FUNDING_SQL = SQL("""
-    with cte as (
-        select    award_id
-        from      parent_award
-        where     {award_id_column} = {award_id}
+    with gather_award_ids as (
+        select  award_id
+        from    parent_award
+        where   {award_id_column} = {award_id}
         union all
-        select    cpa.award_id
-        from      parent_award ppa
-                  inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
-        where     ppa.{award_id_column} = {award_id}
+        select  cpa.award_id
+        from    parent_award ppa
+                inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
+        where   ppa.{award_id_column} = {award_id}
+    ), gather_awards as (
+        select  ca.id award_id,
+                ca.generated_unique_award_id,
+                ca.piid,
+                ca.awarding_agency_id,
+                ca.funding_agency_id
+        from    gather_award_ids gaids
+                inner join awards pa on pa.id = gaids.award_id
+                inner join awards ca on
+                    ca.parent_award_piid = pa.piid and
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id and
+                    ca.type not like 'IDV%' and
+                    (ca.piid = {piid} or {piid} is null)
+    ), gather_financial_accounts_by_awards as (
+        select  ga.award_id,
+                ga.generated_unique_award_id,
+                ga.piid,
+                ga.awarding_agency_id,
+                ga.funding_agency_id,
+                nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
+                faba.financial_accounts_by_awards_id,
+                faba.submission_id,
+                faba.treasury_account_id,
+                faba.program_activity_id,
+                faba.object_class_id
+        from    gather_awards ga
+                inner join financial_accounts_by_awards faba on faba.award_id = ga.award_id
     )
     select
-        ca.id                           award_id,
-        ca.generated_unique_award_id,
+        gfaba.award_id,
+        gfaba.generated_unique_award_id,
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
-        ca.piid,
-        coalesce(aa.id, af.id)          awarding_agency_id,
-        coalesce(ttaa.name, ttaf.name)  awarding_agency_name,
+        gfaba.piid,
+        aa.id                           awarding_agency_id,
+        ttaa.name                       awarding_agency_name,
         af.id                           funding_agency_id,
         ttaf.name                       funding_agency_name,
         taa.agency_id,
@@ -61,39 +91,19 @@ GET_FUNDING_SQL = SQL("""
         rpa.program_activity_name,
         oc.object_class,
         oc.object_class_name,
-        nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount
+        gfaba.transaction_obligated_amount
     from
-        cte
-        inner join awards pa on
-            pa.id = cte.award_id
-        inner join awards ca on
-            ca.parent_award_piid = pa.piid and
-            ca.fpds_parent_agency_id = pa.fpds_agency_id and
-            ca.type not like 'IDV%'
-        inner join financial_accounts_by_awards faba on
-            faba.award_id = ca.id
-        left outer join submission_attributes sa on
-            sa.submission_id = faba.submission_id
+        gather_financial_accounts_by_awards gfaba
+        left outer join submission_attributes sa on sa.submission_id = gfaba.submission_id
         left outer join treasury_appropriation_account taa on
-            taa.treasury_account_identifier = faba.treasury_account_id
-        left outer join federal_account fa on
-            fa.id = taa.federal_account_id
-        left outer join ref_program_activity rpa on
-            rpa.id = faba.program_activity_id
-        left outer join object_class oc on
-            oc.id = faba.object_class_id
-        left outer join toptier_agency ttaf on
-            ttaf.toptier_agency_id = taa.funding_toptier_agency_id
-        left outer join agency af on
-            af.toptier_agency_id = taa.funding_toptier_agency_id and
-            af.toptier_flag is true
-        left outer join toptier_agency ttaa on
-            ttaa.toptier_agency_id = taa.awarding_toptier_agency_id
-        left outer join agency aa on
-            aa.toptier_agency_id = taa.awarding_toptier_agency_id and
-            aa.toptier_flag is true
-    where
-        (ca.piid = {piid} or {piid} is null)
+            taa.treasury_account_identifier = gfaba.treasury_account_id
+        left outer join federal_account fa on fa.id = taa.federal_account_id
+        left outer join ref_program_activity rpa on rpa.id = gfaba.program_activity_id
+        left outer join object_class oc on oc.id = gfaba.object_class_id
+        left outer join agency aa on aa.id = gfaba.awarding_agency_id
+        left outer join toptier_agency ttaa on ttaa.toptier_agency_id = aa.toptier_agency_id
+        left outer join agency af on af.id = gfaba.funding_agency_id
+        left outer join toptier_agency ttaf on ttaf.toptier_agency_id = af.toptier_agency_id
     {order_by}
     limit {limit} offset {offset}
 """)
