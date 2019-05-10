@@ -25,6 +25,7 @@ def create_es_client():
 
 
 def mock_es_client():
+    global CLIENT
     CLIENT = MockElasticSearch()
 
 
