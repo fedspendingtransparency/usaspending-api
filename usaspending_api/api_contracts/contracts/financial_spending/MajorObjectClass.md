@@ -48,25 +48,8 @@ This endpoint returns the total amount that a specific agency has obligated to m
 + obligated_amount: 524341511584.82 (required, string)
 + outlay_amount: 523146830716.62 (required, string)
 
-## FinancialBalance (object)
-+ budget_authority_amount: 1899160740172.16 (required, string)
-+ obligated_amount: 524341511584.82 (required, string)
-+ outlay_amount: 523146830716.62 (required, string)
-
-
 ## MajorObjectClass (object)
 + major_object_class_code: 30 (required, string)
 + major_object_class_name: Acquisition of assets (required, string)
 + obligated_amount: 216067467.29 (required, string)
 
-## MinorObjectClass (object)
-+ object_class_code: 310 (required, string)
-+ object_class_name: Equipment (required, string)
-+ obligated_amount: 209728763.65 (required, string)
-
-## FederalAccount (object)
-+ account_title (required, string)
-+ account_number (required, string)
-+ id (required, string)
-    The USAspending.gov unique identifier for the federal account. You will need to use this ID when making API requests for details about specific federal accounts.
-+ obligated_amount (required, string)

@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-## Major Object Classes [/api/v2/financial_spending/object_class/{?fiscal_year,funding_agency_id,major_object_class_code}]
+## Minor Object Classes [/api/v2/financial_spending/object_class/{?fiscal_year,funding_agency_id,major_object_class_code}]
 
 This endpoint returns the total amount that a specific agency has obligated to minor object classes within a specific major object class in a given fiscal year.
 
@@ -49,17 +49,6 @@ This endpoint returns the total amount that a specific agency has obligated to m
 + current_total_budget_authority_amount: 8361447130497.72 (required, string)
 + obligated_amount: 524341511584.82 (required, string)
 + outlay_amount: 523146830716.62 (required, string)
-
-## FinancialBalance (object)
-+ budget_authority_amount: 1899160740172.16 (required, string)
-+ obligated_amount: 524341511584.82 (required, string)
-+ outlay_amount: 523146830716.62 (required, string)
-
-
-## MajorObjectClass (object)
-+ major_object_class_code: 30 (required, string)
-+ major_object_class_name: Acquisition of assets (required, string)
-+ obligated_amount: 216067467.29 (required, string)
 
 ## MinorObjectClass (object)
 + object_class_code: 310 (required, string)
