@@ -232,20 +232,32 @@ Returns a list of cities matching search criteria
 + Response 200 (application/json)
     + Attributes (object)
         + count: 10 (required, number)
-        + results (required, array[string])
-            + `Springfield, VA`
-            + `Springfield, MA`
-            + `Springfield, IL`
-            + `Springfield, UT`
-            + `Springfield, SC`
-            + `Springfield, GA`
-            + `Springfield, MT`
-            + `Springfield, CA`
-            + `Springfield, ID`
-            + `Springfield, NY`
-        ])
+        + results (required, AutocompleteCityResults)
 
 # Data Structures
+
+## AutocompleteCityResults (array)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `VA` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `MA` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `UT` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `NV` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `KY` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `GA` (required, string)
+- (object)
+    - city_name: `Springfield` (required, string)
+    - state_code: `SC` (required, string)
 
 ## FilterObjectAwardTypes (array)
 List of filterable award types
