@@ -3,10 +3,10 @@ class MockElasticSearch:
         pass
 
     def search(self,**kwargs):
-        return basic_response()
+        return simple_city_search()
 
 
-def basic_response():
+def simple_city_search():
     return {
         "took": 46,
         "timed_out": False,
@@ -34,4 +34,4 @@ def basic_response():
         }
     }
 
-stored_values = {"CORTLANDT": basic_response}
+stored_values = {"simple_search_by_city": simple_city_search}
