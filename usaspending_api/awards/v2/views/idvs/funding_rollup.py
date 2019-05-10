@@ -50,7 +50,8 @@ ROLLUP_SQL = SQL("""
         count(distinct taa.agency_id || '-' || taa.main_account_code)   federal_account_count
     from
         gather_financial_accounts_by_awards gfaba
-        left outer join treasury_appropriation_account taa on taa.treasury_account_identifier = gfaba.treasury_account_id
+        left outer join treasury_appropriation_account taa on
+            taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join agency aa on aa.id = gfaba.awarding_agency_id
         left outer join agency af on af.id = gfaba.funding_agency_id
 """)
