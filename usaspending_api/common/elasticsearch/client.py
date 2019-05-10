@@ -7,6 +7,8 @@ from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
 
+from usaspending_api.common.elasticsearch.mock_elasticsearch import MockElasticSearch
+
 logger = logging.getLogger("console")
 CLIENT_TIMEOUT = settings.ES_TIMEOUT or 15
 CLIENT = None
@@ -20,6 +22,10 @@ def create_es_client():
         CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=CLIENT_TIMEOUT)
     except Exception as e:
         logger.error("Error creating the elasticsearch client: {}".format(e))
+
+
+def mock_es_client():
+    CLIENT = MockElasticSearch()
 
 
 def es_client_query(index, body, timeout="1m", retries=1):
