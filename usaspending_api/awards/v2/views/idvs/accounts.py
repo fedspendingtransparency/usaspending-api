@@ -36,12 +36,12 @@ ACCOUNTS_SQL = SQL("""
         where       ppa.{award_id_column} = {award_id}
     )
     select
-        sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric)) total_transaction_obligated_amount,
-        taa.agency_id || '-' || taa.main_account_code federal_account,
+        sum(nullif(faba.transaction_obligated_amount, 'NaN'::numeric))  total_transaction_obligated_amount,
+        taa.agency_id || '-' || taa.main_account_code                   federal_account,
         fa.account_title,
-        tta.abbreviation funding_agency_abbreviation,
-        tta.name funding_agency_name,
-        a.id funding_agency_id
+        tta.abbreviation                                                funding_agency_abbreviation,
+        tta.name                                                        funding_agency_name,
+        a.id                                                            funding_agency_id
     from
         cte
         inner join awards pa on
