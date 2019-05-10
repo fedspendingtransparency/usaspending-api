@@ -45,4 +45,4 @@ def connection_error():
     return ConnectionError
 
 
-stored_values = {"simple_search_by_city": simple_city_search,"connection_error":connection_error}
+stored_values = {"simple_search_by_city": simple_city_search, "connection_error": connection_error}
