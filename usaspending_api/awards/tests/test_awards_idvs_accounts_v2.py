@@ -8,7 +8,7 @@ from usaspending_api.awards.v2.views.idvs.accounts import SORTABLE_COLUMNS
 FEDERAL_ACCOUNT_ENDPOINT = '/api/v2/awards/idvs/accounts/'
 
 
-class IDVFundingTreemapTestCase(TestCase):
+class IDVAccountsTestCase(TestCase):
 
     @classmethod
     def setUp(cls):
