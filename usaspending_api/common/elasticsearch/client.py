@@ -24,9 +24,9 @@ def create_es_client():
         logger.error("Error creating the elasticsearch client: {}".format(e))
 
 
-def mock_es_client():
+def mock_es_client(behavior):
     global CLIENT
-    CLIENT = MockElasticSearch()
+    CLIENT = MockElasticSearch(behavior)
 
 
 def es_client_query(index, body, timeout="1m", retries=1):

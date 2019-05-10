@@ -1,9 +1,14 @@
+from elasticsearch import ConnectionError
+
 class MockElasticSearch:
-    def __init__(self):
-        pass
+    behavior = "default"
+    calls = 0
+    def __init__(self,behavior):
+        self.behavior = behavior
 
     def search(self,**kwargs):
-        return simple_city_search()
+        self.calls += 1
+        return stored_values[self.behavior]()
 
 
 def simple_city_search():
@@ -34,4 +39,7 @@ def simple_city_search():
         }
     }
 
-stored_values = {"simple_search_by_city": simple_city_search}
+def connection_error():
+    return ConnectionError
+
+stored_values = {"simple_search_by_city": simple_city_search,"connection_error":connection_error}
