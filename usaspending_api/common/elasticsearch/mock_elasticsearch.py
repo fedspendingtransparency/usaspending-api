@@ -4,10 +4,11 @@ from elasticsearch import ConnectionError
 class MockElasticSearch:
     behavior = "default"
     calls = 0
-    def __init__(self,behavior):
+
+    def __init__(self, behavior):
         self.behavior = behavior
 
-    def search(self,**kwargs):
+    def search(self, **kwargs):
         self.calls += 1
         return stored_values[self.behavior](**kwargs)
 
