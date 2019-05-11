@@ -9,10 +9,10 @@ class MockElasticSearch:
 
     def search(self,**kwargs):
         self.calls += 1
-        return stored_values[self.behavior]()
+        return stored_values[self.behavior](**kwargs)
 
 
-def simple_city_search():
+def simple_city_search(**kwargs):
     return {
         "took": 46,
         "timed_out": False,
@@ -41,7 +41,7 @@ def simple_city_search():
     }
 
 
-def connection_error():
+def connection_error(**kwargs):
     return ConnectionError
 
 
