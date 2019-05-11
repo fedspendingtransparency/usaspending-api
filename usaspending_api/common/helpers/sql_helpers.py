@@ -3,6 +3,7 @@ import logging
 import os
 
 from collections import OrderedDict
+from django.conf import settings
 from django.db import connections, router
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
@@ -15,6 +16,24 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger('console')
 
 TYPES_TO_QUOTE_IN_SQL = (str, datetime.date)
+
+
+def get_database_dsn_string():
+    """
+        This function parses the Django database configuration in settings.py and
+        returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
+        a PostgreSQL database
+        Will return a different database configuration for local vs deployed.
+    """
+
+    if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
+        db = settings.DATABASES["db_source"]
+    elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
+        db = settings.DATABASES["default"]
+    else:
+        raise Exception("No valid database connection is configured")
+
+    return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db)
 
 
 def read_sql_file(file_path):

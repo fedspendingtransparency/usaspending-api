@@ -2,19 +2,20 @@ import boto3
 import json
 import os
 import pandas as pd
+import psycopg2
 import subprocess
 import tempfile
 
 from collections import defaultdict
+from django.conf import settings
 from datetime import datetime
-from django.db import connection
 from elasticsearch import helpers
 from elasticsearch import TransportError
 from time import perf_counter, sleep
 
-from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -181,14 +182,17 @@ def configure_sql_strings(config, filename, deleted_ids):
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
-    """ Simple function to execute SQL using the Django DB connection"""
+    """ Simple function to execute SQL using a psycopg2 connection"""
     rows = None
     if verbose:
         print(cmd)
-    with connection.cursor() as cursor:
-        cursor.execute(cmd)
-        if results:
-            rows = db_rows_to_dict(cursor)
+
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        connection.autocommit = True
+        with connection.cursor() as cursor:
+            cursor.execute(cmd)
+            if results:
+                rows = db_rows_to_dict(cursor)
     return rows
 
 
