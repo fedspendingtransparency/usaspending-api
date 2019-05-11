@@ -30,24 +30,6 @@ CHUNK_SIZE = 100000
 
 
 SQLS = ["""
-update  transaction_fabs
-set     unique_award_key = case
-            when record_type = 1 then
-                upper(
-                    'ASST_AGG' || '_' ||
-                    coalesce(uri, '-NONE-') || '_' ||
-                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
-                )
-            else
-                upper(
-                    'ASST_NON' || '_' ||
-                    coalesce(fain, '-NONE-') || '_' ||
-                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
-                )
-        end
-where   transaction_id between {minid} and {maxid} and
-        unique_award_key is null
-""", """
 update  transaction_fpds
 set     unique_award_key = case
             when pulled_from = 'IDV' then
@@ -65,6 +47,24 @@ set     unique_award_key = case
                     coalesce(referenced_idv_agency_iden, '-NONE-')
                 )
             end
+where   transaction_id between {minid} and {maxid} and
+        unique_award_key is null
+""", """
+update  transaction_fabs
+set     unique_award_key = case
+            when record_type = 1 then
+                upper(
+                    'ASST_AGG' || '_' ||
+                    coalesce(uri, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+            else
+                upper(
+                    'ASST_NON' || '_' ||
+                    coalesce(fain, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+        end
 where   transaction_id between {minid} and {maxid} and
         unique_award_key is null
 """, """
