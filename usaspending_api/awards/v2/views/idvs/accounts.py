@@ -60,18 +60,19 @@ ACCOUNTS_SQL = SQL("""
         fa.account_title,
         tta.abbreviation                                funding_agency_abbreviation,
         tta.name                                        funding_agency_name,
-        af.id                                           funding_agency_id
+        ttaf.id                                         funding_agency_id
     from
         gather_financial_accounts_by_awards gfaba
         left outer join agency af on af.id = gfaba.funding_agency_id
         left outer join toptier_agency tta on tta.toptier_agency_id = af.toptier_agency_id
+        left outer join agency ttaf on ttaf.toptier_agency_id = tta.toptier_agency_id and ttaf.toptier_flag is true
         left outer join treasury_appropriation_account taa on
             taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join federal_account fa on
             fa.agency_identifier = taa.agency_id and
             fa.main_account_code = taa.main_account_code
     group by
-        federal_account, fa.account_title, tta.abbreviation, tta.name, af.id
+        federal_account, fa.account_title, tta.abbreviation, tta.name, ttaf.id
     order by
         {order_by} {order_direction}
 """)
