@@ -57,7 +57,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
 
 
         response = OrderedDict(
-            [ ("total-hits", 0), ("terms", []),("results", [])]
+            [ ("total-hits", 0), ("terms", [])]
         )
 
         hits = es_client_query(index="city-search-v1", body=query, retries=10)
