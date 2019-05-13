@@ -2,7 +2,6 @@ import logging
 
 from django.conf import settings
 from rest_framework.response import Response
-from time import perf_counter
 from collections import OrderedDict
 
 from usaspending_api.common.cache_decorator import cache_response
@@ -28,21 +27,24 @@ class CityAutocompleteViewSet(APIDocumentationView):
         search_text = preprocess(search_text)
 
         country = request.GET.get("country", None)
-        state =request.GET.get("state", None)
+        state = request.GET.get("state", None)
 
-        scope = request.GET.get("scope","recipient_location") #recipient_location, pop
+        scope = request.GET.get("scope", "recipient_location")  # recipient_location, pop
         method = request.GET.get("method", "wildcard")
 
         if state:
-            query_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND".format(scope=scope, state=state)
+            query_string = ("({scope}_country_code:USA)",
+                            "AND ({scope}_state_code:{state}) AND").format(scope=scope, state=state)
         elif country and country != "USA":
             query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
         else:
-            query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)  
+            query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
 
         method_char = "*" if method == "wildcard" else "~"
 
-        query_string += "({scope}_city_name:{city_partial}{method_char})".format(scope=scope, city_partial=search_text, method_char=method_char )
+        query_string += "({scope}_city_name:{city_partial}{method_char})".format(scope=scope,
+                                                                                 city_partial=search_text,
+                                                                                 method_char=method_char)
         query = {
             "_source": ["{}_city_name".format(scope)],
             "size": 50000,
@@ -55,9 +57,8 @@ class CityAutocompleteViewSet(APIDocumentationView):
         if method == "fuzzy":
             query["query"]["query_string"]["fuzzy_prefix_length"] = 1
 
-
         response = OrderedDict(
-            [ ("total-hits", 0), ("terms", [])]
+            [("total-hits", 0), ("terms", [])]
         )
 
         hits = es_client_query(index=INDEX, body=query, retries=10)
