@@ -60,7 +60,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
             [ ("total-hits", 0), ("terms", [])]
         )
 
-        hits = es_client_query(index="city-search-v1", body=query, retries=10)
+        hits = es_client_query(index=INDEX, body=query, retries=10)
         if hits:
             response["total-hits"] = hits["hits"]["total"]
             results = hits["hits"]["hits"]
