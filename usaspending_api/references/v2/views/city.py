@@ -35,17 +35,17 @@ class CityAutocompleteViewSet(APIDocumentationView):
 
         if state:
             query_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND".format(scope=scope, state=state)
-        elif country != "USA":
-            query_string = ""
+        elif country and country != "USA":
+            query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
         else:
-            query_string = "({scope}_country_code:USA) AND"  
+            query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)  
 
         method_char = "*" if method == "wildcard" else "~"
 
         query_string += "({scope}_city_name:{city_partial}{method_char})".format(scope=scope, city_partial=search_text, method_char=method_char )
         query = {
             "_source": ["{}_city_name".format(scope)],
-            "size": 500000,
+            "size": 50000,
             "query": {
                 "query_string": {
                     "query": query_string
@@ -57,16 +57,17 @@ class CityAutocompleteViewSet(APIDocumentationView):
 
 
         response = OrderedDict(
-            [ ("total-hits", 0), ("terms", [])]
+            [ ("total-hits", 0), ("terms", []),("results", [])]
         )
 
-        hits = es_client_query(index=INDEX, body=query, retries=10)
+        hits = es_client_query(index="city-search-v1", body=query, retries=10)
         if hits:
             response["total-hits"] = hits["hits"]["total"]
             results = hits["hits"]["hits"]
             terms = []
             for result in results:
-                terms.append(result["_source"]["{}_city_name".format(scope)])
+                if result["_source"]["{}_city_name".format(scope)]:
+                    terms.append(result["_source"]["{}_city_name".format(scope)].strip())
             terms = set(terms)
             response["terms"] = terms
         return Response(response)
