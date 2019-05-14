@@ -34,6 +34,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "generated_unique_award_id": "CONT_AW_1425_4730_INR17PA00008_GS23F0170L",
                         "last_date_to_order": "2020-11-30",
                         "obligated_amount": 8000.0,
+                        "awarded_amount": 20000.0,
                         "period_of_performance_start_date": "2016-01-14",
                         "piid": "INR17PA00008",
                         "recipient_name": "Booz Allen Hamilton",
@@ -46,7 +47,8 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency_id": 634,
                         "generated_unique_award_id": "CONT_AW_4732_4730_GS33FCA001_GS23F0170L",
                         "last_date_to_order": "2017-09-30",
-                        "obligated_amount": 22570355.24,
+                        "obligated_amount": 2257.24,
+                        "awarded_amount": 10000.0,
                         "period_of_performance_start_date": "2014-10-01",
                         "piid": "GS33FCA001",
                         "recipient_name": "Booz Allen Hamilton",
@@ -60,6 +62,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "generated_unique_award_id": "CONT_AW_12D2_4730_AG3151B140009_GS23F0170L",
                         "last_date_to_order": "2015-04-06",
                         "obligated_amount": 47840.0,
+                        "awarded_amount": 12000.0,
                         "period_of_performance_start_date": "2014-04-07",
                         "piid": "AG3151B140009",
                         "recipient_name": "Booz Allen Hamilton",
@@ -88,7 +91,8 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 + `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
 + `awarding_agency_id`: 634 (required, number)
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
-+ `obligated_amount`: 22570355.24 (required, number)
++ `obligated_amount`: 2257.24 (required, number)
++ `awarded_amount`: 10000.00 (required, number)
 + `period_of_performance_start_date`: `2014-10-01` (required, string, nullable)
     The starting date of the award in the format `YYYY-MM-DD`
 + `piid`: `GS33FCA001` (required, string)
