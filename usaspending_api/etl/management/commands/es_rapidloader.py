@@ -32,7 +32,7 @@ from usaspending_api.etl.es_etl_helpers import take_snapshot
 # 3. Take a snapshot of the index reloaded
 #
 # IF RELOADING ---
-# [command] --index_name=NEWINDEX --reload-all
+# python manage.py es_rapidloader --index-name NEWINDEX --reload-all all
 
 DEFAULT_DATETIME = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
 ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
