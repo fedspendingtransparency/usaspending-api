@@ -8,7 +8,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.common.elasticsearch.client import es_client_query
-from usaspending_api.search.v2.elasticsearch_helper import preprocess
+from usaspending_api.search.v2.elasticsearch_helper import preprocess, es_sanitizer
 
 
 logger = logging.getLogger("console")
@@ -24,7 +24,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
     @cache_response()
     def get(self, request, format=None):
         search_text = request.GET.get("search_text")
-        search_text = preprocess(search_text)
+        search_text = es_sanitizer(search_text)
 
         country = request.GET.get("country", None)
         state = request.GET.get("state", None)
@@ -33,8 +33,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         method = request.GET.get("method", "wildcard")
 
         if state:
-            query_string = ("({scope}_country_code:USA)",
-                            "AND ({scope}_state_code:{state}) AND").format(scope=scope, state=state)
+            query_string = ("({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND").format(scope=scope, state=state)
         elif country and country != "USA":
             query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
         else:
