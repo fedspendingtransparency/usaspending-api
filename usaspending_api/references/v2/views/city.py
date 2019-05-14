@@ -97,26 +97,36 @@ class CityAutocompleteViewSet(APIDocumentationView):
                     "query": query_string
                 }
             },
+            "aggs": {
+                "cities": {
+                    "terms": {
+                        "field": "{}.keyword".format(return_fields[0])
+                    },
+                    "aggs": {
+                        "states": {
+                            "terms": {
+                                "field": return_fields[1]
+                            }
+                        }
+                    }
+                }
+            }
         }
+
         if method == "fuzzy":
             query["query"]["query_string"]["fuzzy_prefix_length"] = 1
 
-        response = OrderedDict(
-            [("count", 0), ("results", [])]
-        )
-
         hits = es_client_query(index=INDEX, body=query, retries=10)
+        results = []
         if hits:
-            results = hits["hits"]["hits"]
-            terms = []
-            for result in results:
-                if "{}_city_name".format(scope) in result["_source"]:
-                    if "{}_state_code".format(scope) in result["_source"]:
-                        term = (result["_source"]["{}_state_code".format(scope)],
-                                result["_source"]["{}_city_name".format(scope)])
-                        terms.append(term)
-            terms = set(terms)
-            terms = [{"state_code": s, "city_name": c} for s, c in terms]
-            response["results"] = terms[:limit]
-            response['count'] = len(terms)
+            for city in hits["aggregations"]["cities"]["buckets"]:
+                for state_code in city["states"]["buckets"]:
+                    results.append({"state_code": state_code["key"], "city_name": city["key"]})
+
+        response = OrderedDict(
+            [
+                ("count", len(results[:limit])),
+                ("results", sorted(results[:limit], key=lambda x: x["city_name"])),
+            ]
+        )
         return Response(response)
