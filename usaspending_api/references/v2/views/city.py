@@ -54,6 +54,7 @@ models = [
                 "key": "limit",
                 "name": "limit",
                 "type": "integer",
+                "max": 500,
                 "optional": True,
                 "default": 10
                 }
@@ -91,7 +92,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
                                                                                  method_char=method_char)
         query = {
             "_source": return_fields,
-            "size": 50000,
+            "size": 0,
             "query": {
                 "query_string": {
                     "query": query_string
@@ -100,12 +101,14 @@ class CityAutocompleteViewSet(APIDocumentationView):
             "aggs": {
                 "cities": {
                     "terms": {
-                        "field": "{}.keyword".format(return_fields[0])
+                        "field": "{}.keyword".format(return_fields[0]),
+                        "size": 50000
                     },
                     "aggs": {
                         "states": {
                             "terms": {
-                                "field": return_fields[1]
+                                "field": return_fields[1],
+                                "size": 50000
                             }
                         }
                     }
@@ -123,10 +126,12 @@ class CityAutocompleteViewSet(APIDocumentationView):
                 for state_code in city["states"]["buckets"]:
                     results.append({"state_code": state_code["key"], "city_name": city["key"]})
 
+        sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+
         response = OrderedDict(
             [
-                ("count", len(results[:limit])),
-                ("results", sorted(results[:limit], key=lambda x: x["city_name"])),
+                ("count", len(sorted_results[:limit])),
+                ("results", sorted_results[:limit]),
             ]
         )
         return Response(response)
