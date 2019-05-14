@@ -27,6 +27,7 @@ def preprocess(keyword):
         keyword = processed_string
     return keyword
 
+
 def es_sanitizer(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
     keyword = concat_if_array(keyword)
@@ -36,7 +37,6 @@ def es_sanitizer(keyword):
         msg = "Stripped characters from ES city search string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
     return processed_string
-    
 
 
 def swap_keys(dictionary_):
