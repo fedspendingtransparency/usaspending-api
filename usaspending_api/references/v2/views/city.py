@@ -17,48 +17,48 @@ logger = logging.getLogger("console")
 INDEX = "{}*".format(settings.TRANSACTIONS_INDEX_ROOT)
 
 models = [
-             {
-                'name': 'filter|country_code',
-                'key': 'filter|country_code',
-                'type': 'text',
-                'text_type': 'search',
-                'optional': False
-                }, {
-                'key': 'filter|state_code',
-                'name': 'fitler|state_code',
-                'type': 'text',
-                'text_type': 'search',
-                'optional': True,
-                'default': None,
-                'allow_nulls': True
-                }, {
-                'key': 'filter|scope',
-                'name': 'filter|scope',
-                'type': 'enum',
-                'enum_values': ("recipient_location", "primary_place_of_performance"),
-                'optional': False
-                }, {
-                "key": "search_text",
-                "name": "search_text",
-                "type": "text",
-                "text_type": "search",
-                "optional": False,
-                }, {
-                "key": "method",
-                "name": "method",
-                "type": "enum",
-                'enum_values': ('wildcard', 'fuzzy'),
-                "optional": True,
-                "default": "wildcard"
-                }, {
-                "key": "limit",
-                "name": "limit",
-                "type": "integer",
-                "max": 500,
-                "optional": True,
-                "default": 10
-                }
-        ]
+    {
+        'name': 'filter|country_code',
+        'key': 'filter|country_code',
+        'type': 'text',
+        'text_type': 'search',
+        'optional': False,
+    }, {
+        'key': 'filter|state_code',
+        'name': 'fitler|state_code',
+        'type': 'text',
+        'text_type': 'search',
+        'optional': True,
+        'default': None,
+        'allow_nulls': True,
+    }, {
+        'key': 'filter|scope',
+        'name': 'filter|scope',
+        'type': 'enum',
+        'enum_values': ("recipient_location", "primary_place_of_performance"),
+        'optional': False,
+    }, {
+        "key": "search_text",
+        "name": "search_text",
+        "type": "text",
+        "text_type": "search",
+        "optional": False,
+    }, {
+        "key": "method",
+        "name": "method",
+        "type": "enum",
+        'enum_values': ('wildcard', 'fuzzy'),
+        "optional": True,
+        "default": "wildcard",
+    }, {
+        "key": "limit",
+        "name": "limit",
+        "type": "integer",
+        "max": 500,
+        "optional": True,
+        "default": 10,
+    }
+]
 
 
 @validate_post_request(models)
@@ -130,7 +130,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
 
         response = OrderedDict(
             [
-                ("count", len(sorted_results[:limit])),
+                ("count", len(sorted_results)),
                 ("results", sorted_results[:limit]),
             ]
         )
