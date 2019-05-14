@@ -50,11 +50,11 @@ This endpoint returns a list of transactions, their amount, type, action date, a
 + type_description: BPA (required, string)
 + action_date: `1999-01-15` (required, string)
     Action date in the format `YYYY-MM-DD`.
-+ action_type: C (required, string)
++ action_type: C (optional, string)
     Action type code
 + action_type_description: description (required, string)
 + modification_number: `0` (required, string)
-+ description: MANAGEMENT AND OPERATIONS (required, string)
++ description: MANAGEMENT AND OPERATIONS (optional, string)
 + federal_action_obligation: 1234.56 (required, number, nullable)
     Monetary value of the transaction. Null for results with award type codes that correspond to loans.
 + face_value_loan_guarantee: 1234.56 (required, number, nullable)
