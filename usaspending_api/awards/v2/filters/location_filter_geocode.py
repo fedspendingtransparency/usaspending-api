@@ -31,8 +31,8 @@ def geocode_filter_locations(scope, values, use_matview=False):
 
             if state_zip_key == "city":
                 all_ids = []
-                for value in state_values:
-                    all_ids.extend(get_award_ids_by_city(value, scope))
+                for city in state_values:
+                    all_ids.extend(get_award_ids_by_city(scope, city))
                 state_inner_qs = Q(**{"award_id" + "__in": all_ids})
             elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
@@ -47,11 +47,11 @@ def geocode_filter_locations(scope, values, use_matview=False):
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
                 if state_values["city"]:
-                    all_ids = []
-                    for city in state_values["city"]:
-                        for value in state_values:
-                            all_ids.extend(get_award_ids_by_city(value, scope))
-                    city_qs = Q(**{"award_id" + "__in": set(all_ids)})
+                    matching_awards = get_award_ids_by_city(scope, state_values["city"], state_zip_key)
+                    if not matching_awards:
+                        city_qs = Q(pk=None)
+                    else:
+                        city_qs = Q(**{"award_id" + "__in": matching_awards})
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
@@ -153,14 +153,24 @@ def return_query_string(use_matview):
     return q_str, country_code_col
 
 
-def get_award_ids_by_city(city, scope):
-    scope = "recipient_location_city_name" if scope == "recipient_location" else "pop_city_name"
+def get_award_ids_by_city(scope, city, state=None):
     query = {
+        "bool": {
+            "must": [
+                {"match": {"{}_city_name".format(scope): city}}
+            ]
+        }
+    }
+    if state:
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): state}})
+
+    es_json_body = {
         "_source": ["award_id"],
         "size": 50000,  # TODO: This may not be large enough, so look into "scroll API" for elastic search to batch ids
-        "query": {"query_string": {"query": '"{}"'.format(city), "fields": [scope]}},
+        "query": query,
     }
-    hits = es_client_query(index=INDEX, body=query, retries=10)
+
+    hits = es_client_query(index=INDEX, body=es_json_body, retries=10)
     if hits:
         results = hits["hits"]["hits"]
         ids = []
