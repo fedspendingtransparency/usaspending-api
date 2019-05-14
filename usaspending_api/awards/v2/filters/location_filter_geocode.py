@@ -1,5 +1,9 @@
+from django.conf import settings
 from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.elasticsearch.client import es_client_query
+
+INDEX = "{}*".format(settings.TRANSACTIONS_INDEX_ROOT)
 
 
 def geocode_filter_locations(scope, values, use_matview=False):
@@ -24,18 +28,31 @@ def geocode_filter_locations(scope, values, use_matview=False):
         state_qs = Q()
 
         for state_zip_key, state_values in state_zip.items():
-            if state_zip_key == 'zip':
+
+            if state_zip_key == "city":
+                all_ids = []
+                for value in state_values:
+                    all_ids.extend(get_award_ids_by_city(value, scope))
+                state_inner_qs = Q(**{"award_id" + "__in": all_ids})
+            elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
                 state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
                 county_qs = Q()
                 district_qs = Q()
+                city_qs = Q()
 
                 if state_values['county']:
                     county_qs = Q(**{q_str.format(scope, 'county_code') + '__in': state_values['county']})
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
-                state_inner_qs &= (county_qs | district_qs)
+                if state_values["city"]:
+                    all_ids = []
+                    for city in state_values["city"]:
+                        for value in state_values:
+                            all_ids.extend(get_award_ids_by_city(value, scope))
+                    city_qs = Q(**{"award_id" + "__in": set(all_ids)})
+                state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
 
@@ -65,6 +82,9 @@ def create_nested_object(values):
         if 'zip' in v and not nested_locations[v['country']].get('zip'):
             nested_locations[v['country']]['zip'] = []
 
+        if 'city' in v and not nested_locations[v['country']].get('city'):
+            nested_locations[v['country']]['city'] = []
+
         # Second level of filtering is zip and state
         # Requests must have a country+zip or country+state combination
         if 'zip' in v:
@@ -73,7 +93,7 @@ def create_nested_object(values):
 
         # If we have a state, add it to the list
         if 'state' in v and nested_locations[v['country']].get(v['state']) is None:
-            nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
+            nested_locations[v['country']][v['state']] = {'county': [], 'district': [], 'city': []}
 
         # Based on previous checks, there will always be a state if either of these exist
         if v.get('county'):
@@ -81,6 +101,12 @@ def create_nested_object(values):
 
         if v.get('district'):
             nested_locations[v['country']][v['state']]['district'].extend(get_fields_list('district', v['district']))
+
+        if 'city' in v and 'state' in v:
+            nested_locations[v['country']][v['state']]['city'] = v["city"]
+        elif 'city' in v:
+            nested_locations[v['country']]['city'].append(v['city'])
+
     return nested_locations
 
 
@@ -125,3 +151,22 @@ def return_query_string(use_matview):
         country_code_col = 'location_country_code'
 
     return q_str, country_code_col
+
+
+def get_award_ids_by_city(city, scope):
+    scope = "recipient_location_city_name" if scope == "recipient_location" else "pop_city_name"
+    query = {
+        "_source": ["award_id"],
+        "size": 50000,  # TODO: This may not be large enough, so look into "scroll API" for elastic search to batch ids
+        "query": {"query_string": {"query": '"{}"'.format(city), "fields": [scope]}},
+    }
+    hits = es_client_query(index=INDEX, body=query, retries=10)
+    if hits:
+        results = hits["hits"]["hits"]
+        ids = []
+        for result in results:
+            ids.append(result["_source"]["award_id"])
+        ids = set(ids)
+        return ids
+    else:
+        return []
