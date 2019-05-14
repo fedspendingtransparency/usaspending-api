@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db.models import Q
+from itertools import chain
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.elasticsearch.client import es_client_query
 
@@ -28,12 +30,8 @@ def geocode_filter_locations(scope, values, use_matview=False):
         state_qs = Q()
 
         for state_zip_key, state_values in state_zip.items():
-
             if state_zip_key == "city":
-                all_ids = []
-                for city in state_values:
-                    all_ids.extend(get_award_ids_by_city(scope, city))
-                state_inner_qs = Q(**{"award_id" + "__in": all_ids})
+                state_inner_qs = create_city_name_queryset(scope, state_values)
             elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
@@ -47,11 +45,7 @@ def geocode_filter_locations(scope, values, use_matview=False):
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
                 if state_values["city"]:
-                    matching_awards = get_award_ids_by_city(scope, state_values["city"], state_zip_key)
-                    if not matching_awards:
-                        city_qs = Q(pk=None)
-                    else:
-                        city_qs = Q(**{"award_id" + "__in": matching_awards})
+                    city_qs = create_city_name_queryset(scope, state_values["city"], state_zip_key)
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
@@ -103,7 +97,7 @@ def create_nested_object(values):
             nested_locations[v['country']][v['state']]['district'].extend(get_fields_list('district', v['district']))
 
         if 'city' in v and 'state' in v:
-            nested_locations[v['country']][v['state']]['city'] = v["city"]
+            nested_locations[v['country']][v['state']]['city'].append(v["city"])
         elif 'city' in v:
             nested_locations[v['country']]['city'].append(v['city'])
 
@@ -135,48 +129,55 @@ def get_fields_list(scope, field_value):
 
 
 def return_query_string(use_matview):
-    # Returns query strings according based on mat view or database
+    # Returns query strings based upon if the queryset is for a normalized or de-normalized model
 
-    if use_matview:
+    if use_matview:  # de-normalized
         # Queries going through the references_location table will not require a join
         # Example "pop__county_code"
         q_str = '{0}_{1}'
-        # Matviews use country_code ex: pop_country_code
-        country_code_col = 'country_code'
+        country_code_col = 'country_code'  # Matviews use country_code ex: pop_country_code
     else:
-        # Queries going through the references_location table will a join in the filter
+        # Queries going through the references_location table will require a join in the filter
         # Example "place_of_performance__county_code"
         q_str = '{0}__{1}'
-        # References_location table uses the col location_country_code
-        country_code_col = 'location_country_code'
+        country_code_col = 'location_country_code'  # References_location table uses the col location_country_code
 
     return q_str, country_code_col
 
 
-def get_award_ids_by_city(scope, city, state=None):
-    query = {
-        "bool": {
-            "must": [
-                {"match": {"{}_city_name".format(scope): city}}
-            ]
-        }
-    }
-    if state:
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): state}})
+def create_city_name_queryset(scope, list_of_city_names, state_code=None):
+    """
+        Given a list of city names and the scope, return a django queryset.
+        scope = "pop" or "recipient_location"
+        list_of_city_names is a list of strings
+        state_code (optional) is the state code if the search should be limited to that state
+    """
+    matching_awards = set(chain(*[get_award_ids_by_city(scope, city, state_code) for city in list_of_city_names]))
+    result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
 
-    es_json_body = {
+    if matching_awards:
+        result_queryset = Q(**{"award_id" + "__in": matching_awards})
+    return result_queryset
+
+
+def get_award_ids_by_city(scope, city, state_code=None):
+    """
+    """
+    # Search using a "filter" instead of a "query" to leverage ES caching
+    query = {"bool": {"must": [{"match": {"{}_city_name".format(scope): city}}]}}
+    if state_code:
+        # If a state was provided, include it in the filter to limit hits
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): state_code}})
+
+    search_body = {
         "_source": ["award_id"],
         "size": 50000,  # TODO: This may not be large enough, so look into "scroll API" for elastic search to batch ids
         "query": query,
     }
 
-    hits = es_client_query(index=INDEX, body=es_json_body, retries=10)
+    hits = es_client_query(index=INDEX, body=search_body, retries=10)
+
     if hits:
-        results = hits["hits"]["hits"]
-        ids = []
-        for result in results:
-            ids.append(result["_source"]["award_id"])
-        ids = set(ids)
-        return ids
+        return set([result["_source"]["award_id"] for result in hits["hits"]["hits"]])
     else:
         return []
