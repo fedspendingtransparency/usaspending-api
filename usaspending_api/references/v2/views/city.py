@@ -9,32 +9,76 @@ from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitizer
+from usaspending_api.common.validator.tinyshield import validate_post_request
 
 
 logger = logging.getLogger("console")
 
 INDEX = "{}*".format(settings.TRANSACTIONS_INDEX_ROOT)
 
+models = [
+             {
+                'name': 'filter|country_code',
+                'key': 'filter|country_code',
+                'type': 'text',
+                'text_type': 'search',
+                'optional': False
+                }, {
+                'key': 'filter|state_code',
+                'name': 'fitler|state_code',
+                'type': 'text',
+                'text_type': 'search',
+                'optional': True,
+                'default': None,
+                'allow_nulls': True
+                }, {
+                'key': 'filter|scope',
+                'name': 'filter|scope',
+                'type': 'enum',
+                'enum_values': ("recipient_location", "primary_place_of_performance"),
+                'optional': False
+                }, {
+                "key": "search_text",
+                "name": "search_text",
+                "type": "text",
+                "text_type": "search",
+                "optional": False,
+                }, {
+                "key": "method",
+                "name": "method",
+                "type": "enum",
+                'enum_values': ('wildcard', 'fuzzy'),
+                "optional": True,
+                "default": "wildcard"
+                }, {
+                "key": "limit",
+                "name": "limit",
+                "type": "integer",
+                "optional": True,
+                "default": 10
+                }
+        ]
 
+
+@validate_post_request(models)
 class CityAutocompleteViewSet(APIDocumentationView):
     """
     endpoint_doc:
     """
 
     @cache_response()
-    def get(self, request, format=None):
-        search_text = request.GET.get("search_text")
-        search_text = es_sanitizer(search_text)
+    def post(self, request, format=None):
 
-        country = request.GET.get("country", None)
-        state = request.GET.get("state", None)
-
-        scope = request.GET.get("scope", "recipient_location")  # recipient_location, pop
-        method = request.GET.get("method", "wildcard")
-
+        search_text = es_sanitizer(request.data["search_text"])
+        country = request.data['filter']['country_code']
+        state = request.data['filter']['state_code']
+        scope = 'recipient_location' if request.data['filter']['scope'] == 'recipient_location' else 'pop'
+        method = request.data['method']
+        limit = request.data['limit']
+        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
         if state:
-            query_string = ("({scope}_country_code:USA)",
-                            "AND ({scope}_state_code:{state}) AND").format(scope=scope, state=state)
+            start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND"
+            query_string = start_string.format(scope=scope, state=state)
         elif country and country != "USA":
             query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
         else:
@@ -46,29 +90,43 @@ class CityAutocompleteViewSet(APIDocumentationView):
                                                                                  city_partial=search_text,
                                                                                  method_char=method_char)
         query = {
-            "_source": ["{}_city_name".format(scope)],
+            "_source": return_fields,
             "size": 50000,
             "query": {
                 "query_string": {
                     "query": query_string
                 }
             },
+            "aggs": {
+                "cities": {
+                    "terms": {
+                        "field": "{}.keyword".format(return_fields[0])
+                    },
+                    "aggs": {
+                        "states": {
+                            "terms": {
+                                "field": return_fields[1]
+                            }
+                        }
+                    }
+                }
+            }
         }
+
         if method == "fuzzy":
             query["query"]["query_string"]["fuzzy_prefix_length"] = 1
 
-        response = OrderedDict(
-            [("total-hits", 0), ("terms", [])]
-        )
-
         hits = es_client_query(index=INDEX, body=query, retries=10)
+        results = []
         if hits:
-            response["total-hits"] = hits["hits"]["total"]
-            results = hits["hits"]["hits"]
-            terms = []
-            for result in results:
-                if result["_source"]["{}_city_name".format(scope)]:
-                    terms.append(result["_source"]["{}_city_name".format(scope)].strip())
-            terms = set(terms)
-            response["terms"] = terms
+            for city in hits["aggregations"]["cities"]["buckets"]:
+                for state_code in city["states"]["buckets"]:
+                    results.append({"state_code": state_code["key"], "city_name": city["key"]})
+
+        response = OrderedDict(
+            [
+                ("count", len(results[:limit])),
+                ("results", sorted(results[:limit], key=lambda x: x["city_name"])),
+            ]
+        )
         return Response(response)
