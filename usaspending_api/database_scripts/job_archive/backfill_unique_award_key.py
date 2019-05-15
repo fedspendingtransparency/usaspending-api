@@ -11,14 +11,14 @@ Expected CLI:
 Purpose:
 
     Generates unique_award_keys for all transaction_fabs, transaction_fpds, and transaction_normalized records.
+
+    SINGLE PROCESS VERSION
 """
 import math
 import psycopg2
 import time
 
-from multiprocessing import Pool
 from os import environ
-from threading import Lock
 
 
 # DEFINE THIS ENVIRONMENT VARIABLE BEFORE RUNNING!
@@ -26,29 +26,10 @@ from threading import Lock
 CONNECTION_STRING = environ['DATABASE_URL']
 
 
-MULTIPROCESSING_POOLS = 4
 CHUNK_SIZE = 50000
 
 
-UPDATE_SQL = """
-update  transaction_fabs
-set     unique_award_key = case
-            when record_type = 1 then
-                upper(
-                    'ASST_AGG' || '_' ||
-                    coalesce(uri, '-NONE-') || '_' ||
-                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
-                )
-            else
-                upper(
-                    'ASST_NON' || '_' ||
-                    coalesce(fain, '-NONE-') || '_' ||
-                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
-                )
-        end
-where   transaction_id between {minid} and {maxid};
-
-
+SQLS = ["""
 update  transaction_fpds
 set     unique_award_key = case
             when pulled_from = 'IDV' then
@@ -66,9 +47,27 @@ set     unique_award_key = case
                     coalesce(referenced_idv_agency_iden, '-NONE-')
                 )
             end
-where   transaction_id between {minid} and {maxid};
-
-
+where   transaction_id between {minid} and {maxid} and
+        unique_award_key is null
+""", """
+update  transaction_fabs
+set     unique_award_key = case
+            when record_type = 1 then
+                upper(
+                    'ASST_AGG' || '_' ||
+                    coalesce(uri, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+            else
+                upper(
+                    'ASST_NON' || '_' ||
+                    coalesce(fain, '-NONE-') || '_' ||
+                    coalesce(awarding_sub_tier_agency_c, '-NONE-')
+                )
+        end
+where   transaction_id between {minid} and {maxid} and
+        unique_award_key is null
+""", """
 update  transaction_normalized
 set     unique_award_key = t.unique_award_key
 from    (
@@ -78,22 +77,12 @@ from    (
                     left outer join transaction_fpds fpds on fpds.transaction_id = tn.id
             where   tn.id between {minid} and {maxid}
          ) t
-where   transaction_normalized.id = t.id;
-"""
+where   transaction_normalized.id = t.id and
+        transaction_normalized.unique_award_key is null
+"""]
 
 
 GET_MIN_MAX_SQL = 'select min(id), max(id) from transaction_normalized'
-
-
-class Counter(object):
-
-    def __init__(self):
-        self.value = 0
-        self.lock = Lock()
-
-    def increment(self, arg):
-        with self.lock:
-            self.value += 1
 
 
 class Timer:
@@ -111,12 +100,6 @@ class Timer:
         end = time.perf_counter()
         return self.pretty_print(end - self.start)
 
-    def estimated_total_runtime(self, ratio):
-        end = time.perf_counter()
-        elapsed = end - self.start
-        est = elapsed / ratio
-        return self.pretty_print(est)
-
     def estimated_remaining_runtime(self, ratio):
         end = time.perf_counter()
         elapsed = end - self.start
@@ -131,56 +114,38 @@ class Timer:
         return '%d:%02d:%02d.%04d' % (h, m, s, f*10000)
 
 
-def execute_chunk(max_id, _min, _max, timer):
-    try:
-        with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
-            connection.autocommit = True
-            with connection.cursor() as cursor:
-                with Timer() as t:
-                    cursor.execute(UPDATE_SQL.format(minid=_min, maxid=_max))
-                row_count = cursor.rowcount
-                print(
-                    '[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}'.format(
-                        _max / max_id, _min, _max, row_count, t.elapsed_as_string,
-                        timer.estimated_remaining_runtime(_max / max_id)
-                    ),
-                    flush=True
-                )
-    except Exception as e:
-        print('Exception {:,} => {:,}: {}'.format(_min, _max, e))
-        raise
-
-
-failure_count = Counter()
-
 with Timer() as overall_timer:
 
     with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+        connection.autocommit = True
+
         with connection.cursor() as cursor:
             print('Finding min/max IDs...')
             cursor.execute(GET_MIN_MAX_SQL)
             results = cursor.fetchall()
             min_id, max_id = results[0]
 
-    print('Min ID: {:,}'.format(min_id))
-    print('Max ID: {:,}'.format(max_id), flush=True)
+        print('Min ID: {:,}'.format(min_id))
+        print('Max ID: {:,}'.format(max_id), flush=True)
 
-    pool = Pool(MULTIPROCESSING_POOLS)
-
-    with Timer() as chunk_timer:
-        _min = min_id
-        while _min <= max_id:
-            _max = min(_min + CHUNK_SIZE - 1, max_id)
-            pool.apply_async(
-                execute_chunk, (max_id, _min, _max, chunk_timer), error_callback=failure_count.increment
-            )
-            _min = _max + 1
-
-    pool.close()
-    pool.join()
+        with Timer() as chunk_timer:
+            for n, sql in enumerate(SQLS):
+                _min = min_id
+                while _min <= max_id:
+                    _max = min(_min + CHUNK_SIZE - 1, max_id)
+                    with connection.cursor() as cursor:
+                        with Timer() as t:
+                            cursor.execute(sql.format(minid=_min, maxid=_max))
+                        row_count = cursor.rowcount
+                        progress = (_max + (max_id * n)) / (max_id * len(SQLS))
+                        print(
+                            '[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}'
+                            .format(
+                                progress, _min, _max, row_count, t.elapsed_as_string,
+                                chunk_timer.estimated_remaining_runtime(progress)
+                            ),
+                            flush=True
+                        )
+                    _min = _max + 1
 
 print('Finished.  Overall run time: %s' % overall_timer.elapsed_as_string)
-
-if failure_count.value > 0:
-    print('{:,} queries failed'.format(failure_count.value))
-    exit(1)
