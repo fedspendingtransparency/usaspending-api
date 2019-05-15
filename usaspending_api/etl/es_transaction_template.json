@@ -231,7 +231,7 @@
           "type": "text"
         },
         "pop_state_code": {
-          "type": "keyword"
+          "type": "text"
         },
         "pop_county_code": {
           "type": "text"
@@ -246,12 +246,7 @@
           "type": "text"
         },
         "pop_city_name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "text"
         },
 
         "recipient_location_country_code": {
@@ -261,7 +256,7 @@
           "type": "text"
         },
         "recipient_location_state_code": {
-          "type": "keyword"
+          "type": "text"
         },
         "recipient_location_county_code": {
           "type": "text"
@@ -276,12 +271,7 @@
           "type": "text"
         },
         "recipient_location_city_name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "text"
         },
         "type": {
           "type": "keyword",
