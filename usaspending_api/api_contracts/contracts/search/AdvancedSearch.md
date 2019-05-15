@@ -212,27 +212,6 @@ Restores selected filter criteria, based on URL hash.
               }
             }
 
-## Advanced Search City Autocomplete [/api/v2/autocomplete/city/]
-
-Returns a list of cities matching search criteria
-
-### Advanced Search City Autocomplete [GET]
-
-+ Request (application/json)
-    + Attributes (object)
-        + search_text: `Springfield` (required, string)
-        + country: `USA` (optional, string)
-        + state: `VA` (optional, string)
-        + scope: `recipient_location` (required, enum[string])
-            + `pop`
-            + `recipient_location`
-
-+ Response 200 (application/json)
-    + Attributes (object)
-        + total-hits: 10 (required, number)
-        + terms (required, array[string])
-
-
 # Data Structures
 
 ## FilterObjectAwardTypes (array)
