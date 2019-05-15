@@ -212,6 +212,8 @@ Restores selected filter criteria, based on URL hash.
               }
             }
 
+# Data Structures
+
 ## FilterObjectAwardTypes (array)
 List of filterable award types
 
