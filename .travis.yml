@@ -26,9 +26,9 @@ install:
   - pip install coveralls
 
 before_script:
+  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - psql -c "CREATE DATABASE usaspending_api;" -U postgres
   - psql -c "CREATE USER readonly;"
-  - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
   - python $MATVIEW_GEN --dest='temp_sql/' --quiet
   - python manage.py migrate
   - psql $DATABASE_URL -f $FUNCS_AND_ENUMS -v ON_ERROR_STOP=1 --quiet
@@ -46,6 +46,7 @@ before_script:
   - psql $DATABASE_URL -f temp_sql/summary_view_psc_codes.sql -v ON_ERROR_STOP=1 --quiet
   - psql $DATABASE_URL -f temp_sql/universal_award_matview.sql -v ON_ERROR_STOP=1 --quiet
   - psql $DATABASE_URL -f temp_sql/universal_transaction_matview.sql -v ON_ERROR_STOP=1 --quiet
+  - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
 
 script:
   - flake8
