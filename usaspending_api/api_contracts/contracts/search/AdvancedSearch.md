@@ -216,24 +216,29 @@ Restores selected filter criteria, based on URL hash.
 
 Returns a list of cities matching search criteria
 
-### Advanced Search City Autocomplete [GET]
+### Advanced Search City Autocomplete [POST]
 
 + Request (application/json)
     + Attributes (object)
         + search_text: `Springfield` (required, string)
-        + country: `USA` (optional, string)
-        + state: `VA` (optional, string)
-        + scope: `recipient_location` (required, enum[string])
-            + `pop`
-            + `recipient_location`
+        + limit: 40 (required, number)
+        + filter (object)
+            + country_code: `USA` (required, string)
+            + scope: `recipient_location` (required, enum[string])
+                + `primary_place_of_performance`
+                + `recipient_location`
+            + state_code: `SC` (optional, string)
 
 + Response 200 (application/json)
     + Attributes (object)
-        + total-hits: 10 (required, number)
-        + terms (required, array[string])
-
+        + count: 10 (required, number)
+        + results (required, array[AutocompleteCityResult], fixed-type)
 
 # Data Structures
+
+## AutocompleteCityResult (object)
++ city_name: `Springfield` (required, string)
++ state_code: `VA` (required, string)
 
 ## FilterObjectAwardTypes (array)
 List of filterable award types
@@ -403,6 +408,7 @@ List of table columns
 + country: USA (required, string)
 + state: VA (optional, string)
 + county: 059 (optional, string)
++ city: DC (optional, string)
 
 ## AgencyObject (object)
 + type: awarding (required, enum[string])
