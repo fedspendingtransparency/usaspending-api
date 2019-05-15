@@ -205,6 +205,9 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
+    print("Queue has items: {}".format(not fetch_jobs.empty()))
+    sleep(5)  # just because
+    print("Queue has items: {}".format(not fetch_jobs.empty()))
     while not fetch_jobs.empty():
         if done_jobs.full():
             printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})

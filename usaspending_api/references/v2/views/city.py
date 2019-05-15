@@ -65,7 +65,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         query = {
             "_source": return_fields,
             "size": 0,
-            "query": {"query_string": {"query": query_string, "allow_leading_wildcard": False}},
+            "query": query_string,
             "aggs": {
                 "cities": {
                     "terms": {"field": "{}.keyword".format(return_fields[0]), "size": 50000},
@@ -104,5 +104,7 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     else:
         query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
 
-    query_string += "({scope}_city_name:\"{text}{char}\")".format(scope=scope, text=search_text, char=method_char)
-    return query_string
+    query_string += '({scope}_city_name:"{text}")'.format(scope=scope, text=search_text, char=method_char)
+
+    query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
+    return query
