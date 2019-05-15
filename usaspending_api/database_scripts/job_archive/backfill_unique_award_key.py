@@ -114,6 +114,22 @@ class Timer:
         return '%d:%02d:%02d.%04d' % (h, m, s, f*10000)
 
 
+def run_update_query():
+    with connection.cursor() as cursor:
+        with Timer() as t:
+            cursor.execute(sql.format(minid=_min, maxid=_max))
+        row_count = cursor.rowcount
+        progress = (_max + (max_id * n)) / (max_id * len(SQLS))
+        print(
+            '[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}'
+            .format(
+                progress, _min, _max, row_count, t.elapsed_as_string,
+                chunk_timer.estimated_remaining_runtime(progress)
+            ),
+            flush=True
+        )
+
+
 with Timer() as overall_timer:
 
     with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
@@ -133,19 +149,7 @@ with Timer() as overall_timer:
                 _min = min_id
                 while _min <= max_id:
                     _max = min(_min + CHUNK_SIZE - 1, max_id)
-                    with connection.cursor() as cursor:
-                        with Timer() as t:
-                            cursor.execute(sql.format(minid=_min, maxid=_max))
-                        row_count = cursor.rowcount
-                        progress = (_max + (max_id * n)) / (max_id * len(SQLS))
-                        print(
-                            '[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}'
-                            .format(
-                                progress, _min, _max, row_count, t.elapsed_as_string,
-                                chunk_timer.estimated_remaining_runtime(progress)
-                            ),
-                            flush=True
-                        )
+                    run_update_query()
                     _min = _max + 1
 
 print('Finished.  Overall run time: %s' % overall_timer.elapsed_as_string)
