@@ -28,7 +28,7 @@ def preprocess(keyword):
     return keyword
 
 
-def es_sanitizer(keyword):
+def es_sanitize(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
     keyword = concat_if_array(keyword)
     processed_string = re.sub(r'([-&!|{}()^~*?:\/"])', r'\\\1', keyword)
