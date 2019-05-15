@@ -41,14 +41,6 @@ models = [
         "optional": False,
     },
     {"key": "search_text", "name": "search_text", "type": "text", "text_type": "search", "optional": False},
-    {
-        "key": "method",
-        "name": "method",
-        "type": "enum",
-        "enum_values": ("wildcard", "fuzzy"),
-        "optional": True,
-        "default": "wildcard",
-    },
     {"key": "limit", "name": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
 ]
 
@@ -66,45 +58,51 @@ class CityAutocompleteViewSet(APIDocumentationView):
         country = request.data["filter"]["country_code"]
         state = request.data["filter"]["state_code"]
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
-        method = request.data["method"]
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
-        if state:
-            start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND"
-            query_string = start_string.format(scope=scope, state=state)
-        elif country and country != "USA":
-            query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
-        else:
-            query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
+        query_string = create_es_search("wildcard", scope, search_text, country, state)
 
-        method_char = "*" if method == "wildcard" else "~"
-
-        query_string += "({scope}_city_name:{city_partial}{method_char})".format(
-            scope=scope, city_partial=search_text, method_char=method_char
-        )
         query = {
             "_source": return_fields,
             "size": 0,
-            "query": {"query_string": {"query": query_string}},
+            "query": {"query_string": {"query": query_string, "allow_leading_wildcard": False}},
             "aggs": {
                 "cities": {
                     "terms": {"field": "{}.keyword".format(return_fields[0]), "size": 50000},
                     "aggs": {"states": {"terms": {"field": return_fields[1], "size": 50000}}},
                 }
-            },
+            }
         }
 
-        if method == "fuzzy":
-            query["query"]["query_string"]["fuzzy_prefix_length"] = 1
-
         hits = es_client_query(index=INDEX, body=query, retries=10)
+
         results = []
-        if hits:
+        if hits and hits["hits"]["total"] > 0:
             for city in hits["aggregations"]["cities"]["buckets"]:
                 for state_code in city["states"]["buckets"]:
-                    results.append({"state_code": state_code["key"], "city_name": city["key"]})
+                    results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
 
         sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
 
         response = OrderedDict([("count", len(sorted_results)), ("results", sorted_results[:limit])])
         return Response(response)
+
+
+def create_es_search(method, scope, search_text, country=None, state=None):
+    """
+        Providing the parameters, create a value query sub-string for elasticsearch
+
+        IF there is a need to perform a fuzzy search, there might be a need to set
+            ["query_string"]["fuzzy_prefix_length"] to a value like 1
+    """
+    method_char = "~" if method == "fuzzy" else "*"
+    if state:
+        start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND"
+        query_string = start_string.format(scope=scope, state=state)
+    elif country and country != "USA":
+        query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
+    else:
+        query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
+
+    query_string += "({scope}_city_name:\"{text}{char}\")".format(scope=scope, text=search_text, char=method_char)
+    return query_string
