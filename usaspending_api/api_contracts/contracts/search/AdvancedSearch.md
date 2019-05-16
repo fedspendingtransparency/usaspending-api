@@ -382,7 +382,6 @@ List of table columns
 + country: USA (required, string)
 + state: VA (optional, string)
 + county: 059 (optional, string)
-+ city: DC (optional, string)
 
 ## AgencyObject (object)
 + type: awarding (required, enum[string])

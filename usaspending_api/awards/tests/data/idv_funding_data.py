@@ -50,7 +50,6 @@ def create_funding_data_tree():
         mommy.make(
             'references.Agency',
             id=8000 + _id,
-            toptier_flag=True,
             toptier_agency_id=8500 + _id
         )
 
@@ -72,8 +71,8 @@ def create_funding_data_tree():
             fpds_agency_id='fpds_agency_id_%s' % _sid,
             parent_award_piid='piid_%s' % _spid if _spid else None,
             fpds_parent_agency_id='fpds_agency_id_%s' % _spid if _spid else None,
-            awarding_agency_id=8000 + _id,
             funding_agency_id=9000 + _id,
+            awarding_agency_id=8000 + _id
         )
 
         if _id in IDVS:
@@ -105,9 +104,7 @@ def create_funding_data_tree():
             reporting_agency_name='reporting agency name %s' % _sid,
             agency_id=str(_id).zfill(3),
             main_account_code=str(_id).zfill(4),
-            account_title='TreasuryAppropriationAccount account title %s' % _sid,
-            awarding_toptier_agency_id=8500 + _id,
-            funding_toptier_agency_id=9500 + _id,
+            account_title='TreasuryAppropriationAccount account title %s' % _sid
         )
 
         mommy.make(

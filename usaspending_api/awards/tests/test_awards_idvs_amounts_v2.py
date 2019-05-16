@@ -23,7 +23,7 @@ EXPECTED_GOOD_OUTPUT = {
 }
 
 
-class IDVAmountsTestCase(TestCase):
+class IDVAwardsTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):

@@ -2,13 +2,12 @@ from django.test import TestCase
 from rest_framework import status
 
 from usaspending_api.awards.tests.data.idv_funding_data import create_funding_data_tree, AWARD_COUNT
-from usaspending_api.awards.v2.views.idvs.accounts import SORTABLE_COLUMNS
 
 
 FEDERAL_ACCOUNT_ENDPOINT = '/api/v2/awards/idvs/accounts/'
 
 
-class IDVAccountsTestCase(TestCase):
+class IDVFundingTreemapTestCase(TestCase):
 
     @classmethod
     def setUp(cls):
@@ -54,21 +53,4 @@ class IDVAccountsTestCase(TestCase):
 
         self._test_post(
             {'award_id': None},
-        )
-
-    def test_sort_columns(self):
-
-        for sortable_column in SORTABLE_COLUMNS:
-
-            self._test_post(
-                {'award_id': 2, 'order': 'desc', 'sort': sortable_column}
-            )
-
-            self._test_post(
-                {'award_id': 2, 'order': 'asc', 'sort': sortable_column}
-            )
-
-        self._test_post(
-            {'award_id': 2, 'sort': 'BOGUS FIELD'},
-            expected_status_code=status.HTTP_400_BAD_REQUEST
         )

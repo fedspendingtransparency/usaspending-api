@@ -4,7 +4,7 @@ const drakovOptions  = {
     sourceFiles: './contracts/**/*.md',
     serverPort: 5000,
     autoOptions: true,
-    delay: 2500 // 2.5 seconds
+    delay: 10000 // 10 seconds
 };
 
 
