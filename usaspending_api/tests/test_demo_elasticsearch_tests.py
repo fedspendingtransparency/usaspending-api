@@ -112,10 +112,10 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         "sort": "Transaction Amount",
         "order": "desc"
     }
-    resp = client.post(
+    response = client.post(
         "/api/v2/search/spending_by_transaction",
         content_type="application/json",
         data=json.dumps(query)
     )
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) == 1
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data["results"]) == 1
