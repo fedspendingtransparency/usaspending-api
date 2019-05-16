@@ -42,13 +42,23 @@ class TestElasticSearchIndex:
 
         self.mapping, self.doc_type, _ = mapping_data_for_processing()
 
+        mapping_dict = json.loads(self.mapping)
+        mapping_dict.setdefault('settings', {})
+        mapping_dict['settings'].setdefault('index.refresh_interval', {})
+        mapping_dict['settings']['index.refresh_interval'] = "-1"
+        mapping_dict['settings'].setdefault('index', {})
+        mapping_dict['settings']['index']['number_of_shards'] = 1
+        mapping_dict['settings']['index']['number_of_replicas'] = 0
+
+        self.mapping_dict = mapping_dict
+
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
     def update_index(self):
         self.delete_index()
         self._refresh_materialized_views()
-        self.client.indices.create(self.index_name, self.mapping)
+        self.client.indices.create(self.index_name, self.mapping_dict)
         create_aliases(self.client, self.index_name)
         self._add_contents()
 
@@ -58,12 +68,14 @@ class TestElasticSearchIndex:
             transactions = fetchall_to_ordered_dictionary(cursor)
 
         for transaction in transactions:
-            self.client.create(
+            self.client.index(
                 self.index_name,
-                "transaction_mapping",
-                transaction['transaction_id'],
+                self.doc_type,
                 json.dumps(transaction, cls=DjangoJSONEncoder),
-                refresh=True)
+                transaction['transaction_id'])
+
+        # Force newly added documents to become searchable.
+        self.client.indices.refresh(self.index_name)
 
     @staticmethod
     def _refresh_materialized_views():
