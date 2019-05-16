@@ -5,31 +5,46 @@ HOST: https://api.usaspending.gov
 
 These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## Spending by Award Count [/api/v2/search/spending_by_award_count/]
+## Spending by Geography [/api/v2/search/spending_by_geography/]
 
-This endpoint takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, Other and IDVs).
+This endpoint takes award filters, and returns aggregated obligation amounts in different geographic areas.
 
-### Spending by Award Count [POST]
+### Spending by Geography [POST]
 
 + Request (application/json)
     + Attributes (object)
-        + filters (required, FilterObject)
-        + subawards: false (optional, boolean)
+        + `filters` (required, FilterObject)
+        + `subawards`: false (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+        + `scope`: `place_of_performance` (required, enum[string])
+            When fetching transactions, use the primary place of performance or recipient location
+            + Members
+                + `place_of_performance`
+                + `recipient_location`
+        + `geo_layer` (required, enum[string])
+            Set the type of areas in the response
+            + Members
+                + state
+                + county
+                + district
+        + `geo_layer_filters` (required, array[string])
+            - DC
+            - MD
+            - VA
+
 
 + Response 200 (application/json)
     + Attributes
-        + results (AwardTypeResult)
+        + `scope`
+        + `geo_layer`
+        + `results` (array[GeographyTypeResult], fixed-type)
 
 # Data Structures
 
-## AwardTypeResult (object)
-+ grants (required, number)
-+ loans (required, number)
-+ contracts (required, number)
-+ direct_payments (required, number)
-+ other (required, number)
-+ idvs (required, number)
+## GeographyTypeResult (object)
++ `aggregated_amount` (required, number)
++ `display_name` (required, string)
++ `shape_code` (required, string)
 
 
 ## Filter Objects
