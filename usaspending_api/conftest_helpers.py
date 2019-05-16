@@ -65,8 +65,8 @@ class TestElasticSearchIndex:
                 json.dumps(transaction, cls=DjangoJSONEncoder))
 
         # Force newly added documents to become searchable.
-        self.client.indices.flush(self.index_name)
         self.client.indices.refresh(self.index_name)
+        self.client.indices.flush(self.index_name, wait_if_ongoing=True, force=True)
 
     @staticmethod
     def _refresh_materialized_views():
