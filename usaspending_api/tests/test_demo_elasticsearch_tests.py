@@ -112,6 +112,18 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         print(cursor.fetchall()[0][0])
 
     query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+    response = client.search(
+        elasticsearch_transaction_index.index_name,
+        elasticsearch_transaction_index.doc_type,
+        query
+    )
+    print(response)
+
+    query = {
         "filters": {
             "keyword": "IND12PB00323",
             "award_type_codes": ["A", "B", "C", "D"]
