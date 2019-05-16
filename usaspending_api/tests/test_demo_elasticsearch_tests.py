@@ -1,6 +1,8 @@
+import json
 import pytest
 
 from model_mommy import mommy
+from rest_framework import status
 
 
 @pytest.fixture
@@ -19,18 +21,25 @@ def award_data_fixture(db):
     mommy.make(
         'awards.TransactionFPDS',
         transaction_id=1,
-        legal_entity_zip5='abcde'
+        legal_entity_zip5='abcde',
+        piid='IND12PB00323'
     )
     mommy.make(
         'awards.Award',
         id=1,
         latest_transaction_id=1,
         recipient_id=1,
-        is_fpds=True
+        is_fpds=True,
+        type='A',
+        piid='IND12PB00323'
     )
 
 
 def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
+    """
+    A super simple direct search against Elasticsearch that returns one record.
+    """
+    # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
     query = {
         "query": {
@@ -55,6 +64,10 @@ def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
 
 
 def test_sample_query2(db, award_data_fixture, elasticsearch_transaction_index):
+    """
+    A super simple direct search against Elasticsearch that returns no results.
+    """
+    # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
     query = {
         "query": {
@@ -76,3 +89,30 @@ def test_sample_query2(db, award_data_fixture, elasticsearch_transaction_index):
         query
     )
     assert response["hits"]["total"] == 0
+
+
+@pytest.mark.skip(reason="NOT READY FOR PRIME TIME")
+def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transaction_index):
+    """
+    An example of how one might test a keyword search.
+    """
+    # This is the important part.  This ensures data is loaded into your Elasticsearch.
+    elasticsearch_transaction_index.update_index()
+    query = {
+        "filters": {
+            "keyword": "IND12PB00323",
+            "award_type_codes": ["A", "B", "C", "D"]
+        },
+        "fields": [
+            "Award ID", "Mod", "Recipient Name", "Action Date", "Transaction Amount",
+            "Awarding Agency", "Awarding Sub Agency", "Award Type"
+        ],
+        "page": 1,
+        "limit": 35,
+        "sort": "Transaction Amount",
+        "order": "desc"
+    }
+    resp = client.post("/api/v2/search/spending_by_transaction", content_type="application/json", data=json.dumps(query))
+    print(resp.data)
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 1

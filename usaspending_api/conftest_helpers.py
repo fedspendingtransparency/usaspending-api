@@ -35,6 +35,9 @@ class TestElasticSearchIndex:
 
     def __init__(self):
         self.index_name = self._generate_index_name()
+        # So, we'll just prefix our aliases with the index name to make sure
+        # they don't collide with other indexes.
+        self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
 
         self.mapping, self.doc_type, _ = mapping_data_for_processing()
