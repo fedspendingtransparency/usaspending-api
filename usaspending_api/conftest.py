@@ -257,6 +257,8 @@ def elasticsearch_transaction_index(db):
     Add this fixture to your test if you intend to use the Elasticsearch
     transaction index.  To use, create some mock database data then call
     elasticsearch_transaction_index.update_index to populate Elasticsearch.
+
+    See test_demo_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticSearchIndex()
     with override_settings(TRANSACTIONS_INDEX_ROOT=elastic_search_index.alias_prefix):
