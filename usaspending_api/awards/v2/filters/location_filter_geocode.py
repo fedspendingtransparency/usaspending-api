@@ -31,7 +31,7 @@ def geocode_filter_locations(scope, values, use_matview=False):
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == "city":
-                state_inner_qs = create_city_name_queryset(scope, state_values)
+                state_inner_qs = create_city_name_queryset(scope, state_values, country)
             elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
@@ -45,7 +45,7 @@ def geocode_filter_locations(scope, values, use_matview=False):
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
                 if state_values["city"]:
-                    city_qs = create_city_name_queryset(scope, state_values["city"], state_zip_key)
+                    city_qs = create_city_name_queryset(scope, state_values["city"], country, state_zip_key)
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
@@ -145,14 +145,14 @@ def return_query_string(use_matview):
     return q_str, country_code_col
 
 
-def create_city_name_queryset(scope, list_of_city_names, state_code=None):
+def create_city_name_queryset(scope, list_of_city_names, country_code, state_code=None):
     """
         Given a list of city names and the scope, return a django queryset.
         scope = "pop" or "recipient_location"
         list_of_city_names is a list of strings
         state_code (optional) is the state code if the search should be limited to that state
     """
-    matching_awards = set(chain(*[get_award_ids_by_city(scope, city, state_code) for city in list_of_city_names]))
+    matching_awards = set(chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_city_names]))
     result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
 
     if matching_awards:
@@ -160,24 +160,32 @@ def create_city_name_queryset(scope, list_of_city_names, state_code=None):
     return result_queryset
 
 
-def get_award_ids_by_city(scope, city, state_code=None):
+def get_award_ids_by_city(scope, city, country_code, state_code=None):
     """
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
-    query = {"bool": {"must": [{"match": {"{}_city_name".format(scope): city}}]}}
+    query = {
+        "bool": {
+            "must": [
+                {"match": {"{}_city_name".format(scope): city}},
+                {"match": {"{}_country_code".format(scope): country_code}},
+            ]
+        }
+    }
     if state_code:
         # If a state was provided, include it in the filter to limit hits
         query["bool"]["must"].append({"match": {"{}_state_code".format(scope): state_code}})
 
     search_body = {
         "_source": ["award_id"],
-        "size": 50000,  # TODO: This may not be large enough, so look into "scroll API" for elastic search to batch ids
+        "size": 0,
         "query": query,
+        "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 50000}}},
     }
 
     hits = es_client_query(index=INDEX, body=search_body, retries=10)
 
-    if hits:
-        return set([result["_source"]["award_id"] for result in hits["hits"]["hits"]])
+    if hits and hits["hits"]["total"]:
+        return [result["key"] for result in hits["aggregations"]["award_ids"]["buckets"]]
     else:
         return []
