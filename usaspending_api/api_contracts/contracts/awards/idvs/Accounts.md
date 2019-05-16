@@ -26,8 +26,8 @@ This endpoint returns a list of federal accounts under a given IDV.
 
 + Response 200 (application/json)
     + Attributes 
-       + page_metadata (required, PageMetadata)
-       + results (required, array[AccountListing], fixed-type)
+       + `results` (required, array[AccountListing], fixed-type)
+       + `page_metadata` (required, PageMetadata, fixed-type)
 
 
 # Data Structures
