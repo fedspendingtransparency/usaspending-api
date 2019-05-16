@@ -11,7 +11,7 @@
     "  transaction_fpds.pulled_from,",
     "  awards.category,",
     "",
-    "  transaction_normalized.awarding_agency_id,",
+    "  transaction_normalized.awarding_agency_id2,",
     "  transaction_normalized.funding_agency_id,",
     "  TAA.name AS awarding_toptier_agency_name,",
     "  TFA.name AS funding_toptier_agency_name,",
