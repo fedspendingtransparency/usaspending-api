@@ -78,7 +78,11 @@ def search_transactions(request_data, lower_limit, limit):
         return False, "Bad/Missing Award Types requested", None
 
     print(index_name)
+    print()
+    print()
     print(query)
+    print()
+    print()
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         total = response["hits"]["total"]

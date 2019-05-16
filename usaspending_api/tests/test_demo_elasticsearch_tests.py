@@ -110,19 +110,37 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         print(cursor.fetchall()[0][0])
         cursor.execute("select count(*) from universal_award_matview")
         print(cursor.fetchall()[0][0])
+    print()
+    print()
 
     query = {
         "query": {
             "match_all": {}
         }
     }
-    client = elasticsearch_transaction_index.client
-    response = client.search(
+    clnt = elasticsearch_transaction_index.client
+    response = clnt.search(
         elasticsearch_transaction_index.index_name,
         elasticsearch_transaction_index.doc_type,
         query
     )
     print(response)
+    print()
+    print()
+
+    response = clnt.search(
+        elasticsearch_transaction_index.index_name + '-contracts*',
+        elasticsearch_transaction_index.doc_type,
+        query
+    )
+    print(response)
+    print()
+    print()
+
+    response = clnt.cat.aliases()
+    print(response)
+    print()
+    print()
 
     query = {
         "filters": {
@@ -145,4 +163,6 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
     )
     assert response.status_code == status.HTTP_200_OK
     print(response.data)
+    print()
+    print()
     assert len(response.data["results"]) == 1
