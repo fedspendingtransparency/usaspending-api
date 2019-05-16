@@ -2,6 +2,7 @@ import logging
 import pytest
 
 from django.conf import settings
+from django.test import override_settings
 from django_mock_queries.query import MockSet
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_transaction_delta_view_exists
@@ -258,5 +259,6 @@ def elasticsearch_transaction_index(db):
     elasticsearch_transaction_index.update_index to populate Elasticsearch.
     """
     elastic_search_index = TestElasticSearchIndex()
-    yield elastic_search_index
-    elastic_search_index.delete_index()
+    with override_settings(TRANSACTIONS_INDEX_ROOT=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
