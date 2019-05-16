@@ -98,6 +98,8 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
+    import time
+    time.sleep(5)
     query = {
         "filters": {
             "keyword": "IND12PB00323",
