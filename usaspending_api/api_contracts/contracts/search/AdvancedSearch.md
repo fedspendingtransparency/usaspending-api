@@ -33,25 +33,9 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Response 200 (application/json)
     + Attributes
-        + limit: 60 (optional, number)
-        + results (array[SpendingByAwardResponse])
-        + page_metadata (PageMetadataObject)
-
-## Spending by Award Count [/api/v2/search/spending_by_award_count/]
-
-This endpoint takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, Other and IDVs).
-
-### Spending by Award Count [POST]
-
-+ Request (application/json)
-    + Attributes (object)
-        + filters (required, FilterObject)
-        + subawards: false (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
-
-+ Response 200 (application/json)
-    + Attributes
-        + results (AwardTypeResult)
+        + `limit`: 60 (optional, number)
+        + `results` (array[SpendingByAwardResponse])
+        + `page_metadata` (PageMetadataObject)
 
 ## Spending By Category [/api/v2/search/spending_by_category/]
 
@@ -214,39 +198,6 @@ Restores selected filter criteria, based on URL hash.
 
 # Data Structures
 
-## FilterObjectAwardTypes (array)
-List of filterable award types
-
-### Sample
-- A
-- B
-- C
-- D
-
-### Default
-- 02
-- 03
-- 04
-- 05
-- 06
-- 07
-- 08
-- 09
-- 10
-- 11
-- A
-- B
-- C
-- D
-- IDV_A
-- IDV_B
-- IDV_B_A
-- IDV_B_B
-- IDV_B_C
-- IDV_C
-- IDV_D
-- IDV_E
-
 ## SpendingByAwardFields (array)
 List of table columns
 
@@ -264,17 +215,17 @@ List of table columns
 - Funding Sub Agency
 
 ### Default
-- Award ID
-- Recipient Name
-- Start Date
-- End Date
-- Award Amount
-- Awarding Agency
-- Awarding Sub Agency
-- Contract Award Type
-- Award Type
-- Funding Agency
-- Funding Sub Agency
+- `Award ID`
+- `Recipient Name`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Contract Award Type`
+- `Award Type`
+- `Funding Agency`
+- `Funding Sub Agency`
 
 ## SpendingByAwardResponse (object)
 + Recipient Name : `MULTIPLE RECIPIENTS` (optional, string)
@@ -310,32 +261,35 @@ List of table columns
 + Subsidy Cost : 3000186413 (optional, number)
 + internal_id : 1018950  (optional, number)
 
-## AwardTypeResult (object)
-+ grants : 1 (required, number)
-+ loans : 1 (required, number)
-+ contracts : 1 (required, number)
-+ direct_payments : 1 (required, number)
-+ other : 1 (required, number)
-+ idvs : 1 (required, number)
-
 ## CategoryResult (object)
-+ id: 1 (required, number)
-    The `id` is the database key.
-+ name: Aircraft Manufacturing (required, string)
-+ code: 336411 (optional, string)
-    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
-+ amount: 591230394.12 (required, number)
++ id (required, number)
+    The id is the database key.
++ name (required, string, nullable)
++ code (required, string, nullable)
+    code is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
++ amount (required, number)
 
 ## TimeResult (object)
-+ time_period (required, TimePeriodGroup)
-+ aggregated_amount: 200000000 (required, number)
++ `time_period` (required, TimePeriodGroup)
++ `aggregated_amount` (required, number)
     The aggregate award amount for this time period and the given filters.
 
 ## PageMetadataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
++ page (required, number)
++ hasNext (required, boolean)
 
-## FilterObject (object)
+## TimePeriodGroup (object)
++ `fiscal_year`: `2018` (required, string)
++ `quarter`: `1` (optional, string)
+    Excluded when grouping by `fiscal_year` or `month`.
++ `month`: `1` (optional, string)
+    Excluded when grouping by `fiscal_year` or `quarter`.
+
+
+
+
+## Filter Objects
+### FilterObject (object)
 + `keywords` : poptarts (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope`: `domestic` (optional, enum[string])
@@ -364,35 +318,62 @@ List of table columns
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 
-## TimePeriodObject (object)
-+ start_date: `2017-10-01` (required, string)
-+ end_date: `2018-09-30` (required, string)
+### TimePeriodObject (object)
++ `start_date`: `2017-10-01` (required, string)
++ `end_date`: `2018-09-30` (required, string)
 + `date_type`: `action_date` (optional, enum[string])
     + action_date
     + last_modified_date
 
-## TimePeriodGroup (object)
-+ fiscal_year: `2018` (required, string)
-+ quarter: `1` (optional, string)
-    Excluded when grouping by `fiscal_year` or `month`.
-+ month: `1` (optional, string)
-    Excluded when grouping by `fiscal_year` or `quarter`.
 
-## LocationObject (object)
+### LocationObject (object)
 + country: USA (required, string)
 + state: VA (optional, string)
 + county: 059 (optional, string)
 + city: DC (optional, string)
 
-## AgencyObject (object)
+### AgencyObject (object)
 + type: awarding (required, enum[string])
     + awarding
     + funding
 + tier: toptier (required, enum[string])
-    + `toptier`
-    + `subtier`
+    + toptier
+    + subtier
 + name: `Department of Defense` (required, string)
 
-## AwardAmounts (object)
-+ lower_bound (optional, number)
-+ upper_bound: 1000000 (optional, number)
+### AwardAmounts (object)
++ `lower_bound` (optional, number)
++ `upper_bound`: 1000000 (optional, number)
+
+### FilterObjectAwardTypes (array)
+List of filterable award types
+
+### Sample
+- A
+- B
+- C
+- D
+
+### Default
+- 02
+- 03
+- 04
+- 05
+- 06
+- 07
+- 08
+- 09
+- 10
+- 11
+- A
+- B
+- C
+- D
+- IDV_A
+- IDV_B
+- IDV_B_A
+- IDV_B_B
+- IDV_B_C
+- IDV_C
+- IDV_D
+- IDV_E
