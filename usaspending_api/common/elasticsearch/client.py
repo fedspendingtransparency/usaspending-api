@@ -8,7 +8,7 @@ from elasticsearch import NotFoundError
 from elasticsearch import TransportError
 
 logger = logging.getLogger("console")
-CLIENT_TIMEOUT = settings.ES_TIMEOUT or 15
+CLIENT_TIMEOUT = settings.ES_TIMEOUT or 5
 CLIENT = None
 
 
