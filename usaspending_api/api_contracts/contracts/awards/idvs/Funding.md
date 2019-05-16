@@ -42,22 +42,43 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 
 + Response 200 (application/json)
     + Attributes
-        + `results` (required, array[IDVFundingResponse])
+        + `results` (required, array[IDVFundingResponse], fixed-type)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
 
     + Body
+
 
             {
                 "results": [
                     {
                         "award_id": 5531118,
                         "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
+                        "reporting_fiscal_year": 2019,
+                        "reporting_fiscal_quarter": 1,
+                        "piid": "15B30518FTM230002",
+                        "awarding_agency_id": 252,
+                        "awarding_agency_name": "Department of Justice",
+                        "funding_agency_id": 252,
+                        "funding_agency_name": "Department of Justice",
+                        "agency_id": "015",
+                        "main_account_code": "1060",
+                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
+                        "program_activity_code": "0002",
+                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
+                        "object_class": "220",
+                        "object_class_name": "Transportation of things",
+                        "transaction_obligated_amount": -53.82
+                    },
+                    {
+                        "award_id": 5531118,
+                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 4,
                         "piid": "15B30518FTM230002",
-                        "funding_agency_id": 259,
-                        "reporting_agency_id": "015",
-                        "reporting_agency_name": "Department of Justice",
+                        "awarding_agency_id": 252,
+                        "awarding_agency_name": "Department of Justice",
+                        "funding_agency_id": 252,
+                        "funding_agency_name": "Department of Justice",
                         "agency_id": "015",
                         "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
@@ -73,9 +94,10 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 3,
                         "piid": "15B30518FTM230002",
-                        "funding_agency_id": 259,
-                        "reporting_agency_id": "015",
-                        "reporting_agency_name": "Department of Justice",
+                        "awarding_agency_id": 252,
+                        "awarding_agency_name": "Department of Justice",
+                        "funding_agency_id": 252,
+                        "funding_agency_name": "Department of Justice",
                         "agency_id": "015",
                         "main_account_code": "1060",
                         "account_title": "Salaries and Expenses, Federal Prison System, Justice",
@@ -84,42 +106,6 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                         "object_class": "220",
                         "object_class_name": "Transportation of things",
                         "transaction_obligated_amount": 193.96
-                    },
-                    {
-                        "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
-                        "reporting_fiscal_year": 2018,
-                        "reporting_fiscal_quarter": 2,
-                        "piid": "15B30518FTM230002",
-                        "funding_agency_id": 259,
-                        "reporting_agency_id": "015",
-                        "reporting_agency_name": "Department of Justice",
-                        "agency_id": "015",
-                        "main_account_code": "1060",
-                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
-                        "program_activity_code": "0002",
-                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
-                        "object_class": "220",
-                        "object_class_name": "Transportation of things",
-                        "transaction_obligated_amount": 140.97
-                    },
-                    {
-                        "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
-                        "reporting_fiscal_year": 2018,
-                        "reporting_fiscal_quarter": 1,
-                        "piid": "15B30518FTM230002",
-                        "funding_agency_id": 259,
-                        "reporting_agency_id": "015",
-                        "reporting_agency_name": "Department of Justice",
-                        "agency_id": "015",
-                        "main_account_code": "1060",
-                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
-                        "program_activity_code": "0002",
-                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
-                        "object_class": "220",
-                        "object_class_name": "Transportation of things",
-                        "transaction_obligated_amount": 192.64
                     }
                 ],
                 "page_metadata": {
@@ -147,15 +133,16 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
     Unique internal natural identifier for an award.
 + `reporting_fiscal_year`: 2018 (required, number, nullable)
     Fiscal year of the submission date.
-+ `reporting_fiscal_quarter`: 1 (required, number, nullable)
++ `reporting_fiscal_quarter`: 3 (required, number, nullable)
     Fiscal quarter of the submission date.
 + `piid`: `15B30518FTM230002` (required, string, nullable)
     Procurement Instrument Identifier (PIID).
-+ `funding_agency_id`: 259 (required, number, nullable)
++ `awarding_agency_id`: 252 (required, number, nullable)
+    Internal surrogate identifier of the awarding agency.
++ `awarding_agency_name`: `Department of Justice` (required, string, nullable)
++ `funding_agency_id`: 252 (required, number, nullable)
     Internal surrogate identifier of the funding agency.
-+ `reporting_agency_id`: `015` (required, string, nullable)
-    CGAC of the reporting agency.
-+ `reporting_agency_name`: `Department of Justice` (required, string, nullable)
++ `funding_agency_name`: `Department of Justice` (required, string, nullable)
 + `agency_id`: `015` (required, string, nullable)
     CGAC of the funding agency.
 + `main_account_code`: `1060` (required, string, nullable)
@@ -165,4 +152,4 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 + `program_activity_name`: `INSTITUTION SECURITY AND ADMINISTRATION` (required, string, nullable)
 + `object_class`: `220` (required, string, nullable)
 + `object_class_name`: `Transportation of things` (required, string, nullable)
-+ `transaction_obligated_amount`: 192.64 (required, number, nullable)
++ `transaction_obligated_amount`: 193.96 (required, number, nullable)
