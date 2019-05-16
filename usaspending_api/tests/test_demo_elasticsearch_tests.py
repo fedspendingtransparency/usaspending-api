@@ -116,6 +116,7 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
             "match_all": {}
         }
     }
+    client = elasticsearch_transaction_index.client
     response = client.search(
         elasticsearch_transaction_index.index_name,
         elasticsearch_transaction_index.doc_type,
