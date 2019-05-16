@@ -104,7 +104,7 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     else:
         query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
 
-    query_string += '({scope}_city_name:"{text}")'.format(scope=scope, text=search_text, char=method_char)
+    query_string += '({scope}_city_name:{text}{char})'.format(scope=scope, text=search_text, char=method_char)
 
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
     return query
