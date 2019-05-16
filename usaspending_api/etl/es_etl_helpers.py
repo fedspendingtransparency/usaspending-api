@@ -306,6 +306,20 @@ def put_alias(client, index, alias_name, award_type_codes):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
+def create_aliases(client, index, silent=False):
+    for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
+        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        if silent is True:
+            printf(
+                {
+                    "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
+                    "job": "",
+                    "f": "ES Alias Put",
+                }
+            )
+        put_alias(client, index, alias_name, award_type_codes)
+
+
 def swap_aliases(client, index):
     client.indices.refresh(index)
     # add null values to contracts alias
@@ -324,16 +338,7 @@ def swap_aliases(client, index):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
-        printf(
-            {
-                "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
-                "job": "",
-                "f": "ES Alias Put",
-            }
-        )
-        put_alias(client, index, alias_name, award_type_codes)
+    create_aliases(client, index)
 
     es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
     with open(es_settingsfile) as f:
