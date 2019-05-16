@@ -1,16 +1,10 @@
-# Stdlib imports
 import logging
-
-
-# Core Django imports
-from django.conf import settings
-
-# Third-party app imports
 import pytest
-from django_mock_queries.query import MockSet
 
-# Imports from your apps
+from django.conf import settings
+from django_mock_queries.query import MockSet
 from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_transaction_delta_view_exists
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
@@ -237,6 +231,8 @@ def django_db_setup(django_db_blocker,
             interactive=False,
             **setup_databases_args
         )
+        generate_matviews()
+        ensure_transaction_delta_view_exists()
 
     def teardown_database():
         with django_db_blocker.unblock():
@@ -252,3 +248,15 @@ def django_db_setup(django_db_blocker,
 @pytest.fixture()
 def refresh_matviews():
     generate_matviews()
+
+
+@pytest.fixture
+def elasticsearch_transaction_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    transaction index.  To use, create some mock database data then call
+    elasticsearch_transaction_index.update_index to populate Elasticsearch.
+    """
+    elastic_search_index = TestElasticSearchIndex()
+    yield elastic_search_index
+    elastic_search_index.delete_index()
