@@ -36,7 +36,7 @@ def award_data_fixture(db):
     )
 
 
-def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
+def test_positive_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns one record.
     """
@@ -64,7 +64,7 @@ def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     assert response["hits"]["total"] == 1
 
 
-def test_sample_query2(db, award_data_fixture, elasticsearch_transaction_index):
+def test_negative_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns no results.
     """
@@ -98,50 +98,6 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
-
-    from django.db import connection
-
-    with connection.cursor() as cursor:
-        cursor.execute("select count(*) from awards")
-        print(cursor.fetchall()[0][0])
-        cursor.execute("select count(*) from transaction_delta_view")
-        print(cursor.fetchall()[0][0])
-        cursor.execute("select count(*) from universal_transaction_matview")
-        print(cursor.fetchall()[0][0])
-        cursor.execute("select count(*) from universal_award_matview")
-        print(cursor.fetchall()[0][0])
-    print()
-    print()
-
-    query = {
-        "query": {
-            "match_all": {}
-        }
-    }
-    clnt = elasticsearch_transaction_index.client
-    response = clnt.search(
-        elasticsearch_transaction_index.index_name,
-        elasticsearch_transaction_index.doc_type,
-        query
-    )
-    print(response)
-    print()
-    print()
-
-    response = clnt.search(
-        elasticsearch_transaction_index.index_name + '-contracts*',
-        elasticsearch_transaction_index.doc_type,
-        query
-    )
-    print(response)
-    print()
-    print()
-
-    response = clnt.cat.aliases()
-    print(response)
-    print()
-    print()
-
     query = {
         "filters": {
             "keyword": "IND12PB00323",
@@ -162,7 +118,4 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         data=json.dumps(query)
     )
     assert response.status_code == status.HTTP_200_OK
-    print(response.data)
-    print()
-    print()
     assert len(response.data["results"]) == 1

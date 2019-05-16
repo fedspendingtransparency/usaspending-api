@@ -15,7 +15,9 @@ from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_
 
 # This view is used to populate the Elasticsearch index.
 TRANSACTION_DELTA_VIEW_PATH = os.path.join(
-    settings.BASE_DIR, 'usaspending_api/database_scripts/etl/transaction_delta_view.sql')
+    settings.BASE_DIR,
+    "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
+)
 
 
 # These two materialized views are used by transaction_delta_view.sql, so we
@@ -39,18 +41,7 @@ class TestElasticSearchIndex:
         # they don't collide with other aliases.
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-
         self.mapping, self.doc_type, _ = mapping_data_for_processing()
-
-        mapping_dict = json.loads(self.mapping)
-        mapping_dict.setdefault('settings', {})
-        mapping_dict['settings'].setdefault('index.refresh_interval', {})
-        mapping_dict['settings']['index.refresh_interval'] = "-1"
-        mapping_dict['settings'].setdefault('index', {})
-        mapping_dict['settings']['index']['number_of_shards'] = 1
-        mapping_dict['settings']['index']['number_of_replicas'] = 0
-
-        self.mapping_dict = mapping_dict
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
@@ -58,7 +49,7 @@ class TestElasticSearchIndex:
     def update_index(self):
         self.delete_index()
         self._refresh_materialized_views()
-        self.client.indices.create(self.index_name, self.mapping_dict)
+        self.client.indices.create(self.index_name, self.mapping)
         create_aliases(self.client, self.index_name)
         self._add_contents()
 
@@ -72,7 +63,7 @@ class TestElasticSearchIndex:
                 self.index_name,
                 self.doc_type,
                 json.dumps(transaction, cls=DjangoJSONEncoder),
-                transaction['transaction_id'])
+                transaction["transaction_id"])
 
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
@@ -84,7 +75,7 @@ class TestElasticSearchIndex:
 
     @staticmethod
     def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):
-        return ''.join(choice(chars) for _ in range(size))
+        return "".join(choice(chars) for _ in range(size))
 
     @classmethod
     def _generate_index_name(cls):

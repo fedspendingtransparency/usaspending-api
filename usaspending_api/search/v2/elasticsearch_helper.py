@@ -76,12 +76,6 @@ def search_transactions(request_data, lower_limit, limit):
         logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
         return False, "Bad/Missing Award Types requested", None
 
-    print(index_name)
-    print()
-    print()
-    print(query)
-    print()
-    print()
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         total = response["hits"]["total"]
