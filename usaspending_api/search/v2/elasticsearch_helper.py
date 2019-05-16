@@ -28,6 +28,15 @@ def preprocess(keyword):
     return keyword
 
 
+def es_sanitize(keyword):
+    """ Escapes reserved elasticsearch characters and removes when necessary """
+    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', keyword)
+    if len(processed_string) != len(keyword):
+        msg = "Stripped characters from ES city search string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, keyword))
+    return processed_string
+
+
 def swap_keys(dictionary_):
     return dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items())
 
