@@ -98,8 +98,19 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
-    import time
-    time.sleep(5)
+
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute("select count(*) from awards")
+        print(cursor.fetchall()[0][0])
+        cursor.execute("select count(*) from transaction_delta_view")
+        print(cursor.fetchall()[0][0])
+        cursor.execute("select count(*) from universal_transaction_matview")
+        print(cursor.fetchall()[0][0])
+        cursor.execute("select count(*) from universal_award_matview")
+        print(cursor.fetchall()[0][0])
+
     query = {
         "filters": {
             "keyword": "IND12PB00323",
@@ -120,4 +131,5 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         data=json.dumps(query)
     )
     assert response.status_code == status.HTTP_200_OK
+    print(response.data)
     assert len(response.data["results"]) == 1
