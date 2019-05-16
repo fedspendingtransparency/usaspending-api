@@ -40,8 +40,8 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
 
 + Response 200 (application/json)
     + Attributes
-        + `results` (array[`IDVRelatedAwardsResponse`], fixed-type)
-        + `page_metadata` (`PageMetaDataObject`)
+        + `results` (required, array[IDVRelatedAwardsResponse], fixed-type)
+        + `page_metadata` (required, PageMetaDataObject, fixed-type)
 
     * Body
 
