@@ -4,6 +4,7 @@ python:
   - '3.5'
 
 services:
+  - docker
   - postgresql
 
 addons:
@@ -23,7 +24,9 @@ install:
   - pip install coveralls
 
 before_script:
-  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
+  - docker pull docker.elastic.co/elasticsearch/elasticsearch:6.1.1
+  - docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.1.1
+  # - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - psql -c "CREATE DATABASE usaspending_api;" -U postgres
   - psql -c "CREATE USER readonly;"
   - python manage.py migrate
