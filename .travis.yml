@@ -5,7 +5,6 @@ python:
 
 services:
   - postgresql
-  - elasticsearch
 
 addons:
   postgresql: '9.6'
@@ -15,8 +14,6 @@ env:
     - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
     - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
     - ES_HOSTNAME='http://localhost:9200'
-    - FUNCS_AND_ENUMS='usaspending_api/database_scripts/matviews/functions_and_enums.sql'
-    - MATVIEW_GEN='usaspending_api/database_scripts/matview_generator/matview_sql_generator.py'
 
 before_install:
   - npm install dredd@5.4.1 --global
@@ -26,26 +23,11 @@ install:
   - pip install coveralls
 
 before_script:
+  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - psql -c "CREATE DATABASE usaspending_api;" -U postgres
   - psql -c "CREATE USER readonly;"
-  - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
-  - python $MATVIEW_GEN --dest='temp_sql/' --quiet
   - python manage.py migrate
-  - psql $DATABASE_URL -f $FUNCS_AND_ENUMS -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/subaward_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_award_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_state_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_fed_acct_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_geo_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_month_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_recipient_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_cfda_number.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_naics_codes.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_psc_codes.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/universal_award_matview.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/universal_transaction_matview.sql -v ON_ERROR_STOP=1 --quiet
+  - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
 
 script:
   - flake8
