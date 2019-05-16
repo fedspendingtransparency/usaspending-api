@@ -1,12 +1,13 @@
 from django.conf import settings
 from django.db.models import Q
 from itertools import chain
+from typing import Optional
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.elasticsearch.client import es_client_query
 
 
-def geocode_filter_locations(scope: str, values: list, use_matview: bool=False) -> Q:
+def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -143,7 +144,7 @@ def return_query_string(use_matview: bool) -> tuple:
     return q_str, country_code_col
 
 
-def create_city_name_queryset(scope: str, list_of_city_names: list, country_code: str, state_code: str=None):
+def create_city_name_queryset(scope: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None):
     """
         Given a list of city names and the scope, return a django queryset.
         scope = "pop" or "recipient_location"
@@ -152,7 +153,7 @@ def create_city_name_queryset(scope: str, list_of_city_names: list, country_code
         state_code (optional) is the state code if the search should be limited to that state
     """
     matching_awards = set(
-        chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_city_names])
+        chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_cities])
     )
     result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
 
@@ -161,7 +162,7 @@ def create_city_name_queryset(scope: str, list_of_city_names: list, country_code
     return result_queryset
 
 
-def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: str=None) -> list:
+def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: Optional[str] = None) -> list:
     """
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
