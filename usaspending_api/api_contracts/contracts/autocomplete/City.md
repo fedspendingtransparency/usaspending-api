@@ -31,4 +31,4 @@ Returns a list of cities matching search criteria
 
 ## AutocompleteCityResult (object)
 + city_name: `Springfield` (required, string)
-+ state_code: `VA` (required, string)
++ state_code: `VA` (required, string, nullable)
