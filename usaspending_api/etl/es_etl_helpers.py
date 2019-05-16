@@ -314,7 +314,8 @@ def put_alias(client, index, alias_name, award_type_codes):
 def create_aliases(client, index, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
-        if silent is not False:
+
+        if silent is True:
             printf(
                 {
                     "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),

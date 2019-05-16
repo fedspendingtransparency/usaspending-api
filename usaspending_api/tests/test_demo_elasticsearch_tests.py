@@ -36,7 +36,7 @@ def award_data_fixture(db):
     )
 
 
-def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
+def test_positive_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns one record.
     """
@@ -64,7 +64,7 @@ def test_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     assert response["hits"]["total"] == 1
 
 
-def test_sample_query2(db, award_data_fixture, elasticsearch_transaction_index):
+def test_negative_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns no results.
     """
