@@ -5,10 +5,8 @@ from itertools import chain
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.elasticsearch.client import es_client_query
 
-INDEX = "{}*".format(settings.TRANSACTIONS_INDEX_ROOT)
 
-
-def geocode_filter_locations(scope, values, use_matview=False):
+def geocode_filter_locations(scope: str, values: list, use_matview: bool=False) -> Q:
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -128,7 +126,7 @@ def get_fields_list(scope, field_value):
     return [field_value]
 
 
-def return_query_string(use_matview):
+def return_query_string(use_matview: bool) -> tuple:
     # Returns query strings based upon if the queryset is for a normalized or de-normalized model
 
     if use_matview:  # de-normalized
@@ -145,14 +143,17 @@ def return_query_string(use_matview):
     return q_str, country_code_col
 
 
-def create_city_name_queryset(scope, list_of_city_names, country_code, state_code=None):
+def create_city_name_queryset(scope: str, list_of_city_names: list, country_code: str, state_code: str=None):
     """
         Given a list of city names and the scope, return a django queryset.
         scope = "pop" or "recipient_location"
         list_of_city_names is a list of strings
+        country_code is the country code to limit the query and results from Elasticsearch
         state_code (optional) is the state code if the search should be limited to that state
     """
-    matching_awards = set(chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_city_names]))
+    matching_awards = set(
+        chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_city_names])
+    )
     result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
 
     if matching_awards:
@@ -160,7 +161,7 @@ def create_city_name_queryset(scope, list_of_city_names, country_code, state_cod
     return result_queryset
 
 
-def get_award_ids_by_city(scope, city, country_code, state_code=None):
+def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: str=None) -> list:
     """
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
@@ -183,7 +184,11 @@ def get_award_ids_by_city(scope, city, country_code, state_code=None):
         "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 50000}}},
     }
 
-    hits = es_client_query(index=INDEX, body=search_body, retries=10)
+    return elasticsearch_results(search_body)
+
+
+def elasticsearch_results(body: dict) -> list:
+    hits = es_client_query(body=body, index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), retries=5)
 
     if hits and hits["hits"]["total"]:
         return [result["key"] for result in hits["aggregations"]["award_ids"]["buckets"]]
