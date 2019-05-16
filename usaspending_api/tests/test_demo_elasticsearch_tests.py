@@ -16,7 +16,8 @@ def award_data_fixture(db):
         id=1,
         award_id=1,
         action_date='2010-10-01',
-        is_fpds=True
+        is_fpds=True,
+        type='A'
     )
     mommy.make(
         'awards.TransactionFPDS',
@@ -91,7 +92,6 @@ def test_sample_query2(db, award_data_fixture, elasticsearch_transaction_index):
     assert response["hits"]["total"] == 0
 
 
-@pytest.mark.skip(reason="NOT READY FOR PRIME TIME")
 def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transaction_index):
     """
     An example of how one might test a keyword search.
@@ -112,7 +112,10 @@ def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transac
         "sort": "Transaction Amount",
         "order": "desc"
     }
-    resp = client.post("/api/v2/search/spending_by_transaction", content_type="application/json", data=json.dumps(query))
-    print(resp.data)
+    resp = client.post(
+        "/api/v2/search/spending_by_transaction",
+        content_type="application/json",
+        data=json.dumps(query)
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
