@@ -25,7 +25,7 @@ def es_sanitize(keyword):
         return keyword
     processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', keyword)
     if len(processed_string) != len(keyword):
-        msg = "Stripped characters from ES city search string New: '{}' Original: '{}'"
+        msg = "Stripped characters from ES input string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
     return processed_string
 
@@ -41,7 +41,7 @@ def format_for_frontend(response):
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = es_sanitize(keyword)
+    keyword = es_sanitize(concat_if_array(keyword))
     query = {
         "dis_max": {
             "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]
