@@ -5,7 +5,6 @@ from typing import Optional
 
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
 
 def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
@@ -170,14 +169,14 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
     query = {
         "bool": {
             "must": [
-                {"match": {"{}_city_name".format(scope): es_sanitize(city)}},
-                {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
+                {"match": {"{}_city_name".format(scope): city}},
+                {"match": {"{}_country_code".format(scope): country_code}},
             ]
         }
     }
     if state_code:
         # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): state_code}})
 
     search_body = {
         "_source": ["award_id"],

@@ -38,6 +38,7 @@ def create_es_client():
 
 
 def es_client_query(index, body, timeout="1m", retries=1):
+    body = preprocess(body)
     if CLIENT is None:
         create_es_client()
     if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
@@ -72,3 +73,27 @@ def _es_search(index, body, timeout):
     except Exception as e:
         logger.error(error_template.format(type="Generic", e=str(e)))
     return result
+
+
+def preprocess(json):
+    """traverse a dict and sanitize all strings"""
+    for key in list(json.keys):
+        if key not in ['filter', 'limit', 'search_text']:
+            json.pop(key)
+        if key == 'search_text':
+            json[key] = es_sanitize(json['filter'][key])
+
+    for key in list(json['filter'].keys):
+        if key not in ['country_code', 'scope']:
+            json['filter'].pop(key)
+        json['filter'][key] = es_sanitize(json['filter'][key])
+    return json
+
+
+def es_sanitize(keyword):
+    """ Escapes reserved elasticsearch characters and removes when necessary """
+    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', keyword)
+    if len(processed_string) != len(keyword):
+        msg = "Stripped characters from ES search string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, keyword))
+    return processed_string
