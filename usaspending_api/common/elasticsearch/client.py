@@ -1,14 +1,17 @@
 import logging
 import json
+
 from django.conf import settings
 from elasticsearch import ConnectionError
 from elasticsearch import ConnectionTimeout
 from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
+from elasticsearch.connection import create_ssl_context
+from ssl import CERT_NONE
 
 logger = logging.getLogger("console")
-CLIENT_TIMEOUT = settings.ES_TIMEOUT or 15
+CLIENT_TIMEOUT = settings.ES_TIMEOUT
 CLIENT = None
 
 
@@ -16,8 +19,20 @@ def create_es_client():
     if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
         logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
     global CLIENT
+    es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": CLIENT_TIMEOUT}
     try:
-        CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=CLIENT_TIMEOUT)
+        # If the connection string is using SSL with localhost, disable verifying
+        # the certificates to allow testing in a development environment
+        if settings.ES_HOSTNAME.startswith("https://localhost"):
+            logger.warn("SSL cert verification is disabled. Safe only for local development")
+            import urllib3
+            urllib3.disable_warnings()
+            ssl_context = create_ssl_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = CERT_NONE
+            es_config["ssl_context"] = ssl_context
+
+        CLIENT = Elasticsearch(**es_config)
     except Exception as e:
         logger.error("Error creating the elasticsearch client: {}".format(e))
 
