@@ -50,7 +50,7 @@ class TestElasticSearchIndex:
         self.delete_index()
         self._refresh_materialized_views()
         self.client.indices.create(self.index_name, self.mapping)
-        create_aliases(self.client, self.index_name)
+        create_aliases(self.client, self.index_name, True)
         self._add_contents()
 
     def _add_contents(self):
