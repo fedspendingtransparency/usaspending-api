@@ -62,7 +62,7 @@ def validate_location_keys(values):
 
 
 def create_nested_object(values):
-    # Makes sure keys provided are valid
+    """ Makes sure keys provided are valid """
     validate_location_keys(values)
 
     nested_locations = {}
@@ -115,7 +115,7 @@ def location_error_handling(fields):
 
 
 def get_fields_list(scope, field_value):
-    """List of values to search for; `field_value`, plus possibly variants on it"""
+    """ List of values to search for; `field_value`, plus possibly variants on it """
     if scope in ['congressional_code', 'county_code']:
         try:
             # Congressional and county codes are not uniform and contain multiple variables
@@ -129,7 +129,7 @@ def get_fields_list(scope, field_value):
 
 
 def return_query_string(use_matview: bool) -> tuple:
-    # Returns query strings based upon if the queryset is for a normalized or de-normalized model
+    """ Returns query strings based upon if the queryset is for a normalized or de-normalized model """
 
     if use_matview:  # de-normalized
         # Queries going through the references_location table will not require a join
@@ -147,11 +147,11 @@ def return_query_string(use_matview: bool) -> tuple:
 
 def create_city_name_queryset(scope: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None):
     """
-        Given a list of city names and the scope, return a django queryset.
-        scope = "pop" or "recipient_location"
-        list_of_city_names is a list of strings
-        country_code is the country code to limit the query and results from Elasticsearch
-        state_code (optional) is the state code if the search should be limited to that state
+    Given a list of city names and the scope, return a django queryset.
+    scope = "pop" or "recipient_location"
+    list_of_city_names is a list of strings
+    country_code is the country code to limit the query and results from Elasticsearch
+    state_code (optional) is the state code if the search should be limited to that state
     """
     matching_awards = set(
         chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_cities])
@@ -165,6 +165,8 @@ def create_city_name_queryset(scope: str, list_of_cities: list, country_code: st
 
 def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: Optional[str] = None) -> list:
     """
+    Craft an elasticsearch query to return award ids by city or an empty list
+    if there were no matches.
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
     query = {
@@ -190,6 +192,10 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
 
 
 def elasticsearch_results(body: dict) -> list:
+    """
+    Run provided query and return a list of award ids or an empty list if there
+    were no hits.
+    """
     hits = es_client_query(body=body, index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), retries=5)
 
     if hits and hits["hits"]["total"]:
