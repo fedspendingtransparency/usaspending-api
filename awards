@@ -1,0 +1,29 @@
+{
+    "award_levels": ["prime_awards", "sub_awards"],
+    "filters": {
+        "award_types": ["contracts", "grants"],
+        "agency": "075",
+        "sub_agency": "Centers for Disease Control and Prevention",
+        "date_type": "action_date",
+        "date_range": {
+            "start_date": "2019-04-01",
+            "end_date": "2019-04-30"
+        },
+        "recipient_locations": [
+            {
+            "country": "",
+            "state": "",
+            "county": ""
+            }
+        ],
+        "place_of_performance_locations": [
+            {
+            "country": "",
+            "state": "",
+            "county": ""
+            }
+       ]
+    },
+    "columns": [],
+    "file_format": "csv"
+}
