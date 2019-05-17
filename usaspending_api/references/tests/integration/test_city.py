@@ -1,11 +1,8 @@
 import json
 import pytest
-import logging #TODO: remove this
 
 from model_mommy import mommy
-from rest_framework import status
 
-from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
 
 @pytest.fixture
 def award_data_fixture(db):
@@ -25,6 +22,9 @@ def award_data_fixture(db):
         'awards.TransactionFPDS',
         transaction_id=1,
         legal_entity_zip5='abcde',
+        legal_entity_city_name="ARLINGTON",
+        legal_entity_state_code="VA",
+        legal_entity_country_code="UNITED STATES",
         piid='IND12PB00323'
     )
     mommy.make(
@@ -38,32 +38,34 @@ def award_data_fixture(db):
     )
 
 
-def test_city_search_matches_found(client,db, award_data_fixture, elasticsearch_transaction_index):
-    logger = logging.getLogger("console")
+@pytest.mark.django_db
+def test_city_search_matches_found(client, db, award_data_fixture, elasticsearch_transaction_index):
+
     elasticsearch_transaction_index.update_index()
     body = {
         "filter": {
             "country_code": "USA",
-            "scope": "primary_place_of_performance"
+            "scope": "recipient_location"
         },
-        "search_text": "arl",
+        "search_text": "arli",
         "limit": 20
     }
     response = client.post('/api/v2/autocomplete/city',
                            content_type='application/json',
                            data=json.dumps(body))
-    assert response.data['count'] == 15
+    assert response.data['count'] == 1
     for entry in response.data['results']:
         assert entry['city_name'].lower().find('arl') > -1
 
 
-def test_city_search_no_matches(client,db, award_data_fixture, elasticsearch_transaction_index):
-    logger = logging.getLogger("console")
+@pytest.mark.django_db
+def test_city_search_no_matches(client, db, award_data_fixture, elasticsearch_transaction_index):
+
     elasticsearch_transaction_index.update_index()
     body = {
         "filter": {
             "country_code": "USA",
-            "scope": "primary_place_of_performance"
+            "scope": "recipient_location"
         },
         "search_text": "bhqlg",
         "limit": 20
@@ -78,7 +80,7 @@ def test_city_search_no_matches(client,db, award_data_fixture, elasticsearch_tra
     body = {
         "filter": {
             "country_code": "USA",
-            "scope": "primary_place_of_performance"
+            "scope": "recipient_location"
         },
         "search_text": "arlingtontownsburgplaceville",
         "limit": 20
@@ -90,20 +92,22 @@ def test_city_search_no_matches(client,db, award_data_fixture, elasticsearch_tra
     for entry in response.data['results']:
         assert False  # this should never be reached
 
-def test_city_search_special_characters(client,db, award_data_fixture, elasticsearch_transaction_index):
-    logger = logging.getLogger("console")
+
+@pytest.mark.django_db
+def test_city_search_special_characters(client, db, award_data_fixture, elasticsearch_transaction_index):
+
     elasticsearch_transaction_index.update_index()
     body = {
         "filter": {
             "country_code": "USA",
-            "scope": "primary_place_of_performance"
+            "scope": "recipient_location"
         },
-        "search_text": "arl+-&|!()[]{}^~*?:\"/<>\\",  # Once special characters are stripped, this should just be 'arl'
+        "search_text": "arli+-&|!()[]{}^~*?:\"/<>\\",  # Once special characters are stripped, this should just be 'arl'
         "limit": 20
     }
     response = client.post('/api/v2/autocomplete/city',
                            content_type='application/json',
                            data=json.dumps(body))
-    assert response.data['count'] == 15
+    assert response.data['count'] == 1
     for entry in response.data['results']:
         assert entry['city_name'].lower().find('arl') > -1

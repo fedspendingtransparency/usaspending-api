@@ -1,5 +1,3 @@
-import logging
-
 from django.conf import settings
 from rest_framework.response import Response
 from collections import OrderedDict
@@ -10,12 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
-
-logger = logging.getLogger("console")
-
-INDEX = "{}*".format(settings.TRANSACTIONS_INDEX_ROOT)
 
 models = [
     {
@@ -60,7 +53,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         state = es_sanitize(request.data["filter"]["state_code"])
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = es_sanitize(["{}_city_name".format(scope), "{}_state_code".format(scope)])
+        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
         query_string = create_es_search("wildcard", scope, search_text, country, state)
 
         query = {
@@ -69,29 +62,27 @@ class CityAutocompleteViewSet(APIDocumentationView):
             "query": query_string,
             "aggs": {
                 "cities": {
-                    "terms": {"field": "{}.keyword".format(return_fields[0]), 
-                            "size": 50000,
-                            "order": {
-                                "max_score": "desc"
-                            }},
+                    "terms": {"field": "{}.keyword".format(return_fields[0]),
+                              "size": 50000,
+                              "order": {
+                                 "max_score": "desc"
+                         }},
                     "aggs": {
                         "max_score": {"max": {"script": "_score"}},
                         "states": {"terms": {"field": return_fields[1], "size": 50000}}
-                        
+
                         },
                 }
             }
         }
 
-        hits = es_client_query(index=INDEX, body=query, retries=10)
+        hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query, retries=10)
 
         results = []
         if hits and hits["hits"]["total"] > 0:
             for city in hits["aggregations"]["cities"]["buckets"]:
                 for state_code in city["states"]["buckets"]:
                     results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
-
-        #sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
 
         response = OrderedDict([("count", len(results)), ("results", results[:limit])])
         return Response(response)
@@ -106,16 +97,14 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     """
     method_char = "~" if method == "fuzzy" else "*"
     if state:
-        start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND"
+        start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND "
         query_string = start_string.format(scope=scope, state=state)
     elif country and country != "USA":
-        query_string = "({scope}_country_code:{country}) AND".format(scope=scope, country=country)
+        query_string = "({scope}_country_code:{country}) AND ".format(scope=scope, country=country)
     else:
-        query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
+        query_string = "(({scope}_country_code:USA) OR ({scope}_country_code:UNITED STATES)) AND ".format(scope=scope)
 
     query_string += '({scope}_city_name:{text}{char})'.format(scope=scope, text=search_text, char=method_char)
-
-    query_string = es_sanitize(query_string)
 
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
     if not state:

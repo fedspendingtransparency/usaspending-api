@@ -15,6 +15,7 @@ KEYWORD_DATATYPE_FIELDS = ["{}.raw".format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
+
 def es_sanitize(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
 
@@ -40,7 +41,7 @@ def format_for_frontend(response):
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = preprocess(keyword)
+    keyword = es_sanitize(keyword)
     query = {
         "dis_max": {
             "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]
