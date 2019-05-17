@@ -10,6 +10,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import preprocess
 from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
 
 logger = logging.getLogger("console")
@@ -54,9 +55,9 @@ class CityAutocompleteViewSet(APIDocumentationView):
     @cache_response()
     def post(self, request, format=None):
 
-        search_text = preprocess(request.data["search_text"])
-        country = request.data["filter"]["country_code"]
-        state = request.data["filter"]["state_code"]
+        search_text = es_sanitize(preprocess(request.data["search_text"]))
+        country = es_sanitize(request.data["filter"]["country_code"])
+        state = es_sanitize(request.data["filter"]["state_code"])
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]

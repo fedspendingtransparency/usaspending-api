@@ -30,6 +30,11 @@ def preprocess(keyword):
 
 def es_sanitize(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
+
+    if not isinstance(keyword, str):
+        # can't sanitize a non-string, but there are instances where TinyShield may
+        # replace an optional value with None, and we want to maintain that behavior
+        return keyword
     processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', keyword)
     if len(processed_string) != len(keyword):
         msg = "Stripped characters from ES city search string New: '{}' Original: '{}'"
