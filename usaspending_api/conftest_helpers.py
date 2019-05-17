@@ -15,7 +15,9 @@ from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_
 
 # This view is used to populate the Elasticsearch index.
 TRANSACTION_DELTA_VIEW_PATH = os.path.join(
-    settings.BASE_DIR, 'usaspending_api/database_scripts/etl/transaction_delta_view.sql')
+    settings.BASE_DIR,
+    "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
+)
 
 
 # These two materialized views are used by transaction_delta_view.sql, so we
@@ -36,10 +38,9 @@ class TestElasticSearchIndex:
     def __init__(self):
         self.index_name = self._generate_index_name()
         # So, we'll just prefix our aliases with the index name to make sure
-        # they don't collide with other indexes.
+        # they don't collide with other aliases.
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-
         self.mapping, self.doc_type, _ = mapping_data_for_processing()
 
     def delete_index(self):
@@ -58,15 +59,14 @@ class TestElasticSearchIndex:
             transactions = fetchall_to_ordered_dictionary(cursor)
 
         for transaction in transactions:
-            self.client.create(
+            self.client.index(
                 self.index_name,
-                "transaction_mapping",
-                transaction['transaction_id'],
-                json.dumps(transaction, cls=DjangoJSONEncoder))
+                self.doc_type,
+                json.dumps(transaction, cls=DjangoJSONEncoder),
+                transaction["transaction_id"])
 
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
-        self.client.indices.flush(self.index_name, wait_if_ongoing=True, force=True)
 
     @staticmethod
     def _refresh_materialized_views():
@@ -75,7 +75,7 @@ class TestElasticSearchIndex:
 
     @staticmethod
     def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):
-        return ''.join(choice(chars) for _ in range(size))
+        return "".join(choice(chars) for _ in range(size))
 
     @classmethod
     def _generate_index_name(cls):
