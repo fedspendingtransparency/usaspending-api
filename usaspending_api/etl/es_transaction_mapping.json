@@ -12,6 +12,11 @@
           "stemmer_analyzer": {
               "tokenizer": "standard",
               "filter": ["standard", "lowercase", "singular_stemmer"]
+          },
+          "keyword_analyzer":{
+            "type":"custom",
+            "tokenizer":"keyword",
+            "filter":["lowercase"]
           }
         },
         "filter": {
