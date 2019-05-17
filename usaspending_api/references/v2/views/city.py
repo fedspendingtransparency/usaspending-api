@@ -8,7 +8,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.common.elasticsearch.client import es_client_query
-from usaspending_api.search.v2.elasticsearch_helper import preprocess
+from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
@@ -55,12 +55,12 @@ class CityAutocompleteViewSet(APIDocumentationView):
     @cache_response()
     def post(self, request, format=None):
 
-        search_text = es_sanitize(preprocess(request.data["search_text"]))
+        search_text = es_sanitize(request.data["search_text"])
         country = es_sanitize(request.data["filter"]["country_code"])
         state = es_sanitize(request.data["filter"]["state_code"])
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
+        return_fields = es_sanitize(["{}_city_name".format(scope), "{}_state_code".format(scope)])
         query_string = create_es_search("wildcard", scope, search_text, country, state)
 
         query = {
@@ -114,6 +114,8 @@ def create_es_search(method, scope, search_text, country=None, state=None):
         query_string = "({scope}_country_code:USA) AND ({scope}_country_code:UNITED STATES) AND".format(scope=scope)
 
     query_string += '({scope}_city_name:{text}{char})'.format(scope=scope, text=search_text, char=method_char)
+
+    query_string = es_sanitize(query_string)
 
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
     if not state:

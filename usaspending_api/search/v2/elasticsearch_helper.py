@@ -15,18 +15,6 @@ KEYWORD_DATATYPE_FIELDS = ["{}.raw".format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
-
-def preprocess(keyword):
-    keyword = concat_if_array(keyword)
-    """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub(r"[/:][^!]", "", keyword)
-    if len(processed_string) != len(keyword):
-        msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
-        logger.info(msg.format(processed_string, keyword))
-        keyword = processed_string
-    return keyword
-
-
 def es_sanitize(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
 
