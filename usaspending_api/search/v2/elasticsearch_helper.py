@@ -31,7 +31,7 @@ def es_sanitize(keyword):
     """ Escapes reserved elasticsearch characters and removes when necessary """
     processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', keyword)
     if len(processed_string) != len(keyword):
-        msg = "Stripped characters from ES city search string New: '{}' Original: '{}'"
+        msg = "Stripped characters from ES search string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
     return processed_string
 
