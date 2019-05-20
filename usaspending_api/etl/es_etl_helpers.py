@@ -77,6 +77,7 @@ VIEW_COLUMNS = [
     "pop_county_name",
     "pop_zip5",
     "pop_congressional_code",
+    "pop_city_name",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
@@ -84,6 +85,7 @@ VIEW_COLUMNS = [
     "recipient_location_county_name",
     "recipient_location_zip5",
     "recipient_location_congressional_code",
+    "recipient_location_city_name",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"

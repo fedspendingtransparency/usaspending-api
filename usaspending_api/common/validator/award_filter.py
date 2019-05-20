@@ -43,6 +43,7 @@ AWARD_FILTER = [
         'zip': {'type': 'text', 'text_type': 'search', 'optional': True},
         'district': {'type': 'text', 'text_type': 'search', 'optional': True},
         'county': {'type': 'text', 'text_type': 'search', 'optional': True},
+        'city': {'type': 'text', 'text_type': 'search', 'optional': True},
     }},
     {'name': 'place_of_performance_locations', 'type': 'array', 'array_type': 'object', 'object_keys': {
         'country': {'type': 'text', 'text_type': 'search', 'optional': False},
@@ -50,6 +51,7 @@ AWARD_FILTER = [
         'zip': {'type': 'text', 'text_type': 'search', 'optional': True},
         'district': {'type': 'text', 'text_type': 'search', 'optional': True},
         'county': {'type': 'text', 'text_type': 'search', 'optional': True},
+        'city': {'type': 'text', 'text_type': 'search', 'optional': True},
     }},
 ]
 

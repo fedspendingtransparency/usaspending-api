@@ -73,7 +73,10 @@ MATVIEW_SELECTOR = {
             'place_of_performance_scope',
             'place_of_performance_locations',
         ],
-        'prevent_values': {},
+        'prevent_values': {
+            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
+            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
+        },
         'examine_values': {
             'time_period': [can_use_month_aggregation, only_action_date_type],
         },
@@ -96,7 +99,10 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes',
         ],
-        'prevent_values': {},
+        'prevent_values': {
+            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
+            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
+        },
         'examine_values': {
             'time_period': [only_action_date_type]
         },
@@ -120,7 +126,10 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes',
         ],
-        'prevent_values': {},
+        'prevent_values': {
+            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
+            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
+        },
         'examine_values': {
             'time_period': [can_use_month_aggregation, only_action_date_type],
             'award_amounts': [can_use_total_obligation_enum]},
@@ -232,6 +241,10 @@ def can_use_view(filters, view_name):
             not compatible with the materialized view.
         '''
         if rules['type'] == 'list':
+            if rules.get("is_present") and key in filters:
+                for field in filters[key]:
+                    if field.get(rules.get("key")):
+                        return False
             try:
                 for field in filters[key]:
                     if field[rules['key']] == rules['value']:
