@@ -120,5 +120,4 @@ def test_geocode_filter_by_city(client, award_data_fixture, elasticsearch_transa
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.data)
     assert len(resp.data["results"]) == 1
