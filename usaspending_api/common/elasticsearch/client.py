@@ -11,7 +11,6 @@ from elasticsearch.connection import create_ssl_context
 from ssl import CERT_NONE
 
 logger = logging.getLogger("console")
-CLIENT_TIMEOUT = settings.ES_TIMEOUT or 5
 CLIENT = None
 
 
@@ -19,7 +18,7 @@ def create_es_client():
     if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
         logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
     global CLIENT
-    es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": CLIENT_TIMEOUT}
+    es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
     try:
         # If the connection string is using SSL with localhost, disable verifying
         # the certificates to allow testing in a development environment
