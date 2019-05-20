@@ -37,7 +37,7 @@ def create_es_client():
         logger.error("Error creating the elasticsearch client: {}".format(e))
 
 
-def es_client_query(index, body, timeout="1m", retries=1):
+def es_client_query(index, body, timeout="1m", retries=5):
     if CLIENT is None:
         create_es_client()
     if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
