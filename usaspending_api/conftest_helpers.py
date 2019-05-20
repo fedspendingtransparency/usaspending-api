@@ -13,32 +13,15 @@ from usaspending_api.etl.es_etl_helpers import create_aliases
 from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_for_processing
 
 
-# This view is used to populate the Elasticsearch index.
-TRANSACTION_DELTA_VIEW_PATH = os.path.join(
-    settings.BASE_DIR,
-    "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
-)
-
-
-# These two materialized views are used by transaction_delta_view.sql, so we
-# will need to refresh them in order for transaction_delta_view to see changes
-# to their underlying tables.
-REFRESH_MATERIALIZED_VIEWS_SQL = """
-refresh materialized view universal_award_matview;
-refresh materialized view universal_transaction_matview;
-"""
-
-
-# Get all the things.
-GET_TRANSACTIONS_SQL = "select * from transaction_delta_view"
-
-
 class TestElasticSearchIndex:
 
     def __init__(self):
+        """
+        We will be prefixing all aliases with the index name to ensure
+        uniquity, otherwise, we may end up with aliases representing more
+        than one index which may throw off our search results.
+        """
         self.index_name = self._generate_index_name()
-        # So, we'll just prefix our aliases with the index name to make sure
-        # they don't collide with other aliases.
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
         self.mapping, self.doc_type, _ = mapping_data_for_processing()
@@ -47,6 +30,11 @@ class TestElasticSearchIndex:
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
     def update_index(self):
+        """
+        To ensure a fresh Elasticsearch index, delete the old one, update the
+        materialized views, re-create the Elasticsearch index, create aliases
+        for the index, and add contents.
+        """
         self.delete_index()
         self._refresh_materialized_views()
         self.client.indices.create(self.index_name, self.mapping)
@@ -54,8 +42,12 @@ class TestElasticSearchIndex:
         self._add_contents()
 
     def _add_contents(self):
+        """
+        Get all of the transactions presented by transaction_delta_view and
+        stuff them into the Elasticsearch index.
+        """
         with connection.cursor() as cursor:
-            cursor.execute(GET_TRANSACTIONS_SQL)
+            cursor.execute("select * from transaction_delta_view")
             transactions = fetchall_to_ordered_dictionary(cursor)
 
         for transaction in transactions:
@@ -70,8 +62,16 @@ class TestElasticSearchIndex:
 
     @staticmethod
     def _refresh_materialized_views():
+        """
+        These two materialized views are used by transaction_delta_view.sql, so
+        we will need to refresh them in order for transaction_delta_view to see
+        changes to their underlying tables.
+        """
         with connection.cursor() as cursor:
-            cursor.execute(REFRESH_MATERIALIZED_VIEWS_SQL)
+            cursor.execute(
+                "refresh materialized view universal_award_matview; "
+                "refresh materialized view universal_transaction_matview;"
+            )
 
     @staticmethod
     def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):
@@ -86,7 +86,15 @@ class TestElasticSearchIndex:
 
 
 def ensure_transaction_delta_view_exists():
-    with open(TRANSACTION_DELTA_VIEW_PATH) as f:
+    """
+    The transaction_delta_view is used to populate the Elasticsearch index.
+    This function will just ensure the view exists in the database.
+    """
+    transaction_delta_view_path = os.path.join(
+        settings.BASE_DIR,
+        "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
+    )
+    with open(transaction_delta_view_path) as f:
         transaction_delta_view = f.read()
     with connection.cursor() as cursor:
         cursor.execute(transaction_delta_view)
