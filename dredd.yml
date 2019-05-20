@@ -31,4 +31,4 @@ hooks-worker-handler-host: 127.0.0.1
 hooks-worker-handler-port: 61321
 config: ./dredd.yml
 blueprint: usaspending_api/api_contracts/contracts/**/*.md
-endpoint: 'http://127.0.0.1:8000'
+endpoint: '127.0.0.1:8000'

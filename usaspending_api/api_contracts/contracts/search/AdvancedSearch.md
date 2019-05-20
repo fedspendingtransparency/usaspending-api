@@ -336,7 +336,7 @@ List of table columns
 + hasNext: false (required, boolean)
 
 ## FilterObject (object)
-+ `keywords` (optional, array[string])
++ `keywords` : poptarts (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope`: `domestic` (optional, enum[string])
     + domestic

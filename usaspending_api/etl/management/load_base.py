@@ -12,7 +12,6 @@ from copy import copy
 from django import db
 from django.core.management.base import BaseCommand
 from django.db import connections
-from django.core.cache import caches
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
@@ -27,7 +26,6 @@ from usaspending_api.references.abbreviations import territory_country_codes
 award_update_id_list = []
 award_contract_update_id_list = []
 
-awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
@@ -58,7 +56,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        awards_cache.clear()
 
         # Grab the data broker database connections
         if not options['test']:
@@ -611,16 +608,19 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
-    if value is None:
-        return
-    if field.endswith('date'):  # turn datetimes into dates
-        if isinstance(value, str):
-            try:
-                value = dateutil.parser.parse(value).date()
-            except (TypeError, ValueError):
-                pass
+    # turn datetimes into dates
+    if field.endswith('date') and isinstance(value, str):
+        try:
+            value = dateutil.parser.parse(value).date()
+        except (TypeError, ValueError):
+            pass
+
     if reverse and reverse.search(field):
-        value = -1 * Decimal(value)
+        try:
+            value = -1 * Decimal(value)
+        except TypeError:
+            pass
+
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:

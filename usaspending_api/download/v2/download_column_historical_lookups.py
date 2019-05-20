@@ -25,7 +25,7 @@ query_paths = {
             ('current_total_value_of_award', 'award__latest_transaction__contract_data__current_total_value_award'),
             ('potential_total_value_of_award', 'award__latest_transaction__contract_data__potential_total_value_awar'),
             ('period_of_performance_start_date',
-             'award__latest_transaction__contract_data__period_of_performance_star'),
+             'award__period_of_performance_start_date'),
             ('period_of_performance_current_end_date',
              'award__latest_transaction__contract_data__period_of_performance_curr'),
             ('period_of_performance_potential_end_date',
