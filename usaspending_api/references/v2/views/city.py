@@ -62,21 +62,22 @@ class CityAutocompleteViewSet(APIDocumentationView):
             "query": query_string,
             "aggs": {
                 "cities": {
-                    "terms": {"field": "{}.keyword".format(return_fields[0]),
-                              "size": 50000,
-                              "order": {
-                                 "max_score": "desc"
-                         }},
+                    "terms": {
+                        "field": "{}.keyword".format(return_fields[0]),
+                        "size": 50000,
+                        "order": {
+                            "max_score": "desc"
+                        }
+                    },
                     "aggs": {
                         "max_score": {"max": {"script": "_score"}},
                         "states": {"terms": {"field": return_fields[1], "size": 50000}}
-
-                        },
+                    },
                 }
             }
         }
 
-        hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query, retries=10)
+        hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
 
         results = []
         if hits and hits["hits"]["total"] > 0:

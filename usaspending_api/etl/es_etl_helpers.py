@@ -208,7 +208,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a reoccuring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
     sleep(5)
-    print("Queue has items: {}".format(not fetch_jobs.empty()))
+    printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
         if done_jobs.full():
             printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
