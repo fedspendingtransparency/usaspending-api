@@ -59,6 +59,12 @@ class CityAutocompleteViewSet(APIDocumentationView):
         return Response(response)
 
 
+def prepare_search_terms(request_data):
+    fields = [request_data["search_text"], request_data["filter"]["country_code"], request_data["filter"]["state_code"]]
+
+    return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
+
+
 def create_elasticsearch_query(return_fields, scope, search_text, country, state):
     query_string = create_es_search("wildcard", scope, search_text, country, state)
     query = {
@@ -120,20 +126,19 @@ def query_elasticsearch(query, search_text):
 
     results = []
     if hits and hits["hits"]["total"] > 0:
-        for city in hits["aggregations"]["cities"]["buckets"]:
-            if city['key'].startswith(search_text):
-                if len(city["states"]["buckets"]) > 0:
-                    for state_code in city["states"]["buckets"]:
-                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
-                else:
-                    # for foreign countries
-                    results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
-
-    sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
-    return sorted_results
+        results = parse_elasticsearch_response(hits, search_text)
+        results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+    return results
 
 
-def prepare_search_terms(request_data):
-    fields = [request_data["search_text"], request_data["filter"]["country_code"], request_data["filter"]["state_code"]]
-
-    return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
+def parse_elasticsearch_response(hits, search_text):
+    results = []
+    for city in hits["aggregations"]["cities"]["buckets"]:
+        if city['key'].startswith(search_text):
+            if len(city["states"]["buckets"]) > 0:
+                for state_code in city["states"]["buckets"]:
+                    results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+            else:
+                # for cities without states, useful for foreign country results
+                results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+    return results
