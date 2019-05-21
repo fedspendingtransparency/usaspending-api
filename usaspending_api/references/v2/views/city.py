@@ -79,7 +79,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         if hits and hits["hits"]["total"] > 0:
             for city in hits["aggregations"]["cities"]["buckets"]:
                 if city['key'].lower().startswith(search_text.lower()):
-                    if state:
+                    if len(city["states"]["buckets"]) > 0:
                         for state_code in city["states"]["buckets"]:
                             results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
                     else:
