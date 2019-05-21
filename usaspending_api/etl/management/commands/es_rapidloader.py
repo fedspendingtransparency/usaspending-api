@@ -1,3 +1,4 @@
+import certifi
 import os
 import json
 
@@ -32,10 +33,15 @@ from usaspending_api.etl.es_etl_helpers import take_snapshot
 # 3. Take a snapshot of the index reloaded
 #
 # IF RELOADING ---
-# [command] --index_name=NEWINDEX --reload-all
+# python manage.py es_rapidloader --index-name NEWINDEX --reload-all all
 
 DEFAULT_DATETIME = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
-ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+
+if 'https' in settings.ES_HOSTNAME:
+    ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300, use_ssl=True, verify_certs=True, ca_certs=certifi.where())
+else:
+    ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+
 INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
 
 
