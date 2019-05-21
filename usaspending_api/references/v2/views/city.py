@@ -64,10 +64,10 @@ class CityAutocompleteViewSet(APIDocumentationView):
                 "cities": {
                     "terms": {
                         "field": "{}.keyword".format(return_fields[0]),
-                        "size": 50000,
+                        "size": 5000,
                     },
                     "aggs": {
-                        "states": {"terms": {"field": return_fields[1], "size": 50000}}
+                        "states": {"terms": {"field": return_fields[1], "size": 100}}
                     },
                 }
             }
@@ -79,8 +79,12 @@ class CityAutocompleteViewSet(APIDocumentationView):
         if hits and hits["hits"]["total"] > 0:
             for city in hits["aggregations"]["cities"]["buckets"]:
                 if city['key'].lower().startswith(search_text.lower()):
-                    for state_code in city["states"]["buckets"]:
-                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                    if state:
+                        for state_code in city["states"]["buckets"]:
+                            results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                    else:
+                        # for foreign countries
+                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
 
         sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
 
