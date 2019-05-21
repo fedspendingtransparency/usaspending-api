@@ -59,7 +59,16 @@ class CityAutocompleteViewSet(APIDocumentationView):
         query = {
             "_source": return_fields,
             "size": 0,
-            "query": query_string,
+            "query":{
+                "bool": {
+                    "must": query_string, 
+                  "filter":{
+                    "wildcard":{
+                        "{}_city_name.keyword".format(scope): search_text.upper() + "*"
+                    }
+                  }
+                }
+            },
             "aggs": {
                 "cities": {
                     "terms": {
