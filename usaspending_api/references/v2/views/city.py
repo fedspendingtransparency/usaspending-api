@@ -48,9 +48,9 @@ class CityAutocompleteViewSet(APIDocumentationView):
     @cache_response()
     def post(self, request, format=None):
 
-        search_text = es_sanitize(request.data["search_text"])
-        country = es_sanitize(request.data["filter"]["country_code"])
-        state = es_sanitize(request.data["filter"]["state_code"])
+        search_text = upper_string(es_sanitize(request.data["search_text"]))
+        country = upper_string(es_sanitize(request.data["filter"]["country_code"]))
+        state = upper_string(es_sanitize(request.data["filter"]["state_code"]))
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
@@ -125,3 +125,9 @@ def create_es_search(method, scope, search_text, country=None, state=None):
 
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
     return query
+
+def upper_string(input):
+    if isinstance(input, str):
+        return input.upper()
+    else:
+        return input
