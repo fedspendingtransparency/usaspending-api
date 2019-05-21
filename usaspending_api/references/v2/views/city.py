@@ -65,12 +65,8 @@ class CityAutocompleteViewSet(APIDocumentationView):
                     "terms": {
                         "field": "{}.keyword".format(return_fields[0]),
                         "size": 50000,
-                        "order": {
-                            "max_score": "desc"
-                        }
                     },
                     "aggs": {
-                        "max_score": {"max": {"script": "_score"}},
                         "states": {"terms": {"field": return_fields[1], "size": 50000}}
                     },
                 }
@@ -82,10 +78,13 @@ class CityAutocompleteViewSet(APIDocumentationView):
         results = []
         if hits and hits["hits"]["total"] > 0:
             for city in hits["aggregations"]["cities"]["buckets"]:
-                for state_code in city["states"]["buckets"]:
-                    results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                if city['key'].lower().startswith(search_text.lower()):
+                    for state_code in city["states"]["buckets"]:
+                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+        
+        sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
 
-        response = OrderedDict([("count", len(results)), ("results", results[:limit])])
+        response = OrderedDict([("count", len(results)), ("query", query), ("results", results[:limit])])
         return Response(response)
 
 
@@ -108,7 +107,4 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     query_string += '({scope}_city_name:{text}{char})'.format(scope=scope, text=search_text, char=method_char)
 
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
-    if not state:
-        # This produces better results for queries without a specified state.
-        query['query_string']["analyzer"] = "keyword_analyzer"
     return query
