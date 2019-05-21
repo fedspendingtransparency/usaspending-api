@@ -3,7 +3,7 @@
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": 50000,
-    "index.refresh_interval": 1,
+    "index.refresh_interval": "1s",
     "index": {
       "number_of_shards" : 3,
       "number_of_replicas" : 1
@@ -231,7 +231,7 @@
           "type": "text"
         },
         "pop_state_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_county_code": {
           "type": "text"
@@ -246,7 +246,12 @@
           "type": "text"
         },
         "pop_city_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
 
         "recipient_location_country_code": {
@@ -256,7 +261,7 @@
           "type": "text"
         },
         "recipient_location_state_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_county_code": {
           "type": "text"
@@ -271,7 +276,12 @@
           "type": "text"
         },
         "recipient_location_city_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type": {
           "type": "keyword",

@@ -75,7 +75,7 @@ SELECT
   UTM.pop_county_name,
   UTM.pop_zip5,
   UTM.pop_congressional_code,
-  COALESCE(FPDS.place_of_perform_city_name, FABS.place_of_performance_city) AS pop_city_name,
+  TRIM(TRAILING FROM COALESCE(FPDS.place_of_perform_city_name, FABS.place_of_performance_city)) AS pop_city_name,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,
@@ -84,7 +84,7 @@ SELECT
   UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
-  COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name) AS recipient_location_city_name
+  TRIM(TRAILING FROM COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name)) AS recipient_location_city_name
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
