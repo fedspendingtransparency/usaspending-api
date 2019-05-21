@@ -81,10 +81,10 @@ class CityAutocompleteViewSet(APIDocumentationView):
                 if city['key'].lower().startswith(search_text.lower()):
                     for state_code in city["states"]["buckets"]:
                         results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
-        
+
         sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
 
-        response = OrderedDict([("count", len(results)), ("query", query), ("results", results[:limit])])
+        response = OrderedDict([("count", len(results)), ("results", sorted_results[:limit])])
         return Response(response)
 
 
