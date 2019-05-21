@@ -103,6 +103,8 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     if state:
         start_string = "({scope}_country_code:USA) AND ({scope}_state_code:{state}) AND "
         query_string = start_string.format(scope=scope, state=state)
+    elif country == "FOREIGN":
+        query_string = "NOT (({scope}_country_code:USA) OR ({scope}_country_code:UNITED STATES)) AND ".format(scope=scope)
     elif country and country != "USA":
         query_string = "({scope}_country_code:{country}) AND ".format(scope=scope, country=country)
     else:
