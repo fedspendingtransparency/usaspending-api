@@ -278,7 +278,6 @@ LOGGING = {
 }
 
 
-
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
 CACHES = {
     'default': {
