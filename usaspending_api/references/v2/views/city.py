@@ -47,58 +47,46 @@ class CityAutocompleteViewSet(APIDocumentationView):
 
     @cache_response()
     def post(self, request, format=None):
-
-        search_text = upper_string(es_sanitize(request.data["search_text"]))
-        country = upper_string(es_sanitize(request.data["filter"]["country_code"]))
-        state = upper_string(es_sanitize(request.data["filter"]["state_code"]))
+        search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
-        query_string = create_es_search("wildcard", scope, search_text, country, state)
 
-        query = {
-            "_source": return_fields,
-            "size": 0,
-            "query": {
-                "bool": {
-                    "must": query_string,
-                    "filter": {
-                        "wildcard": {
-                            "{}_city_name.keyword".format(scope): search_text.upper() + "*"
-                        }
+        query_string = create_elasticsearch_query(return_fields, scope, search_text, country, state)
+        sorted_results = query_elasticsearch(query_string, search_text)
+        response = OrderedDict([("count", len(sorted_results)), ("results", sorted_results[:limit])])
+
+        return Response(response)
+
+
+def create_elasticsearch_query(return_fields, scope, search_text, country, state):
+    query_string = create_es_search("wildcard", scope, search_text, country, state)
+    query = {
+        "_source": return_fields,
+        "size": 0,
+        "query": {
+            "bool": {
+                "must": query_string,
+                "filter": {
+                    "wildcard": {
+                        "{}_city_name.keyword".format(scope): search_text + "*"
                     }
                 }
-            },
-            "aggs": {
-                "cities": {
-                    "terms": {
-                        "field": "{}.keyword".format(return_fields[0]),
-                        "size": 5000,
-                    },
-                    "aggs": {
-                        "states": {"terms": {"field": return_fields[1], "size": 100}}
-                    },
-                }
+            }
+        },
+        "aggs": {
+            "cities": {
+                "terms": {
+                    "field": "{}.keyword".format(return_fields[0]),
+                    "size": 5000,
+                },
+                "aggs": {
+                    "states": {"terms": {"field": return_fields[1], "size": 100}}
+                },
             }
         }
-
-        hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
-
-        results = []
-        if hits and hits["hits"]["total"] > 0:
-            for city in hits["aggregations"]["cities"]["buckets"]:
-                if city['key'].lower().startswith(search_text.lower()):
-                    if len(city["states"]["buckets"]) > 0:
-                        for state_code in city["states"]["buckets"]:
-                            results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
-                    else:
-                        # for foreign countries
-                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
-
-        sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
-
-        response = OrderedDict([("count", len(results)), ("results", sorted_results[:limit])])
-        return Response(response)
+    }
+    return query
 
 
 def create_es_search(method, scope, search_text, country=None, state=None):
@@ -126,8 +114,26 @@ def create_es_search(method, scope, search_text, country=None, state=None):
     query = {"query_string": {"query": query_string, "allow_leading_wildcard": False}}
     return query
 
-def upper_string(input):
-    if isinstance(input, str):
-        return input.upper()
-    else:
-        return input
+
+def query_elasticsearch(query, search_text):
+    hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
+
+    results = []
+    if hits and hits["hits"]["total"] > 0:
+        for city in hits["aggregations"]["cities"]["buckets"]:
+            if city['key'].startswith(search_text):
+                if len(city["states"]["buckets"]) > 0:
+                    for state_code in city["states"]["buckets"]:
+                        results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                else:
+                    # for foreign countries
+                    results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+
+    sorted_results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+    return sorted_results
+
+
+def prepare_search_terms(request_data):
+    fields = [request_data["search_text"], request_data["filter"]["country_code"], request_data["filter"]["state_code"]]
+
+    return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
