@@ -41,8 +41,8 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## PageMetadataObject (object)
 + page: 1 (required, number)
-+ next (optional, number)
-+ previous (optional, number)
++ next (required, number, nullable)
++ previous (required, number, nullable)
 + hasNext (required, boolean)
 + hasPrevious (required, boolean)
 
