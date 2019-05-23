@@ -283,7 +283,6 @@ def fetch_agency_details(agency_id):
         "subtier_agency__subtier_code",
         "subtier_agency__name",
         "subtier_agency__abbreviation",
-        "office_agency__name",
     ]
     agency = Agency.objects.filter(pk=agency_id).values(*values).first()
 
@@ -301,7 +300,6 @@ def fetch_agency_details(agency_id):
                 "code": agency["subtier_agency__subtier_code"],
                 "abbreviation": agency["subtier_agency__abbreviation"],
             },
-            "office_agency_name": agency["office_agency__name"],
         }
     return agency_details
 
