@@ -67,6 +67,10 @@ def prepare_search_terms(request_data):
 
 def create_elasticsearch_query(return_fields, scope, search_text, country, state, limit):
     query_string = create_es_search(scope, search_text, country, state)
+    # Buffering the "group by city" to create a handful more buckets, more than the number of shards we expect to have,
+    # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
+    # number of shards we have) such that it may provide inconsistent results in repeated queries
+    city_buckets = limit + 100
     query = {
         "_source": return_fields,
         "size": 0,
@@ -81,7 +85,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
             "cities": {
                 "terms": {
                     "field": "{}.keyword".format(return_fields[0]),
-                    "size": limit,
+                    "size": city_buckets,
                 },
                 "aggs": {
                     "states": {"terms": {"field": return_fields[1], "size": 100}}
