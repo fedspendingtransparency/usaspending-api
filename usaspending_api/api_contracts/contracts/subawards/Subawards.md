@@ -26,7 +26,6 @@ This endpoint returns a list of data that is associated with the award profile p
             
 + Response 200 (application/json)
     + Attributes
-        + `limit` (optional, number)
         + `results`(required, array[SubawardResponse], fixed-type)
         + `page_metadata`(PageMetadataObject)
 
@@ -42,6 +41,8 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## PageMetadataObject (object)
 + page: 1 (required, number)
++ next (optional, number)
++ previous (optional, number)
 + hasNext (required, boolean)
 + hasPrevious (required, boolean)
 
