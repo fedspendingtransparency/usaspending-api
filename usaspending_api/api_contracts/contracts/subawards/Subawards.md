@@ -27,7 +27,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + Response 200 (application/json)
     + Attributes
         + `limit` (optional, number)
-        + `results`(array[SubawardResponse])
+        + `results`(required, array[SubawardResponse], fixed-type)
         + `page_metadata`(PageMetadataObject)
 
 # Data Structures
