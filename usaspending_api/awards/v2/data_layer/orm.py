@@ -46,7 +46,11 @@ def construct_assistance_response(requested_award_dict):
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    if response["funding_agency"]:
+        response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    if response["awarding_agency"]:
+        response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
         [
             ("start_date", award["_start_date"]),
@@ -80,7 +84,11 @@ def construct_contract_response(requested_award_dict):
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    if response["funding_agency"]:
+        response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    if response["awarding_agency"]:
+        response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
         [
             ("start_date", award["_start_date"]),
@@ -129,7 +137,11 @@ def construct_idv_response(requested_award_dict):
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    if response["funding_agency"]:
+        response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    if response["awarding_agency"]:
+        response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
         [
             ("start_date", award["_start_date"]),
