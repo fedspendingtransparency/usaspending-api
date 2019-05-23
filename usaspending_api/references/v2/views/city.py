@@ -71,7 +71,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
         "_source": return_fields,
         "size": 0,
         "query": {
-            "constant_score": {
+            "bool": {
                 "filter": {
                     "bool": query_string
                 }
