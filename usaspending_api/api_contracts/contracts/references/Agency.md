@@ -45,6 +45,7 @@ This endpoint returns a high-level overview of a specific government agency, giv
 + icon_filename: `DOT.jpg` (required, string)
     The file name of the agency's logo. If no logo is available, this will be an empty string. Images can be found at `https://www.usaspending.gov/graphics/agency/[file]`.
 + website: `https://www.treasury.gov` (required, string)
++ congressional_justification_url: `https://www.treasury.gov/cj` (required, nullable, string)
 + budget_authority_amount: 1899160740172.16 (required, string)
 + current_total_budget_authority_amount: 8361447130497.72 (required, string)
 + obligated_amount: 524341511584.82 (required, string)
