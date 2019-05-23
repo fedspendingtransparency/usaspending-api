@@ -52,8 +52,8 @@ class CityAutocompleteViewSet(APIDocumentationView):
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
 
-        query_string = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
-        sorted_results = query_elasticsearch(query_string, search_text)
+        query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
+        sorted_results = query_elasticsearch(query)
         response = OrderedDict([("count", len(sorted_results)), ("results", sorted_results[:limit])])
 
         return Response(response)
@@ -92,37 +92,26 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     return query
 
 
-def create_es_search(scope, search_text, country=None, state=None, term_level_query_method="wildcard"):
+def create_es_search(scope, search_text, country=None, state=None):
     """
-        Providing the parameters, create a value query sub-string for elasticsearch
+        Providing the parameters, create a dictionary representing the bool-query conditional clauses for elasticsearch
 
         Args:
             scope: which city field was chosen for searching `pop` (place of performance) or `recipient_location`
             search_text: the text the user is typing in and sent to the backend
             country: optional country selected by user
             state: optional state selected by user
-            term_level_query_method: Supports `wildcard` or `fuzzy`. Defaults to wildcard
     """
-    method_char = "" if term_level_query_method == "fuzzy" else "*"
-
-    # The base query that will do a wildcard (or fuzzy) term-level query
+    # The base query that will do a wildcard term-level query
     query = {
         "must": [
             {
-                term_level_query_method: {
-                    "{}_city_name.keyword".format(scope): search_text + method_char
+                "wildcard": {
+                    "{}_city_name.keyword".format(scope): search_text + "*"
                 }
             }
         ]
     }
-
-    def build_country_match(country_match_scope, country_match_country):
-        country_match = {
-            "match": {
-                "{}_country_code".format(country_match_scope): country_match_country
-            }
-        }
-        return country_match
 
     if state:
         # States are only supported for Country=USA
@@ -136,7 +125,7 @@ def create_es_search(scope, search_text, country=None, state=None, term_level_qu
                 "must_not": [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
             }
         }
-    elif country and country != "USA":
+    elif country != "USA":
         # A non-USA selected country
         query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
     else:
@@ -147,17 +136,26 @@ def create_es_search(scope, search_text, country=None, state=None, term_level_qu
     return query
 
 
-def query_elasticsearch(query, search_text):
+def build_country_match(country_match_scope, country_match_country):
+    country_match = {
+        "match": {
+            "{}_country_code".format(country_match_scope): country_match_country
+        }
+    }
+    return country_match
+
+
+def query_elasticsearch(query):
     hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
 
     results = []
     if hits and hits["hits"]["total"] > 0:
-        results = parse_elasticsearch_response(hits, search_text)
+        results = parse_elasticsearch_response(hits)
         results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
     return results
 
 
-def parse_elasticsearch_response(hits, search_text):
+def parse_elasticsearch_response(hits):
     results = []
     for city in hits["aggregations"]["cities"]["buckets"]:
         if len(city["states"]["buckets"]) > 0:
