@@ -20,9 +20,9 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 
 + Response 200 (application/json)
     + Attributes
-        + results (required, array[ChildAward], fixed-type)
-            Results are sorted by obligated amount in descending order.
-        + page_metadata (required, PageMetaData)
+        + `results` (required, array[ChildAward], fixed-type)
+            Results are sorted by awarded amount in descending order.
+        + `page_metadata` (required, PageMetaData, fixed-type)
 
     * Body
 
@@ -73,19 +73,19 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                 ],
                 "page_metadata": {
                     "count": 40,
-                    "page": 1,
+                    "page": 1
                 }
             }
 
 # Data Structures
 
 ## PageMetaData (object)
-+ page: 2 (required, number)
-+ count: 40 (required, number)
++ `page`: 2 (required, number)
++ `count`: 40 (required, number)
     The total number of results.
 
 ## ChildAward (object)
-+ `award_id`: `69054107` (required, string)
++ `award_id`: 69054107 (required, number)
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
 + `generated_unique_award_id`: `CONT_AW_1540_NONE_DJB30605051_NONE` (required, string)
     Unique internal natural identifier for an award.
