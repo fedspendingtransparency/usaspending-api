@@ -29,7 +29,6 @@ class IDVFundingRollupTestCase(TestCase):
         grandchildren = [k for k in PARENTS if PARENTS[k] in children and PARENTS[k] in IDVS]
         non_idv_children = [k for k in children if k not in IDVS]
         non_idv_grandchildren = [k for k in grandchildren if k not in IDVS]
-        _id = sum(non_idv_children) + sum(non_idv_grandchildren)
         count = len(non_idv_children) + len(non_idv_grandchildren)
         summ = sum(non_idv_children) + sum(non_idv_grandchildren)
         results = {
