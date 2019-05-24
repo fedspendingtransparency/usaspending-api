@@ -110,8 +110,9 @@ TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
 class IDVActivityViewSet(APIDocumentationView):
-    """Returns the direct children of an IDV.
-    endpoint_doc: /awards/idvs/awards.md
+    """
+    Returns award funding info for children and grandchildren of an IDV.  Used
+    to power the Activity visualization on IDV Summary page.
     """
 
     @staticmethod
