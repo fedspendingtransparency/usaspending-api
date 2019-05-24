@@ -196,6 +196,7 @@ class ToptierAgency(models.Model):
     name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name", db_index=True)
     mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")
     website = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Website")
+    justification = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Congressional Justification")
     icon_filename = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Icon Filename")
 
     class Meta:
