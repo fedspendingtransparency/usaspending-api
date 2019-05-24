@@ -17,12 +17,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 # In gather_award_ids, if any awards are found for IDVs in the second half of
 # the union, by definition, they have to be grandchildren so even though the
 # grandchild boolean appears to be applying to the IDV, it will actually
-# trickle down to its children.  agency_id_to_agency_id_for_toptier_mapping
-# is used to turn agency ids into agency ids for toptier agencies.  Unfortunately
-# that logic is... not 100% straightforward.  To determine if an agency is a
-# toptier agency, apparently the topter name and subtier names have to match and,
-# even then, there can be more than one match... or no match in the three cases
-# where agencies don't have subtiers.
+# trickle down to its children.
 ACTIVITY_SQL = SQL("""
     with gather_award_ids as (
         select  award_id,
@@ -35,33 +30,11 @@ ACTIVITY_SQL = SQL("""
         from    parent_award ppa
                 inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
         where   ppa.{award_id_column} = {award_id}
-    ), agency_id_to_agency_id_for_toptier_mapping as (
-        select
-            a.id                            agency_id,
-            t.agency_id                     agency_id_for_toptier,
-            t.toptier_agency_name
-        from (
-                select
-                    a.id                    agency_id,
-                    ta.toptier_agency_id,
-                    ta.name                 toptier_agency_name,
-                    row_number() over(
-                        partition by ta.toptier_agency_id
-                        order by sa.name is not distinct from ta.name desc, a.update_date asc, a.id desc
-                    ) as per_toptier_row_number
-                from
-                    agency a
-                    inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
-                    left outer join subtier_agency sa on sa.subtier_agency_id = a.subtier_agency_id
-            ) t
-            inner join agency a on a.toptier_agency_id = t.toptier_agency_id
-        where
-            t.per_toptier_row_number = 1
     )
     select
         ca.id                                           award_id,
-        aamap.toptier_agency_name                       awarding_agency,
-        aamap.agency_id_for_toptier                     awarding_agency_id,
+        ta.name                                         awarding_agency,
+        ca.awarding_agency_id                           awarding_agency_id,
         ca.generated_unique_award_id,
         tf.ordering_period_end_date                     last_date_to_order,
         ca.total_obligation                             obligated_amount,
@@ -80,7 +53,8 @@ ACTIVITY_SQL = SQL("""
             ca.type not like 'IDV%'
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
         left outer join recipient_profile rp on rp.recipient_unique_id = tf.awardee_or_recipient_uniqu
-        left outer join agency_id_to_agency_id_for_toptier_mapping aamap on aamap.agency_id = ca.awarding_agency_id
+        left outer join agency a on a.id = ca.awarding_agency_id
+        left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     order by
         ca.base_and_all_options_value desc, ca.id desc
     limit {limit} offset {offset}
