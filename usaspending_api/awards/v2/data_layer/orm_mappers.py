@@ -99,6 +99,8 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_zip5", "_pop_zip5"),
         ("place_of_performance_forei", "_pop_foreign_province"),
+        ("awarding_office_name", "_awarding_office_name"),
+        ("funding_office_name", "_funding_office_name"),
     ]
 )
 
@@ -198,6 +200,8 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_congr", "_pop_congressional_code"),
         ("place_of_performance_zip5", "_pop_zip5"),
+        ("awarding_office_name", "_awarding_office_name"),
+        ("funding_office_name", "_funding_office_name"),
     ]
 )
 

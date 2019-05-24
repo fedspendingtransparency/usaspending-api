@@ -87,6 +87,8 @@ def awards_and_transactions(db):
         "place_of_performance_zip5": "40221",
         "place_of_performance_forei": None,
         "modified_at": "2000-01-02T00:00:00Z",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
     }
     cont_data = {
         "awardee_or_recipient_legal": "John's Pizza",
@@ -156,6 +158,8 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": None,
         "ultimate_parent_unique_ide": "123",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **cont_data)
@@ -265,13 +269,13 @@ expected_response_asst = {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "funding_office",
     },
     "recipient": {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
@@ -335,13 +339,13 @@ expected_response_cont = {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "funding_office",
     },
     "recipient": {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",

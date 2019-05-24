@@ -168,6 +168,8 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": None,
         "ultimate_parent_unique_ide": "123",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
@@ -264,13 +266,13 @@ expected_response_idv = {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
         "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "office_agency_name": "office_agency",
+        "office_agency_name": "funding_office",
     },
     "recipient": {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
