@@ -17,12 +17,15 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Request (application/json)
     + Attributes (object)
-        + page: 1 (required, number)
-        + limit: 10 (optional, number)
+        + page (required, number)
+            + Default: 1
+        + limit (optional, number)
+            + Default: 10
         + filters (required, FilterObject)
-        + order: (required, enum)
+        + order (required, enum)
             + asc
             + desc 
+            + Default: desc
             
 + Response 200 (application/json)
     + Attributes
@@ -40,7 +43,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + description (required, string)
 
 ## PageMetadataObject (object)
-+ page: (required, number)
++ page (required, number)
 + next (required, number, nullable)
 + previous (required, number, nullable)
 + hasNext (required, boolean)
