@@ -3,7 +3,7 @@ import json
 from django.test import TestCase
 from rest_framework import status
 from usaspending_api.awards.models import Award
-from usaspending_api.awards.tests.data.idv_funding_data import create_funding_data_tree, PARENTS, IDVS, AWARD_COUNT
+from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, PARENTS, IDVS, AWARD_COUNT
 
 
 AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding_rollup/'
@@ -12,28 +12,28 @@ AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding_rollup/'
 class IDVFundingRollupTestCase(TestCase):
 
     @classmethod
-    def setUp(cls):
-        create_funding_data_tree()
+    def setUpTestData(cls):
+        create_idv_test_data()
 
     @staticmethod
-    def _generate_expected_response(award_id, *args):
+    def _generate_expected_response(award_id):
         """
         Rather than manually generate an insane number of potential responses
         to test the various parameter combinations, we're going to procedurally
         generate them.  award_ids is the list of ids we expect back from the
         request in the order we expect them.  Unfortunately, for this to work,
         test data had to be generated in a specific way.  If you change how
-        test data is generated you will probably also have to change this.  For
-        example, IDVs have obligated amounts in the thousands whereas contracts
-        have obligated amounts in the single digits and teens.
+        test data is generated you will probably also have to change this.
         """
         children = [k for k in PARENTS if PARENTS[k] == award_id and award_id in IDVS]
         grandchildren = [k for k in PARENTS if PARENTS[k] in children and PARENTS[k] in IDVS]
         non_idv_children = [k for k in children if k not in IDVS]
         non_idv_grandchildren = [k for k in grandchildren if k not in IDVS]
         _id = sum(non_idv_children) + sum(non_idv_grandchildren)
+        count = len(non_idv_children) + len(non_idv_grandchildren)
+        summ = sum(non_idv_children) + sum(non_idv_grandchildren)
         results = {
-            'total_transaction_obligated_amount': _id * 10000 + _id + _id / 100,
+            'total_transaction_obligated_amount': count * 200000.0 + summ,
             'awarding_agency_count': len(non_idv_children) + len(non_idv_grandchildren),
             'funding_agency_count': len(non_idv_children) + len(non_idv_grandchildren),
             'federal_account_count': len(non_idv_children) + len(non_idv_grandchildren)
@@ -89,7 +89,7 @@ class IDVFundingRollupTestCase(TestCase):
     def test_null_agencies_accounts(self):
         """
         We are going to null out some accounts/agencies to ensure our count is
-        correct.  According the LOVELY drawing in idv_funding_data.py, C14 will
+        correct.  According the LOVELY drawing in idv_test_data.py, C14 will
         be a great candidate for this exercise.  It's ultimate parent is I2.
         """
         # Grab the counts for I2.
