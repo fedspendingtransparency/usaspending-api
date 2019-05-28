@@ -17,16 +17,25 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Request (application/json)
     + Attributes (object)
-        + page (required, number)
+        + `page` (required, number)
             + Default: 1
-        + limit (optional, number)
+        + `limit` (optional, number)
             + Default: 10
-        + filters (required, FilterObject)
-        + order (required, enum[string], fixed-type)
+        + `sort` (required, enum[string], fixed-type)
+            + Members
+                + subaward_number
+                + description
+                + action_date
+                + amount
+                + recipient_name
+                + award_id
+        + `order` (required, enum[string], fixed-type)
             + Members
                 + asc
                 + desc 
             + Default: desc
+        + `award_id` (optional, number)
+            + Award ID of parent Award
             
 + Response 200 (application/json)
     + Attributes
@@ -50,7 +59,3 @@ This endpoint returns a list of data that is associated with the award profile p
 + hasNext (required, boolean)
 + hasPrevious (required, boolean)
 
-## FilterObject (object)
-+ field (required, string)
-+ operation (required, string)
-+ value (required, number)
