@@ -30,18 +30,18 @@ This endpoint returns a list of data that is associated with the award profile p
             
 + Response 200 (application/json)
     + Attributes
-        + results(required, array[SubawardResponse], fixed-type)
-        + `page_metadata`(required, PageMetadataObject)
+        + `results` (required, array[SubawardResponse], fixed-type)
+        + `page_metadata` (required, PageMetadataObject)
 
 # Data Structures
 
 ## SubawardResponse (object)
 + `subaward_number` (required, string)
-+ amount (required, number)
-+ id (required, number)
++ `amount` (required, number)
++ `id` (required, number)
 + `action_date` (required, string)
 + `recipient_name` (required, string)
-+ description (required, string)
++ `description` (required, string)
 
 ## PageMetadataObject (object)
 + page (required, number)
