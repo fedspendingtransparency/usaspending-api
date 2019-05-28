@@ -22,7 +22,7 @@ This endpoint returns a list of data that is associated with the award profile p
         + limit (optional, number)
             + Default: 10
         + filters (required, FilterObject)
-        + order (required, enum)
+        + order (required, enum[string], fixed-type)
             + Members
                 + asc
                 + desc 
