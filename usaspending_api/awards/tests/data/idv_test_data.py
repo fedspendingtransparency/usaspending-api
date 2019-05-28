@@ -81,7 +81,7 @@ def create_idv_test_data():
             transaction_id=transaction_normalized.id,
             funding_agency_name='subtier_funding_agency_name_%s' % transaction_normalized.id,
             ordering_period_end_date='2018-01-%02d' % award_id,
-            awardee_or_recipient_uniqu="recipient_unique_id_%s" % (7000 + award_id),
+            awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
         )
 
         mommy.make(
@@ -159,12 +159,11 @@ def create_idv_test_data():
         )
 
         mommy.make(
-            "recipient.RecipientProfile",
+            "recipient.RecipientLookup",
             id=7000 + award_id,
-            recipient_level=format(award_id % 16, '01x'),  # this can only be a single character
             recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
-            recipient_name="recipient_name_%s" % (7000 + award_id),
-            recipient_unique_id="recipient_unique_id_%s" % (7000 + award_id),
+            legal_business_name="recipient_name_%s" % (7000 + award_id),
+            duns="duns_%s" % (7000 + award_id),
         )
 
     # We'll need some parent_awards.  We "hard code" values here rather than

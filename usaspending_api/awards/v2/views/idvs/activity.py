@@ -41,8 +41,11 @@ ACTIVITY_SQL = SQL("""
         ca.base_and_all_options_value                   awarded_amount,
         ca.period_of_performance_start_date,
         ca.piid,
-        rp.recipient_name,
-        rp.recipient_hash || '-' || rp.recipient_level  recipient_id,
+        rl.legal_business_name                          recipient_name,
+        rl.recipient_hash || case
+            when tf.ultimate_parent_unique_ide is null then '-R'
+            else '-C'
+        end                                             recipient_id,
         gaids.grandchild
     from
         gather_award_ids gaids
@@ -52,7 +55,7 @@ ACTIVITY_SQL = SQL("""
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
-        left outer join recipient_profile rp on rp.recipient_unique_id = tf.awardee_or_recipient_uniqu
+        left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
         left outer join agency a on a.id = ca.awarding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     order by

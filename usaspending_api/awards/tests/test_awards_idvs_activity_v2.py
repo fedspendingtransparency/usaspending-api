@@ -38,7 +38,7 @@ class IDVAwardsTestCase(TestCase):
                 "period_of_performance_start_date": "2018-02-%02d" % award_id,
                 "piid": "piid_%s" % string_award_id,
                 "recipient_name": "recipient_name_%s" % (7000 + award_id),
-                "recipient_id": "%s%s-%s" % (RECIPIENT_HASH_PREFIX, 7000 + award_id, format(award_id % 16, '01x')),
+                "recipient_id": "%s%s-%s" % (RECIPIENT_HASH_PREFIX, 7000 + award_id, 'R'),
                 "grandchild": award_id in (11, 12, 13, 14),  # based on picture in idv_test_data
             })
 
