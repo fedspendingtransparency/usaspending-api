@@ -35,11 +35,11 @@ This endpoint returns a list of data that is associated with the award profile p
 # Data Structures
 
 ## SubawardResponse (object)
-+ subaward_number (required, string)
++ `subaward_number` (required, string)
 + amount (required, number)
 + id (required, number)
-+ action_date (required, string)
-+ recipient_name (required, string)
++ `action_date` (required, string)
++ `recipient_name` (required, string)
 + description (required, string)
 
 ## PageMetadataObject (object)
