@@ -23,8 +23,9 @@ This endpoint returns a list of data that is associated with the award profile p
             + Default: 10
         + filters (required, FilterObject)
         + order (required, enum)
-            + asc
-            + desc 
+            + Members
+                + asc
+                + desc 
             + Default: desc
             
 + Response 200 (application/json)
