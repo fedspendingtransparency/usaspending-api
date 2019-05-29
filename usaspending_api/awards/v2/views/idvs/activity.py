@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_result_count_pagination_metadata
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary, get_connection
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -108,11 +108,8 @@ class IDVActivityViewSet(APIDocumentationView):
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id)
         )
-
-        with get_connection().cursor() as cursor:
-            cursor.execute(sql)
-            results = cursor.fetchall()
-        overall_count = results[0][0] if results else 0
+        overall_count_results = execute_sql_to_ordered_dictionary(sql)
+        overall_count = overall_count_results[0]['rollup_contract_count'] if overall_count_results else 0
 
         sql = ACTIVITY_SQL.format(
             award_id_column=Identifier(award_id_column),
