@@ -102,10 +102,12 @@ class ToptierAgenciesViewSet(APIDocumentationView):
             if toptier_agency.abbreviation is not None:
                 abbreviation = toptier_agency.abbreviation
 
+            cj = toptier_agency.justification if toptier_agency.justification else None
             # craft response
             response['results'].append({'agency_id': agency.id,
                                         'abbreviation': abbreviation,
                                         'agency_name': toptier_agency.name,
+                                        'congressional_justification_url': cj,
                                         'active_fy': str(active_fiscal_year),
                                         'active_fq': str(active_fiscal_quarter),
                                         'outlay_amount': float(aggregate_dict['outlay_amount']),
