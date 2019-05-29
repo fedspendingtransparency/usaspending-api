@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.generic_helper import get_result_count_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
@@ -124,7 +124,7 @@ class IDVActivityViewSet(APIDocumentationView):
     def post(self, request: Request) -> Response:
         request_data = self._parse_and_validate_request(request.data)
         results, overall_count = self._business_logic(request_data)
-        page_metadata = get_result_count_pagination_metadata(request_data['page'], overall_count)
+        page_metadata = get_pagination_metadata(overall_count, request_data['limit'], request_data['page'])
 
         response = OrderedDict((
             ('results', results[:request_data['limit']]),

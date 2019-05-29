@@ -311,13 +311,6 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
     return page_metadata
 
 
-def get_result_count_pagination_metadata(page, overall_count):
-    return {
-        "count": overall_count,
-        "page": page
-    }
-
-
 def fy(raw_date):
     """Federal fiscal year corresponding to date"""
 
