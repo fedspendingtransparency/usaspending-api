@@ -50,7 +50,9 @@ class CityAutocompleteViewSet(APIDocumentationView):
         search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope), "{}_country_code.keyword".format(scope)]
+        return_fields = ["{}_city_name".format(scope),
+                         "{}_state_code".format(scope),
+                         "{}_country_code.keyword".format(scope)]
 
         query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
         sorted_results = query_elasticsearch(query)
@@ -137,7 +139,8 @@ def create_es_search(scope, search_text, country=None, state=None):
               }
             }
           ]
-        query["should"][0]["bool"]["must_not"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        query["should"][0]["bool"]["must_not"] = [build_country_match(scope, "USA"),
+                                                  build_country_match(scope, "UNITED STATES")]
     elif country != "USA":
         # A non-USA selected country
         query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
@@ -170,12 +173,10 @@ def query_elasticsearch(query):
 def parse_elasticsearch_response(hits):
     results = []
     for city in hits["aggregations"]["cities"]["buckets"]:
-
         if city.get("states") and len(city["states"]["buckets"]) > 0:
             for state_code in city["states"]["buckets"]:
                 results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
         else:
             # for cities without states, useful for foreign country results
             results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
-
     return results
