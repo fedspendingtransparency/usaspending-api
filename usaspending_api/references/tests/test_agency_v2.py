@@ -41,7 +41,7 @@ def test_agency_endpoint(client, create_agency_data):
     assert resp.data['results']['outlay_amount'] == '2.00'
     assert resp.data['results']['obligated_amount'] == '2.00'
     assert resp.data['results']['budget_authority_amount'] == '2.00'
-    assert resp.data['results']['justification'] == 'test.com/cj'
+    assert resp.data['results']['congressional_justification_url'] == 'test.com/cj'
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/references/agency/4/')
