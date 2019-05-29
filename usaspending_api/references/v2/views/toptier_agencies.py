@@ -102,7 +102,7 @@ class ToptierAgenciesViewSet(APIDocumentationView):
             if toptier_agency.abbreviation is not None:
                 abbreviation = toptier_agency.abbreviation
 
-            cj = toptier_agency.justification if len(toptier_agency.justification) > 0 else None
+            cj = toptier_agency.justification if toptier_agency.justification else None
             # craft response
             response['results'].append({'agency_id': agency.id,
                                         'abbreviation': abbreviation,
