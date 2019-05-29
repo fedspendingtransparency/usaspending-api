@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.pagination import BasePagination
 from django.template import loader
 from rest_framework.utils.urls import replace_query_param
-from rest_framework.compat import template_render
 
 
 class UsaspendingPagination(BasePagination):
@@ -124,4 +123,4 @@ class UsaspendingPagination(BasePagination):
     def to_html(self):
         template = loader.get_template(self.template)
         context = self.get_html_context()
-        return template_render(template, context)
+        return template.render(template, context)
