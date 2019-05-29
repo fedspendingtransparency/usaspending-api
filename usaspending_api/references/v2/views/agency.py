@@ -94,7 +94,8 @@ class AgencyViewSet(APIDocumentationView):
                                'current_total_budget_authority_amount': str(TOTAL_BUDGET_AUTHORITY),
                                'mission': toptier_agency.mission,
                                'website': toptier_agency.website,
-                               'icon_filename': toptier_agency.icon_filename
+                               'icon_filename': toptier_agency.icon_filename,
+                               'congressional_justification_url': toptier_agency.justification,
                                }
 
         return Response(response)
