@@ -173,7 +173,6 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
     if there were no matches.
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
-    print(country_code)
     query = {
         "bool": {
             "must": [
@@ -209,6 +208,7 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
         "query": query,
         "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 50000}}},
     }
+
     return elasticsearch_results(search_body)
 
 

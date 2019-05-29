@@ -214,8 +214,7 @@
           "index": false
         },
         "pop_country_code": {
-          "type": "keyword",
-          "null_value": "NULL"
+          "type": "text"
         },
         "pop_country_name": {
           "type": "text"
@@ -245,8 +244,7 @@
         },
 
         "recipient_location_country_code": {
-          "type": "keyword",
-          "null_value": "NULL"
+          "type": "text"
         },
         "recipient_location_country_name": {
           "type": "text"
