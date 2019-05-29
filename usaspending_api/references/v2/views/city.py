@@ -114,29 +114,46 @@ def create_es_search(scope, search_text, country=None, state=None):
                     "{}_city_name.keyword".format(scope): search_text + "*"
                 }
             }
-        ]
+        ],
+         "should": [
+            {
+              "bool": {
+                "must_not": [
+                  {
+                      "match": {
+                          "{}_country_code".format(scope): "NULL"
+                      }
+                    # "exists": {
+                    #   "field": "{}_country_code".format(scope)
+                    # }
+                  }
+                ]
+              }
+            }
+          ],
+          "minimum_should_match": 1
     }
 
     if state:
         # States are only supported for Country=USA
         query["must"].append({"match": {"{scope}_state_code".format(scope=scope): state}})
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
+        query["should"].append([build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")])
+        # query["minimum_should_match"] = 2
     elif country == "FOREIGN":
         # Create a "Should Not" query with a nested bool, to get everything non-USA
-        query["should"] = {
-            "bool": {
-                "must_not": [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-            }
-        }
+        query["should"][0]["bool"]["must_not"].append(build_country_match(scope, "USA"))
+        query["should"][0]["bool"]["must_not"].append(build_country_match(scope, "UNITED STATES"))
+        # query["minimum_should_match"] = 1
+        # query["must_not"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")] 
+
     elif country != "USA":
         # A non-USA selected country
         query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
     else:
         # USA is selected as country
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
-
+        # query["minimum_should_match"] = 2
+    print(query)
     return query
 
 
@@ -168,4 +185,5 @@ def parse_elasticsearch_response(hits):
         else:
             # for cities without states, useful for foreign country results
             results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+
     return results

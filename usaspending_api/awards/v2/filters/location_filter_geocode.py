@@ -26,7 +26,9 @@ def geocode_filter_locations(scope: str, values: list, use_matview: bool = False
 
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
-        country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
+        country_qs = None
+        if country != "FOREIGN":
+            country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
         for state_zip_key, state_values in state_zip.items():
@@ -49,8 +51,10 @@ def geocode_filter_locations(scope: str, values: list, use_matview: bool = False
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
-
-        or_queryset |= (country_qs & state_qs)
+        if country_qs:
+            or_queryset |= (country_qs & state_qs)
+        else:
+            or_queryset |= (state_qs)
     return or_queryset
 
 
@@ -169,14 +173,26 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
     if there were no matches.
     """
     # Search using a "filter" instead of a "query" to leverage ES caching
+    print(country_code)
     query = {
         "bool": {
             "must": [
-                {"match_phrase": {"{}_city_name".format(scope): es_sanitize(city)}},
-                {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
+                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
+                
+            ],
+            "must_not": [
+                {"match": {"{}_country_code".format(scope): "NULL"}},
             ]
         }
     }
+
+    if country_code != "FOREIGN":
+        query["bool"]["must"].append({"match": {"{}_country_code".format(scope): es_sanitize(country_code)}})
+
+    elif country_code == "FOREIGN":
+        query["bool"]["must_not"].append({"match_phrase": {"{}_country_code".format(scope): "USA"}})
+        query["bool"]["must_not"].append({"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}})
+
     if state_code:
         # If a state was provided, include it in the filter to limit hits
         query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})
@@ -187,7 +203,6 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
         "query": query,
         "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 50000}}},
     }
-
     return elasticsearch_results(search_body)
 
 
