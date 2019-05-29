@@ -5,11 +5,11 @@ from rest_framework import status
 
 
 @pytest.fixture
-def financial_spending_data(db):
+def create_agency_data(db):
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
     ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100', website='http://test.com',
-                           mission='test', icon_filename='test')
+                           mission='test', icon_filename='test', justification="test.com/cj")
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1)
 
     # create TAS
@@ -32,7 +32,7 @@ def financial_spending_data(db):
 
 
 @pytest.mark.django_db
-def test_award_type_endpoint(client, financial_spending_data):
+def test_agency_endpoint(client, create_agency_data):
     """Test the award_type endpoint."""
 
     resp = client.get('/api/v2/references/agency/1/')
@@ -41,6 +41,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert resp.data['results']['outlay_amount'] == '2.00'
     assert resp.data['results']['obligated_amount'] == '2.00'
     assert resp.data['results']['budget_authority_amount'] == '2.00'
+    assert resp.data['results']['congressional_justification_url'] == 'test.com/cj'
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/references/agency/4/')
