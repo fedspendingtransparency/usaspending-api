@@ -24,6 +24,7 @@ This endpoint returns a list of data that is associated with the award profile p
         + `sort` (required, enum[string], fixed-type)
             + Members
                 + subaward_number
+                + id
                 + description
                 + action_date
                 + amount

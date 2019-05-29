@@ -18,6 +18,7 @@ class SubawardsViewSet(APIDocumentationView):
 
     subaward_lookup = {
         # "Display Name": "database_column"
+        "id": "subaward_id",
         "subaward_number": "subaward_number",
         "description": "description",
         "action_date": "action_date",
