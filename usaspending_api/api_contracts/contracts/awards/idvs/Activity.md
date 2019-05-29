@@ -11,10 +11,10 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
     + Attributes (object)
         + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
-        + `limit`: 10 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page.
             + Default: 10
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit.
             + Default: 1
 
@@ -72,32 +72,42 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                     }
                 ],
                 "page_metadata": {
-                    "count": 40,
-                    "page": 1
+                    "hasNext": true,
+                    "hasPrevious": true,
+                    "limit": 3,
+                    "next": 5,
+                    "page": 4,
+                    "previous": 3,
+                    "total": 30066
                 }
             }
 
 # Data Structures
 
 ## PageMetaData (object)
-+ `page`: 2 (required, number)
-+ `count`: 40 (required, number)
-    The total number of results.
++ `hasNext` (boolean, required)
++ `hasPrevious` (boolean, required)
++ `limit` (required, number)
++ `next` (number, required, nullable)
++ `page` (number, required)
++ `previous` (number, required, nullable)
++ `total` (required, number)
+    Total count of all results including those not returned on this page.
 
 ## ChildAward (object)
-+ `award_id`: 69054107 (required, number)
++ `award_id` (required, number)
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
-+ `generated_unique_award_id`: `CONT_AW_1540_NONE_DJB30605051_NONE` (required, string)
++ `generated_unique_award_id` (required, string)
     Unique internal natural identifier for an award.
-+ `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
-+ `awarding_agency_id`: 634 (required, number)
-+ `last_date_to_order`: `2017-09-30` (required, string, nullable)
-+ `obligated_amount`: 2257.24 (required, number)
-+ `awarded_amount`: 10000.00 (required, number)
-+ `period_of_performance_start_date`: `2014-10-01` (required, string, nullable)
++ `awarding_agency` (required, string)
++ `awarding_agency_id` (required, number)
++ `last_date_to_order` (required, string, nullable)
++ `obligated_amount` (required, number)
++ `awarded_amount` (required, number)
++ `period_of_performance_start_date` (required, string, nullable)
     The starting date of the award in the format `YYYY-MM-DD`
-+ `piid`: `GS33FCA001` (required, string)
++ `piid` (required, string)
     Procurement Instrument Identifier (PIID).
-+ `recipient_name`: `Booz Allen Hamilton` (required, string, nullable)
-+ `recipient_id`: `9a277fc5-50fc-685f-0f77-be0d96420a17-C` (required, string, nullable)
-+ `grandchild`: false (required, boolean)
++ `recipient_name` (required, string, nullable)
++ `recipient_id` (required, string, nullable)
++ `grandchild` (required, boolean)
