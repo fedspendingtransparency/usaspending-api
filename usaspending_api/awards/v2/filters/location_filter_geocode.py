@@ -178,10 +178,6 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
         "bool": {
             "must": [
                 {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
-                
-            ],
-            "must_not": [
-                {"match": {"{}_country_code".format(scope): "NULL"}},
             ]
         }
     }
@@ -190,9 +186,19 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
         query["bool"]["must"].append({"match": {"{}_country_code".format(scope): es_sanitize(country_code)}})
 
     elif country_code == "FOREIGN":
-        query["bool"]["must_not"].append({"match_phrase": {"{}_country_code".format(scope): "USA"}})
-        query["bool"]["must_not"].append({"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}})
 
+        query["bool"]["should"] = [
+            {
+              "bool": {
+                "must": {
+                  "exists": {
+                    "field": "{}_country_code".format(scope)
+                  }
+                },
+              }
+            }
+          ]
+        query["bool"]["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},{"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
     if state_code:
         # If a state was provided, include it in the filter to limit hits
         query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})

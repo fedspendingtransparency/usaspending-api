@@ -302,7 +302,7 @@ def spending_by_geography(filters):
 
 
 def spending_by_award_count(filters):
-    view_chain = ['SummaryAwardView', 'UniversalAwardView']
+    view_chain = ['UniversalAwardView', 'SummaryAwardView']
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
