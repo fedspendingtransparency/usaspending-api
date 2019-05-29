@@ -80,6 +80,7 @@ class Command(BaseCommand):
                     frec_entity_description = row.get('FREC Entity Description', '')
                     mission = row.get('MISSION', '')
                     website = row.get('WEBSITE', '')
+                    justification = row.get('CONGRESSIONAL JUSTIFICATION', '')
                     icon_filename = row.get('ICON FILENAME', '')
                     is_frec = row.get('IS_FREC', 'FALSE')
 
@@ -112,6 +113,7 @@ class Command(BaseCommand):
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename
+                        toptier_agency.justification = justification
 
                         if is_frec == 'TRUE':
                             toptier_agency.cgac_code = frec_code
