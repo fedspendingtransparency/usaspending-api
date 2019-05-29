@@ -15,7 +15,7 @@ class IDVAwardsTestCase(TestCase):
         create_idv_test_data()
 
     @staticmethod
-    def _generate_expected_response(count, page, *award_ids):
+    def _generate_expected_response(total, limit, page, *award_ids):
         """
         Rather than manually generate an insane number of potential responses
         to test the various parameter combinations, we're going to procedurally
@@ -43,8 +43,13 @@ class IDVAwardsTestCase(TestCase):
             })
 
         page_metadata = {
-            "count": count,
-            "page": page
+            "hasNext": (limit * page < total),
+            "hasPrevious": page > 1 and limit * (page - 2) < total,
+            "limit": limit,
+            "next": page + 1 if (limit * page < total) else None,
+            "page": page,
+            "previous": page - 1 if (page > 1 and limit * (page - 2) < total) else None,
+            "total": total
         }
 
         return {"results": results, "page_metadata": page_metadata}
@@ -72,43 +77,43 @@ class IDVAwardsTestCase(TestCase):
 
         self._test_post(
             {"award_id": 2},
-            (400002, 1, 14, 13, 12, 11, 10, 9)
+            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
         )
 
         self._test_post(
             {"award_id": "GENERATED_UNIQUE_AWARD_ID_002"},
-            (400002, 1, 14, 13, 12, 11, 10, 9)
+            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
         )
 
     def test_with_nonexistent_id(self):
 
         self._test_post(
             {"award_id": 0},
-            (0, 1)
+            (0, 10, 1)
         )
 
         self._test_post(
             {"award_id": "GENERATED_UNIQUE_AWARD_ID_000"},
-            (0, 1)
+            (0, 10, 1)
         )
 
     def test_with_bogus_id(self):
 
         self._test_post(
             {"award_id": None},
-            (0, 1)
+            (0, 10, 1)
         )
 
     def test_limit_values(self):
 
         self._test_post(
             {"award_id": 2, "limit": 1},
-            (400002, 1, 14)
+            (400002, 1, 1, 14)
         )
 
         self._test_post(
             {"award_id": 2, "limit": 5},
-            (400002, 1, 14, 13, 12, 11, 10)
+            (400002, 5, 1, 14, 13, 12, 11, 10)
         )
 
         self._test_post(
@@ -130,17 +135,17 @@ class IDVAwardsTestCase(TestCase):
 
         self._test_post(
             {"award_id": 2, "limit": 1, "page": 2},
-            (400002, 2, 13)
+            (400002, 1, 2, 13)
         )
 
         self._test_post(
             {"award_id": 2, "limit": 1, "page": 3},
-            (400002, 3, 12)
+            (400002, 1, 3, 12)
         )
 
         self._test_post(
             {"award_id": 2, "limit": 1, "page": 10},
-            (400002, 10)
+            (400002, 1, 10)
         )
 
         self._test_post(
