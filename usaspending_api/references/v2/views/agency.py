@@ -73,6 +73,8 @@ class AgencyViewSet(APIDocumentationView):
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
             outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
 
+        cj = toptier_agency.justification if toptier_agency.justification else None
+
         # TODO: Rework this block to calculate the total once consumption of the latest GTAS file is implemented
         # # get the overall total government budget authority (to craft a budget authority percentage)
         # total_budget_authority_queryset = OverallTotals.objects.all()
@@ -94,7 +96,8 @@ class AgencyViewSet(APIDocumentationView):
                                'current_total_budget_authority_amount': str(TOTAL_BUDGET_AUTHORITY),
                                'mission': toptier_agency.mission,
                                'website': toptier_agency.website,
-                               'icon_filename': toptier_agency.icon_filename
+                               'icon_filename': toptier_agency.icon_filename,
+                               'congressional_justification_url': cj,
                                }
 
         return Response(response)
