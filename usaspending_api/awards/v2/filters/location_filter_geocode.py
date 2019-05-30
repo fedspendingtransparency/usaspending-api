@@ -172,7 +172,7 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
     query = {
         "bool": {
             "must": [
-                {"match": {"{}_city_name".format(scope): es_sanitize(city)}},
+                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
                 {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
             ]
         }
