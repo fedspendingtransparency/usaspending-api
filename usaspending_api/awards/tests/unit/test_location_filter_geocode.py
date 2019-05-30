@@ -135,6 +135,7 @@ def award_data_fixture(db):
         place_of_performance_id=2
     )
 
+
 def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
 
@@ -312,7 +313,6 @@ def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_ind
     assert results[2] == 3
     assert results[3] == 4
     assert results[4] == 5
-
 
     query = {
         "_source": ["award_id"],
