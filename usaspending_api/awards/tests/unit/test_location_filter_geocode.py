@@ -68,7 +68,7 @@ def award_data_fixture(db):
         place_of_performance_id=2
     )
 
-    mommy.make("references.LegalEntity", legal_entity_id=2)
+    mommy.make("references.LegalEntity", legal_entity_id=3)
     mommy.make(
         "awards.TransactionNormalized",
         id=3,
@@ -90,6 +90,50 @@ def award_data_fixture(db):
         place_of_performance_id=2
     )
 
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=4,
+        action_date="2010-10-01",
+        award_id=4,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=4,
+        legal_entity_city_name="NEW YORK",
+        legal_entity_country_code="USA",
+        piid="0003",
+        place_of_perform_city_name="NEW YORK",
+    )
+    mommy.make(
+        "awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=5,
+        action_date="2010-10-01",
+        award_id=5,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=5,
+        legal_entity_city_name="NEW AMSTERDAM",
+        legal_entity_country_code="USA",
+        piid="0004",
+        place_of_perform_city_name="NEW AMSTERDAM",
+    )
+    mommy.make(
+        "awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
 
 def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
@@ -101,7 +145,7 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
         {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
-    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 3
+    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
@@ -226,6 +270,8 @@ def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction
     assert to.filter(create_city_name_queryset("recipient_location", ["BRISTOL"], "USA")).count() == 0
     assert to.filter(create_city_name_queryset("recipient_location", ["BRISBANE"], "USA")).count() == 1
     assert to.filter(create_city_name_queryset("recipient_location", ["BRISBANE"], "FOREIGN")).count() == 0
+    assert to.filter(create_city_name_queryset("recipient_location", ["NEW YORK"], "USA")).count() == 1
+    assert to.filter(create_city_name_queryset("recipient_location", ["NEW AMSTERDAM"], "USA")).count() == 1
 
 
 def test_get_award_ids_by_city(award_data_fixture, elasticsearch_transaction_index):
@@ -260,10 +306,13 @@ def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_ind
     }
     results = elasticsearch_results(query)
     assert results is not None
-    assert len(results) == 3
+    assert len(results) == 5
     assert results[0] == 1
     assert results[1] == 2
     assert results[2] == 3
+    assert results[3] == 4
+    assert results[4] == 5
+
 
     query = {
         "_source": ["award_id"],
