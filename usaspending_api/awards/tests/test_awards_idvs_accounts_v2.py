@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework import status
 
-from usaspending_api.awards.tests.data.idv_funding_data import create_funding_data_tree, AWARD_COUNT
+from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, AWARD_COUNT
 from usaspending_api.awards.v2.views.idvs.accounts import SORTABLE_COLUMNS
 
 
@@ -12,7 +12,7 @@ class IDVAccountsTestCase(TestCase):
 
     @classmethod
     def setUp(cls):
-        create_funding_data_tree()
+        create_idv_test_data()
 
     def _test_post(self, request, expected_status_code=status.HTTP_200_OK):
         """
@@ -24,12 +24,6 @@ class IDVAccountsTestCase(TestCase):
             for you so just pass the parameters as a tuple or list.
         expected_status_code is the HTTP status we expect to be returned from
             the call to the endpoint.
-
-        Because this endpoint uses the same shared SQL as the roll-up endpoint and simply adds a group-by clause,
-        it is not necessary to test the aggregation again, as any adjustment to the aggregation SQL that is incorrect
-        would cause the Rollup Test cases to fail first anyway.
-
-        Returns... nothing useful.
         """
         response = self.client.post(FEDERAL_ACCOUNT_ENDPOINT, request)
         assert response.status_code == expected_status_code

@@ -64,10 +64,10 @@ def _es_search(index, body, timeout):
         logger.error(error_template.format(type="Hostname", e=str(e)))
     except (ConnectionError, ConnectionTimeout) as e:
         logger.error(error_template.format(type="Connection", e=str(e)))
-    except TransportError as e:
-        logger.error(error_template.format(type="Transport", e=str(e)))
     except NotFoundError as e:
         logger.error(error_template.format(type="404 Not Found", e=str(e)))
+    except TransportError as e:
+        logger.error(error_template.format(type="Transport", e=str(e)))
     except Exception as e:
         logger.error(error_template.format(type="Generic", e=str(e)))
     return result
