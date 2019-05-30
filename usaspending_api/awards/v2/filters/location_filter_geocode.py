@@ -203,7 +203,9 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
         query["bool"]["minimum_should_match"] = 1
     else:
         # USA is selected as country
-        query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}}, {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                   {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        # null country codes are being considered as USA country codes
         query["bool"]["should"].append({
               "bool": {
                 "must_not": {

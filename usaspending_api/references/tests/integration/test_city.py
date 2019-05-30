@@ -129,7 +129,6 @@ def award_data_fixture(db):
     )
 
 
-
 @pytest.mark.django_db
 def test_city_search_matches_found(client, db, award_data_fixture, elasticsearch_transaction_index):
 
@@ -204,6 +203,7 @@ def test_city_search_special_characters(client, db, award_data_fixture, elastics
     for entry in response.data['results']:
         assert entry['city_name'].lower().find('arl') > -1
 
+
 @pytest.mark.django_db
 def test_city_search_non_usa(client, db, award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
@@ -236,6 +236,7 @@ def test_city_search_non_usa(client, db, award_data_fixture, elasticsearch_trans
     assert response.data['count'] == 1
     for entry in response.data['results']:
         assert entry['city_name'].lower().find('bri') > -1
+
 
 @pytest.mark.django_db
 def test_city_search_foreign(client, db, award_data_fixture, elasticsearch_transaction_index):

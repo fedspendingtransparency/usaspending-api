@@ -126,11 +126,12 @@ def create_es_search(scope, search_text, country=None, state=None):
         # States are only supported for Country=USA
         query["must"].append({"match": {"{scope}_state_code".format(scope=scope): state}})
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        query["minimum_should_match"] = 1
     elif country != "USA":
         # A non-USA selected country
         if country != "FOREIGN":
             query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
-        # Create a "Should Not" query with a nested bool, to get everything non-USA
+        # Create a "Should Not" query with a nested bool, to get everything non-USA & non-null
         query["should"] = [
             {
               "bool": {
@@ -148,6 +149,7 @@ def create_es_search(scope, search_text, country=None, state=None):
     else:
         # USA is selected as country
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        # null country codes are being considered as USA country codes
         query["should"].append({
               "bool": {
                 "must_not": {
@@ -183,7 +185,7 @@ def query_elasticsearch(query):
 def parse_elasticsearch_response(hits):
     results = []
     for city in hits["aggregations"]["cities"]["buckets"]:
-        if city.get("states") and len(city["states"]["buckets"]) > 0:
+        if len(city["states"]["buckets"]) > 0:
             for state_code in city["states"]["buckets"]:
                 results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
         else:
