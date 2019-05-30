@@ -126,7 +126,10 @@ def create_es_search(scope, search_text, country=None, state=None):
         # States are only supported for Country=USA
         query["must"].append({"match": {"{scope}_state_code".format(scope=scope): state}})
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-    elif country == "FOREIGN":
+    elif country != "USA":
+        # A non-USA selected country
+        if country != "FOREIGN":
+            query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
         # Create a "Should Not" query with a nested bool, to get everything non-USA
         query["should"] = [
             {
@@ -141,12 +144,20 @@ def create_es_search(scope, search_text, country=None, state=None):
           ]
         query["should"][0]["bool"]["must_not"] = [build_country_match(scope, "USA"),
                                                   build_country_match(scope, "UNITED STATES")]
-    elif country != "USA":
-        # A non-USA selected country
-        query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
+        query["minimum_should_match"] = 1
     else:
         # USA is selected as country
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        query["should"].append({
+              "bool": {
+                "must_not": {
+                  "exists": {
+                    "field": "{}_country_code".format(scope)
+                  }
+                },
+              }
+            })
+        query["minimum_should_match"] = 1
     return query
 
 
@@ -166,7 +177,6 @@ def query_elasticsearch(query):
     if hits and hits["hits"]["total"] > 0:
         results = parse_elasticsearch_response(hits)
         results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
-
     return results
 
 
