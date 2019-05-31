@@ -49,12 +49,12 @@ def test_all_subawards(mock_matviews_qs):
     subawards_logic = svs._business_logic(test_params)
     assert [] == subawards_logic
 
-    sort("id",[strip_award_id(subaward_3), strip_award_id(subaward_1), strip_award_id(subaward_2)])
-    sort("amount", [strip_award_id(subaward_3), strip_award_id(subaward_2), strip_award_id(subaward_1)])
-    sort("action_date", [strip_award_id(subaward_2), strip_award_id(subaward_1), strip_award_id(subaward_3)])
-    sort("recipient_name", [strip_award_id(subaward_2), strip_award_id(subaward_3), strip_award_id(subaward_1)])
+    assert request_with_sort("id") == [strip_award_id(subaward_3), strip_award_id(subaward_1), strip_award_id(subaward_2)]
+    assert request_with_sort("amount") == [strip_award_id(subaward_3), strip_award_id(subaward_2), strip_award_id(subaward_1)]
+    assert request_with_sort("action_date") == [strip_award_id(subaward_2), strip_award_id(subaward_1), strip_award_id(subaward_3)]
+    assert request_with_sort("recipient_name") == [strip_award_id(subaward_2), strip_award_id(subaward_3), strip_award_id(subaward_1)]
 
-def sort(sort,response):
+def request_with_sort(sort):
     svs = SubawardsViewSet()
     test_payload = {
         "page": 1,
@@ -64,7 +64,7 @@ def sort(sort,response):
     }
     test_params = svs._parse_and_validate_request(test_payload)
     subawards_logic = svs._business_logic(test_params)
-    assert response == subawards_logic
+    return subawards_logic
 
 def test_specific_award(mock_matviews_qs):
     mock_model_1 = MockModel(**subaward_10)
