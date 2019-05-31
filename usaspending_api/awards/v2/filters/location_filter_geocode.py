@@ -7,6 +7,8 @@ from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
+ALL_FOREIGN_COUNTIRES = "FOREIGN"
+
 
 def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
     """
@@ -27,7 +29,7 @@ def geocode_filter_locations(scope: str, values: list, use_matview: bool = False
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
         country_qs = None
-        if country != "FOREIGN":
+        if country != ALL_FOREIGN_COUNTIRES:
             country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
@@ -172,7 +174,7 @@ def build_es_city_query(query: object, bool_should: bool,
                         state_code: Optional[str] = None):
     if country_code != "USA":
         # A non-USA selected country
-        if country_code != "FOREIGN":
+        if country_code != ALL_FOREIGN_COUNTIRES:
             if bool_should:
                 query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
             else:
