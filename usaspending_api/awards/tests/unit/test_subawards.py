@@ -49,14 +49,14 @@ def test_all_subawards(mock_matviews_qs):
     subawards_logic = svs._business_logic(test_params)
     assert [] == subawards_logic
 
-    assert request_with_sort("id") \
-        == [strip_award_id(subaward_3), strip_award_id(subaward_1), strip_award_id(subaward_2)]
-    assert request_with_sort("amount") \
-        == [strip_award_id(subaward_3), strip_award_id(subaward_2), strip_award_id(subaward_1)]
-    assert request_with_sort("action_date") \
-        == [strip_award_id(subaward_2), strip_award_id(subaward_1), strip_award_id(subaward_3)]
-    assert request_with_sort("recipient_name") \
-        == [strip_award_id(subaward_2), strip_award_id(subaward_3), strip_award_id(subaward_1)]
+    sub_1 = strip_award_id(subaward_1)
+    sub_2 = strip_award_id(subaward_2)
+    sub_3 = strip_award_id(subaward_3)
+
+    assert request_with_sort("id") == [sub_3, sub_1, sub_2]
+    assert request_with_sort("amount") == [sub_3, sub_2, sub_1]
+    assert request_with_sort("action_date") == [sub_2, sub_1, sub_3]
+    assert request_with_sort("recipient_name") == [sub_2, sub_3, sub_1]
 
 
 def request_with_sort(sort):
