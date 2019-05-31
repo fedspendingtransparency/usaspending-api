@@ -252,7 +252,7 @@ def build_es_city_query(query: object, bool_should: bool,
 
     if state_code:
         # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope).upper(): es_sanitize(state_code).upper()}})
 
     return query
 
@@ -268,7 +268,7 @@ def get_record_ids_by_city(
     query = {
         "bool": {
             "must": [
-                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
+                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
             ]
         }
     }
