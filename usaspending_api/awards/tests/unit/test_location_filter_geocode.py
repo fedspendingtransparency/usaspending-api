@@ -7,7 +7,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
     elasticsearch_results,
     geocode_filter_locations,
-    get_award_ids_by_city,
+    get_record_ids_by_city,
     get_fields_list,
     location_error_handling,
     return_query_string,
@@ -196,17 +196,17 @@ def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction
 def test_get_award_ids_by_city(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
 
-    assert len(get_award_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
+    assert len(get_record_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
 
-    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", None)) == 1
-    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", "TX")) == 1
-    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("pop", "award_id", "Burbank", "USA", "CA")) == 0
+    assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", None)) == 1
+    assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", "TX")) == 1
+    assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", "VA")) == 0
+    assert len(get_record_ids_by_city("pop", "award_id", "Burbank", "USA", "CA")) == 0
 
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", None)) == 1
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "CA")) == 1
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "Houston", "USA", "TX")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", None)) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "CA")) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "VA")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Houston", "USA", "TX")) == 0
 
 
 def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_index):

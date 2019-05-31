@@ -160,7 +160,7 @@ def create_city_name_queryset(
     state_code (optional) is the state code if the search should be limited to that state
     """
     matching_awards = set(
-        chain(*[get_award_ids_by_city(
+        chain(*[get_record_ids_by_city(
             scope, desired_id_field, city, country_code, state_code) for city in list_of_cities]
         )
     )
@@ -171,7 +171,7 @@ def create_city_name_queryset(
     return result_queryset
 
 
-def get_award_ids_by_city(
+def get_record_ids_by_city(
     scope: str, desired_id_field: str, city: str, country_code: str, state_code: Optional[str] = None
 ) -> list:
     """
