@@ -1,7 +1,6 @@
 import pytest
 
 from model_mommy import mommy
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_city_name_queryset,
@@ -65,7 +64,10 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
-    values = [{"city": "AUSTIN", "state": "TX", "country": "USA"}, {"city": "BURBANK", "state": "TX", "country": "USA"}]
+    values = [
+        {"city": "AUSTIN", "state": "TX", "country": "USA"},
+        {"city": "BURBANK", "state": "TX", "country": "USA"},
+    ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 0
@@ -159,34 +161,34 @@ def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction
 
     assert to.filter(create_city_name_queryset("nothing", [], "nothing", "nothing")).count() == 0
 
-    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", None)).count() == 1
-    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", "TX")).count() == 1
-    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", "VA")).count() == 0
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["Houston"], "USA", None)).count() == 1
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["Houston"], "USA", "TX")).count() == 1
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["Houston"], "USA", "VA")).count() == 0
     assert (
-        to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON", "BURBANK"], "USA", "TX")).count() == 1
+        to.filter(create_city_name_queryset("pop", "transaction_id", ["Houston", "Burbank"], "USA", "TX")).count() == 1
     )
-    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["BURBANK"], "USA", "CA")).count() == 0
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["Burbank"], "USA", "CA")).count() == 0
 
     assert (
-        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", None)).count()
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["Burbank"], "USA", None)).count()
         == 1
     )
     assert (
-        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", "CA")).count()
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["Burbank"], "USA", "CA")).count()
         == 1
     )
     assert (
-        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", "VA")).count()
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["Burbank"], "USA", "VA")).count()
         == 0
     )
     assert (
         to.filter(
-            create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK", "HOUSTON"], "USA", "CA")
+            create_city_name_queryset("recipient_location", "transaction_id", ["Burbank", "Houston"], "USA", "CA")
         ).count()
         == 1
     )
     assert (
-        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["HOUSTON"], "USA", "TX")).count()
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["Houston"], "USA", "TX")).count()
         == 0
     )
 
@@ -196,15 +198,15 @@ def test_get_award_ids_by_city(award_data_fixture, elasticsearch_transaction_ind
 
     assert len(get_award_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
 
-    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", None)) == 1
-    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", "TX")) == 1
-    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("pop", "award_id", "BURBANK", "USA", "CA")) == 0
+    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", None)) == 1
+    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", "TX")) == 1
+    assert len(get_award_ids_by_city("pop", "award_id", "Houston", "USA", "VA")) == 0
+    assert len(get_award_ids_by_city("pop", "award_id", "Burbank", "USA", "CA")) == 0
 
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", None)) == 1
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", "CA")) == 1
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("recipient_location", "award_id", "HOUSTON", "USA", "TX")) == 0
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", None)) == 1
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "CA")) == 1
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "VA")) == 0
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "Houston", "USA", "TX")) == 0
 
 
 def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_index):
@@ -214,7 +216,7 @@ def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_ind
         "_source": ["award_id"],
         "size": 0,
         "query": {"match_all": {}},
-        "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 5}}},
+        "aggs": {"id_groups": {"terms": {"field": "award_id", "size": 5}}},
     }
     results = elasticsearch_results(query)
     assert results is not None
@@ -225,7 +227,7 @@ def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_ind
         "_source": ["award_id"],
         "size": 0,
         "query": {"match": {"pop_country": "XXXXX"}},
-        "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 5}}},
+        "aggs": {"id_groups": {"terms": {"field": "award_id", "size": 5}}},
     }
     results = elasticsearch_results(query)
     assert results is not None
