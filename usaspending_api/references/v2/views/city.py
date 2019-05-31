@@ -8,6 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.awards.v2.filters.location_filter_geocode import build_es_city_query
 
 
 models = [
@@ -121,46 +122,7 @@ def create_es_search(scope, search_text, country=None, state=None):
             }
         ]
     }
-
-    if state:
-        # States are only supported for Country=USA
-        query["must"].append({"match": {"{scope}_state_code".format(scope=scope): state}})
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
-    elif country != "USA":
-        # A non-USA selected country
-        if country != "FOREIGN":
-            query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
-        # Create a "Should Not" query with a nested bool, to get everything non-USA & non-null
-        query["should"] = [
-            {
-              "bool": {
-                "must": {
-                  "exists": {
-                    "field": "{}_country_code".format(scope)
-                  }
-                },
-              }
-            }
-          ]
-        query["should"][0]["bool"]["must_not"] = [build_country_match(scope, "USA"),
-                                                  build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
-    else:
-        # USA is selected as country
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        # null country codes are being considered as USA country codes
-        query["should"].append({
-              "bool": {
-                "must_not": {
-                  "exists": {
-                    "field": "{}_country_code".format(scope)
-                  }
-                },
-              }
-            })
-        query["minimum_should_match"] = 1
-    return query
+    return build_es_city_query(query, False, scope, country, state)
 
 
 def build_country_match(country_match_scope, country_match_country):
