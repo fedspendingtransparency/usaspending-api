@@ -103,7 +103,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if set(filters["award_type_codes"]) <= set(list(contract_type_mapping)
                                                            + list(idv_type_mapping)):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
-                elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
+                elif set(filters["award_type_codes"]) <= set(list(grant_type_mapping)
+                                                             + list(loan_type_mapping)
+                                                             + list(non_loan_assistance_type_mapping)):  # Subaward grants
                     sort_filters = [grant_subaward_mapping[sort]]
                 else:
                     msg = """Award Type codes limited for Subawards.
