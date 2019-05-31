@@ -32,11 +32,11 @@ def award_data_fixture(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        legal_entity_city_name="Burbank",
+        legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="Houston",
+        place_of_perform_city_name="HOUSTON",
     )
     mommy.make(
         "awards.Award",
@@ -147,8 +147,8 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "Houston", "state": "TX", "country": "USA"},
-        {"city": "Burbank", "state": "CA", "country": "USA"},
+        {"city": "HOUSTON", "state": "TX", "country": "USA"},
+        {"city": "BURBANK", "state": "CA", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
@@ -157,7 +157,7 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
 
     values = [
         {"city": "AUSTIN", "state": "TX", "country": "USA"},
-        {"city": "Burbank", "state": "TX", "country": "USA"},
+        {"city": "BURBANK", "state": "TX", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
