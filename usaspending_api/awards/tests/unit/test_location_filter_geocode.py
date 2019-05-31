@@ -2,7 +2,7 @@ import pytest
 
 from model_mommy import mommy
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_city_name_queryset,
     create_nested_object,
@@ -33,15 +33,21 @@ def award_data_fixture(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        legal_entity_city_name="Burbank",
+        legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="Houston",
+        place_of_perform_city_name="HOUSTON",
     )
     mommy.make(
-        "awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", recipient_id=1, type="A",
-        place_of_performance_id=1
+        "awards.Award",
+        id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piiiiid",
+        recipient_id=1,
+        type="A",
+        place_of_performance_id=1,
     )
 
 
@@ -51,18 +57,15 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "Houston", "state": "TX", "country": "USA"},
-        {"city": "Burbank", "state": "CA", "country": "USA"},
+        {"city": "HOUSTON", "state": "TX", "country": "USA"},
+        {"city": "BURBANK", "state": "CA", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 1
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
-    values = [
-        {"city": "Austin", "state": "TX", "country": "USA"},
-        {"city": "Burbank", "state": "TX", "country": "USA"},
-    ]
+    values = [{"city": "AUSTIN", "state": "TX", "country": "USA"}, {"city": "BURBANK", "state": "TX", "country": "USA"}]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 0
@@ -134,10 +137,7 @@ def test_location_error_handling():
     assert location_error_handling({"country": "", "state": "", "county": ""}) is None
     assert location_error_handling({"country": "", "state": "", "district": ""}) is None
     assert location_error_handling({"country": "", "state": "", "county": "", "district": ""}) is None
-    assert (
-        location_error_handling({"country": "", "state": "", "county": "", "district": "", "feet": ""})
-        is None
-    )
+    assert location_error_handling({"country": "", "state": "", "county": "", "district": "", "feet": ""}) is None
 
 
 def test_get_fields_list():
@@ -155,42 +155,56 @@ def test_return_query_string():
 def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
 
-    to = TransactionNormalized.objects
+    to = UniversalTransactionView.objects
 
     assert to.filter(create_city_name_queryset("nothing", [], "nothing", "nothing")).count() == 0
 
-    assert to.filter(create_city_name_queryset("pop", ["Houston"], "USA", None)).count() == 1
-    assert to.filter(create_city_name_queryset("pop", ["Houston"], "USA", "TX")).count() == 1
-    assert to.filter(create_city_name_queryset("pop", ["Houston"], "USA", "VA")).count() == 0
-    assert to.filter(create_city_name_queryset("pop", ["Houston", "Burbank"], "USA", "TX")).count() == 1
-    assert to.filter(create_city_name_queryset("pop", ["Burbank"], "USA", "CA")).count() == 0
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", None)).count() == 1
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", "TX")).count() == 1
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON"], "USA", "VA")).count() == 0
+    assert (
+        to.filter(create_city_name_queryset("pop", "transaction_id", ["HOUSTON", "BURBANK"], "USA", "TX")).count() == 1
+    )
+    assert to.filter(create_city_name_queryset("pop", "transaction_id", ["BURBANK"], "USA", "CA")).count() == 0
 
-    assert to.filter(create_city_name_queryset("recipient_location", ["Burbank"], "USA", None)).count() == 1
-    assert to.filter(create_city_name_queryset("recipient_location", ["Burbank"], "USA", "CA")).count() == 1
-    assert to.filter(create_city_name_queryset("recipient_location", ["Burbank"], "USA", "VA")).count() == 0
+    assert (
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", None)).count()
+        == 1
+    )
+    assert (
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", "CA")).count()
+        == 1
+    )
+    assert (
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK"], "USA", "VA")).count()
+        == 0
+    )
     assert (
         to.filter(
-            create_city_name_queryset("recipient_location", ["Burbank", "Houston"], "USA", "CA")
+            create_city_name_queryset("recipient_location", "transaction_id", ["BURBANK", "HOUSTON"], "USA", "CA")
         ).count()
         == 1
     )
-    assert to.filter(create_city_name_queryset("recipient_location", ["Houston"], "USA", "TX")).count() == 0
+    assert (
+        to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["HOUSTON"], "USA", "TX")).count()
+        == 0
+    )
 
 
 def test_get_award_ids_by_city(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
 
-    assert len(get_award_ids_by_city("nothing", "nothing", "nothing", "nothing")) == 0
+    assert len(get_award_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
 
-    assert len(get_award_ids_by_city("pop", "Houston", "USA", None)) == 1
-    assert len(get_award_ids_by_city("pop", "Houston", "USA", "TX")) == 1
-    assert len(get_award_ids_by_city("pop", "Houston", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("pop", "Burbank", "USA", "CA")) == 0
+    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", None)) == 1
+    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", "TX")) == 1
+    assert len(get_award_ids_by_city("pop", "award_id", "HOUSTON", "USA", "VA")) == 0
+    assert len(get_award_ids_by_city("pop", "award_id", "BURBANK", "USA", "CA")) == 0
 
-    assert len(get_award_ids_by_city("recipient_location", "Burbank", "USA", None)) == 1
-    assert len(get_award_ids_by_city("recipient_location", "Burbank", "USA", "CA")) == 1
-    assert len(get_award_ids_by_city("recipient_location", "Burbank", "USA", "VA")) == 0
-    assert len(get_award_ids_by_city("recipient_location", "Houston", "USA", "TX")) == 0
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", None)) == 1
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", "CA")) == 1
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "BURBANK", "USA", "VA")) == 0
+    assert len(get_award_ids_by_city("recipient_location", "award_id", "HOUSTON", "USA", "TX")) == 0
 
 
 def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_index):

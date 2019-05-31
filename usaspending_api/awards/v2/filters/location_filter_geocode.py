@@ -97,9 +97,9 @@ def create_nested_object(values):
             nested_locations[v["country"]][v["state"]]["district"].extend(get_fields_list("district", v["district"]))
 
         if "city" in v and "state" in v:
-            nested_locations[v["country"]][v["state"]]["city"].append(v["city"].upper())
+            nested_locations[v["country"]][v["state"]]["city"].append(v["city"])
         elif "city" in v:
-            nested_locations[v["country"]]["city"].append(v["city"].upper())
+            nested_locations[v["country"]]["city"].append(v["city"])
 
     return nested_locations
 
@@ -176,14 +176,14 @@ def get_award_ids_by_city(
     query = {
         "bool": {
             "must": [
-                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
+                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
                 {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
             ]
         }
     }
     if state_code:
         # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
 
     search_body = {
         "_source": [source],
