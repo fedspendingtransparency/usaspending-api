@@ -147,8 +147,8 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "HOUSTON", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "CA", "country": "USA"},
+        {"city": "Houston", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
@@ -156,8 +156,8 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
     values = [
-        {"city": "AUSTIN", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "TX", "country": "USA"},
+        {"city": "Austin", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "TX", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
