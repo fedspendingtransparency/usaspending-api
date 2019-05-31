@@ -8,6 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.awards.v2.filters.location_filter_geocode import build_es_city_query
 
 
 models = [
@@ -50,7 +51,9 @@ class CityAutocompleteViewSet(APIDocumentationView):
         search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope)]
+        return_fields = ["{}_city_name".format(scope),
+                         "{}_state_code".format(scope),
+                         "{}_country_code.keyword".format(scope)]
 
         query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
         sorted_results = query_elasticsearch(query)
@@ -71,6 +74,10 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
+    if country == 'FOREIGN':
+        aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
+    else:
+        aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
     query = {
         "_source": return_fields,
         "size": 0,
@@ -87,11 +94,10 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
                     "field": "{}.keyword".format(return_fields[0]),
                     "size": city_buckets,
                 },
-                "aggs": {
-                    "states": {"terms": {"field": return_fields[1], "size": 100}}
-                },
+                "aggs": aggs,
             }
-        }
+        },
+        "size": 0
     }
     return query
 
@@ -116,28 +122,7 @@ def create_es_search(scope, search_text, country=None, state=None):
             }
         ]
     }
-
-    if state:
-        # States are only supported for Country=USA
-        query["must"].append({"match": {"{scope}_state_code".format(scope=scope): state}})
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
-    elif country == "FOREIGN":
-        # Create a "Should Not" query with a nested bool, to get everything non-USA
-        query["should"] = {
-            "bool": {
-                "must_not": [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-            }
-        }
-    elif country != "USA":
-        # A non-USA selected country
-        query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
-    else:
-        # USA is selected as country
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
-        query["minimum_should_match"] = 1
-
-    return query
+    return build_es_city_query(query, False, scope, country, state)
 
 
 def build_country_match(country_match_scope, country_match_country):
