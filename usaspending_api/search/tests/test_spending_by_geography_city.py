@@ -22,11 +22,11 @@ def award_data_fixture(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        legal_entity_city_name="Burbank",
+        legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="Houston"
+        place_of_perform_city_name="HOUSTON"
     )
     mommy.make(
         "awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", recipient_id=1, type="A",
