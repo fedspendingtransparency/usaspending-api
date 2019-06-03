@@ -244,7 +244,10 @@ def build_es_city_query(query: object, bool_should: bool,
 
     if state_code:
         # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code)}})
+        if bool_should:
+            query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
+        else:
+            query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
 
     return query
 
