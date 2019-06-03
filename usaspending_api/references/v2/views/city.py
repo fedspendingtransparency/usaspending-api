@@ -10,6 +10,7 @@ from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
 
+
 models = [
     {
         "name": "filter|country_code",
