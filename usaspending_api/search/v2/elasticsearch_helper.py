@@ -26,6 +26,17 @@ def es_sanitize(input_string):
     return processed_string
 
 
+def es_minimal_sanitize(keyword):
+    keyword = concat_if_array(keyword)
+    """Remove Lucene special characters instead of escaping for now"""
+    processed_string = re.sub(r"[/:][^!]", "", keyword)
+    if len(processed_string) != len(keyword):
+        msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, keyword))
+        keyword = processed_string
+    return keyword
+
+
 def swap_keys(dictionary_):
     return dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items())
 
@@ -37,7 +48,7 @@ def format_for_frontend(response):
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = es_sanitize(concat_if_array(keyword))
+    keyword = es_minimal_sanitize(concat_if_array(keyword))
     query = {
         "dis_max": {
             "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]
