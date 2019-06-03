@@ -8,7 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
-
+from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
 
 models = [
     {
@@ -73,7 +73,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
-    if country == 'FOREIGN':
+    if country == ALL_FOREIGN_COUNTRIES:
         aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
     else:
         aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
@@ -123,7 +123,7 @@ def create_es_search(scope, search_text, country=None, state=None):
     }
     if country != "USA":
         # A non-USA selected country
-        if country != "FOREIGN":
+        if country != ALL_FOREIGN_COUNTRIES:
             query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
         # Create a "Should Not" query with a nested bool, to get everything non-USA
         query["should"] = [

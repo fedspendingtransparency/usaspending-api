@@ -31,7 +31,7 @@ def geocode_filter_locations(
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
         country_qs = None
-        if country != ALL_FOREIGN_COUNTIRES:
+        if country != ALL_FOREIGN_COUNTRIES:
             country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
@@ -194,7 +194,7 @@ def get_record_ids_by_city(
     }
     if country_code != "USA":
         # A non-USA selected country
-        if country_code != ALL_FOREIGN_COUNTIRES:
+        if country_code != ALL_FOREIGN_COUNTRIES:
             query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
         # Create a "Should Not" query with a nested, to get everything non-USA
         query["bool"]["should"] = [
