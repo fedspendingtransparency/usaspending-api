@@ -7,7 +7,7 @@ from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
-ALL_FOREIGN_COUNTIRES = "FOREIGN"
+ALL_FOREIGN_COUNTRIES = "FOREIGN"
 
 
 def geocode_filter_locations(
