@@ -8,7 +8,6 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
-from usaspending_api.awards.v2.filters.location_filter_geocode import build_es_city_query
 
 
 models = [
@@ -122,7 +121,47 @@ def create_es_search(scope, search_text, country=None, state=None):
             }
         ]
     }
-    return build_es_city_query(query, False, scope, country, state)
+    if country != "USA":
+        # A non-USA selected country
+        if country != "FOREIGN":
+            query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
+        # Create a "Should Not" query with a nested bool, to get everything non-USA
+        query["should"] = [
+          {
+            "bool": {
+              "must": {
+                "exists": {
+                  "field": "{}_country_code".format(scope)
+                }
+              },
+            }
+          }
+        ]
+        query["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                                  {"match_phrase": {
+                                                     "{}_country_code".format(scope): "UNITED STATES"}}]
+        query["minimum_should_match"] = 1
+    else:
+        # USA is selected as country
+        query["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                           {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        query["should"].append({
+              "bool": {
+                "must_not": {
+                  "exists": {
+                    "field": "{}_country_code".format(scope)
+                  }
+                },
+              }
+            })
+        query["minimum_should_match"] = 1
+        # null country codes are being considered as USA country codes
+
+    if state:
+        # If a state was provided, include it in the filter to limit hits
+        query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
+
+    return query
 
 
 def build_country_match(country_match_scope, country_match_country):

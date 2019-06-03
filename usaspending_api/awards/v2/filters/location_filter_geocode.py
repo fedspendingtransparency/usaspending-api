@@ -177,89 +177,6 @@ def create_city_name_queryset(
     return result_queryset
 
 
-def build_es_city_query(query: object, bool_should: bool,
-                        scope: str, country_code: str,
-                        state_code: Optional[str] = None):
-    if country_code != "USA":
-        # A non-USA selected country
-        if country_code != ALL_FOREIGN_COUNTIRES:
-            if bool_should:
-                query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
-            else:
-                query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
-        # Create a "Should Not" query with a nested bool, to get everything non-USA
-        if bool_should:
-            query["bool"]["should"] = [
-              {
-                "bool": {
-                  "must": {
-                    "exists": {
-                      "field": "{}_country_code".format(scope)
-                    }
-                  },
-                }
-              }
-            ]
-            query["bool"]["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                                              {"match_phrase": {
-                                                                "{}_country_code".format(scope): "UNITED STATES"}}]
-            query["bool"]["minimum_should_match"] = 1
-        else:
-            query["should"] = [
-              {
-                "bool": {
-                  "must": {
-                    "exists": {
-                      "field": "{}_country_code".format(scope)
-                    }
-                  },
-                }
-              }
-            ]
-            query["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                                      {"match_phrase": {
-                                                         "{}_country_code".format(scope): "UNITED STATES"}}]
-            query["minimum_should_match"] = 1
-    else:
-        # USA is selected as country
-        if bool_should:
-            query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                       {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
-            query["bool"]["should"].append({
-                  "bool": {
-                    "must_not": {
-                      "exists": {
-                        "field": "{}_country_code".format(scope)
-                      }
-                    },
-                  }
-                })
-            query["bool"]["minimum_should_match"] = 1
-        else:
-            query["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                               {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
-            query["should"].append({
-                  "bool": {
-                    "must_not": {
-                      "exists": {
-                        "field": "{}_country_code".format(scope)
-                      }
-                    },
-                  }
-                })
-            query["minimum_should_match"] = 1
-        # null country codes are being considered as USA country codes
-
-    if state_code:
-        # If a state was provided, include it in the filter to limit hits
-        if bool_should:
-            query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
-        else:
-            query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
-
-    return query
-
-
 def get_record_ids_by_city(
     scope: str, desired_id_field: str, city: str, country_code: str, state_code: Optional[str] = None
 ) -> list:
@@ -275,7 +192,46 @@ def get_record_ids_by_city(
             ]
         }
     }
-    query = build_es_city_query(query, True, scope, country_code, state_code)
+    if country_code != "USA":
+        # A non-USA selected country
+        if country_code != ALL_FOREIGN_COUNTIRES:
+            query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
+        # Create a "Should Not" query with a nested, to get everything non-USA
+        query["bool"]["should"] = [
+          {
+            "bool": {
+              "must": {
+                "exists": {
+                  "field": "{}_country_code".format(scope)
+                }
+              },
+            }
+          }
+        ]
+        query["bool"]["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                                          {"match_phrase": {
+                                                            "{}_country_code".format(scope): "UNITED STATES"}}]
+        query["bool"]["minimum_should_match"] = 1
+    else:
+        # USA is selected as country
+        query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                   {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        query["bool"]["should"].append({
+              "bool": {
+                "must_not": {
+                  "exists": {
+                    "field": "{}_country_code".format(scope)
+                  }
+                },
+              }
+            })
+        query["bool"]["minimum_should_match"] = 1
+        # null country codes are being considered as USA country codes
+
+    if state_code:
+        # If a state was provided, include it in the filter to limit hits
+        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
+
     search_body = {
         "_source": [desired_id_field],
         "size": 0,
