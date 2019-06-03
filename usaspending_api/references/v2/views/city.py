@@ -143,8 +143,7 @@ def create_es_search(scope, search_text, country=None, state=None):
         query["minimum_should_match"] = 1
     else:
         # USA is selected as country
-        query["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                           {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
         query["should"].append({
               "bool": {
                 "must_not": {
