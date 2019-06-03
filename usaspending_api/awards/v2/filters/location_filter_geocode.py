@@ -10,7 +10,9 @@ from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 ALL_FOREIGN_COUNTIRES = "FOREIGN"
 
 
-def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
+def geocode_filter_locations(
+    scope: str, values: list, use_matview: bool = False, desired_id_field: str = "award_id"
+) -> Q:
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -35,7 +37,7 @@ def geocode_filter_locations(scope: str, values: list, use_matview: bool = False
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == "city":
-                state_inner_qs = create_city_name_queryset(scope, state_values, country)
+                state_inner_qs = create_city_name_queryset(scope, desired_id_field, state_values, country)
             elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
@@ -49,7 +51,9 @@ def geocode_filter_locations(scope: str, values: list, use_matview: bool = False
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
                 if state_values["city"]:
-                    city_qs = create_city_name_queryset(scope, state_values["city"], country, state_zip_key)
+                    city_qs = create_city_name_queryset(
+                        scope, desired_id_field, state_values["city"], country, state_zip_key
+                    )
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
@@ -151,7 +155,9 @@ def return_query_string(use_matview: bool) -> tuple:
     return q_str, country_code_col
 
 
-def create_city_name_queryset(scope: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None):
+def create_city_name_queryset(
+    scope: str, desired_id_field: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None
+) -> Q:
     """
     Given a list of city names and the scope, return a django queryset.
     scope = "pop" or "recipient_location"
@@ -160,12 +166,14 @@ def create_city_name_queryset(scope: str, list_of_cities: list, country_code: st
     state_code (optional) is the state code if the search should be limited to that state
     """
     matching_awards = set(
-        chain(*[get_award_ids_by_city(scope, city, country_code, state_code) for city in list_of_cities])
+        chain(*[get_record_ids_by_city(
+            scope, desired_id_field, city, country_code, state_code) for city in list_of_cities]
+        )
     )
     result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
 
     if matching_awards:
-        result_queryset = Q(**{"award_id" + "__in": matching_awards})
+        result_queryset = Q(**{desired_id_field + "__in": matching_awards})
     return result_queryset
 
 
@@ -252,7 +260,9 @@ def build_es_city_query(query: object, bool_should: bool,
     return query
 
 
-def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: Optional[str] = None) -> list:
+def get_record_ids_by_city(
+    scope: str, desired_id_field: str, city: str, country_code: str, state_code: Optional[str] = None
+) -> list:
     """
     Craft an elasticsearch query to return award ids by city or an empty list
     if there were no matches.
@@ -261,16 +271,16 @@ def get_award_ids_by_city(scope: str, city: str, country_code: str, state_code: 
     query = {
         "bool": {
             "must": [
-                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city)}},
+                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
             ]
         }
     }
     query = build_es_city_query(query, True, scope, country_code, state_code)
     search_body = {
-        "_source": ["award_id"],
+        "_source": [desired_id_field],
         "size": 0,
         "query": query,
-        "aggs": {"award_ids": {"terms": {"field": "award_id", "size": 50000}}},
+        "aggs": {"id_groups": {"terms": {"field": desired_id_field, "size": 50000}}},
     }
 
     return elasticsearch_results(search_body)
@@ -284,6 +294,6 @@ def elasticsearch_results(body: dict) -> list:
     hits = es_client_query(body=body, index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), retries=5)
 
     if hits and hits["hits"]["total"]:
-        return [result["key"] for result in hits["aggregations"]["award_ids"]["buckets"]]
+        return [result["key"] for result in hits["aggregations"]["id_groups"]["buckets"]]
     else:
         return []
