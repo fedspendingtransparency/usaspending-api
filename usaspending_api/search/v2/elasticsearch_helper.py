@@ -10,14 +10,23 @@ from usaspending_api.common.elasticsearch.client import es_client_query
 
 logger = logging.getLogger("console")
 
-TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 KEYWORD_DATATYPE_FIELDS = ["{}.raw".format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
-def preprocess(keyword):
+def es_sanitize(input_string):
+    """ Escapes reserved elasticsearch characters and removes when necessary """
+
+    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', input_string)
+    if len(processed_string) != len(input_string):
+        msg = "Stripped characters from input string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, input_string))
+    return processed_string
+
+
+def es_minimal_sanitize(keyword):
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters instead of escaping for now"""
     processed_string = re.sub(r"[/:][^!]", "", keyword)
@@ -39,7 +48,7 @@ def format_for_frontend(response):
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = preprocess(keyword)
+    keyword = es_minimal_sanitize(concat_if_array(keyword))
     query = {
         "dis_max": {
             "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]
@@ -71,7 +80,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
-            index_name = "{}-{}*".format(TRANSACTIONS_INDEX_ROOT, index)
+            index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, index)
             break
     else:
         logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
@@ -87,7 +96,7 @@ def search_transactions(request_data, lower_limit, limit):
 
 
 def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(TRANSACTIONS_INDEX_ROOT, sub_index.replace("_", ""))
+    index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, sub_index.replace("_", ""))
     query = {"query": base_query(keyword)}
 
     response = es_client_query(index=index_name, body=query, retries=retries)
@@ -120,7 +129,7 @@ def get_sum_aggregation_results(keyword, field="transaction_amount"):
     """
     Size has to be zero here because you only want the aggregations
     """
-    index_name = "{}-*".format(TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
     query = {"query": base_query(keyword), "aggs": {"transaction_sum": {"sum": {"field": field}}}}
 
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -142,7 +151,7 @@ def get_download_ids(keyword, field, size=10000):
 
     Note: this only works for fields in ES of integer type.
     """
-    index_name = "{}-*".format(TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
@@ -174,7 +183,7 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = "{}-*".format(TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
     query = {
         "query": base_query(keyword),
         "aggs": {

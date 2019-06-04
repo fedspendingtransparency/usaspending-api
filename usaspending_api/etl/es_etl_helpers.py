@@ -77,6 +77,7 @@ VIEW_COLUMNS = [
     "pop_county_name",
     "pop_zip5",
     "pop_congressional_code",
+    "pop_city_name",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
@@ -84,6 +85,7 @@ VIEW_COLUMNS = [
     "recipient_location_county_name",
     "recipient_location_zip5",
     "recipient_location_congressional_code",
+    "recipient_location_city_name",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -203,6 +205,10 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
+    # There has been a reoccuring issue with .empty() returning true when the queue actually
+    # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    sleep(5)
+    printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
         if done_jobs.full():
             printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
@@ -306,6 +312,20 @@ def put_alias(client, index, alias_name, award_type_codes):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
+def create_aliases(client, index, silent=False):
+    for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
+        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        if silent is False:
+            printf(
+                {
+                    "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
+                    "job": "",
+                    "f": "ES Alias Put",
+                }
+            )
+        put_alias(client, index, alias_name, award_type_codes)
+
+
 def swap_aliases(client, index):
     client.indices.refresh(index)
     # add null values to contracts alias
@@ -324,16 +344,7 @@ def swap_aliases(client, index):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
-        printf(
-            {
-                "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
-                "job": "",
-                "f": "ES Alias Put",
-            }
-        )
-        put_alias(client, index, alias_name, award_type_codes)
+    create_aliases(client, index)
 
     es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
     with open(es_settingsfile) as f:
