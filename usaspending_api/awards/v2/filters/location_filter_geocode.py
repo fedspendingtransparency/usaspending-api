@@ -33,7 +33,7 @@ def geocode_filter_locations(
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == "city":
-                state_inner_qs = create_city_name_queryset(scope, desired_id_field, state_values, country)
+                state_inner_qs = Q(**{q_str.format(scope, 'city_name') + '__in': state_values})
             elif state_zip_key == 'zip':
                 state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
             else:
@@ -47,9 +47,7 @@ def geocode_filter_locations(
                 if state_values['district']:
                     district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
                 if state_values["city"]:
-                    city_qs = create_city_name_queryset(
-                        scope, desired_id_field, state_values["city"], country, state_zip_key
-                    )
+                    city_qs = Q(**{q_str.format(scope, 'city_name') + '__in': state_values['city']})
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs

@@ -83,7 +83,8 @@
     "  pop_city_name,",
     "  LEFT(COALESCE(pop_zip4, ''), 5) AS pop_zip5,",
     "  pop_street_address,",
-    "  pop_congressional_code",
+    "  pop_congressional_code,",
+    "  pop_city_name",
     "FROM",
     "  subaward AS sub",
     "LEFT OUTER JOIN psc ON product_or_service_code = psc.code",
@@ -211,6 +212,10 @@
       "where": "recipient_location_congressional_code IS NOT NULL",
       "columns": [{"name": "recipient_location_congressional_code"}]
     }, {
+      "name": "recipient_location_city_name",
+      "where": "recipient_location_city_name IS NOT NULL",
+      "columns": [{"name": "recipient_location_city_name"}]
+    }, {
       "name": "pop_country_code",
       "where": "pop_country_code IS NOT NULL",
       "columns": [{"name": "pop_country_code"}]
@@ -230,6 +235,10 @@
       "name": "pop_congressional_code",
       "where": "pop_congressional_code IS NOT NULL",
       "columns": [{"name": "pop_congressional_code"}]
+    }, {
+      "name": "pop_city_name",
+      "where": "pop_city_name IS NOT NULL",
+      "columns": [{"name": "pop_city_name"}]
     }, {
       "name": "cfda_number",
       "where": "cfda_number IS NOT NULL",
