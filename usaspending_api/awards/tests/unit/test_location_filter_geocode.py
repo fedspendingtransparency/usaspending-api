@@ -49,6 +49,97 @@ def award_data_fixture(db):
         place_of_performance_id=1,
     )
 
+    mommy.make("references.Location", location_id=2, location_country_code="USA", state_code="NE")
+    mommy.make("references.LegalEntity", legal_entity_id=2)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=2,
+        action_date="2010-10-01",
+        award_id=2,
+        is_fpds=True,
+        place_of_performance_id=1,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=2,
+        legal_entity_city_name="BRISTOL",
+        legal_entity_country_code="GBR",
+        piid="piiiiid",
+        place_of_perform_city_name="Mccool Junction",
+    )
+    mommy.make(
+        "awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
+    mommy.make("references.LegalEntity", legal_entity_id=3)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=3,
+        action_date="2010-10-01",
+        award_id=3,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=3,
+        legal_entity_city_name="BRISBANE",
+        piid="0002",
+        place_of_perform_city_name="BRISBANE",
+    )
+    mommy.make(
+        "awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=4,
+        action_date="2010-10-01",
+        award_id=4,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=4,
+        legal_entity_city_name="NEW YORK",
+        legal_entity_country_code="USA",
+        piid="0003",
+        place_of_perform_city_name="NEW YORK",
+    )
+    mommy.make(
+        "awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=5,
+        action_date="2010-10-01",
+        award_id=5,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=5,
+        legal_entity_city_name="NEW AMSTERDAM",
+        legal_entity_country_code="USA",
+        piid="0004",
+        place_of_perform_city_name="NEW AMSTERDAM",
+    )
+    mommy.make(
+        "awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
 
 def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
@@ -56,17 +147,17 @@ def test_geocode_filter_locations(award_data_fixture, elasticsearch_transaction_
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "HOUSTON", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "CA", "country": "USA"},
+        {"city": "Houston", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
-    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 1
+    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
     values = [
-        {"city": "AUSTIN", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "TX", "country": "USA"},
+        {"city": "Austin", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "TX", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
@@ -187,6 +278,14 @@ def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction
         ).count()
         == 1
     )
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["Houston"], "USA", "TX")).count() == 0
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["BRISTOL"], "GBR")).count() == 1
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["BRISTOL"], "FOREIGN")).count() == 1
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["BRISTOL"], "USA")).count() == 0
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["BRISBANE"], "USA")).count() == 1
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["BRISBANE"], "FOREIGN")).count() == 0
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["NEW YORK"], "USA")).count() == 1
+    assert to.filter(create_city_name_queryset("recipient_location", "award_id", ["NEW AMSTERDAM"], "USA")).count() == 1
     assert (
         to.filter(create_city_name_queryset("recipient_location", "transaction_id", ["Houston"], "USA", "TX")).count()
         == 0
@@ -196,13 +295,22 @@ def test_create_city_name_queryset(award_data_fixture, elasticsearch_transaction
 def test_get_award_ids_by_city(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
 
-    assert len(get_record_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
+    # assert len(get_record_ids_by_city("nothing", "nothing", "nothing", "nothing", "nothing")) == 0
 
     assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", None)) == 1
     assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", "TX")) == 1
     assert len(get_record_ids_by_city("pop", "award_id", "Houston", "USA", "VA")) == 0
     assert len(get_record_ids_by_city("pop", "award_id", "Burbank", "USA", "CA")) == 0
 
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", None)) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "CA")) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "VA")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "Houston", "USA", "TX")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "BRISTOL", "GBR")) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "BRISTOL", "FOREIGN")) == 1
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "BRISTOL", "USA")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "BRISBANE", "FOREIGN")) == 0
+    assert len(get_record_ids_by_city("recipient_location", "award_id", "BRISBANE", "USA")) == 1
     assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", None)) == 1
     assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "CA")) == 1
     assert len(get_record_ids_by_city("recipient_location", "award_id", "Burbank", "USA", "VA")) == 0
@@ -220,8 +328,12 @@ def test_elasticsearch_results(award_data_fixture, elasticsearch_transaction_ind
     }
     results = elasticsearch_results(query)
     assert results is not None
-    assert len(results) == 1
+    assert len(results) == 5
     assert results[0] == 1
+    assert results[1] == 2
+    assert results[2] == 3
+    assert results[3] == 4
+    assert results[4] == 5
 
     query = {
         "_source": ["award_id"],

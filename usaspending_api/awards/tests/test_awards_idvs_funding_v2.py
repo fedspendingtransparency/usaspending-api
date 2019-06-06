@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework import status
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.views.idvs.funding import SORTABLE_COLUMNS
-from usaspending_api.awards.tests.data.idv_funding_data import create_funding_data_tree
+from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data
 
 
 DETAIL_ENDPOINT = '/api/v2/awards/idvs/funding/'
@@ -13,8 +13,8 @@ DETAIL_ENDPOINT = '/api/v2/awards/idvs/funding/'
 class IDVFundingTestCase(TestCase):
 
     @classmethod
-    def setUp(cls):
-        create_funding_data_tree()
+    def setUpTestData(cls):
+        create_idv_test_data()
 
     @staticmethod
     def _generate_expected_response(previous, next, page, has_previous, has_next, *award_ids):
@@ -24,9 +24,7 @@ class IDVFundingTestCase(TestCase):
         generate them.  award_ids is the list of ids we expect back from the
         request in the order we expect them.  Unfortunately, for this to work,
         test data had to be generated in a specific way.  If you change how
-        test data is generated you will probably also have to change this.  For
-        example, IDVs have obligated amounts in the thousands whereas contracts
-        have obligated amounts in the single digits and teens.
+        test data is generated you will probably also have to change this.
         """
         results = []
         for _id in award_ids:
@@ -41,14 +39,14 @@ class IDVFundingTestCase(TestCase):
                 'awarding_agency_name': 'toptier_awarding_agency_name_%s' % (8500 + _id),
                 'funding_agency_id': 9000 + _id,
                 'funding_agency_name': 'toptier_funding_agency_name_%s' % (9500 + _id),
-                'agency_id': _sid.zfill(3),
+                'agency_id': str(100 + _id).zfill(3),
                 'main_account_code': _sid.zfill(4),
-                'account_title': 'FederalAccount account title %s' % _sid,
-                'program_activity_code': _sid,
-                'program_activity_name': 'program activity %s' % _sid,
-                'object_class': '1' + _sid,
-                'object_class_name': 'object class %s' % _sid,
-                'transaction_obligated_amount': _id * 10000 + _id + _id / 100
+                'account_title': "federal_account_title_%s" % (2000 + _id),
+                'program_activity_code': str(4000 + _id),
+                'program_activity_name': "program_activity_%s" % (4000 + _id),
+                'object_class': str(5000 + _id),
+                'object_class_name': "object_class_%s" % (5000 + _id),
+                'transaction_obligated_amount': 200000.0 + _id
             })
 
         page_metadata = {
@@ -229,14 +227,14 @@ class IDVFundingTestCase(TestCase):
         self._test_post(
             {'award_id': 2, 'piid': 'piid_013', 'limit': 3, 'page': 1, 'sort': 'piid', 'order': 'asc'},
             (None, None, 1, False, False, 13)
-            )
+        )
 
     def test_dev_2307(self):
 
         # Make one of the transaction_obligated_amount values NaN.  Going from
-        # the drawing in idv_funding_data.poy, if we update contract 12, we should
+        # the drawing in idv_test_data.py, if we update contract 12, we should
         # see this record for IDV 7.
-        FinancialAccountsByAwards.objects.filter(pk=12).update(transaction_obligated_amount='NaN')
+        FinancialAccountsByAwards.objects.filter(pk=6012).update(transaction_obligated_amount='NaN')
 
         # Retrieve the NaN value.
         response = self.client.post(
@@ -247,4 +245,4 @@ class IDVFundingTestCase(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         assert len(result['results']) == 2
         for r in result['results']:
-            assert r['transaction_obligated_amount'] in (None, 110011.11)
+            assert r['transaction_obligated_amount'] in (None, 200011.0)

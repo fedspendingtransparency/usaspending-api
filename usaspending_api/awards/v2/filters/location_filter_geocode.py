@@ -7,6 +7,8 @@ from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
+ALL_FOREIGN_COUNTRIES = "FOREIGN"
+
 
 def geocode_filter_locations(
     scope: str, values: list, use_matview: bool = False, desired_id_field: str = "award_id"
@@ -28,7 +30,9 @@ def geocode_filter_locations(
 
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
-        country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
+        country_qs = None
+        if country != ALL_FOREIGN_COUNTRIES:
+            country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
         for state_zip_key, state_values in state_zip.items():
@@ -53,8 +57,10 @@ def geocode_filter_locations(
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
-
-        or_queryset |= (country_qs & state_qs)
+        if country_qs:
+            or_queryset |= (country_qs & state_qs)
+        else:
+            or_queryset |= (state_qs)
     return or_queryset
 
 
@@ -183,10 +189,45 @@ def get_record_ids_by_city(
         "bool": {
             "must": [
                 {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
-                {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
             ]
         }
     }
+    if country_code != "USA":
+        # A non-USA selected country
+        if country_code != ALL_FOREIGN_COUNTRIES:
+            query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
+        # Create a "Should Not" query with a nested, to get everything non-USA
+        query["bool"]["should"] = [
+          {
+            "bool": {
+              "must": {
+                "exists": {
+                  "field": "{}_country_code".format(scope)
+                }
+              },
+            }
+          }
+        ]
+        query["bool"]["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                                          {"match_phrase": {
+                                                            "{}_country_code".format(scope): "UNITED STATES"}}]
+        query["bool"]["minimum_should_match"] = 1
+    else:
+        # USA is selected as country
+        query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
+                                   {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
+        query["bool"]["should"].append({
+              "bool": {
+                "must_not": {
+                  "exists": {
+                    "field": "{}_country_code".format(scope)
+                  }
+                },
+              }
+            })
+        query["bool"]["minimum_should_match"] = 1
+        # null country codes are being considered as USA country codes
+
     if state_code:
         # If a state was provided, include it in the filter to limit hits
         query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
