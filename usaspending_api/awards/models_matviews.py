@@ -362,7 +362,6 @@ class SummaryTransactionMonthView(models.Model):
     recipient_location_county_code = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
-    recipient_location_foreign_province = models.TextField()
     recipient_location_city_name = models.TextField()
 
     pop_country_name = models.TextField()
@@ -427,7 +426,6 @@ class SummaryTransactionGeoView(models.Model):
     recipient_location_county_code = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
-    recipient_location_foreign_province = models.TextField()
     recipient_location_city_name = models.TextField()
 
     pop_country_name = models.TextField()

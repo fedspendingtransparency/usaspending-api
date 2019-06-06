@@ -51,8 +51,8 @@ def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "HOUSTON", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "CA", "country": "USA"},
+        {"city": "HoUsToN", "state": "tx", "country": "USA"},
+        {"city": "burBANK", "state": "CA", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 1
@@ -117,9 +117,9 @@ def test_create_nested_object():
         ]
     ) == {
         "USA": {
-            "city": ["Chicago"],
+            "city": ["CHICAGO"],
             "zip": ["12345", "12345"],
-            "IL": {"county": ["Yes"], "district": ["Also Yes"], "city": ["Chicago"]},
+            "IL": {"county": ["YES"], "district": ["ALSO YES"], "city": ["CHICAGO"]},
         }
     }
 
