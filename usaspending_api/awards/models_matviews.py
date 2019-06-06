@@ -837,7 +837,6 @@ class SubawardView(models.Model):
     pop_zip5 = models.TextField()
     pop_street_address = models.TextField()
     pop_congressional_code = models.TextField()
-    pop_city_name = models.TextField()
 
     class Meta:
         managed = False
