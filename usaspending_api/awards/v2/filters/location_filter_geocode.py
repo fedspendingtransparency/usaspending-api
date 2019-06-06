@@ -1,11 +1,6 @@
-from django.conf import settings
 from django.db.models import Q
-from itertools import chain
-from typing import Optional
 
-from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
 
 def geocode_filter_locations(
@@ -145,68 +140,3 @@ def return_query_string(use_matview: bool) -> tuple:
         country_code_col = 'location_country_code'  # References_location table uses the col location_country_code
 
     return q_str, country_code_col
-
-
-def create_city_name_queryset(
-    scope: str, desired_id_field: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None
-) -> Q:
-    """
-    Given a list of city names and the scope, return a django queryset.
-    scope = "pop" or "recipient_location"
-    list_of_city_names is a list of strings
-    country_code is the country code to limit the query and results from Elasticsearch
-    state_code (optional) is the state code if the search should be limited to that state
-    """
-    matching_awards = set(
-        chain(*[get_record_ids_by_city(
-            scope, desired_id_field, city, country_code, state_code) for city in list_of_cities]
-        )
-    )
-    result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
-
-    if matching_awards:
-        result_queryset = Q(**{desired_id_field + "__in": matching_awards})
-    return result_queryset
-
-
-def get_record_ids_by_city(
-    scope: str, desired_id_field: str, city: str, country_code: str, state_code: Optional[str] = None
-) -> list:
-    """
-    Craft an elasticsearch query to return award ids by city or an empty list
-    if there were no matches.
-    """
-    # Search using a "filter" instead of a "query" to leverage ES caching
-    query = {
-        "bool": {
-            "must": [
-                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
-                {"match": {"{}_country_code".format(scope): es_sanitize(country_code)}},
-            ]
-        }
-    }
-    if state_code:
-        # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
-
-    search_body = {
-        "_source": [desired_id_field],
-        "size": 0,
-        "query": query,
-        "aggs": {"id_groups": {"terms": {"field": desired_id_field, "size": 500000}}},
-    }
-
-    return elasticsearch_results(search_body)
-
-
-def elasticsearch_results(body: dict) -> list:
-    """
-    Run provided query and return a list of award ids or an empty list if there
-    were no hits.
-    """
-    hits = es_client_query(body=body, index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), retries=5)
-
-    if hits and hits["hits"]["total"]:
-        return [result["key"] for result in hits["aggregations"]["id_groups"]["buckets"]]
-    else:
-        return []
