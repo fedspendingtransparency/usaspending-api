@@ -30,10 +30,10 @@ CREATE TABLE references_legalentityofficers_new AS (
                 NULLIF(high_comp_officer3_amount, '''')::NUMERIC(23, 2) AS officer_3_amount,
                 NULLIF(high_comp_officer4_amount, '''')::NUMERIC(23, 2) AS officer_4_amount,
                 NULLIF(high_comp_officer5_amount, '''')::NUMERIC(23, 2) AS officer_5_amount
-            FROM executive_compensation e
+            FROM duns e
             INNER JOIN (
                 SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate
-                FROM executive_compensation ex
+                FROM duns ex
                 GROUP BY awardee_or_recipient_uniqu
             ) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu
                 AND e.created_at = ex.MaxDate
