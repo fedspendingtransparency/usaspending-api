@@ -1,6 +1,7 @@
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
 
 def geocode_filter_locations(
@@ -65,13 +66,13 @@ def create_nested_object(values):
 
     nested_locations = {}
     for v in values:
-        country = v.get("country", "").upper() or None
-        city = v.get("city", "").upper() or None
-        state = v.get("state", "").upper() or None
+        upper_case_dict_values(v)
+        city = v.get("city")
+        country = v.get("country")
+        county = v.get("county")
+        district = v.get("district")
+        state = v.get("state")
         zip = v.get("zip")
-        county = v.get("county", "").upper() or None
-        district = v.get("district", "").upper() or None
-
         # First level in location filtering in country
         # All location requests must have a country otherwise there will be a key error
         if nested_locations.get(country) is None:
