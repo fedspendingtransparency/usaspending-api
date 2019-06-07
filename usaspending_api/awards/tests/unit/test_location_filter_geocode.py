@@ -45,7 +45,6 @@ def award_data_fixture(db):
         type="A",
     )
 
-    mommy.make("references.Location", location_id=2, location_country_code="USA", state_code="NE")
     mommy.make("references.LegalEntity", legal_entity_id=2)
     mommy.make(
         "awards.TransactionNormalized",
@@ -53,7 +52,6 @@ def award_data_fixture(db):
         action_date="2010-10-01",
         award_id=2,
         is_fpds=True,
-        place_of_performance_id=1,
         type="A",
     )
     mommy.make(
@@ -62,11 +60,12 @@ def award_data_fixture(db):
         legal_entity_city_name="BRISTOL",
         legal_entity_country_code="GBR",
         piid="piiiiid",
-        place_of_perform_city_name="Mccool Junction",
+        place_of_perform_city_name="MCCOOL JUNCTION",
+        place_of_performance_state="TX",
+        place_of_perform_country_c="USA",
     )
     mommy.make(
         "awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", recipient_id=2, type="A",
-        place_of_performance_id=2
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=3)
@@ -76,7 +75,6 @@ def award_data_fixture(db):
         action_date="2010-10-01",
         award_id=3,
         is_fpds=True,
-        place_of_performance_id=2,
         type="A",
     )
     mommy.make(
@@ -85,10 +83,11 @@ def award_data_fixture(db):
         legal_entity_city_name="BRISBANE",
         piid="0002",
         place_of_perform_city_name="BRISBANE",
+        place_of_performance_state="NE",
+        place_of_perform_country_c="USA",
     )
     mommy.make(
         "awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", recipient_id=2, type="A",
-        place_of_performance_id=2
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=4)
@@ -98,7 +97,6 @@ def award_data_fixture(db):
         action_date="2010-10-01",
         award_id=4,
         is_fpds=True,
-        place_of_performance_id=2,
         type="A",
     )
     mommy.make(
@@ -108,10 +106,11 @@ def award_data_fixture(db):
         legal_entity_country_code="USA",
         piid="0003",
         place_of_perform_city_name="NEW YORK",
+        place_of_performance_state="NE",
+        place_of_perform_country_c="USA",
     )
     mommy.make(
-        "awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A",
-        place_of_performance_id=2
+        "awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A"
     )
     mommy.make("references.LegalEntity", legal_entity_id=4)
     mommy.make(
@@ -120,7 +119,6 @@ def award_data_fixture(db):
         action_date="2010-10-01",
         award_id=5,
         is_fpds=True,
-        place_of_performance_id=2,
         type="A",
     )
     mommy.make(
@@ -130,10 +128,11 @@ def award_data_fixture(db):
         legal_entity_country_code="USA",
         piid="0004",
         place_of_perform_city_name="NEW AMSTERDAM",
+        place_of_performance_state="NE",
+        place_of_perform_country_c="USA",
     )
     mommy.make(
         "awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", recipient_id=2, type="A",
-        place_of_performance_id=2
     )
 
 
@@ -142,7 +141,7 @@ def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "Houston", "state": "TX", "country": "USA"},
+        {"city": "McCool Junction", "state": "TX", "country": "USA"},
         {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
@@ -151,8 +150,8 @@ def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
     values = [
-        {"city": "Austin", "state": "TX", "country": "USA"},
-        {"city": "Burbank", "state": "TX", "country": "USA"},
+        {"city": "Houston", "state": "TX", "country": "USA"},
+        {"city": "McCool Junction", "state": "TX", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
