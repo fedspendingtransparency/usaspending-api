@@ -45,23 +45,114 @@ def award_data_fixture(db):
         type="A",
     )
 
+    mommy.make("references.Location", location_id=2, location_country_code="USA", state_code="NE")
+    mommy.make("references.LegalEntity", legal_entity_id=2)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=2,
+        action_date="2010-10-01",
+        award_id=2,
+        is_fpds=True,
+        place_of_performance_id=1,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=2,
+        legal_entity_city_name="BRISTOL",
+        legal_entity_country_code="GBR",
+        piid="piiiiid",
+        place_of_perform_city_name="Mccool Junction",
+    )
+    mommy.make(
+        "awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
+    mommy.make("references.LegalEntity", legal_entity_id=3)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=3,
+        action_date="2010-10-01",
+        award_id=3,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=3,
+        legal_entity_city_name="BRISBANE",
+        piid="0002",
+        place_of_perform_city_name="BRISBANE",
+    )
+    mommy.make(
+        "awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=4,
+        action_date="2010-10-01",
+        award_id=4,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=4,
+        legal_entity_city_name="NEW YORK",
+        legal_entity_country_code="USA",
+        piid="0003",
+        place_of_perform_city_name="NEW YORK",
+    )
+    mommy.make(
+        "awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=5,
+        action_date="2010-10-01",
+        award_id=5,
+        is_fpds=True,
+        place_of_performance_id=2,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=5,
+        legal_entity_city_name="NEW AMSTERDAM",
+        legal_entity_country_code="USA",
+        piid="0004",
+        place_of_perform_city_name="NEW AMSTERDAM",
+    )
+    mommy.make(
+        "awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", recipient_id=2, type="A",
+        place_of_performance_id=2
+    )
+
 
 def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
 
     to = UniversalAwardView.objects
 
     values = [
-        {"city": "HoUsToN", "state": "tx", "country": "USA"},
-        {"city": "burBANK", "state": "CA", "country": "USA"},
+        {"city": "Houston", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
-    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 1
-    assert to.filter(geocode_filter_locations("pop", values, True)).count() == 0
+    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
+    assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
     assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
 
     values = [
-        {"city": "AUSTIN", "state": "TX", "country": "USA"},
-        {"city": "BURBANK", "state": "TX", "country": "USA"},
+        {"city": "Austin", "state": "TX", "country": "USA"},
+        {"city": "Burbank", "state": "TX", "country": "USA"},
     ]
 
     assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1

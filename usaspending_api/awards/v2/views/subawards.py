@@ -51,9 +51,9 @@ class SubawardsViewSet(APIDocumentationView):
             queryset = queryset.filter(award_id=request_data["award_id"])
 
         if request_data["order"] == "desc":
-            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
+            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True))
         else:
-            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
+            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True))
 
         rows = list(queryset[lower_limit:upper_limit + 1])
         return [

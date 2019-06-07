@@ -3,6 +3,8 @@ from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
+ALL_FOREIGN_COUNTRIES = "FOREIGN"
+
 
 def geocode_filter_locations(
     scope: str, values: list, use_matview: bool = False, desired_id_field: str = "award_id"
@@ -24,7 +26,9 @@ def geocode_filter_locations(
 
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
-        country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
+        country_qs = None
+        if country != ALL_FOREIGN_COUNTRIES:
+            country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
         for state_zip_key, location_values in state_zip.items():
@@ -48,8 +52,10 @@ def geocode_filter_locations(
                 state_inner_qs &= (county_qs | district_qs | city_qs)
 
             state_qs |= state_inner_qs
-
-        or_queryset |= (country_qs & state_qs)
+        if country_qs:
+            or_queryset |= (country_qs & state_qs)
+        else:
+            or_queryset |= (state_qs)
     return or_queryset
 
 
