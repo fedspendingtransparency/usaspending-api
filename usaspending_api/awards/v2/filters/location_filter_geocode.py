@@ -236,7 +236,7 @@ def get_record_ids_by_city(
         "_source": [desired_id_field],
         "size": 0,
         "query": query,
-        "aggs": {"id_groups": {"terms": {"field": desired_id_field, "size": 50000}}},
+        "aggs": {"id_groups": {"terms": {"field": desired_id_field, "size": 500000}}},
     }
 
     return elasticsearch_results(search_body)
