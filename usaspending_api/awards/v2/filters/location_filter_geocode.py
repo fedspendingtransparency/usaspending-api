@@ -6,9 +6,7 @@ from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 ALL_FOREIGN_COUNTRIES = "FOREIGN"
 
 
-def geocode_filter_locations(
-    scope: str, values: list, use_matview: bool = False, desired_id_field: str = "award_id"
-) -> Q:
+def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
