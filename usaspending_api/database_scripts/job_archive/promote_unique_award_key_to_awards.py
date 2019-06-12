@@ -11,36 +11,18 @@ Expected CLI:
 
 Process:
 
-    STEP 1:  Remove orphaned awards
-    STEP 2:  Replace all generated_unique_award_ids with unique_award_keys in the awards table
-    STEP 3:  Confirm there are no duplicate unique_award_keys in the awards table
-    STEP 6:  Confirm there are no mislinked transactions/awards
-             awards.latest_transaction_id = transaction.transaction_id but transaction_normalized.award_id != awards.id
-             awards.latest_transaction_id not in the set of transaction.ids where transaction_normalized.award_id != awards.id
-    STEP 7:  Reload all of those by unique_award_key
+    STEP 1 - There are some awards that have no relations anywhere in
+             the database.  Eliminate them.
 
+    STEP 2 - Back up old generated_unique_award_ids.
 
-WHAT IF WE MADE A LIST OF ALL UNIQUE AWARD KEYS FROM LATEST TRANSACTIONS AND COMPARED THEN AGAINST WHAT WOULD HAVE BEEN GENERATED FROM THE AWARD... ANY VALUE?
-WHAT DO WE DO WITH INVALID TRANSACTION UNIQUE AWARD KEYS?  DELETE THE TRANSACTIONS?  THIS WILL CAUSE A PROBLEM BECAUSE OF MATERIALIZED VIEWS
+    STEP 3 - Create a unique_award_key mapping.  This is for debugging
+             purposes.  It's harder to figure out what went wrong if we update
+             the awards table directly.
 
-UPDATE UNIQUE_AWARD_KEYS FROM LATEST TRANSACTION - GENERATE THEM FOR THOSE AWARDS THAT HAVE NO TRANSACTIONS
-GENERATE A LIST OF CONFLICED OR OTHERWISE BOGUS AWARDS
-DELETE THE CONFLICTED AWARDS - THIS WILL CAUSE A PROBLEM WITH MATERIALIZED VIEWS
-NULL OR DELETE REFERENCES TO THEM
-DUPLICATE ALL THE STUFF IN FPDS NIGHTLY LOADER TO REBUILD THE AWARDS
+    STEP 4 - Replace generated_unique_award_id with unique_award_key
 
-
-            # Update Awards based on changed FPDS records
-            with timer("updating awards to reflect their latest associated transaction info", logger.info):
-                update_awards(tuple(AWARD_UPDATE_ID_LIST))
-
-            # Update FPDS-specific Awards based on the info in child transactions
-            with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
-                update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
-
-            # Update AwardCategories based on changed FPDS records
-            with timer("updating award category variables", logger.info):
-                update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+    STEP 5 - If everything went well, remove temp_dev2504_unique_award_key_mapping.
 
 """
 import contextlib
