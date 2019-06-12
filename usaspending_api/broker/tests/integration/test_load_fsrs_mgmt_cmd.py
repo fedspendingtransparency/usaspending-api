@@ -70,8 +70,6 @@ def test_fresh_subaward_load_associated_awards_exact_match(mock_db_cursor):
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
 
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
     models_to_mock = [
         {
             'model': Award,
@@ -115,8 +113,6 @@ def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
 
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
     models_to_mock = [
         {
             'model': Award,
@@ -160,8 +156,6 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
 
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
     models_to_mock = [
         {
             'model': Award,

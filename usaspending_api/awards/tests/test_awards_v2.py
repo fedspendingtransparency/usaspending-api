@@ -172,7 +172,7 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
-        "generated_unique_award_id": "ASST_AW_3620_-NONE-_1830212.0481163",
+        "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "awarding_agency": Agency.objects.get(pk=1),
@@ -198,7 +198,7 @@ def awards_and_transactions(db):
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
-        "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
@@ -228,11 +228,11 @@ def test_award_last_updated_endpoint(client):
 @pytest.mark.django_db
 def test_award_endpoint_generated_id(client, awards_and_transactions):
 
-    resp = client.get("/api/v2/awards/ASST_AW_3620_-NONE-_1830212.0481163/")
+    resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
 
-    resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/")
+    resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
 
@@ -252,7 +252,7 @@ expected_response_asst = {
     "type_description": "OTHER FINANCIAL ASSISTANCE",
     "uri": "1234",
     "fain": None,
-    "generated_unique_award_id": "ASST_AW_3620_-NONE-_1830212.0481163",
+    "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
     "description": "lorem ipsum",
     "cfda_objectives": None,
     "cfda_number": "1234",
@@ -328,7 +328,7 @@ expected_response_asst = {
 
 expected_response_cont = {
     "id": 2,
-    "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
+    "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
     "type": "A",
     "category": "contract",
     "type_description": "DEFINITIVE CONTRACT",
