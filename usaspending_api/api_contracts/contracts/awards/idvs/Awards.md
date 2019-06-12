@@ -32,6 +32,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                 + `period_of_performance_current_end_date`
                 + `last_date_to_order`
                 + `funding_agency`
+                + `awarding_agency`
                 + `award_type`
                 + `obligated_amount`
         + `order`: `desc` (optional, string)

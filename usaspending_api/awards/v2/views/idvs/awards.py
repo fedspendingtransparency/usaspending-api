@@ -19,6 +19,7 @@ SORTABLE_COLUMNS = (
     'award_type',
     'description',
     'funding_agency',
+    'awarding_agency',
     'last_date_to_order',
     'obligated_amount',
     'period_of_performance_current_end_date',
