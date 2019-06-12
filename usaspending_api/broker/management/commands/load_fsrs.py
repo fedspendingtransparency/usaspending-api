@@ -112,7 +112,8 @@ class Command(BaseCommand):
             )
 
             if all_awards.count() > 1:
-                logger.warning("Multiple awards found with generated_unique_award_id '{}'".format(row['unique_award_key']))
+                logger.warning(
+                    "Multiple awards found with generated_unique_award_id '{}'".format(row['unique_award_key']))
 
             award = all_awards.first()
 

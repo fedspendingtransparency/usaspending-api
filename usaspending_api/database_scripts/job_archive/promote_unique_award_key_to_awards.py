@@ -88,46 +88,49 @@ def delete_orphaned_awards(cursor):
     This query takes about 30 minutes on DEV and about 20 on PROD.
     """
     cursor.execute("""
-        select  a.id, a.type
-        from    awards a
-                left outer join transaction_normalized tn on tn.award_id = a.id
-                left outer join subaward sa on sa.award_id = a.id
-                left outer join financial_accounts_by_awards faba on faba.award_id = a.id
-        where   tn.id is null and
-                sa.id is null and
-                faba.financial_accounts_by_awards_id is null
-        order by a.id
+        create table if not exists
+                    temp_dev2504_orphaned_awards
+        as select   a.id award_id, a.type
+        from        awards a
+                    left outer join transaction_normalized tn on tn.award_id = a.id
+                    left outer join subaward sa on sa.award_id = a.id
+                    left outer join financial_accounts_by_awards faba on faba.award_id = a.id
+        where       tn.id is null and
+                    sa.id is null and
+                    faba.financial_accounts_by_awards_id is null
+        order by    a.id
     """)
-    results = cursor.fetchall()
+    _rowcount = cursor.rowcount
+    if _rowcount > -1:
+        print("{:,} orphans found".format(cursor.rowcount))
+    else:
+        cursor.execute("select count(*) from temp_dev2504_orphaned_awards")
+        results = cursor.fetchall()
+        _rowcount = results[0][0]
+        print("Using existing table which contains {:,} orphans".format(_rowcount))
 
-    if len(results) >= 300:
+    if _rowcount >= 300:
         raise ValueError(
-            "While running 'delete_orphaned_awards', found {:,} IDVs to be "
-            "deleted.  Expected less than 300.".format(len(results))
+            "While running 'delete_orphaned_awards', found {:,} orphans to be "
+            "deleted.  Expected less than 300.".format(_rowcount)
         )
 
-    idv_award_ids = []
-    non_idv_award_ids = []
-    for row in results:
-        if row[1].startswith('IDV'):
-            idv_award_ids.append(row[0])
-        else:
-            non_idv_award_ids.append(row[0])
-
-    if non_idv_award_ids:
+    cursor.execute("select count(*) from temp_dev2504_orphaned_awards where type not like 'IDV%'")
+    results = cursor.fetchall()
+    if results[0][0] > 0:
         raise ValueError(
-            "While running 'delete_orphaned_awards', the following non-IDV "
-            "awards were returned.  Expected none.  %s" % non_idv_award_ids
+            "While running 'delete_orphaned_awards', found {:,} non-IDV.  "
+            "Expected none.  Check temp_dev2504_orphaned_awards table for the "
+            "list.".format(results[0][0])
         )
 
     # Ok.  We're good.  Delete these awards if there are any.
-    if idv_award_ids:
-        idv_award_ids = tuple(idv_award_ids)
-        with connection.cursor() as cursor:
-            cursor.execute('delete from parent_award where award_id in %s', idv_award_ids)
-            print("{:,} parent_awards deleted".format(cursor.rowcount))
-            cursor.execute('delete from awards where id in %s', idv_award_ids)
-            print("{:,} awards deleted".format(cursor.rowcount))
+    # if _rowcount > 0:
+    cursor.execute(
+        'delete from parent_award where award_id in (select award_id from temp_dev2504_orphaned_awards)')
+    print("{:,} parent_awards deleted".format(cursor.rowcount))
+    cursor.execute('delete from awards where id in (select award_id from temp_dev2504_orphaned_awards)')
+    print("{:,} awards deleted".format(cursor.rowcount))
 
 
 def back_up_generated_unique_award_ids(cursor):
@@ -191,7 +194,7 @@ def replace_generated_unique_award_id(cursor):
     total_count = 0
 
     overall_start = time.perf_counter()
-    for _min, _max, _ratio in chunk_ids(min_id, max_id, 100000):
+    for _min, _max, _ratio in chunk_ids(min_id, max_id, 200000):
         start = time.perf_counter()
         cursor.execute("""
             update
