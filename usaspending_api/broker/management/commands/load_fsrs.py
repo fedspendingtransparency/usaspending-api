@@ -78,11 +78,6 @@ class Command(BaseCommand):
                 .first()
             )
 
-            # We don't have a matching award for this sub-contract, log a warning and continue to the next row
-            if not award:
-                msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
-                logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
-                return None
         else:
 
             # Find the award to attach this sub-grant to using the generated unique ID (unique_award_key):
@@ -102,11 +97,11 @@ class Command(BaseCommand):
 
             award = all_awards.first()
 
-            # We don't have a matching award for this sub-grant, log a warning and continue to the next row
-            if not award:
-                msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
-                logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
-                return None
+        if not award:
+            msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
+            logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
+            return None
+
         return award
 
     def gather_shared_award_data(self, data, award_type):
