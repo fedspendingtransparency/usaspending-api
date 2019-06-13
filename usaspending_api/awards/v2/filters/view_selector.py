@@ -74,8 +74,6 @@ MATVIEW_SELECTOR = {
             'place_of_performance_locations',
         ],
         'prevent_values': {
-            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
-            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
         },
         'examine_values': {
             'time_period': [can_use_month_aggregation, only_action_date_type],
@@ -100,8 +98,6 @@ MATVIEW_SELECTOR = {
             'extent_competed_type_codes',
         ],
         'prevent_values': {
-            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
-            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
         },
         'examine_values': {
             'time_period': [only_action_date_type]
@@ -127,8 +123,6 @@ MATVIEW_SELECTOR = {
             'extent_competed_type_codes',
         ],
         'prevent_values': {
-            "recipient_locations": {"key": "city", "type": "list", "is_present": True},
-            "place_of_performance_locations": {"key": "city", "type": "list", "is_present": True},
         },
         'examine_values': {
             'time_period': [can_use_month_aggregation, only_action_date_type],
