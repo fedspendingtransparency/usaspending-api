@@ -88,9 +88,12 @@ def delete_orphaned_awards(cursor):
     This query takes about 30 minutes on DEV and about 20 on PROD.
     """
     cursor.execute("""
-        create table if not exists
-                    temp_dev2504_orphaned_awards
-        as select   a.id as award_id, null::text as type
+        create table if not exists temp_dev2504_orphaned_awards (award_id bigint not null, type text)
+    """)
+
+    cursor.execute("""
+        insert into temp_dev2504_orphaned_awards (award_id)
+        select      a.id
         from        awards a
                     left outer join transaction_normalized tn on tn.award_id = a.id
                     left outer join subaward sa on sa.award_id = a.id
