@@ -90,7 +90,7 @@ def delete_orphaned_awards(cursor):
     cursor.execute("""
         create table if not exists
                     temp_dev2504_orphaned_awards
-        as select   a.id award_id, a.type
+        as select   a.id as award_id, null::text as type
         from        awards a
                     left outer join transaction_normalized tn on tn.award_id = a.id
                     left outer join subaward sa on sa.award_id = a.id
@@ -100,6 +100,22 @@ def delete_orphaned_awards(cursor):
                     faba.financial_accounts_by_awards_id is null
     """)
     _rowcount = cursor.rowcount
+
+    # Believe it or not, it's faster to update this after the fact than to
+    # try to include "type" in the create table script above.  Probably
+    # something to do with index only scans.
+    cursor.execute("""
+        update      temp_dev2504_orphaned_awards
+        set         type = a.type
+        from        awards a
+        where       a.id = temp_dev2504_orphaned_awards.award_id
+    """)
+    if cursor.rowcount != _rowcount:
+        raise RuntimeError(
+            "Error updating temp_dev2504_orphaned_awards.type - rowcount "
+            "mismatch {} in table vs {} types updated".format(_rowcount, cursor.rowcount)
+        )
+
     if _rowcount > -1:
         print("{:,} orphans found".format(cursor.rowcount))
     else:

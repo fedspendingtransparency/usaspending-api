@@ -224,7 +224,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 fsrs_procurement AS fp ON fp.id = fsc.parent_id
                 JOIN
                 subaward s ON s.subaward_type = ''sub-contract'' AND s.sub_id = fsc.id
-             )
+            )
 
             UNION ALL
 
@@ -287,7 +287,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 JOIN
                 fsrs_grant AS fg ON fg.id = fsg.parent_id
                 JOIN
-                subaward s ON s.subaward_type = ''sub-grant'' AND s.sub_id = fsc.id
+                subaward s ON s.subaward_type = ''sub-grant'' AND s.sub_id = fsg.id
             )') AS broker_subawards
         (
             broker_award_id INTEGER,
