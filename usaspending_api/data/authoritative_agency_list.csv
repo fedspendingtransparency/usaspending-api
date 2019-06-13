@@ -10,7 +10,7 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 003,0300,Library of Congress,LOC,NO,NO,OMB File,0300,Library of Congress,LOC,,,0300,Library of Congress,GPO Acronym List,,,,,FALSE,,,,
 003,0300,Library of Congress,LOC,NO,NO,OMB File,0361,Library of Congress Trust Fund Board,,,,0300,Library of Congress,,,,,,FALSE,,,,
 003,0300,Library of Congress,LOC,NO,NO,OMB File,0362,Permanent Committee for the Oliver Wendell Holmes Devise,,,,0300,Library of Congress,,,,,,FALSE,,,,
-004,0400,Government Publishing Office,GPO,NO,NO,OMB File,0400,Government Publishing Office,GPO,,,0400,Government Publishing Office,,,,GOVERNMENT PRINTING OFFICE,GOVERNMENT PRINTING OFFICE,FALSE,,,,
+004,0400,Government Publishing Office,GPO,NO,NO,OMB File,0400,Government Publishing Office,GPO,,,0400,Government Publishing Office,,,,GOVERNMENT PRINTING OFFICE,GOVERNMENT PRINTING OFFICE,FALSE,,,
 005,0500,Government Accountability Office,GAO,YES,NO,OMB File,0500,Government Accountability Office,GAO,,,0500,Government Accountability Office,GPO Acronym List,,,,,FALSE,"Our Mission is to support the Congress in meeting its constitutional responsibilities and to help improve the performance and ensure the accountability of the federal government for the benefit of the American people. We provide Congress with timely information that is objective, fact-based, nonpartisan, nonideological, fair, and balanced.",https://www.gao.gov/,,,
 005,0500,Government Accountability Office,GAO,YES,NO,OMB File,0501,Comptroller General of the United States,,,,0500,Government Accountability Office,,,,,,FALSE,,,,,
 005,0500,Government Accountability Office,GAO,YES,NO,OMB File,0559,"GAO, Except Comptroller General",,,,0500,Government Accountability Office,,,,,,FALSE,,,,,
