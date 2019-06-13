@@ -37,17 +37,17 @@ class Command(BaseCommand):
         if isinstance(internal_ids, list) and len(internal_ids) > 0:
             ids_string = ','.join([str(id).lower() for id in internal_ids])
             query = (
-                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c "
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c, prime_id "
                 "FROM subaward "
                 "WHERE subaward_type = '{}' and internal_id = ANY(\'{{{}}}\'::text[]) "
-                "ORDER BY id".format(_type, ids_string)
+                "ORDER BY prime_id".format(_type, ids_string)
             )
         else:
             query = (
-                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c "
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c, prime_id "
                 "FROM subaward "
-                "WHERE subaward_type = '{}' and id > {} "
-                "ORDER BY id".format(_type, str(max_id))
+                "WHERE subaward_type = '{}' and prime_id > {} "
+                "ORDER BY prime_id".format(_type, str(max_id))
             )
 
         db_cursor.execute(query)
@@ -55,6 +55,7 @@ class Command(BaseCommand):
         return dictfetchall(db_cursor)
 
     def get_award(self, row, award_type):
+        award = None
         if award_type == 'procurement':
 
             agency = get_valid_awarding_agency(row)
@@ -67,35 +68,37 @@ class Command(BaseCommand):
                 return None
 
             # Find the award to attach this sub-contract to using the generated unique ID (unique_award_key):
-            award = (
-                Award.objects
-                .filter(
-                    generated_unique_award_id=row['unique_award_key'],
-                    latest_transaction_id__isnull=False,
+            if row['unique_award_key'] is not None:
+                award = (
+                    Award.objects
+                    .filter(
+                        generated_unique_award_id=row['unique_award_key'],
+                        latest_transaction_id__isnull=False,
+                    )
+                    .distinct()
+                    .order_by("-date_signed")
+                    .first()
                 )
-                .distinct()
-                .order_by("-date_signed")
-                .first()
-            )
 
         else:
 
             # Find the award to attach this sub-grant to using the generated unique ID (unique_award_key):
-            all_awards = (
-                Award.objects
-                .filter(
-                    generated_unique_award_id=row['unique_award_key'],
-                    latest_transaction_id__isnull=False,
+            if row['unique_award_key'] is not None:
+                all_awards = (
+                    Award.objects
+                    .filter(
+                        generated_unique_award_id=row['unique_award_key'],
+                        latest_transaction_id__isnull=False,
+                    )
+                    .distinct()
+                    .order_by("-date_signed")
                 )
-                .distinct()
-                .order_by("-date_signed")
-            )
 
-            if all_awards.count() > 1:
-                logger.warning(
-                    "Multiple awards found with generated_unique_award_id '{}'".format(row['unique_award_key']))
+                if all_awards.count() > 1:
+                    logger.warning(
+                        "Multiple awards found with generated_unique_award_id '{}'".format(row['unique_award_key']))
 
-            award = all_awards.first()
+                award = all_awards.first()
 
         if not award:
             msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
