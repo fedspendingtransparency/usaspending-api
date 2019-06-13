@@ -66,7 +66,7 @@ CREATE TABLE references_legalentityofficers_new AS (
 );
 
 BEGIN;
-TRUNCATE TABLE references_legalentityofficers RESTART IDENTITY;
+DELETE FROM references_legalentityofficers;
 
 INSERT INTO public.references_legalentityofficers (
     legal_entity_id, duns,
