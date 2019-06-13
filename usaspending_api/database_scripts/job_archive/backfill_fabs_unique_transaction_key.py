@@ -84,7 +84,7 @@ def run_update_query():
         with Timer() as t:
             cursor.execute(sql.format(minid=_min, maxid=_max))
         row_count = cursor.rowcount
-        progress = (_max + (max_id * n)) / (max_id * len(SQLS))
+        progress = progress = (_max - min_id + 1 + totes * n) / (totes * len(SQLS))
         print(
             '[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}'
             .format(
@@ -105,6 +105,7 @@ with Timer() as overall_timer:
             cursor.execute(GET_MIN_MAX_SQL)
             results = cursor.fetchall()
             min_id, max_id = results[0]
+            totes = max_id - min_id + 1
 
         print('Min ID: {:,}'.format(min_id))
         print('Max ID: {:,}'.format(max_id), flush=True)
