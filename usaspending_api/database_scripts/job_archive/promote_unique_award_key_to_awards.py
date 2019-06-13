@@ -98,7 +98,6 @@ def delete_orphaned_awards(cursor):
         where       tn.id is null and
                     sa.id is null and
                     faba.financial_accounts_by_awards_id is null
-        order by    a.id
     """)
     _rowcount = cursor.rowcount
     if _rowcount > -1:

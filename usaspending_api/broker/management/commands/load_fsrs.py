@@ -28,31 +28,26 @@ class Command(BaseCommand):
         """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
-        query_columns = ['internal_id']
 
-        # we need different columns depending on if it's a procurement or a grant
         if award_type == 'procurement':
-            query_columns.extend(
-                [
-                    'contract_number',
-                    'idv_reference_number',
-                    'contracting_office_aid',
-                    'contract_agency_code',
-                    'contract_idv_agency_code',
-                ]
-            )
+            _type = 'sub-contract'
         else:
-            # TODO contracting_office_aid equivalent? Do we even need it?
-            query_columns.extend(['fain'])
+            _type = 'sub-grant'
 
         if isinstance(internal_ids, list) and len(internal_ids) > 0:
             ids_string = ','.join([str(id).lower() for id in internal_ids])
-            query = "SELECT {} FROM fsrs_{} WHERE internal_id = ANY(\'{{{}}}\'::text[]) ORDER BY id".format(
-                ",".join(query_columns), award_type, ids_string
+            query = (
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c "
+                "FROM subaward "
+                "WHERE subaward_type = '{}' and internal_id = ANY(\'{{{}}}\'::text[]) "
+                "ORDER BY id".format(_type, ids_string)
             )
         else:
-            query = "SELECT {} FROM fsrs_{} WHERE id > {} ORDER BY id".format(
-                ",".join(query_columns), award_type, str(max_id)
+            query = (
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c "
+                "FROM subaward "
+                "WHERE subaward_type = '{}' and id > {} "
+                "ORDER BY id".format(_type, str(max_id))
             )
 
         db_cursor.execute(query)
@@ -66,12 +61,12 @@ class Command(BaseCommand):
             if not agency:
                 logger.warning(
                     "Internal ID {} cannot find matching agency with subtier code {}".format(
-                        row['internal_id'], row['contracting_office_aid']
+                        row['internal_id'], row['awarding_sub_tier_agency_c']
                     )
                 )
                 return None
 
-            # Find the award to attach this sub-contract to, using the generated unique ID (unique_award_key):
+            # Find the award to attach this sub-contract to using the generated unique ID (unique_award_key):
             award = (
                 Award.objects
                 .filter(
@@ -83,24 +78,14 @@ class Command(BaseCommand):
                 .first()
             )
 
-            # We don't have a matching award for this subcontract, log a warning and continue to the next row
+            # We don't have a matching award for this sub-contract, log a warning and continue to the next row
             if not award:
-                msg = (
-                    "[Internal ID {}] Award not found for {},{},{},{}"
-                    + " (agency_id, referenced_idv_agency_iden, piid, parent_award_id)"
-                )
-                logger.warning(
-                    msg.format(
-                        row['internal_id'],
-                        row['contract_agency_code'],
-                        row['contract_idv_agency_code'],
-                        row['contract_number'],
-                        row['idv_reference_number'],
-                    )
-                )
+                msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
+                logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
                 return None
         else:
-            # Find the award to attach this sub-contract to.
+
+            # Find the award to attach this sub-grant to using the generated unique ID (unique_award_key):
             all_awards = (
                 Award.objects
                 .filter(
@@ -117,10 +102,10 @@ class Command(BaseCommand):
 
             award = all_awards.first()
 
-            # We don't have a matching award for this subgrant, log a warning and continue to the next row
+            # We don't have a matching award for this sub-grant, log a warning and continue to the next row
             if not award:
-                msg = "[Internal ID {}] Award not found for FAIN '{}'"
-                logger.warning(msg.format(row['internal_id'], row['fain']))
+                msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
+                logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
                 return None
         return award
 
@@ -503,7 +488,7 @@ class Command(BaseCommand):
 def get_valid_awarding_agency(row):
     agency = None
 
-    agency_subtier_code = row['contracting_office_aid']
+    agency_subtier_code = row['awarding_sub_tier_agency_c']
     valid_subtier_code = agency_subtier_code and len(agency_subtier_code) > 0
 
     # Get the awarding agency
