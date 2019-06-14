@@ -13,12 +13,12 @@ Returns lists of available values for some of the components that make up Treasu
 
 + Response 200 (application/json)
     + Attributes (object)
-        + agency_ids (required, array[AgencyResult], fixed-type)
-        + allocation_transfer_agency_ids (required, array[AgencyResult], fixed-type)
+        + `agency_ids` (required, array[AgencyResult], fixed-type)
+        + `allocation_transfer_agency_ids` (required, array[AgencyResult], fixed-type)
 
 # Data Structures
 
 ## AgencyResult (object)
-+ cgac: `020` (required, string)
-+ agency_name: `Department of the Treasury` (required, string)
-+ agency_abbreviation: `TREAS` (required, string, nullable)
++ `cgac`: `020` (required, string)
++ `agency_name`: `Department of the Treasury` (required, string)
++ `agency_abbreviation`: `TREAS` (required, string, nullable)
