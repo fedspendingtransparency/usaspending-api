@@ -99,3 +99,4 @@ WHERE external_data_type_id = (
     WHERE external_data_type.name = 'exec_comp');
 
 COMMIT;
+VACUUM ANALYZE references_legalentityofficers;
