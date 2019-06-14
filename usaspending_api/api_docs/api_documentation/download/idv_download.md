@@ -9,7 +9,7 @@ This route sends a request to the backend to begin generating a zipfile of IDV d
 
 ```
 {
-    "award_id": "CONT_AW_1540_-NONE-_DJB30605051_-NONE-"
+    "award_id": "CONT_IDV_DJB30605051_1540"
 }
 ```
 

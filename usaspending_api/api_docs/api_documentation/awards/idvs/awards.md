@@ -25,7 +25,7 @@ Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle a
             "description": "4524345064!OTHER GROCERY AND R",
             "funding_agency": "DEPARTMENT OF DEFENSE (DOD)",
             "funding_agency_id": 1219,
-            "generated_unique_award_id": "CONT_AW_9700_9700_71T0_SPM30008D3155",
+            "generated_unique_award_id": "CONT_AWD_71T0_9700_SPM30008D3155_9700",
             "last_date_to_order": null,
             "obligated_amount": 4080.71,
             "period_of_performance_current_end_date": "2013-05-06",

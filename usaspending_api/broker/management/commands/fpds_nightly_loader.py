@@ -232,22 +232,10 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-            # Generate the unique Award ID
-            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            generated_unique_id = (
-                "CONT_AW_"
-                + (row["agency_id"] if row["agency_id"] else "-NONE-")
-                + "_"
-                + (row["referenced_idv_agency_iden"] if row["referenced_idv_agency_iden"] else "-NONE-")
-                + "_"
-                + (row["piid"] if row["piid"] else "-NONE-")
-                + "_"
-                + (row["parent_award_id"] if row["parent_award_id"] else "-NONE-")
-            )
-
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(
-                generated_unique_award_id=generated_unique_id, piid=row["piid"]
+                generated_unique_award_id=row["unique_award_key"],
+                piid=row["piid"],
             )
             award.parent_award_piid = row.get("parent_award_id")
             award.save()
@@ -280,7 +268,6 @@ class Command(BaseCommand):
                 "action_date": format_date(row["action_date"]),
                 "last_modified_date": last_mod_date,
                 "transaction_unique_id": row["detached_award_proc_unique"],
-                "generated_unique_award_id": generated_unique_id,
                 "is_fpds": True,
                 "type": award_type,
                 "type_description": award_type_desc,
