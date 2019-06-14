@@ -13,7 +13,7 @@ CREATE TABLE transaction_normalized_new AS (
             SELECT
                 TRUE AS is_fpds,
                 transaction_fpds_new.detached_award_proc_unique AS transaction_unique_id,
-                transaction_fpds_new.unique_award_key AS generated_unique_award_id,
+                transaction_fpds_new.unique_award_key,
                 NULL AS usaspending_unique_transaction_id,
                 contract_award_type AS type,
                 contract_award_type_desc AS type_description,
@@ -57,7 +57,7 @@ CREATE TABLE transaction_normalized_new AS (
             SELECT
                 FALSE as is_fpds,
                 transaction_fabs_new.afa_generated_unique AS transaction_unique_id,
-                transaction_fabs_new.unique_award_key AS generated_unique_award_id,
+                transaction_fabs_new.unique_award_key,
                 NULL AS usaspending_unique_transaction_id,
                 assistance_type AS type,
                 assistance_type_desc AS type_description,

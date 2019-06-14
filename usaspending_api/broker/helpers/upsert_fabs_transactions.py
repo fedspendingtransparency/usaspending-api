@@ -118,11 +118,9 @@ def insert_new_fabs(to_insert):
         awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
         funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-        generated_unique_award_id = row['unique_award_key']
-
         # Create the summary Award
         (created, award) = Award.get_or_create_summary_award(
-            generated_unique_award_id=generated_unique_award_id,
+            generated_unique_award_id=row['unique_award_key'],
             fain=row['fain'],
             uri=row['uri'],
             record_type=row['record_type'],
@@ -136,6 +134,7 @@ def insert_new_fabs(to_insert):
             last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
         except ValueError:
             last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+
         parent_txn_value_map = {
             "award": award,
             "awarding_agency": awarding_agency,
@@ -148,7 +147,6 @@ def insert_new_fabs(to_insert):
             "last_modified_date": last_mod_date,
             "type_description": row['assistance_type_desc'],
             "transaction_unique_id": row['afa_generated_unique'],
-            "generated_unique_award_id": generated_unique_award_id,
         }
 
         fad_field_map = {
