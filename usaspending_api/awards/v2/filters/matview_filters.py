@@ -29,10 +29,6 @@ def universal_transaction_matview_filter(filters):
 
 def matview_search_filter(filters, model, for_downloads=False):
     queryset = model.objects.all()
-    if model.__name__ in LIST_OF_AWARD_MODELS:
-        id_field = "award_id"
-    else:
-        id_field = "transaction_id"
 
     recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
     pop_scope_q = Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES")
@@ -213,7 +209,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True, id_field))
+            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -228,7 +224,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations("pop", value, True, id_field))
+            queryset = queryset.filter(geocode_filter_locations("pop", value, True))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, model, filters)

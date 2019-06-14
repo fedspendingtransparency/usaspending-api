@@ -32,6 +32,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                 + `period_of_performance_current_end_date`
                 + `last_date_to_order`
                 + `funding_agency`
+                + `awarding_agency`
                 + `award_type`
                 + `obligated_amount`
         + `order`: `desc` (optional, string)
@@ -52,7 +53,9 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "award_type": "BPA",
                         "description": "IGF::OT::IGF GP-2600 FEDEX SHIPPING SERVICE - GREAT PLAINS REGIONAL OFFICE, BILLINGS, MONTANA",
                         "funding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
+                        "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
                         "funding_agency_id": 228,
+                        "awarding_agency_id": 228,
                         "generated_unique_award_id": "CONT_AW_1425_4730_INR17PA00008_GS23F0170L",
                         "last_date_to_order": "2020-11-30",
                         "obligated_amount": 8000.0,
@@ -65,7 +68,9 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "award_type": "BPA",
                         "description": "OTHER THAN SCHEDULE,IGF::OT::IGF",
                         "funding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
+                        "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
                         "funding_agency_id": 634,
+                        "awarding_agency_id:: 634,
                         "generated_unique_award_id": "CONT_AW_4732_4730_GS33FCA001_GS23F0170L",
                         "last_date_to_order": "2017-09-30",
                         "obligated_amount": 22570355.24,
@@ -78,7 +83,9 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "award_type": "BPA",
                         "description": "IGF::OT::IGF BPA WITH AN INTERNATIONAL MAIL DELIVERY SERVICE FOR PACKAGES GENERATED THROUGH TSED'S COCHRAN FELLOWSHIP PROGRAM",
                         "funding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
+                        "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
                         "funding_agency_id": 153,
+                        "awarding_agency_id": 153,
                         "generated_unique_award_id": "CONT_AW_12D2_4730_AG3151B140009_GS23F0170L",
                         "last_date_to_order": "2015-04-06",
                         "obligated_amount": 47840.0,
@@ -111,7 +118,9 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
 + `award_type`: `BPA`(required, string)
 + `description`: `OTHER THAN SCHEDULE,IGF::OT::IGF` (required, string, nullable)
 + `funding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
++ `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
 + `funding_agency_id`: `634` (required, number)
++ `awarding_agency_id`: `634` (required, number)
 + `generated_unique_award_id`: `CONT_AW_1540_NONE_DJB30605051_NONE` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
