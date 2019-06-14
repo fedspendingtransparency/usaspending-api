@@ -169,11 +169,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 fp.id AS broker_award_id,
                 UPPER(fp.internal_id) internal_id,
                 UPPER(fp.contract_number) AS piid,
-                UPPER(''CONT_AW_'' ||
-                    COALESCE(fp.contract_agency_code,''-NONE-'') || ''_'' ||
-                    COALESCE(fp.contract_idv_agency_code,''-NONE-'') || ''_'' ||
-                    COALESCE(fp.contract_number,''-NONE-'') || ''_'' ||
-                    COALESCE(fp.idv_reference_number,''-NONE-'')) AS expected_generated_unique_award_id,
+                s.unique_award_key AS expected_generated_unique_award_id,
                 NULL AS fain,
                 ''procurement'' AS award_type,
                 fsc.subcontract_date AS action_date,
@@ -226,6 +222,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
             FROM fsrs_subcontract AS fsc
                 JOIN
                 fsrs_procurement AS fp ON fp.id = fsc.parent_id
+                JOIN
+                subaward s ON s.subaward_type = ''sub-contract'' AND s.sub_id = fsc.id
             )
 
             UNION ALL
@@ -235,7 +233,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
                 fg.id AS broker_award_id,
                 UPPER(fg.internal_id) internal_id,
                 NULL AS piid,
-                NULL AS expected_generated_unique_award_id,
+                s.unique_award_key AS expected_generated_unique_award_id,
                 UPPER(fg.fain) AS fain,
                 ''grant'' AS award_type,
                 fsg.subaward_date AS action_date,
@@ -288,6 +286,8 @@ CREATE TABLE public.temporary_restock_subaward AS (
             FROM fsrs_subgrant AS fsg
                 JOIN
                 fsrs_grant AS fg ON fg.id = fsg.parent_id
+                JOIN
+                subaward s ON s.subaward_type = ''sub-grant'' AND s.sub_id = fsg.id
             )') AS broker_subawards
         (
             broker_award_id INTEGER,
@@ -343,11 +343,7 @@ CREATE TABLE public.temporary_restock_subaward AS (
             recipient_location_street_address TEXT,
             recipient_location_zip4 TEXT
         )
-    INNER JOIN awards AS aw ON (
-        (broker_subawards.award_type = 'procurement' AND aw.is_fpds IS TRUE AND REPLACE(aw.generated_unique_award_id, '-', '') = REPLACE(broker_subawards.expected_generated_unique_award_id, '-', ''))
-        OR
-        (broker_subawards.award_type = 'grant' AND aw.is_fpds IS FALSE AND REPLACE(aw.fain, '-', '') = REPLACE(broker_subawards.fain, '-', ''))
-    )
+    INNER JOIN awards AS aw ON aw.generated_unique_award_id = broker_subawards.expected_generated_unique_award_id
     LEFT OUTER JOIN legal_entity AS prime_le ON aw.recipient_id = prime_le.legal_entity_id
     LEFT OUTER JOIN agency AS aa ON aw.awarding_agency_id = aa.id
     LEFT OUTER JOIN toptier_agency AS taa ON aa.toptier_agency_id = taa.toptier_agency_id
