@@ -312,31 +312,7 @@ class Command(BaseCommand):
             legal_entity.transaction_unique_id = detached_award_proc_unique
             legal_entity.save()
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--date",
-            dest="date",
-            nargs="+",
-            type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
-        )
-
-    @transaction.atomic
-    def handle(self, *args, **options):
-        logger.info("==== Starting FPDS nightly data load ====")
-
-        if options.get("date"):
-            date = options.get("date")[0]
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-        else:
-            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
-            date = get_last_load_date("fpds", default=default_last_load_date).date()
-        processing_start_datetime = datetime.now(timezone.utc)
-
-        logger.info("Processing data for FPDS starting from %s" % date)
-
-        with timer("retrieval of deleted FPDS IDs", logger.info):
-            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+    def perform_load(self, ids_to_delete, ids_to_insert):
 
         if len(ids_to_delete) > 0:
             with timer("deletion of all stale FPDS data", logger.info):
@@ -344,13 +320,10 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to delete at this juncture")
 
-        with timer("retrieval of new/modified FPDS data ID list", logger.info):
-            total_insert = self.get_fpds_transaction_ids(date=date)
-
-        if len(total_insert) > 0:
+        if len(ids_to_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                self.insert_all_new_fpds(total_insert)
+                self.insert_all_new_fpds(ids_to_insert)
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
@@ -370,7 +343,66 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
 
+    def nightly_loader(self, start_date):
+
+        logger.info("==== Starting FPDS nightly data load ====")
+
+        if start_date:
+            date = start_date
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        else:
+            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).date()
+        processing_start_datetime = datetime.now(timezone.utc)
+
+        logger.info("Processing data for FPDS starting from %s" % date)
+
+        with timer("retrieval of new/modified FPDS data ID list", logger.info):
+            ids_to_insert = self.get_fpds_transaction_ids(date=date)
+
+        with timer("retrieval of deleted FPDS IDs", logger.info):
+            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+
+        self.perform_load(
+            ids_to_delete,
+            ids_to_insert,
+        )
+
         # Update the date for the last time the data load was run
         update_last_load_date("fpds", processing_start_datetime)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
+
+    def load_specific_transactions(self, detached_award_procurement_ids):
+        logger.info("==== Starting FPDS (re)load of specific transactions ====")
+
+        self.perform_load(
+            detached_award_procurement_ids,
+            detached_award_procurement_ids,
+        )
+
+        logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
+
+    def add_arguments(self, parser):
+        mutually_exclusive_group = parser.add_mutually_exclusive_group()
+
+        mutually_exclusive_group.add_argument(
+            "--date",
+            dest="date",
+            type=str,
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
+        )
+
+        mutually_exclusive_group.add_argument(
+            "--detached-award-procurement-ids",
+            nargs="+",
+            type=int,
+            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+        )
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        if options['detached_award_procurement_ids'] is not None:
+            self.load_specific_transactions(options['detached_award_procurement_ids'])
+        else:
+            self.nightly_loader(options['date'])
