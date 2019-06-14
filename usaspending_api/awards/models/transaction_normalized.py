@@ -122,9 +122,6 @@ class TransactionNormalized(models.Model):
     transaction_unique_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Transaction Unique ID"
     )
-    generated_unique_award_id = models.TextField(
-        blank=False, null=False, default="NONE", verbose_name="Generated Unique Award ID"
-    )
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     funding_amount = models.DecimalField(
         max_digits=23,

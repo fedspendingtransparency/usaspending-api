@@ -52,7 +52,7 @@ If the award has a `category` of `contract`, the response will look like this:
       "name": "Department of Defense"
     }
   },
-  "generated_unique_award_id": "CONT_AW_9700_9700_SPE4A718F9115_SPRPA117GC101",
+  "generated_unique_award_id": "CONT_AWD_SPE4A718F9115_9700_SPRPA117GC101_9700",
   "id": 68584146,
   "latest_transaction_contract_data": {
     "clinger_cohen_act_planning": "N",
@@ -222,7 +222,7 @@ If the `category` is `idv`, the response will look like this:
       "name": "Department of State"
     }
   },
-  "generated_unique_award_id": "CONT_AW_1900_-NONE-_190PRL18A0613_-NONE-",
+  "generated_unique_award_id": "CONT_IDV_190PRL18A0613_1900",
   "id": 68943678,
   "latest_transaction_contract_data": {
     "clinger_cohen_act_planning": "N",
@@ -405,7 +405,7 @@ If the `category` of the award is any assistance type, the response will instead
         }
     },
     "id": 68463998,
-    "generated_unique_award_id": "ASST_AW_3620_-NONE-_18090913.0121844",
+    "generated_unique_award_id": "ASST_AGG_18090913.0121844_3620",
     "total_subsidy_cost": null,
     "uri": "18090913.0121844",
     "total_loan_value": null,

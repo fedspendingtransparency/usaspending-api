@@ -14,7 +14,7 @@ Returns counts and dollar figures for a specific Indefinite Delivery Vehicle awa
 ```
 {
     "award_id": 68841198,
-    "generated_unique_award_id": "CONT_AW_4730_-NONE-_GS10F0201R_-NONE-",
+    "generated_unique_award_id": "CONT_IDV_GS10F0201R_4730",
     "child_idv_count": 2,
     "child_award_count": 25,
     "child_award_total_obligation": 363410.59,
