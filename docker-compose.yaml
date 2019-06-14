@@ -1,5 +1,6 @@
 version: '3.7'
 
+# See run instructions in accompanying Dockerfile
 services:
 
   usaspending-db:
@@ -69,16 +70,13 @@ services:
       ES_HOSTNAME: ${ES_HOSTNAME}
 
   usaspending-es:
-    hostname: es-node-1
     image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
-    container_name: es-node-1
     environment:
     - cluster.name=usaspending
     - network.host=0.0.0.0
-    - node.name=es-node-1
     - bootstrap.memory_lock=true
     - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"
-    - "discovery.zen.ping.unicast.hosts=es-node-1"
+    - "discovery.zen.ping.unicast.hosts=usaspending-es"
     - discovery.zen.minimum_master_nodes=1
     ulimits:
       memlock:

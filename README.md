@@ -46,7 +46,7 @@ See below for basic setup instructions. For help with Docker Compose:
  - [Docker Compose](https://docs.docker.com/compose/)  
 
 
-### Database Setup and Initialization w/Docker Compose
+### Database Setup and Initialization with Docker Compose
 
 - **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
 
@@ -63,6 +63,19 @@ See below for basic setup instructions. For help with Docker Compose:
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
+## Running Elasticsearch
+Some of the API endpoints reach into Elasticsearch for data. To start a single-node Elasticsearch cluster that the 
+API can reach, run the following command: with the 
+```bash
+docker-compose up -d usaspending-es 
+```
+
+_To see log output, run `docker-compose logs usaspending-es`_
+
+The cluster should be reachable via `curl` or Kibana at http://localhost:9200
+
+To populate this cluster's index(es) with data from your database, you would need to run the
+Django Managment command at: `usaspending_api/etl/management/commands/es_rapidloader.py`
 
 ## Running the API
 `docker-compose up usaspending-api`
