@@ -44,6 +44,7 @@ class UniversalTransactionView(models.Model):
     pop_county_name = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
+    pop_city_name = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
@@ -52,6 +53,7 @@ class UniversalTransactionView(models.Model):
     recipient_location_county_name = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
+    recipient_location_city_name = models.TextField()
 
     naics_code = models.TextField()
     naics_description = models.TextField()
@@ -108,6 +110,8 @@ class SummaryTransactionView(models.Model):
     recipient_location_county_name = models.TextField()
     recipient_location_congressional_code = models.TextField()
     recipient_location_zip5 = models.TextField()
+    recipient_location_city_name = models.TextField()
+
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
     pop_zip5 = models.TextField()
@@ -115,6 +119,7 @@ class SummaryTransactionView(models.Model):
     pop_county_name = models.TextField()
     pop_state_code = models.TextField()
     pop_congressional_code = models.TextField()
+    pop_city_name = models.TextField()
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
@@ -165,7 +170,6 @@ class UniversalAwardView(models.Model):
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
 
-    recipient_hash = models.UUIDField()
     recipient_id = models.IntegerField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
@@ -203,6 +207,7 @@ class UniversalAwardView(models.Model):
     recipient_location_county_name = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
+    recipient_location_city_name = models.TextField()
 
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
@@ -212,6 +217,7 @@ class UniversalAwardView(models.Model):
     pop_city_code = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
+    pop_city_name = models.TextField()
 
     cfda_number = models.TextField()
     sai_number = models.TextField()
@@ -356,7 +362,7 @@ class SummaryTransactionMonthView(models.Model):
     recipient_location_county_code = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
-    recipient_location_foreign_province = models.TextField()
+    recipient_location_city_name = models.TextField()
 
     pop_country_name = models.TextField()
     pop_country_code = models.TextField()
@@ -365,6 +371,7 @@ class SummaryTransactionMonthView(models.Model):
     pop_county_code = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
+    pop_city_name = models.TextField()
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
@@ -419,7 +426,7 @@ class SummaryTransactionGeoView(models.Model):
     recipient_location_county_code = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
-    recipient_location_foreign_province = models.TextField()
+    recipient_location_city_name = models.TextField()
 
     pop_country_name = models.TextField()
     pop_country_code = models.TextField()
@@ -428,6 +435,7 @@ class SummaryTransactionGeoView(models.Model):
     pop_county_code = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
+    pop_city_name = models.TextField()
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
