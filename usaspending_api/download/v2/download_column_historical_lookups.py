@@ -423,6 +423,7 @@ query_paths = {
     },
     'transaction': {
         'd1': OrderedDict([
+            ('contract_transaction_unique_key', 'transaction__contract_data__detached_award_proc_unique'),
             ('award_id_piid', 'transaction__contract_data__piid'),
             ('modification_number', 'transaction__contract_data__award_modification_amendme'),
             ('transaction_number', 'transaction__contract_data__transaction_number'),
@@ -700,6 +701,7 @@ query_paths = {
             ('last_modified_date', 'transaction__contract_data__last_modified')
         ]),
         'd2': OrderedDict([
+            ('assistance_transaction_unique_key', 'transaction__assistance_data__afa_generated_unique'),
             ('award_id_fain', 'transaction__assistance_data__fain'),
             ('modification_number', 'transaction__modification_number'),
             ('award_id_uri', 'transaction__assistance_data__uri'),
