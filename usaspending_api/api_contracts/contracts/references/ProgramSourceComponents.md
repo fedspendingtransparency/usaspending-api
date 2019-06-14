@@ -19,14 +19,13 @@ Returns lists of available values for some of the components that make up Treasu
 # Data Structures
 
 ## FederalAccountComponents (object)
-+ agency_ids: (required, array[AgencyIdResult], fixed-type)
++ agency_ids: (required, array[AgencyResult], fixed-type)
 
 ## TreasuryAccountComponents (object)
-+ agency_ids (required, array[AgencyIdResult], fixed-type)
-+ allocation_transfer_agency_ids (required, array[string], fixed-type)
-+ availability_type_code (required, array[string], fixed-type)
++ agency_ids (required, array[AgencyResult], fixed-type)
++ allocation_transfer_agency_ids (required, array[AgencyResult], fixed-type)
 
-## AgencyIdResult (object)
+## AgencyResult (object)
 + agency_id: `020` (required, string)
 + agency_name: `Department of the Treasury` (required, string)
 + agency_acronym: `TREAS` (required, string, nullable)
