@@ -191,7 +191,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 for x in self.geo_layer_filters
             ]
             self.queryset = self.queryset.filter(
-                geocode_filter_locations(scope_field_name, geo_layers_list, True, "transaction_id")
+                geocode_filter_locations(scope_field_name, geo_layers_list, True)
             )
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
