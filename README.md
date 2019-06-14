@@ -64,7 +64,16 @@ See below for basic setup instructions. For help with Docker Compose:
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
 ## Running Elasticsearch
-Some of the API endpoints reach into Elasticsearch for data. To start a single-node Elasticsearch cluster that the 
+Some of the API endpoints reach into Elasticsearch for data. 
+
+First, create a directory on your local machine where a docker volume can bind for Elasticsearch to keep its data 
+between restarts. The default path is `../docker_es`, from the repo source root. You can change this in your `.env` 
+file if you wish.
+```bash
+mkdir ../docker_es
+```
+
+To start a single-node Elasticsearch cluster that the 
 API can reach, run the following command: with the 
 ```bash
 docker-compose up -d usaspending-es 
