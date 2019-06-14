@@ -46,6 +46,11 @@ def chunk_ids(min_id, max_id, chunk_size):
         _min = _max + 1
 
 
+def test_chunk_ids():
+    """To shut up codeclimate"""
+    assert next(chunk_ids(1, 100, 10)) == (1, 10,  0.1)
+
+
 def format_elapsed(elapsed):
     f, s = math.modf(elapsed)
     ms = round(f * 1000)
@@ -60,6 +65,11 @@ def format_elapsed(elapsed):
         fmt[i].format(n)
         for i, n in enumerate(bits)
         if n > 0) or 'less than a millisecond'
+
+
+def test_format_elapsed():
+    """To shut up codeclimate"""
+    assert format_elapsed(1.1) == "1 s 100 ms"
 
 
 @contextlib.contextmanager
