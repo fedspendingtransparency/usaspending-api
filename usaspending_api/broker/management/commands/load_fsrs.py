@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
-from django.db.models import F, Func, Max, Value
+from django.db.models import F, Max
 
 from usaspending_api.awards.models import Award, Subaward, TransactionFPDS
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
@@ -28,123 +28,83 @@ class Command(BaseCommand):
         """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
-        query_columns = ['internal_id']
 
-        # we need different columns depending on if it's a procurement or a grant
         if award_type == 'procurement':
-            query_columns.extend(
-                [
-                    'contract_number',
-                    'idv_reference_number',
-                    'contracting_office_aid',
-                    'contract_agency_code',
-                    'contract_idv_agency_code',
-                ]
-            )
+            _type = 'sub-contract'
         else:
-            # TODO contracting_office_aid equivalent? Do we even need it?
-            query_columns.extend(['fain'])
+            _type = 'sub-grant'
 
         if isinstance(internal_ids, list) and len(internal_ids) > 0:
             ids_string = ','.join([str(id).lower() for id in internal_ids])
-            query = "SELECT {} FROM fsrs_{} WHERE internal_id = ANY(\'{{{}}}\'::text[]) ORDER BY id".format(
-                ",".join(query_columns), award_type, ids_string
+            query = (
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c, prime_id "
+                "FROM subaward "
+                "WHERE subaward_type = '{}' and internal_id = ANY(\'{{{}}}\'::text[]) "
+                "ORDER BY prime_id".format(_type, ids_string)
             )
         else:
-            query = "SELECT {} FROM fsrs_{} WHERE id > {} ORDER BY id".format(
-                ",".join(query_columns), award_type, str(max_id)
+            query = (
+                "SELECT DISTINCT unique_award_key, internal_id, awarding_sub_tier_agency_c, prime_id "
+                "FROM subaward "
+                "WHERE subaward_type = '{}' and prime_id > {} "
+                "ORDER BY prime_id".format(_type, str(max_id))
             )
 
         db_cursor.execute(query)
 
         return dictfetchall(db_cursor)
 
-    @staticmethod
-    def generate_unique_ids(row, award_type):
-        if award_type == 'procurement':
-            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
-            return (
-                'CONT_AW_'
-                + (row['contract_agency_code'].replace('-', '') if row['contract_agency_code'] else 'NONE')
-                + '_'
-                + (row['contract_idv_agency_code'].replace('-', '') if row['contract_idv_agency_code'] else 'NONE')
-                + '_'
-                + (row['contract_number'].replace('-', '') if row['contract_number'] else 'NONE')
-                + '_'
-                + (row['idv_reference_number'].replace('-', '') if row['idv_reference_number'] else 'NONE')
-            )
-        else:
-            # For assistance awards, 'ASST_AW_' is NOT prepended because we are unable to build the full unique
-            # identifier since all the required fields to do so are not provided by the subaward tables from the source.
-            # Therefore, we can only use the FAIN to find the closest match instead of generated_unique_award_id.
-            return row['fain'].replace('-', '')
-
     def get_award(self, row, award_type):
+        award = None
         if award_type == 'procurement':
-            # we don't need the agency for grants
-            agency = get_valid_awarding_agency(row)
 
+            agency = get_valid_awarding_agency(row)
             if not agency:
                 logger.warning(
                     "Internal ID {} cannot find matching agency with subtier code {}".format(
-                        row['internal_id'], row['contracting_office_aid']
+                        row['internal_id'], row['awarding_sub_tier_agency_c']
                     )
                 )
                 return None
 
-            # Find the award to attach this sub-contract to, using the generated unique ID:
-            award = (
-                Award.objects.annotate(
-                    modified_generated_unique_award_id=Func(
-                        F('generated_unique_award_id'), Value('-'), Value(''), function='replace'
+            # Find the award to attach this sub-contract to using the generated unique ID (unique_award_key):
+            if row['unique_award_key'] is not None:
+                award = (
+                    Award.objects
+                    .filter(
+                        generated_unique_award_id=row['unique_award_key'],
+                        latest_transaction_id__isnull=False,
                     )
+                    .distinct()
+                    .order_by("-date_signed")
+                    .first()
                 )
-                .filter(
-                    modified_generated_unique_award_id=self.generate_unique_ids(row, award_type),
-                    latest_transaction_id__isnull=False,
-                )
-                .distinct()
-                .order_by("-date_signed")
-                .first()
-            )
 
-            # We don't have a matching award for this subcontract, log a warning and continue to the next row
-            if not award:
-                msg = (
-                    "[Internal ID {}] Award not found for {},{},{},{}"
-                    + " (agency_id, referenced_idv_agency_iden, piid, parent_award_id)"
-                )
-                logger.warning(
-                    msg.format(
-                        row['internal_id'],
-                        row['contract_agency_code'],
-                        row['contract_idv_agency_code'],
-                        row['contract_number'],
-                        row['idv_reference_number'],
-                    )
-                )
-                return None
         else:
-            # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
-            # a transaction with a matching fain
-            all_awards = (
-                Award.objects.annotate(modified_fain=Func(F('fain'), Value('-'), Value(''), function='replace'))
-                .filter(modified_fain=self.generate_unique_ids(row, award_type), latest_transaction_id__isnull=False)
-                .distinct()
-                .order_by("-date_signed")
-            )
 
-            if all_awards.count() > 1:
-                logger.warning("Multiple awards found with FAIN '{}'".format(row['fain']))
+            # Find the award to attach this sub-grant to using the generated unique ID (unique_award_key):
+            if row['unique_award_key'] is not None:
+                all_awards = (
+                    Award.objects
+                    .filter(
+                        generated_unique_award_id=row['unique_award_key'],
+                        latest_transaction_id__isnull=False,
+                    )
+                    .distinct()
+                    .order_by("-date_signed")
+                )
 
-            award = all_awards.first()
+                if all_awards.count() > 1:
+                    logger.warning(
+                        "Multiple awards found with generated_unique_award_id '{}'".format(row['unique_award_key']))
 
-            # We don't have a matching award for this subgrant, log a warning and continue to the next row
-            if not award:
-                msg = "[Internal ID {}] Award not found for FAIN '{}'"
-                logger.warning(msg.format(row['internal_id'], row['fain']))
-                return None
+                award = all_awards.first()
+
+        if not award:
+            msg = "[Internal ID {}] Award not found for unique_award_key '{}'"
+            logger.warning(msg.format(row['internal_id'], row['unique_award_key']))
+            return None
+
         return award
 
     def gather_shared_award_data(self, data, award_type):
@@ -526,7 +486,7 @@ class Command(BaseCommand):
 def get_valid_awarding_agency(row):
     agency = None
 
-    agency_subtier_code = row['contracting_office_aid']
+    agency_subtier_code = row['awarding_sub_tier_agency_c']
     valid_subtier_code = agency_subtier_code and len(agency_subtier_code) > 0
 
     # Get the awarding agency

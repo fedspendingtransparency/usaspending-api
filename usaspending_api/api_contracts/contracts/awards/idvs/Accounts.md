@@ -13,7 +13,7 @@ This endpoint returns a list of federal accounts under a given IDV.
 ### List Federal Accounts [POST]
 + Request (application/json)
     + Attributes
-        + `award_id`:`CONT_AW_4732_-NONE-_GS30FHA006_-NONE-` (required, string) 
+        + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string) 
             IDV to return accounts for
         + `page`: 1 (optional, number)
             Page number to return

@@ -204,12 +204,8 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
     fy(action_date) AS fiscal_year
 FROM
     dblink ('broker_server', 'SELECT
-        DISTINCT ON (tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
-        ''cont_aw_'' ||
-            coalesce(tf.agency_id,''-none-'') || ''_'' ||
-            coalesce(tf.referenced_idv_agency_iden,''-none-'') || ''_'' ||
-            coalesce(tf.piid,''-none-'') || ''_'' ||
-            coalesce(tf.parent_award_id,''-none-'') AS generated_unique_award_id,
+        DISTINCT ON (tf.unique_award_key)
+        tf.unique_award_key AS generated_unique_award_id,
         tf.contract_award_type AS type,
         tf.contract_award_type_desc AS type_description,
         tf.agency_id AS agency_id,
@@ -494,10 +490,7 @@ FROM
         exec_comp_lookup AS exec_comp ON exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu
     window w AS (partition BY tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
     ORDER BY
-        tf.piid,
-        tf.parent_award_id,
-        tf.agency_id,
-        tf.referenced_idv_agency_iden,
+        tf.unique_award_key,
         tf.action_date desc,
         tf.award_modification_amendme desc,
         tf.transaction_number desc') AS fpds_uniq_awards
@@ -909,11 +902,8 @@ UNION ALL
     fy(action_date) AS fiscal_year
 FROM
     dblink ('broker_server', 'SELECT
-    DISTINCT ON (pafa.fain, pafa.awarding_sub_tier_agency_c)
-    ''asst_aw_'' ||
-        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
-        coalesce(pafa.fain, ''-none-'') || ''_'' ||
-        ''-none-'' AS generated_unique_award_id,
+    DISTINCT ON (pafa.unique_award_key)
+    pafa.unique_award_key AS generated_unique_award_id,
     pafa.assistance_type AS type,
     pafa.assistance_type_desc AS type_description,
     NULL::text AS agency_id,
@@ -1113,8 +1103,7 @@ FROM published_award_financial_assistance AS pafa
 WHERE pafa.record_type = ''2'' AND is_active=TRUE
 window w AS (partition BY pafa.fain, pafa.awarding_sub_tier_agency_c)
 ORDER BY
-    pafa.fain,
-    pafa.awarding_sub_tier_agency_c,
+    pafa.unique_award_key,
     pafa.action_date desc,
     pafa.award_modification_amendme desc
 ;') AS fabs_fain_uniq_awards
@@ -1528,11 +1517,8 @@ UNION ALL
     fy(action_date) AS fiscal_year
 FROM
     dblink ('broker_server', 'SELECT
-    DISTINCT ON (pafa.uri, pafa.awarding_sub_tier_agency_c)
-    ''asst_aw_'' ||
-        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
-        ''-none-'' || ''_'' ||
-        coalesce(pafa.uri, ''-none-'') AS generated_unique_award_id,
+    DISTINCT ON (pafa.unique_award_key)
+    pafa.unique_award_key AS generated_unique_award_id,
     pafa.assistance_type AS type,
     pafa.assistance_type_desc AS type_description,
     NULL::text AS agency_id,
@@ -1732,8 +1718,7 @@ FROM published_award_financial_assistance AS pafa
 WHERE pafa.record_type = ''1'' AND is_active=TRUE
 window w AS (partition BY pafa.uri, pafa.awarding_sub_tier_agency_c)
 ORDER BY
-    pafa.uri,
-    pafa.awarding_sub_tier_agency_c,
+    pafa.unique_award_key,
     pafa.action_date desc,
     pafa.award_modification_amendme desc') AS fabs_uri_uniq_awards
     (
@@ -1853,7 +1838,7 @@ ORDER BY
         cfda_number text,
         cfda_title text,
         sai_number text,
-        
+
         -- recipient data
         recipient_unique_id text, -- DUNS
         recipient_name text,
@@ -1875,24 +1860,24 @@ ORDER BY
         recipient_location_address_line1 text,
         recipient_location_address_line2 text,
         recipient_location_address_line3 text,
-        
+
         -- foreign province
         recipient_location_foreign_province text,
         recipient_location_foreign_city_name text,
         recipient_location_foreign_postal_code text,
-        
+
         -- country
         recipient_location_country_code text,
         recipient_location_country_name text,
-        
+
         -- state
         recipient_location_state_code text,
         recipient_location_state_name text,
-        
+
         -- county (NONE FOR FPDS)
         recipient_location_county_code text,
         recipient_location_county_name text,
-        
+
         -- city
         recipient_location_city_code text,
         recipient_location_city_name text,
@@ -1902,28 +1887,28 @@ ORDER BY
 
         -- congressional disctrict
         recipient_location_congressional_code text,
-        
+
         -- ppop data
         pop_code text,
-        
+
         -- foreign
         pop_foreign_province text,
-        
+
         -- country
         pop_country_code text,
         pop_country_name text,
-        
+
         -- state
         pop_state_code text,
         pop_state_name text,
-        
+
         -- county
         pop_county_code text,
         pop_county_name text,
-        
+
         -- city
         pop_city_name text,
-        
+
         -- zip
         pop_zip5 text,
 
