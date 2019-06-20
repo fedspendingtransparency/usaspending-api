@@ -68,23 +68,23 @@ SELECT
   UTM.pulled_from,
   UTM.type,
 
-  UTM.pop_country_code,
+  COALESCE(UTM.pop_country_code, 'USA') AS pop_country_code,
   UTM.pop_country_name,
   UTM.pop_state_code,
   UTM.pop_county_code,
   UTM.pop_county_name,
   UTM.pop_zip5,
   UTM.pop_congressional_code,
-  TRIM(TRAILING FROM COALESCE(FPDS.place_of_perform_city_name, FABS.place_of_performance_city)) AS pop_city_name,
+  COALESCE(FPDS.place_of_perform_city_name, FABS.place_of_performance_city) AS pop_city_name,
 
-  UTM.recipient_location_country_code,
+  COALESCE(UTM.recipient_location_country_code, 'USA') AS recipient_location_country_code,
   UTM.recipient_location_country_name,
   UTM.recipient_location_state_code,
   UTM.recipient_location_county_code,
   UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
-  TRIM(TRAILING FROM COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name)) AS recipient_location_city_name
+  COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name) AS recipient_location_city_name
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
