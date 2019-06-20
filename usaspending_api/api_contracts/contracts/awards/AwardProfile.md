@@ -279,6 +279,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `purchase_card_as_payment_method` (required, string, nullable)
 + `purchase_card_as_payment_method_description` (required, string, nullable)
 + `referenced_idv_agency_iden` (required, string, nullable)
++ `referenced_idv_agency_name` (required, string, nullable)
 + `sea_transportation` (required, string, nullable)
 + `sea_transportation_description` (required, string, nullable)
 + `small_business_competitive` (required, boolean, nullable)

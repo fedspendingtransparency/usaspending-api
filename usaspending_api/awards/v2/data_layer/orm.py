@@ -17,7 +17,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
+from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda, ToptierAgency
 
 
 logger = logging.getLogger("console")
@@ -80,6 +80,9 @@ def construct_contract_response(requested_award_dict):
     response.update(award)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
+    if transaction["referenced_idv_agency_iden"] is not None:
+        agency_name = ToptierAgency.objects.filter(fpds_code=transaction["referenced_idv_agency_iden"])
+        transaction["referenced_idv_agency_name"] = agency_name.values_list("name")[0][0]
 
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
     response["latest_transaction_contract_data"] = transaction
