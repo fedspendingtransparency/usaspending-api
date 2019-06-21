@@ -80,12 +80,6 @@ def construct_contract_response(requested_award_dict):
     response.update(award)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
-    if transaction["referenced_idv_agency_iden"] is not None:
-        agency_name = ToptierAgency.objects.filter(
-            fpds_code=transaction["referenced_idv_agency_iden"]).values_list("name")
-        if len(agency_name) > 0:
-            transaction["referenced_idv_agency_name"] = agency_name[0][0]
-
     response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
