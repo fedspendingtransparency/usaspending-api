@@ -1,7 +1,11 @@
 from usaspending_api.recipient.models import RecipientLookup
 
 
-def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id=None, child_recipient_unique_id=None):
+def obtain_recipient_uri(
+        recipient_name,
+        recipient_unique_id,
+        parent_recipient_unique_id=None,
+        child_recipient_unique_id=None):
     if not recipient_unique_id:
         return create_recipient_uri_without_duns(recipient_name, recipient_unique_id, parent_recipient_unique_id)
     return fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id, child_recipient_unique_id)
