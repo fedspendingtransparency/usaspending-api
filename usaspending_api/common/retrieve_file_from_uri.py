@@ -15,9 +15,10 @@ SCHEMA_HELP_TEXT = (
 
 
 class RetrieveFileFromUri:
-    def __init__(self, ruri, binary_data=True):
+    def __init__(self, ruri, binary_data=True, dest_file_path=None):
         self.uri = ruri  # Relative Uniform Resource Locator
         self.mode = "rb" if binary_data else "r"
+        self.dest_file_path = dest_file_path
         self._validate_url()
 
     def _validate_url(self):
@@ -60,6 +61,8 @@ class RetrieveFileFromUri:
         f = tempfile.SpooledTemporaryFile()
         f.write(r.content)
         f.seek(0)  # go to beginning of file for reading
+        if self.dest_file_path:
+            self._copy_file()
         return f
 
     def _handle_file(self):
@@ -69,3 +72,6 @@ class RetrieveFileFromUri:
             file_path = self.parsed_url_obj.path
 
         return open(file_path, self.mode)
+
+    def _copy_file(self):
+        urllib.request.urlretrieve(self.uri, self.dest_file_path)
