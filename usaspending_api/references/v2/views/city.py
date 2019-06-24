@@ -179,7 +179,7 @@ def query_elasticsearch(query):
     results = []
     if hits and hits["hits"]["total"] > 0:
         results = parse_elasticsearch_response(hits)
-        results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+        results = sorted(results, key=lambda x: x.pop("hits"), reverse=True)
     return results
 
 
@@ -188,8 +188,12 @@ def parse_elasticsearch_response(hits):
     for city in hits["aggregations"]["cities"]["buckets"]:
         if len(city["states"]["buckets"]) > 0:
             for state_code in city["states"]["buckets"]:
-                results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                results.append(OrderedDict([("city_name", city["key"]),
+                                            ("state_code", state_code["key"]),
+                                            ("hits", state_code["doc_count"])]))
         else:
             # for cities without states, useful for foreign country results
-            results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+            results.append(OrderedDict([("city_name", city["key"]),
+                                        ("state_code", None),
+                                        ("hits", city["doc_count"])]))
     return results
