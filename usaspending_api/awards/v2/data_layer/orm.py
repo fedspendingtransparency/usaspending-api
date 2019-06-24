@@ -17,7 +17,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
+from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda, SubtierAgency
 
 
 logger = logging.getLogger("console")
@@ -272,7 +272,11 @@ def fetch_fabs_details_by_pk(primary_key, mapper):
 
 def fetch_fpds_details_by_pk(primary_key, mapper):
     vals, ann = split_mapper_into_qs(mapper)
-    return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
+    results = TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
+    if results["referenced_idv_agency_iden"] is not None:
+        agency = SubtierAgency.objects.filter(subtier_code=results["referenced_idv_agency_iden"])
+        results["referenced_idv_agency_desc"] = agency.values_list("name")[0][0]
+    return results
 
 
 def fetch_agency_details(agency_id):
