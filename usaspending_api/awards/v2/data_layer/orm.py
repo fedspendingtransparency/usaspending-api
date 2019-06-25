@@ -246,8 +246,8 @@ def fetch_parent_award_details(guai):
     if not parent_award:
         logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
         return None
-    
-    parent_agency = SubtierAgency.objects.filter(subtier_code = parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
+    parent_agency = SubtierAgency.objects.filter(
+        subtier_code=parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
 
     parent_object = OrderedDict(
         [
