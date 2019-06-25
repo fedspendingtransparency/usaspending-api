@@ -169,8 +169,16 @@ def create_recipient_object(db_row_dict):
             ),
             ("recipient_name", db_row_dict["_recipient_name"]),
             ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
-            ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
+            (
+                "parent_recipient_hash", obtain_recipient_uri(
+                    db_row_dict["_parent_recipient_name"],
+                    db_row_dict["_parent_recipient_unique_id"],
+                    None,
+                    db_row_dict["_recipient_unique_id"]
+                )
+            ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
+            ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             ("business_categories", fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
             (
                 "location",
