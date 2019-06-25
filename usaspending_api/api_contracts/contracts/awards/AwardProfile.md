@@ -191,11 +191,12 @@ This endpoint returns a list of data that is associated with the award profile p
 + recipient_hash: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string)
 + recipient_unique_id: `2424224` (required, string, nullable)
     The recipient's DUNS
++ parent_recipient_name: `HoneyWell` (string, nullable)
++ parent_recipient_hash: `18e9854a-6e51-29fe-0add-4f2ad80a4010-P` (string, nullable)
 + parent_recipient_unique_id: `2424232` (required, string, nullable)
     The recipient's parent's DUNS
 + location (required, Location, nullable)
     The recipeint's location
-+ parent_recipient_name: `HoneyWell` (string, nullable)
 + business_categories (required, array[string])
     Names of the recipients' business catagories in human readable format
 
