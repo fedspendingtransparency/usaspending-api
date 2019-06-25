@@ -246,10 +246,13 @@ def fetch_parent_award_details(guai):
     if not parent_award:
         logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
         return None
+    
+    parent_agency = SubtierAgency.objects.filter(subtier_code = parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
 
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
+            ("agency_name", parent_agency["name"]),
             ("award_id", parent_award_ids["parent_award__award_id"]),
             ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
@@ -272,11 +275,7 @@ def fetch_fabs_details_by_pk(primary_key, mapper):
 
 def fetch_fpds_details_by_pk(primary_key, mapper):
     vals, ann = split_mapper_into_qs(mapper)
-    results = TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
-    if results["referenced_idv_agency_iden"] is not None:
-        agency = SubtierAgency.objects.filter(subtier_code=results["referenced_idv_agency_iden"])
-        results["referenced_idv_agency_desc"] = agency.values_list("name")[0][0]
-    return results
+    return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
 def fetch_agency_details(agency_id):
