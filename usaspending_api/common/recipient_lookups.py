@@ -1,10 +1,14 @@
 from usaspending_api.recipient.models import RecipientLookup
 
 
-def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id=None):
+def obtain_recipient_uri(
+        recipient_name,
+        recipient_unique_id,
+        parent_recipient_unique_id=None,
+        child_recipient_unique_id=None):
     if not recipient_unique_id:
         return create_recipient_uri_without_duns(recipient_name, recipient_unique_id, parent_recipient_unique_id)
-    return fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id)
+    return fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id, child_recipient_unique_id)
 
 
 def create_recipient_uri_without_duns(recipient_name, recipient_unique_id, parent_recipient_unique_id=None):
@@ -13,9 +17,13 @@ def create_recipient_uri_without_duns(recipient_name, recipient_unique_id, paren
     return combine_recipient_hash_and_level(recipient_hash, recipient_level)
 
 
-def fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id):
+def fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id, child_recipient_unique_id):
     recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
-    recipient_level = obtain_recipient_level({"duns": recipient_unique_id, "parent_duns": parent_recipient_unique_id})
+    recipient_level = obtain_recipient_level({
+        "duns": recipient_unique_id,
+        "parent_duns": parent_recipient_unique_id,
+        "child_duns": child_recipient_unique_id
+    })
     return combine_recipient_hash_and_level(recipient_hash, recipient_level)
 
 
@@ -40,12 +48,17 @@ def fetch_recipient_hash_using_duns(recipient_unique_id):
 
 def obtain_recipient_level(recipient_record: dict) -> str:
     level = None
-    if recipient_is_standalone(recipient_record):
+    if recipient_is_parent(recipient_record):
+        level = "P"
+    elif recipient_is_standalone(recipient_record):
         level = "R"
     elif recipient_is_child(recipient_record):
         level = "C"
-    # Can never be associated with a "parent" recipient profile level
     return level
+
+
+def recipient_is_parent(recipient_record: dict) -> bool:
+    return recipient_record["child_duns"] is not None
 
 
 def recipient_is_standalone(recipient_record: dict) -> bool:
