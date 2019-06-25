@@ -174,6 +174,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + idv_type_description: `test` (required, string, nullable)
 + type_of_idc_description: `r3w` (required, string, nullable)
 + agency_id: `123` (required, string)
++ agency_name `Department of Justice` (required, string)
 + multiple_or_single_aw_desc: `something` (required, string)
 + piid: `345` (required, string)
 
