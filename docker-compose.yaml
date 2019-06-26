@@ -25,7 +25,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
-  usaspending-db-sql-directory-setup:
+  usaspending-db-sql:
     build: .
     volumes:
      - .:/dockermount
