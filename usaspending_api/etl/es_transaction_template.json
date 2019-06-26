@@ -234,7 +234,12 @@
           "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_county_name": {
           "type": "text"
@@ -255,7 +260,12 @@
         },
 
         "recipient_location_country_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_country_name": {
           "type": "text"
