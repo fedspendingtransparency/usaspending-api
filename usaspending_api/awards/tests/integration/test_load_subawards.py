@@ -14,6 +14,7 @@ def cursor_fixture(db, monkeypatch):
     other SQL executes to occur.
     """
     original_execute_sql = Command._execute_sql
+
     def _execute_sql(self, sql):
         if 'dblink' not in sql and 'broker_server' not in sql:
             original_execute_sql(self, sql)

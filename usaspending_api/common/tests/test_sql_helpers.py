@@ -80,7 +80,7 @@ class CursorExecuteTestCase(TestCase):
             assert _build_composable_order_by('column') == 'order by "column"'
             assert _build_composable_order_by('this.column') == 'order by "this"."column"'
             assert _build_composable_order_by('column', 'asc') == 'order by "column" asc'
-            assert _build_composable_order_by('column', nulls='first') == 'order by "column" nulls first'
+            assert _build_composable_order_by('column', sort_nulls='first') == 'order by "column" nulls first'
             assert _build_composable_order_by('column', 'asc', 'first') == 'order by "column" asc nulls first'
 
             assert (
@@ -92,7 +92,7 @@ class CursorExecuteTestCase(TestCase):
                 'order by "column1" desc, "column2" desc'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], nulls='last') ==
+                _build_composable_order_by(['column1', 'column2'], sort_nulls='last') ==
                 'order by "column1" nulls last, "column2" nulls last'
             )
             assert (
@@ -104,7 +104,7 @@ class CursorExecuteTestCase(TestCase):
                 'order by "column1" asc, "column2" desc'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'last']) ==
+                _build_composable_order_by(['column1', 'column2'], sort_nulls=['first', 'last']) ==
                 'order by "column1" nulls first, "column2" nulls last'
             )
             assert (
@@ -123,19 +123,19 @@ class CursorExecuteTestCase(TestCase):
                 _build_composable_order_by(['column1', 'column2'], 'NOPE')
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls='NOPE')
+                _build_composable_order_by(['column1', 'column2'], sort_nulls='NOPE')
 
             with pytest.raises(ValueError):
                 _build_composable_order_by(['column1', 'column2'], ['asc', 'NOPE'])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'NOPE'])
+                _build_composable_order_by(['column1', 'column2'], sort_nulls=['first', 'NOPE'])
 
             with pytest.raises(ValueError):
                 _build_composable_order_by(['column1', 'column2'], ['asc', 'asc', 'asc'])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'first', 'first'])
+                _build_composable_order_by(['column1', 'column2'], sort_nulls=['first', 'first', 'first'])
 
         _sql = (
             SQL('select id, latest_transaction_id from awards a ') +

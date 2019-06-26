@@ -109,7 +109,7 @@ class Command(load_base.Command):
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
         start_time = datetime.now()
-        awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.

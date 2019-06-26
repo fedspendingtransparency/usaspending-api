@@ -82,7 +82,7 @@ def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
     if sort_null is not None:
         if sort_null not in ('first', 'last'):
             raise ValueError('sort_null must be either "first" or "last"')
-        bits.append(SQL('sort_null %s' % sort_null))
+        bits.append(SQL('nulls %s' % sort_null))
 
     return SQL(' ').join(bits)
 
