@@ -398,7 +398,6 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     write_to_log(message="Adding data dictionary to zip file")
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
-    # URL needs to be updated if filename changes
-    data_dictionary_url = "https://files.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx"
+    data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url, dest_file_path=data_dictionary_file_path).get_file_object()
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
