@@ -191,7 +191,6 @@ def parse_elasticsearch_response(hits):
                 results.append(OrderedDict([("city_name", city["key"]),
                                             ("state_code", state_code["key"]),
                                             ("hits", state_code["doc_count"])]))
-                print('{}, {}: {}'.format(city["key"], state_code["key"], state_code["doc_count"]))
         else:
             # for cities without states, useful for foreign country results
             results.append(OrderedDict([("city_name", city["key"]),
