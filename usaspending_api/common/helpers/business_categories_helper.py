@@ -10,7 +10,7 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "small_business"
     },
     {
-        "display_name": "Other Than Small Business",
+        "display_name": "Not Designated a Small Business",
         "field_name": "other_than_small_business"
     },
     {
