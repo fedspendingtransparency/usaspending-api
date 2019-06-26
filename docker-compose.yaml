@@ -29,7 +29,7 @@ services:
     build: .
     volumes:
      - .:/dockermount
-    command:
+    command: >
       /bin/sh -c "mkdir $$MATVIEW_SQL_DIR | true &&
       python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=$$MATVIEW_SQL_DIR"
     environment:
