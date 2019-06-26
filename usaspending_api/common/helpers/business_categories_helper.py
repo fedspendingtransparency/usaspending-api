@@ -2,19 +2,19 @@
 BUSINESS_CATEGORIES_LOOKUP = [
     # Category Business
     {
-        "display_name": "",
+        "display_name": "Category Business",
         "field_name": "category_business"
     },
     {
-        "display_name": "",
+        "display_name": "Small Business",
         "field_name": "small_business"
     },
     {
-        "display_name": "",
+        "display_name": "Other Than Small Business",
         "field_name": "other_than_small_business"
     },
     {
-        "display_name": "Corporate Entity tax Exempt",
+        "display_name": "Corporate Entity Tax Exempt",
         "field_name": "corporate_entity_tax_exempt",
     },
     {
@@ -48,7 +48,7 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "minority_owned_business",
     },
     {
-        "display_name": "",
+        "display_name": "Alaskan Native Corporation Owned Firm",
         "field_name": "alaskan_native_owned_business",
     },
     {
@@ -76,7 +76,7 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "native_hawaiian_owned_business",
     },
     {
-        "display_name": "Subcontinent Asian - Indian American Owned Business",
+        "display_name": "Indian (Subcontinent) American Owned Business",
         "field_name": "subcontinent_asian_indian_american_owned_business",
     },
     {
@@ -122,15 +122,15 @@ BUSINESS_CATEGORIES_LOOKUP = [
 
     # Special Designations
     {
-        "display_name": "",
+        "display_name": "Special Designations",
         "field_name": "special_designations"
     },
     {
-        "display_name": "8a Program Participant",
+        "display_name": "8(a) Program Participant",
         "field_name": "8a_program_participant"
     },
     {
-        "display_name": "The AbilityOne Program",
+        "display_name": "AbilityOne Program Participant",
         "field_name": "ability_one_program"
     },
     {
@@ -146,7 +146,7 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "federally_funded_research_and_development_corp",
     },
     {
-        "display_name": "Historically Underutilized Business Zone HUBZone Firm",
+        "display_name": "HUBZone Firm",
         "field_name": "historically_underutilized_business_firm",
     },
     {
@@ -174,11 +174,11 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "community_developed_corporation_owned_firm",
     },
     {
-        "display_name": "",
+        "display_name": "U.S.-Owned Business",
         "field_name": "us_owned_business",
     },
     {
-        "display_name": "",
+        "display_name": "Foreign-Owned and U.S.-Incorporated Business",
         "field_name": "foreign_owned_and_us_located_business",
     },
     {
@@ -198,7 +198,7 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "domestic_shelter"
     },
     {
-        "display_name": "",
+        "display_name": "Hospital",
         "field_name": "hospital"
     },
     {
@@ -226,15 +226,15 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "higher_education"
     },
     {
-        "display_name": "",
+        "display_name": "Higher Education (Public)",
         "field_name": "public_institution_of_higher_education",
     },
     {
-        "display_name": "",
+        "display_name": "Higher Education (Private)",
         "field_name": "private_institution_of_higher_education",
     },
     {
-        "display_name": "",
+        "display_name": "Higher Education (Minority Serving)",
         "field_name": "minority_serving_institution_of_higher_education",
     },
     {
@@ -256,35 +256,35 @@ BUSINESS_CATEGORIES_LOOKUP = [
         "field_name": "government"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. National Government",
         "field_name": "national_government"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Regional/State Government",
         "field_name": "regional_and_state_government"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Regional Government Organization",
         "field_name": "regional_organization"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Interstate Government Entity",
         "field_name": "interstate_entity"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Territory Government",
         "field_name": "us_territory_or_possession"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Local Government",
         "field_name": "local_government"
     },
     {
-        "display_name": "",
+        "display_name": "Native American Tribal Government",
         "field_name": "indian_native_american_tribal_government"
     },
     {
-        "display_name": "",
+        "display_name": "U.S. Government Authorities",
         "field_name": "authorities_and_commissions"
     },
     {
@@ -311,4 +311,4 @@ def get_business_category_display_names(business_category_list):
             BUSINESS_CATEGORIES_LOOKUP
         )
     )
-    return map(lambda bus_cat_dict: bus_cat_dict.get("display_name"), filtered_business_category_list)
+    return list(map(lambda bus_cat_dict: bus_cat_dict.get("display_name"), filtered_business_category_list))

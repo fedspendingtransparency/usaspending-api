@@ -1,36 +1,51 @@
-# Third-party app imports
-import pytest
+# Imports from your apps
+from usaspending_api.common.helpers.business_categories_helper import (
+    BUSINESS_CATEGORIES_LOOKUP, get_business_category_display_names
+)
 
-from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
+
+def _get_all_business_category_field_names():
+    return list(map(lambda bus_cat: bus_cat["field_name"], BUSINESS_CATEGORIES_LOOKUP))
 
 
-def test_get_few_valid_business_category_display_names():
-    business_category_names_list = [
-        "corporate_entity_tax_exempt",
-        "minority_owned_business",
-        "economically_disadvantaged_women_owned_small_business",
-        "service_disabled_veteran_owned_business",
-        "dot_certified_disadvantaged_business_enterprise",
-        "federally_funded_research_and_development_corp",
-        "self_certified_small_disadvanted_business",
-        "community_development_corporations",
-        "educational_institution",
-        "council_of_governments",
-        "interstate_entity",
-        "individuals"
-    ]
-    business_category_display_names_list = [
-        "Corporate Entity Tax Exempt",
-        "Minority Owned Business",
-        "Economically Disadvantaged Women Owned Small Business",
-        "Service Disabled Veteran Owned Business",
-        "DOT Certified Disadvantaged Business Enterprise",
-        "Federally Funded Research and Development Corp",
-        "Self-Certified Small Disadvantaged Business",
-        "Community Development Corporations",
-        "Educational Institution",
-        "Council of Governments",
-        "Interstate Entity",
-        "Individuals"
-    ]
-    assert get_business_category_display_names(business_category_names_list) == business_category_display_names_list
+def _get_first_ten_business_category_field_names():
+    return list(map(lambda bus_cat: bus_cat["field_name"], BUSINESS_CATEGORIES_LOOKUP))[:10]
+
+
+def _get_all_business_category_display_names():
+    return list(map(lambda bus_cat: bus_cat["display_name"], BUSINESS_CATEGORIES_LOOKUP))
+
+
+def _get_first_ten_business_category_display_names():
+    return list(map(lambda bus_cat: bus_cat["display_name"], BUSINESS_CATEGORIES_LOOKUP))[:10]
+
+
+def test_get_ten_valid_business_category_display_names():
+    business_category_field_names_list = _get_first_ten_business_category_field_names()
+    business_category_display_names_list = _get_first_ten_business_category_display_names()
+    assert get_business_category_display_names(
+        business_category_field_names_list
+    ) == business_category_display_names_list
+
+
+def test_get_all_valid_business_category_display_names():
+    business_category_field_names_list = _get_all_business_category_field_names()
+    business_category_display_names_list = _get_all_business_category_display_names()
+    assert get_business_category_display_names(
+        business_category_field_names_list
+    ) == business_category_display_names_list
+
+
+def test_get_invalid_business_category_display_names():
+    business_category_field_names_list = _get_all_business_category_field_names()
+    business_category_field_names_list.insert(0, "invalid_name_1")
+    business_category_field_names_list.append("invalid_name_2")
+    business_category_display_names_list = _get_all_business_category_display_names()
+    assert get_business_category_display_names(
+        business_category_field_names_list
+    ) == business_category_display_names_list
+
+
+def test_get_empty_business_category_display_names():
+    business_category_field_names_list = []
+    assert get_business_category_display_names(business_category_field_names_list) == []

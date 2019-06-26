@@ -180,7 +180,6 @@ def create_recipient_object(db_row_dict):
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
-            ("business_categories", fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
             (
                 "business_categories", get_business_category_display_names(
                     fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])
