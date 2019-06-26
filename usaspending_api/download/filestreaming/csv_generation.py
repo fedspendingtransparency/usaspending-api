@@ -14,7 +14,7 @@ from django.conf import settings
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description

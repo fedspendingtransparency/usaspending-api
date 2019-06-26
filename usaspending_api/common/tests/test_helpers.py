@@ -4,7 +4,8 @@ import time
 
 import pytest
 
-from usaspending_api.common.helpers.generic_helper import fy, get_pagination, timer
+from usaspending_api.common.helpers.generic_helper import fy, get_pagination
+from usaspending_api.common.helpers.timing_helper import timer
 
 legal_dates = {
     dt.datetime(2017, 2, 2, 16, 43, 28, 377373): 2017,
@@ -74,7 +75,7 @@ def test_fy_type_exceptions(not_date):
 
 
 def test_timer(capsys):
-    'Verify that timer helper executes without error'
+    """Verify that timer helper executes without error"""
 
     with timer():
         print('Doing a thing')
@@ -84,7 +85,7 @@ def test_timer(capsys):
 
 
 def test_timer_times(capsys):
-    'Verify that timer shows longer times for slower operations'
+    """Verify that timer shows longer times for slower operations"""
 
     pattern = re.compile(r'([\d\.e\-]+)s')
 

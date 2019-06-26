@@ -20,7 +20,6 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
-from usaspending_api.etl.subaward_etl import load_subawards
 
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.load_base import load_data_into_model
@@ -38,7 +37,7 @@ logger = logging.getLogger('console')
 class Command(load_base.Command):
     """
     This command will load a single submission from the DATA Act broker. If we've already loaded the specified broker
-    submisison, this command will remove the existing records before loading them again.
+    submission, this command will remove the existing records before loading them again.
     """
     help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable \
                 must set so we can pull submission data from their db."
@@ -46,13 +45,6 @@ class Command(load_base.Command):
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         parser.add_argument('-q', '--quick', action='store_true', help='experimental SQL-based load')
-        parser.add_argument(
-            '--nosubawards',
-            action='store_true',
-            dest='nosubawards',
-            default=False,
-            help='Skips the D1/D2 subaward load for this submission.'
-        )
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -119,17 +111,6 @@ class Command(load_base.Command):
         start_time = datetime.now()
         awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
-
-        if not options['nosubawards']:
-            try:
-                start_time = datetime.now()
-                logger.info('Loading subaward data...')
-                load_subawards(submission_attributes, awards_touched, db_cursor)
-                logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
-            except Exception:
-                logger.warning("Error loading subawards for this submission")
-        else:
-            logger.info('Skipping subawards due to flags...')
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method
