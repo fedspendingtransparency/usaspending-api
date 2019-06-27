@@ -40,7 +40,7 @@
     "  transaction_normalized.description AS transaction_description,",
     "  transaction_normalized.modification_number,",
     "",
-    "  COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n, 'USA') AS pop_country_name,",
+    "  COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n) AS pop_country_name,",
     "  COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,",
     "  COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,",
     "  COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co) AS pop_county_code,",
