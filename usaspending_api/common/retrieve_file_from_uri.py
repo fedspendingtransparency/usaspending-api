@@ -69,8 +69,6 @@ class RetrieveFileFromUri:
         f = tempfile.SpooledTemporaryFile()
         f.write(r.content)
         f.seek(0)  # go to beginning of file for reading
-        if self.dest_file_path:
-            self._copy_file()
         return f
 
     def _handle_file(self):
