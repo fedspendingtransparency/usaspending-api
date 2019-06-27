@@ -183,7 +183,7 @@ class Command(BaseCommand):
                 wheres.append(SQL('{} > {}').format(Identifier(column), Literal(value)))
 
         if wheres:
-            # So this is weird.  Because our where clause is embedded in a
+            # Because our where clause is embedded in a
             # dblink, we need to wrap it in a literal again to get everything
             # escaped properly.
             where = SQL('where {}').format(SQL(' or ').join(wheres))
