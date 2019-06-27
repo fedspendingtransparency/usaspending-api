@@ -1,23 +1,23 @@
 # Imports from your apps
 from usaspending_api.common.helpers.business_categories_helper import (
-    BUSINESS_CATEGORIES_LOOKUP, get_business_category_display_names
+    BUSINESS_CATEGORIES_LOOKUP_DICT, get_business_category_display_names
 )
 
 
 def _get_all_business_category_field_names():
-    return list(map(lambda bus_cat: bus_cat["field_name"], BUSINESS_CATEGORIES_LOOKUP))
+    return list(BUSINESS_CATEGORIES_LOOKUP_DICT.keys())
 
 
 def _get_first_ten_business_category_field_names():
-    return list(map(lambda bus_cat: bus_cat["field_name"], BUSINESS_CATEGORIES_LOOKUP))[:10]
+    return list(BUSINESS_CATEGORIES_LOOKUP_DICT.keys())[:10]
 
 
 def _get_all_business_category_display_names():
-    return list(map(lambda bus_cat: bus_cat["display_name"], BUSINESS_CATEGORIES_LOOKUP))
+    return list(BUSINESS_CATEGORIES_LOOKUP_DICT.values())
 
 
 def _get_first_ten_business_category_display_names():
-    return list(map(lambda bus_cat: bus_cat["display_name"], BUSINESS_CATEGORIES_LOOKUP))[:10]
+    return list(BUSINESS_CATEGORIES_LOOKUP_DICT.values())[:10]
 
 
 def test_get_ten_valid_business_category_display_names():

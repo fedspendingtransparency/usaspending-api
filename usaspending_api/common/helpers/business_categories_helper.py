@@ -1,143 +1,101 @@
 # Dictionary of Business Categories that pair them with their human readable name
-BUSINESS_CATEGORIES_LOOKUP = [
+BUSINESS_CATEGORIES_LOOKUP_DICT = {
     # Category Business
-    {"display_name": "Category Business", "field_name": "category_business"},
-    {"display_name": "Small Business", "field_name": "small_business"},
-    {"display_name": "Not Designated a Small Business", "field_name": "other_than_small_business"},
-    {"display_name": "Corporate Entity Tax Exempt", "field_name": "corporate_entity_tax_exempt"},
-    {"display_name": "Corporate Entity Not Tax Exempt", "field_name": "corporate_entity_not_tax_exempt"},
-    {
-        "display_name": "Partnership or Limited Liability Partnership",
-        "field_name": "partnership_or_limited_liability_partnership"
-    },
-    {"display_name": "Sole Proprietorship", "field_name": "sole_proprietorship"},
-    {"display_name": "Manufacturer of Goods", "field_name": "manufacturer_of_goods"},
-    {"display_name": "Subchapter S Corporation", "field_name": "subchapter_s_corporation"},
-    {"display_name": "Limited Liability Corporation", "field_name": "limited_liability_corporation"},
+    "category_business": "Category Business",
+    "small_business": "Small Business",
+    "other_than_small_business": "Not Designated a Small Business",
+    "corporate_entity_tax_exempt": "Corporate Entity Tax Exempt",
+    "corporate_entity_not_tax_exempt": "Corporate Entity Not Tax Exempt",
+    "partnership_or_limited_liability_partnership": "Partnership or Limited Liability Partnership",
+    "sole_proprietorship": "Sole Proprietorship",
+    "manufacturer_of_goods": "Manufacturer of Goods",
+    "subchapter_s_corporation": "Subchapter S Corporation",
+    "limited_liability_corporation": "Limited Liability Corporation",
 
     # Minority Owned Business
-    {"display_name": "Minority Owned Business", "field_name": "minority_owned_business"},
-    {"display_name": "Alaskan Native Corporation Owned Firm", "field_name": "alaskan_native_owned_business"},
-    {"display_name": "American Indian Owned Business", "field_name": "american_indian_owned_business"},
-    {"display_name": "Asian Pacific American Owned Business", "field_name": "asian_pacific_american_owned_business"},
-    {"display_name": "Black American Owned Business", "field_name": "black_american_owned_business"},
-    {"display_name": "Hispanic American Owned Business", "field_name": "hispanic_american_owned_business"},
-    {"display_name": "Native American Owned Business", "field_name": "native_american_owned_business"},
-    {"display_name": "Native Hawaiian Owned Business", "field_name": "native_hawaiian_owned_business"},
-    {
-        "display_name": "Indian (Subcontinent) American Owned Business",
-        "field_name": "subcontinent_asian_indian_american_owned_business"
-    },
-    {"display_name": "Tribally Owned Business", "field_name": "tribally_owned_business"},
-    {"display_name": "Other Minority Owned Business", "field_name": "other_minority_owned_business"},
+    "minority_owned_business": "Minority Owned Business",
+    "alaskan_native_owned_business": "Alaskan Native Corporation Owned Firm",
+    "american_indian_owned_business": "American Indian Owned Business",
+    "asian_pacific_american_owned_business": "Asian Pacific American Owned Business",
+    "black_american_owned_business": "Black American Owned Business",
+    "hispanic_american_owned_business": "Hispanic American Owned Business",
+    "native_american_owned_business": "Native American Owned Business",
+    "native_hawaiian_owned_business": "Native Hawaiian Owned Business",
+    "subcontinent_asian_indian_american_owned_business": "Indian (Subcontinent) American Owned Business",
+    "tribally_owned_business": "Tribally Owned Business",
+    "other_minority_owned_business": "Other Minority Owned Business",
 
     # Women Owned Business
-    {"display_name": "Woman Owned Business", "field_name": "woman_owned_business"},
-    {"display_name": "Women Owned Small Business", "field_name": "women_owned_small_business"},
-    {
-        "display_name": "Economically Disadvantaged Women Owned Small Business",
-        "field_name": "economically_disadvantaged_women_owned_small_business"
-    },
-    {
-        "display_name": "Joint Venture Women Owned Small Business",
-        "field_name": "joint_venture_women_owned_small_business"
-    },
-    {
-        "display_name": "Joint Venture Economically Disadvantaged Women Owned Small Business",
-        "field_name": "joint_venture_economically_disadvantaged_women_owned_small_business"
-    },
+    "woman_owned_business": "Woman Owned Business",
+    "women_owned_small_business": "Women Owned Small Business",
+    "economically_disadvantaged_women_owned_small_business": "Economically Disadvantaged Women Owned Small Business",
+    "joint_venture_women_owned_small_business": "Joint Venture Women Owned Small Business",
+    "joint_venture_economically_disadvantaged_women_owned_small_business":
+        "Joint Venture Economically Disadvantaged Women Owned Small Business",
 
     # Veteran Owned Business
-    {"display_name": "Veteran Owned Business", "field_name": "veteran_owned_business"},
-    {
-        "display_name": "Service Disabled Veteran Owned Business",
-        "field_name": "service_disabled_veteran_owned_business"
-    },
+    "veteran_owned_business": "Veteran Owned Business",
+    "service_disabled_veteran_owned_business": "Service Disabled Veteran Owned Business",
 
     # Special Designations
-    {"display_name": "Special Designations", "field_name": "special_designations"},
-    {"display_name": "8(a) Program Participant", "field_name": "8a_program_participant"},
-    {"display_name": "AbilityOne Program Participant", "field_name": "ability_one_program"},
-    {
-        "display_name": "DoT Certified Disadvantaged Business Enterprise",
-        "field_name": "dot_certified_disadvantaged_business_enterprise"
-    },
-    {"display_name": "Emerging Small Business", "field_name": "emerging_small_business"},
-    {
-        "display_name": "Federally Funded Research and Development Corp",
-        "field_name": "federally_funded_research_and_development_corp"
-    },
-    {"display_name": "HUBZone Firm", "field_name": "historically_underutilized_business_firm"},
-    {"display_name": "Labor Surplus Area Firm", "field_name": "labor_surplus_area_firm"},
-    {"display_name": "SBA Certified 8 a Joint Venture", "field_name": "sba_certified_8a_joint_venture"},
-    {
-        "display_name": "Self-Certified Small Disadvantaged Business",
-        "field_name": "self_certified_small_disadvanted_business"
-    },
-    {"display_name": "Small Agricultural Cooperative", "field_name": "small_agricultural_cooperative"},
-    {"display_name": "Small Disadvantaged Business", "field_name": "small_disadvantaged_business"},
-    {
-        "display_name": "Community Developed Corporation Owned Firm",
-        "field_name": "community_developed_corporation_owned_firm"
-    },
-    {"display_name": "U.S.-Owned Business", "field_name": "us_owned_business"},
-    {
-        "display_name": "Foreign-Owned and U.S.-Incorporated Business",
-        "field_name": "foreign_owned_and_us_located_business"
-    },
-    {"display_name": "Foreign Owned and Located", "field_name": "foreign_owned_and_located_business"},
-    {"display_name": "Foreign Government", "field_name": "foreign_government"},
-    {"display_name": "International Organization", "field_name": "international_organization"},
-    {"display_name": "Domestic Shelter", "field_name": "domestic_shelter"},
-    {"display_name": "Hospital", "field_name": "hospital"},
-    {"display_name": "Veterinary Hospital", "field_name": "veterinary_hospital"},
+    "special_designations": "Special Designations",
+    "8a_program_participant": "8(a) Program Participant",
+    "ability_one_program": "AbilityOne Program Participant",
+    "dot_certified_disadvantaged_business_enterprise": "DoT Certified Disadvantaged Business Enterprise",
+    "emerging_small_business": "Emerging Small Business",
+    "federally_funded_research_and_development_corp": "Federally Funded Research and Development Corp",
+    "historically_underutilized_business_firm": "HUBZone Firm",
+    "labor_surplus_area_firm": "Labor Surplus Area Firm",
+    "sba_certified_8a_joint_venture": "SBA Certified 8 a Joint Venture",
+    "self_certified_small_disadvanted_business": "Self-Certified Small Disadvantaged Business",
+    "small_agricultural_cooperative": "Small Agricultural Cooperative",
+    "small_disadvantaged_business": "Small Disadvantaged Business",
+    "community_developed_corporation_owned_firm": "Community Developed Corporation Owned Firm",
+    "us_owned_business": "U.S.-Owned Business",
+    "foreign_owned_and_us_located_business": "Foreign-Owned and U.S.-Incorporated Business",
+    "foreign_owned_and_located_business": "Foreign Owned and Located",
+    "foreign_government": "Foreign Government",
+    "international_organization": "International Organization",
+    "domestic_shelter": "Domestic Shelter",
+    "hospital": "Hospital",
+    "veterinary_hospital": "Veterinary Hospital",
 
     # Nonprofit
-    {"display_name": "Nonprofit Organization", "field_name": "nonprofit"},
-    {"display_name": "Foundation", "field_name": "foundation"},
-    {"display_name": "Community Development Corporation", "field_name": "community_development_corporations"},
+    "nonprofit": "Nonprofit Organization",
+    "foundation": "Foundation",
+    "community_development_corporations": "Community Development Corporation",
 
     # Higher education
-    {"display_name": "Higher Education", "field_name": "higher_education"},
-    {
-        "display_name": "Higher Education (Public)",
-        "field_name": "public_institution_of_higher_education"
-    },
-    {
-        "display_name": "Higher Education (Private)",
-        "field_name": "private_institution_of_higher_education"
-    },
-    {
-        "display_name": "Higher Education (Minority Serving)",
-        "field_name": "minority_serving_institution_of_higher_education"
-    },
-    {"display_name": "Educational Institution", "field_name": "educational_institution"},
-    {"display_name": "School of Forestry", "field_name": "school_of_forestry"},
-    {"display_name": "Veterinary College", "field_name": "veterinary_college"},
+    "higher_education": "Higher Education",
+    "public_institution_of_higher_education": "Higher Education (Public)",
+    "private_institution_of_higher_education": "Higher Education (Private)",
+    "minority_serving_institution_of_higher_education": "Higher Education (Minority Serving)",
+    "educational_institution": "Educational Institution",
+    "school_of_forestry": "School of Forestry",
+    "veterinary_college": "Veterinary College",
 
     # Government
-    {"display_name": "Government", "field_name": "government"},
-    {"display_name": "U.S. National Government", "field_name": "national_government"},
-    {"display_name": "U.S. Regional/State Government", "field_name": "regional_and_state_government"},
-    {"display_name": "U.S. Regional Government Organization", "field_name": "regional_organization"},
-    {"display_name": "U.S. Interstate Government Entity", "field_name": "interstate_entity"},
-    {"display_name": "U.S. Territory Government", "field_name": "us_territory_or_possession"},
-    {"display_name": "U.S. Local Government", "field_name": "local_government"},
-    {"display_name": "Native American Tribal Government", "field_name": "indian_native_american_tribal_government"},
-    {"display_name": "U.S. Government Authorities", "field_name": "authorities_and_commissions"},
-    {"display_name": "Interstate Entity", "field_name": "interstate_entity"},
-    {"display_name": "Council of Governments", "field_name": "council_of_governments"},
+    "government": "Government",
+    "national_government": "U.S. National Government",
+    "regional_and_state_government": "U.S. Regional/State Government",
+    "regional_organization": "U.S. Regional Government Organization",
+    "interstate_entity": "U.S. Interstate Government Entity",
+    "us_territory_or_possession": "U.S. Territory Government",
+    "local_government": "U.S. Local Government",
+    "indian_native_american_tribal_government": "Native American Tribal Government",
+    "authorities_and_commissions": "U.S. Government Authorities",
+    "interstate_entity": "Interstate Entity",
+    "council_of_governments": "Council of Governments",
 
     # Individuals
-    {"display_name": "Individuals", "field_name": "individuals"},
-]
+    "individuals": "Individuals"
+}
 
 
 def get_business_category_display_names(business_category_list):
-    filtered_business_category_list = list(
-        filter(
-            lambda bus_cat_dict: bus_cat_dict.get("field_name") in business_category_list,
-            BUSINESS_CATEGORIES_LOOKUP
-        )
-    )
-    return list(map(lambda bus_cat_dict: bus_cat_dict.get("display_name"), filtered_business_category_list))
+    business_category_display_name_list = []
+    for business_category in business_category_list:
+        display_name = BUSINESS_CATEGORIES_LOOKUP_DICT.get(business_category)
+        if display_name:
+            business_category_display_name_list.append(display_name)
+    return business_category_display_name_list
