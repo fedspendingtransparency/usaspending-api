@@ -22,7 +22,7 @@ update
     awards
 
 set
-    total_subaward_amount = st.total_subaward_amount,
+    total_subaward_amount = coalesce(st.total_subaward_amount, 0),
     subaward_count = st.subaward_count
 
 from
