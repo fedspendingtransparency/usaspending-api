@@ -11,6 +11,22 @@ from usaspending_api.references.models import Agency, Location, ToptierAgency, S
 
 @pytest.fixture
 def awards_and_transactions(db):
+    parent_loc = {
+        "pk": 2,
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "SC",
+        "city_name": "Charleston",
+        "county_name": "CHARLESTON",
+        "address_line1": "123 calhoun st",
+        "address_line2": None,
+        "address_line3": None,
+        "zip4": 294245897,
+        "congressional_code": "90",
+        "zip5": 29424,
+        "foreign_postal_code": None,
+        "foreign_province": None,
+    }
     loc = {
         "pk": 1,
         "location_country_code": "USA",
@@ -32,14 +48,25 @@ def awards_and_transactions(db):
     trans_asst = {"pk": 1}
     trans_cont = {"pk": 2}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
+    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
     mommy.make("references.Cfda", program_number=1234)
+    mommy.make("references.Location", **parent_loc)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
+    mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("references.SubtierAgency", **sub_agency)
     mommy.make("references.ToptierAgency", **sub_agency)
     mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
+
+    parent_le = {
+        "pk": 2,
+        "recipient_name": "Dave's Pizza LLC",
+        "recipient_unique_id": "123",
+        "business_categories": ["limited liability"],
+        "location": Location.objects.get(pk=2),
+    }
 
     le = {
         "pk": 1,
@@ -56,6 +83,7 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
+    mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 
     asst_data = {
@@ -65,6 +93,7 @@ def awards_and_transactions(db):
         "cfda_title": "Shiloh",
         "awardee_or_recipient_legal": "John's Pizza",
         "awardee_or_recipient_uniqu": "456",
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
         "ultimate_parent_unique_ide": "123",
         "legal_entity_country_code": "USA",
         "legal_entity_country_name": "UNITED STATES",
@@ -147,6 +176,7 @@ def awards_and_transactions(db):
         "program_system_or_equipmen": "000",
         "purchase_card_as_paym_desc": "NO",
         "referenced_idv_agency_iden": "9700",
+        "referenced_idv_agency_desc": "whatever",
         "sea_transportation_desc": "NO",
         "small_business_competitive": False,
         "solicitation_identifier": None,
@@ -156,7 +186,7 @@ def awards_and_transactions(db):
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": None,
         "type_set_aside_description": None,
-        "ultimate_parent_legal_enti": None,
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
         "ultimate_parent_unique_ide": "123",
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
@@ -281,6 +311,8 @@ expected_response_asst = {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "John's Pizza",
         "recipient_unique_id": "456",
+        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_unique_id": "123",
         "business_categories": ["small_business"],
         "location": {
@@ -298,7 +330,6 @@ expected_response_asst = {
             "location_country_code": "USA",
             "congressional_code": "90",
         },
-        "parent_recipient_name": None,
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
@@ -351,6 +382,8 @@ expected_response_cont = {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "John's Pizza",
         "recipient_unique_id": "456",
+        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_unique_id": "123",
         "business_categories": ["small_business"],
         "location": {
@@ -368,7 +401,6 @@ expected_response_cont = {
             "location_country_code": "USA",
             "congressional_code": "90",
         },
-        "parent_recipient_name": None,
     },
     "total_obligation": 1000.0,
     "base_and_all_options": 2000.0,
@@ -448,6 +480,7 @@ expected_response_cont = {
         "purchase_card_as_payment_method": None,
         "purchase_card_as_payment_method_description": "NO",
         "referenced_idv_agency_iden": "9700",
+        "referenced_idv_agency_desc": "whatever",
         "sea_transportation": None,
         "sea_transportation_description": "NO",
         "small_business_competitive": False,
