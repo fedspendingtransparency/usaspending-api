@@ -399,5 +399,5 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
-    RetrieveFileFromUri(data_dictionary_url, dest_file_path=data_dictionary_file_path).get_file_object()
+    RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)

@@ -15,10 +15,9 @@ SCHEMA_HELP_TEXT = (
 
 
 class RetrieveFileFromUri:
-    def __init__(self, ruri, binary_data=True, dest_file_path=None):
+    def __init__(self, ruri, binary_data=True):
         self.uri = ruri  # Relative Uniform Resource Locator
         self.mode = "rb" if binary_data else "r"
-        self.dest_file_path = dest_file_path
         self._validate_url()
 
     def _validate_url(self):
@@ -34,7 +33,7 @@ class RetrieveFileFromUri:
         """
             return a file object (aka file handler) to either:
                 the local file,
-                a temporary file that was loaded from the pulled exernal file
+                a temporary file that was loaded from the pulled external file
             Recommendation is to use this method as a context manager
         """
         if self.parsed_url_obj.scheme == "s3":
@@ -43,6 +42,15 @@ class RetrieveFileFromUri:
             return self._handle_http()
         elif self.parsed_url_obj.scheme in ("file", ""):
             return self._handle_file()
+        else:
+            raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
+
+    def copy(self, dest_file_path):
+        """
+            create a copy of the file and place at "dest_file_path"
+        """
+        if self.parsed_url_obj.scheme.startswith("http"):
+            urllib.request.urlretrieve(self.uri, dest_file_path)
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
@@ -72,6 +80,3 @@ class RetrieveFileFromUri:
             file_path = self.parsed_url_obj.path
 
         return open(file_path, self.mode)
-
-    def _copy_file(self):
-        urllib.request.urlretrieve(self.uri, self.dest_file_path)

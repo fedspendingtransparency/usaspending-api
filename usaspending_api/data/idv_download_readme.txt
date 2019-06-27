@@ -27,4 +27,4 @@ This file contains transaction-level data representing all of the modifications 
 
 File: Data_Dictionary_Crosswalk.xlsx
 
-This file contains the data dictionary covering all elements available for download from USASpending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/#/download_center/data_dictionary
+This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/#/download_center/data_dictionary
