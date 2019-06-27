@@ -84,7 +84,6 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "local_government": "U.S. Local Government",
     "indian_native_american_tribal_government": "Native American Tribal Government",
     "authorities_and_commissions": "U.S. Government Authorities",
-    "interstate_entity": "Interstate Entity",
     "council_of_governments": "Council of Governments",
 
     # Individuals
