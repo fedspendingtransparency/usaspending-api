@@ -74,7 +74,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
-    if country == ALL_FOREIGN_COUNTRIES:
+    if country != 'USA':
         aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
     else:
         aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
