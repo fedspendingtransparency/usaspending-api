@@ -174,6 +174,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + idv_type_description: `test` (required, string, nullable)
 + type_of_idc_description: `r3w` (required, string, nullable)
 + agency_id: `123` (required, string)
++ agency_name `Department of Justice` (required, string)
 + multiple_or_single_aw_desc: `something` (required, string)
 + piid: `345` (required, string)
 
@@ -280,6 +281,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `purchase_card_as_payment_method` (required, string, nullable)
 + `purchase_card_as_payment_method_description` (required, string, nullable)
 + `referenced_idv_agency_iden` (required, string, nullable)
++ `referenced_idv_agency_desc` (required, string, nullable)
 + `sea_transportation` (required, string, nullable)
 + `sea_transportation_description` (required, string, nullable)
 + `small_business_competitive` (required, boolean, nullable)
