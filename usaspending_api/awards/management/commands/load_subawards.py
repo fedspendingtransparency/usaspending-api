@@ -155,11 +155,13 @@ class Command(BaseCommand):
                 with Timer("delete from subaward"):
                     self._execute_sql("delete from subaward")
             self._execute_sql_file("140_add_subawards.sql")
-            self._execute_sql_file("150_update_award_totals.sql", where=where)
+            if self.full_reload:
+                self._execute_sql_file("150_reset_unlinked_award_subaward_fields.sql")
+            self._execute_sql_file("160_update_award_subaward_fields.sql", where=where)
 
         # We'll do this outside of the transaction since it doesn't hurt
         # anything to reimport subawards.
-        self._execute_sql_file("160_mark_imported.sql")
+        self._execute_sql_file("170_mark_imported.sql")
 
         self._execute_sql_file("900_cleanup.sql")
 

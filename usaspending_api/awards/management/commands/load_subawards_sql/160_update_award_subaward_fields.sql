@@ -2,7 +2,7 @@
 
 
 
-with subaward_totals AS (
+with subaward_totals as (
 
     select
         award_id,
