@@ -16,6 +16,7 @@ from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
@@ -56,6 +57,9 @@ def generate_csvs(download_job):
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             parse_source(source, columns, download_job, working_dir, piid, zip_file_path, limit)
+        include_data_dictionary = json_request.get("include_data_dictionary")
+        if include_data_dictionary:
+            add_data_dictionary_to_zip(working_dir, zip_file_path)
         include_file_description = json_request.get('include_file_description')
         if include_file_description:
             write_to_log(message="Adding file description to zip file")
@@ -388,3 +392,12 @@ def fail_download(download_job, exception, message):
     download_job.error_message = '{}:\n{}'.format(message, stack_trace)
     download_job.job_status_id = JOB_STATUS_DICT['failed']
     download_job.save()
+
+
+def add_data_dictionary_to_zip(working_dir, zip_file_path):
+    write_to_log(message="Adding data dictionary to zip file")
+    data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
+    data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
+    data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
+    RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+    append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
