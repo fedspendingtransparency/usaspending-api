@@ -90,7 +90,7 @@ class Command(BaseCommand):
         if not options["safe"]:
             for next_missing_sub in missing_submissions:
                 try:
-                    call_command('load_submission', '--noclean', '--nosubawards', next_missing_sub[0])
+                    call_command('load_submission', '--noclean', next_missing_sub[0])
                 except CommandError:
                     logger.info('Skipping submission ID {} due to CommandError (bad ID)'.format(next_missing_sub[0]))
                     continue

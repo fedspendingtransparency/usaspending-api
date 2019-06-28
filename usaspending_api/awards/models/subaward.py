@@ -1,13 +1,12 @@
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
-from usaspending_api.common.models import DataSourceTrackedModel
 
+class Subaward(models.Model):
 
-class Subaward(DataSourceTrackedModel):
-
-    id = models.AutoField(primary_key=True)
+    # This id is now a 1 to 1 mapping with the Subaward table in Broker, however,
+    # it's a soft relationship currently.
+    id = models.IntegerField(primary_key=True)
 
     award = models.ForeignKey("awards.Award", models.CASCADE, related_name="subawards", null=True)
     cfda = models.ForeignKey(
@@ -35,7 +34,7 @@ class Subaward(DataSourceTrackedModel):
         blank=False,
         null=False,
         default=0,
-        verbose_name="FSRS Award ID in the " "Broker",
+        verbose_name="FSRS Award ID in the Broker",
         help_text="The ID of the parent award in broker",
         db_index=True,
     )
@@ -55,15 +54,10 @@ class Subaward(DataSourceTrackedModel):
         help_text="Whether the parent Award is a Procurement or a Grant",
         db_index=True,
     )
-
-    keyword_ts_vector = SearchVectorField(null=True, blank=True)
-    award_ts_vector = SearchVectorField(null=True, blank=True)
-    recipient_name_ts_vector = SearchVectorField(null=True, blank=True)
-    data_source = models.TextField(null=True, blank=True)
+    unique_award_key = models.TextField(blank=True, null=True, db_index=True)
 
     latest_transaction_id = models.IntegerField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
-    total_obl_bin = models.TextField(null=True, blank=True)
 
     awarding_toptier_agency_name = models.TextField(null=True, blank=True)
     awarding_subtier_agency_name = models.TextField(null=True, blank=True)
@@ -87,7 +81,6 @@ class Subaward(DataSourceTrackedModel):
     business_type_code = models.TextField(null=True, blank=True)
     business_type_description = models.TextField(null=True, blank=True)
 
-    prime_recipient = models.ForeignKey("references.LegalEntity", models.DO_NOTHING, null=True)
     business_categories = ArrayField(models.TextField(), default=list)
     prime_recipient_name = models.TextField(null=True, blank=True)
 
