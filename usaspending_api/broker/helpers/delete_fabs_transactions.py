@@ -1,6 +1,6 @@
 import logging
 
-from usaspending_api.common.helpers.timing_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.broker.helpers.store_deleted_fabs import store_deleted_fabs
 

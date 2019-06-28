@@ -18,7 +18,7 @@ from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_l
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.common.helpers.timing_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import (
     update_awards,
     update_contract_awards,

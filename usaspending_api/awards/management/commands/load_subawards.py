@@ -6,7 +6,7 @@ from django.db import transaction
 from functools import partial
 from psycopg2.sql import Identifier, Literal, SQL
 from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string, get_connection
-from usaspending_api.common.helpers.timing_helper import Timer
+from usaspending_api.common.helpers.timing_helpers import Timer
 
 
 logger = logging.getLogger("console")
@@ -183,9 +183,8 @@ class Command(BaseCommand):
                 wheres.append(SQL('{} > {}').format(Identifier(column), Literal(value)))
 
         if wheres:
-            # Because our where clause is embedded in a
-            # dblink, we need to wrap it in a literal again to get everything
-            # escaped properly.
+            # Because our where clause is embedded in a dblink, we need to
+            # wrap it in a literal again to get everything escaped properly.
             where = SQL('where {}').format(SQL(' or ').join(wheres))
             where = Literal(convert_composable_query_to_string(where))
             where = convert_composable_query_to_string(where)

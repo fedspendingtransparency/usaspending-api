@@ -5,7 +5,7 @@ from django.db import transaction
 
 from usaspending_api.awards.models import TransactionFPDS
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.common.helpers.timing_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_award_categories
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.award_helpers import update_contract_awards

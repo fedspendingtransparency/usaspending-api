@@ -5,7 +5,7 @@ from django.db import connections, transaction as db_transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.common.helpers.timing_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import RefCountryCode
 from usaspending_api.references.abbreviations import territory_country_codes
 
