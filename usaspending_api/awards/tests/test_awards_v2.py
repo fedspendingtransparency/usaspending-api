@@ -314,7 +314,7 @@ expected_response_asst = {
         "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_unique_id": "123",
-        "business_categories": ["small_business"],
+        "business_categories": ["Small Business"],
         "location": {
             "address_line1": "123 main st",
             "address_line2": None,
@@ -385,7 +385,7 @@ expected_response_cont = {
         "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_unique_id": "123",
-        "business_categories": ["small_business"],
+        "business_categories": ["Small Business"],
         "location": {
             "address_line1": "123 main st",
             "address_line2": None,
