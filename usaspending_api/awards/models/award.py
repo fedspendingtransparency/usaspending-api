@@ -203,6 +203,11 @@ class Award(DataSourceTrackedModel):
         verbose_name="Parent Award Piid",
         help_text="The piid of the Award's parent Award",
     )
+    # As part of DEV-2504, generated_unique_award_id now contains the
+    # unique_award_key value from Broker rather than being generated during
+    # the nightly pipeline.  It serves the exact same purpose, but renaming
+    # the column would have been significantly more disruptive and has been
+    # saved for a future improvement.
     generated_unique_award_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Generated Unique Award ID"
     )
@@ -288,7 +293,7 @@ class Award(DataSourceTrackedModel):
             }
             if generated_unique_award_id:
                 create_kwargs["generated_unique_award_id"] = generated_unique_award_id
-                if generated_unique_award_id.startswith("CONT_AW_"):
+                if generated_unique_award_id.startswith("CONT_"):
                     create_kwargs["is_fpds"] = True
 
             summary_award = Award(**create_kwargs)

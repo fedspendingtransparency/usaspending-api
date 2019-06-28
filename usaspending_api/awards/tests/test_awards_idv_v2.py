@@ -180,7 +180,7 @@ def awards_and_transactions(db):
         "piid": 1234,
         "type_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
         "description": "lorem ipsum",
-        "generated_unique_award_id": "ASST_AW_3620_-NONE-_1830212.0481163",
+        "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "awarding_agency": Agency.objects.get(pk=1),
@@ -206,7 +206,7 @@ def awards_and_transactions(db):
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
-        "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
@@ -236,7 +236,7 @@ def test_null_awards():
 
 @pytest.mark.django_db
 def test_award_endpoint_different_ids(client, awards_and_transactions):
-    resp = client.get("/api/v2/awards/CONT_AW_9700_9700_03VD_SPM30012D3486/", content_type="application/json")
+    resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
@@ -249,7 +249,7 @@ expected_response_idv = {
     "id": 2,
     "type": "IDV_A",
     "parent_generated_unique_award_id": None,
-    "generated_unique_award_id": "CONT_AW_9700_9700_03VD_SPM30012D3486",
+    "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
     "category": "idv",
     "type_description": "GWAC",
     "piid": "5678",

@@ -21,21 +21,21 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Request A request with a contract id (application/json)
     + Parameters
-        + `award_id`: `CONT_AW_9700_-NONE-_SP045003WG347_-NONE-`
+        + `award_id`: `CONT_AWD_SP045003WG347_9700_-NONE-_-NONE-`
 
 + Response 200 (application/json)
     + Attributes (ContractResponse)
 
 + Request A request with a financial assistance id (application/json)
     + Parameters
-        + `award_id`: `ASST_AW_1665_0000000000001828_-NONE-`
+        + `award_id`: `ASST_NON_0000000000001828_1665`
 
 + Response 200 (application/json)
     + Attributes (FinancialAssistanceResponse)
 
 + Request A request with an IDV id (application/json)
     + Parameters
-        + `award_id`: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-`
+        + `award_id`: `CONT_IDV_N0018918D0057_9700`
 
 + Response 200 (application/json)
     + Attributes (IDVResponse)
@@ -95,7 +95,7 @@ This endpoint returns a list of data that is associated with the award profile p
     Award id
 + parent_award_piid: `1301` (required, string, nullable)
     null if the IDV has no parent
-+ parent_generated_unique_award_id: `CONT_AW_9700_4730_W56HZV10AA913_GS10F0243K` (required, nullable)
++ parent_generated_unique_award_id: `CONT_IDV_W56HZV10AA913_9700` (required, nullable)
     null if the IDV has no parent
 + description: `ewraijwrw` (required, string, nullable)
     Description of the first transaction for this award

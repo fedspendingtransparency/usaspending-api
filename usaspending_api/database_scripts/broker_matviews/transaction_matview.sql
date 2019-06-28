@@ -7,11 +7,7 @@ FROM
     dblink ('broker_server', '(select
             -- unique ids + cols used for unique id
             ''cont_tx_'' || detached_award_proc_unique as generated_unique_transaction_id,
-            ''cont_aw_'' ||
-                coalesce(agency_id,''-none-'') || ''_'' ||
-                coalesce(referenced_idv_agency_iden,''-none-'') || ''_'' ||
-                coalesce(piid,''-none-'') || ''_'' ||
-                coalesce(parent_award_id,''-none-'') AS generated_unique_award_id,
+            unique_award_key AS generated_unique_award_id,
             piid,
             parent_award_id AS parent_award_piid,
             NULL AS fain,
@@ -106,10 +102,7 @@ FROM
         (select
             -- unique ids + cols used for unique id
             ''asst_tx_'' || afa_generated_unique as generated_unique_transaction_id,
-            CASE
-                WHEN record_type = ''1'' THEN ''asst_aw_'' || coalesce(awarding_sub_tier_agency_c,''-none-'') || ''_'' || ''-none-'' || ''_'' || coalesce(uri, ''-none-'')
-                WHEN record_type = ''2'' THEN ''asst_aw_'' || coalesce(awarding_sub_tier_agency_c,''-none-'') || ''_'' || coalesce(fain, ''-none-'') || ''_'' || ''-none-''
-            END AS generated_unique_award_id,
+            unique_award_key AS generated_unique_award_id,
             NULL AS piid,
             NULL AS parent_award_piid,
             fain,

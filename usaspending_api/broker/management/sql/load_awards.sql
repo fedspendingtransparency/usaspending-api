@@ -11,12 +11,8 @@ CREATE TABLE awards_new AS (
         (
             -- TRANSACTION NORMALIZED: FPDS
             SELECT
-                DISTINCT ON (tfn.piid, tfn.parent_award_id, tfn.agency_id, tfn.referenced_idv_agency_iden)
-                'CONT_AW_' ||
-                    coalesce(tfn.agency_id,'-NONE-') || '_' ||
-                    coalesce(tfn.referenced_idv_agency_iden,'-NONE-') || '_' ||
-                    coalesce(tfn.piid,'-NONE-') || '_' ||
-                    coalesce(tfn.parent_award_id,'-NONE-') AS generated_unique_award_id,
+                DISTINCT ON (tfn.unique_award_key)
+                tfn.unique_award_key AS generated_unique_award_id,
                 TRUE AS is_fpds,
                 tfn.detached_award_proc_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
@@ -62,10 +58,7 @@ CREATE TABLE awards_new AS (
                 agency_lookup AS funding_agency ON funding_agency.subtier_code = tfn.funding_sub_tier_agency_co
             window w AS (partition BY tfn.piid, tfn.parent_award_id, tfn.agency_id, tfn.referenced_idv_agency_iden)
             ORDER BY
-                tfn.piid,
-                tfn.parent_award_id,
-                tfn.agency_id,
-                tfn.referenced_idv_agency_iden,
+                tfn.unique_award_key,
                 tfn.action_date DESC,
                 tfn.award_modification_amendme DESC,
                 tfn.transaction_number DESC
@@ -76,11 +69,8 @@ CREATE TABLE awards_new AS (
         (
             -- TRANSACTION NORMALIZED: FABS - FAIN
             SELECT
-                DISTINCT ON (tfn.fain, tfn.awarding_sub_tier_agency_c)
-                'ASST_AW_' ||
-                    coalesce(tfn.awarding_sub_tier_agency_c,'-NONE-') || '_' ||
-                    coalesce(tfn.fain, '-NONE-') || '_' ||
-                    '-NONE-' AS generated_unique_award_id,
+                DISTINCT ON (tfn.unique_award_key)
+                tfn.unique_award_key AS generated_unique_award_id,
                 FALSE as is_fpds,
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
@@ -127,8 +117,7 @@ CREATE TABLE awards_new AS (
             WHERE tfn.record_type = '2'
             window w AS (partition BY tfn.fain, tfn.awarding_sub_tier_agency_c)
             ORDER BY
-                tfn.fain,
-                tfn.awarding_sub_tier_agency_c,
+                tfn.unique_award_key,
                 tfn.action_date DESC,
                 tfn.award_modification_amendme DESC
         )
@@ -138,11 +127,8 @@ CREATE TABLE awards_new AS (
         (
             -- TRANSACTION NORMALIZED: FABS - URI
             SELECT
-                DISTINCT ON (tfn.uri, tfn.awarding_sub_tier_agency_c)
-                'ASST_AW_' ||
-                    coalesce(tfn.awarding_sub_tier_agency_c,'-NONE-') || '_' ||
-                    '-NONE-' || '_' ||
-                    coalesce(tfn.uri, '-NONE-') AS generated_unique_award_id,
+                DISTINCT ON (tfn.unique_award_key)
+                tfn.unique_award_key AS generated_unique_award_id,
                 FALSE as is_fpds,
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
@@ -189,8 +175,7 @@ CREATE TABLE awards_new AS (
             WHERE tfn.record_type = '1'
             window w AS (partition BY tfn.uri, tfn.awarding_sub_tier_agency_c)
             ORDER BY
-                tfn.uri,
-                tfn.awarding_sub_tier_agency_c,
+                tfn.unique_award_key,
                 tfn.action_date DESC,
                 tfn.award_modification_amendme DESC
         )

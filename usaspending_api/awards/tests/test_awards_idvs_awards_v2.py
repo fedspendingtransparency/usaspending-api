@@ -32,6 +32,8 @@ class IDVAwardsTestCase(TestCase):
             results.append({
                 'award_id': award_id,
                 'award_type': 'type_description_%s' % string_award_id,
+                'awarding_agency': 'toptier_awarding_agency_name_%s' % (8500 + award_id),
+                'awarding_agency_id': 8000 + award_id,
                 'description': 'description_%s' % string_award_id,
                 'funding_agency': 'toptier_funding_agency_name_%s' % (9500 + award_id),
                 'funding_agency_id': 9000 + award_id,
@@ -286,7 +288,8 @@ class IDVAwardsTestCase(TestCase):
         mommy.make(
             'awards.TransactionFPDS',
             transaction_id=award_id,
-            funding_agency_name='subtier_funding_agency_name_%s' % string_award_id
+            funding_agency_name='subtier_funding_agency_name_%s' % string_award_id,
+            awarding_agency_name='subtier_awarding_agency_name_%s' % string_award_id
         )
 
         mommy.make(

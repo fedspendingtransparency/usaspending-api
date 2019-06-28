@@ -8,13 +8,13 @@ Returns aggregated award counts and funding amounts for IDV (Indefinite Delivery
 ## GET
 
 + Parameters
-    + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
+    + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
          Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
 
 + Response 200 (application/json)
     + Attributes
         + `award_id`: 68841198 (required, number)
-        + `generated_unique_award_id`: `CONT_AW_4730_-NONE-_GS10F0201R_-NONE-` (required, string)
+        + `generated_unique_award_id`: `CONT_IDV_GS10F0201R_4730` (required, string)
         * `child_idv_count`: 2 (required, number)
         * `child_award_count`: 25 (required, number)
         * `child_award_total_obligation`: 363410.59 (required, number)
@@ -29,7 +29,7 @@ Returns aggregated award counts and funding amounts for IDV (Indefinite Delivery
 
             {
                 "award_id": 68841198,
-                "generated_unique_award_id": "CONT_AW_4730_-NONE-_GS10F0201R_-NONE-",
+                "generated_unique_award_id": "CONT_IDV_GS10F0201R_4730",
                 "child_idv_count": 2,
                 "child_award_count": 25,
                 "child_award_total_obligation": 363410.59,

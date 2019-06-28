@@ -228,6 +228,7 @@ class Command(BaseCommand):
                 awarding_agency=awarding_agency,
                 fain=row.get('fain'),
                 uri=row.get('uri'),
+                generated_unique_award_id=row.get('unique_award_key'),
                 save=False
             )
 
@@ -438,7 +439,9 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_piid=row.get('parent_award_id'))
+                    parent_award_piid=row.get('parent_award_id'),
+                    generated_unique_award_id=row.get('unique_award_key'),
+                )
                 award.save()
 
                 award_update_id_list.append(award.id)

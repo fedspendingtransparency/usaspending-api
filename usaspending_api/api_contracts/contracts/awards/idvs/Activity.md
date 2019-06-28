@@ -9,7 +9,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
+        + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `limit` (optional, number)
             The number of results to include per page.
@@ -32,7 +32,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "award_id": 69138778,
                         "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
                         "awarding_agency_id": 228,
-                        "generated_unique_award_id": "CONT_AW_1425_4730_INR17PA00008_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_INR17PA00008_1425",
                         "last_date_to_order": "2020-11-30",
                         "obligated_amount": 8000.0,
                         "awarded_amount": 20000.0,
@@ -46,7 +46,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "award_id": 69054107,
                         "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
                         "awarding_agency_id": 634,
-                        "generated_unique_award_id": "CONT_AW_4732_4730_GS33FCA001_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_GS33FCA001_4732",
                         "last_date_to_order": "2017-09-30",
                         "obligated_amount": 2257.24,
                         "awarded_amount": 10000.0,
@@ -60,7 +60,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "award_id": 69216438,
                         "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
                         "awarding_agency_id": 153,
-                        "generated_unique_award_id": "CONT_AW_12D2_4730_AG3151B140009_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_AG3151B140009_12D2",
                         "last_date_to_order": "2015-04-06",
                         "obligated_amount": 47840.0,
                         "awarded_amount": 12000.0,

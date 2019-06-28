@@ -7,7 +7,6 @@ CREATE TABLE transaction_normalized_new_2 AS (
         transaction_normalized_new.id as id,
         transaction_normalized_new.is_fpds AS is_fpds,
         transaction_normalized_new.transaction_unique_id AS transaction_unique_id,
-        transaction_normalized_new.generated_unique_award_id AS generated_unique_award_id,
         transaction_normalized_new.usaspending_unique_transaction_id AS usaspending_unique_transaction_id,
         transaction_normalized_new.type AS type,
         transaction_normalized_new.type_description AS type_description,
@@ -30,11 +29,12 @@ CREATE TABLE transaction_normalized_new_2 AS (
         transaction_normalized_new.awarding_agency_id AS awarding_agency_id,
         transaction_normalized_new.funding_agency_id AS funding_agency_id,
         transaction_normalized_new.place_of_performance_id AS place_of_performance_id,
-        transaction_normalized_new.recipient_id AS recipient_id
+        transaction_normalized_new.recipient_id AS recipient_id,
+        transaction_normalized_new.unique_award_key
     FROM
         transaction_normalized_new
         INNER JOIN
-        awards_new ON awards_new.generated_unique_award_id = transaction_normalized_new.generated_unique_award_id
+        awards_new ON awards_new.generated_unique_award_id = transaction_normalized_new.unique_award_key
 );
 
 ALTER TABLE transaction_normalized_new RENAME TO transaction_normalized_new_old;

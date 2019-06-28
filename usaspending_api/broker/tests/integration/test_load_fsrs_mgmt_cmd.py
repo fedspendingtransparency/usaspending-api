@@ -70,65 +70,19 @@ def test_fresh_subaward_load_associated_awards_exact_match(mock_db_cursor):
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
 
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
     models_to_mock = [
         {
             'model': Award,
             'id': 50,
-            'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
+            'generated_unique_award_id': 'unique_award_key_1',
             'latest_transaction': mommy.make(TransactionNormalized),
             'recipient_id': 77,
         },
         {
             'model': Award,
             'id': 100,
+            'generated_unique_award_id': 'unique_award_key_4',
             'fain': 'FAIN54321',
-            'latest_transaction': mommy.make(TransactionNormalized),
-            'recipient_id': 66,
-        },
-        {'model': SubtierAgency, 'subtier_agency_id': 1, 'subtier_code': '12345'},
-        {'model': Agency, 'subtier_agency_id': 1},
-        {'model': LegalEntity, 'legal_entity_id': 77, 'business_categories': ['stark_industry', 'oscorp']},
-        {'model': LegalEntity, 'legal_entity_id': 66, 'business_categories': ['blues', 'reds']},
-    ]
-
-    for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
-
-    call_command('load_fsrs')
-
-    expected_results = {'count': 3, 'award_ids': [50, 100, 100]}
-
-    actual_results = {
-        'count': Subaward.objects.count(),
-        'award_ids': list(Subaward.objects.values_list('award_id', flat=True)),
-    }
-
-    assert expected_results == actual_results
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize('mock_db_cursor', [DB_CURSOR_PARAMS.copy()], indirect=True)
-def test_fresh_subaward_load_associated_awards_with_dashes(mock_db_cursor):
-    """
-    Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
-    """
-
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
-    models_to_mock = [
-        {
-            'model': Award,
-            'id': 50,
-            'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
-            'latest_transaction': mommy.make(TransactionNormalized),
-            'recipient_id': 77,
-        },
-        {
-            'model': Award,
-            'id': 100,
-            'fain': 'FAIN-54321',
             'latest_transaction': mommy.make(TransactionNormalized),
             'recipient_id': 66,
         },
@@ -160,19 +114,18 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
     Test the subaward load as if it were happening for the first time on an empty table, with no awards to link to
     """
 
-    # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-    # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
     models_to_mock = [
         {
             'model': Award,
             'id': 50,
-            'generated_unique_award_id': 'CONT_AW_12345_12345_PIID12345_IDV12345',
+            'generated_unique_award_id': 'unique_award_key_1',
             'latest_transaction': mommy.make(TransactionNormalized),
             'recipient_id': 77,
         },
         {
             'model': Award,
             'id': 99,
+            'generated_unique_award_id': 'unique_award_key_4',
             'fain': 'FAIN54321',
             'date_signed': '1700-01-02',
             'latest_transaction': mommy.make(TransactionNormalized),
@@ -181,6 +134,7 @@ def test_fresh_subaward_load_associated_awards_multiple_matching_fains(mock_db_c
         {
             'model': Award,
             'id': 100,
+            'generated_unique_award_id': 'unique_award_key_5',
             'fain': 'FAIN-54321',
             'date_signed': '1700-01-01',
             'latest_transaction': mommy.make(TransactionNormalized),
@@ -267,6 +221,7 @@ def test_subaward_broken_links(mock_db_cursor):
             'date_signed': '1700-01-03',
             'latest_transaction': mommy.make(TransactionNormalized),
             'recipient_id': 0,
+            'generated_unique_award_id': 'unique_award_key_6',
         },
         {'model': SubtierAgency, 'subtier_agency_id': 1, 'subtier_code': '12345'},
         {'model': Agency, 'subtier_agency_id': 1},
