@@ -48,14 +48,14 @@ CREATE_TEMP_SUBAWARD_AWARD_ID_TABLE_SQL = """
 
     create unlogged table   temp_dev_2006_subaward_award_ids
     as select distinct      award_id
-    from                    subaward 
+    from                    subaward
     where                   award_id is not null;
 """
 
 
 INDEX_TEMP_TABLE_SQL = """
     create unique index     idx_temp_dev_2006_subaward_award_ids
-    on                      temp_dev_2006_subaward_award_ids (award_id) 
+    on                      temp_dev_2006_subaward_award_ids (award_id)
 """
 
 
@@ -76,7 +76,7 @@ UPDATE_AWARDS_CHUNK_SQL = """
         id between {minid} and {maxid} and
         id not in (
             select award_id from temp_dev_2006_subaward_award_ids where award_id between {minid} and {maxid}
-        ) and 
+        ) and
         (
             total_subaward_amount is not null or
             subaward_count is distinct from 0
