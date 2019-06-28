@@ -103,4 +103,4 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
 + `total_rows`: 393 (required, number)
 + `total_columns`: 12 (required, number)
 + `total_size`: `119.32KB` (required, string)
-+ `download_location`: `http://files-nonprod.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx` (required, string)
++ `download_location`: `https://files.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx` (required, string)

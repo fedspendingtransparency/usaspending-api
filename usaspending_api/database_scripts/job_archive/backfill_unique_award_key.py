@@ -13,6 +13,10 @@ Purpose:
     Generates unique_award_keys for all transaction_fabs, transaction_fpds, and transaction_normalized records.
 
     SINGLE PROCESS VERSION
+
+    This script can be eliminated after sprint 81 has finished rolling out and
+    we are happy with the results.
+
 """
 import math
 import psycopg2
