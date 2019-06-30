@@ -5,7 +5,6 @@ from django.db import models
 from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel, DeleteIfChildlessMixin
 from usaspending_api.references.abbreviations import code_to_state, state_to_code
-from usaspending_api.references.models import RefCityCountyCode
 
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
@@ -86,6 +85,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 self.zip5 = match.group(1)
 
     def load_city_county_data(self):
+        from usaspending_api.references.models import RefCityCountyCode
+
         # Here we fill in missing information from the ref city county code data
         if self.location_country_code == "USA":
 
