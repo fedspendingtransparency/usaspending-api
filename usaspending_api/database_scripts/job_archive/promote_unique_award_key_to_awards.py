@@ -24,6 +24,9 @@ Process:
 
     STEP 5 - If everything went well, remove temp_dev2504_unique_award_key_mapping.
 
+    This script can be eliminated after sprint 83 has finished rolling out and
+    we are happy with the results.
+
 """
 import contextlib
 import math

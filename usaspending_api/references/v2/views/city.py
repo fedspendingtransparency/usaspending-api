@@ -74,7 +74,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
-    if country == ALL_FOREIGN_COUNTRIES:
+    if country != 'USA':
         aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
     else:
         aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
@@ -179,7 +179,7 @@ def query_elasticsearch(query):
     results = []
     if hits and hits["hits"]["total"] > 0:
         results = parse_elasticsearch_response(hits)
-        results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+        results = sorted(results, key=lambda x: x.pop("hits"), reverse=True)
     return results
 
 
@@ -188,8 +188,12 @@ def parse_elasticsearch_response(hits):
     for city in hits["aggregations"]["cities"]["buckets"]:
         if len(city["states"]["buckets"]) > 0:
             for state_code in city["states"]["buckets"]:
-                results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                results.append(OrderedDict([("city_name", city["key"]),
+                                            ("state_code", state_code["key"]),
+                                            ("hits", state_code["doc_count"])]))
         else:
             # for cities without states, useful for foreign country results
-            results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+            results.append(OrderedDict([("city_name", city["key"]),
+                                        ("state_code", None),
+                                        ("hits", city["doc_count"])]))
     return results

@@ -3,6 +3,8 @@
 # Lines starting with # are ignored.
 ========ABOUT THESE FILES========
 
+Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/#/download_center/data_dictionary. We have also included a copy in this download for convenience.
+
 Empty Files: When no data is available for a given file, its contents will only contain column headers (no records will be included).
 
 Split Files: The # in all filenames defaults to 1; if the number of rows in a given file is large enough to warrant breaking it into multiple files, then additional files will be present and appended with 2, 3, etc. instead.
@@ -22,3 +24,7 @@ This file contains award-level data (data that sums obligated amounts and ceilin
 File: IDV_[Award PIID]_TransactionHistory_#.csv
 
 This file contains transaction-level data representing all of the modifications made to this IDV. This data is also available from the Advanced Search or Custom Award Download sections of the site.
+
+File: Data_Dictionary_Crosswalk.xlsx
+
+This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/#/download_center/data_dictionary

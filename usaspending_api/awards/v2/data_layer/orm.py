@@ -15,9 +15,10 @@ from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
 )
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
+from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda
+from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda, SubtierAgency
 
 
 logger = logging.getLogger("console")
@@ -169,9 +170,21 @@ def create_recipient_object(db_row_dict):
             ),
             ("recipient_name", db_row_dict["_recipient_name"]),
             ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
-            ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
+            (
+                "parent_recipient_hash", obtain_recipient_uri(
+                    db_row_dict["_parent_recipient_name"],
+                    db_row_dict["_parent_recipient_unique_id"],
+                    None,
+                    db_row_dict["_recipient_unique_id"]
+                )
+            ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
-            ("business_categories", fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
+            ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
+            (
+                "business_categories", get_business_category_display_names(
+                    fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])
+                )
+            ),
             (
                 "location",
                 OrderedDict(
@@ -246,10 +259,13 @@ def fetch_parent_award_details(guai):
     if not parent_award:
         logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
         return None
+    parent_agency = SubtierAgency.objects.filter(
+        subtier_code=parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
 
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
+            ("agency_name", parent_agency["name"]),
             ("award_id", parent_award_ids["parent_award__award_id"]),
             ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
