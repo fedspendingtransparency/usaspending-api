@@ -63,7 +63,7 @@
     "  cfda_title,",
     "",
     "  recipient_location_country_name,",
-    "  recipient_location_country_code,",
+    "  COALESCE(recipient_location_country_code,'USA') AS recipient_location_country_code,",
     "  recipient_location_city_name,",
     "  recipient_location_state_code,",
     "  recipient_location_state_name,",
