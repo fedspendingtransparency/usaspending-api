@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection, connections
 
-from usaspending_api.common.helpers import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 
 logger = logging.getLogger('console')

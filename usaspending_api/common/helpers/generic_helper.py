@@ -1,4 +1,3 @@
-import contextlib
 import logging
 import subprocess
 import time
@@ -328,24 +327,6 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
-
-
-@contextlib.contextmanager
-def timer(msg='', logging_func=print):
-    """
-    Use as a context manager or decorator to report on elapsed time.
-
-    with timer('stuff', logger.info):
-        (active code)
-
-    """
-    start = time.perf_counter()
-    logging_func('Beginning {}...'.format(msg))
-    try:
-        yield {}
-    finally:
-        elapsed = time.perf_counter() - start
-        logging_func('... finished {} in {:.2f}s'.format(msg, elapsed))
 
 
 # Raw SQL run during a migration

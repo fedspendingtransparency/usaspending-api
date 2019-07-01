@@ -33,7 +33,7 @@ class RetrieveFileFromUri:
         """
             return a file object (aka file handler) to either:
                 the local file,
-                a temporary file that was loaded from the pulled exernal file
+                a temporary file that was loaded from the pulled external file
             Recommendation is to use this method as a context manager
         """
         if self.parsed_url_obj.scheme == "s3":
@@ -42,6 +42,15 @@ class RetrieveFileFromUri:
             return self._handle_http()
         elif self.parsed_url_obj.scheme in ("file", ""):
             return self._handle_file()
+        else:
+            raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
+
+    def copy(self, dest_file_path):
+        """
+            create a copy of the file and place at "dest_file_path"
+        """
+        if self.parsed_url_obj.scheme.startswith("http"):
+            urllib.request.urlretrieve(self.uri, dest_file_path)
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
