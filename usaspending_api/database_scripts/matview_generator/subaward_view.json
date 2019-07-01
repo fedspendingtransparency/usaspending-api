@@ -74,7 +74,7 @@
     "  recipient_location_congressional_code,",
     "",
     "  pop_country_name,",
-    "  pop_country_code,",
+    "  COALESCE(pop_country_code,'USA') as pop_country_code,",
     "  pop_state_code,",
     "  pop_state_name,",
     "  pop_county_code,",
