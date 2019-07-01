@@ -11,7 +11,7 @@
     "  transaction_fpds.pulled_from,",
     "  array_to_string(array_agg(DISTINCT transaction_normalized.award_id), ',') AS distinct_awards,",
     "",
-    "  place_of_performance.location_country_code AS pop_country_code,",
+    "  COALESCE(place_of_performance.location_country_code,'USA') AS pop_country_code,",
     "  place_of_performance.state_code AS pop_state_code,",
     "",
     "  SUM(COALESCE(CASE",
