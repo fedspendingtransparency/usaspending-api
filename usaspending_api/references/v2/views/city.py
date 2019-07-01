@@ -53,7 +53,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         limit = request.data["limit"]
         return_fields = ["{}_city_name".format(scope),
                          "{}_state_code".format(scope),
-                         "{}_country_code.keyword".format(scope)]
+                         "{}_country_code".format(scope)]
 
         query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
         sorted_results = query_elasticsearch(query)
