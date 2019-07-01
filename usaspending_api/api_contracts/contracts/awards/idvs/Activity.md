@@ -34,7 +34,8 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509200110C509C25044V509P6176_3600_V509P6176_3600",
                         "last_date_to_order": "2003-09-15 00:00:00",
-                        "parent_award_id": "V509P6176",
+                        "parent_award_id": 69001298,
+                        "parent_award_piid": "V509P6176",
                         "obligated_amount": 30000.0,
                         "awarded_amount": 0.0,
                         "period_of_performance_start_date": "2001-10-15",
@@ -49,7 +50,8 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509200010C509C15099V509P6176_3600_V509P6176_3600",
                         "last_date_to_order": "2003-09-15 00:00:00",
-                        "parent_award_id": "V509P6176",
+                        "parent_award_id": 69001298,
+                        "parent_award_piid": "V509P6176",
                         "obligated_amount": 30000.0,
                         "awarded_amount": 0.0,
                         "period_of_performance_start_date": "2000-10-15",
@@ -64,7 +66,8 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509199910C509C05018V509P6176_3600_V509P6176_3600",
                         "last_date_to_order": "2003-09-15 00:00:00",
-                        "parent_award_id": "V509P6176",
+                        "parent_award_id": 69001298,
+                        "parent_award_piid": "V509P6176",
                         "obligated_amount": 30000.0,
                         "awarded_amount": 0.0,
                         "period_of_performance_start_date": "1999-10-15",
@@ -106,6 +109,9 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 + `awarding_agency` (required, string)
 + `awarding_agency_id` (required, number)
 + `last_date_to_order` (required, string, nullable)
++ `parent_award_id` (required, number, nullable)
+    Internal, surrogate id for an award.
++ `parent_award_piid` (required, string, nullable)
 + `obligated_amount` (required, number)
 + `awarded_amount` (required, number)
 + `period_of_performance_start_date` (required, string, nullable)
