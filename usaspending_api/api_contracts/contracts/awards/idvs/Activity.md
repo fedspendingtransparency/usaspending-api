@@ -9,7 +9,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
+        + `award_id`: `CONT_IDV_V509P6176_3600` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `limit` (optional, number)
             The number of results to include per page.
@@ -29,58 +29,62 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
             {
                 "results": [
                     {
-                        "award_id": 69138778,
-                        "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
-                        "awarding_agency_id": 228,
-                        "generated_unique_award_id": "CONT_IDV_INR17PA00008_1425",
-                        "last_date_to_order": "2020-11-30",
-                        "obligated_amount": 8000.0,
-                        "awarded_amount": 20000.0,
-                        "period_of_performance_start_date": "2016-01-14",
-                        "piid": "INR17PA00008",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "543ee6af-9096-f32a-abaa-834106bead6a-P",
+                        "award_id": 1867804,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509200110C509C25044V509P6176_3600_V509P6176_3600",
+                        "last_date_to_order": "2003-09-15 00:00:00",
+                        "parent_award_id": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "2001-10-15",
+                        "piid": "00509200110C509C25044V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
                         "grandchild": false
                     },
                     {
-                        "award_id": 69054107,
-                        "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
-                        "awarding_agency_id": 634,
-                        "generated_unique_award_id": "CONT_IDV_GS33FCA001_4732",
-                        "last_date_to_order": "2017-09-30",
-                        "obligated_amount": 2257.24,
-                        "awarded_amount": 10000.0,
-                        "period_of_performance_start_date": "2014-10-01",
-                        "piid": "GS33FCA001",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "9a277fc5-50fc-685f-0f77-be0d96420a17-C",
+                        "award_id": 1867504,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509200010C509C15099V509P6176_3600_V509P6176_3600",
+                        "last_date_to_order": "2003-09-15 00:00:00",
+                        "parent_award_id": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "2000-10-15",
+                        "piid": "00509200010C509C15099V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
                         "grandchild": false
                     },
                     {
-                        "award_id": 69216438,
-                        "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
-                        "awarding_agency_id": 153,
-                        "generated_unique_award_id": "CONT_IDV_AG3151B140009_12D2",
-                        "last_date_to_order": "2015-04-06",
-                        "obligated_amount": 47840.0,
-                        "awarded_amount": 12000.0,
-                        "period_of_performance_start_date": "2014-04-07",
-                        "piid": "AG3151B140009",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "9a277fc5-50fc-685f-0f77-be0d96420a17-C",
-                        "grandchild": true
+                        "award_id": 1867181,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509199910C509C05018V509P6176_3600_V509P6176_3600",
+                        "last_date_to_order": "2003-09-15 00:00:00",
+                        "parent_award_id": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "1999-10-15",
+                        "piid": "00509199910C509C05018V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
+                        "grandchild": false
                     }
                 ],
                 "page_metadata": {
-                    "hasNext": true,
-                    "hasPrevious": true,
-                    "limit": 3,
-                    "next": 5,
-                    "page": 4,
-                    "previous": 3,
-                    "total": 30066
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "limit": 10,
+                    "next": null,
+                    "page": 1,
+                    "previous": null,
+                    "total": 3
                 }
             }
+
 
 # Data Structures
 
