@@ -39,7 +39,7 @@
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
     "  transaction_fpds.pulled_from,",
-    "  place_of_performance.location_country_code,",
+    "  pop_country_code,",
     "  place_of_performance.country_name,",
     "  place_of_performance.state_code"
   ],
