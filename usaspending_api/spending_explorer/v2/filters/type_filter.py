@@ -90,6 +90,9 @@ def type_filter(_type, filters, limit=None):
             'Valid Types: budget_function, budget_subfunction, federal_account, program_activity,'
             'object_class, recipient, award, award_category agency, agency_type, agency_sub')
 
+    if filters is None:
+        raise InvalidParameterException('Missing Required Request Parameter, "fiters": { "filter_options" }')
+
     # Get fiscal_date and fiscal_quarter
     for key, value in filters.items():
         if key == 'fy':
