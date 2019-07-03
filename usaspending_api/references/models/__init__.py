@@ -5,7 +5,6 @@ from usaspending_api.references.models.filter_hash import FilterHash
 from usaspending_api.references.models.frec_map import FrecMap
 from usaspending_api.references.models.gtas_total_obligation import GTASTotalObligation
 from usaspending_api.references.models.legal_entity import LegalEntity
-from usaspending_api.references.models.legal_entity_officers import LegalEntityOfficers
 from usaspending_api.references.models.location import Location
 from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.object_class import ObjectClass
@@ -27,7 +26,6 @@ __all__ = [
     "FrecMap",
     "GTASTotalObligation",
     "LegalEntity",
-    "LegalEntityOfficers",
     "Location",
     "NAICS",
     "ObjectClass",

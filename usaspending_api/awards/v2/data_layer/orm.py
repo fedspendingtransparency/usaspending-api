@@ -7,7 +7,6 @@ from django.db.models import Sum
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_AWARD_FIELDS,
     FPDS_CONTRACT_FIELDS,
-    OFFICER_FIELDS,
     FPDS_AWARD_FIELDS,
     FABS_ASSISTANCE_FIELDS,
 )
@@ -18,7 +17,7 @@ from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda, SubtierAgency
+from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
 
 
 logger = logging.getLogger("console")
@@ -329,18 +328,14 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
 
 
 def fetch_officers_by_legal_entity_id(legal_entity_id):
-    officer_info = LegalEntityOfficers.objects.filter(pk=legal_entity_id).values(*OFFICER_FIELDS.keys()).first()
+    # ======================================================
+    # SETH TODO
+
+    # Remove this function and fetch values from appropriate transaction table
+    # ======================================================
+    # officer_info = LegalEntityOfficers.objects.filter(pk=legal_entity_id).values(*OFFICER_FIELDS.keys()).first()
 
     officers = []
-    if officer_info:
-        for x in range(1, 6):
-            officers.append(
-                {
-                    "name": officer_info["officer_{}_name".format(x)],
-                    "amount": officer_info["officer_{}_amount".format(x)],
-                }
-            )
-
     return {"officers": officers}
 
 
