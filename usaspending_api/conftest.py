@@ -1,5 +1,7 @@
 import logging
+import os
 import pytest
+import tempfile
 
 from django.conf import settings
 from django.test import override_settings
@@ -264,3 +266,24 @@ def elasticsearch_transaction_index(db):
     with override_settings(TRANSACTIONS_INDEX_ROOT=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def temp_file_path():
+    """
+    If you need a temp file for something... anything... but you don't want
+    the file to actually exist and you don't want to deal with managing its
+    lifetime, use this fixture.
+    """
+    # This actually creates the temporary file, but once the context manager
+    # exits, it will delete the file leaving the filename free for you to use.
+    with tempfile.NamedTemporaryFile() as tf:
+        path = tf.name
+
+    yield path
+
+    # For convenience.  Don't care if it fails.
+    try:
+        os.remove(path)
+    except:
+        pass

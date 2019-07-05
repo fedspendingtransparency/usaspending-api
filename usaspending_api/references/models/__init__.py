@@ -1,5 +1,6 @@
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.references.models.cfda import Cfda
+from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.definition import Definition
 from usaspending_api.references.models.filter_hash import FilterHash
 from usaspending_api.references.models.frec_map import FrecMap
@@ -22,6 +23,7 @@ from usaspending_api.references.models.toptier_agency import ToptierAgency
 __all__ = [
     "Agency",
     "Cfda",
+    "CGAC",
     "Definition",
     "FilterHash",
     "FrecMap",

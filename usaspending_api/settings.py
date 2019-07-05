@@ -70,6 +70,7 @@ DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/DATA+Transp
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
 IDV_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/idv_download_readme.txt")
+AGENCY_FILE_URL = "https://files.usaspending.gov/reference_data/agency_codes.csv"
 
 # Elasticsearch
 ES_HOSTNAME = ""
