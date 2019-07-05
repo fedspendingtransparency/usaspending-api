@@ -114,7 +114,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 + `period_of_performance_ultimate_end_date` (required, string, nullable)
 + `parent_award_id` (required, number, nullable)
     Internal, surrogate id for the award's parent.  Deprecated.  Use `parent_generated_unique_award_id`.
-+ `parent_generated_unique_award_id` (required, string)
++ `parent_generated_unique_award_id` (required, string, nullable)
     Unique internal natural identifier for the award's parent.
 + `parent_award_piid` (required, string, nullable)
 + `obligated_amount` (required, number)
