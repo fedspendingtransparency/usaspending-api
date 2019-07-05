@@ -285,5 +285,5 @@ def temp_file_path():
     # For convenience.  Don't care if it fails.
     try:
         os.remove(path)
-    except:
+    except Exception:
         pass
