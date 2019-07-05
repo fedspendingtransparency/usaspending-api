@@ -59,10 +59,10 @@ ACTIVITY_SQL = SQL("""
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
-            {hide_edges_end_date}
         left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
         left outer join agency a on a.id = ca.awarding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
+    {hide_edges_end_date}
     order by
         ca.base_and_all_options_value desc, ca.id desc
     limit {limit} offset {offset}
@@ -129,7 +129,7 @@ class IDVActivityViewSet(APIDocumentationView):
 
         if hide_edge_cases:
             hide_edges_awarded_amount = "and ca.base_and_all_options_value > 0"
-            hide_edges_end_date = 'and tf.period_of_perf_potential_e is not null'
+            hide_edges_end_date = 'where tf.period_of_perf_potential_e is not null'
         sql = ACTIVITY_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
