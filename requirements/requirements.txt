@@ -14,7 +14,7 @@ git+https://github.com/fedspendingtransparency/django-mock-queries#egg=django-mo
 django-queryset-csv==1.0.1
 django-simple-history==1.8.2
 django-spaghetti-and-meatballs==0.2.2
-Django==1.11.21
+Django==1.11.22
 djangorestframework==3.9.4
 drf-extensions==0.3.1
 drf-tracking==1.4.0
