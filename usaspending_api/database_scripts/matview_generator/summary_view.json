@@ -32,8 +32,6 @@
     "FROM",
     "  transaction_normalized",
     "LEFT OUTER JOIN",
-    "  awards ON (transaction_normalized.award_id = awards.id)",
-    "LEFT OUTER JOIN",
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "LEFT OUTER JOIN",
     "  agency AS AA ON (transaction_normalized.awarding_agency_id = AA.id)",

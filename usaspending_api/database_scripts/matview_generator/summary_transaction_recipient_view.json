@@ -38,8 +38,6 @@
     "    duns",
     "  FROM recipient_lookup AS rlv",
     "  ) recipient_lookup ON recipient_lookup.duns = COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AND COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL",
-    "LEFT OUTER JOIN",
-    "  awards ON (transaction_normalized.award_id = awards.id)",
     "WHERE",
     "  transaction_normalized.action_date >= '2007-10-01'",
     "GROUP BY",

@@ -27,8 +27,6 @@
     "LEFT OUTER JOIN",
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "LEFT OUTER JOIN",
-    "  awards ON (transaction_normalized.award_id = awards.id)",
-    "LEFT OUTER JOIN",
     "  references_location AS place_of_performance ON (transaction_normalized.place_of_performance_id = place_of_performance.location_id)",
     "WHERE",
     "  transaction_normalized.action_date >= '2007-10-01' AND",

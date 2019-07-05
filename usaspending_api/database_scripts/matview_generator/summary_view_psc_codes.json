@@ -21,8 +21,6 @@
     "  COUNT(*) counts",
     "FROM",
     "  transaction_normalized",
-    "LEFT OUTER JOIN",
-    "  awards ON (transaction_normalized.award_id = awards.id)",
     "INNER JOIN",
     "  transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)",
     "WHERE",
