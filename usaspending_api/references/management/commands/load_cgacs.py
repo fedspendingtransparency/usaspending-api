@@ -1,7 +1,6 @@
 import logging
 import pandas
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from functools import partial
@@ -23,11 +22,20 @@ MAX_DIFF = 10
 class Command(BaseCommand):
 
     help = (
-        "Load CGAC codes/agencies from {} into USAspending.  "
-        "Every load is a full restock since this is a tiny table.".format(settings.AGENCY_FILE_URL)
+        "Load CGAC codes/agencies from the indicated file into USAspending.  "
+        "Every load is a full restock since this is a tiny table."
     )
 
     def add_arguments(self, parser):
+
+        parser.add_argument(
+            "--agency-file-uri",
+            required=True,
+            help=(
+                "URI for the file to be loaded.  As of this writing, only files "
+                "obtained via https have been tested."
+            ),
+        )
 
         parser.add_argument(
             "--force",
@@ -48,12 +56,14 @@ class Command(BaseCommand):
         module_name = __name__.split(".")[-1]
         with Timer(module_name):
 
+            agency_file_uri = options["agency_file_uri"]
+
             with Timer("Retrieve new CGACs"):
-                new_cgacs = self._get_new_cgacs()
-                logger.info("{:,} CGACs read from '{}'.".format(len(new_cgacs), settings.AGENCY_FILE_URL))
+                new_cgacs = self._get_new_cgacs(agency_file_uri)
+                logger.info("{:,} CGACs read from '{}'.".format(len(new_cgacs), agency_file_uri))
 
             if len(new_cgacs) < 1:
-                raise RuntimeError("No CGAC value were found in '{}'.".format(settings.AGENCY_FILE_URL))
+                raise RuntimeError("No CGAC value were found in '{}'.".format(agency_file_uri))
 
             if options["force"]:
 
@@ -68,7 +78,7 @@ class Command(BaseCommand):
                 if not old_cgacs:
                     logger.info("No CGACs in cgac table.  Performing a full load.")
                 else:
-                    diff = self._diff_cgacs(new_cgacs, old_cgacs)
+                    diff = self._diff_cgacs(new_cgacs, old_cgacs, agency_file_uri)
                     if diff > 0:
                         logger.info("Found {:,} differences.  Performing a full load.".format(diff))
                     else:
@@ -80,10 +90,10 @@ class Command(BaseCommand):
                 logger.info("{:,} CGACs loaded.".format(len(new_cgacs)))
 
     @staticmethod
-    def _get_new_cgacs():
+    def _get_new_cgacs(agency_file_uri):
 
         df = pandas.read_csv(
-            settings.AGENCY_FILE_URL,
+            agency_file_uri,
             header=0,
             usecols=["CGAC AGENCY CODE", "AGENCY NAME", "AGENCY ABBREVIATION"],
             dtype={"CGAC AGENCY CODE": str, "AGENCY NAME": str, "AGENCY ABBREVIATION": str},
@@ -95,7 +105,7 @@ class Command(BaseCommand):
         if not pandas.Series(df["CGAC AGENCY CODE"]).is_unique:
             raise ValueError(
                 "Found CGAC AGENCY CODE values with more than one AGENCY NAME/AGENCY "
-                "ABBREVIATION in the source file '{}'.".format(settings.AGENCY_FILE_URL)
+                "ABBREVIATION in the source file '{}'.".format(agency_file_uri)
             )
         df = df.sort_values(["CGAC AGENCY CODE"])
         df = df.replace({"": None})
@@ -108,7 +118,7 @@ class Command(BaseCommand):
         return execute_fetchall("select cgac_code, agency_name, agency_abbreviation from cgac")
 
     @staticmethod
-    def _diff_cgacs(new_cgacs, old_cgacs):
+    def _diff_cgacs(new_cgacs, old_cgacs, agency_file_uri):
 
         # The way we're calculating difference is rather trivial.  It's the max
         # list length minus the number of similarities.
@@ -119,7 +129,7 @@ class Command(BaseCommand):
                 "There are {:,} differences between '{}' and the cgac table.   "
                 "As a failsafe, we throw an exception if there are more than {:,} "
                 "differences.  If this is expected, rerun this script with the "
-                "--force switch to accept these changes.".format(diff, settings.AGENCY_FILE_URL, MAX_DIFF)
+                "--force switch to accept these changes.".format(diff, agency_file_uri, MAX_DIFF)
             )
 
         return diff
