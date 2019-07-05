@@ -56,7 +56,9 @@ ACTIVITY_SQL = SQL("""
             ca.parent_award_piid = pa.piid and
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
+            {hide_edges_awarded_amount}
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+            {hide_edges_end_date}
         left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
         left outer join agency a on a.id = ca.awarding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
@@ -82,6 +84,14 @@ def _prepare_tiny_shield_models():
     # This endpoint has a fixed sort.  No need for "sort" or "order".
     models = [copy(p) for p in PAGINATION if p["name"] in ("page", "limit")]
     models.extend([get_internal_or_generated_award_id_model()])
+    x = [
+        {'name': 'hide_edge_cases', 'type': 'boolean', 'optional': True},
+    ]
+    for p in x:
+        p['optional'] = p.get('optional', True)
+        p['key'] = p['name']
+    models.extend(x)
+
     return models
 
 
@@ -104,6 +114,9 @@ class IDVActivityViewSet(APIDocumentationView):
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
         award_id = request_data['award_id']
+        hide_edge_cases = request_data.get('hide_edge_cases')
+        hide_edges_awarded_amount=''
+        hide_edges_end_date=''
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
         sql = COUNT_ACTIVITY_SQL.format(
@@ -113,11 +126,16 @@ class IDVActivityViewSet(APIDocumentationView):
         overall_count_results = execute_sql_to_ordered_dictionary(sql)
         overall_count = overall_count_results[0]['rollup_contract_count'] if overall_count_results else 0
 
+        if hide_edge_cases:
+            hide_edges_awarded_amount = "and ca.base_and_all_options_value > 0"
+            hide_edges_end_date = 'and tf.period_of_perf_potential_e is not null'
         sql = ACTIVITY_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
             limit=Literal(request_data['limit'] + 1),
             offset=Literal((request_data['page'] - 1) * request_data['limit']),
+            hide_edges_awarded_amount=SQL(hide_edges_awarded_amount),
+            hide_edges_end_date=SQL(hide_edges_end_date)
         )
 
         return execute_sql_to_ordered_dictionary(sql), overall_count
