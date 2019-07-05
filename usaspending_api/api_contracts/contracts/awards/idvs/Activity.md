@@ -33,7 +33,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509200110C509C25044V509P6176_3600_V509P6176_3600",
-                        "period_of_performance_ultimate_end_date": "2003-09-15 00:00:00",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
                         "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
                         "parent_award_piid": "V509P6176",
@@ -50,7 +50,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509200010C509C15099V509P6176_3600_V509P6176_3600",
-                        "period_of_performance_ultimate_end_date": "2003-09-15 00:00:00",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
                         "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
                         "parent_award_piid": "V509P6176",
@@ -67,7 +67,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
                         "generated_unique_award_id": "CONT_AWD_00509199910C509C05018V509P6176_3600_V509P6176_3600",
-                        "period_of_performance_ultimate_end_date": "2003-09-15 00:00:00",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
                         "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
                         "parent_award_piid": "V509P6176",
@@ -111,10 +111,10 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
     Unique internal natural identifier for an award.
 + `awarding_agency` (required, string)
 + `awarding_agency_id` (required, number)
-+ `period_of_performance_ultimate_end_date` (required, string, nullable)
++ `period_of_performance_potential_end_date` (required, string, nullable)
 + `parent_award_id` (required, number, nullable)
     Internal, surrogate id for the award's parent.  Deprecated.  Use `parent_generated_unique_award_id`.
-+ `generated_unique_award_id` (required, string)
++ `parent_generated_unique_award_id` (required, string, nullable)
     Unique internal natural identifier for the award's parent.
 + `parent_award_piid` (required, string, nullable)
 + `obligated_amount` (required, number)
