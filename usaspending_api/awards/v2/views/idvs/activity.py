@@ -115,8 +115,8 @@ class IDVActivityViewSet(APIDocumentationView):
         # integer or a generated award id that is a string.
         award_id = request_data['award_id']
         hide_edge_cases = request_data.get('hide_edge_cases')
-        hide_edges_awarded_amount=''
-        hide_edges_end_date=''
+        hide_edges_awarded_amount = ''
+        hide_edges_end_date = ''
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
         sql = COUNT_ACTIVITY_SQL.format(
