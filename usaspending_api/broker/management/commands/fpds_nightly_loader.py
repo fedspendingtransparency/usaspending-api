@@ -206,6 +206,24 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5",
         }
 
+        fpds_normalized_field_map = {
+            "type": "contract_award_type",
+            "description": "award_description"
+        }
+
+        fpds_field_map = {
+            "officer_1_name": "high_comp_officer1_full_na",
+            "officer_1_amount": "high_comp_officer1_amount",
+            "officer_2_name": "high_comp_officer2_full_na",
+            "officer_2_amount": "high_comp_officer2_amount",
+            "officer_3_name": "high_comp_officer3_full_na",
+            "officer_3_amount": "high_comp_officer3_amount",
+            "officer_4_name": "high_comp_officer4_full_na",
+            "officer_4_amount": "high_comp_officer4_amount",
+            "officer_5_name": "high_comp_officer5_full_na",
+            "officer_5_amount": "high_comp_officer5_amount"
+        }
+
         for index, row in enumerate(to_insert, 1):
             upper_case_dict_values(row)
 
@@ -274,17 +292,20 @@ class Command(BaseCommand):
                 "type_description": award_type_desc,
             }
 
-            contract_field_map = {"description": "award_description"}
-
             transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
-                field_map=contract_field_map,
+                field_map=fpds_normalized_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True,
             )
 
-            contract_instance = load_data_into_model(TransactionFPDS(), row, as_dict=True)  # thrown away
+            contract_instance = load_data_into_model(
+                TransactionFPDS(),  # thrown away
+                row,
+                field_map=fpds_field_map,
+                as_dict=True
+            )
 
             detached_award_proc_unique = contract_instance["detached_award_proc_unique"]
             unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
