@@ -24,15 +24,15 @@ Returns lists of possible AIDs matching the search string and narrowed down by t
 
 ## ComponentFilters (object)
 + ata: `123` (optional, string, nullable)
-    Allocation Transfer Agency Identifier (3 characters). TAS & Federal Account
+    Allocation Transfer Agency Identifier (3 characters). TAS only.
 + bpoa: `2017` (optional, string, nullable)
     Beginning Period of Availability (4 characters). TAS only.
 + epoa: `2019` (optional, string, nullable)
     Ending Period of Availability (4 characters). TAS only.
 + a: `X` (optional, string, nullable)
     Availability Type Code (1 character) - will either be 'X' or null. TAS only.
-+ main: `6789` (optional, string, nullable)
-    Main Account Code (4 characters). TAS & Federal Account
++ main: `6789` (required, string, nullable)
+    Main Account Code (4 characters). TAS & Federal Account.
 + sub: `098` (optional, string, nullable)
     Sub-Account Code (3 characters). TAS only.
 
