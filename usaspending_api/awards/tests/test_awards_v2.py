@@ -362,16 +362,6 @@ expected_response_asst = {
         "congressional_code": "-0-",
     },
     "date_signed": "2005-04-03",
-    "executive_details": {"officers": [
-        {
-            "name": "John Apple",
-            "amount": 50000.00
-        },
-        {
-            "name": "Wally World",
-            "amount": 4623.00
-        }
-    ]},
 }
 
 

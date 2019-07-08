@@ -61,7 +61,6 @@ def construct_assistance_response(requested_award_dict):
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
-    response["executive_details"] = create_officers_object(transaction)
 
     return delete_keys_from_dict(response)
 
