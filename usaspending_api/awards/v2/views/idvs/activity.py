@@ -110,6 +110,7 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL("""
     {hide_edges_end_date}
 """)
 
+
 def _prepare_tiny_shield_models():
     # This endpoint has a fixed sort.  No need for "sort" or "order".
     models = [copy(p) for p in PAGINATION if p["name"] in ("page", "limit")]
@@ -161,7 +162,7 @@ class IDVActivityViewSet(APIDocumentationView):
             sql = COUNT_ACTIVITY_SQL.format(
                 award_id_column=Identifier(award_id_column),
                 award_id=Literal(award_id)
-            )   
+            )
         overall_count_results = execute_sql_to_ordered_dictionary(sql)
         overall_count = overall_count_results[0]['rollup_contract_count'] if overall_count_results else 0
         sql = ACTIVITY_SQL.format(
