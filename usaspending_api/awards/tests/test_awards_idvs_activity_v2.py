@@ -34,7 +34,7 @@ class IDVAwardsTestCase(TestCase):
                 "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
                 "awarding_agency_id": 8000 + award_id,
                 "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
-                "period_of_performance_ultimate_end_date": "2018-08-%02d" % award_id,
+                "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
                 "parent_award_id": parent_award_id,
                 "parent_generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_parent_award_id,
                 "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
