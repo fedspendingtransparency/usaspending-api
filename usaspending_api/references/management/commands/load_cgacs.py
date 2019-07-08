@@ -32,7 +32,7 @@ class Command(BaseCommand):
             "--agency-file-uri",
             required=True,
             help=(
-                "URI for the file to be loaded.  As of this writing, only files "
+                "URI for the file to be loaded.  As of this writing, only files " 
                 "obtained via https have been tested."
             ),
         )
@@ -50,6 +50,23 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        Sooooooo, return 0 if there were changes... 3 if
+        there were no changes... and anything other than
+        0 or 3 if there was an issue.  ¯\_(ツ)_/¯
+        """
+        try:
+
+            if self._handle_load(**options):
+                exit(0)  # Changes
+            exit(3)  # No changes
+
+        except Exception as e:
+
+            logger.exception("Exception encountered during load.  Details should follow.")
+            exit(1)  # No bueno
+
+    def _handle_load(self, **options):
 
         # Pick out just the last bit of the module name (which should match the
         # file name minus the extension).
@@ -83,11 +100,12 @@ class Command(BaseCommand):
                         logger.info("Found {:,} differences.  Performing a full load.".format(diff))
                     else:
                         logger.info("No differences found.  No load will be performed.")
-                        return
+                        return 0
 
             with Timer("Load new CGACs"):
                 self._load_cgacs(new_cgacs)
                 logger.info("{:,} CGACs loaded.".format(len(new_cgacs)))
+                return len(new_cgacs)
 
     @staticmethod
     def _get_new_cgacs(agency_file_uri):
