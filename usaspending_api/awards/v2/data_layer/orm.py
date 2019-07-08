@@ -61,6 +61,7 @@ def construct_assistance_response(requested_award_dict):
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
+    response["executive_details"] = create_officers_object(transaction)
 
     return delete_keys_from_dict(response)
 
@@ -81,7 +82,7 @@ def construct_contract_response(requested_award_dict):
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
-    response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
+    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -134,7 +135,7 @@ def construct_idv_response(requested_award_dict):
 
     response["parent_award"] = parent_award
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
-    response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
+    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -226,6 +227,21 @@ def create_place_of_performance_object(db_row_dict):
             ("foreign_postal_code", None),
         ]
     )
+
+
+def create_officers_object(db_row_dict):
+    officers = []
+    for officer_num in range(1,6):
+        officer_name_key = "_officer_{}_name".format(officer_num)
+        officer_amount_key = "_officer_{}_amount".format(officer_num)
+        officer_name = db_row_dict.get(officer_name_key)
+        officer_amount = db_row_dict.get(officer_amount_key)
+        if officer_name or officer_amount:
+            officers.append({
+                "name": officer_name,
+                "amount": officer_amount
+            })
+    return {"officers": officers}
 
 
 def fetch_award_details(filter_q, mapper_fields):
@@ -325,18 +341,6 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
     if le:
         return le["business_categories"]
     return []
-
-
-def fetch_officers_by_legal_entity_id(legal_entity_id):
-    # ======================================================
-    # SETH TODO
-
-    # Remove this function and fetch values from appropriate transaction table
-    # ======================================================
-    # officer_info = LegalEntityOfficers.objects.filter(pk=legal_entity_id).values(*OFFICER_FIELDS.keys()).first()
-
-    officers = []
-    return {"officers": officers}
 
 
 def fetch_cfda_details_using_cfda_number(cfda):
