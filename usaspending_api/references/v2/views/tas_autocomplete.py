@@ -2,14 +2,13 @@ from copy import deepcopy
 from rest_framework.response import Response
 from collections import OrderedDict
 from rest_framework.views import APIView
-from django.db.models import F
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import CGAC
 
 
-TS_MODELS = [
+TINY_SHIELD_MODELS = [
     {"name": "filters|ata", "key": "filters|ata", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|aid", "key": "filters|aid", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|bpoa", "key": "filters|bpoa", "type": "text", "text_type": "search", "allow_nulls": True},
@@ -36,7 +35,7 @@ class TASAutocomplete(APIView):
 
     @staticmethod
     def _parse_and_validate_request(request_data):
-        return TinyShield(deepcopy(TS_MODELS)).block(request_data)
+        return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
 
     @staticmethod
     def _business_logic(filters, requested_component, limit):
@@ -54,28 +53,30 @@ class TASAutocomplete(APIView):
 
         results = (
             TreasuryAppropriationAccount.objects.filter(**kwargs)
-            .values(**{requested_component: F(requested_column)})
+            .values_list(requested_column, flat=True)
             .distinct()
             .order_by(requested_column)[:limit]
         )
 
         if requested_component in ("ata", "aid"):
 
-            # Convert to ordered dictionary so the columns are returned in the same order every time.
-            results = [OrderedDict(d) for d in results]
-
-            # Look up the agency name and abbreviation for ata and aid.
-            cgacs = CGAC.objects.filter(cgac_code__in=[r[requested_component] for r in results])
+            # Look up the agency names and abbreviations for ata and aid.
+            cgacs = CGAC.objects.filter(cgac_code__in=results)
 
             # Create lookups for agency names and abbreviations.
             agency_names = {cgac.cgac_code: cgac.agency_name for cgac in cgacs}
             agency_abbreviations = {cgac.cgac_code: cgac.agency_abbreviation for cgac in cgacs}
 
-            # Stuff the agency names and abbreviations into our result set.
-            for result in results:
-                key = result.get(requested_component)
-                result["agency_name"] = agency_names.get(key)
-                result["agency_abbreviation"] = agency_abbreviations.get(key)
+            # Build a new result set with the requested_component, agency_name,
+            # and agency_abbrevistion.
+            results = [
+                OrderedDict([
+                    (requested_component, r),
+                    ("agency_name", agency_names.get(r)),
+                    ("agency_abbreviation", agency_abbreviations.get(r)),
+                ])
+                for r in results
+            ]
 
         return results
 
