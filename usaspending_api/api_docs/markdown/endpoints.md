@@ -35,13 +35,13 @@ The currently available endpoints are listed in the following table.
 
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
-|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Allocation Transfer Agency Identifier (ATA) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Agency Identifier (AID) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Beginning Period of Availability (BPOA) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Ending Period of Availability (EPOA) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Availability Type Code (A) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Main Account Code (MAIN) filtered by other components provided request filter. | 
-|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Sub-Account Code (SUB) filtered by other components provided request filter. | 
+|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Agency Identifier (AID) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Beginning Period of Availability (BPOA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Ending Period of Availability (EPOA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Availability Type Code (A) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Main Account Code (MAIN) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Sub-Account Code (SUB) filtered by other components provided in the request filter. | 
 |[/api/v2/autocomplete/awarding_agency](/api/v2/autocomplete/awarding_agency)|POST| Returns awarding agencies matching the specified search text|
 |[/api/v2/autocomplete/cfda](/api/v2/autocomplete/cfda)|POST| Returns CFDA programs matching the specified search text|
 |[/api/v2/autocomplete/funding_agency](/api/v2/autocomplete/funding_agency)|POST| Returns funding agencies matching the specified search text|
