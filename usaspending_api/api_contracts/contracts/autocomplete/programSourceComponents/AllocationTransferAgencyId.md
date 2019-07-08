@@ -21,7 +21,7 @@ Returns lists of possible ATAs matching the search string and narrowed down by t
 # Data Structures
 
 ## ComponentFilters (object)
-+ ata: `12` (required, string, nullable)
++ ata: `12` (required, string)
     The Allocation Transfer Agency Identifier search string (max 3 characters).
 + aid: `123` (optional, string, nullable)
     Agency Identifier (3 characters).

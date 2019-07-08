@@ -24,7 +24,7 @@ Returns lists of possible AIDs matching the search string and narrowed down by t
 + aid: `12` (required, string)
     The Agency Identifier search string (max 3 characters).
 + ata: `123` (optional, string, nullable)
-    Allocation Transfer Agency Identifier (max 3 characters). TAS only.
+    Allocation Transfer Agency Identifier (3 characters). TAS only.
 + bpoa: `2017` (optional, string, nullable)
     Beginning Period of Availability (4 characters). TAS only.
 + epoa: `2019` (optional, string, nullable)
