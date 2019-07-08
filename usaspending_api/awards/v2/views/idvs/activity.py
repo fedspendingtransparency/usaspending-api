@@ -150,7 +150,7 @@ class IDVActivityViewSet(APIDocumentationView):
         hide_edges_end_date = ''
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
         if hide_edge_cases:
-            hide_edges_awarded_amount = "and ca.base_and_all_options_value > 0"
+            hide_edges_awarded_amount = "and ca.base_and_all_options_value > 0 and ca.total_obligation > 0"
             hide_edges_end_date = "where tf.period_of_perf_potential_e is not null"
             sql = COUNT_ACTIVITY_HIDDEN_SQL.format(
                 award_id_column=Identifier(award_id_column),

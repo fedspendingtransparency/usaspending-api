@@ -169,6 +169,15 @@ class IDVAwardsTestCase(TestCase):
             (6, 1, 1, 14)
         )
         self._test_post(
+            {"award_id": 2, "limit": 1, "hide_edge_cases": False},
+            (400002, 1, 1, 14)
+        )
+        self._test_post(
             {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": True},
             (6, 10, 1, 14, 13, 12, 11, 10, 9)
+        )
+
+        self._test_post(
+            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": False},
+            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
         )
