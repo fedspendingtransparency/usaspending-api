@@ -80,6 +80,35 @@ COUNT_ACTIVITY_SQL = SQL("""
     where   {award_id_column} = {award_id}
 """)
 
+COUNT_ACTIVITY_HIDDEN_SQL = SQL("""
+    with gather_award_ids as (
+        select  award_id,
+                false grandchild
+        from    parent_award
+        where   {award_id_column} = {award_id}
+        union all
+        select  cpa.award_id,
+                true grandchild
+        from    parent_award ppa
+                inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
+        where   ppa.{award_id_column} = {award_id}
+    )
+    select
+        count(ca.id) rollup_contract_count
+    from
+        gather_award_ids gaids
+        inner join awards pa on pa.id = gaids.award_id
+        inner join awards ca on
+            ca.parent_award_piid = pa.piid and
+            ca.fpds_parent_agency_id = pa.fpds_agency_id and
+            ca.type not like 'IDV%'
+            {hide_edges_awarded_amount}
+        left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+        left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
+        left outer join agency a on a.id = ca.awarding_agency_id
+        left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
+    {hide_edges_end_date}
+""")
 
 def _prepare_tiny_shield_models():
     # This endpoint has a fixed sort.  No need for "sort" or "order".
@@ -119,17 +148,22 @@ class IDVActivityViewSet(APIDocumentationView):
         hide_edges_awarded_amount = ''
         hide_edges_end_date = ''
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
-
-        sql = COUNT_ACTIVITY_SQL.format(
-            award_id_column=Identifier(award_id_column),
-            award_id=Literal(award_id)
-        )
-        overall_count_results = execute_sql_to_ordered_dictionary(sql)
-        overall_count = overall_count_results[0]['rollup_contract_count'] if overall_count_results else 0
-
         if hide_edge_cases:
             hide_edges_awarded_amount = "and ca.base_and_all_options_value > 0"
-            hide_edges_end_date = 'where tf.period_of_perf_potential_e is not null'
+            hide_edges_end_date = "where tf.period_of_perf_potential_e is not null"
+            sql = COUNT_ACTIVITY_HIDDEN_SQL.format(
+                award_id_column=Identifier(award_id_column),
+                award_id=Literal(award_id),
+                hide_edges_awarded_amount=SQL(hide_edges_awarded_amount),
+                hide_edges_end_date=SQL(hide_edges_end_date)
+            )
+        else:
+            sql = COUNT_ACTIVITY_SQL.format(
+                award_id_column=Identifier(award_id_column),
+                award_id=Literal(award_id)
+            )   
+        overall_count_results = execute_sql_to_ordered_dictionary(sql)
+        overall_count = overall_count_results[0]['rollup_contract_count'] if overall_count_results else 0
         sql = ACTIVITY_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
