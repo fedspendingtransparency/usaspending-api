@@ -173,8 +173,8 @@ def create_recipient_object(db_row_dict):
                 "parent_recipient_hash", obtain_recipient_uri(
                     db_row_dict["_parent_recipient_name"],
                     db_row_dict["_parent_recipient_unique_id"],
-                    None,
-                    db_row_dict["_recipient_unique_id"]
+                    None,                                           # parent_recipient_unique_id
+                    True                                            # is_parent_recipient
                 )
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
