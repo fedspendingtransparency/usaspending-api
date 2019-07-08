@@ -89,6 +89,7 @@ def validate_idv_request(request_data):
             "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
         },
         "limit": parse_limit(request_data),
+        "include_data_dictionary": True,
     }
 
 

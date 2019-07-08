@@ -10,8 +10,7 @@ WHERE legal_entity_id IN (
     FROM legal_entity le
     WHERE (
         NOT EXISTS (SELECT 1 FROM transaction_normalized WHERE recipient_id = le.legal_entity_id) AND
-        NOT EXISTS (SELECT 1 FROM awards WHERE recipient_id = le.legal_entity_id) AND
-        NOT EXISTS (SELECT 1 FROM subaward WHERE prime_recipient_id = le.legal_entity_id)
+        NOT EXISTS (SELECT 1 FROM awards WHERE recipient_id = le.legal_entity_id)
     )
 );
 
@@ -19,8 +18,7 @@ DELETE
 FROM legal_entity le
 WHERE (
     NOT EXISTS (SELECT 1 FROM transaction_normalized WHERE recipient_id = le.legal_entity_id) AND
-    NOT EXISTS (SELECT 1 FROM awards WHERE recipient_id = le.legal_entity_id) AND
-    NOT EXISTS (SELECT 1 FROM subaward WHERE prime_recipient_id = le.legal_entity_id)
+    NOT EXISTS (SELECT 1 FROM awards WHERE recipient_id = le.legal_entity_id)
 );
 
 COMMIT;

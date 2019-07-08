@@ -110,6 +110,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("idv_type_description", "idv_type_description"),
         ("type_of_idc_description", "type_of_idc_description"),
         ("referenced_idv_agency_iden", "referenced_idv_agency_iden"),
+        ("referenced_idv_agency_desc", "referenced_idv_agency_desc"),
         ("multiple_or_single_aw_desc", "multiple_or_single_award_description"),
         ("solicitation_identifier", "solicitation_identifier"),
         ("solicitation_procedures", "solicitation_procedures"),
