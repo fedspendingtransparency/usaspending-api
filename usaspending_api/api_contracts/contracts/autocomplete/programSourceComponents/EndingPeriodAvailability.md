@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Ending Period of Availability (EPOA)
 
-This endpoint powers USAspending.gov's Treasury Account and Federal Account Ending Period of Availability (EPOA) component filter in the Advanced Search Program Source (TAS) filter.
+This endpoint powers USAspending.gov's Treasury Account Ending Period of Availability (EPOA) component filter in the Advanced Search Program Source (TAS) filter.
 
 ## Ending Period of Availability [/api/v2/autocomplete/accounts/epoa/]
 
