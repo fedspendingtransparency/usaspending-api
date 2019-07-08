@@ -12,9 +12,7 @@ Returns lists of possible ATAs matching the search string and narrowed down by t
 ## POST
 + Request
     + Attributes (object)
-        + searchString: `12` (required, string, nullable)
-            A null search string will return all possible ATAs
-        + filters (optional, ComponentFilters)
+        + filters (required, ComponentFilters)
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -23,20 +21,22 @@ Returns lists of possible ATAs matching the search string and narrowed down by t
 # Data Structures
 
 ## ComponentFilters (object)
-+ aid: `123` (required, string, nullable)
++ ata: `12` (required, string, nullable)
+    The Allocation Transfer Agency Identifier search string (max 3 characters).
++ aid: `123` (optional, string, nullable)
     Agency Identifier (3 characters).
-+ bpoa: `2017` (required, string, nullable)
++ bpoa: `2017` (optional, string, nullable)
     Beginning Period of Availability (4 characters).
-+ epoa: `2019` (required, string, nullable)
++ epoa: `2019` (optional, string, nullable)
     Ending Period of Availability (4 characters).
-+ a: `X` (required, string, nullable)
++ a: `X` (optional, string, nullable)
     Availability Type Code (1 character) - will either be 'X' or null.
-+ main: `6789` (required, string, nullable)
++ main: `6789` (optional, string, nullable)
     Main Account Code (4 characters).
-+ sub: `098` (required, string, nullable)
++ sub: `098` (optional, string, nullable)
     Sub-Account Code (3 characters).
 
 ## AgencyResult
 + `ata`: `456` (required, string)
-+ `agency_name`: `Department of Sandwiches` (required, string)
++ `agency_name`: `Department of Sandwiches` (required, string, nullable)
 + `agency_abbreviation`: `DOS` (required, string, nullable)
