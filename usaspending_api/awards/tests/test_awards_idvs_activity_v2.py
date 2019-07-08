@@ -2,7 +2,7 @@ import json
 
 from django.test import TestCase
 from rest_framework import status
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, RECIPIENT_HASH_PREFIX
+from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, PARENTS, RECIPIENT_HASH_PREFIX
 
 
 ENDPOINT = "/api/v2/awards/idvs/activity/"
@@ -27,12 +27,17 @@ class IDVAwardsTestCase(TestCase):
         results = []
         for award_id in award_ids:
             string_award_id = str(award_id).zfill(3)
+            parent_award_id = PARENTS.get(award_id)
+            string_parent_award_id = str(parent_award_id).zfill(3)
             results.append({
                 "award_id": award_id,
                 "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
                 "awarding_agency_id": 8000 + award_id,
                 "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
-                "last_date_to_order": "2018-01-%02d" % award_id,
+                "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
+                "parent_award_id": parent_award_id,
+                "parent_generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_parent_award_id,
+                "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
                 "obligated_amount": 100000.0 + award_id,
                 "awarded_amount": 500000.0 + award_id,
                 "period_of_performance_start_date": "2018-02-%02d" % award_id,
