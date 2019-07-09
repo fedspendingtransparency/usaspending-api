@@ -9,7 +9,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
+        + `award_id`: `CONT_IDV_V509P6176_3600` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `limit` (optional, number)
             The number of results to include per page.
@@ -29,58 +29,68 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
             {
                 "results": [
                     {
-                        "award_id": 69138778,
-                        "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
-                        "awarding_agency_id": 228,
-                        "generated_unique_award_id": "CONT_AW_1425_4730_INR17PA00008_GS23F0170L",
-                        "last_date_to_order": "2020-11-30",
-                        "obligated_amount": 8000.0,
-                        "awarded_amount": 20000.0,
-                        "period_of_performance_start_date": "2016-01-14",
-                        "piid": "INR17PA00008",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "543ee6af-9096-f32a-abaa-834106bead6a-P",
+                        "award_id": 1867804,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509200110C509C25044V509P6176_3600_V509P6176_3600",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
+                        "parent_award_id": 69001298,
+                        "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
+                        "parent_award_piid": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "2001-10-15",
+                        "piid": "00509200110C509C25044V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
                         "grandchild": false
                     },
                     {
-                        "award_id": 69054107,
-                        "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
-                        "awarding_agency_id": 634,
-                        "generated_unique_award_id": "CONT_AW_4732_4730_GS33FCA001_GS23F0170L",
-                        "last_date_to_order": "2017-09-30",
-                        "obligated_amount": 2257.24,
-                        "awarded_amount": 10000.0,
-                        "period_of_performance_start_date": "2014-10-01",
-                        "piid": "GS33FCA001",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "9a277fc5-50fc-685f-0f77-be0d96420a17-C",
+                        "award_id": 1867504,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509200010C509C15099V509P6176_3600_V509P6176_3600",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
+                        "parent_award_id": 69001298,
+                        "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
+                        "parent_award_piid": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "2000-10-15",
+                        "piid": "00509200010C509C15099V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
                         "grandchild": false
                     },
                     {
-                        "award_id": 69216438,
-                        "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
-                        "awarding_agency_id": 153,
-                        "generated_unique_award_id": "CONT_AW_12D2_4730_AG3151B140009_GS23F0170L",
-                        "last_date_to_order": "2015-04-06",
-                        "obligated_amount": 47840.0,
-                        "awarded_amount": 12000.0,
-                        "period_of_performance_start_date": "2014-04-07",
-                        "piid": "AG3151B140009",
-                        "recipient_name": "Booz Allen Hamilton",
-                        "recipient_id": "9a277fc5-50fc-685f-0f77-be0d96420a17-C",
-                        "grandchild": true
+                        "award_id": 1867181,
+                        "awarding_agency": "Department of Veterans Affairs",
+                        "awarding_agency_id": 561,
+                        "generated_unique_award_id": "CONT_AWD_00509199910C509C05018V509P6176_3600_V509P6176_3600",
+                        "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
+                        "parent_award_id": 69001298,
+                        "parent_generated_unique_award_id": "CONT_IDV_V509P6176_3600",
+                        "parent_award_piid": "V509P6176",
+                        "obligated_amount": 30000.0,
+                        "awarded_amount": 0.0,
+                        "period_of_performance_start_date": "1999-10-15",
+                        "piid": "00509199910C509C05018V509P6176",
+                        "recipient_name": "SIEMENS MEDICAL SOLUTIONS USA INCORPORATED",
+                        "recipient_id": "b5e31cf9-1f2f-dee0-7f70-eb73fd55617a-C",
+                        "grandchild": false
                     }
                 ],
                 "page_metadata": {
-                    "hasNext": true,
-                    "hasPrevious": true,
-                    "limit": 3,
-                    "next": 5,
-                    "page": 4,
-                    "previous": 3,
-                    "total": 30066
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "limit": 10,
+                    "next": null,
+                    "page": 1,
+                    "previous": null,
+                    "total": 3
                 }
             }
+
 
 # Data Structures
 
@@ -101,7 +111,12 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
     Unique internal natural identifier for an award.
 + `awarding_agency` (required, string)
 + `awarding_agency_id` (required, number)
-+ `last_date_to_order` (required, string, nullable)
++ `period_of_performance_potential_end_date` (required, string, nullable)
++ `parent_award_id` (required, number, nullable)
+    Internal, surrogate id for the award's parent.  Deprecated.  Use `parent_generated_unique_award_id`.
++ `parent_generated_unique_award_id` (required, string, nullable)
+    Unique internal natural identifier for the award's parent.
++ `parent_award_piid` (required, string, nullable)
 + `obligated_amount` (required, number)
 + `awarded_amount` (required, number)
 + `period_of_performance_start_date` (required, string, nullable)

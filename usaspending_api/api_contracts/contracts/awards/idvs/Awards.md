@@ -9,7 +9,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
+        + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `type`: `child_idvs` (optional, enum[string])
             The type of related awards to return.
@@ -56,7 +56,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
                         "funding_agency_id": 228,
                         "awarding_agency_id": 228,
-                        "generated_unique_award_id": "CONT_AW_1425_4730_INR17PA00008_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_INR17PA00008_1425",
                         "last_date_to_order": "2020-11-30",
                         "obligated_amount": 8000.0,
                         "period_of_performance_current_end_date": null,
@@ -71,7 +71,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
                         "funding_agency_id": 634,
                         "awarding_agency_id:: 634,
-                        "generated_unique_award_id": "CONT_AW_4732_4730_GS33FCA001_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_GS33FCA001_4732",
                         "last_date_to_order": "2017-09-30",
                         "obligated_amount": 22570355.24,
                         "period_of_performance_current_end_date": null,
@@ -86,7 +86,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
                         "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
                         "funding_agency_id": 153,
                         "awarding_agency_id": 153,
-                        "generated_unique_award_id": "CONT_AW_12D2_4730_AG3151B140009_GS23F0170L",
+                        "generated_unique_award_id": "CONT_IDV_AG3151B140009_12D2",
                         "last_date_to_order": "2015-04-06",
                         "obligated_amount": 47840.0,
                         "period_of_performance_current_end_date": null,
@@ -121,7 +121,7 @@ Returns child IDVs, child awards, or grandchild awards for the indicated IDV (In
 + `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
 + `funding_agency_id`: `634` (required, number)
 + `awarding_agency_id`: `634` (required, number)
-+ `generated_unique_award_id`: `CONT_AW_1540_NONE_DJB30605051_NONE` (required, string)
++ `generated_unique_award_id`: `CONT_IDV_DJB30605051_1540` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
 + `obligated_amount`: `22570355.24` (required, number)

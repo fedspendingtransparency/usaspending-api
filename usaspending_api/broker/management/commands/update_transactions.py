@@ -7,7 +7,7 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
@@ -228,6 +228,7 @@ class Command(BaseCommand):
                 awarding_agency=awarding_agency,
                 fain=row.get('fain'),
                 uri=row.get('uri'),
+                generated_unique_award_id=row.get('unique_award_key'),
                 save=False
             )
 
@@ -438,7 +439,9 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_piid=row.get('parent_award_id'))
+                    parent_award_piid=row.get('parent_award_id'),
+                    generated_unique_award_id=row.get('unique_award_key'),
+                )
                 award.save()
 
                 award_update_id_list.append(award.id)

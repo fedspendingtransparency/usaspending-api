@@ -10,7 +10,8 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
@@ -118,28 +119,9 @@ def insert_new_fabs(to_insert):
         awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
         funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-        # Generate the unique Award ID
-        # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
-
-        # this will raise an exception if the cast to an int fails, that's ok since we don't want to process
-        # non-numeric record type values
-        record_type_int = int(row['record_type'])
-        if record_type_int == 1:
-            uri = row['uri'] if row['uri'] else '-NONE-'
-            fain = '-NONE-'
-        elif record_type_int in (2, 3):
-            uri = '-NONE-'
-            fain = row['fain'] if row['fain'] else '-NONE-'
-        else:
-            msg = "Invalid record type encountered for the following afa_generated_unique record: {}"
-            raise Exception(msg.format(row['afa_generated_unique']))
-
-        astac = row["awarding_sub_tier_agency_c"] if row["awarding_sub_tier_agency_c"] else "-NONE-"
-        generated_unique_id = "ASST_AW_{}_{}_{}".format(astac, fain, uri)
-
         # Create the summary Award
         (created, award) = Award.get_or_create_summary_award(
-            generated_unique_award_id=generated_unique_id,
+            generated_unique_award_id=row['unique_award_key'],
             fain=row['fain'],
             uri=row['uri'],
             record_type=row['record_type'],
@@ -153,6 +135,7 @@ def insert_new_fabs(to_insert):
             last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
         except ValueError:
             last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+
         parent_txn_value_map = {
             "award": award,
             "awarding_agency": awarding_agency,
@@ -165,7 +148,6 @@ def insert_new_fabs(to_insert):
             "last_modified_date": last_mod_date,
             "type_description": row['assistance_type_desc'],
             "transaction_unique_id": row['afa_generated_unique'],
-            "generated_unique_award_id": generated_unique_id,
         }
 
         fad_field_map = {

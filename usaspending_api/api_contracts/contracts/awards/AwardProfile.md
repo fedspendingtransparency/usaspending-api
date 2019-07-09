@@ -21,21 +21,21 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Request A request with a contract id (application/json)
     + Parameters
-        + `award_id`: `CONT_AW_9700_-NONE-_SP045003WG347_-NONE-`
+        + `award_id`: `CONT_AWD_SP045003WG347_9700_-NONE-_-NONE-`
 
 + Response 200 (application/json)
     + Attributes (ContractResponse)
 
 + Request A request with a financial assistance id (application/json)
     + Parameters
-        + `award_id`: `ASST_AW_1665_0000000000001828_-NONE-`
+        + `award_id`: `ASST_NON_0000000000001828_1665`
 
 + Response 200 (application/json)
     + Attributes (FinancialAssistanceResponse)
 
 + Request A request with an IDV id (application/json)
     + Parameters
-        + `award_id`: `CONT_AW_9700_-NONE-_N0018918D0057_-NONE-`
+        + `award_id`: `CONT_IDV_N0018918D0057_9700`
 
 + Response 200 (application/json)
     + Attributes (IDVResponse)
@@ -95,7 +95,7 @@ This endpoint returns a list of data that is associated with the award profile p
     Award id
 + parent_award_piid: `1301` (required, string, nullable)
     null if the IDV has no parent
-+ parent_generated_unique_award_id: `CONT_AW_9700_4730_W56HZV10AA913_GS10F0243K` (required, nullable)
++ parent_generated_unique_award_id: `CONT_IDV_W56HZV10AA913_9700` (required, nullable)
     null if the IDV has no parent
 + description: `ewraijwrw` (required, string, nullable)
     Description of the first transaction for this award
@@ -174,6 +174,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + idv_type_description: `test` (required, string, nullable)
 + type_of_idc_description: `r3w` (required, string, nullable)
 + agency_id: `123` (required, string)
++ agency_name `Department of Justice` (required, string)
 + multiple_or_single_aw_desc: `something` (required, string)
 + piid: `345` (required, string)
 
@@ -190,11 +191,12 @@ This endpoint returns a list of data that is associated with the award profile p
 + recipient_hash: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string)
 + recipient_unique_id: `2424224` (required, string, nullable)
     The recipient's DUNS
++ parent_recipient_name: `HoneyWell` (string, nullable)
++ parent_recipient_hash: `18e9854a-6e51-29fe-0add-4f2ad80a4010-P` (string, nullable)
 + parent_recipient_unique_id: `2424232` (required, string, nullable)
     The recipient's parent's DUNS
 + location (required, Location, nullable)
     The recipeint's location
-+ parent_recipient_name: `HoneyWell` (string, nullable)
 + business_categories (required, array[string])
     Names of the recipients' business catagories in human readable format
 
@@ -279,6 +281,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `purchase_card_as_payment_method` (required, string, nullable)
 + `purchase_card_as_payment_method_description` (required, string, nullable)
 + `referenced_idv_agency_iden` (required, string, nullable)
++ `referenced_idv_agency_desc` (required, string, nullable)
 + `sea_transportation` (required, string, nullable)
 + `sea_transportation_description` (required, string, nullable)
 + `small_business_competitive` (required, boolean, nullable)

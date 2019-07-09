@@ -9,7 +9,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_AW_4730_-NONE-_GS23F0170L_-NONE-` (required, string)
+        + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `piid`: `15B30518FTM230002` (optional, string)
             Award ID to further refine results.  All File C financial data for this award is returned if omitted.
@@ -52,7 +52,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                 "results": [
                     {
                         "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
+                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
                         "reporting_fiscal_year": 2019,
                         "reporting_fiscal_quarter": 1,
                         "piid": "15B30518FTM230002",
@@ -71,7 +71,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                     },
                     {
                         "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
+                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 4,
                         "piid": "15B30518FTM230002",
@@ -90,7 +90,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
                     },
                     {
                         "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L",
+                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
                         "reporting_fiscal_year": 2018,
                         "reporting_fiscal_quarter": 3,
                         "piid": "15B30518FTM230002",
@@ -129,7 +129,7 @@ Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's d
 ## IDVFundingResponse (object)
 + `award_id`: 5531118 (required, number)
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
-+ `generated_unique_award_id`: `CONT_AW_1540_4730_15B30518FTM230002_GS23F0170L` (required, string)
++ `generated_unique_award_id`: `CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730` (required, string)
     Unique internal natural identifier for an award.
 + `reporting_fiscal_year`: 2018 (required, number, nullable)
     Fiscal year of the submission date.
