@@ -76,7 +76,7 @@ services:
     - cluster.name=usaspending
     - network.host=0.0.0.0
     - bootstrap.memory_lock=true
-    - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"
+    - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
     - "discovery.zen.ping.unicast.hosts=usaspending-es"
     - discovery.zen.minimum_master_nodes=1
     ulimits:
