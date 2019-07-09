@@ -40,27 +40,27 @@ def test_load_cgacs(agency_file_fixture):
     # Confirm the CGACs table is empty.
     assert CGAC.objects.all().count() == 0
 
-    # This should error since --agency-file-uri is required.
+    # This should error since agency-file is required.
     with pytest.raises(CommandError):
         call_command("load_cgacs")
 
     # This should load everything since the table is empty.
-    call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+    call_command("load_cgacs", AGENCY_FILE)
     the_count = CGAC.objects.all().count()
     assert the_count > 0
 
     # This should do nothing.
-    call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+    call_command("load_cgacs", AGENCY_FILE)
     assert CGAC.objects.all().count() == the_count
 
     # Deleting a record should cause a reload.
     CGAC.objects.first().delete()
     assert CGAC.objects.all().count() < the_count
-    call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+    call_command("load_cgacs", AGENCY_FILE)
     assert CGAC.objects.all().count() == the_count
 
     # The --force switch should cause a reload.
-    call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE, "--force")
+    call_command("load_cgacs", AGENCY_FILE, "--force")
     assert CGAC.objects.all().count() == the_count
 
     # Changing a value should cause a reload.
@@ -70,7 +70,7 @@ def test_load_cgacs(agency_file_fixture):
     o.agency_abbreviation = new_aa
     o.save()
     assert CGAC.objects.filter(cgac_code=o.cgac_code).first().agency_abbreviation == new_aa
-    call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+    call_command("load_cgacs", AGENCY_FILE)
     assert CGAC.objects.all().count() == the_count
     assert CGAC.objects.filter(cgac_code=o.cgac_code).first().agency_abbreviation == old_aa
 
@@ -79,9 +79,9 @@ def test_load_cgacs(agency_file_fixture):
         CGAC.objects.first().delete()
     assert CGAC.objects.all().count() < the_count
     with pytest.raises(RuntimeError):
-        call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+        call_command("load_cgacs", AGENCY_FILE)
 
     # An empty CGAC file should cause an error.
     new_cgacs = []
     with pytest.raises(RuntimeError):
-        call_command("load_cgacs", "--agency-file-uri", AGENCY_FILE)
+        call_command("load_cgacs", AGENCY_FILE)
