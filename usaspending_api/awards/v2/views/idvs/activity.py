@@ -94,7 +94,7 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL("""
         where   ppa.{award_id_column} = {award_id}
     )
     select
-        count(ca.id) rollup_contract_count
+        count(*) rollup_contract_count
     from
         gather_award_ids gaids
         inner join awards pa on pa.id = gaids.award_id
@@ -104,9 +104,6 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL("""
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
-        left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
-        left outer join agency a on a.id = ca.awarding_agency_id
-        left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     {hide_edges_end_date}
 """)
 
@@ -115,13 +112,11 @@ def _prepare_tiny_shield_models():
     # This endpoint has a fixed sort.  No need for "sort" or "order".
     models = [copy(p) for p in PAGINATION if p["name"] in ("page", "limit")]
     models.extend([get_internal_or_generated_award_id_model()])
-    x = [
-        {'name': 'hide_edge_cases', 'type': 'boolean', 'optional': True},
-    ]
-    for p in x:
-        p['optional'] = p.get('optional', True)
-        p['key'] = p['name']
-    models.extend(x)
+    models.extend([{'key': 'hide_edge_cases',
+                    'name': 'hide_edge_cases',
+                    'type': 'boolean',
+                    'optional': True,
+                    'default': False}])
 
     return models
 
