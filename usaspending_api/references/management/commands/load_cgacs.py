@@ -16,7 +16,7 @@ logger = logging.getLogger("console")
 Timer = partial(Timer, success_logger=logger.info, failure_logger=logger.error)
 
 
-MAX_DIFF = 10
+MAX_DIFF = 20
 
 
 class Command(BaseCommand):
@@ -29,11 +29,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--agency-file-uri",
+            "--agency-file",
             required=True,
             help=(
-                "URI for the file to be loaded.  As of this writing, only files "
-                "obtained via https have been tested."
+                "Path (for local files) or URI (for http(s) files) of the "
+                "file to be loaded.  As of this writing, only local files and "
+                "http(s) files have been tested.  S3 will likely require some "
+                "enhancements."
             ),
         )
 
@@ -44,7 +46,7 @@ class Command(BaseCommand):
                 "By default, load_cgacs performs a sanity check on the "
                 "incoming data to prevent database corruption in the face of "
                 "source data corruption or dirty reads.  If it detects more "
-                "than {} CGAC differences, it will INTENTIONALLY fail.  To "
+                "than {:,} CGAC differences, it will INTENTIONALLY fail.  To "
                 "force it to run anyhow, supply this switch.".format(MAX_DIFF)
             ),
         )
@@ -56,14 +58,14 @@ class Command(BaseCommand):
         module_name = __name__.split(".")[-1]
         with Timer(module_name):
 
-            agency_file_uri = options["agency_file_uri"]
+            agency_file = options["agency_file"]
 
             with Timer("Retrieve new CGACs"):
-                new_cgacs = self._get_new_cgacs(agency_file_uri)
-                logger.info("{:,} CGACs read from '{}'.".format(len(new_cgacs), agency_file_uri))
+                new_cgacs = self._get_new_cgacs(agency_file)
+                logger.info("{:,} CGACs read from '{}'.".format(len(new_cgacs), agency_file))
 
             if len(new_cgacs) < 1:
-                raise RuntimeError("No CGAC value were found in '{}'.".format(agency_file_uri))
+                raise RuntimeError("No CGAC values were found in '{}'.".format(agency_file))
 
             if options["force"]:
 
@@ -78,7 +80,7 @@ class Command(BaseCommand):
                 if not old_cgacs:
                     logger.info("No CGACs in cgac table.  Performing a full load.")
                 else:
-                    diff = self._diff_cgacs(new_cgacs, old_cgacs, agency_file_uri)
+                    diff = self._diff_cgacs(new_cgacs, old_cgacs, agency_file)
                     if diff > 0:
                         logger.info("Found {:,} differences.  Performing a full load.".format(diff))
                     else:
@@ -90,10 +92,10 @@ class Command(BaseCommand):
                 logger.info("{:,} CGACs loaded.".format(len(new_cgacs)))
 
     @staticmethod
-    def _get_new_cgacs(agency_file_uri):
+    def _get_new_cgacs(agency_file):
 
         df = pandas.read_csv(
-            agency_file_uri,
+            agency_file,
             header=0,
             usecols=["CGAC AGENCY CODE", "AGENCY NAME", "AGENCY ABBREVIATION"],
             dtype={"CGAC AGENCY CODE": str, "AGENCY NAME": str, "AGENCY ABBREVIATION": str},
@@ -105,7 +107,7 @@ class Command(BaseCommand):
         if not pandas.Series(df["CGAC AGENCY CODE"]).is_unique:
             raise ValueError(
                 "Found CGAC AGENCY CODE values with more than one AGENCY NAME/AGENCY "
-                "ABBREVIATION in the source file '{}'.".format(agency_file_uri)
+                "ABBREVIATION in the source file '{}'.".format(agency_file)
             )
         df = df.sort_values(["CGAC AGENCY CODE"])
         df = df.replace({"": None})
@@ -122,7 +124,7 @@ class Command(BaseCommand):
         return execute_fetchall("select cgac_code, agency_name, agency_abbreviation from cgac")
 
     @staticmethod
-    def _diff_cgacs(new_cgacs, old_cgacs, agency_file_uri):
+    def _diff_cgacs(new_cgacs, old_cgacs, agency_file):
 
         # The way we're calculating difference is rather trivial.  It's the max
         # list length minus the number of similarities.
@@ -133,7 +135,7 @@ class Command(BaseCommand):
                 "There are {:,} differences between '{}' and the cgac table.   "
                 "As a failsafe, we throw an exception if there are more than {:,} "
                 "differences.  If this is expected, rerun this script with the "
-                "--force switch to accept these changes.".format(diff, agency_file_uri, MAX_DIFF)
+                "--force switch to accept these changes.".format(diff, agency_file, MAX_DIFF)
             )
 
         return diff
