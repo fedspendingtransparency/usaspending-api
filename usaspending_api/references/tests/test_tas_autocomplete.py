@@ -123,23 +123,29 @@ class TASAutocompleteTestCase(TestCase):
             {"filters": {"aid": "002"}},
             [{"aid": "002", "agency_name": "Agency 002", "agency_abbreviation": "A002"}],
         )
+        self._post(BASE_ENDPOINT + "aid", {"filters": {"aid": "2"}}, [])
 
     def test_autocomplete_bpoa(self):
 
         self._post(BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "9"}}, ["923456"])
+        self._post(BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "6"}}, [])
 
     def test_autocomplete_epoa(self):
 
         self._post(BASE_ENDPOINT + "epoa", {"filters": {"epoa": "9"}}, ["934567"])
+        self._post(BASE_ENDPOINT + "epoa", {"filters": {"epoa": "7"}}, [])
 
     def test_autocomplete_a(self):
 
         self._post(BASE_ENDPOINT + "a", {"filters": {"a": "X"}}, ["X"])
+        self._post(BASE_ENDPOINT + "a", {"filters": {"a": "Z"}}, [])
 
     def test_autocomplete_main(self):
 
         self._post(BASE_ENDPOINT + "main", {"filters": {"main": "9"}}, ["9234"])
+        self._post(BASE_ENDPOINT + "main", {"filters": {"main": "4"}}, [])
 
     def test_autocomplete_sub(self):
 
         self._post(BASE_ENDPOINT + "sub", {"filters": {"sub": "9"}}, ["921"])
+        self._post(BASE_ENDPOINT + "sub", {"filters": {"sub": "1"}}, [])
