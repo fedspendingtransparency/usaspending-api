@@ -29,8 +29,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--agency-file",
-            required=True,
+            "agency_file",
+            metavar="AGENCY_FILE",
             help=(
                 "Path (for local files) or URI (for http(s) files) of the "
                 "file to be loaded.  As of this writing, only local files and "
