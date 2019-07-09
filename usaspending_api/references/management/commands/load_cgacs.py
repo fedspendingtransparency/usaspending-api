@@ -110,6 +110,10 @@ class Command(BaseCommand):
         df = df.sort_values(["CGAC AGENCY CODE"])
         df = df.replace({"": None})
 
+        # Only keep rows with a CGAC AGENCY CODE
+        df = df[df["CGAC AGENCY CODE"].map(lambda c: c is not None)]
+
+        # Return a list of tuples (much like a Postgres fetchall returns).
         return [tuple(v) for v in df.values]
 
     @staticmethod
