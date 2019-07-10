@@ -7,7 +7,8 @@
 ##       docker-compose up usaspending-db-migrate
 ##       docker-compose up usaspending-db-sql
 ##       docker-compose up usaspending-db-init
-##    Then run/re-run using the db you just created:
+##       docker-compose up usaspending-es (leave running, elasticsearch)
+##    Then run/re-run using the db you just created (may need to wait for the DB to be up and listening):
 ##       docker-compose up usaspending-api
 ##
 ## Optional) Run ad-hoc commands:
