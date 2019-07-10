@@ -32,17 +32,17 @@ Returns lists of possible As narrowed down by the given component filters.
 # Data Structures
 
 ## ComponentFilters (object)
-+ a: `X` (optional, string, nullable)
++ a (optional, string, nullable)
     Availability Type Code (1 character) - will either be 'X' or null.
-+ aid: `12` (optional, string, nullable)
++ aid (optional, string, nullable)
     The Agency Identifier (3 characters).
-+ ata: `123` (optional, string, nullable)
++ ata (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.
-+ bpoa: `2019` (optional, string, nullable)
++ bpoa (optional, string, nullable)
     Beginning Period of Availability (4 characters). TAS only.
-+ epoa: `2019` (optional, string, nullable)
++ epoa (optional, string, nullable)
     Ending Period of Availability (4 characters). TAS only.
-+ main: `6789` (optional, string, nullable)
++ main(optional, string, nullable)
     Main Account Code (4 characters).
-+ sub: `098` (optional, string, nullable)
++ sub (optional, string, nullable)
     Sub-Account Code (3 characters).

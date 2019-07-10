@@ -34,17 +34,17 @@ Returns lists of possible SUBs narrowed down by the given component filters. Per
 # Data Structures
 
 ## ComponentFilters (object)
-+ sub: `09` (optional, string, nullable)
++ sub (optional, string, nullable)
     Sub-Account Code search string (max 3 characters). Excluding this field returns all SUBs.
-+ aid: `12` (optional, string, nullable)
++ aid (optional, string, nullable)
     The Agency Identifier (3 characters).
-+ ata: `123` (optional, string, nullable)
++ ata (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.
-+ bpoa: `2019` (optional, string, nullable)
++ bpoa (optional, string, nullable)
     Beginning Period of Availability (4 characters). TAS only.
-+ epoa: `2019` (optional, string, nullable)
++ epoa (optional, string, nullable)
     Ending Period of Availability (4 characters). TAS only.
-+ a: `X` (optional, string, nullable)
++ a (optional, string, nullable)
     Availability Type Code (1 character) - will either be 'X' or null. TAS only.
-+ main: `6789` (optional, string, nullable)
++ main (optional, string, nullable)
     Main Account Code (4 characters).
