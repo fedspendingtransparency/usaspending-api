@@ -24,8 +24,8 @@ Returns lists of possible BPOAs narrowed down by the given component filters. Pe
 # Data Structures
 
 ## ComponentFilters (object)
-+ bpoa: `20` (required, string)
-    Beginning Period of Availability search string (max 4 characters).
++ bpoa: `20` (optional, string, nullable)
+    Beginning Period of Availability search string (max 4 characters). Excluding this field returns all BPOAs.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).
 + ata: `123` (optional, string, nullable)

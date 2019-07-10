@@ -24,8 +24,8 @@ Returns lists of possible AIDs narrowed down by the given component filters. Per
 # Data Structures
 
 ## ComponentFilters (object)
-+ aid: `12` (required, string)
-    The Agency Identifier search string (max 3 characters).
++ aid: `12` (optional, string, nullable)
+    The Agency Identifier search string (max 3 characters). Excluding this field returns all AIDs.
 + ata: `123` (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.
 + bpoa: `2017` (optional, string, nullable)

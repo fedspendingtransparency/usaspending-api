@@ -24,7 +24,7 @@ Returns lists of possible As narrowed down by the given component filters.
 # Data Structures
 
 ## ComponentFilters (object)
-+ a: `X` (required, string, nullable)
++ a: `X` (optional, string, nullable)
     Availability Type Code (1 character) - will either be 'X' or null.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).

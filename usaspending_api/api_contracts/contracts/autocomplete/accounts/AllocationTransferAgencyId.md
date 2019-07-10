@@ -24,8 +24,8 @@ Returns lists of possible ATAs narrowed down by the given component filters. Per
 # Data Structures
 
 ## ComponentFilters (object)
-+ ata: `12` (required, string)
-    The Allocation Transfer Agency Identifier search string (max 3 characters).
++ ata: `12` (optional, string, nullable)
+    The Allocation Transfer Agency Identifier search string (max 3 characters). Excluding this field returns all ATAs.
 + aid: `123` (optional, string, nullable)
     Agency Identifier (3 characters).
 + bpoa: `2017` (optional, string, nullable)

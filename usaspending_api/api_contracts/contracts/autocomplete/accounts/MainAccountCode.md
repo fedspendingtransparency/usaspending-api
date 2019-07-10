@@ -24,8 +24,8 @@ Returns lists of possible MAINs narrowed down by the given component filters. Pe
 # Data Structures
 
 ## ComponentFilters (object)
-+ main: `67` (required, string)
-    Main Account Code search string (max 4 characters).
++ main: `67` (optional, string, nullable)
+    Main Account Code search string (max 4 characters). Excluding this field returns all MAINs.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).
 + ata: `123` (optional, string, nullable)

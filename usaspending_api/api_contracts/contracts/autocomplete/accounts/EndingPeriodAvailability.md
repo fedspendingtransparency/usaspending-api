@@ -26,8 +26,8 @@ Returns lists of possible EPOAs narrowed down by the given component filters. Pe
 # Data Structures
 
 ## ComponentFilters (object)
-+ epoa: `20` (required, string)
-    Ending Period of Availability search string (max 4 characters).
++ epoa: `20` (optional, string, nullable)
+    Ending Period of Availability search string (max 4 characters). Excluding this field returns all EPOAs.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).
 + ata: `123` (optional, string, nullable)

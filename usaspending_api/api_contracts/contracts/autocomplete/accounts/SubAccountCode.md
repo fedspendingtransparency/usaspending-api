@@ -24,8 +24,8 @@ Returns lists of possible SUBs narrowed down by the given component filters. Per
 # Data Structures
 
 ## ComponentFilters (object)
-+ sub: `09` (required, string)
-    Sub-Account Code search string (max 3 characters).
++ sub: `09` (optional, string, nullable)
+    Sub-Account Code search string (max 3 characters). Excluding this field returns all SUBs.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).
 + ata: `123` (optional, string, nullable)
