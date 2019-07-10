@@ -66,3 +66,4 @@ services:
     command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
