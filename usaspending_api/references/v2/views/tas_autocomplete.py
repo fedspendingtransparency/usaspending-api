@@ -79,7 +79,7 @@ class TASAutocomplete(APIView):
                 for r in results
             ]
 
-        return results
+        return {"results": results}
 
     @cache_response()
     def post(self, request, requested_component):
