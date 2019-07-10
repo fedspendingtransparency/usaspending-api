@@ -13,6 +13,9 @@ Returns lists of possible ATAs narrowed down by the given component filters. Per
 + Request
     + Attributes (object)
         + filters (required, ComponentFilters)
+        + limit (required, number)
+            Maximum number of results to return.
+            + Default: 10
 
 + Response 200 (application/json)
     + Attributes (object)
