@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Main Account Code (MAIN)
+# Availability Type Code (A)
 
-This endpoint powers USAspending.gov's Treasury Account and Federal Account Main Account Code (MAIN) component filter in the Advanced Search Program Source (TAS) filter.
+This endpoint powers USAspending.gov's Treasury Account Availability Type Code (A) component filter in the Advanced Search Program Source (TAS) filter.
 
-## Main Account Code [/api/v2/autocomplete/accounts/main/]
+## Availability Type Code [/api/v2/autocomplete/accounts/a/]
 
-Returns lists of possible MAINs matching the search string and narrowed down by the given component filters.
+Returns lists of possible As narrowed down by the given component filters.
 
 ## POST
 + Request
@@ -16,13 +16,13 @@ Returns lists of possible MAINs matching the search string and narrowed down by 
 
 + Response 200 (application/json)
     + Attributes (object)
-        + results: `6789`, `4567`, `5678` (array[string])
+        + results: `X` (array[string])
 
 # Data Structures
 
 ## ComponentFilters (object)
-+ main: `67` (required, string)
-    Main Account Code search string (max 4 characters).
++ a: `X` (required, string, nullable)
+    Availability Type Code (1 character) - will either be 'X' or null.
 + aid: `12` (optional, string, nullable)
     The Agency Identifier (3 characters).
 + ata: `123` (optional, string, nullable)
@@ -31,7 +31,7 @@ Returns lists of possible MAINs matching the search string and narrowed down by 
     Beginning Period of Availability (4 characters). TAS only.
 + epoa: `2019` (optional, string, nullable)
     Ending Period of Availability (4 characters). TAS only.
-+ a: `X` (optional, string, nullable)
-    Availability Type Code (1 character) - will either be 'X' or null. TAS only.
++ main: `6789` (optional, string, nullable)
+    Main Account Code (4 characters).
 + sub: `098` (optional, string, nullable)
-    Sub-Account Code (3 characters). TAS only.
+    Sub-Account Code (3 characters).

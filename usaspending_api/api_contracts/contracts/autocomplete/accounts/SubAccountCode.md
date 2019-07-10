@@ -7,7 +7,7 @@ This endpoint powers USAspending.gov's Treasury Account Sub Account Code (SUB) c
 
 ## Sub Account Code [/api/v2/autocomplete/accounts/sub/]
 
-Returns lists of possible SUBs matching the search string and narrowed down by the given component filters.
+Returns lists of possible SUBs narrowed down by the given component filters. Performs a partial search on `sub` and an exact search on the rest of the filters.
 
 ## POST
 + Request

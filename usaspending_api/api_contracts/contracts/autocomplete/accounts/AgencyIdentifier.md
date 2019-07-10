@@ -7,7 +7,7 @@ This endpoint powers USAspending.gov's Treasury Account and Federal Account Agen
 
 ## Agency Identifier [/api/v2/autocomplete/accounts/aid/]
 
-Returns lists of possible AIDs matching the search string and narrowed down by the given component filters.
+Returns lists of possible AIDs narrowed down by the given component filters. Performs a partial search on `aid` and an exact search on the rest of the filters.
 
 ## POST
 + Request

@@ -7,7 +7,7 @@ This endpoint powers USAspending.gov's Treasury Account Allocation Transfer Agen
 
 ## Allocation Transfer Agency Id [/api/v2/autocomplete/accounts/ata/]
 
-Returns lists of possible ATAs matching the search string and narrowed down by the given component filters.
+Returns lists of possible ATAs narrowed down by the given component filters. Performs a partial search on `ata` and an exact search on the rest of the filters.
 
 ## POST
 + Request
