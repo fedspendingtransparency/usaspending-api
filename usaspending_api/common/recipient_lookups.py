@@ -6,10 +6,9 @@ def obtain_recipient_uri(
         recipient_unique_id,
         parent_recipient_unique_id=None,
         is_parent_recipient=False):
-    # No need to create a hash when the parent recipient does not exist
-    if is_parent_recipient and not recipient_unique_id:
-        return None
-    elif not recipient_unique_id:
+    if not recipient_unique_id:
+        if not recipient_name:
+            return None
         return create_recipient_uri_without_duns(
             recipient_name,
             recipient_unique_id,
