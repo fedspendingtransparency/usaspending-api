@@ -63,28 +63,21 @@ See below for basic setup instructions. For help with Docker Compose:
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
-## Running Elasticsearch
-Some of the API endpoints reach into Elasticsearch for data. 
+## Elasticsearch Setup
+Some of the API endpoints reach into Elasticsearch for data.  
 
-First, create a directory on your local machine where a docker volume can bind for Elasticsearch to keep its data 
-between restarts. The default path is `../docker_es`, from the repo source root. You can change this in your `.env` 
-file if you wish.
-```bash
-mkdir ../docker_es
+- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+
+- The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
+
+- Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
+
+- To populate this cluster's index(es) with data from your database, you would need to run the Django Managment command in `es_rapidloader.py`, which can be run from Docker directly, after setting `ES_HOSTNAME` in `.env`:
+
 ```
-
-To start a single-node Elasticsearch cluster that the 
-API can reach, run the following command: with the 
-```bash
-docker-compose up -d usaspending-es 
+docker build . -t usaspendingapi
+docker run -p 127.0.0.1:8001:8000 usaspendingapi <command>
 ```
-
-_To see log output, run `docker-compose logs usaspending-es`_
-
-The cluster should be reachable via `curl` or Kibana at http://localhost:9200
-
-To populate this cluster's index(es) with data from your database, you would need to run the
-Django Managment command at: `usaspending_api/etl/management/commands/es_rapidloader.py`
 
 ## Running the API
 `docker-compose up usaspending-api`
