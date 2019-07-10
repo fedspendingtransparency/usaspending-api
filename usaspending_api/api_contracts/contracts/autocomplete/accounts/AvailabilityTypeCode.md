@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's Treasury Account Availability Type Code (
 Returns lists of possible As narrowed down by the given component filters.
 
 ## POST
-+ Request
++ Request (application/json)
     + Attributes (object)
         + filters (required, ComponentFilters)
         + limit (required, number)
@@ -19,7 +19,15 @@ Returns lists of possible As narrowed down by the given component filters.
 
 + Response 200 (application/json)
     + Attributes (object)
-        + results: `X` (array[string])
+        + results: (array[string])
+
+    + Body
+
+            {
+                "results": [
+                    "X"
+                ]
+            }
 
 # Data Structures
 

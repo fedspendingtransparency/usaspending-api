@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's Treasury Account Allocation Transfer Agen
 Returns lists of possible ATAs narrowed down by the given component filters. Performs a partial search on `ata` and an exact search on the rest of the filters.
 
 ## POST
-+ Request
++ Request (application/json)
     + Attributes (object)
         + filters (required, ComponentFilters)
         + limit (required, number)
@@ -20,6 +20,23 @@ Returns lists of possible ATAs narrowed down by the given component filters. Per
 + Response 200 (application/json)
     + Attributes (object)
         + results (array[AgencyResult], fixed-type)
+
+    + Body
+
+            {
+                "results": [
+                    {
+                        "aid": "456",
+                        "agency_name": "Mock Agency 1",
+                        "agency_abbreviation": "ABC"
+                    },
+                    {
+                        "aid": "789",
+                        "agency_name": "Mock Agency 2",
+                        "agency_abbreviation": null
+                    }
+                ]
+            }
 
 # Data Structures
 
@@ -39,7 +56,7 @@ Returns lists of possible ATAs narrowed down by the given component filters. Per
 + sub: `098` (optional, string, nullable)
     Sub-Account Code (3 characters).
 
-## AgencyResult
-+ `ata`: `456` (required, string)
-+ `agency_name`: `Department of Sandwiches` (required, string, nullable)
-+ `agency_abbreviation`: `DOS` (required, string, nullable)
+## AgencyResult (object)
++ `ata` (required, string)
++ `agency_name` (required, string, nullable)
++ `agency_abbreviation` (required, string, nullable)

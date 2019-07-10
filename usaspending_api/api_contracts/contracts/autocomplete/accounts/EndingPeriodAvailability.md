@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's Treasury Account Ending Period of Availab
 Returns lists of possible EPOAs narrowed down by the given component filters. Performs a partial search on `epoa` and an exact search on the rest of the filters.
 
 ## POST
-+ Request
++ Request (application/json)
     + Attributes (object)
         + filters (required, ComponentFilters)
         + limit (required, number)
@@ -19,9 +19,17 @@ Returns lists of possible EPOAs narrowed down by the given component filters. Pe
 
 + Response 200 (application/json)
     + Attributes (object)
-        + results: `2015`, `2016`, `2017` (array[string])
+        + results: (array[string])
 
-+ Body
+    + Body
+
+            {
+                "results": [
+                    "1998",
+                    "1999",
+                    "2000"
+                ]
+            }
 
 # Data Structures
 

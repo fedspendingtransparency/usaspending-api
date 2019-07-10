@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's Treasury Account and Federal Account Main
 Returns lists of possible MAINs narrowed down by the given component filters. Performs a partial search on `main` and an exact search on the rest of the filters.
 
 ## POST
-+ Request
++ Request  (application/json)
     + Attributes (object)
         + filters (required, ComponentFilters)
         + limit (required, number)
@@ -19,7 +19,17 @@ Returns lists of possible MAINs narrowed down by the given component filters. Pe
 
 + Response 200 (application/json)
     + Attributes (object)
-        + results: `6789`, `4567`, `5678` (array[string])
+        + results: (array[string])
+
+    + Body
+
+            {
+                "results": [
+                    "6789",
+                    "4567",
+                    "5678"
+                ]
+            }
 
 # Data Structures
 

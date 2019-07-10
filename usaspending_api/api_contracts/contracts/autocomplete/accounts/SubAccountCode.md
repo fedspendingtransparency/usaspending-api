@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's Treasury Account Sub Account Code (SUB) c
 Returns lists of possible SUBs narrowed down by the given component filters. Performs a partial search on `sub` and an exact search on the rest of the filters.
 
 ## POST
-+ Request
++ Request (application/json)
     + Attributes (object)
         + filters (required, ComponentFilters)
         + limit (required, number)
@@ -19,7 +19,17 @@ Returns lists of possible SUBs narrowed down by the given component filters. Per
 
 + Response 200 (application/json)
     + Attributes (object)
-        + results: `098`, `097`, `609` (array[string])
+        + results: (array[string])
+
+    + Body
+
+            {
+                "results": [
+                    "098",
+                    "097",
+                    "609"
+                ]
+            }
 
 # Data Structures
 
