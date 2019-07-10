@@ -3,7 +3,9 @@ import requests
 import tempfile
 import urllib
 
+from shutil import copyfile
 from usaspending_api import settings
+
 
 VALID_SCHEMES = ("http", "https", "s3", "file", "")
 SCHEMA_HELP_TEXT = (
@@ -15,21 +17,15 @@ SCHEMA_HELP_TEXT = (
 
 
 class RetrieveFileFromUri:
-    def __init__(self, ruri, binary_data=True):
-        self.uri = ruri  # Relative Uniform Resource Locator
-        self.mode = "rb" if binary_data else "r"
-        self._validate_url()
 
-    def _validate_url(self):
-        self.parsed_url_obj = urllib.parse.urlparse(self.uri)
-        self._test_approved_scheme()
-
-    def _test_approved_scheme(self):
+    def __init__(self, ruri):
+        self.ruri = ruri  # Relative Uniform Resource Locator
+        self.parsed_url_obj = urllib.parse.urlparse(ruri)
         if self.parsed_url_obj.scheme not in VALID_SCHEMES:
             msg = "Scheme '{}' isn't supported. Try one of these: {}"
             raise NotImplementedError(msg.format(self.parsed_url_obj.scheme, VALID_SCHEMES))
 
-    def get_file_object(self):
+    def get_file_object(self, text=False):
         """
             return a file object (aka file handler) to either:
                 the local file,
@@ -37,24 +33,30 @@ class RetrieveFileFromUri:
             Recommendation is to use this method as a context manager
         """
         if self.parsed_url_obj.scheme == "s3":
-            return self._handle_s3()
+            return self._handle_s3(text)
         elif self.parsed_url_obj.scheme.startswith("http"):
-            return self._handle_http()
+            return self._handle_http(text)
         elif self.parsed_url_obj.scheme in ("file", ""):
-            return self._handle_file()
+            return self._handle_file(text)
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
     def copy(self, dest_file_path):
         """
-            create a copy of the file and place at "dest_file_path"
+            create a copy of the file and place at "dest_file_path" which
+            currently must be a filesystem path (not s3 or http).
         """
         if self.parsed_url_obj.scheme.startswith("http"):
-            urllib.request.urlretrieve(self.uri, dest_file_path)
+            urllib.request.urlretrieve(self.ruri, dest_file_path)
+        elif self.parsed_url_obj.scheme in ("file", ""):
+            copyfile(self.ruri, dest_file_path)
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
-    def _handle_s3(self):
+    def _handle_s3(self, text):
+        if text is True:
+            raise NotImplementedError("Text mode is not currently supported for S3 files.")
+
         file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
         boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_bucket = boto3_s3.Bucket(self.parsed_url_obj.netloc)
@@ -64,17 +66,17 @@ class RetrieveFileFromUri:
         f.seek(0)  # go to beginning of file for reading
         return f
 
-    def _handle_http(self):
-        r = requests.get(self.uri, allow_redirects=True)
-        f = tempfile.SpooledTemporaryFile()
-        f.write(r.content)
+    def _handle_http(self, text):
+        r = requests.get(self.ruri, allow_redirects=True)
+        f = tempfile.SpooledTemporaryFile(mode="w" if text else "w+b")
+        f.write(r.text if text else r.content)
         f.seek(0)  # go to beginning of file for reading
         return f
 
-    def _handle_file(self):
+    def _handle_file(self, text):
         if self.parsed_url_obj == "file":
             file_path = self.parsed_url_obj.netloc
         else:  # if no schema provided, treat it as a relative file path
             file_path = self.parsed_url_obj.path
 
-        return open(file_path, self.mode)
+        return open(file_path, "r" if text else "rb")
