@@ -72,13 +72,6 @@ Some of the API endpoints reach into Elasticsearch for data.
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
-- To populate this cluster's index(es) with data from your database, you would need to run the Django Managment command in `es_rapidloader.py`, which can be run from Docker directly, after setting `ES_HOSTNAME` in `.env`:
-
-```
-docker build . -t usaspendingapi
-docker run -p 127.0.0.1:8001:8000 usaspendingapi <command>
-```
-
 ## Running the API
 `docker-compose up usaspending-api`
 
