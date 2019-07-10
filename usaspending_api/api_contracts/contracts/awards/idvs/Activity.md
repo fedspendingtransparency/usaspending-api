@@ -17,7 +17,9 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
         + `page` (optional, number)
             The page of results to return based on the limit.
             + Default: 1
-
+        + `hide_edge_cases` (optional, boolean)
+            Choose whether or not to hide awards that have no/negative obligated amounts and/or no/negative awarded amounts and/or no end date
+            + Default: false
 + Response 200 (application/json)
     + Attributes
         + `results` (required, array[ChildAward], fixed-type)

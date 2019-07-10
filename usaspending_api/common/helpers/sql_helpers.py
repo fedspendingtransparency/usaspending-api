@@ -172,7 +172,29 @@ def convert_composable_query_to_string(sql, model=Award, cursor=None):
     return sql
 
 
-def execute_sql(sql, model=Award, fetcher=None):
+def execute_update_sql(sql, model=Award):
+    """
+    Executes a sql query against a database that perform some sort of update
+    (INSERT, UPDATE, etc).
+
+    sql     - Can be either a sql string statement or a psycopg2 Composable
+              object (Identifier, Literal, SQL, etc).
+    model   - A Django model that represents a database table germaine to your
+              query.  If one is not supplied, Award will be used since it is
+              fairly central to the database as a whole.
+
+    Returns a CLOSED cursor.  Can be used for row counts and what not, but is
+    no longer operational.
+    """
+    connection = get_connection(model, False)
+    with connection.cursor() as cursor:
+        # Because django-debug-toolbar does not understand Composable queries,
+        # we need to convert the query to a string before executing it.
+        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
+        return cursor
+
+
+def execute_fetchall(sql, model=Award, fetcher=None):
     """
     Executes a read only sql query against a database.
 
@@ -181,7 +203,7 @@ def execute_sql(sql, model=Award, fetcher=None):
     model   - A Django model that represents a database table germaine to your
               query.  If one is not supplied, Award will be used since it is
               fairly central to the database as a whole.
-    fetcher - A function to format fetchall results in a specfic way.
+    fetcher - A function to format fetchall results in a specific way.
 
     Returns query results in the format dictated by the fetcher or a list of
     tuples if no fetcher is supplied.
@@ -208,7 +230,7 @@ def execute_sql_to_ordered_dictionary(sql, model=Award):
 
     Returns query results as a list of ordered dictionaries.
     """
-    return execute_sql(sql, model, fetchall_to_ordered_dictionary)
+    return execute_fetchall(sql, model, fetchall_to_ordered_dictionary)
 
 
 def fetchall_to_ordered_dictionary(cursor):
