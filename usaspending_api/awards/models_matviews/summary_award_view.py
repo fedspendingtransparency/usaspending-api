@@ -25,4 +25,4 @@ class SummaryAwardView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_award_view'
+        db_table = "summary_award_view"

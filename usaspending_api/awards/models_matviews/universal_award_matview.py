@@ -85,4 +85,4 @@ class UniversalAwardView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'universal_award_matview'
+        db_table = "universal_award_matview"

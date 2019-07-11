@@ -80,5 +80,4 @@ class UniversalTransactionView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'universal_transaction_matview'
-
+        db_table = "universal_transaction_matview"

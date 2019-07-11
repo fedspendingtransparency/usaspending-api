@@ -26,4 +26,4 @@ class SummaryView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_view'
+        db_table = "summary_view"

@@ -11,8 +11,8 @@ class SummaryTransactionView(models.Model):
     total_obl_bin = models.TextField()
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     federal_action_obligation = models.DecimalField(
-        max_digits=23, db_index=True, decimal_places=2, blank=True,
-        null=True)
+        max_digits=23, db_index=True, decimal_places=2, blank=True, null=True
+    )
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
 
@@ -63,4 +63,4 @@ class SummaryTransactionView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_transaction_view'
+        db_table = "summary_transaction_view"
