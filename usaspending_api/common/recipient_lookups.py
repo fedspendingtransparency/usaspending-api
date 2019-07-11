@@ -1,48 +1,41 @@
 from usaspending_api.recipient.models import RecipientLookup
 
 
-def obtain_recipient_uri(
-        recipient_name,
-        recipient_unique_id,
-        parent_recipient_unique_id=None,
-        is_parent_recipient=False):
-    if not recipient_unique_id:
-        if not recipient_name:
-            return None
-        return create_recipient_uri_without_duns(
-            recipient_name,
-            recipient_unique_id,
-            parent_recipient_unique_id,
-            is_parent_recipient
-        )
-    return fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id, is_parent_recipient)
+def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
+    """ Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
+        Keyword Arguments:
+        recipient_name -- Legal Entity Name from the record
+        recipient_unique_id -- DUNS from the record
+        parent_recipient_unique_id -- parent DUNS from the record
+        is_parent_recipient -- boolean flag to force the recipient level to be "P" (default False)
+            By the nature of transaction records, the listed recipient can only be "R" or "C"
+            This flag is for the parent recipient link (as appropriate)
 
-def create_recipient_uri_without_duns(
-        recipient_name,
-        recipient_unique_id,
-        parent_recipient_unique_id=None,
-        is_parent_recipient=False):
-    recipient_hash = generate_missing_recipient_hash(recipient_name, recipient_unique_id)
-    recipient_level = obtain_recipient_level({
-        "duns": recipient_unique_id,
-        "parent_duns": parent_recipient_unique_id,
-        "is_parent_recipient": is_parent_recipient
-    })
+        Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
+
+    """
+    recipient_hash = None
+    if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):
+        return None
+    elif recipient_unique_id:
+        recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
+
+    if recipient_hash is None:
+        recipient_hash = generate_missing_recipient_hash(recipient_unique_id, recipient_name)
+
+    recipient_level = obtain_recipient_level(
+        {
+            "duns": recipient_unique_id,
+            "parent_duns": parent_recipient_unique_id,
+            "is_parent_recipient": is_parent_recipient,
+        }
+    )
+
     return combine_recipient_hash_and_level(recipient_hash, recipient_level)
 
 
-def fetch_recipient_uri_with_duns(recipient_unique_id, parent_recipient_unique_id, is_parent_recipient):
-    recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
-    recipient_level = obtain_recipient_level({
-        "duns": recipient_unique_id,
-        "parent_duns": parent_recipient_unique_id,
-        "is_parent_recipient": is_parent_recipient
-    })
-    return combine_recipient_hash_and_level(recipient_hash, recipient_level)
-
-
-def generate_missing_recipient_hash(recipient_name, recipient_unique_id):
+def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
     # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
     import hashlib
     import uuid
