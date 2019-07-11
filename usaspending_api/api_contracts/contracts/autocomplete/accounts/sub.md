@@ -33,18 +33,18 @@ This endpoint powers the USAspending.gov Sub Account Code (SUB) autocomplete in 
     + Body
 
             {
-              "results": [
-                "300",
-                "302",
-                "308"
-              ]
+                "results": [
+                    "300",
+                    "302",
+                    "308"
+                ]
             }
 
 # Data Structures
 
 ## ComponentFilters (object)
 
-Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will perform an exact match on account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided except in the case of sub where a partial match will be performed on the sub component starting with the provided value.
+Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will include account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided except in the case of sub where a partial match will be performed on the sub component starting with the provided value.
 
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.

@@ -41,7 +41,7 @@ This endpoint powers the USAspending.gov Availability Type Code (A) autocomplete
 
 ## ComponentFilters (object)
 
-Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will perform an exact match on account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided.
+Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will include account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided.
 
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.

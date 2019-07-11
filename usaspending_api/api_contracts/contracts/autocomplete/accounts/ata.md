@@ -36,30 +36,30 @@ This endpoint powers the USAspending.gov Allocation Transfer Agency Identifier (
     + Body
 
             {
-              "results": [
-                {
-                  "aid": "020",
-                  "agency_name": "Department of the Treasury",
-                  "agency_abbreviation": "TREAS"
-                },
-                {
-                  "aid": "021",
-                  "agency_name": "Department of the Army",
-                  "agency_abbreviation": null
-                },
-                {
-                  "aid": "023",
-                  "agency_name": "U.S. Tax Court",
-                  "agency_abbreviation": "USTAXCOURT"
-                }
-              ]
+                 "results": [
+                      {
+                          "aid": "020",
+                          "agency_name": "Department of the Treasury",
+                          "agency_abbreviation": "TREAS"
+                      },
+                      {
+                          "aid": "021",
+                          "agency_name": "Department of the Army",
+                          "agency_abbreviation": null
+                      },
+                      {
+                          "aid": "023",
+                          "agency_name": "U.S. Tax Court",
+                          "agency_abbreviation": "USTAXCOURT"
+                      }
+                 ]
             }
 
 # Data Structures
 
 ## ComponentFilters (object)
 
-Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will perform an exact match on account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided except in the case of ata where a partial match will be performed on the ata component starting with the provided value.
+Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will include account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided except in the case of ata where a partial match will be performed on the ata component starting with the provided value.
 
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier (3 characters). TAS only.
