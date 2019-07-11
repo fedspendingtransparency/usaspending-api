@@ -15,11 +15,13 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_u
         Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
-    recipient_hash = None
     if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):
         return None
-    elif recipient_unique_id:
+
+    if recipient_unique_id:
         recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
+    else:
+        recipient_hash = None
 
     if recipient_hash is None:
         recipient_hash = generate_missing_recipient_hash(recipient_unique_id, recipient_name)
