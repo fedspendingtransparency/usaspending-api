@@ -28,8 +28,7 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "women_owned_small_business": "Women Owned Small Business",
     "economically_disadvantaged_women_owned_small_business": "Economically Disadvantaged Women Owned Small Business",
     "joint_venture_women_owned_small_business": "Joint Venture Women Owned Small Business",
-    "joint_venture_economically_disadvantaged_women_owned_small_business":
-        "Joint Venture Economically Disadvantaged Women Owned Small Business",
+    "joint_venture_economically_disadvantaged_women_owned_small_business": "Joint Venture Economically Disadvantaged Women Owned Small Business",
     # Veteran Owned Business
     "veteran_owned_business": "Veteran Owned Business",
     "service_disabled_veteran_owned_business": "Service Disabled Veteran Owned Business",

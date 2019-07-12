@@ -50,8 +50,7 @@ award_contracts_mapping = {
     "Commercial Item Test Program": "latest_transaction__contract_data__commercial_item_test_progr",
     "Evaluated Preference": "latest_transaction__contract_data__evaluated_preference_desc",
     "FedBizOpps": "latest_transaction__contract_data__fed_biz_opps_description",
-    "Small Business Competitiveness Demonstration Program":
-        "latest_transaction__contract_data__small_business_competitive",
+    "Small Business Competitiveness Demonstration Program": "latest_transaction__contract_data__small_business_competitive",
     "PSC Code": "latest_transaction__contract_data__product_or_service_code",
     "NAICS Code": "latest_transaction__contract_data__naics",
     "NAICS Description": "latest_transaction__contract_data__naics_description",
@@ -70,8 +69,7 @@ award_contracts_mapping = {
     "Interagency Contracting Authority": "latest_transaction__contract_data__interagency_contract_desc",
     "Major program": "latest_transaction__contract_data__major_program",
     "Multi Year Contract": "latest_transaction__contract_data__multi_year_contract",
-    "Price Evaluation Adjustment Preference Percent Difference":
-        "latest_transaction__contract_data__price_evaluation_adjustmen",
+    "Price Evaluation Adjustment Preference Percent Difference": "latest_transaction__contract_data__price_evaluation_adjustmen",
     "Program Acronym": "latest_transaction__contract_data__program_acronym",
     "Purchase Card as Payment Method": "latest_transaction__contract_data__purchase_card_as_payment_m",
     "Subcontracting Plan": "latest_transaction__contract_data__subcontracting_plan_desc",
