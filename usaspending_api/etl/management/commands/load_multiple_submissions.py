@@ -26,7 +26,7 @@ class Command(BaseCommand):
             broker_cursor = broker_conn.cursor()
             api_conn = connections['default']
             api_cursor = api_conn.cursor()
-        except Exception as err:
+        except Exception as err:  # NOQA
             logger.critical('Could not connect to database(s).')
             logger.critical(err)
             return
@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
                 if certify_date > most_recently_loaded_date:
                     missing_submissions.append((submission_id, agency_name, certify_date, most_recently_loaded_date))
-            except Exception as error:
+            except Exception as error:  # NOQA
                 logger.debug("Submission {} failed in pull from broker: {}".format(submission_id, error))
                 failed_submissions.append(submission_id)
         logger.info("Total missing submissions: {}".format(len(missing_submissions)))
