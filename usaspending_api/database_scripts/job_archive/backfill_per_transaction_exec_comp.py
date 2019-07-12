@@ -92,15 +92,15 @@ SPENDING_FABS_UPDATE_SQL = """
 update
     transaction_fabs as fabs set
         officer_1_name = broker.high_comp_officer1_full_na,
-        officer_1_amount = cast(broker.high_comp_officer1_amount as double precision),
+        officer_1_amount = cast(broker.high_comp_officer1_amount as numeric),
         officer_2_name = broker.high_comp_officer2_full_na,
-        officer_2_amount = cast(broker.high_comp_officer2_amount as double precision),
+        officer_2_amount = cast(broker.high_comp_officer2_amount as numeric),
         officer_3_name = broker.high_comp_officer3_full_na,
-        officer_3_amount = cast(broker.high_comp_officer3_amount as double precision),
+        officer_3_amount = cast(broker.high_comp_officer3_amount as numeric),
         officer_4_name = broker.high_comp_officer4_full_na,
-        officer_4_amount = cast(broker.high_comp_officer4_amount as double precision),
+        officer_4_amount = cast(broker.high_comp_officer4_amount as numeric),
         officer_5_name = broker.high_comp_officer5_full_na,
-        officer_5_amount = cast(broker.high_comp_officer5_amount as double precision)
+        officer_5_amount = cast(broker.high_comp_officer5_amount as numeric)
 from
     (values {}) as broker(
         published_award_financial_assistance_id,
@@ -123,15 +123,15 @@ SPENDING_FPDS_UPDATE_SQL = """
 update
     transaction_fpds as fpds set
         officer_1_name = broker.high_comp_officer1_full_na,
-        officer_1_amount = cast(broker.high_comp_officer1_amount as double precision),
+        officer_1_amount = cast(broker.high_comp_officer1_amount as numeric),
         officer_2_name = broker.high_comp_officer2_full_na,
-        officer_2_amount = cast(broker.high_comp_officer2_amount as double precision),
+        officer_2_amount = cast(broker.high_comp_officer2_amount as numeric),
         officer_3_name = broker.high_comp_officer3_full_na,
-        officer_3_amount = cast(broker.high_comp_officer3_amount as double precision),
+        officer_3_amount = cast(broker.high_comp_officer3_amount as numeric),
         officer_4_name = broker.high_comp_officer4_full_na,
-        officer_4_amount = cast(broker.high_comp_officer4_amount as double precision),
+        officer_4_amount = cast(broker.high_comp_officer4_amount as numeric),
         officer_5_name = broker.high_comp_officer5_full_na,
-        officer_5_amount = cast(broker.high_comp_officer5_amount as double precision)
+        officer_5_amount = cast(broker.high_comp_officer5_amount as numeric)
 from
     (values {}) as broker(
         detached_award_procurement_id,
@@ -278,6 +278,7 @@ with Timer() as overall_timer:
                     fabs_row_count += updated_row_count
                 else:
                     print_no_rows_to_update("FABS")
+                # Move to next chunk
                 _min = _max + 1
 
         print(
@@ -309,6 +310,7 @@ with Timer() as overall_timer:
                     fpds_row_count += updated_row_count
                 else:
                     print_no_rows_to_update("FPDS")
+                # Move to next chunk
                 _min = _max + 1
 
         print(
