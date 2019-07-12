@@ -14,14 +14,14 @@ from usaspending_api.common.views import APIDocumentationView
 
 
 SORTABLE_COLUMNS = {
-    'federal_account': 'federal_account',
-    'total_transaction_obligated_amount': 'total_transaction_obligated_amount',
-    'agency': 'funding_agency_name',
-    'account_title': 'fa.account_title'
+    "federal_account": "federal_account",
+    "total_transaction_obligated_amount": "total_transaction_obligated_amount",
+    "agency": "funding_agency_name",
+    "account_title": "fa.account_title",
 }
 
 
-DEFAULT_SORT_COLUMN = 'federal_account'
+DEFAULT_SORT_COLUMN = "federal_account"
 
 
 # As per direction from the product owner, agency data is to be retrieved from
@@ -33,7 +33,8 @@ DEFAULT_SORT_COLUMN = 'federal_account'
 # toptier agency, apparently the topter name and subtier names have to match and,
 # even then, there can be more than one match... or no match in the three cases
 # where agencies don't have subtiers.
-ACCOUNTS_SQL = SQL("""
+ACCOUNTS_SQL = SQL(
+    """
     with gather_award_ids as (
         select  award_id
         from    parent_award
@@ -104,7 +105,8 @@ ACCOUNTS_SQL = SQL("""
         afmap.agency_id_for_toptier
     order by
         {order_by} {order_direction}
-""")
+"""
+)
 
 
 TINYSHIELD_MODELS = customize_pagination_with_sort_columns(list(SORTABLE_COLUMNS.keys()), DEFAULT_SORT_COLUMN)
@@ -113,20 +115,19 @@ TINYSHIELD_MODELS.append(get_internal_or_generated_award_id_model())
 
 @validate_post_request(TINYSHIELD_MODELS)
 class IDVAccountsViewSet(APIDocumentationView):
-
     @staticmethod
     def _business_logic(request_data: dict) -> list:
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
-        award_id = request_data['award_id']
-        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+        award_id = request_data["award_id"]
+        award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = ACCOUNTS_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
-            order_by=SQL(SORTABLE_COLUMNS[request_data['sort']]),
-            order_direction=SQL(request_data['order'])
+            order_by=SQL(SORTABLE_COLUMNS[request_data["sort"]]),
+            order_direction=SQL(request_data["order"]),
         )
 
         return execute_sql_to_ordered_dictionary(sql)
@@ -134,10 +135,7 @@ class IDVAccountsViewSet(APIDocumentationView):
     @cache_response()
     def post(self, request: Request) -> Response:
         results = self._business_logic(request.data)
-        paginated_results, page_metadata = get_pagination(results, request.data['limit'], request.data['page'])
-        response = OrderedDict((
-            ('results', paginated_results),
-            ('page_metadata', page_metadata)
-        ))
+        paginated_results, page_metadata = get_pagination(results, request.data["limit"], request.data["page"])
+        response = OrderedDict((("results", paginated_results), ("page_metadata", page_metadata)))
 
         return Response(response)

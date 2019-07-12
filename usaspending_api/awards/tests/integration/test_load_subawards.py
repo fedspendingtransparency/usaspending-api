@@ -16,7 +16,7 @@ def cursor_fixture(db, monkeypatch):
     original_execute_sql = Command._execute_sql
 
     def _execute_sql(self, sql):
-        if 'dblink' not in sql and 'broker_server' not in sql:
+        if "dblink" not in sql and "broker_server" not in sql:
             original_execute_sql(self, sql)
         else:
             BrokerSubaward.objects.all().delete()
@@ -25,11 +25,11 @@ def cursor_fixture(db, monkeypatch):
             for record in records:
                 BrokerSubaward.objects.create(**record)
 
-    monkeypatch.setattr('usaspending_api.awards.management.commands.load_subawards.Command._execute_sql', _execute_sql)
+    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute_sql", _execute_sql)
 
 
 def test_defaults(cursor_fixture):
-    call_command('load_subawards')
+    call_command("load_subawards")
     assert BrokerSubaward.objects.all().count() == 4
     assert Subaward.objects.all().count() == 4
 
@@ -118,12 +118,12 @@ def test_defaults(cursor_fixture):
 
 
 def test_full(cursor_fixture):
-    call_command('load_subawards', '--full-reload')
+    call_command("load_subawards", "--full-reload")
     assert BrokerSubaward.objects.all().count() == 4
     assert Subaward.objects.all().count() == 4
 
 
 def test_sql_logging(cursor_fixture):
-    call_command('load_subawards', '--sql')
+    call_command("load_subawards", "--sql")
     assert BrokerSubaward.objects.all().count() == 4
     assert Subaward.objects.all().count() == 4

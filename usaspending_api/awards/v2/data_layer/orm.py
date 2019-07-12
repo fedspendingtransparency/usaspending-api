@@ -11,7 +11,11 @@ from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_ASSISTANCE_FIELDS,
 )
 from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
+    Award,
+    FinancialAccountsByAwards,
+    TransactionFABS,
+    TransactionFPDS,
+    ParentAward,
 )
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
@@ -161,7 +165,8 @@ def create_recipient_object(db_row_dict):
     return OrderedDict(
         [
             (
-                "recipient_hash", obtain_recipient_uri(
+                "recipient_hash",
+                obtain_recipient_uri(
                     db_row_dict["_recipient_name"],
                     db_row_dict["_recipient_unique_id"],
                     db_row_dict["_parent_recipient_unique_id"],
@@ -170,19 +175,19 @@ def create_recipient_object(db_row_dict):
             ("recipient_name", db_row_dict["_recipient_name"]),
             ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
             (
-                "parent_recipient_hash", obtain_recipient_uri(
+                "parent_recipient_hash",
+                obtain_recipient_uri(
                     db_row_dict["_parent_recipient_name"],
                     db_row_dict["_parent_recipient_unique_id"],
-                    None,                                           # parent_recipient_unique_id
-                    True                                            # is_parent_recipient
-                )
+                    None,  # parent_recipient_unique_id
+                    True,  # is_parent_recipient
+                ),
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             (
-                "business_categories", get_business_category_display_names(
-                    fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])
-                )
+                "business_categories",
+                get_business_category_display_names(fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
             ),
             (
                 "location",
@@ -236,10 +241,7 @@ def create_officers_object(db_row_dict):
         officer_name = db_row_dict.get(officer_name_key)
         officer_amount = db_row_dict.get(officer_amount_key)
         if officer_name or officer_amount:
-            officers.append({
-                "name": officer_name,
-                "amount": officer_amount
-            })
+            officers.append({"name": officer_name, "amount": officer_amount})
     return {"officers": officers}
 
 
@@ -273,8 +275,11 @@ def fetch_parent_award_details(guai):
     if not parent_award:
         logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
         return None
-    parent_agency = SubtierAgency.objects.filter(
-        subtier_code=parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
+    parent_agency = (
+        SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
+        .values("name")
+        .first()
+    )
 
     parent_object = OrderedDict(
         [
@@ -350,9 +355,8 @@ def fetch_cfda_details_using_cfda_number(cfda):
 
 
 def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id):
-    _sum = (
-        FinancialAccountsByAwards.objects.filter(award_id=internal_award_id)
-        .aggregate(Sum("transaction_obligated_amount"))
+    _sum = FinancialAccountsByAwards.objects.filter(award_id=internal_award_id).aggregate(
+        Sum("transaction_obligated_amount")
     )
     if _sum:
         return _sum.get("transaction_obligated_amount__sum")

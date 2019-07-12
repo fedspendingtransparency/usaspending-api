@@ -5,11 +5,10 @@ from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data
 from usaspending_api.awards.v2.views.idvs.accounts import SORTABLE_COLUMNS
 
 
-FEDERAL_ACCOUNT_ENDPOINT = '/api/v2/awards/idvs/accounts/'
+FEDERAL_ACCOUNT_ENDPOINT = "/api/v2/awards/idvs/accounts/"
 
 
 class IDVAccountsTestCase(TestCase):
-
     @classmethod
     def setUp(cls):
         create_idv_test_data()
@@ -30,39 +29,24 @@ class IDVAccountsTestCase(TestCase):
 
     def test_complete_queries(self):
         for _id in range(1, AWARD_COUNT + 1):
-            self._test_post(
-                {'award_id': _id}
-            )
+            self._test_post({"award_id": _id})
 
     def test_with_nonexistent_id(self):
 
-        self._test_post(
-            {'award_id': 0},
-        )
+        self._test_post({"award_id": 0})
 
-        self._test_post(
-            {'award_id': 'GENERATED_UNIQUE_AWARD_ID_000'},
-        )
+        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"})
 
     def test_with_bogus_id(self):
 
-        self._test_post(
-            {'award_id': None},
-        )
+        self._test_post({"award_id": None})
 
     def test_sort_columns(self):
 
         for sortable_column in SORTABLE_COLUMNS:
 
-            self._test_post(
-                {'award_id': 2, 'order': 'desc', 'sort': sortable_column}
-            )
+            self._test_post({"award_id": 2, "order": "desc", "sort": sortable_column})
 
-            self._test_post(
-                {'award_id': 2, 'order': 'asc', 'sort': sortable_column}
-            )
+            self._test_post({"award_id": 2, "order": "asc", "sort": sortable_column})
 
-        self._test_post(
-            {'award_id': 2, 'sort': 'BOGUS FIELD'},
-            expected_status_code=status.HTTP_400_BAD_REQUEST
-        )
+        self._test_post({"award_id": 2, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)

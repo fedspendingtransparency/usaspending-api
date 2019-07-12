@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
 
 UPPERCASE_UPDATES = {
-    'transaction_fabs': """
+    "transaction_fabs": """
         UPDATE transaction_fabs
         SET award_description = UPPER(award_description),
             awardee_or_recipient_legal = UPPER(awardee_or_recipient_legal),
@@ -61,7 +61,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(place_of_performance_zip5) != place_of_performance_zip5
                 OR UPPER(place_of_perform_zip_last4) != place_of_perform_zip_last4);
         """,
-    'transaction_fpds': """
+    "transaction_fpds": """
         UPDATE transaction_fpds
         SET detached_award_proc_unique = UPPER(detached_award_proc_unique),
             awarding_agency_name = UPPER(awarding_agency_name),
@@ -96,7 +96,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(program_acronym) != program_acronym
                 OR UPPER(pulled_from) != pulled_from);
         """,
-    'transaction_normalized': """
+    "transaction_normalized": """
         UPDATE transaction_normalized
         SET transaction_unique_id = UPPER(transaction_unique_id),
             description = UPPER(description)
@@ -105,7 +105,7 @@ UPPERCASE_UPDATES = {
             AND (UPPER(transaction_unique_id) != transaction_unique_id
                 OR UPPER(description) != description);
         """,
-    'references_location': """
+    "references_location": """
         UPDATE references_location
         SET transaction_unique_id = UPPER(transaction_unique_id),
             foreign_city_name = UPPER(foreign_city_name),
@@ -134,7 +134,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(congressional_code) != congressional_code
                 OR UPPER(zip4) != zip4);
         """,
-    'legal_entity': """
+    "legal_entity": """
         UPDATE legal_entity
         SET transaction_unique_id = UPPER(transaction_unique_id),
             recipient_name = UPPER(recipient_name),
@@ -147,7 +147,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(business_types) != business_types
                 OR UPPER(vendor_fax_number) != vendor_fax_number);
         """,
-    'awards': """
+    "awards": """
         UPDATE awards
         SET transaction_unique_id = UPPER(transaction_unique_id),
             generated_unique_award_id = UPPER(generated_unique_award_id),
@@ -165,4 +165,5 @@ UPPERCASE_UPDATES = {
                 OR UPPER(uri) != uri
                 OR UPPER(fain) != fain
                 OR UPPER(description) != description);
-        """}
+        """,
+}

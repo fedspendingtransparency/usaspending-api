@@ -14,7 +14,7 @@ legal_dates = {
     dt.date(2017, 10, 2): 2018,
 }
 
-not_dates = (0, 2017.2, 'forthwith')
+not_dates = (0, 2017.2, "forthwith")
 
 
 def test_pagination():
@@ -48,8 +48,10 @@ def test_pagination():
     populated_page_metadata = {"previous": 1, "hasPrevious": True, "count": 5, "page": 2}
     assert get_pagination(results, 5, 2) == ([], {**empty_page_metadata, **populated_page_metadata})
     populated_page_metadata = {"page": 1, "count": 5}
-    assert get_pagination(results, 1000, 1) == (["A", "B", "C", "D", "E"],
-                                                {**empty_page_metadata, **populated_page_metadata})
+    assert get_pagination(results, 1000, 1) == (
+        ["A", "B", "C", "D", "E"],
+        {**empty_page_metadata, **populated_page_metadata},
+    )
     populated_page_metadata = {"previous": 1, "hasPrevious": True, "page": 2, "count": 5}
     assert get_pagination(results, 1000, 2) == ([], {**empty_page_metadata, **populated_page_metadata})
     populated_page_metadata = {"page": 1, "count": 5}
@@ -78,24 +80,24 @@ def test_timer(capsys):
     """Verify that timer helper executes without error"""
 
     with timer():
-        print('Doing a thing')
+        print("Doing a thing")
     output = capsys.readouterr()[0]
-    assert 'Beginning' in output
-    assert 'finished' in output
+    assert "Beginning" in output
+    assert "finished" in output
 
 
 def test_timer_times(capsys):
     """Verify that timer shows longer times for slower operations"""
 
-    pattern = re.compile(r'([\d\.e\-]+)s')
+    pattern = re.compile(r"([\d\.e\-]+)s")
 
     with timer():
-        print('Doing a thing')
+        print("Doing a thing")
     output0 = capsys.readouterr()[0]
     time0 = float(pattern.search(output0).group(1))
 
     with timer():
-        print('Doing a slower thing')
+        print("Doing a slower thing")
         time.sleep(0.1)
     output1 = capsys.readouterr()[0]
     time1 = float(pattern.search(output1).group(1))

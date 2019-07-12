@@ -9,15 +9,14 @@ from usaspending_api import settings
 
 VALID_SCHEMES = ("http", "https", "s3", "file", "")
 SCHEMA_HELP_TEXT = (
-    "Internet RFC on Relative Uniform Resource Locators " +
-    "Format: scheme://netloc/path;parameters?query#fragment " +
-    "List of supported schemes: " +
-    ", ".join(["{}://".format(s) for s in VALID_SCHEMES if s])
+    "Internet RFC on Relative Uniform Resource Locators "
+    + "Format: scheme://netloc/path;parameters?query#fragment "
+    + "List of supported schemes: "
+    + ", ".join(["{}://".format(s) for s in VALID_SCHEMES if s])
 )
 
 
 class RetrieveFileFromUri:
-
     def __init__(self, ruri):
         self.ruri = ruri  # Relative Uniform Resource Locator
         self.parsed_url_obj = urllib.parse.urlparse(ruri)

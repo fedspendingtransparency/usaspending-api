@@ -13,15 +13,11 @@ def mock_limitable_data():
 
 @pytest.mark.django_db
 def test_nested_field_limiting(client, mock_limitable_data):
-    request_object = {
-        "fields": ["piid", "recipient__recipient_name"]
-    }
+    request_object = {"fields": ["piid", "recipient__recipient_name"]}
 
     response = client.post(
-        "/api/v1/awards/",
-        content_type='application/json',
-        data=json.dumps(request_object),
-        format='json')
+        "/api/v1/awards/", content_type="application/json", data=json.dumps(request_object), format="json"
+    )
 
     results = response.data["results"][0]
 
@@ -32,15 +28,11 @@ def test_nested_field_limiting(client, mock_limitable_data):
 
 @pytest.mark.django_db
 def test_nested_field_exclusion(client, mock_limitable_data):
-    request_object = {
-        "exclude": ["piid", "recipient__recipient_name"]
-    }
+    request_object = {"exclude": ["piid", "recipient__recipient_name"]}
 
     response = client.post(
-        "/api/v1/awards/",
-        content_type='application/json',
-        data=json.dumps(request_object),
-        format='json')
+        "/api/v1/awards/", content_type="application/json", data=json.dumps(request_object), format="json"
+    )
 
     results = response.data["results"][0]
 

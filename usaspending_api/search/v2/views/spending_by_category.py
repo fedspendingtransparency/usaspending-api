@@ -189,7 +189,7 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
             row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "awarding_subagency")
@@ -211,7 +211,7 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
@@ -236,7 +236,7 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         for row in query_results:
             row["recipient_id"] = None
             if not self.subawards:
@@ -277,7 +277,7 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
@@ -310,7 +310,7 @@ class BusinessLogic:
         self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
@@ -344,7 +344,7 @@ class BusinessLogic:
         self.queryset = self.common_db_query(filters, values)
 
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit:self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         return alias_response(ALIAS_DICT[self.category], query_results)
 
 

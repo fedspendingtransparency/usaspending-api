@@ -15,7 +15,7 @@ class CsvDataReader(object):
 
     def __iter__(self):
         self._length = 0
-        with open(self.path, 'rU', encoding='utf8') as data:
+        with open(self.path, "rU", encoding="utf8") as data:
             reader = csv.DictReader(data)
             for row in reader:
                 # Save the statistics

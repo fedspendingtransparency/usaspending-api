@@ -11,7 +11,7 @@ class JobStatus(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'job_status'
+        db_table = "job_status"
 
 
 class DownloadJob(models.Model):
@@ -29,10 +29,10 @@ class DownloadJob(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'download_job'
+        db_table = "download_job"
 
     def seconds_elapsed(self):
-        if self.job_status.name == 'running':
+        if self.job_status.name == "running":
             return timezone.now() - self.create_date
-        elif self.job_status.name in ('finished', 'failed'):
+        elif self.job_status.name in ("finished", "failed"):
             return self.update_date - self.create_date

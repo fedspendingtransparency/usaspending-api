@@ -22,8 +22,8 @@ from os import environ
 
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
-SPENDING_CONNECTION_STRING = environ['DATABASE_URL']
-BROKER_CONNECTION_STRING = environ['DATA_BROKER_DATABASE_URL']
+SPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
+BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
 
 
 BROKER_FABS_SELECT_SQL = """
@@ -168,7 +168,6 @@ CHUNK_SIZE = 50000
 
 
 class Timer:
-
     def __enter__(self):
         self.start = time.perf_counter()
         return self
@@ -189,7 +188,7 @@ class Timer:
         f, s = math.modf(elapsed)
         m, s = divmod(s, 60)
         h, m = divmod(m, 60)
-        return "%d:%02d:%02d.%04d" % (h, m, s, f*10000)
+        return "%d:%02d:%02d.%04d" % (h, m, s, f * 10000)
 
 
 def build_spending_update_query(query_base, update_data):
@@ -210,20 +209,16 @@ def determine_progress():
 def print_no_rows_to_update(transaction_type):
     progress = determine_progress()
     print(
-        "[{} - {:.2%}] {:,} => {:,}: No rows to update with an estimated remaining run time of {}"
-        .format(
+        "[{} - {:.2%}] {:,} => {:,}: No rows to update with an estimated remaining run time of {}".format(
             transaction_type, progress, _min, _max, chunk_timer.estimated_remaining_runtime(progress)
         ),
-        flush=True
+        flush=True,
     )
 
 
 def run_broker_select_query(transaction_sql):
     with broker_connection.cursor() as select_cursor:
-        query_parameters = {
-            "min_id": _min,
-            "max_id": _max
-        }
+        query_parameters = {"min_id": _min, "max_id": _max}
         select_cursor.execute(transaction_sql, query_parameters)
         return select_cursor.fetchall()
 
@@ -232,26 +227,28 @@ def run_spending_update_query(transaction_sql, transaction_type, broker_data):
     with spending_connection.cursor() as update_cursor:
         update_query = build_spending_update_query(transaction_sql, broker_data)
         with Timer() as t:
-            update_cursor.execute(
-                update_query,
-                [col for row in broker_data for col in row]
-            )
+            update_cursor.execute(update_query, [col for row in broker_data for col in row])
         row_count = update_cursor.rowcount
         progress = determine_progress()
         print(
-            "[{} - {:.2%}] {:,} => {:,}: {:,} rows updated in {} with an estimated remaining run time of {}"
-            .format(
-                transaction_type, progress, _min, _max, row_count, t.elapsed_as_string,
-                chunk_timer.estimated_remaining_runtime(progress)
+            "[{} - {:.2%}] {:,} => {:,}: {:,} rows updated in {} with an estimated remaining run time of {}".format(
+                transaction_type,
+                progress,
+                _min,
+                _max,
+                row_count,
+                t.elapsed_as_string,
+                chunk_timer.estimated_remaining_runtime(progress),
             ),
-            flush=True
+            flush=True,
         )
         return row_count
 
 
 with Timer() as overall_timer:
-    with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, \
-            psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection:
+    with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, psycopg2.connect(
+        dsn=BROKER_CONNECTION_STRING
+    ) as broker_connection:
         spending_connection.autocommit = True
 
         print("Running FABS backfill from Broker to USAspending")
@@ -282,8 +279,9 @@ with Timer() as overall_timer:
                 _min = _max + 1
 
         print(
-            "Finished running FABS backfill. Took {} to update {:,} rows"
-            .format(chunk_timer.elapsed_as_string, fabs_row_count)
+            "Finished running FABS backfill. Took {} to update {:,} rows".format(
+                chunk_timer.elapsed_as_string, fabs_row_count
+            )
         )
 
         print("Running FPDS backfill from Broker to USAspending")
@@ -314,11 +312,13 @@ with Timer() as overall_timer:
                 _min = _max + 1
 
         print(
-            "Finished running FPDS backfill. Took {} to update {:,} rows"
-            .format(chunk_timer.elapsed_as_string, fpds_row_count)
+            "Finished running FPDS backfill. Took {} to update {:,} rows".format(
+                chunk_timer.elapsed_as_string, fpds_row_count
+            )
         )
 
 print(
-    "Finished. Overall run time to update {:,} rows: {}"
-    .format(fabs_row_count + fpds_row_count, overall_timer.elapsed_as_string)
+    "Finished. Overall run time to update {:,} rows: {}".format(
+        fabs_row_count + fpds_row_count, overall_timer.elapsed_as_string
+    )
 )

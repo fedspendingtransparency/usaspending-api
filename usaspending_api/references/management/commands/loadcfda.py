@@ -14,10 +14,7 @@ from usaspending_api.references.models import Cfda
 
 
 logger = logging.getLogger("console")
-Reporter = OpsReporter(
-    iso_start_datetime=datetime.now(timezone.utc).isoformat(),
-    job_name="loadcfda.py",
-)
+Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="loadcfda.py")
 
 
 DATA_CLEANING_MAP = {

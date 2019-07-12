@@ -11,7 +11,6 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "manufacturer_of_goods": "Manufacturer of Goods",
     "subchapter_s_corporation": "Subchapter S Corporation",
     "limited_liability_corporation": "Limited Liability Corporation",
-
     # Minority Owned Business
     "minority_owned_business": "Minority Owned Business",
     "alaskan_native_owned_business": "Alaskan Native Corporation Owned Firm",
@@ -24,19 +23,15 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "subcontinent_asian_indian_american_owned_business": "Indian (Subcontinent) American Owned Business",
     "tribally_owned_business": "Tribally Owned Business",
     "other_minority_owned_business": "Other Minority Owned Business",
-
     # Women Owned Business
     "woman_owned_business": "Woman Owned Business",
     "women_owned_small_business": "Women Owned Small Business",
     "economically_disadvantaged_women_owned_small_business": "Economically Disadvantaged Women Owned Small Business",
     "joint_venture_women_owned_small_business": "Joint Venture Women Owned Small Business",
-    "joint_venture_economically_disadvantaged_women_owned_small_business":
-        "Joint Venture Economically Disadvantaged Women Owned Small Business",
-
+    "joint_venture_economically_disadvantaged_women_owned_small_business": "Joint Venture Economically Disadvantaged Women Owned Small Business",
     # Veteran Owned Business
     "veteran_owned_business": "Veteran Owned Business",
     "service_disabled_veteran_owned_business": "Service Disabled Veteran Owned Business",
-
     # Special Designations
     "special_designations": "Special Designations",
     "8a_program_participant": "8(a) Program Participant",
@@ -59,12 +54,10 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "domestic_shelter": "Domestic Shelter",
     "hospital": "Hospital",
     "veterinary_hospital": "Veterinary Hospital",
-
     # Nonprofit
     "nonprofit": "Nonprofit Organization",
     "foundation": "Foundation",
     "community_development_corporations": "Community Development Corporation",
-
     # Higher education
     "higher_education": "Higher Education",
     "public_institution_of_higher_education": "Higher Education (Public)",
@@ -73,7 +66,6 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "educational_institution": "Educational Institution",
     "school_of_forestry": "School of Forestry",
     "veterinary_college": "Veterinary College",
-
     # Government
     "government": "Government",
     "national_government": "U.S. National Government",
@@ -85,9 +77,8 @@ BUSINESS_CATEGORIES_LOOKUP_DICT = {
     "indian_native_american_tribal_government": "Native American Tribal Government",
     "authorities_and_commissions": "U.S. Government Authorities",
     "council_of_governments": "Council of Governments",
-
     # Individuals
-    "individuals": "Individuals"
+    "individuals": "Individuals",
 }
 
 

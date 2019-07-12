@@ -12,7 +12,7 @@ logger = logging.getLogger("console")
 
 @transaction.atomic
 def delete_stale_fabs(ids_to_delete):
-    logger.info('Starting deletion of stale FABS data')
+    logger.info("Starting deletion of stale FABS data")
 
     if not ids_to_delete:
         return []
@@ -20,9 +20,9 @@ def delete_stale_fabs(ids_to_delete):
     transactions = TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete)
     update_award_ids, delete_award_ids = find_related_awards(transactions)
 
-    delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
-    delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
-    delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
+    delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list("id")]
+    delete_transaction_str_ids = ",".join([str(deleted_result) for deleted_result in delete_transaction_ids])
+    delete_award_str_ids = ",".join([str(deleted_result) for deleted_result in delete_award_ids])
 
     queries = []
     # Transaction FABS
@@ -40,8 +40,8 @@ def delete_stale_fabs(ids_to_delete):
         queries.extend([faba.format(delete_award_str_ids), sub, delete_awards_query])
 
     if queries:
-        db_query = ''.join(queries)
-        db_cursor = connections['default'].cursor()
+        db_query = "".join(queries)
+        db_cursor = connections["default"].cursor()
         db_cursor.execute(db_query, [])
 
     # Update Awards

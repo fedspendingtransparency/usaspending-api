@@ -10,7 +10,7 @@ from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 def build_dsn_string(db_settings):
@@ -42,15 +42,15 @@ def read_sql_file(file_path):
     # Read in SQL file and extract commands into a list
     _, file_extension = os.path.splitext(file_path)
 
-    if file_extension != '.sql':
+    if file_extension != ".sql":
         raise InvalidParameterException("Invalid file provided. A file with extension '.sql' is required.")
 
     # Open and read the file as a single buffer
-    with open(file_path, 'r') as fd:
+    with open(file_path, "r") as fd:
         sql_file = fd.read()
 
     # all SQL commands (split on ';') and trimmed for whitespaces
-    return [command.strip() for command in sql_file.split(';') if command]
+    return [command.strip() for command in sql_file.split(";") if command]
 
 
 def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
@@ -69,22 +69,22 @@ def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
     Returns a string with the freshly built order by.
     """
     if type(sort_column) is not str:
-        raise ValueError('Provided sort_column is not a string')
+        raise ValueError("Provided sort_column is not a string")
 
     # Split to handle column qualifiers (awards.id => "awards"."id").
-    bits = [SQL('.').join([Identifier(c) for c in sort_column.split('.')])]
+    bits = [SQL(".").join([Identifier(c) for c in sort_column.split(".")])]
 
     if sort_order is not None:
-        if sort_order not in ('asc', 'desc'):
+        if sort_order not in ("asc", "desc"):
             raise ValueError('sort_order must be either "asc" or "desc"')
         bits.append(SQL(sort_order))
 
     if sort_null is not None:
-        if sort_null not in ('first', 'last'):
+        if sort_null not in ("first", "last"):
             raise ValueError('sort_null must be either "first" or "last"')
-        bits.append(SQL('nulls %s' % sort_null))
+        bits.append(SQL("nulls %s" % sort_null))
 
-    return SQL(' ').join(bits)
+    return SQL(" ").join(bits)
 
 
 def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
@@ -116,7 +116,7 @@ def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
     """
     # Shortcut everything if there's nothing to do.
     if not sort_columns:
-        return SQL('')
+        return SQL("")
 
     # To simplify processing, make all of our parameters iterables of the same length.
     if type(sort_columns) is str:
@@ -132,19 +132,19 @@ def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
 
     if len(sort_orders) != column_count:
         raise ValueError(
-            'Number of sort_orders (%s) does not match number of sort_columns (%s)' % (len(sort_orders), column_count)
+            "Number of sort_orders (%s) does not match number of sort_columns (%s)" % (len(sort_orders), column_count)
         )
 
     if len(sort_nulls) != column_count:
         raise ValueError(
-            'Number of sort_nulls (%s) does not match number of sort_columns (%s)' % (len(sort_nulls), column_count)
+            "Number of sort_nulls (%s) does not match number of sort_columns (%s)" % (len(sort_nulls), column_count)
         )
 
     order_bys = []
     for column, order, null in zip(sort_columns, sort_orders, sort_nulls):
         order_bys.append(_build_order_by_column(column, order, null))
 
-    return SQL('order by ') + SQL(', ').join(order_bys)
+    return SQL("order by ") + SQL(", ").join(order_bys)
 
 
 def convert_composable_query_to_string(sql, model=Award, cursor=None):

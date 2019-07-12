@@ -206,10 +206,7 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5",
         }
 
-        fpds_normalized_field_map = {
-            "type": "contract_award_type",
-            "description": "award_description"
-        }
+        fpds_normalized_field_map = {"type": "contract_award_type", "description": "award_description"}
 
         fpds_field_map = {
             "officer_1_name": "high_comp_officer1_full_na",
@@ -221,7 +218,7 @@ class Command(BaseCommand):
             "officer_4_name": "high_comp_officer4_full_na",
             "officer_4_amount": "high_comp_officer4_amount",
             "officer_5_name": "high_comp_officer5_full_na",
-            "officer_5_amount": "high_comp_officer5_amount"
+            "officer_5_amount": "high_comp_officer5_amount",
         }
 
         for index, row in enumerate(to_insert, 1):
@@ -253,8 +250,7 @@ class Command(BaseCommand):
 
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(
-                generated_unique_award_id=row["unique_award_key"],
-                piid=row["piid"],
+                generated_unique_award_id=row["unique_award_key"], piid=row["piid"]
             )
             award.parent_award_piid = row.get("parent_award_id")
             award.save()
@@ -301,10 +297,7 @@ class Command(BaseCommand):
             )
 
             contract_instance = load_data_into_model(
-                TransactionFPDS(),  # thrown away
-                row,
-                field_map=fpds_field_map,
-                as_dict=True
+                TransactionFPDS(), row, field_map=fpds_field_map, as_dict=True  # thrown away
             )
 
             detached_award_proc_unique = contract_instance["detached_award_proc_unique"]
@@ -385,10 +378,7 @@ class Command(BaseCommand):
         with timer("retrieval of deleted FPDS IDs", logger.info):
             ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
 
-        self.perform_load(
-            ids_to_delete,
-            ids_to_insert,
-        )
+        self.perform_load(ids_to_delete, ids_to_insert)
 
         # Update the date for the last time the data load was run
         update_last_load_date("fpds", processing_start_datetime)
@@ -398,10 +388,7 @@ class Command(BaseCommand):
     def load_specific_transactions(self, detached_award_procurement_ids):
         logger.info("==== Starting FPDS (re)load of specific transactions ====")
 
-        self.perform_load(
-            detached_award_procurement_ids,
-            detached_award_procurement_ids,
-        )
+        self.perform_load(detached_award_procurement_ids, detached_award_procurement_ids)
 
         logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
 
@@ -424,7 +411,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if options['detached_award_procurement_ids'] is not None:
-            self.load_specific_transactions(options['detached_award_procurement_ids'])
+        if options["detached_award_procurement_ids"] is not None:
+            self.load_specific_transactions(options["detached_award_procurement_ids"])
         else:
-            self.nightly_loader(options['date'])
+            self.nightly_loader(options["date"])

@@ -9,7 +9,6 @@ ENDPOINT = "/api/v2/awards/idvs/activity/"
 
 
 class IDVAwardsTestCase(TestCase):
-
     @classmethod
     def setUpTestData(cls):
         create_idv_test_data()
@@ -29,23 +28,25 @@ class IDVAwardsTestCase(TestCase):
             string_award_id = str(award_id).zfill(3)
             parent_award_id = PARENTS.get(award_id)
             string_parent_award_id = str(parent_award_id).zfill(3)
-            results.append({
-                "award_id": award_id,
-                "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
-                "awarding_agency_id": 8000 + award_id,
-                "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
-                "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
-                "parent_award_id": parent_award_id,
-                "parent_generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_parent_award_id,
-                "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
-                "obligated_amount": 100000.0 + award_id,
-                "awarded_amount": 500000.0 + award_id,
-                "period_of_performance_start_date": "2018-02-%02d" % award_id,
-                "piid": "piid_%s" % string_award_id,
-                "recipient_name": "recipient_name_%s" % (7000 + award_id),
-                "recipient_id": "%s%s-%s" % (RECIPIENT_HASH_PREFIX, 7000 + award_id, 'R'),
-                "grandchild": award_id in (11, 12, 13, 14),  # based on picture in idv_test_data
-            })
+            results.append(
+                {
+                    "award_id": award_id,
+                    "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
+                    "awarding_agency_id": 8000 + award_id,
+                    "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
+                    "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
+                    "parent_award_id": parent_award_id,
+                    "parent_generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_parent_award_id,
+                    "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
+                    "obligated_amount": 100000.0 + award_id,
+                    "awarded_amount": 500000.0 + award_id,
+                    "period_of_performance_start_date": "2018-02-%02d" % award_id,
+                    "piid": "piid_%s" % string_award_id,
+                    "recipient_name": "recipient_name_%s" % (7000 + award_id),
+                    "recipient_id": "%s%s-%s" % (RECIPIENT_HASH_PREFIX, 7000 + award_id, "R"),
+                    "grandchild": award_id in (11, 12, 13, 14),  # based on picture in idv_test_data
+                }
+            )
 
         page_metadata = {
             "hasNext": (limit * page < total),
@@ -54,7 +55,7 @@ class IDVAwardsTestCase(TestCase):
             "next": page + 1 if (limit * page < total) else None,
             "page": page,
             "previous": page - 1 if (page > 1 and limit * (page - 2) < total) else None,
-            "total": total
+            "total": total,
         }
 
         return {"results": results, "page_metadata": page_metadata}
@@ -80,104 +81,56 @@ class IDVAwardsTestCase(TestCase):
 
     def test_defaults(self):
 
-        self._test_post(
-            {"award_id": 2},
-            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
-        )
+        self._test_post({"award_id": 2}, (400002, 10, 1, 14, 13, 12, 11, 10, 9))
 
-        self._test_post(
-            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002"},
-            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
-        )
+        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_002"}, (400002, 10, 1, 14, 13, 12, 11, 10, 9))
 
     def test_with_nonexistent_id(self):
 
-        self._test_post(
-            {"award_id": 0},
-            (0, 10, 1)
-        )
+        self._test_post({"award_id": 0}, (0, 10, 1))
 
-        self._test_post(
-            {"award_id": "GENERATED_UNIQUE_AWARD_ID_000"},
-            (0, 10, 1)
-        )
+        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"}, (0, 10, 1))
 
     def test_with_bogus_id(self):
 
-        self._test_post(
-            {"award_id": None},
-            (0, 10, 1)
-        )
+        self._test_post({"award_id": None}, (0, 10, 1))
 
     def test_limit_values(self):
 
-        self._test_post(
-            {"award_id": 2, "limit": 1},
-            (400002, 1, 1, 14)
-        )
+        self._test_post({"award_id": 2, "limit": 1}, (400002, 1, 1, 14))
 
-        self._test_post(
-            {"award_id": 2, "limit": 5},
-            (400002, 5, 1, 14, 13, 12, 11, 10)
-        )
+        self._test_post({"award_id": 2, "limit": 5}, (400002, 5, 1, 14, 13, 12, 11, 10))
 
-        self._test_post(
-            {"award_id": 2, "limit": 0},
-            expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
+        self._test_post({"award_id": 2, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        self._test_post(
-            {"award_id": 2, "limit": 2000000000},
-            expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
+        self._test_post({"award_id": 2, "limit": 2000000000}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        self._test_post(
-            {"award_id": 2, "limit": {"BOGUS": "LIMIT"}},
-            expected_status_code=status.HTTP_400_BAD_REQUEST
-        )
+        self._test_post({"award_id": 2, "limit": {"BOGUS": "LIMIT"}}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_page_values(self):
 
+        self._test_post({"award_id": 2, "limit": 1, "page": 2}, (400002, 1, 2, 13))
+
+        self._test_post({"award_id": 2, "limit": 1, "page": 3}, (400002, 1, 3, 12))
+
+        self._test_post({"award_id": 2, "limit": 1, "page": 10}, (400002, 1, 10))
+
         self._test_post(
-            {"award_id": 2, "limit": 1, "page": 2},
-            (400002, 1, 2, 13)
+            {"award_id": 2, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
         )
 
         self._test_post(
-            {"award_id": 2, "limit": 1, "page": 3},
-            (400002, 1, 3, 12)
-        )
-
-        self._test_post(
-            {"award_id": 2, "limit": 1, "page": 10},
-            (400002, 1, 10)
-        )
-
-        self._test_post(
-            {"award_id": 2, "limit": 1, "page": 0},
-            expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
-
-        self._test_post(
-            {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"},
-            expected_status_code=status.HTTP_400_BAD_REQUEST
+            {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"}, expected_status_code=status.HTTP_400_BAD_REQUEST
         )
 
     def test_hide_edges(self):
+        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": True}, (6, 1, 1, 14))
+        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": False}, (400002, 1, 1, 14))
         self._test_post(
-            {"award_id": 2, "limit": 1, "hide_edge_cases": True},
-            (6, 1, 1, 14)
-        )
-        self._test_post(
-            {"award_id": 2, "limit": 1, "hide_edge_cases": False},
-            (400002, 1, 1, 14)
-        )
-        self._test_post(
-            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": True},
-            (6, 10, 1, 14, 13, 12, 11, 10, 9)
+            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": True}, (6, 10, 1, 14, 13, 12, 11, 10, 9)
         )
 
         self._test_post(
             {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": False},
-            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
+            (400002, 10, 1, 14, 13, 12, 11, 10, 9),
         )

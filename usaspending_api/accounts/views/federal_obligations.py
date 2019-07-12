@@ -13,6 +13,7 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
     Returns a Appropriation Account Balance's obligated amount broken up by TAS.
     endpoint_doc: /federal_obligations.md
     """
+
     serializer_class = FederalAccountByObligationSerializer
 
     def get_queryset(self):
@@ -22,13 +23,11 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
         # Retrieve post request payload
         json_request = self.request.query_params
         # Retrieve fiscal_year & agency_identifier from request
-        fiscal_year = json_request.get('fiscal_year', None)
-        funding_agency_id = json_request.get('funding_agency_id', None)
+        fiscal_year = json_request.get("fiscal_year", None)
+        funding_agency_id = json_request.get("funding_agency_id", None)
         # Raise exception if required query parameter not provided
         if not funding_agency_id:
-            raise InvalidParameterException(
-                'Missing required query parameters: fiscal_year & funding_agency_id'
-            )
+            raise InvalidParameterException("Missing required query parameters: fiscal_year & funding_agency_id")
         # Use filter() instead of get() on Agency.objects
         # as get() will likely raise an error on a bad agency id
         # while trying to get the top_tier_agency_id from the Agency set
@@ -40,25 +39,26 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
             tta_list = DOD_ARMED_FORCES_CGAC
             queryset = AppropriationAccountBalances.final_objects.filter(
                 submission__reporting_fiscal_year=fiscal_year,
-                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
+                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list,
             )
         else:
             queryset = AppropriationAccountBalances.final_objects.filter(
                 submission__reporting_fiscal_year=fiscal_year,
-                treasury_account_identifier__funding_toptier_agency__cgac_code=toptier_agency.cgac_code
+                treasury_account_identifier__funding_toptier_agency__cgac_code=toptier_agency.cgac_code,
             )
 
         queryset = queryset.annotate(
-            account_title=F('treasury_account_identifier__federal_account__account_title'),
-            id=F('treasury_account_identifier__federal_account')
+            account_title=F("treasury_account_identifier__federal_account__account_title"),
+            id=F("treasury_account_identifier__federal_account"),
         )
         # Sum and sort descending obligations_incurred by account
-        queryset = queryset.values(
-            'id',
-            'account_title',
-        ).annotate(
-            account_number=F('treasury_account_identifier__federal_account__federal_account_code'),
-            obligated_amount=Sum('obligations_incurred_total_by_tas_cpe')
-        ).order_by('-obligated_amount')
+        queryset = (
+            queryset.values("id", "account_title")
+            .annotate(
+                account_number=F("treasury_account_identifier__federal_account__federal_account_code"),
+                obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
+            )
+            .order_by("-obligated_amount")
+        )
         # Return minor object class vars
         return queryset

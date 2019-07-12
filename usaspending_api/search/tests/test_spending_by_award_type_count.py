@@ -99,11 +99,10 @@ def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
         subaward_id=9999,
         award_type="grant",
         prime_award_type="02",
-
         award_id=90,
         awarding_toptier_agency_name="Department of Pizza",
         awarding_toptier_agency_abbreviation="DOP",
-        generated_pragmatic_obligation=10
+        generated_pragmatic_obligation=10,
     )
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1])

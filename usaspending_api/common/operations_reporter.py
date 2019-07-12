@@ -8,6 +8,7 @@ class OpsReporter:
         Later, additional data can be added just like adding/updating values in a dictionary.
         At the end of the script, send the JSON to the intended destination.
     """
+
     required_keys = ("job_name", "duration", "iso_start_datetime", "end_status")
 
     def __init__(self, **kwargs):

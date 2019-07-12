@@ -29,7 +29,7 @@ class TransactionDeltaManager(models.Manager):
         return delete_count
 
     def get_max_created_at(self):
-        return self.get_queryset().aggregate(models.Max('created_at'))['created_at__max']
+        return self.get_queryset().aggregate(models.Max("created_at"))["created_at__max"]
 
     def update_or_create_transaction(self, transaction_id):
         """
@@ -52,7 +52,7 @@ class TransactionDeltaManager(models.Manager):
 
                 # Perform upserts in chunks.
                 for chunk_start in range(0, len(transaction_ids), CHUNK_SIZE):
-                    chunk_of_ids = transaction_ids[chunk_start: chunk_start + CHUNK_SIZE]
+                    chunk_of_ids = transaction_ids[chunk_start : chunk_start + CHUNK_SIZE]
                     chunk_of_inserts = tuple(
                         TransactionDelta(transaction_id=transaction_id, created_at=created_at)
                         for transaction_id in chunk_of_ids
@@ -65,9 +65,7 @@ class TransactionDeltaManager(models.Manager):
 
 class TransactionDelta(models.Model):
 
-    transaction = models.OneToOneField(
-        "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True
-    )
+    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True)
     created_at = models.DateTimeField()
 
     objects = TransactionDeltaManager()
