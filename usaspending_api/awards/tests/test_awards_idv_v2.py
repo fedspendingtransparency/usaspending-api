@@ -45,7 +45,8 @@ def awards_and_transactions(db):
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
     trans_asst = {"pk": 1}
-    trans_cont = {"pk": 2}
+    trans_cont_1 = {"pk": 2}
+    trans_cont_2 = {"pk": 3}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
@@ -57,7 +58,7 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("references.SubtierAgency", **subag)
     mommy.make("references.ToptierAgency", **subag)
-    mommy.make("references.OfficeAgency", name="office_agency")
+    mommy.make("references.OfficeAgency", pk=1, name="office_agency")
 
     parent_le = {
         "pk": 2,
@@ -84,7 +85,8 @@ def awards_and_transactions(db):
     }
 
     mommy.make("awards.TransactionNormalized", **trans_asst)
-    mommy.make("awards.TransactionNormalized", **trans_cont)
+    mommy.make("awards.TransactionNormalized", **trans_cont_1)
+    mommy.make("awards.TransactionNormalized", **trans_cont_2)
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
@@ -204,8 +206,113 @@ def awards_and_transactions(db):
         "officer_2_name": "Stan Burger",
         "officer_2_amount": 1234.00,
     }
+    latest_transaction_contract_data_without_recipient_name_or_id = {
+        "agency_id": "192",
+        "awardee_or_recipient_legal": None,
+        "awardee_or_recipient_uniqu": None,
+        "clinger_cohen_act_planning": None,
+        "clinger_cohen_act_pla_desc": "NO",
+        "commercial_item_acquisitio": "A",
+        "commercial_item_acqui_desc": None,
+        "commercial_item_test_progr": None,
+        "commercial_item_test_desc": "NO",
+        "consolidated_contract": None,
+        "consolidated_contract_desc": "NOT CONSOLIDATED",
+        "construction_wage_rate_req": None,
+        "construction_wage_rat_desc": "NO",
+        "cost_or_pricing_data": None,
+        "cost_or_pricing_data_desc": "NO",
+        "program_system_or_equipmen": "000",
+        "program_system_or_equ_desc": None,
+        "dod_claimant_program_code": None,
+        "dod_claimant_prog_cod_desc": "C9E",
+        "evaluated_preference_desc": "NO PREFERENCE USED",
+        "domestic_or_foreign_entity": None,
+        "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "evaluated_preference": None,
+        "evaluated_preference_desc": "NO PREFERENCE USED",
+        "extent_competed": "D",
+        "extent_compete_description": None,
+        "fair_opportunity_limited_s": None,
+        "fair_opportunity_limi_desc": None,
+        "fed_biz_opps": None,
+        "fed_biz_opps_description": "YES",
+        "foreign_funding": None,
+        "foreign_funding_desc": "NOT APPLICABLE",
+        "idv_type_description": "IDC",
+        "information_technology_com": None,
+        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "interagency_contracting_au": None,
+        "interagency_contract_desc": "NOT APPLICABLE",
+        "labor_standards": None,
+        "labor_standards_descrip": "NO",
+        "last_modified": "2018-08-24",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_congressional": "90",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_state_code": "NC",
+        "legal_entity_zip5": "12204",
+        "legal_entity_zip_last4": "5312",
+        "major_program": None,
+        "materials_supplies_article": None,
+        "materials_supplies_descrip": "NO",
+        "multi_year_contract": None,
+        "multi_year_contract_desc": "NO",
+        "multiple_or_single_aw_desc": "MULTIPLE AWARD",
+        "naics": "333911",
+        "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+        "number_of_offers_received": None,
+        "ordering_period_end_date": "2025-06-30",
+        "other_than_full_and_open_c": None,
+        "other_than_full_and_o_desc": None,
+        "parent_award_id": "1",
+        "period_of_perf_potential_e": "2003-04-05",
+        "period_of_performance_star": "2010-09-23",
+        "piid": "0",
+        "pk": 3,
+        "place_of_perf_country_desc": "Pacific Delta Amazon",
+        "place_of_perform_city_name": "Austin",
+        "place_of_perform_country_c": "PDA",
+        "place_of_perform_county_na": "Tripoli",
+        "place_of_perform_zip_last4": "2135",
+        "place_of_performance_congr": "-0-",
+        "place_of_performance_state": "TX",
+        "place_of_performance_zip5": "40221",
+        "price_evaluation_adjustmen": None,
+        "product_or_service_code": "4730",
+        "product_or_service_co_desc": None,
+        "program_acronym": None,
+        "purchase_card_as_payment_m": None,
+        "purchase_card_as_paym_desc": "NO",
+        "referenced_idv_agency_iden": "168",
+        "referenced_idv_agency_desc": "whatever",
+        "sea_transportation": None,
+        "sea_transportation_desc": "NO",
+        "small_business_competitive": "False",
+        "solicitation_identifier": None,
+        "solicitation_procedures": "NP",
+        "solicitation_procedur_desc": None,
+        "subcontracting_plan": "B",
+        "subcontracting_plan_desc": None,
+        "transaction": TransactionNormalized.objects.get(pk=3),
+        "type_of_contract_pricing": None,
+        "type_of_contract_pric_desc": "FIRM FIXED PRICE",
+        "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
+        "type_set_aside": None,
+        "type_set_aside_description": None,
+        "ultimate_parent_legal_enti": None,
+        "ultimate_parent_unique_ide": None,
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+    }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
+    mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data_without_recipient_name_or_id)
     award_1_model = {
         "pk": 1,
         "type": "IDV_B_B",
@@ -223,7 +330,6 @@ def awards_and_transactions(db):
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "date_signed": "2005-04-03",
     }
-
     award_2_model = {
         "pk": 2,
         "type": "IDV_A",
@@ -245,8 +351,30 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "date_signed": "2004-03-02",
     }
+    award_3_model = {
+        "pk": 3,
+        "type": "IDV_A",
+        "type_description": "GWAC",
+        "category": "idv",
+        "piid": "9123",
+        "parent_award_piid": "1234",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9800",
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "date_signed": "2004-03-02",
+    }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
+    mommy.make("awards.Award", **award_3_model)
 
 
 @pytest.mark.django_db
@@ -276,6 +404,13 @@ def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/2/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
+
+
+@pytest.mark.django_db
+def test_award_endpoint_for_null_recipient_information(client, awards_and_transactions):
+    resp = client.get("/api/v2/awards/3/", content_type="application/json")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8")).get("recipient") == recipient_without_id_and_name
 
 
 expected_response_idv = {
@@ -431,4 +566,30 @@ expected_response_idv = {
         }
     ]},
     "date_signed": "2004-03-02",
+}
+
+
+recipient_without_id_and_name = {
+    "recipient_hash": None,
+    "recipient_name": None,
+    "recipient_unique_id": None,
+    "parent_recipient_hash": None,
+    "parent_recipient_name": None,
+    "parent_recipient_unique_id": None,
+    "business_categories": ["Small Business"],
+    "location": {
+        "address_line1": "123 main st",
+        "address_line2": None,
+        "address_line3": None,
+        "foreign_province": None,
+        "city_name": "Charlotte",
+        "county_name": "BUNCOMBE",
+        "state_code": "NC",
+        "zip5": "12204",
+        "zip4": "5312",
+        "foreign_postal_code": None,
+        "country_name": "UNITED STATES",
+        "location_country_code": "USA",
+        "congressional_code": "90",
+    },
 }
