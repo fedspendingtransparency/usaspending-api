@@ -13,9 +13,12 @@ from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import dates_are_month_bookends
 from usaspending_api.common.helpers.generic_helper import generate_date_from_string
+from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 
+
 logger = logging.getLogger(__name__)
+
 
 Range = namedtuple('Range', ['start', 'end'])
 
@@ -231,3 +234,37 @@ def transform_keyword(request, api_version):
         filter_obj['keywords'] = keywords
         request.data["filters"] = filter_obj
     return request
+
+
+def get_descendant_award_ids(root_idv_award_id, include_child_idvs):
+    """
+    Unfortunately, there's no clean way to get IDV descendants using the Django
+    ORM so we will turn to the dark side to get what we need.  For the provided
+    IDV award id (surrogate, integer, internal award id), this function will
+    return the award id for all child Awards and grandchild Awards and, if
+    include_child_idvs is True, all child IDVs as well.
+    """
+    sql = """
+        with cte as (
+            select      award_id
+            from        parent_award
+            where       award_id = %(root_idv_award_id)s
+            union all
+            select      cpa.award_id
+            from        parent_award ppa
+                        inner join parent_award cpa on
+                            cpa.parent_award_id = ppa.award_id
+            where       ppa.award_id = %(root_idv_award_id)s
+        )
+        select  ca.id
+        from    cte
+                inner join awards pa on
+                    pa.id = cte.award_id
+                inner join awards ca on
+                    ca.parent_award_piid = pa.piid and
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id
+    """ + ("" if include_child_idvs else " and ca.type not like 'IDV%%'")
+    connection = get_connection()
+    with connection.cursor() as cursor:
+        cursor.execute(sql, {'root_idv_award_id': root_idv_award_id})
+        return [row[0] for row in cursor.fetchall()]

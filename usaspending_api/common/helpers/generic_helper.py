@@ -1,4 +1,3 @@
-import contextlib
 import logging
 import subprocess
 import time
@@ -117,7 +116,7 @@ def dates_are_month_bookends(start, end):
 def min_and_max_from_date_ranges(filter_time_periods):
     min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
     max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
-    return (dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d"))
+    return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
 
 
 def create_full_time_periods(min_date, max_date, group, columns):
@@ -328,24 +327,6 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
-
-
-@contextlib.contextmanager
-def timer(msg='', logging_func=print):
-    """
-    Use as a context manager or decorator to report on elapsed time.
-
-    with timer('stuff', logger.info):
-        (active code)
-
-    """
-    start = time.perf_counter()
-    logging_func('Beginning {}...'.format(msg))
-    try:
-        yield {}
-    finally:
-        elapsed = time.perf_counter() - start
-        logging_func('... finished {} in {:.2f}s'.format(msg, elapsed))
 
 
 # Raw SQL run during a migration

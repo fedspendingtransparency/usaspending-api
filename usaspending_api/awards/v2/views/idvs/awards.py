@@ -19,6 +19,7 @@ SORTABLE_COLUMNS = (
     'award_type',
     'description',
     'funding_agency',
+    'awarding_agency',
     'last_date_to_order',
     'obligated_amount',
     'period_of_performance_current_end_date',
@@ -26,15 +27,25 @@ SORTABLE_COLUMNS = (
     'piid',
 )
 
+
 DEFAULT_SORT_COLUMN = 'period_of_performance_start_date'
 
-GET_IDVS_SQL = SQL("""
+
+# Justification for having three queries that are very similar: ease of
+# understanding.  Yes, a change to the queries might require three updates,
+# but believe me when I tell you that this is a billion times more comprehensible
+# than the version where I broke the queries down into unique bits and
+# grafted them back together.  If we go beyond three versions, though... perhaps
+# something a little more sophisticated is in order.
+GET_CHILD_IDVS_SQL = SQL("""
     select
         ac.id                                      award_id,
         ac.type_description                        award_type,
         ac.description,
-        tf.funding_agency_name                     funding_agency,
+        tta.name                                   funding_agency,
+        ttb.name                                   awarding_agency,
         ac.funding_agency_id,
+        ac.awarding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         pac.rollup_total_obligation                obligated_amount,
@@ -46,6 +57,10 @@ GET_IDVS_SQL = SQL("""
         inner join parent_award pac on pac.parent_award_id = pap.award_id
         inner join awards ac on ac.id = pac.award_id
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        left outer join agency a on a.id = ac.funding_agency_id
+        left outer join agency b on b.id = ac.awarding_agency_id
+        left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id
+        left outer join toptier_agency ttb on ttb.toptier_agency_id = b.toptier_agency_id
     where
         pap.{award_id_column} = {award_id}
     order by
@@ -53,13 +68,16 @@ GET_IDVS_SQL = SQL("""
     limit {limit} offset {offset}
 """)
 
-GET_CONTRACTS_SQL = SQL("""
+
+GET_CHILD_AWARDS_SQL = SQL("""
     select
         ac.id                                      award_id,
         ac.type_description                        award_type,
         ac.description,
-        tf.funding_agency_name                     funding_agency,
+        tta.name                                   funding_agency,
+        ttb.name                                   awarding_agency,
         ac.funding_agency_id,
+        ac.awarding_agency_id,
         ac.generated_unique_award_id,
         tf.ordering_period_end_date                last_date_to_order,
         ac.total_obligation                        obligated_amount,
@@ -70,8 +88,12 @@ GET_CONTRACTS_SQL = SQL("""
         parent_award pap
         inner join awards ap on ap.id = pap.award_id
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
-            ac.type not like 'IDV%%'
+            ac.type not like 'IDV%'
         inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        left outer join agency a on a.id = ac.funding_agency_id
+        left outer join agency b on b.id = ac.awarding_agency_id
+        left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id
+        left outer join toptier_agency ttb on ttb.toptier_agency_id = b.toptier_agency_id
     where
         pap.{award_id_column} = {award_id}
     order by
@@ -80,11 +102,57 @@ GET_CONTRACTS_SQL = SQL("""
 """)
 
 
+GET_GRANDCHILD_AWARDS_SQL = SQL("""
+    select
+        ac.id                                      award_id,
+        ac.type_description                        award_type,
+        ac.description,
+        tta.name                                   funding_agency,
+        ttb.name                                   awarding_agency,
+        ac.funding_agency_id,
+        ac.awarding_agency_id,
+        ac.generated_unique_award_id,
+        tf.ordering_period_end_date                last_date_to_order,
+        ac.total_obligation                        obligated_amount,
+        ac.period_of_performance_current_end_date,
+        ac.period_of_performance_start_date,
+        ac.piid
+    from
+        parent_award pap
+        inner join parent_award pac on pac.parent_award_id = pap.award_id
+        inner join awards ap on ap.id = pac.award_id
+        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
+            ac.type not like 'IDV%'
+        inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        left outer join agency a on a.id = ac.funding_agency_id
+        left outer join agency b on b.id = ac.awarding_agency_id
+        left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id
+        left outer join toptier_agency ttb on ttb.toptier_agency_id = b.toptier_agency_id
+
+    where
+        pap.{award_id_column} = {award_id}
+    order by
+        {sort_column} {sort_direction}, ac.id {sort_direction}
+    limit {limit} offset {offset}
+""")
+
+
+TYPE_TO_SQL_MAPPING = {
+    'child_idvs': GET_CHILD_IDVS_SQL,
+    'child_awards': GET_CHILD_AWARDS_SQL,
+    'grandchild_awards': GET_GRANDCHILD_AWARDS_SQL
+}
+
+
 def _prepare_tiny_shield_models():
     models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
     models.extend([
         get_internal_or_generated_award_id_model(),
-        {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
+        {
+            'key': 'type', 'name': 'type',
+            'type': 'enum', 'enum_values': tuple(TYPE_TO_SQL_MAPPING),
+            'default': 'child_idvs', 'optional': True
+        }
     ])
     return models
 
@@ -98,7 +166,7 @@ class IDVAwardsViewSet(APIDocumentationView):
     """
 
     @staticmethod
-    def _parse_and_validate_request(request: Request) -> dict:
+    def _parse_and_validate_request(request: dict) -> dict:
         return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request)
 
     @staticmethod
@@ -109,7 +177,7 @@ class IDVAwardsViewSet(APIDocumentationView):
         award_id = request_data['award_id']
         award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
 
-        sql = GET_IDVS_SQL if request_data['idv'] else GET_CONTRACTS_SQL
+        sql = TYPE_TO_SQL_MAPPING[request_data['type']]
         sql = sql.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),

@@ -5,10 +5,11 @@ from rest_framework import status
 
 
 @pytest.fixture
-def financial_spending_data(db):
+def create_agency_data(db):
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
-    ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100', abbreviation='tta_abrev')
+    ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100', abbreviation='tta_abrev',
+                           justification='test.com/cj')
     ttagency2 = mommy.make('references.ToptierAgency', name="tta_name_2", cgac_code='200', abbreviation='tta_abrev_2')
 
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1, toptier_flag=True)
@@ -41,8 +42,8 @@ def financial_spending_data(db):
 
 
 @pytest.mark.django_db
-def test_award_type_endpoint(client, financial_spending_data):
-    """Test the award_type endpoint."""
+def test_award_type_endpoint(client, create_agency_data):
+    """Test the toptier_agency endpoint."""
 
     resp = client.get('/api/v2/references/toptier_agencies/')
     assert resp.status_code == status.HTTP_200_OK
@@ -51,6 +52,7 @@ def test_award_type_endpoint(client, financial_spending_data):
                                       'active_fy': '2017',
                                       'agency_id': 1,
                                       'agency_name': 'tta_name',
+                                      'congressional_justification_url': 'test.com/cj',
                                       'budget_authority_amount': 2.0,
                                       'current_total_budget_authority_amount': 8361447130497.72,
                                       'obligated_amount': 2.0,
@@ -61,6 +63,7 @@ def test_award_type_endpoint(client, financial_spending_data):
                                       'active_fy': '2017',
                                       'agency_id': 2,
                                       'agency_name': 'tta_name_2',
+                                      'congressional_justification_url': None,
                                       'budget_authority_amount': 14.0,
                                       'current_total_budget_authority_amount': 8361447130497.72,
                                       'obligated_amount': 14.0,
@@ -75,6 +78,7 @@ def test_award_type_endpoint(client, financial_spending_data):
                          'active_fy': '2017',
                          'agency_id': 2,
                          'agency_name': 'tta_name_2',
+                         'congressional_justification_url': None,
                          'budget_authority_amount': 14.0,
                          'current_total_budget_authority_amount': 8361447130497.72,
                          'obligated_amount': 14.0,
@@ -84,6 +88,7 @@ def test_award_type_endpoint(client, financial_spending_data):
                          'active_fq': '2', 'active_fy': '2017',
                          'agency_id': 1,
                          'agency_name': 'tta_name',
+                         'congressional_justification_url': 'test.com/cj',
                          'budget_authority_amount': 2.0,
                          'current_total_budget_authority_amount': 8361447130497.72,
                          'obligated_amount': 2.0,

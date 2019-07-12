@@ -1,9 +1,9 @@
 import logging
 
 from django.db import connection
-from usaspending_api.awards.models import Award, Agency
-from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
+from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger('console')
@@ -130,11 +130,18 @@ def update_contract_awards(award_tuple=None):
         "    tx.award_id,"
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type "
         "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
+        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
+        "        type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
         "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
         "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
         "      WHEN idv_type = 'B' AND "
         "        (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') "
         "        THEN type_of_idc_description "
+        "      WHEN idv_type = 'B' THEN 'INDEFINITE DELIVERY CONTRACT' "
         "      ELSE idv_type_description END AS type_description, "
         "    agency_id,"
         "    referenced_idv_agency_iden"
@@ -313,38 +320,20 @@ def get_awarding_agency(row):
         return Agency.get_by_toptier(row.agency_identifier)
 
 
-def update_idv_awards(award_tuple=None):
-    award_predicate = ""
-    sql = """
-UPDATE awards a
-SET
-  type = CASE
-        WHEN t.idv_type = 'B' AND t.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', t.type_of_idc::text)
-        ELSE CONCAT('IDV_', t.idv_type::text) END,
-  type_description = CASE
-        WHEN t.idv_type = 'B' AND
-            (t.type_of_idc_description IS DISTINCT FROM NULL AND t.type_of_idc_description <> 'NAN')
-            THEN t.type_of_idc_description
-        ELSE t.idv_type_description END
-FROM transaction_fpds t
-WHERE t.transaction_id = a.latest_transaction_id AND t.pulled_from = 'IDV'{}"""
-
-    if award_tuple:
-        award_predicate = " AND award_id IN %s"
-
-    with connection.cursor() as cursor:
-        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
-        # list (even if it uses the same one!)
-        if award_tuple:
-            cursor.execute(sql.format(award_predicate), [award_tuple])
-        else:
-            cursor.execute(sql.format(award_predicate))
-        rows = cursor.rowcount
-
-    return rows
-
-
 def award_types(row):
+    """
+        "Award Type" for FPDS transactions
+            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type`
+            elif `idv_type` == B &`type_of_idc` is present: use "IDV_B_" + `type_of_idc`
+            elif `idv_type` == B & ("case" for type_of_idc_description for specific IDC type): use IDV_B_*
+            else use "IDV_" + `idv_type`
+
+        "Award Type Description" for FPDS transactions
+            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type_desc`
+            elif `idv_type` == B & `type_of_idc_description` <> null/NAN: use `type_of_idc_description`
+            elif `idv_type` == B: use "INDEFINITE DELIVERY CONTRACT"
+            else: use `idv_type_description`
+    """
     pulled_from = row.get("pulled_from", None)
     idv_type = row.get("idv_type", None)
     type_of_idc = row.get("type_of_idc", None)
@@ -354,6 +343,12 @@ def award_types(row):
         award_type = row.get("contract_award_type")
     elif idv_type == "B" and type_of_idc is not None:
         award_type = "IDV_B_{}".format(type_of_idc)
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / REQUIREMENTS":
+        award_type = "IDV_B_A"
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / INDEFINITE QUANTITY":
+        award_type = "IDV_B_B"
+    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / DEFINITE QUANTITY":
+        award_type = "IDV_B_C"
     else:
         award_type = "IDV_{}".format(idv_type)
 
@@ -361,6 +356,8 @@ def award_types(row):
         award_type_desc = row.get("contract_award_type_desc")
     elif idv_type == "B" and type_of_idc_description not in (None, "NAN"):
         award_type_desc = type_of_idc_description
+    elif idv_type == "B":
+        award_type_desc = "INDEFINITE DELIVERY CONTRACT"
     else:
         award_type_desc = row.get("idv_type_description")
 

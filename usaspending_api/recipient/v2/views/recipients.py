@@ -9,9 +9,9 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
-from usaspending_api.broker.helpers import get_business_categories
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode, LegalEntity
 

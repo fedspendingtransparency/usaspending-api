@@ -99,12 +99,10 @@ UPPERCASE_UPDATES = {
     'transaction_normalized': """
         UPDATE transaction_normalized
         SET transaction_unique_id = UPPER(transaction_unique_id),
-            generated_unique_award_id = UPPER(generated_unique_award_id),
             description = UPPER(description)
         WHERE update_date > '2018-02-02'
             AND update_date <= '2018-02-15'
             AND (UPPER(transaction_unique_id) != transaction_unique_id
-                OR UPPER(generated_unique_award_id) != generated_unique_award_id
                 OR UPPER(description) != description);
         """,
     'references_location': """

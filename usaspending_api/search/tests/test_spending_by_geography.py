@@ -1,8 +1,7 @@
 import json
-
 import pytest
-from rest_framework import status
 
+from rest_framework import status
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 

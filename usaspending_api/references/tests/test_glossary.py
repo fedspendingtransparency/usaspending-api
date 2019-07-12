@@ -15,7 +15,7 @@ def test_glossary_endpoint(client, glossary_data):
 
     resp = client.get('/api/v1/references/glossary/?limit=9999')  # get all glossary terms
     assert resp.status_code == 200
-    assert len(resp.data["results"]) == 128
+    assert len(resp.data["results"]) == 129
 
     resp = client.get(
         '/api/v1/references/glossary/agency-identifier/')
@@ -37,3 +37,8 @@ def test_glossary_endpoint(client, glossary_data):
     assert len(resp.data['results']) > 0
     for itm in resp.data['results']:
         assert 'congress' in itm['plain'].lower()
+
+    # This should probably be broken out into a new file once we sunset v1
+    resp = client.get('/api/v2/references/glossary/?limit=500')
+    assert resp.status_code == 200
+    assert len(resp.data["results"]) == 129

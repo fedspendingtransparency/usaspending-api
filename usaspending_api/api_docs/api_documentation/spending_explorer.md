@@ -20,7 +20,7 @@ This route sends a request to the backend to retrieve spending data information 
 
 **type** - `required` - a string that contains the type of spending to explore on. It must be one of these values: *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipients*, *awards*, *agency*
 
-**filters** - `optional` - an object with the following key-value pairs that indicate what subset of results will be displayed. All values should be strings. The *quarter* field is cumulative and quarters are only available 45 days after their close. Also quarter data is not available before FY 2017 Q2.
+**filters** - `required` - an object with the following key-value pairs that indicate what subset of results will be displayed. All values should be strings. The *quarter* field is cumulative and quarters are only available 45 days after their close. Also quarter data is not available before FY 2017 Q2.
   `filter options` - *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipient*, *award*, *agency*, *fy*, *quarter*
 
 

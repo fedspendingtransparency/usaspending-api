@@ -1,5 +1,5 @@
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.v2.views import BaseDownloadViewSet
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 
 
 class DownloadStatusViewSet(BaseDownloadViewSet):

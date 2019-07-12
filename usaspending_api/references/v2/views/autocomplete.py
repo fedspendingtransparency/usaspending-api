@@ -2,11 +2,13 @@ from django.db.models import F, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.awards.models import LegalEntity
+from usaspending_api.references.models import LegalEntity
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, Cfda, NAICS, PSC
+from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
 from usaspending_api.references.v1.serializers import AgencySerializer
+
+from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -46,7 +48,7 @@ class BaseAutocompleteViewSet(APIView):
         queryset = Agency.objects.filter(
             Q(subtier_agency__name__icontains=search_text)
             | Q(subtier_agency__abbreviation__icontains=search_text)
-            ).order_by('-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
+        ).order_by('-toptier_flag', 'toptier_agency_id', 'subtier_agency__name').distinct(
             'toptier_flag', 'toptier_agency_id', 'subtier_agency__name')
         # The below is a one-off fix to promote FEMA as a subtier to the top when "FEMA" is searched
         # This is the only way to do this because you cannot use annotate and distinct together
@@ -191,4 +193,26 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             }
         }
 
+        return Response(response)
+
+
+class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    @cache_response()
+    def post(self, request):
+
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = Definition.objects.all()
+
+        glossary_terms = queryset.filter(term__icontains=search_text)[:limit]
+        serializer = DefinitionSerializer(glossary_terms, many=True)
+
+        response = {
+            'search_text': search_text,
+            'results': glossary_terms.values_list('term', flat=True),
+            'count': glossary_terms.count(),
+            'matched_terms':
+                serializer.data
+        }
         return Response(response)

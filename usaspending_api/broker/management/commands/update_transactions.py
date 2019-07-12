@@ -7,7 +7,7 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
@@ -103,9 +103,23 @@ class Command(BaseCommand):
 
         }
 
-        fad_field_map = {
+        fabs_normalized_field_map = {
             "type": "assistance_type",
             "description": "award_description",
+            "funding_amount": "total_funding_amount",
+        }
+
+        fabs_field_map = {
+            "officer_1_name": "high_comp_officer1_full_na",
+            "officer_1_amount": "high_comp_officer1_amount",
+            "officer_2_name": "high_comp_officer2_full_na",
+            "officer_2_amount": "high_comp_officer2_amount",
+            "officer_3_name": "high_comp_officer3_full_na",
+            "officer_3_amount": "high_comp_officer3_amount",
+            "officer_4_name": "high_comp_officer4_full_na",
+            "officer_4_amount": "high_comp_officer4_amount",
+            "officer_5_name": "high_comp_officer5_full_na",
+            "officer_5_amount": "high_comp_officer5_amount",
         }
 
         logger.info("Getting total rows")
@@ -228,6 +242,7 @@ class Command(BaseCommand):
                 awarding_agency=awarding_agency,
                 fain=row.get('fain'),
                 uri=row.get('uri'),
+                generated_unique_award_id=row.get('unique_award_key'),
                 save=False
             )
 
@@ -257,9 +272,10 @@ class Command(BaseCommand):
             transaction_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
-                field_map=fad_field_map,
+                field_map=fabs_normalized_field_map,
                 value_map=parent_txn_value_map,
-                as_dict=True)
+                as_dict=True
+            )
 
             transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
             transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
@@ -275,7 +291,9 @@ class Command(BaseCommand):
             financial_assistance_data = load_data_into_model(
                 TransactionFABS(),  # thrown away
                 row,
-                as_dict=True)
+                field_map=fabs_field_map,
+                as_dict=True
+            )
 
             transaction_assistance = TransactionFABS(transaction=transaction_normalized_bulk[index - 1],
                                                      **financial_assistance_data)
@@ -354,9 +372,22 @@ class Command(BaseCommand):
             "place_of_performance_flag": True
         }
 
-        contract_field_map = {
+        fpds_normalized_field_map = {
             "type": "contract_award_type",
             "description": "award_description"
+        }
+
+        fpds_field_map = {
+            "officer_1_name": "high_comp_officer1_full_na",
+            "officer_1_amount": "high_comp_officer1_amount",
+            "officer_2_name": "high_comp_officer2_full_na",
+            "officer_2_amount": "high_comp_officer2_amount",
+            "officer_3_name": "high_comp_officer3_full_na",
+            "officer_3_amount": "high_comp_officer3_amount",
+            "officer_4_name": "high_comp_officer4_full_na",
+            "officer_4_amount": "high_comp_officer4_amount",
+            "officer_5_name": "high_comp_officer5_full_na",
+            "officer_5_amount": "high_comp_officer5_amount"
         }
 
         logger.info("Getting total rows")
@@ -438,7 +469,9 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_piid=row.get('parent_award_id'))
+                    parent_award_piid=row.get('parent_award_id'),
+                    generated_unique_award_id=row.get('unique_award_key'),
+                )
                 award.save()
 
                 award_update_id_list.append(award.id)
@@ -459,7 +492,7 @@ class Command(BaseCommand):
                 transaction_dict = load_data_into_model(
                     TransactionNormalized(),  # thrown away
                     row,
-                    field_map=contract_field_map,
+                    field_map=fpds_normalized_field_map,
                     value_map=parent_txn_value_map,
                     as_dict=True)
 
@@ -469,6 +502,7 @@ class Command(BaseCommand):
                 contract_instance = load_data_into_model(
                     TransactionFPDS(),  # thrown away
                     row,
+                    field_map=fpds_field_map,
                     as_dict=True)
 
                 transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)

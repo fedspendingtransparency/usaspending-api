@@ -100,13 +100,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
             if subawards:
-                if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # Subaward contracts
+                if set(filters["award_type_codes"]) <= set(list(contract_type_mapping)
+                                                           + list(idv_type_mapping)):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
                     sort_filters = [grant_subaward_mapping[sort]]
                 else:
-                    msg = 'Award Type codes limited for Subawards. Only contracts {} or grants {} are available'
-                    msg = msg.format(list(contract_type_mapping.keys()), list(grant_type_mapping.keys()))
+                    msg = """Award Type codes limited for Subawards.
+                             Only contracts {}, IDVs {}, or grants {} are available"""
+                    msg = msg.format(list(contract_type_mapping.keys()),
+                                     list(idv_type_mapping.keys()), list(grant_type_mapping.keys()))
                     raise UnprocessableEntityException(msg)
             else:
                 if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts

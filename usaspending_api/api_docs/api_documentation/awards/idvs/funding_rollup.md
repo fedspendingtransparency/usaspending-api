@@ -16,6 +16,7 @@ Returns aggregated count of awarding agencies, federal accounts, and total trans
 {
     "total_transaction_obligated_amount": 212038930.38,
     "awarding_agency_count": 3,
+    "funding_agency_count": 3,
     "federal_account_count": 4
 }
 ```

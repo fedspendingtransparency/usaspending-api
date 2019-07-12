@@ -11,23 +11,24 @@ from collections import OrderedDict
 from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Case, When, Value, CharField
+from django.db.models import Case, When, Value, CharField, F
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
-from usaspending_api.common.helpers.sql_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
 from usaspending_api.download.filestreaming.csv_source import CsvSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
+
 logger = logging.getLogger('console')
 
 AWARD_MAPPINGS = {
     'Contracts': {
         'agency_field': 'agency_id',
-        'award_types': ['contracts'],
+        'award_types': ['contracts', 'idvs'],
         'column_headers': {
             0: 'agency_id', 1: 'parent_award_agency_id', 2: 'award_id_piid', 3: 'modification_number',
             4: 'parent_award_id', 5: 'transaction_number'
@@ -45,7 +46,7 @@ AWARD_MAPPINGS = {
         'column_headers': {
             0: 'modification_number', 1: 'awarding_sub_agency_code', 2: 'award_id_fain', 3: 'award_id_uri'
         },
-        'correction_delete_ind': 'transaction__assistance_data__correction_delete_indicatr',
+        'correction_delete_ind': 'correction_delete_ind',
         'date_filter': 'modified_at',
         'letter_name': 'd2',
         'match': re.compile(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv'),
@@ -79,14 +80,30 @@ class Command(BaseCommand):
         # Apply filters to the queryset
         filters, agency_code = self.parse_filters(award_map['award_types'], agency)
         source.queryset = VALUE_MAPPINGS['transactions']['filter_function'](filters)
+
         if award_type == 'Contracts':
-            # Derive the correction_delete_ind from the created_at of the records
-            source.queryset = source.queryset. \
-                annotate(correction_delete_ind=Case(When(transaction__contract_data__created_at__lt=generate_since,
-                                                    then=Value('C')), default=Value(''), output_field=CharField()))
+            source.queryset = source.queryset.annotate(
+                correction_delete_ind=Case(
+                    When(transaction__contract_data__created_at__lt=generate_since, then=Value('C')),
+                    default=Value(''),
+                    output_field=CharField()))
+        else:
+            indicator_field = F('transaction__assistance_data__correction_delete_indicatr')
+            source.queryset = source.queryset.annotate(
+                correction_delete_ind=Case(
+                    When(transaction__assistance_data__updated_at__gt=generate_since, then=indicator_field),
+                    When(transaction__transactiondelta__isnull=False, then=Value('C')),
+                    default=indicator_field,
+                    output_field=CharField()))
+
+        transaction_delta_queryset = source.queryset
         source.queryset = source.queryset.filter(**{
             'transaction__{}__{}__gte'.format(award_map['model'], award_map['date_filter']): generate_since
         })
+
+        # UNION the normal results to the transaction_delta results.
+        source.queryset = source.queryset.union(
+            transaction_delta_queryset.filter(transaction__transactiondelta__isnull=False))
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
@@ -121,10 +138,15 @@ class Command(BaseCommand):
         with open(temp_sql_file_path, 'w') as file:
             file.write('\\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
 
+        logger.info('Generated temp SQL file {}'.format(temp_sql_file_path))
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
-                                 'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        try:
+            subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
+                                     'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            logger.exception(e.output)
+            raise e
 
         # Append deleted rows to the end of the file
         self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
@@ -307,3 +329,7 @@ class Command(BaseCommand):
         for agency in toptier_agencies:
             for award_type in award_types:
                 self.download(award_type.capitalize(), agency, last_date)
+
+        logger.info(
+            'IMPORTANT: Be sure to run synchronize_transaction_delta management command '
+            'after a successful monthly delta run')

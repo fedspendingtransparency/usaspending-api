@@ -40,7 +40,7 @@ DB_TO_XLSX_MAPPING = OrderedDict(
 class Command(BaseCommand):
     help = "Loads an Excel spreadsheet of DATA Act/USAspending data names across the various systems into <>"
 
-    s3_public_url = "http://files{}.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx"
+    s3_public_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
 
     def add_arguments(self, parser):
         parser.add_argument("-p", "--path", help="filepath to a local Excel spreadsheet to load", default=None)
@@ -52,8 +52,7 @@ class Command(BaseCommand):
         rosetta_object = extract_data_from_source_file(path=options["path"])
 
         if options["path"] is None:
-            prod_or_noprod = "-nonprod" if settings.DOWNLOAD_ENV != "production" else ""
-            rosetta_object["metadata"]["download_location"] = self.s3_public_url.format(prod_or_noprod)
+            rosetta_object["metadata"]["download_location"] = self.s3_public_url
         load_xlsx_data_to_model(rosetta_object)
 
         logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))

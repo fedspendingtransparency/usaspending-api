@@ -13,13 +13,14 @@ from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.views import YearLimitedDownloadViewSet
+from usaspending_api.download.v2.request_validations import validate_award_request
+from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger('console')
 
 award_mappings = {
-    'contracts': ['contracts'],
+    'contracts': ['contracts', 'idvs'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 
@@ -48,7 +49,7 @@ class Command(BaseCommand):
         }
         download_viewset = YearLimitedDownloadViewSet()
         download_viewset.process_filters(json_request)
-        validated_request = download_viewset.validate_award_request(json_request)
+        validated_request = validate_award_request(json_request)
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'], file_name=file_name,
                                                   json_request=json.dumps(order_nested_object(validated_request)),
                                                   monthly_download=True)

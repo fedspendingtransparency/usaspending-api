@@ -12,7 +12,7 @@ from usaspending_api.references.models import ToptierAgency
 
 class ListMonthlyDownloadsViewset(APIDocumentationView):
     """
-    This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
+     Returns a list of the current versions of generated archive files for a given fiscal year and agency.
 
     endpoint_doc: /download/list_downloads.md
     """
@@ -30,7 +30,7 @@ class ListMonthlyDownloadsViewset(APIDocumentationView):
         required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': type_param}
         for required, param_value in required_params.items():
             if param_value is None:
-                raise InvalidParameterException('Missing one or more required query parameters: {}'.format(required))
+                raise InvalidParameterException('Missing one or more required body parameters: {}'.format(required))
 
         # Capitalize type_param and retrieve agency information from agency ID
         download_type = type_param.capitalize()

@@ -14,9 +14,8 @@ class ExternalDataType(models.Model):
 
 
 class ExternalDataLoadDate(models.Model):
-
     external_data_load_date_id = models.AutoField(primary_key=True)
-    last_load_date = models.DateField(blank=False, null=False)
+    last_load_date = models.DateTimeField(blank=False, null=False)
     external_data_type = models.ForeignKey(ExternalDataType, models.DO_NOTHING, blank=False, null=False)
 
     class Meta:

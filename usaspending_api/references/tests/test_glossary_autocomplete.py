@@ -43,11 +43,79 @@ def test_glossary_autocomplete(client, glossary_data, fields, value, expected):
 
 
 @pytest.mark.django_db
+def test_glossary_v2_autocomplete(client):
+    mommy.make(
+        Definition,
+        term='Abacus',
+        slug="ab",)
+    mommy.make(
+        Definition,
+        term="Aardvark",
+        slug="aa")
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "ab"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "ab"
+    assert json_response['results'] == ["Abacus"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "aa"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "aa"
+    assert json_response['results'] == ["Aardvark"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "a"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "a"
+    assert sorted(json_response['results']) == ["Aardvark", "Abacus"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "b"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "b"
+    assert sorted(json_response['results']) == ["Abacus"]
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
+        content_type='application/json',
+        data=json.dumps({"search_text": "aab"}))
+    json_response = json.loads(resp.content.decode("utf-8"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert json_response['search_text'] == "aab"
+    assert sorted(json_response['results']) == []
+
+
+@pytest.mark.django_db
 def test_bad_glossary_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 
     resp = client.post(
         '/api/v1/references/glossary/autocomplete/',
+        content_type='application/json',
+        data=json.dumps({}))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_bad_v2_glossary_autocomplete_request(client):
+    """Verify error on bad autocomplete request for awards."""
+
+    resp = client.post(
+        '/api/v2/autocomplete/glossary/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

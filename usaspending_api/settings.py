@@ -66,6 +66,10 @@ if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get('STATE_DATA_BUCKET')
 
 ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
+DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx".format(
+    "-nonprod" if DOWNLOAD_ENV != "production" else ""
+)
+IDV_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/idv_download_readme.txt")
 
 # Elasticsearch
 ES_HOSTNAME = ""
@@ -276,6 +280,7 @@ LOGGING = {
     },
 }
 
+
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
 CACHES = {
     'default': {
@@ -285,15 +290,6 @@ CACHES = {
     'locations': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
-    },
-    'awards': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'awards-loc-mem-cache',
-        'TIMEOUT': None,
-        'MAX_ENTRIES': 9999999,
-        # We only want to clear this cache manually - it holds unsaved
-        # Award records, and until they are saved, forgetting them would
-        # lose data
     },
 }
 

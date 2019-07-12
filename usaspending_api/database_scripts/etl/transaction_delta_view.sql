@@ -38,9 +38,10 @@ SELECT
   UTM.parent_recipient_unique_id,
   UTM.recipient_name,
 
-  UTM.action_date::date,
+  UTM.action_date,
   UAM.period_of_performance_start_date,
   UAM.period_of_performance_current_end_date,
+  UAM.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
   UAM.fiscal_year AS award_fiscal_year,
   UAM.total_obligation AS award_amount,
@@ -74,6 +75,7 @@ SELECT
   UTM.pop_county_name,
   UTM.pop_zip5,
   UTM.pop_congressional_code,
+  COALESCE(FPDS.place_of_perform_city_name, FABS.place_of_performance_city) AS pop_city_name,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,
@@ -81,7 +83,8 @@ SELECT
   UTM.recipient_location_county_code,
   UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
-  UTM.recipient_location_congressional_code
+  UTM.recipient_location_congressional_code,
+  COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name) AS recipient_location_city_name
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)

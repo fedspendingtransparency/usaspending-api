@@ -99,7 +99,7 @@ def load_from_url(rfc_path_string):
 
 
 def load_cfda_csv_into_pandas(data_file_handle):
-    df = pd.read_csv(data_file_handle, dtype=str, encoding="latin1", na_filter=False)
+    df = pd.read_csv(data_file_handle, dtype=str, encoding="cp1252", na_filter=False)
     df.rename(columns=clean_col_names, inplace=True)
 
     for field in DATA_CLEANING_MAP.keys():

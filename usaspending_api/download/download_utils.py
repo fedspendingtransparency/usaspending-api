@@ -1,14 +1,19 @@
 from datetime import datetime, timezone
+from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.helpers import write_to_download_log
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency
 
 
-def create_unique_filename(download_types, request_agency=None):
-    prefix = obtain_filename_prefix_from_agency_id(request_agency)
-    award_type_name = create_award_level_string(download_types)
-    download_name = "{}_{}".format(prefix, award_type_name)
+def create_unique_filename(json_request, request_agency=None):
+    if json_request.get("is_for_idv"):
+        download_name = "IDV_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
+    else:
+        download_types = json_request["download_types"]
+        prefix = obtain_filename_prefix_from_agency_id(request_agency)
+        award_type_name = create_award_level_string(download_types)
+        download_name = "{}_{}".format(prefix, award_type_name)
     timestamped_file_name = get_timestamped_filename("{}.zip".format(download_name))
     return timestamped_file_name
 

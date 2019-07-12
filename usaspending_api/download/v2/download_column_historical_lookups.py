@@ -25,7 +25,7 @@ query_paths = {
             ('current_total_value_of_award', 'award__latest_transaction__contract_data__current_total_value_award'),
             ('potential_total_value_of_award', 'award__latest_transaction__contract_data__potential_total_value_awar'),
             ('period_of_performance_start_date',
-             'award__latest_transaction__contract_data__period_of_performance_star'),
+             'award__period_of_performance_start_date'),
             ('period_of_performance_current_end_date',
              'award__latest_transaction__contract_data__period_of_performance_curr'),
             ('period_of_performance_potential_end_date',
@@ -423,6 +423,7 @@ query_paths = {
     },
     'transaction': {
         'd1': OrderedDict([
+            ('contract_transaction_unique_key', 'transaction__contract_data__detached_award_proc_unique'),
             ('award_id_piid', 'transaction__contract_data__piid'),
             ('modification_number', 'transaction__contract_data__award_modification_amendme'),
             ('transaction_number', 'transaction__contract_data__transaction_number'),
@@ -700,6 +701,7 @@ query_paths = {
             ('last_modified_date', 'transaction__contract_data__last_modified')
         ]),
         'd2': OrderedDict([
+            ('assistance_transaction_unique_key', 'transaction__assistance_data__afa_generated_unique'),
             ('award_id_fain', 'transaction__assistance_data__fain'),
             ('modification_number', 'transaction__modification_number'),
             ('award_id_uri', 'transaction__assistance_data__uri'),
@@ -1108,3 +1110,14 @@ query_paths = {
         ])
     }
 }
+
+# IDV Orders are nearly identical to awards but start from the Awards table
+# instead of from UniversalAwardView materialized view so we need to lop off
+# the leading "award__" bit.
+query_paths['idv_orders'] = {"d1": OrderedDict(
+    [(k, v[7:] if v.startswith('award__') else v) for k, v in query_paths['award']['d1'].items()])}
+
+# Likewise, IDV Transactions start directly in TransactionFPDS instead of
+# UniversalTransactionView.
+query_paths['idv_transaction_history'] = {"d1": OrderedDict(
+    [(k, v[13:] if v.startswith('transaction__') else v) for k, v in query_paths['transaction']['d1'].items()])}

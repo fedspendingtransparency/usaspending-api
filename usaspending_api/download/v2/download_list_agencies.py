@@ -6,7 +6,7 @@ from django.db.models import F
 from rest_framework.response import Response
 
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.awards.models import Agency
+from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.lookups import CFO_CGACS
@@ -19,8 +19,9 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
 
     endpoint_doc: /download/list_agencies.md
     """
+    # Get list of agencies without duplicates
     modified_agencies_list = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
-                                          'modified_authoritative_agency_list.csv')
+                                          'user_selectable_agency_list.csv')
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
@@ -51,7 +52,7 @@ class DownloadListAgenciesViewSet(APIDocumentationView):
         post_data = request.data
         if post_data:
             if 'agency' not in post_data:
-                raise InvalidParameterException('Missing one or more required query parameters: agency')
+                raise InvalidParameterException('Missing one or more required body parameters: agency')
             agency_id = post_data['agency']
 
         # Get all the top tier agencies

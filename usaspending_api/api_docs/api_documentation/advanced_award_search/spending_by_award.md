@@ -209,6 +209,12 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
 ### Errors
 Possible HTTP Status Codes:
 * 400 : Missing parameters or limit is not a valid, positive integer
+* 422 : Award Type code for subawards is not a code for contracts, IDVs, or grants
+```
+{
+    "detail": "Award Type codes limited for Subawards. Only contracts ['A', 'C', 'D', 'B'], IDVs ['IDV_A', 'IDV_B_A', 'IDV_D', 'IDV_B', 'IDV_B_C', 'IDV_B_B', 'IDV_C', 'IDV_E'], or grants ['05', '03', '04', '02'] are available"
+}
+```
 * 500 : All other errors
 
 ```
@@ -216,3 +222,4 @@ Possible HTTP Status Codes:
     "detail": "Sample error message"
 }
 ```
+

@@ -1,2 +1,0 @@
-# This file is to include packages for Python2 aka "Legacy Python"
-supervisor==3.3.3

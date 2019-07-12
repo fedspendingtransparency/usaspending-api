@@ -15,7 +15,7 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 def clear_caches():
-    for cache_name in ('default', 'locations', 'awards'):
+    for cache_name in ('default', 'locations'):
         caches[cache_name].clear()
 
 

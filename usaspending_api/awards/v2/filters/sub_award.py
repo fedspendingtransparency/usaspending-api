@@ -90,8 +90,10 @@ def subaward_filter(filters, for_downloads=False):
             logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(latest_transaction_id__isnull=False)
-            queryset &= queryset.extra(
-                where=['"latest_transaction_id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+
+            # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
+            sql_fragment = '"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
+            queryset = queryset.extra(where=[sql_fragment.format(','.join(transaction_ids))])
 
         elif key == "time_period":
             min_date = API_SEARCH_MIN_DATE
@@ -100,7 +102,7 @@ def subaward_filter(filters, for_downloads=False):
             queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            queryset &= queryset.filter(Q(prime_award_type__in=value))
+            queryset = queryset.filter(prime_award_type__in=value)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -165,7 +167,7 @@ def subaward_filter(filters, for_downloads=False):
             filter_obj = Q()
             for recipient in value:
                 filter_obj |= recip_string_parse(recipient)
-            queryset &= queryset.filter(filter_obj)
+            queryset = queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -176,11 +178,11 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations('recipient_location', value, True))
+            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= queryset.filter(Q(business_categories__overlap=value))
+                queryset = queryset.filter(business_categories__overlap=value)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -191,7 +193,7 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations('pop', value, True))
+            queryset = queryset.filter(geocode_filter_locations("pop", value, True))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, SubawardView, filters)
@@ -202,7 +204,7 @@ def subaward_filter(filters, for_downloads=False):
                 # award_id_string is a Postgres TS_vector
                 # award_id_string = piid + fain + uri + subaward_number
                 filter_obj |= Q(award_ts_vector=val)
-            queryset &= queryset.filter(filter_obj)
+            queryset = queryset.filter(filter_obj)
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
