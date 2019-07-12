@@ -2,10 +2,3 @@
 line-length = 110
 target_version = ['py35']
 exclude = 'migrations'
-
-[coverage:run]
-omit =
-    # tests themselves don't need coverage measurements
-    */tests/*
-    # nor db migration scripts
-    */migrations/*
