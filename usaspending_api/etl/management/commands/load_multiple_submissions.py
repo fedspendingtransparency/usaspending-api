@@ -38,7 +38,7 @@ class Command(BaseCommand):
             logger.critical('Acceptable values for fiscal quarter are 1-4 (was {}).'.format(quarter))
             return
 
-        # Convert fiscal quarter to month
+        # Convert fiscal quarter to starting month of calendar quarter
         quarter = int(quarter) * 3
 
         broker_cursor.execute("SELECT submission.submission_id, MAX(certify_history.created_at) AS certified_at, \
