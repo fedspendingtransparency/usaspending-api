@@ -94,7 +94,7 @@ class Command(BaseCommand):
         # The submission loader is atomic, so one of these failing should not affect subsequent submissions
         if not options["safe"]:
             for next_missing_sub in missing_submissions:
-                submission_id = next_broker_sub[0]
+                submission_id = next_missing_sub[0]
                 try:
                     call_command('load_submission', '--noclean', submission_id)
                 except Exception as error:
