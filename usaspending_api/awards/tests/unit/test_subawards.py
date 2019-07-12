@@ -84,8 +84,8 @@ def test_specific_award(mock_matviews_qs):
 subaward_1 = {
     "subaward_id": 2,
     "subaward_number": "000",
-    "description": "Brunch chips craft direct fixie food gluten-free hoodie jean shorts keffiyeh lomo mumblecore readymade"
-    " squid street stumptown thundercats viral wes you probably haven't heard of them. +1 bicycle biodiesel"
+    "description": "Brunch chips craft direct fixie food gluten-free hoodie jean shorts keffiyeh lomo mumblecore"
+    " readymade squid street stumptown thundercats viral wes you probably haven't heard of them. +1 bicycle biodiesel"
     " brunch carles chips direct diy ethical fixie gentrify keytar letterpress lomo mi mumblecore organic"
     " photo booth pour-over raw readymade salvia semiotics umami vinyl wes wolf. Beer biodiesel blog brooklyn"
     " chips cosby echo etsy forage future helvetica kale occupy salvia sartorial semiotics skateboard squid"
@@ -100,8 +100,8 @@ subaward_1 = {
 subaward_2 = {
     "subaward_id": 1,
     "subaward_number": "001",
-    "description": "Aesthetic bushwick chillwave chips cosby fanny pack four fund gentrify helvetica hoodie occupy pork raw"
-    " salvia sartorial selvage stumptown sustainable tumblr vegan whatever wolf. American artisan authentic"
+    "description": "Aesthetic bushwick chillwave chips cosby fanny pack four fund gentrify helvetica hoodie occupy pork"
+    " raw salvia sartorial selvage stumptown sustainable tumblr vegan whatever wolf. American artisan authentic"
     " chambray cleanse cray direct freegan future hoodie kale lomo moon party portland readymade skateboard"
     " stumptown synth vice wes. +1 belly flexitarian forage helvetica kale marfa master photo booth pinterest"
     " seitan semiotics squid stumptown sweater trade vegan vhs vice. Aesthetic american beard chambray"

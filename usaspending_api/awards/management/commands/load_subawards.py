@@ -145,9 +145,7 @@ class Command(BaseCommand):
         if self.full_reload:
             where = "where award_id is not null"
         else:
-            where = (
-                "where award_id in (select award_id from temp_load_subawards_subaward where award_id is not null)"
-            )
+            where = "where award_id in (select award_id from temp_load_subawards_subaward where award_id is not null)"
 
         with transaction.atomic():
             if self.full_reload:

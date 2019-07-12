@@ -355,7 +355,7 @@ def test_load_submission_transaction_obligated_amount(mock_db_cursor):
             "main_account_code": "0000",
             "sub_account_code": "0000",
             "tas_rendering_label": "999-999-000-0000-0000",
-        }
+        },
     )
     call_command("load_submission", "--noclean", "-9999")
 
