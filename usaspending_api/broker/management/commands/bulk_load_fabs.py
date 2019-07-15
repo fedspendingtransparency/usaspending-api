@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
 from django.db.models import Count
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date

@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.common.helpers.generic_helper import timer
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency
 
 

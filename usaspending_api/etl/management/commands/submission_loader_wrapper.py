@@ -35,7 +35,7 @@ class Command(BaseCommand):
             for idx in options['ids']:
                 logger.info("Running submission load for submission id {}".format(idx))
                 try:
-                    call_command('load_submission', '--noclean', '--nosubawards', idx)
+                    call_command('load_submission', '--noclean', idx)
                 except CommandError:
                     logger.info('Skipping submission ID {} due to CommandError (bad ID)'.format(idx))
                     continue

@@ -82,6 +82,7 @@ def create_idv_test_data():
             funding_agency_name='subtier_funding_agency_name_%s' % transaction_normalized.id,
             ordering_period_end_date='2018-01-%02d' % award_id,
             awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
+            period_of_perf_potential_e='2018-08-%02d' % award_id,
         )
 
         mommy.make(
