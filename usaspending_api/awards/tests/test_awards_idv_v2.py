@@ -201,6 +201,10 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
     }
     latest_transaction_contract_data_without_recipient_name_or_id = {
         "agency_id": "192",
@@ -551,7 +555,16 @@ expected_response_idv = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "executive_details": {"officers": []},
+    "executive_details": {"officers": [
+        {
+            "name": "Tom",
+            "amount": 10000.00
+        },
+        {
+            "name": "Stan Burger",
+            "amount": 1234.00
+        }
+    ]},
     "date_signed": "2004-03-02",
 }
 

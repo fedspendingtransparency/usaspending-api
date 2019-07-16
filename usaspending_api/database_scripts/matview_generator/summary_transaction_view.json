@@ -60,7 +60,7 @@
     "  transaction_fpds.extent_competed,",
     "",
     "  SUM(COALESCE(CASE",
-    "    WHEN awards.category = 'loans' THEN transaction_normalized.original_loan_subsidy_cost",
+    "    WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost",
     "    ELSE transaction_normalized.federal_action_obligation",
     "  END, 0)::NUMERIC(23, 2))::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
     "  SUM(COALESCE(transaction_normalized.federal_action_obligation, 0))::NUMERIC(23, 2) AS federal_action_obligation,",

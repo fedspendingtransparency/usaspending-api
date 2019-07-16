@@ -46,7 +46,7 @@ See below for basic setup instructions. For help with Docker Compose:
  - [Docker Compose](https://docs.docker.com/compose/)  
 
 
-### Database Setup and Initialization w/Docker Compose
+### Database Setup and Initialization with Docker Compose
 
 - **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
 
@@ -63,6 +63,14 @@ See below for basic setup instructions. For help with Docker Compose:
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
+## Elasticsearch Setup
+Some of the API endpoints reach into Elasticsearch for data.  
+
+- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+
+- The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
+
+- Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
 ## Running the API
 `docker-compose up usaspending-api`

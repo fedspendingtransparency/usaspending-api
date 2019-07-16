@@ -28,14 +28,16 @@ class IDVAwardsTestCase(TestCase):
         for award_id in award_ids:
             string_award_id = str(award_id).zfill(3)
             parent_award_id = PARENTS.get(award_id)
+            string_parent_award_id = str(parent_award_id).zfill(3)
             results.append({
                 "award_id": award_id,
                 "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
                 "awarding_agency_id": 8000 + award_id,
                 "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
-                "last_date_to_order": "2018-08-%02d" % award_id,
+                "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
                 "parent_award_id": parent_award_id,
-                "parent_award_piid": ("piid_%s" % str(parent_award_id).zfill(3)) if parent_award_id else None,
+                "parent_generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_parent_award_id,
+                "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
                 "obligated_amount": 100000.0 + award_id,
                 "awarded_amount": 500000.0 + award_id,
                 "period_of_performance_start_date": "2018-02-%02d" % award_id,
@@ -159,4 +161,23 @@ class IDVAwardsTestCase(TestCase):
         self._test_post(
             {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"},
             expected_status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_hide_edges(self):
+        self._test_post(
+            {"award_id": 2, "limit": 1, "hide_edge_cases": True},
+            (6, 1, 1, 14)
+        )
+        self._test_post(
+            {"award_id": 2, "limit": 1, "hide_edge_cases": False},
+            (400002, 1, 1, 14)
+        )
+        self._test_post(
+            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": True},
+            (6, 10, 1, 14, 13, 12, 11, 10, 9)
+        )
+
+        self._test_post(
+            {"award_id": "GENERATED_UNIQUE_AWARD_ID_002", "hide_edge_cases": False},
+            (400002, 10, 1, 14, 13, 12, 11, 10, 9)
         )

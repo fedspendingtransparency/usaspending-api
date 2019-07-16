@@ -7,7 +7,6 @@ from django.db.models import Sum
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_AWARD_FIELDS,
     FPDS_CONTRACT_FIELDS,
-    OFFICER_FIELDS,
     FPDS_AWARD_FIELDS,
     FABS_ASSISTANCE_FIELDS,
 )
@@ -18,7 +17,7 @@ from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, LegalEntityOfficers, Cfda, SubtierAgency
+from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
 
 
 logger = logging.getLogger("console")
@@ -82,7 +81,7 @@ def construct_contract_response(requested_award_dict):
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
-    response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
+    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -135,7 +134,7 @@ def construct_idv_response(requested_award_dict):
 
     response["parent_award"] = parent_award
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
-    response["executive_details"] = fetch_officers_by_legal_entity_id(award["_lei"])
+    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -227,6 +226,21 @@ def create_place_of_performance_object(db_row_dict):
             ("foreign_postal_code", None),
         ]
     )
+
+
+def create_officers_object(db_row_dict):
+    officers = []
+    for officer_num in range(1, 6):
+        officer_name_key = "_officer_{}_name".format(officer_num)
+        officer_amount_key = "_officer_{}_amount".format(officer_num)
+        officer_name = db_row_dict.get(officer_name_key)
+        officer_amount = db_row_dict.get(officer_amount_key)
+        if officer_name or officer_amount:
+            officers.append({
+                "name": officer_name,
+                "amount": officer_amount
+            })
+    return {"officers": officers}
 
 
 def fetch_award_details(filter_q, mapper_fields):
@@ -326,22 +340,6 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
     if le:
         return le["business_categories"]
     return []
-
-
-def fetch_officers_by_legal_entity_id(legal_entity_id):
-    officer_info = LegalEntityOfficers.objects.filter(pk=legal_entity_id).values(*OFFICER_FIELDS.keys()).first()
-
-    officers = []
-    if officer_info:
-        for x in range(1, 6):
-            officers.append(
-                {
-                    "name": officer_info["officer_{}_name".format(x)],
-                    "amount": officer_info["officer_{}_amount".format(x)],
-                }
-            )
-
-    return {"officers": officers}
 
 
 def fetch_cfda_details_using_cfda_number(cfda):

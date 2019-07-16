@@ -93,6 +93,25 @@ def insert_new_fabs(to_insert):
         "foreign_city_name": "legal_entity_foreign_city",
     }
 
+    fabs_normalized_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+        "funding_amount": "total_funding_amount",
+    }
+
+    fabs_field_map = {
+        "officer_1_name": "high_comp_officer1_full_na",
+        "officer_1_amount": "high_comp_officer1_amount",
+        "officer_2_name": "high_comp_officer2_full_na",
+        "officer_2_amount": "high_comp_officer2_amount",
+        "officer_3_name": "high_comp_officer3_full_na",
+        "officer_3_amount": "high_comp_officer3_amount",
+        "officer_4_name": "high_comp_officer4_full_na",
+        "officer_4_amount": "high_comp_officer4_amount",
+        "officer_5_name": "high_comp_officer5_full_na",
+        "officer_5_amount": "high_comp_officer5_amount",
+    }
+
     update_award_ids = []
     for row in to_insert:
         upper_case_dict_values(row)
@@ -150,21 +169,20 @@ def insert_new_fabs(to_insert):
             "transaction_unique_id": row['afa_generated_unique'],
         }
 
-        fad_field_map = {
-            "type": "assistance_type",
-            "description": "award_description",
-            "funding_amount": "total_funding_amount",
-        }
-
         transaction_normalized_dict = load_data_into_model(
             TransactionNormalized(),  # thrown away
             row,
-            field_map=fad_field_map,
+            field_map=fabs_normalized_field_map,
             value_map=parent_txn_value_map,
             as_dict=True,
         )
 
-        financial_assistance_data = load_data_into_model(TransactionFABS(), row, as_dict=True)  # thrown away
+        financial_assistance_data = load_data_into_model(
+            TransactionFABS(),  # thrown away
+            row,
+            field_map=fabs_field_map,
+            as_dict=True
+        )
 
         # Hack to cut back on the number of warnings dumped to the log.
         financial_assistance_data['updated_at'] = cast_datetime_to_utc(financial_assistance_data['updated_at'])

@@ -71,10 +71,6 @@ class TransactionFABSSerializer(LimitableSerializer):
     class Meta:
         model = TransactionFABS
 
-        # import ipdb; ipdb.set_trace()
-
-        # cfda_objectives = serializers.Field()
-        # fields = [a for a in dir(model) if a[0].islower()] + ['cfda_objectives', ]
         # Unforuntately, we can't use fields = '__all__', because we need to add
         # a property to that
         fields = [
@@ -161,6 +157,16 @@ class TransactionFABSSerializer(LimitableSerializer):
             'transaction_id',
             'updated_at',
             'uri',
+            'officer_1_amount',
+            'officer_1_name',
+            'officer_2_amount',
+            'officer_2_name',
+            'officer_3_amount',
+            'officer_3_name',
+            'officer_4_amount',
+            'officer_4_name',
+            'officer_5_amount',
+            'officer_5_name',
         ] + [
             # property fields manually added
             'cfda_objectives',
