@@ -1,7 +1,30 @@
 # Contributing to USAspending-api
 Great! We hope to foster a community around this project to drive improvement and hear how it is valuable to you.
 
+Everything in this Github repository is a work-in-progress following the agile methodology of incrementally delivering value. This especially includes documentation. If you see any lacking areas, feel free to write improvements and create a PR for the community.
+
 # Submitting Changes
+
+## Making a Branch
+If you have write access to the Github repository, create a git branch from where you want to base your work
+    - Typically, this will be `dev`
+
+Otherwise, clone the repo and base your changes from the `dev` branch of your repo and submit a PR into the `dev` branch of this repo.
+
+Try to follow these naming conventions so branches will be organized in a list, easily distinguished, and easily traced to the work involved.
+
+In general, follow the form `prefix/JIRA-###-short-description`
+
+Prefixes are described below. Include the Jira ID (or Github Issue) for this work (or the primary ID when multiple) if one exists. Then a few words to concisely summarize what it is.
+
+Prefix|Change Type|Examples
+------|-----------|--------
+`ftr/`|_New_ stuff. New feature development, or new framework, utility, etc.|`ftr/dev-123-short-description`
+`mod/`|Updates, refactoring, improvements, or modifications to an _existing_ feature/framework/code. <br/>_(If this is happening as part of new feature development, use `ftr/` instead.)_|`mod/dev-456-short-description`
+`bug/`|Bug fixes that are not being hotfixed|`bug/dev-21-the-problem`
+`fix/`|Hotfixes patching the current production code|`fix/dev-888-bug-description`
+`doc/`|In app repos when only a markdown file needs to change. Or for changes in `data-act-documentation` that need to be reviewed|`doc/dev-555-what-the-doc-is`
+
 
 ## Code Style
 Use these tools to have an excellent chance of passing our automated CI tests
@@ -19,7 +42,7 @@ When opening a PR to improve or fix something, the description will auto-populat
 
 > Some requirements _may not_ be applicable for a given PR.
 >
-> If one is not: please check the box, place "(N/A)" at the end of the line, and include the reason in the bottom area. Clearly linking the comment to the requirement.
+> If one is not: please check the box, place "(N/A)" at the end of the line and include the reason in the bottom area. Clearly linking the comment to the requirement.
 >
 > Example: 2. [x] API documentation updated (N/A)
 
@@ -54,7 +77,7 @@ When opening a PR to improve or fix something, the description will auto-populat
     - (Before / After data comparison) Data validation results from #6 in a Jira ticket comment
 
 **Bottom area:**
-If any of the above required checkboxes are marked as `(N/A)`, then write down the explaination of why that requirement is not applicable in this PR. This is useful to critically think about each requirement and gives the author a chance to re-evaluate the `N/A`
+If any of the above required checkboxes are marked as `(N/A)`, then write down the explanation of why that requirement is not applicable in this PR. This is useful to critically think about each requirement and gives the author a chance to re-evaluate the `N/A`
 
 
 # Final Notes
@@ -65,3 +88,12 @@ Note: this codebase supports a Federal US Government [website](https://www.usasp
 This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/legalcode).
 
 All contributions to this project will be released under the [CC0 dedication](LICENSE). By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
+
+## Additional Resources
+- [USAspending.gov Community](https://usaspending-help.zendesk.com/hc/en-us/community/topics)
+- [USAspending Release Notes](https://github.com/fedspendingtransparency/usaspending-website/wiki)
+- [About Federal Spending Transparency](http://fedspendingtransparency.github.io/)
+- [Our Amazing Frontend Repo](https://github.com/fedspendingtransparency/usaspending-website)
+- [Full Dataset as PostgreSQL Dump](https://files.usaspending.gov/database_download/)
+- [General GitHub Documentation](https://help.github.com/)
+- [GitHub Pull Request Documentation](https://help.github.com/articles/creating-a-pull-request/)
