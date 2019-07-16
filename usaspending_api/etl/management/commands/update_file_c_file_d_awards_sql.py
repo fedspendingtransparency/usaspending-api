@@ -26,8 +26,7 @@ class Command(BaseCommand):
 
             curs.execute(self.CREATE_FILE_C_FILE_D_MAPPING)
             logger.info(
-                "NEW LINKAGES ADDED TO FABA CORRECTOR. {} potential links "
-                "(including duplicates)".format(curs.rowcount)
+                "NEW LINKAGES ADDED TO FABA CORRECTOR. {} potential links (including duplicates)".format(curs.rowcount)
             )
 
             curs.execute(self.LINK_FILE_C_FILE_D)

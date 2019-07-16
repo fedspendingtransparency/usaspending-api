@@ -297,7 +297,8 @@ class Command(BaseCommand):
             )
 
             contract_instance = load_data_into_model(
-                TransactionFPDS(), row, field_map=fpds_field_map, as_dict=True  # thrown away
+                # TransactionFPDS() is "thrown" away
+                TransactionFPDS(), row, field_map=fpds_field_map, as_dict=True
             )
 
             detached_award_proc_unique = contract_instance["detached_award_proc_unique"]
