@@ -12,8 +12,13 @@ set
     total_subaward_amount = null,
     subaward_count = 0
 
+from
+    awards a
+    left outer join subaward s on s.award_id = a.id
+
 where
-    id not in (select award_id from subaward where award_id is not null) and (
-        total_subaward_amount is not null or
-        subaward_count is distinct from 0
-    );
+    s.award_id is null and (
+        a.total_subaward_amount is not null or
+        a.subaward_count is distinct from 0
+    ) and
+    awards.id = a.id;
