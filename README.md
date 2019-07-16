@@ -92,10 +92,3 @@ _Note: it is possible to run ad-hoc commands out of a Docker container once you 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 
 For details on how our data loaders modify incoming data, see [data_changes.md](data_changes.md).
-
-## Public Domain License
-
-This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the CC0 1.0 Universal public domain dedication.
-
-All contributions to this project will be released under the CC0 dedication. By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
-got
