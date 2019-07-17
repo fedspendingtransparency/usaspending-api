@@ -14,7 +14,7 @@ from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 # If you write a test that will use this loader, mark it with
 # @pytest.mark.django_db(transaction=True)
 # otherwise you may run into some concurrency issues!
-class ThreadedDataLoader():
+class ThreadedDataLoader:
     # The threaded data loader requires a bit of set up, and explanation of the
     # parameters are below. Most parameter defaults are about where you'd want them:
     #   model_class - The class of the model each row of the file corresponds to
@@ -38,9 +38,19 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None,
-                 collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None,
-                 loghandler='console'):
+    def __init__(
+        self,
+        model_class,
+        processes=None,
+        field_map={},
+        value_map={},
+        collision_field=None,
+        collision_behavior="update",
+        pre_row_function=None,
+        post_row_function=None,
+        post_process_function=None,
+        loghandler="console",
+    ):
         self.logger = logging.getLogger(loghandler)
         self.model_class = model_class
         self.processes = processes
@@ -49,7 +59,7 @@ class ThreadedDataLoader():
             # being spat to console whenever this loader is used.
             # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we fix this issue
             self.processes = 1
-            self.logger.info('Setting processes count to ' + str(self.processes))
+            self.logger.info("Setting processes count to " + str(self.processes))
         self.field_map = field_map
         self.value_map = value_map
         self.collision_field = collision_field
@@ -61,9 +71,9 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath, encoding='utf-8', remote_file=False):
+    def load_from_file(self, filepath, encoding="utf-8", remote_file=False):
         if not remote_file:
-            self.logger.info('Started processing file ' + filepath)
+            self.logger.info("Started processing file " + filepath)
 
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = JoinableQueue(500)
@@ -74,7 +84,7 @@ class ThreadedDataLoader():
             "logger": self.logger,
             "pre_row_function": self.pre_row_function,
             "post_row_function": self.post_row_function,
-            "fields": self.fields.copy()
+            "fields": self.fields.copy(),
         }
 
         # Spawn our processes
@@ -83,14 +93,22 @@ class ThreadedDataLoader():
         db.connections.close_all()
         pool = []
         for i in range(self.processes):
-            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue,
-                                         self.field_map.copy(), self.value_map.copy(), references))
+            pool.append(
+                DataLoaderThread(
+                    "Process-" + str(len(pool)),
+                    self.model_class,
+                    row_queue,
+                    self.field_map.copy(),
+                    self.value_map.copy(),
+                    references,
+                )
+            )
 
         for process in pool:
             process.start()
 
         if remote_file:
-            csv_file = codecs.getreader('utf-8')(filepath['Body'])
+            csv_file = codecs.getreader("utf-8")(filepath["Body"])
             row_queue = self.csv_file_to_queue(csv_file, row_queue)
         else:
             with open(filepath, encoding=encoding) as csv_file:
@@ -107,7 +125,7 @@ class ThreadedDataLoader():
         if self.post_process_function is not None:
             self.post_process_function()
 
-        self.logger.info('Finished processing all rows')
+        self.logger.info("Finished processing all rows")
 
     def csv_file_to_queue(self, csv_file, row_queue):
         reader = csv.DictReader(csv_file)
@@ -132,10 +150,10 @@ class DataLoaderThread(Process):
         self.references = references
 
     def run(self):
-        self.references['logger'].info("Starting " + self.name)
+        self.references["logger"].info("Starting " + self.name)
         connection.connect()
         self.process_data()
-        self.references['logger'].info("Exiting " + self.name)
+        self.references["logger"].info("Exiting " + self.name)
 
     def process_data(self):
         # Make sure we weren't flagged to exit
@@ -170,7 +188,7 @@ class DataLoaderThread(Process):
                         self.data_queue.task_done()
                         continue
                     if behavior == "skip_and_complain":  # Log a warning and skip the row
-                        self.references['logger'].warning('Hit a collision on row %s' % (row))
+                        self.references["logger"].warning("Hit a collision on row %s" % (row))
                         self.data_queue.task_done()
                         continue
                     if behavior == "die":  # Raise an exception and cease execution
@@ -185,8 +203,14 @@ class DataLoaderThread(Process):
                 if self.references["pre_row_function"] is not None:
                     self.references["pre_row_function"](row=row, instance=model_instance)
 
-                self.load_data_into_model(model_instance, self.references["fields"], self.field_map,
-                                          self.value_map, row, self.references["logger"])
+                self.load_data_into_model(
+                    model_instance,
+                    self.references["fields"],
+                    self.field_map,
+                    self.value_map,
+                    row,
+                    self.references["logger"],
+                )
 
                 # If we have a post row function, run it before saving
                 if self.references["post_row_function"] is not None:
@@ -255,7 +279,7 @@ def cleanse_values(row):
     Remove textual quirks from CSV values.
     """
     row = {k: v.strip() for (k, v) in row.items()}
-    row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
+    row = {k: (None if v.lower() == "null" else v) for (k, v) in row.items()}
     return row
 
 

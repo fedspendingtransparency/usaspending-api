@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Generates a markdown file of a model's fields and help text \
             for use in documentation \
             Usage: `python manage.py generate_model_markdown <MODEL>`"
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     friendly_names = {
         "ForeignKey": "Relation",
@@ -18,14 +18,14 @@ class Command(BaseCommand):
         "DecimalField": "Float",
         "DateField": "Date",
         "DateTimeField": "Datetime",
-        "BooleanField": "Boolean"
+        "BooleanField": "Boolean",
     }
 
     def add_arguments(self, parser):
-        parser.add_argument('model', nargs=1, help='The model to generate markdown for')
+        parser.add_argument("model", nargs=1, help="The model to generate markdown for")
 
     def handle(self, *args, **options):
-        model_name = options['model'][0]
+        model_name = options["model"][0]
         model = apps.get_model(model_name)
 
         print("This data is represented internally as the model: `" + model.__name__ + "`")
@@ -38,10 +38,11 @@ class Command(BaseCommand):
             internal_type = field.get_internal_type()
             friendly_type = self.friendly_names.get(internal_type, internal_type)
             field_name = field.name
-            if hasattr(field, 'parent_link'):
-                description = "Reverse look-up for relation from " + field.related_model.__name__ + "::" +\
-                              field.field.name
-            elif field.primary_key and field.help_text == '':
+            if hasattr(field, "parent_link"):
+                description = (
+                    "Reverse look-up for relation from " + field.related_model.__name__ + "::" + field.field.name
+                )
+            elif field.primary_key and field.help_text == "":
                 description = "Internal primary key. Guaranteed to be unique."
             else:
                 description = field.help_text

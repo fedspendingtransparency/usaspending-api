@@ -9,31 +9,29 @@ from usaspending_api.references.models import CGAC
 
 
 TINY_SHIELD_MODELS = [
-    {"name": "filters|ata",  "key": "filters|ata",  "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|aid",  "key": "filters|aid",  "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|ata", "key": "filters|ata", "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|aid", "key": "filters|aid", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|bpoa", "key": "filters|bpoa", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|epoa", "key": "filters|epoa", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|a",    "key": "filters|a",    "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|a", "key": "filters|a", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|main", "key": "filters|main", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|sub",  "key": "filters|sub",  "type": "text", "text_type": "search", "allow_nulls": True},
-
+    {"name": "filters|sub", "key": "filters|sub", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "limit", "key": "limit", "type": "integer", "max": 500, "default": 10},
 ]
 
 
 COMPONENT_MAPPING = {
-    "ata":  "allocation_transfer_agency_id",
-    "aid":  "agency_id",
+    "ata": "allocation_transfer_agency_id",
+    "aid": "agency_id",
     "bpoa": "beginning_period_of_availability",
     "epoa": "ending_period_of_availability",
-    "a":    "availability_type_code",
+    "a": "availability_type_code",
     "main": "main_account_code",
-    "sub":  "sub_account_code",
+    "sub": "sub_account_code",
 }
 
 
 class TASAutocomplete(APIView):
-
     @staticmethod
     def _parse_and_validate_request(request_data):
         return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
@@ -71,11 +69,13 @@ class TASAutocomplete(APIView):
             # Build a new result set with the requested_component, agency_name,
             # and agency_abbreviation.
             results = [
-                OrderedDict([
-                    (requested_component, r),
-                    ("agency_name", agency_names.get(r)),
-                    ("agency_abbreviation", agency_abbreviations.get(r)),
-                ])
+                OrderedDict(
+                    [
+                        (requested_component, r),
+                        ("agency_name", agency_names.get(r)),
+                        ("agency_abbreviation", agency_abbreviations.get(r)),
+                    ]
+                )
                 for r in results
             ]
 

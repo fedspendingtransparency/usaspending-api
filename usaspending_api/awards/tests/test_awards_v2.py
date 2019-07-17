@@ -68,10 +68,7 @@ def awards_and_transactions(db):
         "location": Location.objects.get(pk=2),
     }
 
-    le = {
-        "pk": 1,
-        "business_categories": ["small_business"],
-    }
+    le = {"pk": 1, "business_categories": ["small_business"]}
 
     ag = {
         "pk": 1,
@@ -341,11 +338,7 @@ expected_response_asst = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "period_of_performance": {
-        "start_date": "2004-02-04",
-        "end_date": "2005-02-04",
-        "last_modified_date": "2000-01-02",
-    },
+    "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -505,15 +498,8 @@ expected_response_cont = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "executive_details": {"officers": [
-        {
-            "name": "Tom",
-            "amount": 10000.00
-        },
-        {
-            "name": "Stan Burger",
-            "amount": 1234.00
-        }
-    ]},
+    "executive_details": {
+        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+    },
     "date_signed": "2004-03-02",
 }

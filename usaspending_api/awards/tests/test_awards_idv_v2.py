@@ -555,16 +555,9 @@ expected_response_idv = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "executive_details": {"officers": [
-        {
-            "name": "Tom",
-            "amount": 10000.00
-        },
-        {
-            "name": "Stan Burger",
-            "amount": 1234.00
-        }
-    ]},
+    "executive_details": {
+        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+    },
     "date_signed": "2004-03-02",
 }
 

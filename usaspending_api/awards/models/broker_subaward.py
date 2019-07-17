@@ -6,6 +6,7 @@ class BrokerSubaward(models.Model):
     This table is a direct copy of the "subaward" table in Broker with some
     minor USAspending enhancements (mostly indexes and stronger data typing).
     """
+
     created_at = models.DateTimeField(null=True, blank=True, db_index=True)
     updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     id = models.IntegerField(primary_key=True, db_index=True)

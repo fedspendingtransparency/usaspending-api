@@ -25,9 +25,9 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
     def get_source_dict(self, params, view_instance, view_method, request, args, kwargs):
         params = dict(request.query_params)
         params.update(dict(request.data))
-        if 'auditTrail' in params:
-            del params['auditTrail']
-        return {'request': json.dumps(order_nested_object(params))}
+        if "auditTrail" in params:
+            del params["auditTrail"]
+        return {"request": json.dumps(order_nested_object(params))}
 
 
 class USAspendingKeyConstructor(DefaultKeyConstructor):
@@ -35,13 +35,14 @@ class USAspendingKeyConstructor(DefaultKeyConstructor):
     Handle cache key construction for API requests. If we never need to create more nuanced keys, see the
     drf-extensions documentation: http://chibisov.github.io/drf-extensions/docs/#default-key-constructor
     """
+
     path_bit = PathKeyBit()
     request_params = GetPostQueryParamsKeyBit()
 
     def prepare_key(self, key_dict):
         # Order the key_dict using the order_nested_object function to make sure cache keys are always exactly the same
         ordered_key_dict = json.dumps(order_nested_object(key_dict))
-        key_hex = hashlib.md5(ordered_key_dict.encode('utf-8')).hexdigest()
+        key_hex = hashlib.md5(ordered_key_dict.encode("utf-8")).hexdigest()
         return key_hex
 
 

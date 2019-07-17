@@ -10,15 +10,17 @@ from usaspending_api.awards.models import TransactionFPDS
 
 @pytest.fixture()
 def agency_data():
-    call_command('flush', '--noinput')
+    call_command("flush", "--noinput")
     global fpds_transaction1, fpds_transaction2, fpds_transaction3, fpds_transaction4, fpds_transaction5
 
     fpds_transaction1 = mommy.make(TransactionFPDS, detached_award_proc_unique="4732_4730_GSMPNB710761_0_GS06F0007J_0")
-    fpds_transaction2 = mommy.make(TransactionFPDS,
-                                   detached_award_proc_unique="4740_4740_GS02B2365011120_0_GS02B23650_0")
+    fpds_transaction2 = mommy.make(
+        TransactionFPDS, detached_award_proc_unique="4740_4740_GS02B2365011120_0_GS02B23650_0"
+    )
     fpds_transaction3 = mommy.make(TransactionFPDS, detached_award_proc_unique="9700_9700_0003_24_W52P1J10D0022_1")
-    fpds_transaction4 = mommy.make(TransactionFPDS,
-                                   detached_award_proc_unique="9700_-none-_FA520908P0219_P00004_-none-_0")
+    fpds_transaction4 = mommy.make(
+        TransactionFPDS, detached_award_proc_unique="9700_-none-_FA520908P0219_P00004_-none-_0"
+    )
     fpds_transaction5 = mommy.make(TransactionFPDS, detached_award_proc_unique="9700_9700_N407_1_N0017804D4113_14")
 
 
@@ -27,18 +29,23 @@ def agency_data():
 def test_fpds_csv(agency_data):
     global fpds_transaction1, fpds_transaction2, fpds_transaction3, fpds_transaction4, fpds_transaction5
 
-    call_command('load_fpds_csv', os.path.join(os.path.dirname(__file__), '../../data/testing_data/fpds_small.csv'))
+    call_command("load_fpds_csv", os.path.join(os.path.dirname(__file__), "../../data/testing_data/fpds_small.csv"))
 
-    fpds_transaction1 =\
-        TransactionFPDS.objects.filter(detached_award_proc_unique="4732_4730_GSMPNB710761_0_GS06F0007J_0").first()
-    fpds_transaction2 =\
-        TransactionFPDS.objects.filter(detached_award_proc_unique="4740_4740_GS02B2365011120_0_GS02B23650_0").first()
-    fpds_transaction3 =\
-        TransactionFPDS.objects.filter(detached_award_proc_unique="9700_9700_0003_24_W52P1J10D0022_1").first()
-    fpds_transaction4 =\
-        TransactionFPDS.objects.filter(detached_award_proc_unique="9700_-none-_FA520908P0219_P00004_-none-_0").first()
-    fpds_transaction5 =\
-        TransactionFPDS.objects.filter(detached_award_proc_unique="9700_9700_N407_1_N0017804D4113_14").first()
+    fpds_transaction1 = TransactionFPDS.objects.filter(
+        detached_award_proc_unique="4732_4730_GSMPNB710761_0_GS06F0007J_0"
+    ).first()
+    fpds_transaction2 = TransactionFPDS.objects.filter(
+        detached_award_proc_unique="4740_4740_GS02B2365011120_0_GS02B23650_0"
+    ).first()
+    fpds_transaction3 = TransactionFPDS.objects.filter(
+        detached_award_proc_unique="9700_9700_0003_24_W52P1J10D0022_1"
+    ).first()
+    fpds_transaction4 = TransactionFPDS.objects.filter(
+        detached_award_proc_unique="9700_-none-_FA520908P0219_P00004_-none-_0"
+    ).first()
+    fpds_transaction5 = TransactionFPDS.objects.filter(
+        detached_award_proc_unique="9700_9700_N407_1_N0017804D4113_14"
+    ).first()
 
     assert fpds_transaction1.base_exercised_options_val == str(64.32)
     assert fpds_transaction1.base_and_all_options_value == str(64.32)

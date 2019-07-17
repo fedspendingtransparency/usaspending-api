@@ -26,6 +26,7 @@ def create_es_client():
         if settings.ES_HOSTNAME.startswith(("https://localhost", "https://host.docker.internal")):
             logger.warning("SSL cert verification is disabled. Safe only for local development")
             import urllib3
+
             urllib3.disable_warnings()
             ssl_context = create_ssl_context()
             ssl_context.check_hostname = False

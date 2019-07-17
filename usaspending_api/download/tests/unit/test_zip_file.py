@@ -18,5 +18,5 @@ def test_append_files_to_zip_file():
                 with zipfile.ZipFile(zip_file.name, "r") as zf:
                     assert [z.filename for z in zf.filelist] == [
                         os.path.basename(include_file_1.name),
-                        os.path.basename(include_file_2.name)
+                        os.path.basename(include_file_2.name),
                     ]

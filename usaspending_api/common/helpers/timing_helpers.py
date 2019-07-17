@@ -155,8 +155,6 @@ class Timer:
         d, h = divmod(h, 24)
 
         return (
-            " ".join(
-                f.format(b) for f, b in zip(cls._formats, tuple(int(n) for n in (d, h, m, s, ms))) if b > 0
-            )
+            " ".join(f.format(b) for f, b in zip(cls._formats, tuple(int(n) for n in (d, h, m, s, ms))) if b > 0)
             or "less than a millisecond"
         )

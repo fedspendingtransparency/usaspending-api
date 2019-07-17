@@ -10,6 +10,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,41 +30,41 @@ def subaward_filter(filters, for_downloads=False):
     for key, value in filters.items():
 
         if value is None:
-            raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
+            raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 
         key_list = [
-            'keywords',
-            'elasticsearch_keyword',
-            'time_period',
-            'award_type_codes',
-            'agencies',
-            'legal_entities',
-            'recipient_search_text',
-            'recipient_scope',
-            'recipient_locations',
-            'recipient_type_names',
-            'place_of_performance_scope',
-            'place_of_performance_locations',
-            'award_amounts',
-            'award_ids',
-            'program_numbers',
-            'naics_codes',
-            'psc_codes',
-            'contract_pricing_type_codes',
-            'set_aside_type_codes',
-            'extent_competed_type_codes'
+            "keywords",
+            "elasticsearch_keyword",
+            "time_period",
+            "award_type_codes",
+            "agencies",
+            "legal_entities",
+            "recipient_search_text",
+            "recipient_scope",
+            "recipient_locations",
+            "recipient_type_names",
+            "place_of_performance_scope",
+            "place_of_performance_locations",
+            "award_amounts",
+            "award_ids",
+            "program_numbers",
+            "naics_codes",
+            "psc_codes",
+            "contract_pricing_type_codes",
+            "set_aside_type_codes",
+            "extent_competed_type_codes",
         ]
 
         if key not in key_list:
-            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
+            raise InvalidParameterException("Invalid filter: " + key + " does not exist.")
 
         if key == "keywords":
+
             def keyword_parse(keyword):
                 # keyword_ts_vector & award_ts_vector are Postgres TS_vectors.
                 # keyword_ts_vector = recipient_name + psc_description + subaward_description
                 # award_ts_vector = piid + fain + uri + subaward_number
-                filter_obj = Q(keyword_ts_vector=keyword) | \
-                    Q(award_ts_vector=keyword)
+                filter_obj = Q(keyword_ts_vector=keyword) | Q(award_ts_vector=keyword)
                 # Commenting out until NAICS is associated with subawards in DAIMS 1.3.1
                 # if keyword.isnumeric():
                 #     filter_obj |= Q(naics_code__contains=keyword)
@@ -77,23 +78,24 @@ def subaward_filter(filters, for_downloads=False):
                 filter_obj |= keyword_parse(keyword)
             potential_duns = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
             if len(potential_duns) > 0:
-                filter_obj |= Q(recipient_unique_id__in=potential_duns) | \
-                    Q(parent_recipient_unique_id__in=potential_duns)
+                filter_obj |= Q(recipient_unique_id__in=potential_duns) | Q(
+                    parent_recipient_unique_id__in=potential_duns
+                )
 
             queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
             keyword = value
-            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field="transaction_id")
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
+            logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(latest_transaction_id__isnull=False)
 
             # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
             sql_fragment = '"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
-            queryset = queryset.extra(where=[sql_fragment.format(','.join(transaction_ids))])
+            queryset = queryset.extra(where=[sql_fragment.format(",".join(transaction_ids))])
 
         elif key == "time_period":
             min_date = API_SEARCH_MIN_DATE
@@ -118,9 +120,10 @@ def subaward_filter(filters, for_downloads=False):
                     if tier == "toptier":
                         funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        if 'toptier_name' in v:
-                            funding_subtier |= (Q(funding_subtier_agency_name=name) &
-                                                Q(funding_toptier_agency_name=v['toptier_name']))
+                        if "toptier_name" in v:
+                            funding_subtier |= Q(funding_subtier_agency_name=name) & Q(
+                                funding_toptier_agency_name=v["toptier_name"]
+                            )
                         else:
                             funding_subtier |= Q(funding_subtier_agency_name=name)
 
@@ -128,9 +131,10 @@ def subaward_filter(filters, for_downloads=False):
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        if 'toptier_name' in v:
-                            awarding_subtier |= (Q(awarding_subtier_agency_name=name) &
-                                                 Q(awarding_toptier_agency_name=v['toptier_name']))
+                        if "toptier_name" in v:
+                            awarding_subtier |= Q(awarding_subtier_agency_name=name) & Q(
+                                awarding_toptier_agency_name=v["toptier_name"]
+                            )
                         else:
                             awarding_subtier |= Q(awarding_subtier_agency_name=name)
 
@@ -155,6 +159,7 @@ def subaward_filter(filters, for_downloads=False):
             logger.info(msg.format(key, value))
 
         elif key == "recipient_search_text":
+
             def recip_string_parse(recipient_string):
                 upper_recipient_string = recipient_string.upper()
 
@@ -175,7 +180,7 @@ def subaward_filter(filters, for_downloads=False):
             elif value == "foreign":
                 queryset = queryset.exclude(recipient_scope_q)
             else:
-                raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
+                raise InvalidParameterException("Invalid filter: recipient_scope type is invalid.")
 
         elif key == "recipient_locations":
             queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
@@ -190,7 +195,7 @@ def subaward_filter(filters, for_downloads=False):
             elif value == "foreign":
                 queryset = queryset.exclude(pop_scope_q)
             else:
-                raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
+                raise InvalidParameterException("Invalid filter: place_of_performance_scope is invalid.")
 
         elif key == "place_of_performance_locations":
             queryset = queryset.filter(geocode_filter_locations("pop", value, True))
@@ -215,17 +220,14 @@ def subaward_filter(filters, for_downloads=False):
             }
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= SubawardView.objects.filter(**{'{}__in'.format(filter_to_col[key]): in_query})
+                queryset &= SubawardView.objects.filter(**{"{}__in".format(filter_to_col[key]): in_query})
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
-            filter_to_col = {
-                "set_aside_type_codes": "type_set_aside",
-                "extent_competed_type_codes": "extent_competed",
-            }
+            filter_to_col = {"set_aside_type_codes": "type_set_aside", "extent_competed_type_codes": "extent_competed"}
             in_query = [v for v in value]
             for v in value:
-                or_queryset |= Q(**{'{}__exact'.format(filter_to_col[key]): in_query})
+                or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
 
     return queryset

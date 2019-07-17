@@ -47,6 +47,12 @@ engines:
       # Disable line length (> 79) check
       E501:
         enabled: false
+      # Disable Line break occurred before a binary operator
+      W503:
+        enabled: false
+      # Disable Whitespace before ':'
+      E203:
+        enabled: false
   radon:
     enabled: true
     config:

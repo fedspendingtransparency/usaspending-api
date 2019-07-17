@@ -39,10 +39,10 @@ def generate_raw_quoted_query(queryset):
     for param in params:
         if isinstance(param, TYPES_TO_QUOTE_IN_SQL):
             # single quotes are escaped with two '' for strings in sql
-            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
-            str_fix_param = '\'{}\''.format(param)
+            param = param.replace("'", "''") if isinstance(param, str) else param
+            str_fix_param = "'{}'".format(param)
         elif isinstance(param, list):
-            str_fix_param = 'ARRAY{}'.format(param)
+            str_fix_param = "ARRAY{}".format(param)
         else:
             str_fix_param = param
         str_fix_params.append(str_fix_param)

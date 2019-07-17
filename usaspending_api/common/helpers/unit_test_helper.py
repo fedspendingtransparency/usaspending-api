@@ -10,8 +10,8 @@ def add_to_mock_objects(mock_obj, mock_models_list):
 
 def mappings_test(download_type, sublevel):
     download_mapping = VALUE_MAPPINGS[download_type]
-    table_name = download_mapping['table_name']
-    table = download_mapping['table']
+    table_name = download_mapping["table_name"]
+    table = download_mapping["table"]
 
     try:
         query_values = lookup_mapping.query_paths[table_name][sublevel].values()

@@ -6,11 +6,10 @@ from usaspending_api.awards.models import Award
 from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, PARENTS, IDVS, AWARD_COUNT
 
 
-AGGREGATE_ENDPOINT = '/api/v2/awards/idvs/funding_rollup/'
+AGGREGATE_ENDPOINT = "/api/v2/awards/idvs/funding_rollup/"
 
 
 class IDVFundingRollupTestCase(TestCase):
-
     @classmethod
     def setUpTestData(cls):
         create_idv_test_data()
@@ -32,10 +31,10 @@ class IDVFundingRollupTestCase(TestCase):
         count = len(non_idv_children) + len(non_idv_grandchildren)
         summ = sum(non_idv_children) + sum(non_idv_grandchildren)
         results = {
-            'total_transaction_obligated_amount': count * 200000.0 + summ,
-            'awarding_agency_count': len(non_idv_children) + len(non_idv_grandchildren),
-            'funding_agency_count': len(non_idv_children) + len(non_idv_grandchildren),
-            'federal_account_count': len(non_idv_children) + len(non_idv_grandchildren)
+            "total_transaction_obligated_amount": count * 200000.0 + summ,
+            "awarding_agency_count": len(non_idv_children) + len(non_idv_grandchildren),
+            "funding_agency_count": len(non_idv_children) + len(non_idv_grandchildren),
+            "federal_account_count": len(non_idv_children) + len(non_idv_grandchildren),
         }
 
         return results
@@ -57,33 +56,21 @@ class IDVFundingRollupTestCase(TestCase):
         assert response.status_code == expected_status_code
         if expected_response_parameters_tuple is not None:
             expected_response = self._generate_expected_response(*expected_response_parameters_tuple)
-            assert json.loads(response.content.decode('utf-8')) == expected_response
+            assert json.loads(response.content.decode("utf-8")) == expected_response
 
     def test_complete_queries(self):
         for _id in range(1, AWARD_COUNT + 1):
-            self._test_post(
-                {'award_id': _id},
-                (_id,)
-            )
+            self._test_post({"award_id": _id}, (_id,))
 
     def test_with_nonexistent_id(self):
 
-        self._test_post(
-            {'award_id': 0},
-            (0,)
-        )
+        self._test_post({"award_id": 0}, (0,))
 
-        self._test_post(
-            {'award_id': 'GENERATED_UNIQUE_AWARD_ID_000'},
-            (0,)
-        )
+        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"}, (0,))
 
     def test_with_bogus_id(self):
 
-        self._test_post(
-            {'award_id': None},
-            (0,)
-        )
+        self._test_post({"award_id": None}, (0,))
 
     def test_null_agencies_accounts(self):
         """
@@ -92,16 +79,14 @@ class IDVFundingRollupTestCase(TestCase):
         be a great candidate for this exercise.  It's ultimate parent is I2.
         """
         # Grab the counts for I2.
-        response = self.client.post(AGGREGATE_ENDPOINT, {'award_id': 2})
-        awarding_agency_count = response.data['awarding_agency_count']
-        funding_agency_count = response.data['funding_agency_count']
+        response = self.client.post(AGGREGATE_ENDPOINT, {"award_id": 2})
+        awarding_agency_count = response.data["awarding_agency_count"]
+        funding_agency_count = response.data["funding_agency_count"]
 
         # Grab the treasury appropriation account for C14 and null out its agency values.
-        Award.objects.filter(pk=14).update(
-            awarding_agency_id=None,
-            funding_agency_id=None)
+        Award.objects.filter(pk=14).update(awarding_agency_id=None, funding_agency_id=None)
 
         # Now re-grab the rollup values and ensure they are decremented accordingly.
-        response = self.client.post(AGGREGATE_ENDPOINT, {'award_id': 2})
-        assert awarding_agency_count == response.data['awarding_agency_count'] + 1
-        assert funding_agency_count == response.data['funding_agency_count'] + 1
+        response = self.client.post(AGGREGATE_ENDPOINT, {"award_id": 2})
+        assert awarding_agency_count == response.data["awarding_agency_count"] + 1
+        assert funding_agency_count == response.data["funding_agency_count"] + 1

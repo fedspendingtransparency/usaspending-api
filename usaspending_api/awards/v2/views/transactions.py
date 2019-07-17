@@ -17,6 +17,7 @@ class TransactionViewSet(APIDocumentationView):
     """
     endpoint_doc: /awards/transactions.md
     """
+
     transaction_lookup = {
         # "Display Name": "database_column"
         "id": "transaction_unique_id",
@@ -37,13 +38,14 @@ class TransactionViewSet(APIDocumentationView):
 
     def __init__(self):
         models = customize_pagination_with_sort_columns(
-            list(TransactionViewSet.transaction_lookup.keys()),
-            'action_date'
+            list(TransactionViewSet.transaction_lookup.keys()), "action_date"
         )
-        models.extend([
-            get_internal_or_generated_award_id_model(),
-            {'key': 'idv', 'name': 'idv', 'type': 'boolean', 'default': True, 'optional': True}
-        ])
+        models.extend(
+            [
+                get_internal_or_generated_award_id_model(),
+                {"key": "idv", "name": "idv", "type": "boolean", "default": True, "optional": True},
+            ]
+        )
         self._tiny_shield_models = models
         super(TransactionViewSet, self).__init__()
 
@@ -54,34 +56,32 @@ class TransactionViewSet(APIDocumentationView):
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
-        award_id = request_data['award_id']
-        award_id_column = 'award_id' if type(award_id) is int else 'award__generated_unique_award_id'
+        award_id = request_data["award_id"]
+        award_id_column = "award_id" if type(award_id) is int else "award__generated_unique_award_id"
         filter = {award_id_column: award_id}
 
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = (TransactionNormalized.objects.all()
-                    .values(*list(self.transaction_lookup.values()))
-                    .filter(**filter))
+        queryset = TransactionNormalized.objects.all().values(*list(self.transaction_lookup.values())).filter(**filter)
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
         else:
             queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
 
-        rows = list(queryset[lower_limit:upper_limit + 1])
+        rows = list(queryset[lower_limit : upper_limit + 1])
         return self._format_results(rows)
 
     def _format_results(self, rows):
         results = []
         for row in rows:
-            unique_prefix = 'ASST_TX'
+            unique_prefix = "ASST_TX"
             result = {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
-            if result['is_fpds']:
-                unique_prefix = 'CONT_TX'
-            result['id'] = '{}_{}'.format(unique_prefix, result['id'])
-            del result['is_fpds']
+            if result["is_fpds"]:
+                unique_prefix = "CONT_TX"
+            result["id"] = "{}_{}".format(unique_prefix, result["id"])
+            del result["is_fpds"]
             results.append(result)
         return results
 
@@ -91,9 +91,6 @@ class TransactionViewSet(APIDocumentationView):
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
 
-        response = {
-            "page_metadata": page_metadata,
-            "results": results[:request_data["limit"]],
-        }
+        response = {"page_metadata": page_metadata, "results": results[: request_data["limit"]]}
 
         return Response(response)

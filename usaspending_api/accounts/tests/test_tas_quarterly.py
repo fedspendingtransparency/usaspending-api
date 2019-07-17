@@ -4,33 +4,32 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.accounts.models import (
-    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly)
+from usaspending_api.accounts.models import AppropriationAccountBalances, AppropriationAccountBalancesQuarterly
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
 @pytest.fixture
 @pytest.mark.django_db
 def tas_balances_data():
-    sub1 = mommy.make('submissions.SubmissionAttributes')
-    sub2 = mommy.make('submissions.SubmissionAttributes', previous_submission=sub1)
-    tas1 = mommy.make('accounts.TreasuryAppropriationAccount')
+    sub1 = mommy.make("submissions.SubmissionAttributes")
+    sub2 = mommy.make("submissions.SubmissionAttributes", previous_submission=sub1)
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
 
     mommy.make(
-        'accounts.AppropriationAccountBalances',
+        "accounts.AppropriationAccountBalances",
         submission=sub1,
         treasury_account_identifier=tas1,
         budget_authority_unobligated_balance_brought_forward_fyb=None,
         budget_authority_appropriated_amount_cpe=10,
-        unobligated_balance_cpe=99.99
+        unobligated_balance_cpe=99.99,
     )
     mommy.make(
-        'accounts.AppropriationAccountBalances',
+        "accounts.AppropriationAccountBalances",
         submission=sub2,
         treasury_account_identifier=tas1,
         budget_authority_unobligated_balance_brought_forward_fyb=6.99,
         budget_authority_appropriated_amount_cpe=10,
-        unobligated_balance_cpe=100
+        unobligated_balance_cpe=100,
     )
 
 
@@ -51,18 +50,17 @@ def test_get_quarterly_numbers(tas_balances_data):
     for q in quarters:
         if q.submission == sub1:
             # qtrly values for year's first submission should remain unchanged
-            assert q.budget_authority_appropriated_amount_cpe == Decimal('10.00')
-            assert q.unobligated_balance_cpe == Decimal('99.99')
+            assert q.budget_authority_appropriated_amount_cpe == Decimal("10.00")
+            assert q.unobligated_balance_cpe == Decimal("99.99")
         else:
             # qtrly values for year's 2nd submission should be equal to 2nd
             # submission values - first submission values
-            assert q.budget_authority_appropriated_amount_cpe == Decimal('0.00')
-            assert q.unobligated_balance_cpe == Decimal('.01')
+            assert q.budget_authority_appropriated_amount_cpe == Decimal("0.00")
+            assert q.unobligated_balance_cpe == Decimal(".01")
 
     # test getting quarterly results for a specific submission
 
-    quarters = AppropriationAccountBalances.get_quarterly_numbers(
-        sub2.submission_id)
+    quarters = AppropriationAccountBalances.get_quarterly_numbers(sub2.submission_id)
     # number of quarterly adjusted records should = number of records
     # in AppropriationAccountBalances
     assert len(list(quarters)) == 1
@@ -85,11 +83,11 @@ def test_get_quarterly_null_previous_submission(tas_balances_data):
         if q.submission == sub1:
             # qtrly values for year's first submission should remain unchanged
             # (null values become 0 due to COALESCE)
-            assert q.budget_authority_unobligated_balance_brought_forward_fyb == Decimal('0.0')
+            assert q.budget_authority_unobligated_balance_brought_forward_fyb == Decimal("0.0")
         else:
             # if the equivalent value in the first submisison is NULL, quarterly
             # numbers should equal the number on the 2nd submission
-            assert q.budget_authority_unobligated_balance_brought_forward_fyb == Decimal('6.99')
+            assert q.budget_authority_unobligated_balance_brought_forward_fyb == Decimal("6.99")
 
 
 @pytest.mark.skip(reason="expected behavior is not confirmed")
@@ -120,9 +118,9 @@ def test_insert_quarterly_numbers(tas_balances_data):
     assert quarters.count() == 2
     quarter_sub2 = quarters.get(submission=sub2)
     quarter_sub1 = quarters.get(submission=sub1)
-    assert quarter_sub2.budget_authority_unobligated_balance_brought_forward_fyb == Decimal('6.99')
-    assert quarter_sub2.budget_authority_appropriated_amount_cpe == Decimal('0.00')
-    assert quarter_sub2.unobligated_balance_cpe == Decimal('.01')
+    assert quarter_sub2.budget_authority_unobligated_balance_brought_forward_fyb == Decimal("6.99")
+    assert quarter_sub2.budget_authority_appropriated_amount_cpe == Decimal("0.00")
+    assert quarter_sub2.unobligated_balance_cpe == Decimal(".01")
 
     # loading again drops and recreates quarterly data
     AppropriationAccountBalancesQuarterly.insert_quarterly_numbers()

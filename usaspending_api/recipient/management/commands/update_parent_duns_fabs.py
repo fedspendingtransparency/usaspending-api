@@ -4,7 +4,7 @@ import time
 from django.db import connection
 from django.core.management.base import BaseCommand
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 FABS_PARENT_DUNS_SQL_MATCH = """
     WITH joined_historical_fabs AS (
@@ -84,12 +84,12 @@ class Command(BaseCommand):
             logger.info("Updating FABS with action dates matching the years within the parent duns")
             start = time.time()
             curs.execute(FABS_PARENT_DUNS_SQL_MATCH)
-            logger.info("Updating FABS with matching action dates took {} seconds".format(time.time()-start))
+            logger.info("Updating FABS with matching action dates took {} seconds".format(time.time() - start))
 
             logger.info("Updating FABS with action dates not matching the parent duns, using the earliest match")
             start = time.time()
             curs.execute(CREATE_TEMP_MIN_YEARS_MATVIEW)
             curs.execute(FABS_PARENT_DUNS_SQL_EARLIEST)
             curs.execute(DROP_TEMP_MIN_YEARS_MATVIEW)
-            logger.info("Updating FABS with non-matching action dates took {} seconds".format(time.time()-start))
+            logger.info("Updating FABS with non-matching action dates took {} seconds".format(time.time() - start))
         logger.info("Updating FABS complete")

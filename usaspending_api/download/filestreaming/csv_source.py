@@ -5,7 +5,6 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class CsvSource:
-
     def __init__(self, model_type, file_type, source_type, agency_id):
         self.model_type = model_type
         self.file_type = file_type
@@ -22,7 +21,7 @@ class CsvSource:
                 raise InvalidParameterException("Agency with that ID does not exist")
         self.queryset = None
         self.file_name = None
-        self.is_for_idv = VALUE_MAPPINGS[source_type].get('is_for_idv', False)
+        self.is_for_idv = VALUE_MAPPINGS[source_type].get("is_for_idv", False)
 
     def __repr__(self):
         return "CsvSource('{}', '{}', '{}', '{}')".format(

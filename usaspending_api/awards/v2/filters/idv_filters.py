@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def _get_idv_award_id(filters):
-    if 'idv_award_id' not in filters:
-        raise InvalidParameterException('Invalid filter: idv_award_id is required.')
-    idv_award_id = filters['idv_award_id']
+    if "idv_award_id" not in filters:
+        raise InvalidParameterException("Invalid filter: idv_award_id is required.")
+    idv_award_id = filters["idv_award_id"]
     if idv_award_id is None:
-        raise InvalidParameterException('Invalid filter: idv_award_id has null as its value.')
+        raise InvalidParameterException("Invalid filter: idv_award_id has null as its value.")
     return idv_award_id
 
 
@@ -50,5 +50,5 @@ def idv_treasury_account_funding_filter(account_type, download_table, filters, a
         queryset = download_table.objects.filter(financial_accounts_by_awards_id__isnull=True)
     else:
         queryset = download_table.objects.filter(award_id__in=descendant_award_ids)
-    queryset = generate_treasury_account_query(queryset, 'award_financial', account_level)
+    queryset = generate_treasury_account_query(queryset, "award_financial", account_level)
     return queryset

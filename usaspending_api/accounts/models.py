@@ -12,6 +12,7 @@ class FederalAccount(models.Model):
     Represents a single federal account. A federal account encompasses multiple Treasury Account Symbols (TAS),
     represented by: model:`accounts.TreasuryAppropriationAccount`.
     """
+
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
     account_title = models.TextField()
@@ -19,26 +20,27 @@ class FederalAccount(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'federal_account'
-        unique_together = ('agency_identifier', 'main_account_code')
+        db_table = "federal_account"
+        unique_together = ("agency_identifier", "main_account_code")
 
     def save(self, *args, **kwargs):
-        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code
+        self.federal_account_code = self.agency_identifier + "-" + self.main_account_code
         super().save(*args, **kwargs)
 
 
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
+
     treasury_account_identifier = models.AutoField(primary_key=True)
-    federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
+    federal_account = models.ForeignKey("FederalAccount", models.DO_NOTHING, null=True)
     tas_rendering_label = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
     awarding_toptier_agency = models.ForeignKey(
-        'references.ToptierAgency',
+        "references.ToptierAgency",
         models.DO_NOTHING,
         null=True,
         related_name="tas_ata",
-        help_text="The toptier agency object associated with the ATA"
+        help_text="The toptier agency object associated with the ATA",
     )
     # todo: update the agency details to match FederalAccounts. Is there a way that we can retain the text-based agency
     # TAS components (since those are attributes of TAS while still having a convenient FK that links to our agency
@@ -46,11 +48,11 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     # component and agency_id for the FK?)
     agency_id = models.TextField()
     funding_toptier_agency = models.ForeignKey(
-        'references.ToptierAgency',
+        "references.ToptierAgency",
         models.DO_NOTHING,
         null=True,
         related_name="tas_aid",
-        help_text="The toptier agency object associated with the AID"
+        help_text="The toptier agency object associated with the AID",
     )
     beginning_period_of_availability = models.TextField(blank=True, null=True)
     ending_period_of_availability = models.TextField(blank=True, null=True)
@@ -76,31 +78,30 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     def update_agency_linkages(self):
-        self.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).\
-            order_by("fpds_code").first()
-        self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").\
-            first()
+        self.awarding_toptier_agency = (
+            ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).order_by("fpds_code").first()
+        )
+        self.funding_toptier_agency = (
+            ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").first()
+        )
 
     @staticmethod
     def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
-        tas_rendering_label = '-'.join(filter(None, (ata, aid)))
+        tas_rendering_label = "-".join(filter(None, (ata, aid)))
 
-        if typecode is not None and typecode != '':
-            tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, typecode)))
+        if typecode is not None and typecode != "":
+            tas_rendering_label = "-".join(filter(None, (tas_rendering_label, typecode)))
         else:
-            poa = '/'.join(filter(None, (bpoa, epoa)))
-            tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, poa)))
+            poa = "/".join(filter(None, (bpoa, epoa)))
+            tas_rendering_label = "-".join(filter(None, (tas_rendering_label, poa)))
 
-        tas_rendering_label = '-'.join(filter(None, (tas_rendering_label, mac, sub)))
+        tas_rendering_label = "-".join(filter(None, (tas_rendering_label, mac, sub)))
 
         return tas_rendering_label
 
     @property
     def program_activities(self):
-        return [
-            pb.program_activity
-            for pb in self.program_balances.distinct('program_activity')
-        ]
+        return [pb.program_activity for pb in self.program_balances.distinct("program_activity")]
 
     @property
     def future_object_classes(self):
@@ -112,10 +113,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
     @property
     def object_classes(self):
-        return [
-            pb.object_class
-            for pb in self.program_balances.distinct('object_class')
-        ]
+        return [pb.object_class for pb in self.program_balances.distinct("object_class")]
 
     @property
     def totals_object_class(self):
@@ -128,12 +126,11 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 obligations[reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
                 outlays[reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
             result = {
-                'major_object_class_code': None,
-                'major_object_class_name':
-                None,  # TODO: enable once ObjectClass populated
-                'object_class': object_class.object_class,  # TODO: remove
-                'outlays': obligations,
-                'obligations': outlays,
+                "major_object_class_code": None,
+                "major_object_class_name": None,  # TODO: enable once ObjectClass populated
+                "object_class": object_class.object_class,  # TODO: remove
+                "outlays": obligations,
+                "obligations": outlays,
             }
             results.append(result)
         return results
@@ -150,11 +147,11 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 obligations[reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
                 outlays[reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
             result = {
-                'id': pa.id,
-                'program_activity_name': pa.program_activity_name,
-                'program_activity_code': pa.program_activity_code,
-                'obligations': obligations,
-                'outlays': outlays,
+                "id": pa.id,
+                "program_activity_name": pa.program_activity_name,
+                "program_activity_code": pa.program_activity_code,
+                "obligations": obligations,
+                "outlays": outlays,
             }
             results.append(result)
         return results
@@ -170,25 +167,20 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             outlays[fiscal_year] += ab.gross_outlay_amount_by_tas_cpe
             obligations[fiscal_year] += ab.obligations_incurred_total_by_tas_cpe
         results = {
-            'outgoing': {
-                'outlays': outlays,
-                'obligations': obligations,
-                'budget_authority': budget_authority,
-            },
-            'incoming': {}
+            "outgoing": {"outlays": outlays, "obligations": obligations, "budget_authority": budget_authority},
+            "incoming": {},
         }
         return results
 
     class Meta:
         managed = True
-        db_table = 'treasury_appropriation_account'
+        db_table = "treasury_appropriation_account"
 
     def __str__(self):
         return "%s" % (self.tas_rendering_label)
 
 
 class AppropriationAccountBalancesManager(models.Manager):
-
     def get_queryset(self):
         """
         Get only records from the last submission per TAS per fiscal year.
@@ -205,22 +197,25 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     submission for a fiscal year reflects the balances for the entire
     fiscal year.
     """
+
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey(
-        'TreasuryAppropriationAccount',
+        "TreasuryAppropriationAccount",
         models.CASCADE,
-        db_column='treasury_account_identifier',
-        related_name="account_balances"
+        db_column="treasury_account_identifier",
+        related_name="account_balances",
     )
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=23, decimal_places=2,
-                                                                                   blank=True, null=True)
+    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     budget_authority_appropriated_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     borrowing_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     contract_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2,
-                                                                                    blank=True, null=True)
+    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=23, decimal_places=2)
@@ -243,7 +238,7 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'appropriation_account_balances'
+        db_table = "appropriation_account_balances"
 
     objects = models.Manager()
     final_objects = AppropriationAccountBalancesManager()
@@ -350,12 +345,10 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
             A RawQuerySet of AppropriationAccountBalances objects
         """
         if current_submission_id is None:
-            return AppropriationAccountBalances.objects.raw(
-                cls.QUARTERLY_SQL)
+            return AppropriationAccountBalances.objects.raw(cls.QUARTERLY_SQL)
         else:
-            sql = cls.QUARTERLY_SQL + ' WHERE current.submission_id = %s'
-            return AppropriationAccountBalances.objects.raw(
-                sql, [current_submission_id])
+            sql = cls.QUARTERLY_SQL + " WHERE current.submission_id = %s"
+            return AppropriationAccountBalances.objects.raw(sql, [current_submission_id])
 
 
 class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
@@ -364,16 +357,19 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
     Each data broker submission provides a snapshot of the most recent numbers for that fiscal year. Thus, to populate
     this model, we subtract previous quarters' balances from the balances of the current submission.
     """
-    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE)
+
+    treasury_account_identifier = models.ForeignKey("TreasuryAppropriationAccount", models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=23, decimal_places=2,
-                                                                                   blank=True, null=True)
+    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     budget_authority_appropriated_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     borrowing_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     contract_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2,
-                                                                                    blank=True, null=True)
+    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_budgetary_resources_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=23, decimal_places=2)
@@ -386,7 +382,7 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'appropriation_account_balances_quarterly'
+        db_table = "appropriation_account_balances_quarterly"
         # TODO: find out why this unique index causes constraint violations w/ our data
         # unique_together = ('treasury_account_identifier', 'submission')
 
@@ -427,5 +423,5 @@ class BudgetAuthority(models.Model):
 
     class Meta:
 
-        db_table = 'budget_authority'
+        db_table = "budget_authority"
         unique_together = (("agency_identifier", "fr_entity_code", "year"),)
