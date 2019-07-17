@@ -279,7 +279,7 @@ Request parameter description:
 ```
 
 Request Parameter Description:
-* `recipient_type_names` (List) : Top level key name for filter. Contains list of strings corresponding to drop down selections. Top or lower level selections are passed here. See [Recipient/Business Types](https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types).
+* `recipient_type_names` (List) : Top level key name for filter. Contains list of strings corresponding to drop down selections. Top or lower level selections are passed here.
 
 ## Award Type
 
