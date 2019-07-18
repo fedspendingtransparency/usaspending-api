@@ -134,11 +134,13 @@ def construct_idv_response(requested_award_dict):
     response.update(award)
 
     parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
+
+    response["executive_details"] = create_officers_object(award, mapper)
+
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
     response["parent_award"] = parent_award
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
-    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -233,13 +235,16 @@ def create_place_of_performance_object(db_row_dict):
     )
 
 
-def create_officers_object(db_row_dict):
+def create_officers_object(award,mapper):
+
+    transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
+
     officers = []
     for officer_num in range(1, 6):
         officer_name_key = "_officer_{}_name".format(officer_num)
         officer_amount_key = "_officer_{}_amount".format(officer_num)
-        officer_name = db_row_dict.get(officer_name_key)
-        officer_amount = db_row_dict.get(officer_amount_key)
+        officer_name = transaction.get(officer_name_key)
+        officer_amount = transaction.get(officer_amount_key)
         if officer_name or officer_amount:
             officers.append({"name": officer_name, "amount": officer_amount})
     return {"officers": officers}
