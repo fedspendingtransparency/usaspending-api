@@ -68,7 +68,7 @@ AWARD_MAPPINGS = {
 
 class Command(BaseCommand):
 
-    def download(self, award_type, agency="all", generate_since=None, end_date=None):
+    def download(self, award_type, agency="all", generate_since=None):
         """ Create a delta file based on award_type, and agency_code (or all agencies) """
         logger.info(
             "Starting generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
@@ -116,8 +116,10 @@ class Command(BaseCommand):
         transaction_delta_queryset = source.queryset
 
         _filter = {"transaction__{}__{}__gte".format(award_map["model"], award_map["date_filter"]): generate_since}
-        if end_date:
-            _filter["transaction__{}__{}__lt".format(award_map["model"], award_map["date_filter"])] = end_date
+        if self.debugging_end_date:
+            _filter[
+                "transaction__{}__{}__lt".format(award_map["model"], award_map["date_filter"])
+            ] = self.debugging_end_date
 
         source.queryset = source.queryset.filter(**_filter)
 
@@ -127,7 +129,7 @@ class Command(BaseCommand):
         )
 
         # Generate file
-        file_path = self.create_local_file(award_type, source, agency_code, generate_since, end_date)
+        file_path = self.create_local_file(award_type, source, agency_code, generate_since)
         if file_path is None:
             logger.info("No new, modified, or deleted data; discarding file")
         elif not settings.IS_LOCAL:
@@ -145,7 +147,7 @@ class Command(BaseCommand):
             "Finished generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
         )
 
-    def create_local_file(self, award_type, source, agency_code, generate_since, end_date):
+    def create_local_file(self, award_type, source, agency_code, generate_since):
         """ Generate complete file from SQL query and S3 bucket deletion files, then zip it locally """
         logger.info("Generating CSV file with creations and modifications")
 
@@ -178,7 +180,7 @@ class Command(BaseCommand):
             raise e
 
         # Append deleted rows to the end of the file
-        self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since, end_date)
+        self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if count_rows_in_csv_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
@@ -208,7 +210,7 @@ class Command(BaseCommand):
         tid = tid.upper()
         return pd.Series(tid.split("_") + [tid])
 
-    def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since, end_date):
+    def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
         """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
         logger.info("Retrieving deletion records from S3 files and appending to the CSV")
 
@@ -224,7 +226,7 @@ class Command(BaseCommand):
 
         all_deletions = pd.DataFrame()
         for key in bucket.objects.all():
-            match_date = self.check_regex_match(award_type, key.key, generate_since, end_date)
+            match_date = self.check_regex_match(award_type, key.key, generate_since)
             if match_date:
                 # Create a local copy of the deletion file
                 delete_filepath = "{}{}".format(working_dir, key.key)
@@ -286,7 +288,7 @@ class Command(BaseCommand):
         logger.info("Appending {} records to the end of the file".format(len(deduped_df.index)))
         deduped_df.to_csv(source_path, mode="a", header=False, index=False)
 
-    def check_regex_match(self, award_type, file_name, generate_since, end_date):
+    def check_regex_match(self, award_type, file_name, generate_since):
         """ Create a date object from a regular expression match """
         re_match = re.match(AWARD_MAPPINGS[award_type]["match"], file_name)
         if not re_match:
@@ -305,14 +307,15 @@ class Command(BaseCommand):
         ):
             return False
 
-        # The logic on this is configured to match the logic in the above
-        # statements, specifically the bit concerning "Contract deletion
-        # files are made in the evening, Assistance files in the morning".
-        end_date_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-        if (award_type == "Assistance" and file_date > end_date_date) or (
-            award_type == "Contracts" and file_date >= end_date_date
-        ):
-            return False
+        if self.debugging_end_date:
+            # The logic on this is configured to match the logic in the above
+            # statements, specifically the bit concerning "Contract deletion
+            # files are made in the evening, Assistance files in the morning".
+            end_date_date = datetime.strptime(self.debugging_end_date, "%Y-%m-%d").date()
+            if (award_type == "Assistance" and file_date > end_date_date) or (
+                award_type == "Contracts" and file_date >= end_date_date
+            ):
+                return False
 
         return "{}-{}-{}".format(year, month, day)
 
@@ -379,7 +382,7 @@ class Command(BaseCommand):
             help="Date of last Delta file creation. YYYY-MM-DD",
         )
         parser.add_argument(
-            "--end_date",
+            "--debugging_end_date",
             help="This was added to help with debugging and should not be used for production runs "
             "as the cutoff logic is imprecise. YYYY-MM-DD",
         )
@@ -389,7 +392,7 @@ class Command(BaseCommand):
         agencies = options["agencies"]
         award_types = options["award_types"]
         last_date = options["last_date"]
-        end_date = options["end_date"]
+        self.debugging_end_date = options["debugging_end_date"]
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
@@ -406,7 +409,7 @@ class Command(BaseCommand):
 
         for agency in toptier_agencies:
             for award_type in award_types:
-                self.download(award_type.capitalize(), agency, last_date, end_date)
+                self.download(award_type.capitalize(), agency, last_date)
 
         logger.info(
             "IMPORTANT: Be sure to run synchronize_transaction_delta management command "
