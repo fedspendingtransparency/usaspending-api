@@ -83,9 +83,10 @@ def construct_contract_response(requested_award_dict):
         return None
     response.update(award)
 
+    response["executive_details"] = create_officers_object(award, FPDS_CONTRACT_FIELDS)
+
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
-    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -237,16 +238,19 @@ def create_place_of_performance_object(db_row_dict):
 
 def create_officers_object(award,mapper):
 
-    transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
+    transaction = fetch_latest_fpds_ec_details(award["id"], mapper)
 
     officers = []
-    for officer_num in range(1, 6):
-        officer_name_key = "_officer_{}_name".format(officer_num)
-        officer_amount_key = "_officer_{}_amount".format(officer_num)
-        officer_name = transaction.get(officer_name_key)
-        officer_amount = transaction.get(officer_amount_key)
-        if officer_name or officer_amount:
-            officers.append({"name": officer_name, "amount": officer_amount})
+
+    if transaction is not None:
+        for officer_num in range(1, 6):
+            officer_name_key = "_officer_{}_name".format(officer_num)
+            officer_amount_key = "_officer_{}_amount".format(officer_num)
+            officer_name = transaction.get(officer_name_key)
+            officer_amount = transaction.get(officer_amount_key)
+            if officer_name or officer_amount:
+                officers.append({"name": officer_name, "amount": officer_amount})
+
     return {"officers": officers}
 
 
@@ -313,6 +317,13 @@ def fetch_fabs_details_by_pk(primary_key, mapper):
 def fetch_fpds_details_by_pk(primary_key, mapper):
     vals, ann = split_mapper_into_qs(mapper)
     return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
+
+
+def fetch_latest_fpds_ec_details(award_id, mapper):
+    vals, ann = split_mapper_into_qs(mapper)
+    retval = TransactionFPDS.objects.filter(detached_award_procurement_id=award_id).values(*vals).annotate(**ann)
+    #logger.error(retval)
+    return retval.last()
 
 
 def fetch_agency_details(agency_id):
