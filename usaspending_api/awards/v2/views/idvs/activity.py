@@ -65,7 +65,7 @@ ACTIVITY_SQL = SQL(
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     {hide_edges_end_date}
     order by
-        ca.base_and_all_options_value desc, ca.id desc
+        ca.total_obligation desc, ca.id desc
     limit {limit} offset {offset}
 """
 )
