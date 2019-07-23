@@ -23,7 +23,7 @@ This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity vi
 + Response 200 (application/json)
     + Attributes
         + `results` (required, array[ChildAward], fixed-type)
-            Results are sorted by awarded amount in descending order.
+            Results are sorted by obligated amount in descending order.
         + `page_metadata` (required, PageMetaData)
 
     * Body
