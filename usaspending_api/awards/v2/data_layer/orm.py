@@ -83,7 +83,7 @@ def construct_contract_response(requested_award_dict):
         return None
     response.update(award)
 
-    response["executive_details"] = create_officers_object(award, FPDS_CONTRACT_FIELDS)
+    response["executive_details"] = create_officers_object(award, FPDS_CONTRACT_FIELDS, "fpds")
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
@@ -136,7 +136,7 @@ def construct_idv_response(requested_award_dict):
 
     parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
 
-    response["executive_details"] = create_officers_object(award, mapper)
+    response["executive_details"] = create_officers_object(award, mapper, "fpds")
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
@@ -236,9 +236,9 @@ def create_place_of_performance_object(db_row_dict):
     )
 
 
-def create_officers_object(award,mapper):
+def create_officers_object(award,mapper, transaction_type):
 
-    transaction = fetch_latest_fpds_ec_details(award["id"], mapper)
+    transaction = fetch_latest_fpds_ec_details(award["id"], mapper, transaction_type)
 
     officers = []
 
@@ -319,11 +319,11 @@ def fetch_fpds_details_by_pk(primary_key, mapper):
     return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
-def fetch_latest_fpds_ec_details(award_id, mapper):
+def fetch_latest_fpds_ec_details(award_id, mapper, transaction_type):
     vals, ann = split_mapper_into_qs(mapper)
-    retval = TransactionFPDS.objects.filter(detached_award_procurement_id=award_id).values(*vals).annotate(**ann)
-    #logger.error(retval)
-    return retval.last()
+    model = TransactionFPDS if transaction_type == "fpds" else TransactionFABS
+    retval = model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False).values(*vals).annotate(**ann).order_by("-action_date")
+    return retval.first()
 
 
 def fetch_agency_details(agency_id):
