@@ -8,8 +8,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import combine_date_range_queryset, total_obligation_queryset
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.models import FinancialAccountsByAwards, UniversalTransactionTableView
+from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 from usaspending_api.recipient.models import RecipientProfile
@@ -24,7 +24,7 @@ def universal_award_matview_filter(filters):
 
 
 def universal_transaction_matview_filter(filters):
-    return matview_search_filter(filters, UniversalTransactionView, for_downloads=True)
+    return matview_search_filter(filters, UniversalTransactionTableView, for_downloads=True)
 
 
 def matview_search_filter(filters, model, for_downloads=False):

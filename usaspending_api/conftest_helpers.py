@@ -69,8 +69,7 @@ class TestElasticSearchIndex:
         """
         with connection.cursor() as cursor:
             cursor.execute(
-                "refresh materialized view universal_award_matview; "
-                "refresh materialized view universal_transaction_matview;"
+                "refresh materialized view universal_award_matview;"
             )
 
     @staticmethod

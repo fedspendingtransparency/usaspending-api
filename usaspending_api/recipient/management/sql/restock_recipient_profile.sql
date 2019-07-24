@@ -19,7 +19,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     action_date,
     generated_pragmatic_obligation
   FROM
-    universal_transaction_matview
+    universal_transaction_tableview
   WHERE action_date >= '2007-10-01' AND
     (award_category IS NOT NULL OR (award_category IS NULL AND pulled_from = 'IDV'))
 );

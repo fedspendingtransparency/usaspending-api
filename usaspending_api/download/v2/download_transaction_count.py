@@ -35,7 +35,7 @@ class DownloadTransactionCountViewSet(APIDocumentationView):
             total_count = subaward_filter(filters).count()
         else:
             queryset, model = download_transaction_count(filters)
-            if model in ["UniversalTransactionView"]:
+            if model in ["UniversalTransactionTableView"]:
                 total_count = queryset.count()
             else:
                 # "summary" materialized views are pre-aggregated and contain a counts col

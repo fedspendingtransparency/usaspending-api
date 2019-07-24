@@ -192,6 +192,7 @@ def mock_matviews_qs(monkeypatch):
     monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalAwardView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models.UniversalTransactionTableView.objects", mock_qs)
 
     yield mock_qs
 

@@ -12,3 +12,4 @@ DROP MATERIALIZED VIEW IF EXISTS summary_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_old;
 DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_old;
 DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_old;
+DROP TABLE IF EXISTS universal_transaction_tableview_old;

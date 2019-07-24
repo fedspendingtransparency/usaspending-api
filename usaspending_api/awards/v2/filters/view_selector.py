@@ -11,7 +11,7 @@ from usaspending_api.awards.models_matviews import SummaryTransactionRecipientVi
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.models import UniversalTransactionTableView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_total_obligation_enum
 from usaspending_api.awards.v2.filters.filter_helpers import only_action_date_type
@@ -124,7 +124,7 @@ MATVIEW_SELECTOR = {
         "examine_values": {"time_period": [only_action_date_type]},
         "model": SummaryTransactionFedAcctView,
     },
-    "UniversalTransactionView": {
+    "UniversalTransactionTableView": {
         "allowed_filters": [
             "keywords",
             "time_period",
@@ -149,7 +149,7 @@ MATVIEW_SELECTOR = {
         ],
         "prevent_values": {},
         "examine_values": {},
-        "model": UniversalTransactionView,
+        "model": UniversalTransactionTableView,
     },
     "UniversalAwardView": {
         "allowed_filters": [
@@ -238,7 +238,7 @@ def spending_over_time(filters):
         "SummaryTransactionGeoView",
         "SummaryTransactionMonthView",
         "SummaryTransactionView",
-        "UniversalTransactionView",
+        "UniversalTransactionTableView",
     ]
     for view in view_chain:
         if can_use_view(filters, view):
@@ -255,7 +255,7 @@ def spending_by_geography(filters):
         "SummaryTransactionGeoView",
         "SummaryTransactionMonthView",
         "SummaryTransactionView",
-        "UniversalTransactionView",
+        "UniversalTransactionTableView",
     ]
     for view in view_chain:
         if can_use_view(filters, view):
@@ -287,7 +287,7 @@ def download_transaction_count(filters):
         "SummaryTransactionGeoView",
         "SummaryTransactionMonthView",
         "SummaryTransactionView",
-        "UniversalTransactionView",
+        "UniversalTransactionTableView",
     ]
     for view in view_chain:
         if can_use_view(filters, view):
@@ -306,7 +306,7 @@ def transaction_spending_summary(filters):
         "SummaryTransactionGeoView",
         "SummaryTransactionMonthView",
         "SummaryTransactionView",
-        "UniversalTransactionView",
+        "UniversalTransactionTableView",
     ]
     for view in view_chain:
         if can_use_view(filters, view):
@@ -320,7 +320,7 @@ def transaction_spending_summary(filters):
 
 
 def recipient_totals(filters):
-    view_chain = ["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionView"]
+    view_chain = ["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionTableView"]
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -349,7 +349,7 @@ def spending_by_category(category, filters):
         view_chain = ["SummaryTransactionRecipientView"]
 
     # All of these category/scope combinations can use the following:
-    view_chain.extend(["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionView"])
+    view_chain.extend(["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionTableView"])
 
     if category in ["federal_account"]:
         view_chain = ["SummaryTransactionFedAcctView"]

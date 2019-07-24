@@ -35,9 +35,9 @@ INSERT INTO public.summary_award_recipient
       DISTINCT ON (award_id)
       earliest_transaction_temp.award_id,
       earliest_transaction_temp.action_date,
-      txn_matview.recipient_hash,
-      txn_matview.parent_recipient_unique_id
+      txn_tableview.recipient_hash,
+      txn_tableview.parent_recipient_unique_id
   FROM public.earliest_transaction_temp
-  JOIN universal_transaction_matview txn_matview ON (earliest_transaction_temp.id = txn_matview.transaction_id);
+  JOIN universal_transaction_tableview txn_tableview ON (earliest_transaction_temp.id = txn_tableview.transaction_id);
 DROP TABLE public.earliest_transaction_temp;
 COMMIT;

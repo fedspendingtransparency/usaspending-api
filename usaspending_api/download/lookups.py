@@ -12,8 +12,8 @@ from collections import namedtuple, OrderedDict
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView, SubawardView
+from usaspending_api.awards.models import FinancialAccountsByAwards, UniversalTransactionTableView
+from usaspending_api.awards.models_matviews import UniversalAwardView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -58,7 +58,7 @@ VALUE_MAPPINGS = {
     # Transaction Level
     "transactions": {
         "source_type": "award",
-        "table": UniversalTransactionView,
+        "table": UniversalTransactionTableView,
         "table_name": "transaction",
         "download_name": "prime_transactions",
         "contract_data": "transaction__contract_data",

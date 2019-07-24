@@ -29,8 +29,10 @@ TEMP_SQL_FILES = [
     "../matviews/summary_view_psc_codes.sql",
     "../matviews/universal_award_matview.sql",
     "../matviews/universal_transaction_matview.sql",
+    "../tableviews/universal_transaction_tableview.sql",
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
+TABLEVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/tableview_generator/tableview_sql_generator.py"
 ENUM_FILE = ["usaspending_api/database_scripts/matviews/functions_and_enums.sql"]
 
 
@@ -193,6 +195,7 @@ def generate_matviews():
         c.execute(CREATE_READONLY_SQL)
         c.execute(get_sql(ENUM_FILE)[0])
         subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
+        subprocess.call("python  " + TABLEVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             c.execute(file)
 

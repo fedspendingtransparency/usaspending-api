@@ -86,7 +86,7 @@ SELECT
   UTM.recipient_location_congressional_code,
   COALESCE(FPDS.legal_entity_city_name, FABS.legal_entity_city_name) AS recipient_location_city_name
 
-FROM universal_transaction_matview UTM
+FROM universal_transaction_tableview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
