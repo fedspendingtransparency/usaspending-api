@@ -41,6 +41,9 @@ def construct_assistance_response(requested_award_dict):
         return None
     response.update(award)
 
+    # TODO: Add this to the response and update the contract.
+    # response["executive_details"] = create_officers_object(award, FABS_ASSISTANCE_FIELDS, "fabs")
+
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
     cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
@@ -238,7 +241,7 @@ def create_place_of_performance_object(db_row_dict):
 
 def create_officers_object(award,mapper, transaction_type):
 
-    transaction = fetch_latest_fpds_ec_details(award["id"], mapper, transaction_type)
+    transaction = fetch_latest_ec_details(award["id"], mapper, transaction_type)
 
     officers = []
 
@@ -319,7 +322,7 @@ def fetch_fpds_details_by_pk(primary_key, mapper):
     return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
-def fetch_latest_fpds_ec_details(award_id, mapper, transaction_type):
+def fetch_latest_ec_details(award_id, mapper, transaction_type):
     vals, ann = split_mapper_into_qs(mapper)
     model = TransactionFPDS if transaction_type == "fpds" else TransactionFABS
     retval = model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False).values(*vals).annotate(**ann).order_by("-action_date")
