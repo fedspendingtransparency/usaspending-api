@@ -41,7 +41,9 @@ def award_data_fixture(db):
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=2)
-    transaction_normalized = mommy.make("awards.TransactionNormalized", id=2, award_id=2, action_date="2011-11-11", is_fpds=True, type="A")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", id=2, award_id=2, action_date="2011-11-11", is_fpds=True, type="A"
+    )
     transaction_fpds = mommy.make(
         "awards.TransactionFPDS",
         transaction_id=2,
@@ -51,7 +53,9 @@ def award_data_fixture(db):
         legal_entity_country_code="GBR",
         piid="0001",
     )
-    award = mommy.make("awards.Award", id=2, latest_transaction_id=2, recipient_id=2, is_fpds=True, type="A", piid="0001")
+    award = mommy.make(
+        "awards.Award", id=2, latest_transaction_id=2, recipient_id=2, is_fpds=True, type="A", piid="0001"
+    )
     mommy.make(
         "awards.UniversalTransactionTableView",
         keyword_ts_vector=None,
@@ -71,7 +75,9 @@ def award_data_fixture(db):
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=3)
-    transaction_normalized = mommy.make("awards.TransactionNormalized", id=3, award_id=3, action_date="2018-01-01", is_fpds=True, type="04")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", id=3, award_id=3, action_date="2018-01-01", is_fpds=True, type="04"
+    )
     transaction_fpds = mommy.make(
         "awards.TransactionFPDS",
         transaction_id=3,
@@ -80,7 +86,9 @@ def award_data_fixture(db):
         legal_entity_state_code="PA",
         piid="0002",
     )
-    award = mommy.make("awards.Award", id=3, latest_transaction_id=3, recipient_id=3, is_fpds=True, type="04", piid="0002")
+    award = mommy.make(
+        "awards.Award", id=3, latest_transaction_id=3, recipient_id=3, is_fpds=True, type="04", piid="0002"
+    )
     mommy.make(
         "awards.UniversalTransactionTableView",
         keyword_ts_vector=None,
@@ -100,7 +108,9 @@ def award_data_fixture(db):
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=4)
-    transaction_normalized = mommy.make("awards.TransactionNormalized", id=4, award_id=4, action_date="2011-11-11", is_fpds=True, type="A")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", id=4, award_id=4, action_date="2011-11-11", is_fpds=True, type="A"
+    )
     transaction_fpds = mommy.make(
         "awards.TransactionFPDS",
         transaction_id=4,
@@ -110,7 +120,9 @@ def award_data_fixture(db):
         legal_entity_country_code="USA",
         piid="0003",
     )
-    award = mommy.make("awards.Award", id=4, latest_transaction_id=4, recipient_id=4, is_fpds=True, type="A", piid="0003")
+    award = mommy.make(
+        "awards.Award", id=4, latest_transaction_id=4, recipient_id=4, is_fpds=True, type="A", piid="0003"
+    )
     mommy.make(
         "awards.UniversalTransactionTableView",
         keyword_ts_vector=None,

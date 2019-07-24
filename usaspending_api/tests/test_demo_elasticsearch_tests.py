@@ -8,10 +8,31 @@ from rest_framework import status
 @pytest.fixture
 def award_data_fixture(db):
     mommy.make("references.LegalEntity", legal_entity_id=1)
-    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
-    mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
-    mommy.make(
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A"
+    )
+    transaction_fpds = mommy.make(
+        "awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323"
+    )
+    award = mommy.make(
         "awards.Award", id=1, latest_transaction_id=1, recipient_id=1, is_fpds=True, type="A", piid="IND12PB00323"
+    )
+    mommy.make(
+        "awards.UniversalTransactionTableView",
+        keyword_ts_vector=None,
+        award_ts_vector=None,
+        recipient_name_ts_vector=None,
+        total_obl_bin=None,
+        transaction_id=transaction_normalized.id,
+        award_id=award.id,
+        action_date=transaction_normalized.action_date,
+        type=transaction_normalized.type,
+        recipient_id=award.recipient_id,
+        piid=transaction_fpds.piid,
+        recipient_location_zip5=transaction_fpds.legal_entity_zip5,
+        recipient_location_city_name=transaction_fpds.legal_entity_city_name,
+        recipient_location_state_code=transaction_fpds.legal_entity_state_code,
+        recipient_location_country_code=transaction_fpds.legal_entity_country_code,
     )
 
 
