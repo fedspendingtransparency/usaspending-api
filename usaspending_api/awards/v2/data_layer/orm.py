@@ -239,7 +239,7 @@ def create_place_of_performance_object(db_row_dict):
     )
 
 
-def create_officers_object(award,mapper, transaction_type):
+def create_officers_object(award, mapper, transaction_type):
 
     transaction = fetch_latest_ec_details(award["id"], mapper, transaction_type)
 
@@ -324,7 +324,12 @@ def fetch_fpds_details_by_pk(primary_key, mapper):
 def fetch_latest_ec_details(award_id, mapper, transaction_type):
     vals, ann = split_mapper_into_qs(mapper)
     model = TransactionFPDS if transaction_type == "fpds" else TransactionFABS
-    retval = model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False).values(*vals).annotate(**ann).order_by("-action_date")
+    retval = (
+        model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False)
+        .values(*vals)
+        .annotate(**ann)
+        .order_by("-action_date")
+    )
     return retval.first()
 
 
