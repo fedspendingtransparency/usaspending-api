@@ -319,6 +319,7 @@ List of table columns
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -327,13 +328,11 @@ List of table columns
     + action_date
     + last_modified_date
 
-
 ### LocationObject (object)
 + country: `USA` (required, string)
 + state: `VA` (optional, string)
 + county (optional, string)
 + city (optional, string)
-
 
 ### AgencyObject (object)
 + type (required, enum[string])
@@ -347,6 +346,22 @@ List of table columns
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
+
+### TASCodeObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (optional, string, nullable)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (optional, string, nullable)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
 
 ### FilterObjectAwardTypes (array)
 List of filterable award types
