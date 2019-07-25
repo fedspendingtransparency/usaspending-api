@@ -2,8 +2,7 @@ import itertools
 import logging
 
 from django.db.models import Q
-from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.accounts.models import TASAwardMatview
+from usaspending_api.accounts.helpers import build_tas_codes_filter
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
@@ -278,11 +277,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset = queryset.filter(or_queryset)
 
         elif key == "tas_codes":
-            or_queryset = Q()
-            for tas in value:
-                or_queryset |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas.items()})
-            if or_queryset:
-                queryset = queryset.filter(award_id__in=TASAwardMatview.objects.filter(or_queryset).values("award_id"))
+            queryset = build_tas_codes_filter(queryset, model, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":
