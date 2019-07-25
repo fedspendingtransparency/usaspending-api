@@ -91,13 +91,13 @@ AWARD_FILTER = [
         "type": "array",
         "array_type": "object",
         "object_keys": {
-            "ata":  {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "aid":  {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+            "ata": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+            "aid": {"type": "text", "text_type": "search", "optional": False, "allow_nulls": False},
             "bpoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
             "epoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "a":    {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "main": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "sub":  {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+            "a": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+            "main": {"type": "text", "text_type": "search", "optional": False, "allow_nulls": False},
+            "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
         },
     },
 ]

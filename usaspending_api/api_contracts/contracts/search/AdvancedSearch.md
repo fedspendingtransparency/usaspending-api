@@ -350,7 +350,7 @@ List of table columns
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
-+ `aid` (optional, string, nullable)
++ `aid` (required, string)
     Agency Identifier - three characters
 + `bpoa` (optional, string, nullable)
     Beginning Period of Availability - four digits
@@ -358,7 +358,7 @@ List of table columns
     Ending Period of Availability - four digits
 + `a` (optional, string, nullable)
     Availability Type Code - X or null
-+ `main` (optional, string, nullable)
++ `main` (required, string)
     Main Account Code - four digits
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits
