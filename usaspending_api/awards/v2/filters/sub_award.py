@@ -10,6 +10,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
+from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
+from usaspending_api.accounts.models import TASAwardMatview
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ def subaward_filter(filters, for_downloads=False):
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
+            "tas_codes",
         ]
 
         if key not in key_list:
@@ -229,5 +232,12 @@ def subaward_filter(filters, for_downloads=False):
             for v in value:
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
+
+        elif key == "tas_codes":
+            or_queryset = Q()
+            for tas in value:
+                or_queryset |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas.items()})
+            if or_queryset:
+                queryset = queryset.filter(award_id__in=TASAwardMatview.objects.filter(or_queryset).values("award_id"))
 
     return queryset
