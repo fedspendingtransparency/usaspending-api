@@ -2,7 +2,6 @@ import itertools
 import logging
 
 from django.db.models import Q
-from usaspending_api.accounts.helpers import build_tas_codes_filter
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
@@ -11,6 +10,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
+from usaspending_api.search.helpers import build_tas_codes_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
