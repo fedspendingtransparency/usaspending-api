@@ -47,3 +47,12 @@ def generate_raw_quoted_query(queryset):
             str_fix_param = param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
+
+
+def generate_where_clause(queryset):
+    """
+    Returns the SQL and params from a queryset all ready to be plugged into an
+    extra method.
+    """
+    compiler = queryset.query.get_compiler(DEFAULT_DB_ALIAS)
+    return queryset.query.where.as_sql(compiler, compiler.connection)
