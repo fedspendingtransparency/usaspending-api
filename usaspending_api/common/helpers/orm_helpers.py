@@ -1,6 +1,7 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
+from usaspending_api.common.helpers.sql_helpers import get_connection
 
 
 TYPES_TO_QUOTE_IN_SQL = (str, date)
@@ -54,5 +55,5 @@ def generate_where_clause(queryset):
     Returns the SQL and params from a queryset all ready to be plugged into an
     extra method.
     """
-    compiler = queryset.query.get_compiler(DEFAULT_DB_ALIAS)
+    compiler = queryset.query.get_compiler(get_connection().alias)
     return queryset.query.where.as_sql(compiler, compiler.connection)
