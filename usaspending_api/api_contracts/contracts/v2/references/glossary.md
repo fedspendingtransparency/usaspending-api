@@ -5,8 +5,6 @@ HOST: https://api.usaspending.gov
 
 These endpoints are used to power USAspending.gov's glossary components. 
 
-
-
 ## List Glossary [/api/v2/references/glossary/{?limit,page}]
 
 This endpoint returns a list of glossary data.

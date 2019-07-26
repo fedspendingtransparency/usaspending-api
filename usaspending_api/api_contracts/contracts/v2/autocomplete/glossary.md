@@ -1,8 +1,8 @@
-## Glossary Autocomplete [/api/v2/autocomplete/glossary/]
+# Glossary Autocomplete [/api/v2/autocomplete/glossary/]
 
 This endpoint returns glossary autocomplete data for submitted text snippet.
 
-### List Autocomplete Glossary [POST]
+## List Autocomplete Glossary [POST]
 
 + Request (application/json)
 

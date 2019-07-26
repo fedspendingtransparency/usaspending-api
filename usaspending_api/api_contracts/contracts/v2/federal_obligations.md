@@ -5,12 +5,6 @@ HOST: https://api.usaspending.gov
 
 These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-### Get Major Object Classes [GET]
-
-+ Response 200 (application/json)
-    + Attributes
-        + results (required, array[MajorObjectClass], fixed-type)
-
 ## Federal Accounts [/api/v2/federal_obligations/{?fiscal_year,funding_agency_id,limit,page}]
 
 This endpoint returns the amount that the specific agency has obligated to various federal accounts in a given fiscal year.

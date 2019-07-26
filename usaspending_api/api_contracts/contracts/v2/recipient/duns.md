@@ -68,43 +68,6 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 + Response 200 (application/json)
     + Attributes (RecipientOverview)
 
-## Recipient Children [/api/v2/recipient/children/{duns}/{?year}]
-
-This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
-
-+ Parameters
-    + duns: `001006360` (required, string)
-        Parent recipient's DUNS.
-    + year: `2017` (optional, string)
-        The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
-
-### Get Recipient Children [GET]
-
-+ Response 200 (application/json)
-    + Attributes (array[ChildRecipient], fixed-type)
-
-## New Awards Over Time [/api/v2/search/new_awards_over_time/]
-
-This endpoint returns a the count of new awards grouped by time period in ascending order (earliest to most recent).
-
-### Recipient Spending Over Time [POST]
-
-+ Request (application/json)
-    + Attributes (object)
-        + group: `quarter` (required, enum[string])
-            + `fiscal_year`
-            + `quarter`
-            + `month`
-        + filters (required, TimeFilterObject)
-
-+ Response 200 (application/json)
-    + Attributes
-        + group: `quarter` (required, enum[string])
-            + `fiscal_year`
-            + `quarter`
-            + `month`
-        + results (array[TimeResult], fixed-type)
-
 # Data Structures
 
 ## RecipientsListResponse (object)
@@ -197,36 +160,4 @@ This endpoint returns a the count of new awards grouped by time period in ascend
     DUNS number
 + `parent_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-P` (required, string, nullable)
     A unique identifier for the parent recipient.
-
-## ChildRecipient (object)
-+ name: Child of ABC Corporation (required, string, nullable)
-    Name of the child recipient. `null` if the child recipient's name is not provided.
-+ duns: `001006360` (required, string, nullable)
-    Child recipient's DUNS. `null` if the child recipient's DUNS is not provided.
-+ `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
-    A unique identifier for the child recipient.
-+ `state_province`: New Jersey (required, string, nullable)
-    The state or province in which the child recipient is located.
-+ amount: 300200000 (required, number)
-    The aggregate monetary value of transactions associated with this child recipient for the selected time period.
-
-## TimeResult (object)
-+ time_period (required, TimePeriodGroup)
-+ new_award_count_in_period: 25 (required, number)
-    The count of new awards for this time period and the given filters.
-
-## TimeFilterObject (object)
-+ time_period (optional, array[TimePeriodObject], fixed-type)
-+ recipient_id: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-P` (optional, string)
-    A hash of recipient DUNS, name, and level. A unique identifier for recipients.
-
-## TimePeriodGroup (object)
-+ fiscal_year: `2018` (required, string)
-+ quarter: `1` (optional, string)
-    Excluded when grouping by `fiscal_year` or `month`.
-+ month: `1` (optional, string)
-    Excluded when grouping by `fiscal_year` or `quarter`.
-
-## TimePeriodObject (object)
-+ start_date: `2016-10-01` (required, string)
-+ end_date: `2017-09-30` (required, string)
+ 

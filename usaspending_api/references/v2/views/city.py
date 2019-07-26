@@ -43,7 +43,7 @@ models = [
 @validate_post_request(models)
 class CityAutocompleteViewSet(APIDocumentationView):
     """
-    endpoint_doc: usaspending_api/api_contracts/autocomplete/City.md
+    endpoint_doc: usaspending_api/api_contracts/contracts/v2/autocomplete/city.md
     """
 
     @cache_response()
