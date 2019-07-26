@@ -36,7 +36,12 @@ If the award has a `category` of `contract`, the response will look like this:
   "date_signed": "2018-06-21",
   "description": "8505611174!SHIM KIT,WINDSHIELD",
   "executive_details": {
-    "officers": []
+    "officers": [
+        {
+           "amount": 798352.0,
+           "name": "Officer Name"
+        }
+    ]
   },
   "funding_agency": {
     "id": 1219,
@@ -206,7 +211,12 @@ If the `category` is `idv`, the response will look like this:
   "date_signed": "2017-10-01",
   "description": "PROVIDING PROFESSIONAL FOREIGN LANGUAGE INTERPRETING AND TRANSLATING SERVICES",
   "executive_details": {
-    "officers": []
+    "officers": [
+        {
+           "amount": 798352.0,
+           "name": "Officer Name"
+        }
+    ]
   },
   "funding_agency": {
     "id": 315,
@@ -379,6 +389,14 @@ If the `category` of the award is any assistance type, the response will instead
     "total_funding": 133004,
     "base_and_all_options_value": null,
     "description": "VHA MEDICAL PROCESS",
+    "executive_details": {
+        "officers": [
+            {
+                "amount": 798352.0,
+                "name": "Officer Name"
+            }
+        ]
+    },
     "base_exercised_options": null,
     "total_subaward_amount": null,
     "recipient": {

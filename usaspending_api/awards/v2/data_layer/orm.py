@@ -41,8 +41,7 @@ def construct_assistance_response(requested_award_dict):
         return None
     response.update(award)
 
-    # TODO: Add this to the response and update the contract.
-    # response["executive_details"] = create_officers_object(award, FABS_ASSISTANCE_FIELDS, "fabs")
+    response["executive_details"] = create_officers_object(award, FABS_ASSISTANCE_FIELDS, "fabs")
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
