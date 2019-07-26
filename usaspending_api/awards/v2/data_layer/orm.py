@@ -244,13 +244,14 @@ def create_officers_object(award, mapper, transaction_type):
 
     officers = []
 
-    for officer_num in range(1, 6):
-        officer_name_key = "_officer_{}_name".format(officer_num)
-        officer_amount_key = "_officer_{}_amount".format(officer_num)
-        officer_name = transaction.get(officer_name_key)
-        officer_amount = transaction.get(officer_amount_key)
-        if officer_name or officer_amount:
-            officers.append({"name": officer_name, "amount": officer_amount})
+    if transaction:
+        for officer_num in range(1, 6):
+            officer_name_key = "_officer_{}_name".format(officer_num)
+            officer_amount_key = "_officer_{}_amount".format(officer_num)
+            officer_name = transaction.get(officer_name_key)
+            officer_amount = transaction.get(officer_amount_key)
+            if officer_name or officer_amount:
+                officers.append({"name": officer_name, "amount": officer_amount})
 
     return {"officers": officers}
 
