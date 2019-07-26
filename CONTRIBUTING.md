@@ -28,12 +28,15 @@ Prefix|Change Type|Examples
 
 ## Code Style
 Use these tools to have an excellent chance of passing our automated CI tests
-- [flake8](http://flake8.pycqa.org/en/latest/index.html#)
-  - Will be installed when following the steps in the [readme](README.md)
-  - from repo root dir: `flake8`
-- [black](https://github.com/python/black)
-  - See instructions for installing black and integrating with your develop env. Currently blakc requires a newer version of Python than the usaspending-api application.
-  - from repo root dir: `black .`
+* [flake8](http://flake8.pycqa.org/en/latest/index.html#)
+    * Will be installed when following the steps in the [readme](README.md)
+    * from repo root dir: `flake8`
+* [black](https://github.com/python/black)
+    * See instructions for installing black and integrating with your develop env. Currently black requires a newer version of Python than the usaspending-api application.
+    * Ensure your IDE/editor black tool configuration matches the black section in [pyproject.toml](pyproject.toml)
+        * Recommendation is to _only_ run black on the files you are touching in your feature branch (ignoring django migration files)
+        * Using the cli will automatically find the config when running from the project root
+            * `black usaspending_api/<path to file>`
 
 ## Pull Requests
 When opening a PR to improve or fix something, the description will auto-populate with a template found [here](.github/pull_request_template.md)
