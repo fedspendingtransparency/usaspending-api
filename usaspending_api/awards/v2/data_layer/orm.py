@@ -146,6 +146,7 @@ def construct_idv_response(requested_award_dict):
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    print(transaction)
     if response["funding_agency"]:
         response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
     response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
