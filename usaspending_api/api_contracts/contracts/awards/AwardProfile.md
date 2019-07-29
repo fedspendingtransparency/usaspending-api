@@ -43,10 +43,10 @@ This endpoint returns a list of data that is associated with the award profile p
 # Data Structures
 
 ## ContractResponse (object)
-+ `category`: `contract` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + contract
-+ `type`: `D` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + A
         + B
@@ -76,10 +76,10 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 
 ## IDVResponse (object)
-+ `category`: `idv` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + idv
-+ `type`: `IDV_E` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + `IDV_A`
         + `IDV_B`
@@ -116,13 +116,13 @@ This endpoint returns a list of data that is associated with the award profile p
 + `parent_award` (required, ParentIDVDetails, fixed-type, nullable)
 
 ## FinancialAssistanceResponse (object)
-+ `category`: `loans` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + loans
         + other
         + direct payment
         + grant
-+ `type`: `07` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + `02`
         + `03`
@@ -298,7 +298,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `type_set_aside_description` (required, string, nullable)
 
 ## Executive
-+ officers (required, array[Officer])
++ officers (required, array[Officer], fixed-type)
 
 ## Officer
 + name: `John Doe` (required, string)
