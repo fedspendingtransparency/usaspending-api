@@ -45,8 +45,8 @@ def awards_and_transactions(db):
     }
 
     sub_agency = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    trans_asst = {"pk": 1}
-    trans_cont = {"pk": 2}
+    trans_asst = {"pk": 1, "award_id": 1}
+    trans_cont = {"pk": 2, "award_id": 2}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
@@ -244,15 +244,13 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
 
+
 @pytest.fixture
 def update_awards(db):
-    test_date = datetime.date(2010, 1, 1)
-
     mommy.make("awards.Award", pk=11)
     mommy.make("awards.Award", pk=12)
 
 
-@pytest.mark.django_db
 def test_award_last_updated_endpoint(client, update_awards):
     """Test the awards endpoint."""
     resp = client.get("/api/v2/awards/last_updated/")
@@ -260,7 +258,6 @@ def test_award_last_updated_endpoint(client, update_awards):
     assert resp.data["last_updated"] == datetime.datetime.now().strftime("%m/%d/%Y")
 
 
-@pytest.mark.django_db
 def test_award_endpoint_generated_id(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")

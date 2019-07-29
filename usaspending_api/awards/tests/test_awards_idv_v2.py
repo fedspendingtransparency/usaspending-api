@@ -85,9 +85,9 @@ def awards_and_transactions(db):
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 
-    trans_asst = {"pk": 1}
-    trans_cont_1 = {"pk": 2}
-    trans_cont_2 = {"pk": 3}
+    trans_asst = {"pk": 1, "award_id": 1}
+    trans_cont_1 = {"pk": 2, "award_id": 2}
+    trans_cont_2 = {"pk": 3, "award_id": 3}
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_cont_1)
     mommy.make("awards.TransactionNormalized", **trans_cont_2)
@@ -156,7 +156,6 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_3_model)
 
     asst_data = {
-        "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
         "cfda_number": 1234,
         "cfda_title": "farms",
@@ -183,7 +182,6 @@ def awards_and_transactions(db):
         "program_system_or_equ_desc": None,
         "dod_claimant_program_code": None,
         "dod_claimant_prog_cod_desc": "C9E",
-        "evaluated_preference_desc": "NO PREFERENCE USED",
         "domestic_or_foreign_entity": None,
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
         "evaluated_preference": None,
@@ -292,7 +290,6 @@ def awards_and_transactions(db):
         "program_system_or_equ_desc": None,
         "dod_claimant_program_code": None,
         "dod_claimant_prog_cod_desc": "C9E",
-        "evaluated_preference_desc": "NO PREFERENCE USED",
         "domestic_or_foreign_entity": None,
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
         "evaluated_preference": None,
@@ -389,7 +386,6 @@ def test_no_data_idv_award_endpoint(client):
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.django_db
 def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
@@ -400,7 +396,6 @@ def test_award_endpoint_different_ids(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
 
-@pytest.mark.django_db
 def test_award_endpoint_for_null_recipient_information(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/3/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
