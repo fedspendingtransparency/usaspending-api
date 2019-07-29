@@ -2,7 +2,7 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.awards.models import  Award
+from usaspending_api.awards.models import Award
 
 
 @pytest.fixture
