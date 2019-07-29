@@ -155,11 +155,7 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
 
-    asst_data = {
-        "transaction": TransactionNormalized.objects.get(pk=1),
-        "cfda_number": 1234,
-        "cfda_title": "farms",
-    }
+    asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
 
     latest_transaction_contract_data = {
         "action_date": "2010-01-01",
