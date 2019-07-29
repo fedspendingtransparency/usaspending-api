@@ -4,7 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
 
 
