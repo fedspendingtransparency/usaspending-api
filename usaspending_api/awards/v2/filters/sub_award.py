@@ -2,14 +2,15 @@ import itertools
 import logging
 
 from django.db.models import Q
-
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
+from usaspending_api.search.helpers import build_tas_codes_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
+
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ def subaward_filter(filters, for_downloads=False):
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
+            "tas_codes",
         ]
 
         if key not in key_list:
@@ -229,5 +231,8 @@ def subaward_filter(filters, for_downloads=False):
             for v in value:
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
+
+        elif key == "tas_codes":
+            queryset = build_tas_codes_filter(queryset, SubawardView, value)
 
     return queryset

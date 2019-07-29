@@ -425,3 +425,21 @@ class BudgetAuthority(models.Model):
 
         db_table = "budget_authority"
         unique_together = (("agency_identifier", "fr_entity_code", "year"),)
+
+
+class TASAwardMatview(models.Model):
+
+    tas_award_id = models.UUIDField(primary_key=True)
+    allocation_transfer_agency_id = models.TextField(null=True)
+    agency_id = models.TextField()
+    beginning_period_of_availability = models.TextField(null=True)
+    ending_period_of_availability = models.TextField(null=True)
+    availability_type_code = models.TextField(null=True)
+    main_account_code = models.TextField()
+    sub_account_code = models.TextField(null=True)
+    award_id = models.BigIntegerField()
+
+    class Meta:
+
+        db_table = "tas_award_matview"
+        managed = False

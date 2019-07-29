@@ -1,20 +1,22 @@
-import logging
 import itertools
+import logging
 
 from django.db.models import Q
-
-from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
-from .filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.references.models import PSC
+from usaspending_api.search.helpers import build_tas_codes_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
-from usaspending_api.recipient.models import RecipientProfile
+
 
 logger = logging.getLogger(__name__)
+
 
 LIST_OF_AWARD_MODELS = ["UniversalAwardView", "SummaryAwardView"]
 
@@ -62,6 +64,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
+            "tas_codes",
             # next 3 keys used by federal account page
             "federal_account_ids",
             "object_class",
@@ -272,6 +275,9 @@ def matview_search_filter(filters, model, for_downloads=False):
             for v in value:
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
+
+        elif key == "tas_codes":
+            queryset = build_tas_codes_filter(queryset, model, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":
