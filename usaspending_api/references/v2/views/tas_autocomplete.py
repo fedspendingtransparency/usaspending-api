@@ -1,7 +1,8 @@
+from collections import OrderedDict
 from copy import deepcopy
 from rest_framework.response import Response
-from collections import OrderedDict
 from rest_framework.views import APIView
+from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -20,17 +21,6 @@ TINY_SHIELD_MODELS = [
 ]
 
 
-COMPONENT_MAPPING = {
-    "ata": "allocation_transfer_agency_id",
-    "aid": "agency_id",
-    "bpoa": "beginning_period_of_availability",
-    "epoa": "ending_period_of_availability",
-    "a": "availability_type_code",
-    "main": "main_account_code",
-    "sub": "sub_account_code",
-}
-
-
 class TASAutocomplete(APIView):
     @staticmethod
     def _parse_and_validate_request(request_data):
@@ -39,10 +29,10 @@ class TASAutocomplete(APIView):
     @staticmethod
     def _business_logic(filters, requested_component, limit):
 
-        requested_column = COMPONENT_MAPPING[requested_component]
+        requested_column = TAS_COMPONENT_TO_FIELD_MAPPING[requested_component]
         kwargs = {}
         for current_component, current_value in filters.items():
-            current_column = COMPONENT_MAPPING[current_component]
+            current_column = TAS_COMPONENT_TO_FIELD_MAPPING[current_component]
             if current_value is None:
                 kwargs[current_column + "__isnull"] = True
             elif current_column == requested_column:

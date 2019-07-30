@@ -4,7 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
 
 
@@ -42,22 +42,20 @@ def awards_and_transactions(db):
         "foreign_postal_code": None,
         "foreign_province": None,
     }
-    subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
+    mommy.make("references.Location", **parent_loc)
+    mommy.make("references.Location", **loc)
 
-    trans_asst = {"pk": 1}
-    trans_cont_1 = {"pk": 2}
-    trans_cont_2 = {"pk": 3}
+    subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
+    mommy.make("references.SubtierAgency", **subag)
+    mommy.make("references.ToptierAgency", **subag)
+
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
     mommy.make("references.Cfda", program_number=1234)
-    mommy.make("references.Location", **parent_loc)
-    mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
-    mommy.make("references.SubtierAgency", **subag)
-    mommy.make("references.ToptierAgency", **subag)
     mommy.make("references.OfficeAgency", pk=1, name="office_agency")
 
     parent_le = {
@@ -83,22 +81,84 @@ def awards_and_transactions(db):
         "subtier_agency": SubtierAgency.objects.get(pk=1),
         "office_agency": OfficeAgency.objects.get(pk=1),
     }
-
-    mommy.make("awards.TransactionNormalized", **trans_asst)
-    mommy.make("awards.TransactionNormalized", **trans_cont_1)
-    mommy.make("awards.TransactionNormalized", **trans_cont_2)
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 
-    asst_data = {
+    trans_asst = {"pk": 1, "award_id": 1}
+    trans_cont_1 = {"pk": 2, "award_id": 2}
+    trans_cont_2 = {"pk": 3, "award_id": 3}
+    mommy.make("awards.TransactionNormalized", **trans_asst)
+    mommy.make("awards.TransactionNormalized", **trans_cont_1)
+    mommy.make("awards.TransactionNormalized", **trans_cont_2)
+
+    award_1_model = {
         "pk": 1,
-        "transaction": TransactionNormalized.objects.get(pk=1),
-        "cfda_number": 1234,
-        "cfda_title": "farms",
+        "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "type": "IDV_B_B",
+        "category": "idv",
+        "piid": 1234,
+        "type_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
+        "description": "lorem ipsum",
+        "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "place_of_performance": Location.objects.get(pk=1),
+        "date_signed": "2005-04-03",
     }
+    award_2_model = {
+        "pk": 2,
+        "latest_transaction": TransactionNormalized.objects.get(pk=2),
+        "type": "IDV_A",
+        "type_description": "GWAC",
+        "category": "idv",
+        "piid": "5678",
+        "parent_award_piid": "1234",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "date_signed": "2004-03-02",
+    }
+    award_3_model = {
+        "pk": 3,
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "type": "IDV_A",
+        "type_description": "GWAC",
+        "category": "idv",
+        "piid": "9123",
+        "parent_award_piid": "1234",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9800",
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "date_signed": "2004-03-02",
+    }
+    mommy.make("awards.Award", **award_1_model)
+    mommy.make("awards.Award", **award_2_model)
+    mommy.make("awards.Award", **award_3_model)
+
+    asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
 
     latest_transaction_contract_data = {
+        "action_date": "2010-01-01",
         "agency_id": "192",
         "awardee_or_recipient_legal": "John's Pizza",
         "awardee_or_recipient_uniqu": "456",
@@ -118,7 +178,6 @@ def awards_and_transactions(db):
         "program_system_or_equ_desc": None,
         "dod_claimant_program_code": None,
         "dod_claimant_prog_cod_desc": "C9E",
-        "evaluated_preference_desc": "NO PREFERENCE USED",
         "domestic_or_foreign_entity": None,
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
         "evaluated_preference": None,
@@ -207,6 +266,7 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
     }
     latest_transaction_contract_data_without_recipient_name_or_id = {
+        "action_date": "2020-01-01",
         "agency_id": "192",
         "awardee_or_recipient_legal": None,
         "awardee_or_recipient_uniqu": None,
@@ -226,7 +286,6 @@ def awards_and_transactions(db):
         "program_system_or_equ_desc": None,
         "dod_claimant_program_code": None,
         "dod_claimant_prog_cod_desc": "C9E",
-        "evaluated_preference_desc": "NO PREFERENCE USED",
         "domestic_or_foreign_entity": None,
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
         "evaluated_preference": None,
@@ -313,68 +372,6 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
     mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data_without_recipient_name_or_id)
-    award_1_model = {
-        "pk": 1,
-        "type": "IDV_B_B",
-        "category": "idv",
-        "piid": 1234,
-        "type_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-        "description": "lorem ipsum",
-        "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
-        "total_subaward_amount": 12345.00,
-        "subaward_count": 10,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
-        "latest_transaction": TransactionNormalized.objects.get(pk=1),
-        "date_signed": "2005-04-03",
-    }
-    award_2_model = {
-        "pk": 2,
-        "type": "IDV_A",
-        "type_description": "GWAC",
-        "category": "idv",
-        "piid": "5678",
-        "parent_award_piid": "1234",
-        "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "total_obligation": 1000,
-        "base_and_all_options_value": 2000,
-        "period_of_performance_start_date": "2004-02-04",
-        "period_of_performance_current_end_date": "2005-02-04",
-        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
-        "latest_transaction": TransactionNormalized.objects.get(pk=2),
-        "total_subaward_amount": 12345.00,
-        "subaward_count": 10,
-        "date_signed": "2004-03-02",
-    }
-    award_3_model = {
-        "pk": 3,
-        "type": "IDV_A",
-        "type_description": "GWAC",
-        "category": "idv",
-        "piid": "9123",
-        "parent_award_piid": "1234",
-        "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "total_obligation": 1000,
-        "base_and_all_options_value": 2000,
-        "period_of_performance_start_date": "2004-02-04",
-        "period_of_performance_current_end_date": "2005-02-04",
-        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9800",
-        "latest_transaction": TransactionNormalized.objects.get(pk=3),
-        "total_subaward_amount": 12345.00,
-        "subaward_count": 10,
-        "date_signed": "2004-03-02",
-    }
-    mommy.make("awards.Award", **award_1_model)
-    mommy.make("awards.Award", **award_2_model)
-    mommy.make("awards.Award", **award_3_model)
 
 
 @pytest.mark.django_db
@@ -385,17 +382,6 @@ def test_no_data_idv_award_endpoint(client):
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.django_db
-def test_null_awards():
-    """Test the award.nonempty command."""
-    mommy.make("awards.Award", total_obligation="2000", _quantity=2)
-    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None, recipient=None)
-
-    assert Award.objects.count() == 3
-    assert Award.nonempty.count() == 2
-
-
-@pytest.mark.django_db
 def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
@@ -406,7 +392,6 @@ def test_award_endpoint_different_ids(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
 
-@pytest.mark.django_db
 def test_award_endpoint_for_null_recipient_information(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/3/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
