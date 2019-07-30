@@ -36,6 +36,7 @@ AWARD_MAPPINGS = {
             3: "modification_number",
             4: "parent_award_id",
             5: "transaction_number",
+            6: "contract_transaction_unique_key",
         },
         "correction_delete_ind": "correction_delete_ind",
         "date_filter": "updated_at",
@@ -48,10 +49,12 @@ AWARD_MAPPINGS = {
         "agency_field": "awarding_sub_agency_code",
         "award_types": ["grants", "direct_payments", "loans", "other_financial_assistance"],
         "column_headers": {
-            0: "modification_number",
-            1: "awarding_sub_agency_code",
-            2: "award_id_fain",
-            3: "award_id_uri",
+            0: "awarding_sub_agency_code",
+            1: "award_id_fain",
+            2: "award_id_uri",
+            3: "cfda_number",
+            4: "modification_number",
+            5: "assistance_transaction_unique_key",
         },
         "correction_delete_ind": "correction_delete_ind",
         "date_filter": "modified_at",
@@ -110,9 +113,14 @@ class Command(BaseCommand):
             )
 
         transaction_delta_queryset = source.queryset
-        source.queryset = source.queryset.filter(
-            **{"transaction__{}__{}__gte".format(award_map["model"], award_map["date_filter"]): generate_since}
-        )
+
+        _filter = {"transaction__{}__{}__gte".format(award_map["model"], award_map["date_filter"]): generate_since}
+        if self.debugging_end_date:
+            _filter[
+                "transaction__{}__{}__lt".format(award_map["model"], award_map["date_filter"])
+            ] = self.debugging_end_date
+
+        source.queryset = source.queryset.filter(**_filter)
 
         # UNION the normal results to the transaction_delta results.
         source.queryset = source.queryset.union(
@@ -187,6 +195,20 @@ class Command(BaseCommand):
 
         return zipfile_path
 
+    @staticmethod
+    def split_transaction_id(tid):
+        """
+        Split the transaction id on underscores and append the original transaction
+        id to the result.  The returned components should conform to the column
+        definitions provided in AWARD_MAPPINGS[award_type]['column_headers'].
+
+        USAspending uppercases transaction unique ids, but older version of Broker
+        did not so we'll uppercase just to be safe.  Won't hurt anything to uppercase
+        an uppercased id.
+        """
+        tid = tid.upper()
+        return pd.Series(tid.split("_") + [tid])
+
     def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
         """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
         logger.info("Retrieving deletion records from S3 files and appending to the CSV")
@@ -214,9 +236,9 @@ class Command(BaseCommand):
                 # Split unique identifier into usable columns and add unused columns
                 df = (
                     df[AWARD_MAPPINGS[award_type]["unique_iden"]]
-                    .apply(lambda x: pd.Series(x.split("_")))
-                    .replace("-none-", "", regex=True)
-                    .replace("-NONE-", "", regex=True)
+                    .apply(self.split_transaction_id)
+                    .replace("-none-", "")
+                    .replace("-NONE-", "")
                     .rename(columns=AWARD_MAPPINGS[award_type]["column_headers"])
                 )
 
@@ -241,10 +263,7 @@ class Command(BaseCommand):
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
         """ Ensure that the dataframe has all necessary columns in the correct order """
-        if award_type == "Contracts":
-            ordered_columns = ["correction_delete_ind"] + source.columns(None)
-        else:
-            ordered_columns = source.columns(None)
+        ordered_columns = ["correction_delete_ind"] + source.columns(None)
 
         # Loop through columns and populate rows for each
         unique_values_map = {"correction_delete_ind": "D", "last_modified_date": match_date}
@@ -286,6 +305,16 @@ class Command(BaseCommand):
             award_type == "Contracts" and file_date < generate_since_date
         ):
             return False
+
+        if self.debugging_end_date:
+            # The logic on this is configured to match the logic in the above
+            # statements, specifically the bit concerning "Contract deletion
+            # files are made in the evening, Assistance files in the morning".
+            end_date_date = datetime.strptime(self.debugging_end_date, "%Y-%m-%d").date()
+            if (award_type == "Assistance" and file_date > end_date_date) or (
+                award_type == "Contracts" and file_date >= end_date_date
+            ):
+                return False
 
         return "{}-{}-{}".format(year, month, day)
 
@@ -349,7 +378,12 @@ class Command(BaseCommand):
             default=None,
             type=str,
             required=True,
-            help="Date of last Delta file creation.",
+            help="Date of last Delta file creation. YYYY-MM-DD",
+        )
+        parser.add_argument(
+            "--debugging_end_date",
+            help="This was added to help with debugging and should not be used for production runs "
+            "as the cutoff logic is imprecise. YYYY-MM-DD",
         )
 
     def handle(self, *args, **options):
@@ -357,6 +391,7 @@ class Command(BaseCommand):
         agencies = options["agencies"]
         award_types = options["award_types"]
         last_date = options["last_date"]
+        self.debugging_end_date = options["debugging_end_date"]
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
@@ -377,5 +412,5 @@ class Command(BaseCommand):
 
         logger.info(
             "IMPORTANT: Be sure to run synchronize_transaction_delta management command "
-            "after a successful monthly delta run"
+            "after a successful monthly delta run."
         )
