@@ -9,14 +9,16 @@ from usaspending_api.accounts.models import FederalAccount
 @pytest.fixture
 def financial_spending_data(db):
     latest_subm = mommy.make(
-        'submissions.SubmissionAttributes', certified_date='2017-12-01', reporting_fiscal_year=2017)
+        "submissions.SubmissionAttributes", certified_date="2017-12-01", reporting_fiscal_year=2017
+    )
     last_year_subm = mommy.make(
-        'submissions.SubmissionAttributes', certified_date='2016-12-01', reporting_fiscal_year=2016)
+        "submissions.SubmissionAttributes", certified_date="2016-12-01", reporting_fiscal_year=2016
+    )
     federal_account = mommy.make(FederalAccount, id=1)
 
     # create Object classes
     mommy.make(
-        'accounts.AppropriationAccountBalances',
+        "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,
         submission=latest_subm,
@@ -32,14 +34,14 @@ def financial_spending_data(db):
 
     # these AAB records should not show up in the endpoint, they are too old
     mommy.make(
-        'accounts.AppropriationAccountBalances',
+        "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=False,
         submission=latest_subm,
         gross_outlay_amount_by_tas_cpe=999,
     )
     mommy.make(
-        'accounts.AppropriationAccountBalances',
+        "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,
         submission=last_year_subm,
@@ -50,35 +52,35 @@ def financial_spending_data(db):
 def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/federal_accounts/1/fiscal_year_snapshot')
+    resp = client.get("/api/v2/federal_accounts/1/fiscal_year_snapshot")
     assert resp.status_code == status.HTTP_200_OK
 
     # test response in correct form
 
-    assert 'results' in resp.json()
-    results = resp.json()['results']
-    assert 'outlay' in results
-    assert 'budget_authority' in results
-    assert 'obligated' in results
-    assert 'unobligated' in results
-    assert 'balance_brought_forward' in results
-    assert 'other_budgetary_resources' in results
-    assert 'appropriations' in results
+    assert "results" in resp.json()
+    results = resp.json()["results"]
+    assert "outlay" in results
+    assert "budget_authority" in results
+    assert "obligated" in results
+    assert "unobligated" in results
+    assert "balance_brought_forward" in results
+    assert "other_budgetary_resources" in results
+    assert "appropriations" in results
 
-    assert results['outlay'] == 1000000
-    assert results['budget_authority'] == 2000000
-    assert results['obligated'] == 3000000
-    assert results['unobligated'] == 4000000
-    assert results['balance_brought_forward'] == 11000000
-    assert results['other_budgetary_resources'] == 7000000
-    assert results['appropriations'] == 8000000
+    assert results["outlay"] == 1000000
+    assert results["budget_authority"] == 2000000
+    assert results["obligated"] == 3000000
+    assert results["unobligated"] == 4000000
+    assert results["balance_brought_forward"] == 11000000
+    assert results["other_budgetary_resources"] == 7000000
+    assert results["appropriations"] == 8000000
 
 
 @pytest.mark.django_db
 def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, financial_spending_data):
     """Test response when no AAB records found."""
 
-    resp = client.get('/api/v2/federal_accounts/999/fiscal_year_snapshot')
+    resp = client.get("/api/v2/federal_accounts/999/fiscal_year_snapshot")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {}
 
@@ -86,7 +88,7 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, fin
 def test_federal_account_fiscal_year_snapshot_v2_endpoint_specific_fy(client, financial_spending_data):
     """Test that fy parameter accepted and honored."""
 
-    resp = client.get('/api/v2/federal_accounts/1/fiscal_year_snapshot/2016')
+    resp = client.get("/api/v2/federal_accounts/1/fiscal_year_snapshot/2016")
     assert resp.status_code == status.HTTP_200_OK
-    results = resp.json()['results']
-    assert results['outlay'] == 999
+    results = resp.json()["results"]
+    assert results["outlay"] == 999

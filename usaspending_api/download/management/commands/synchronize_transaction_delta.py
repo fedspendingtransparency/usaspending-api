@@ -40,7 +40,8 @@ class Command(BaseCommand):
         if snapshot_db is None:
             raise EnvironmentError(
                 "Missing required environment variable DOWNLOAD_DATABASE_URL which should contain "
-                "the connection string for the monthly delta snapshot database.")
+                "the connection string for the monthly delta snapshot database."
+            )
 
         max_created_at = self.get_max_created_at(snapshot_db)
         if max_created_at is not None:

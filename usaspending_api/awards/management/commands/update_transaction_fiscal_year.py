@@ -6,7 +6,7 @@ import logging
 class Command(BaseCommand):
     help = "Updates the fiscal year for all transactions based on their individual action dates"
 
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     def handle(self, *args, **options):
         all_transactions = TransactionNormalized.objects.all()

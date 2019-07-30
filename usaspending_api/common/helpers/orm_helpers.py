@@ -1,6 +1,7 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
+from usaspending_api.common.helpers.sql_helpers import get_connection
 
 
 TYPES_TO_QUOTE_IN_SQL = (str, date)
@@ -39,11 +40,20 @@ def generate_raw_quoted_query(queryset):
     for param in params:
         if isinstance(param, TYPES_TO_QUOTE_IN_SQL):
             # single quotes are escaped with two '' for strings in sql
-            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
-            str_fix_param = '\'{}\''.format(param)
+            param = param.replace("'", "''") if isinstance(param, str) else param
+            str_fix_param = "'{}'".format(param)
         elif isinstance(param, list):
-            str_fix_param = 'ARRAY{}'.format(param)
+            str_fix_param = "ARRAY{}".format(param)
         else:
             str_fix_param = param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
+
+
+def generate_where_clause(queryset):
+    """
+    Returns the SQL and params from a queryset all ready to be plugged into an
+    extra method.
+    """
+    compiler = queryset.query.get_compiler(get_connection().alias)
+    return queryset.query.where.as_sql(compiler, compiler.connection)

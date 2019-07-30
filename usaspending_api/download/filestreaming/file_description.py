@@ -17,7 +17,7 @@ def save_file_description(working_dir, file_name, file_description):
 
     # Because this file will be read by Windows machines, it will need carriage
     # returns and line feeds.  /sigh.
-    file_description = '\r\n'.join(file_description.splitlines())
+    file_description = "\r\n".join(file_description.splitlines())
 
     # Build the destination path and create the file using the provided text.
     destination_file_path = os.path.join(working_dir, file_name)

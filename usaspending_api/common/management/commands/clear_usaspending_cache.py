@@ -8,8 +8,9 @@ class Command(BaseCommand):
     This command will clear the usaspending-cache (useful after a load or a deletion
     to ensure end users don't see stale data)
     """
+
     help = "Clears the usaspending-cache"
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     def handle(self, *args, **options):
         self.logger.info("Clearing usaspending-cache...")

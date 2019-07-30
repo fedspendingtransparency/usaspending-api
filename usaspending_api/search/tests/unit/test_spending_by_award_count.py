@@ -28,7 +28,7 @@ def populate_models(mock_matviews_qs):
 
 
 def get_spending_by_award_count_url():
-    return '/api/v2/search/spending_by_award_count/'
+    return "/api/v2/search/spending_by_award_count/"
 
 
 @pytest.mark.django_db
@@ -48,7 +48,7 @@ def test_spending_by_award_count(populate_models, client, mock_matviews_qs):
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(), content_type='application/json', data=json.dumps(test_payload)
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -70,7 +70,7 @@ def test_spending_by_award_count_idvs(populate_models, client, mock_matviews_qs)
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(), content_type='application/json', data=json.dumps(test_payload)
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
     print(json.dumps(resp.data))
 

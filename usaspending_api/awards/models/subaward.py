@@ -9,9 +9,7 @@ class Subaward(models.Model):
     id = models.IntegerField(primary_key=True)
 
     award = models.ForeignKey("awards.Award", models.CASCADE, related_name="subawards", null=True)
-    cfda = models.ForeignKey(
-        "references.Cfda", models.DO_NOTHING, related_name="related_subawards", null=True
-    )
+    cfda = models.ForeignKey("references.Cfda", models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(
         "references.Agency", models.DO_NOTHING, related_name="awarding_subawards", null=True
     )

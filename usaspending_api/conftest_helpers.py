@@ -14,7 +14,6 @@ from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_
 
 
 class TestElasticSearchIndex:
-
     def __init__(self):
         """
         We will be prefixing all aliases with the index name to ensure
@@ -55,7 +54,8 @@ class TestElasticSearchIndex:
                 self.index_name,
                 self.doc_type,
                 json.dumps(transaction, cls=DjangoJSONEncoder),
-                transaction["transaction_id"])
+                transaction["transaction_id"],
+            )
 
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
@@ -80,8 +80,7 @@ class TestElasticSearchIndex:
     @classmethod
     def _generate_index_name(cls):
         return "test-{}-{}".format(
-            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"),
-            cls._generate_random_string()
+            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), cls._generate_random_string()
         )
 
 
@@ -91,8 +90,7 @@ def ensure_transaction_delta_view_exists():
     This function will just ensure the view exists in the database.
     """
     transaction_delta_view_path = os.path.join(
-        settings.BASE_DIR,
-        "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
+        settings.BASE_DIR, "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
     )
     with open(transaction_delta_view_path) as f:
         transaction_delta_view = f.read()

@@ -12,19 +12,20 @@ class Command(BaseCommand):
     This command will remove a submission and all associated data with it from the
     database
     """
+
     help = "Removes a single submission from the configured data broker database"
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
-        parser.add_argument('submission_id', nargs=1, help='the broker submission id to delete', type=int)
+        parser.add_argument("submission_id", nargs=1, help="the broker submission id to delete", type=int)
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.logger.info('Staring rm_submissions management command')
+        self.logger.info("Staring rm_submissions management command")
 
         def signal_handler(signal, frame):
             transaction.set_rollback(True)
-            raise Exception('Received interrupt signal. Aborting...')
+            raise Exception("Received interrupt signal. Aborting...")
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
@@ -38,7 +39,7 @@ class Command(BaseCommand):
 
         deleted_stats = submission.delete()
 
-        self.logger.info('Finished deletions.')
+        self.logger.info("Finished deletions.")
 
         statistics = "Statistics:\n  Total objects removed: {}".format(deleted_stats[0])
         for (model, count) in deleted_stats[1].items():

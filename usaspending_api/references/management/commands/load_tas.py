@@ -7,8 +7,11 @@ from django.db import transaction
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.models import ToptierAgency
-from usaspending_api.references.reference_helpers import (insert_federal_accounts, update_federal_accounts,
-                                                          remove_empty_federal_accounts)
+from usaspending_api.references.reference_helpers import (
+    insert_federal_accounts,
+    update_federal_accounts,
+    remove_empty_federal_accounts,
+)
 
 logger = logging.getLogger("console")
 
@@ -34,8 +37,11 @@ class Command(BaseCommand):
                 frec_match = ToptierAgency.objects.filter(cgac_code=next_tas.fr_entity_code).first()
                 if frec_match:
                     match_count += 1
-                    logger.info("   Matched unknown funding agency for TAS {} with FREC {}".format(
-                        next_tas.tas_rendering_label, next_tas.fr_entity_code))
+                    logger.info(
+                        "   Matched unknown funding agency for TAS {} with FREC {}".format(
+                            next_tas.tas_rendering_label, next_tas.fr_entity_code
+                        )
+                    )
                     next_tas.funding_toptier_agency = frec_match
                     next_tas.save()
 

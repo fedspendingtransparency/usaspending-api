@@ -15,7 +15,7 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 def clear_caches():
-    for cache_name in ('default', 'locations'):
+    for cache_name in ("default", "locations"):
         caches[cache_name].clear()
 
 
@@ -24,26 +24,22 @@ def cleanse_values(row):
     Remove textual quirks from CSV values.
     """
     row = {k: v.strip() for (k, v) in row.items()}
-    row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
+    row = {k: (None if v.lower() == "null" else v) for (k, v) in row.items()}
     return row
 
 
 def convert_date(date):
     if date == "":
         return None
-    return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
+    return datetime.strptime(date, "%m/%d/%Y").strftime("%Y-%m-%d")
 
 
 def get_subtier_agency_dict():
     """Returns a dictionary with key = subtier agency code and value = agency id."""
     # there's no unique constraint on subtier_code, so the order by below ensures that in the case of duplicate subtier
     # codes, the dictionary we return will reflect the most recently updated one
-    agencies = Agency.objects.all().values(
-        'id',
-        'subtier_agency__subtier_code').order_by('subtier_agency__update_date')
-    subtier_agency_dict = {
-        a['subtier_agency__subtier_code']: a['id'] for a in agencies
-    }
+    agencies = Agency.objects.all().values("id", "subtier_agency__subtier_code").order_by("subtier_agency__update_date")
+    subtier_agency_dict = {a["subtier_agency__subtier_code"]: a["id"] for a in agencies}
     return subtier_agency_dict
 
 
@@ -64,7 +60,7 @@ def fetch_country_code(vendor_country_code):
     return country_code
 
 
-location_cache = caches['locations']
+location_cache = caches["locations"]
 
 
 def get_or_create_location(row, mapper):
@@ -75,18 +71,17 @@ def get_or_create_location(row, mapper):
 
         # Apparently zip codes are optional...
         if location_dict["location_zip"]:
-            location_dict.update(
-                zip5=location_dict["location_zip"][:5],
-                zip_last4=location_dict["location_zip"][5:])
+            location_dict.update(zip5=location_dict["location_zip"][:5], zip_last4=location_dict["location_zip"][5:])
 
         location_dict.pop("location_zip")
 
     else:
         location_dict.update(
             foreign_postal_code=location_dict.pop("location_zip", None),
-            foreign_province=location_dict.pop("state_code", None))
+            foreign_province=location_dict.pop("state_code", None),
+        )
         if "city_name" in location_dict:
-            location_dict['foreign_city_name'] = location_dict.pop("city_name")
+            location_dict["foreign_city_name"] = location_dict.pop("city_name")
 
     location_dict = canonicalize_location_dict(location_dict)
 
@@ -103,11 +98,11 @@ def get_or_create_location(row, mapper):
 
 
 def up2colon(input_string):
-    'Takes the part of a string before `:`, if any.'
+    "Takes the part of a string before `:`, if any."
 
     if input_string:
-        return input_string.split(':')[0].strip()
-    return ''
+        return input_string.split(":")[0].strip()
+    return ""
 
 
 def parse_numeric_value(string):
@@ -138,14 +133,16 @@ def get_previous_submission(cgac_code, fiscal_year, fiscal_period):
     For the specified CGAC (e.g., department/top-tier agency) and specified fiscal year and quarter, return the
     previous submission within the same fiscal year.
     """
-    previous_submission = SubmissionAttributes.objects \
-        .filter(
+    previous_submission = (
+        SubmissionAttributes.objects.filter(
             cgac_code=cgac_code,
             reporting_fiscal_year=fiscal_year,
             reporting_fiscal_period__lt=fiscal_period,
-            quarter_format_flag=True) \
-        .order_by('-reporting_fiscal_period') \
+            quarter_format_flag=True,
+        )
+        .order_by("-reporting_fiscal_period")
         .first()
+    )
     return previous_submission
 
 
@@ -165,17 +162,10 @@ def update_model_description_fields():
     For examples of these situations, see the documentation in daims_maps.py
     """
 
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     # This is a list of apps whose models will be checked for description fields
-    updatable_apps = [
-        "accounts",
-        "awards",
-        "common",
-        "financial_activities",
-        "references",
-        "submissions"
-    ]
+    updatable_apps = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]
 
     # This iterates over every model that Django has registered
     for model in django.apps.apps.get_models():
@@ -199,17 +189,18 @@ def update_model_description_fields():
         # It is initialized with a blank filter and empty list, which is where default updates are stored
         model_filtered_update_case_map = [(Q(), {})]
 
-        desc_fields = [field for field in model_fields if field.split('_')[-1] ==
-                       "description"[:len(field.split('_')[-1])]]
+        desc_fields = [
+            field for field in model_fields if field.split("_")[-1] == "description"[: len(field.split("_")[-1])]
+        ]
         non_desc_fields = [field for field in model_fields if field not in desc_fields]
         desc_fields_mapping = {}
         for desc_field in desc_fields:
-            actual_field_short = "_".join(desc_field.split('_')[:-1])
+            actual_field_short = "_".join(desc_field.split("_")[:-1])
             actual_field = None
             for field in non_desc_fields:
                 if actual_field_short == field:
                     actual_field = field
-                elif actual_field_short == field[:len(actual_field_short)]:
+                elif actual_field_short == field[: len(actual_field_short)]:
                     actual_field = field
             desc_fields_mapping[desc_field] = actual_field
 
@@ -219,7 +210,7 @@ def update_model_description_fields():
             split_name = field.split("_")
 
             # If the last element in our split name isn't description, skip it
-            if len(split_name) == 1 or split_name[-1] != "description"[:len(split_name[-1])]:
+            if len(split_name) == 1 or split_name[-1] != "description"[: len(split_name[-1])]:
                 continue
 
             source_field = "_".join(split_name[:-1])
@@ -234,8 +225,11 @@ def update_model_description_fields():
 
             # Validate we have the source field
             if source_field not in model_fields:
-                logger.debug("Tried to update '{}' on model '{}', but source field '{}' does not exist.".
-                             format(destination_field, model.__name__, source_field))
+                logger.debug(
+                    "Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(
+                        destination_field, model.__name__, source_field
+                    )
+                )
                 continue
 
             # Validate we have a map
@@ -245,8 +239,11 @@ def update_model_description_fields():
             elif map_name in daims_maps.keys():
                 code_map = daims_maps[map_name]
             else:
-                logger.warn("Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".
-                            format(destination_field, model.__name__, model_map_name, map_name))
+                logger.warn(
+                    "Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".format(
+                        destination_field, model.__name__, model_map_name, map_name
+                    )
+                )
                 continue
 
             # Cases start from 1
@@ -287,8 +284,11 @@ def update_model_description_fields():
         for filter_tuple in model_filtered_update_case_map:
             # For each filter tuple, check if the dictionary has any entries
             if len(filter_tuple[1].keys()) > 0:
-                print("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".
-                      format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                print(
+                    "Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(
+                        model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())
+                    )
+                )
                 try:
                     model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
                 except django.db.utils.ProgrammingError as e:

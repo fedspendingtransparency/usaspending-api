@@ -9,10 +9,7 @@ def canonicalize_string(val):
         return val
 
 
-canonicalizable = [
-    'address_line', 'city_name', 'county_na', 'state_nam',
-    'province', 'place_of_performance_city',
-]
+canonicalizable = ["address_line", "city_name", "county_na", "state_nam", "province", "place_of_performance_city"]
 # Some field names like 'place_of_perform_county_na' are truncated
 
 

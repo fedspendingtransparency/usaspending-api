@@ -11,7 +11,7 @@ from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.award_helpers import update_contract_awards
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
 
@@ -20,27 +20,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--fiscal_year',
-            dest="fiscal_year",
-            nargs='+',
-            type=int,
-            help="Year for which to run the historical load"
+            "--fiscal_year", dest="fiscal_year", nargs="+", type=int, help="Year for which to run the historical load"
         )
 
         parser.add_argument(
-            '--all',
-            action='store_true',
-            dest='all',
-            default=False,
-            help='Runs the award updates on all records'
+            "--all", action="store_true", dest="all", default=False, help="Runs the award updates on all records"
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        logger.info('Starting updates to award data...')
+        logger.info("Starting updates to award data...")
 
-        all_records_flag = options.get('all')
-        fiscal_year = options.get('fiscal_year')
+        all_records_flag = options.get("all")
+        fiscal_year = options.get("fiscal_year")
 
         award_update_id_list = []
         award_contract_update_id_list = []
@@ -48,27 +40,29 @@ class Command(BaseCommand):
         if not all_records_flag:
             if fiscal_year:
                 fiscal_year = fiscal_year[0]
-                logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
+                logger.info("Processing data for Fiscal Year " + str(fiscal_year))
             else:
                 fiscal_year = 2017
 
             # Lists to store for update_awards and update_contract_awards
-            award_update_id_list = TransactionNormalized.objects.filter(action_date__fy=fiscal_year).\
-                values_list('award_id', flat=True)
-            award_contract_update_id_list = TransactionFPDS.objects.filter(action_date__fy=fiscal_year).\
-                values_list('transaction__award_id', flat=True)
+            award_update_id_list = TransactionNormalized.objects.filter(action_date__fy=fiscal_year).values_list(
+                "award_id", flat=True
+            )
+            award_contract_update_id_list = TransactionFPDS.objects.filter(action_date__fy=fiscal_year).values_list(
+                "transaction__award_id", flat=True
+            )
 
-        with timer('updating awards to reflect their latest associated transaction info', logger.info):
+        with timer("updating awards to reflect their latest associated transaction info", logger.info):
             update_awards() if all_records_flag else update_awards(tuple(award_update_id_list))
 
-        with timer('updating contract-specific awards to reflect their latest transaction info...', logger.info):
+        with timer("updating contract-specific awards to reflect their latest transaction info...", logger.info):
             if all_records_flag:
                 update_contract_awards()
             else:
                 update_contract_awards(tuple(award_contract_update_id_list))
 
-        with timer('updating award category variables', logger.info):
+        with timer("updating award category variables", logger.info):
             update_award_categories() if all_records_flag else update_award_categories(tuple(award_update_id_list))
 
         # Done!
-        logger.info('FINISHED')
+        logger.info("FINISHED")

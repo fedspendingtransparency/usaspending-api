@@ -8,7 +8,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
 BATCH_DOWNLOAD_SIZE = 10000
@@ -17,7 +17,7 @@ BATCH_DOWNLOAD_SIZE = 10000
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('--batch', type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
+        parser.add_argument("--batch", type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
 
     def handle(self, *args, **options):
 
@@ -30,10 +30,10 @@ class Command(BaseCommand):
                     qry = base_qry.format(floor=floor, ceiling=ceiling)
                     curs.execute(qry)
                     elapsed = time.time() - start
-                    logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
+                    logger.info("{}: ID {} to {}, {} s".format(descrip, floor, ceiling, elapsed))
 
     def find_batches(self, curs, table, options):
-        batch = options['batch']
+        batch = options["batch"]
         curs.execute(self.BOUNDARY_FINDER.format(table))
         (lowest, highest) = curs.fetchone()
         floor = (lowest // batch) * batch
@@ -46,7 +46,11 @@ class Command(BaseCommand):
         FROM   {}"""
 
     # Tuples of ( description, controlling table name, query)
-    UPDATERS = (('Place of performance for FABS', 'transaction_fabs', """
+    UPDATERS = (
+        (
+            "Place of performance for FABS",
+            "transaction_fabs",
+            """
             UPDATE references_location l
             SET    state_name = UPPER(tf.place_of_perform_state_nam),
                 state_code = sa.abbrev
@@ -60,7 +64,12 @@ class Command(BaseCommand):
             AND    l.place_of_performance_flag
             AND    tf.transaction_id >= {floor}
             AND    tf.transaction_id < {ceiling};
-            """), ('Recipient for FABS (get state code from name)', 'transaction_fabs', """
+            """,
+        ),
+        (
+            "Recipient for FABS (get state code from name)",
+            "transaction_fabs",
+            """
         UPDATE references_location l
         SET    state_name = UPPER(tf.legal_entity_state_name),
                state_code = sa.abbrev
@@ -76,7 +85,12 @@ class Command(BaseCommand):
         AND    l.recipient_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """), ('Recipient for FABS (get state name from code)', 'transaction_fabs', """
+        """,
+        ),
+        (
+            "Recipient for FABS (get state name from code)",
+            "transaction_fabs",
+            """
         UPDATE references_location l
         SET    state_name = sa.name,
                state_code = UPPER(REPLACE(tf.legal_entity_state_code, '.', ''))
@@ -92,7 +106,12 @@ class Command(BaseCommand):
         AND    l.recipient_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """), ('Place of performance for FPDS', 'transaction_fpds', """
+        """,
+        ),
+        (
+            "Place of performance for FPDS",
+            "transaction_fpds",
+            """
         UPDATE references_location l
         SET    state_name = sa.name,
                state_code = UPPER(REPLACE(tf.place_of_performance_state, '.', ''))
@@ -106,7 +125,12 @@ class Command(BaseCommand):
         AND    l.place_of_performance_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """), ('Recipient for FPDS (get state name from code)', 'transaction_fpds', """
+        """,
+        ),
+        (
+            "Recipient for FPDS (get state name from code)",
+            "transaction_fpds",
+            """
         UPDATE references_location l
         SET    state_name = sa.name,
                state_code = UPPER(REPLACE(tf.legal_entity_state_code, '.', ''))
@@ -121,7 +145,9 @@ class Command(BaseCommand):
         AND    l.recipient_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """))
+        """,
+        ),
+    )
 
     CREATE_STATE_ABBREVS = """
         CREATE TEMPORARY TABLE state_abbrevs (abbrev TEXT PRIMARY KEY, name TEXT NOT NULL);

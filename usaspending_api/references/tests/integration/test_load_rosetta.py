@@ -53,12 +53,7 @@ def test_rosetta_fresh_load():
             {"raw": "legacy_award_element", "display": "Award Element"},
             {"raw": "legacy_subaward_element", "display": "Subaward Element"},
         ],
-        "metadata": {
-            "total_rows": 1,
-            "total_size": "10.80KB",
-            "total_columns": 12,
-            "download_location": None,
-        },
+        "metadata": {"total_rows": 1, "total_size": "10.80KB", "total_columns": 12, "download_location": None},
         "sections": [
             {"colspan": 3, "section": "Schema Data Label & Description"},
             {"colspan": 6, "section": "USA Spending Downloads"},

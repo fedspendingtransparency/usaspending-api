@@ -13,11 +13,7 @@ class AwardManager(models.Manager):
         (i.e. it is no longer empty), these will be updated via update_from_transaction
         and the award will no longer match these criteria
         """
-        q_kwargs = {
-            "latest_transaction__isnull": True,
-            "date_signed__isnull": True,
-            "total_obligation__isnull": True,
-        }
+        q_kwargs = {"latest_transaction__isnull": True, "date_signed__isnull": True, "total_obligation__isnull": True}
 
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
 
@@ -54,10 +50,7 @@ class Award(DataSourceTrackedModel):
         help_text="The plain text description of the type of the award",
     )
     category = models.TextField(
-        db_index=True,
-        verbose_name="Category",
-        null=True,
-        help_text="A field that generalizes the award's type.",
+        db_index=True, verbose_name="Category", null=True, help_text="A field that generalizes the award's type."
     )
     piid = models.TextField(
         db_index=True,
@@ -89,7 +82,7 @@ class Award(DataSourceTrackedModel):
         decimal_places=2,
         null=True,
         verbose_name="Total Obligated",
-        help_text="The amount of money the government is obligated to pay for the " "award",
+        help_text="The amount of money the government is obligated to pay for the award",
     )
     total_outlay = models.DecimalField(
         max_digits=23,
@@ -103,28 +96,20 @@ class Award(DataSourceTrackedModel):
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The total of the original_loan_subsidy_cost from associated " "transactions",
+        help_text="The total of the original_loan_subsidy_cost from associated transactions",
     )
     total_loan_value = models.DecimalField(
         max_digits=23,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The total of the face_value_loan_guarantee from associated " "transactions",
+        help_text="The total of the face_value_loan_guarantee from associated transactions",
     )
     awarding_agency = models.ForeignKey(
-        "references.Agency",
-        related_name="+",
-        null=True,
-        help_text="The awarding agency for the award",
-        db_index=True,
+        "references.Agency", related_name="+", null=True, help_text="The awarding agency for the award", db_index=True
     )
     funding_agency = models.ForeignKey(
-        "references.Agency",
-        related_name="+",
-        null=True,
-        help_text="The funding agency for the award",
-        db_index=True,
+        "references.Agency", related_name="+", null=True, help_text="The funding agency for the award", db_index=True
     )
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
@@ -132,20 +117,15 @@ class Award(DataSourceTrackedModel):
     recipient = models.ForeignKey(
         "references.LegalEntity", null=True, help_text="The recipient of the award", db_index=True
     )
-    description = models.TextField(
-        null=True, verbose_name="Award Description", help_text="A description of the award"
-    )
+    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
     period_of_performance_start_date = models.DateField(
-        null=True,
-        db_index=True,
-        verbose_name="Start Date",
-        help_text="The start date for the period of performance",
+        null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance"
     )
     period_of_performance_current_end_date = models.DateField(
         null=True,
         db_index=True,
         verbose_name="End Date",
-        help_text="The current, not original, period of " "performance end date",
+        help_text="The current, not original, period of performance end date",
     )
     place_of_performance = models.ForeignKey(
         "references.Location",
@@ -162,7 +142,7 @@ class Award(DataSourceTrackedModel):
         blank=True,
         null=True,
         verbose_name="Potential Total Value of Award",
-        help_text="The sum of the potential_value_of_award from " "associated transactions",
+        help_text="The sum of the potential_value_of_award from associated transactions",
     )
     base_and_all_options_value = models.DecimalField(
         max_digits=23,
@@ -171,7 +151,7 @@ class Award(DataSourceTrackedModel):
         blank=True,
         null=True,
         verbose_name="Base and All Options Value",
-        help_text="The sum of the base_and_all_options_value from " "associated transactions",
+        help_text="The sum of the base_and_all_options_value from associated transactions",
     )
     base_exercised_options_val = models.DecimalField(
         max_digits=23,
@@ -179,11 +159,9 @@ class Award(DataSourceTrackedModel):
         blank=True,
         null=True,
         verbose_name="Combined Base and Exercised Options",
-        help_text="The sum of the base_exercised_options_val from " "associated transactions",
+        help_text="The sum of the base_exercised_options_val from associated transactions",
     )
-    last_modified_date = models.DateField(
-        blank=True, null=True, help_text="The date this award was last modified"
-    )
+    last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(
         auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API"
@@ -198,10 +176,7 @@ class Award(DataSourceTrackedModel):
         help_text="The latest transaction by action_date associated with this award",
     )
     parent_award_piid = models.TextField(
-        db_index=True,
-        null=True,
-        verbose_name="Parent Award Piid",
-        help_text="The piid of the Award's parent Award",
+        db_index=True, null=True, verbose_name="Parent Award Piid", help_text="The piid of the Award's parent Award"
     )
     # As part of DEV-2504, generated_unique_award_id now contains the
     # unique_award_key value from Broker rather than being generated during
@@ -220,7 +195,7 @@ class Award(DataSourceTrackedModel):
         decimal_places=2,
         blank=True,
         null=True,
-        help_text="A summation of this award's transactions'" " funding amount",
+        help_text="A summation of this award's transactions' funding amount",
     )
     non_federal_funding_amount = models.DecimalField(
         max_digits=23,
@@ -229,9 +204,7 @@ class Award(DataSourceTrackedModel):
         blank=True,
         help_text="A summation of this award's transactions' non-federal funding amount",
     )
-    fiscal_year = models.IntegerField(
-        blank=True, null=True, help_text="Fiscal Year calculated based on Action Date"
-    )
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, null=True)

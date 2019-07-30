@@ -6,7 +6,7 @@ from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.references.models import Agency
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 def update_awards(award_tuple=None):
@@ -35,65 +35,64 @@ def update_awards(award_tuple=None):
         "  WHEN type = '11' THEN 'other'"
         "  WHEN type LIKE 'IDV%%' THEN 'idv'"
         "  ELSE NULL END AS category "
-        "FROM transaction_normalized ")
+        "FROM transaction_normalized "
+    )
     if award_tuple:
         sql_txn_latest += "WHERE award_id IN %s "
     sql_txn_latest += "ORDER BY award_id, action_date DESC) "
 
     # common table expression for each award's earliest transaction
-    sql_txn_earliest = (
-        'txn_earliest AS ('
-        'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction_normalized ')
+    sql_txn_earliest = "txn_earliest AS (SELECT DISTINCT ON (award_id) * FROM transaction_normalized "
     if award_tuple:
-        sql_txn_earliest += 'WHERE award_id IN %s '
-    sql_txn_earliest += 'ORDER BY award_id, action_date) '
+        sql_txn_earliest += "WHERE award_id IN %s "
+    sql_txn_earliest += "ORDER BY award_id, action_date) "
 
     # common table expression for each award's summarized data (currently the only we summarize is
     # federal_actio_obligation, but we can add more as necessary)
     sql_txn_totals = (
-        'txn_totals AS ('
-        'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
-        'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
-        'SUM(funding_amount) AS total_funding_amount, '
-        'SUM(face_value_loan_guarantee) AS total_loan_value, '
-        'SUM(non_federal_funding_amount) AS non_federal_funding_amount '
-        'FROM transaction_normalized ')
+        "txn_totals AS ("
+        "SELECT award_id, SUM(federal_action_obligation) AS total_obligation, "
+        "SUM(original_loan_subsidy_cost) AS total_subsidy_cost, "
+        "SUM(funding_amount) AS total_funding_amount, "
+        "SUM(face_value_loan_guarantee) AS total_loan_value, "
+        "SUM(non_federal_funding_amount) AS non_federal_funding_amount "
+        "FROM transaction_normalized "
+    )
     if award_tuple:
-        sql_txn_totals += 'WHERE award_id IN %s '
-    sql_txn_totals += 'GROUP BY award_id) '
+        sql_txn_totals += "WHERE award_id IN %s "
+    sql_txn_totals += "GROUP BY award_id) "
 
     # construct a sql query that uses the common table expressions defined above and joins each of them to their
     # corresopnding award. the joined data from earliest, latest, and summarized transactions are used to update awards
     # fields as appropriate
-    sql_update = 'WITH {}, {}, {}'.format(sql_txn_latest, sql_txn_earliest, sql_txn_totals)
+    sql_update = "WITH {}, {}, {}".format(sql_txn_latest, sql_txn_earliest, sql_txn_totals)
     sql_update += (
-        'UPDATE awards a '
-        'SET awarding_agency_id = l.awarding_agency_id, '
-        'certified_date = l.action_date, '
-        'date_signed = e.action_date, '
-        'description = e.description, '
-        'funding_agency_id = l.funding_agency_id, '
-        'last_modified_date = l.last_modified_date, '
-        'period_of_performance_current_end_date = l.period_of_performance_current_end_date, '
-        'period_of_performance_start_date = e.period_of_performance_start_date, '
-        'place_of_performance_id = l.place_of_performance_id, '
-        'recipient_id = l.recipient_id, '
-        'total_obligation = t.total_obligation, '
-        'total_funding_amount = t.total_funding_amount, '
-        'total_subsidy_cost = t.total_subsidy_cost, '
-        'total_loan_value = t.total_loan_value, '
-        'non_federal_funding_amount = t.non_federal_funding_amount, '
-        'latest_transaction_id = l.id, '
-        'type = l.type, '
-        'category = l.category, '
-        'type_description = l.type_description '
-        'FROM txn_earliest e '
-        'JOIN txn_latest l '
-        'ON e.award_id = l.award_id '
-        'JOIN txn_totals t '
-        'ON l.award_id = t.award_id '
-        'WHERE t.award_id = a.id'
+        "UPDATE awards a "
+        "SET awarding_agency_id = l.awarding_agency_id, "
+        "certified_date = l.action_date, "
+        "date_signed = e.action_date, "
+        "description = e.description, "
+        "funding_agency_id = l.funding_agency_id, "
+        "last_modified_date = l.last_modified_date, "
+        "period_of_performance_current_end_date = l.period_of_performance_current_end_date, "
+        "period_of_performance_start_date = e.period_of_performance_start_date, "
+        "place_of_performance_id = l.place_of_performance_id, "
+        "recipient_id = l.recipient_id, "
+        "total_obligation = t.total_obligation, "
+        "total_funding_amount = t.total_funding_amount, "
+        "total_subsidy_cost = t.total_subsidy_cost, "
+        "total_loan_value = t.total_loan_value, "
+        "non_federal_funding_amount = t.non_federal_funding_amount, "
+        "latest_transaction_id = l.id, "
+        "type = l.type, "
+        "category = l.category, "
+        "type_description = l.type_description "
+        "FROM txn_earliest e "
+        "JOIN txn_latest l "
+        "ON e.award_id = l.award_id "
+        "JOIN txn_totals t "
+        "ON l.award_id = t.award_id "
+        "WHERE t.award_id = a.id"
     )
 
     with connection.cursor() as cursor:
@@ -113,15 +112,16 @@ def update_contract_awards(award_tuple=None):
 
     # sum the base_and_all_options_value from contract_data for an award
     sql_txn_totals = (
-        'txn_totals AS ('
-        'SELECT tx.award_id, '
-        'SUM(CAST(f.base_and_all_options_value AS double precision)) AS total_base_and_options_value, '
-        'SUM(CAST(f.base_exercised_options_val AS double precision)) AS base_exercised_options_val '
-        'FROM transaction_fpds AS f '
-        'INNER JOIN transaction_normalized AS tx ON f.transaction_id = tx.id ')
+        "txn_totals AS ("
+        "SELECT tx.award_id, "
+        "SUM(CAST(f.base_and_all_options_value AS double precision)) AS total_base_and_options_value, "
+        "SUM(CAST(f.base_exercised_options_val AS double precision)) AS base_exercised_options_val "
+        "FROM transaction_fpds AS f "
+        "INNER JOIN transaction_normalized AS tx ON f.transaction_id = tx.id "
+    )
     if award_tuple:
-        sql_txn_totals += 'WHERE tx.award_id IN %s '
-    sql_txn_totals += 'GROUP BY tx.award_id) '
+        sql_txn_totals += "WHERE tx.award_id IN %s "
+    sql_txn_totals += "GROUP BY tx.award_id) "
 
     # Gather additional fpds fields such as agency_ids and types
     extra_fpds_fields = (
@@ -155,7 +155,7 @@ def update_contract_awards(award_tuple=None):
     # construct a sql query that uses the latest txn contract common table expression above and joins it to the
     # corresponding award. that joined data is used to update awards fields as appropriate (currently, there's only one
     # trasnaction_contract field that trickles up and updates an award record: base_and_all_options_value)
-    sql_update = 'WITH {}, {}'.format(sql_txn_totals, extra_fpds_fields)
+    sql_update = "WITH {}, {}".format(sql_txn_totals, extra_fpds_fields)
     sql_update += (
         "UPDATE awards a "
         "SET base_and_all_options_value = t.total_base_and_options_value, "
@@ -202,21 +202,22 @@ def update_award_subawards(award_tuple=None):
     # return rows
 
     sql_sub_totals = (
-        'subaward_totals AS ('
-        'SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count '
-        'FROM subaward ')
+        "subaward_totals AS ("
+        "SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count "
+        "FROM subaward "
+    )
     if award_tuple:
-        sql_sub_totals += 'WHERE award_id IN %s '
-    sql_sub_totals += 'GROUP BY award_id) '
+        sql_sub_totals += "WHERE award_id IN %s "
+    sql_sub_totals += "GROUP BY award_id) "
 
     # Construct the SQL update
-    sql_update = 'WITH {}'.format(sql_sub_totals)
+    sql_update = "WITH {}".format(sql_sub_totals)
     sql_update += (
-        'UPDATE awards '
-        'SET total_subaward_amount = subaward_totals.total_subaward_amount, '
-        'subaward_count = subaward_totals.subaward_count '
-        'FROM subaward_totals '
-        'WHERE subaward_totals.award_id = id'
+        "UPDATE awards "
+        "SET total_subaward_amount = subaward_totals.total_subaward_amount, "
+        "subaward_count = subaward_totals.subaward_count "
+        "FROM subaward_totals "
+        "WHERE subaward_totals.award_id = id"
     )
 
     with connection.cursor() as cursor:
@@ -237,15 +238,15 @@ def update_award_categories(award_tuple=None):
         awards = awards.filter(id__in=list(award_tuple))
     awards.update(
         category=Case(
-            When(type__in=['A', 'B', 'C', 'D'], then=Value('contract')),
-            When(type__in=['02', '03', '04', '05'], then=Value('grant')),
-            When(type__in=['06', '10'], then=Value('direct payment')),
-            When(type__in=['07', '08'], then=Value('loans')),
-            When(type__in=['09'], then=Value('insurance')),
-            When(type__in=['11'], then=Value('other')),
-            When(type__startswith='IDV', then=Value('idv')),
+            When(type__in=["A", "B", "C", "D"], then=Value("contract")),
+            When(type__in=["02", "03", "04", "05"], then=Value("grant")),
+            When(type__in=["06", "10"], then=Value("direct payment")),
+            When(type__in=["07", "08"], then=Value("loans")),
+            When(type__in=["09"], then=Value("insurance")),
+            When(type__in=["11"], then=Value("other")),
+            When(type__startswith="IDV", then=Value("idv")),
             default=None,
-            output_field=TextField()
+            output_field=TextField(),
         )
     )
 
@@ -279,33 +280,51 @@ def get_award_financial_transaction(row):
 
     if row.fain is not None and row.uri is not None:
         # this is an assistance award id'd by fain
-        txn = TransactionNormalized.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-            assistance_data__fain=row.fain,
-            assistance_data__uri=row.uri) \
-            .order_by('-action_date').values("awarding_agency").first()
+        txn = (
+            TransactionNormalized.objects.filter(
+                awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
+                assistance_data__fain=row.fain,
+                assistance_data__uri=row.uri,
+            )
+            .order_by("-action_date")
+            .values("awarding_agency")
+            .first()
+        )
 
     elif row.fain is not None:
         # this is an assistance award id'd by fain
-        txn = TransactionNormalized.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-            assistance_data__fain=row.fain) \
-            .order_by('-action_date').values("awarding_agency").first()
+        txn = (
+            TransactionNormalized.objects.filter(
+                awarding_agency__toptier_agency__cgac_code=row.agency_identifier, assistance_data__fain=row.fain
+            )
+            .order_by("-action_date")
+            .values("awarding_agency")
+            .first()
+        )
 
     elif row.uri is not None:
         # this is an assistance award id'd by uri
-        txn = TransactionNormalized.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-            assistance_data__uri=row.uri) \
-            .order_by('-action_date').values("awarding_agency").first()
+        txn = (
+            TransactionNormalized.objects.filter(
+                awarding_agency__toptier_agency__cgac_code=row.agency_identifier, assistance_data__uri=row.uri
+            )
+            .order_by("-action_date")
+            .values("awarding_agency")
+            .first()
+        )
 
     else:
         # this is a contract award
-        txn = TransactionNormalized.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-            contract_data__piid=row.piid,
-            contract_data__parent_award_id=row.parent_award_id) \
-            .order_by('-action_date').values("awarding_agency").first()
+        txn = (
+            TransactionNormalized.objects.filter(
+                awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
+                contract_data__piid=row.piid,
+                contract_data__parent_award_id=row.parent_award_id,
+            )
+            .order_by("-action_date")
+            .values("awarding_agency")
+            .first()
+        )
 
     return str(txn["awarding_agency"]) if txn else None
 

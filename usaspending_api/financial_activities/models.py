@@ -7,23 +7,24 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
-
     def get_queryset(self):
-        '''
+        """
         Get only records from the last submission per TAS per fiscal year.
-        '''
+        """
 
         return super(FinancialAccountsByProgramActivityObjectClassManager, self).get_queryset().filter(final_of_fy=True)
 
 
 class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     """ Model corresponding to Agency File B """
+
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
-    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances",
-                                         null=True)
+    treasury_account = models.ForeignKey(
+        TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
+    )
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
@@ -56,10 +57,12 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     deobligations_recoveries_refund_pri_program_object_class_cpe = models.DecimalField(max_digits=23, decimal_places=2)
-    drv_obligations_incurred_by_program_object_class = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
-                                                                           null=True)
-    drv_obligations_undelivered_orders_unpaid = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
-                                                                    null=True)
+    drv_obligations_incurred_by_program_object_class = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    drv_obligations_undelivered_orders_unpaid = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -70,7 +73,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'financial_accounts_by_program_activity_object_class'
+        db_table = "financial_accounts_by_program_activity_object_class"
 
     objects = models.Manager()
     final_objects = FinancialAccountsByProgramActivityObjectClassManager()
@@ -268,12 +271,10 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
             A RawQuerySet of FinancialAccountsByProgramActivityObjectClass objects
         """
         if current_submission_id is None:
-            return FinancialAccountsByProgramActivityObjectClass.objects.raw(
-                cls.QUARTERLY_SQL)
+            return FinancialAccountsByProgramActivityObjectClass.objects.raw(cls.QUARTERLY_SQL)
         else:
-            sql = cls.QUARTERLY_SQL + ' WHERE current.submission_id = %s'
-            return FinancialAccountsByProgramActivityObjectClass.objects.raw(
-                sql, [current_submission_id])
+            sql = cls.QUARTERLY_SQL + " WHERE current.submission_id = %s"
+            return FinancialAccountsByProgramActivityObjectClass.objects.raw(sql, [current_submission_id])
 
 
 class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
@@ -289,6 +290,7 @@ class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
     FinancialAccountsByProgramActivityObjectClass, but hopefull we'll change
     that to something easier to manage in the near future.
     """
+
     treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True)
@@ -330,9 +332,8 @@ class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'tas_program_activity_object_class_quarterly'
-        unique_together = (
-            'treasury_account', 'program_activity', 'object_class', 'submission')
+        db_table = "tas_program_activity_object_class_quarterly"
+        unique_together = ("treasury_account", "program_activity", "object_class", "submission")
 
     @classmethod
     def insert_quarterly_numbers(cls, submission_id=None):
@@ -346,12 +347,10 @@ class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
         if submission_id is None:
             TasProgramActivityObjectClassQuarterly.objects.all().delete()
         else:
-            TasProgramActivityObjectClassQuarterly.objects.filter(
-                submission_id=submission_id).delete()
+            TasProgramActivityObjectClassQuarterly.objects.filter(submission_id=submission_id).delete()
 
         # retrieve RawQuerySet of quarterly breakouts
-        qtr_records = FinancialAccountsByProgramActivityObjectClass.get_quarterly_numbers(
-            submission_id)
+        qtr_records = FinancialAccountsByProgramActivityObjectClass.get_quarterly_numbers(submission_id)
         qtr_list = []
 
         # for each record in the RawQuerySet, create a corresponding

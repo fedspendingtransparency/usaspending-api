@@ -12,15 +12,18 @@ class ListBudgetFunctionViewSet(APIDocumentationView):
         Function code.
     endpoint_doc: /budget_functions/list_budget_function.md
     """
+
     @cache_response()
     def get(self, request):
         # Retrieve all Budget Functions, grouped by code and title, ordered by code
-        results = TreasuryAppropriationAccount.objects \
-            .filter(~Q(budget_function_code=''), ~Q(budget_function_code=None)) \
-            .values('budget_function_code', 'budget_function_title') \
-            .order_by('budget_function_title').distinct()
+        results = (
+            TreasuryAppropriationAccount.objects.filter(~Q(budget_function_code=""), ~Q(budget_function_code=None))
+            .values("budget_function_code", "budget_function_title")
+            .order_by("budget_function_title")
+            .distinct()
+        )
 
-        return Response({'results': results})
+        return Response({"results": results})
 
 
 class ListBudgetSubfunctionViewSet(APIDocumentationView):
@@ -29,20 +32,24 @@ class ListBudgetSubfunctionViewSet(APIDocumentationView):
         Budget Subfunction code. Can be filtered by Budget Function.
     endpoint_doc: /budget_functions/list_budget_subfunction.md
     """
+
     @cache_response()
     def post(self, request):
         # Retrieve all Budget Subfunctions
-        queryset = TreasuryAppropriationAccount.objects \
-            .filter(~Q(budget_subfunction_code=''), ~Q(budget_subfunction_code=None))
+        queryset = TreasuryAppropriationAccount.objects.filter(
+            ~Q(budget_subfunction_code=""), ~Q(budget_subfunction_code=None)
+        )
 
         # Filter by Budget Function, if provided
-        budget_function = request.data.get('budget_function', None)
+        budget_function = request.data.get("budget_function", None)
         if budget_function:
             queryset = queryset.filter(budget_function_code=budget_function)
 
         # Group by code and title, order by code
-        results = queryset \
-            .values('budget_subfunction_code', 'budget_subfunction_title') \
-            .order_by('budget_subfunction_title').distinct()
+        results = (
+            queryset.values("budget_subfunction_code", "budget_subfunction_title")
+            .order_by("budget_subfunction_title")
+            .distinct()
+        )
 
-        return Response({'results': results})
+        return Response({"results": results})

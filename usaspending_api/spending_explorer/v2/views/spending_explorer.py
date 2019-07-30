@@ -13,12 +13,13 @@ class SpendingExplorerViewSet(APIView):
 
     endpoint_doc: /spending_explorer.md
     """
+
     @cache_response()
     def post(self, request):
 
         json_request = request.data
-        _type = json_request.get('type')
-        filters = json_request.get('filters', None)
+        _type = json_request.get("type")
+        filters = json_request.get("filters", None)
 
         # Returned filtered queryset results
         results = type_filter(_type, filters, SPENDING_EXPLORER_LIMIT)

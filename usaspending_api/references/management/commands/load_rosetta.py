@@ -20,7 +20,6 @@ DB_TO_XLSX_MAPPING = OrderedDict(
         ("element", "Element"),
         ("definition", "Definition"),
         ("fpds_element", "FPDS Data Dictionary Element"),
-
         # "USA Spending Downloads"
         ("award_file", "Award File"),
         ("award_element", "Award Element"),
@@ -28,7 +27,6 @@ DB_TO_XLSX_MAPPING = OrderedDict(
         ("subaward_element", "Subaward Element"),
         ("account_file", "Account File"),
         ("account_element", "Account Element"),
-
         # "Legacy USA Spending"
         ("legacy_award_file", "Award File"),
         ("legacy_award_element", "Award Element"),
@@ -68,7 +66,7 @@ def extract_data_from_source_file(path: str = None) -> dict:
         bucket_name = download_path.split("/")[0]
         filepath = "temp_data_act_crosswalk.xlsx"
         logger.info("Using S3 file: {} from {}".format(filepath, bucket_name))
-        s3_client = boto3.client('s3', region_name=settings.USASPENDING_AWS_REGION)
+        s3_client = boto3.client("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_client.download_file(bucket_name, "/".join(settings.ROSETTA_DICT_S3_PATH.split("/")[1:]), filepath)
 
     file_size = os.path.getsize(filepath)

@@ -36,6 +36,7 @@ def datetime_command_line_argument_type(naive):
     If naive is False, the parsed date/time will be converted to UTC if it
     is timezone aware.  If it is timezone naive, it is assumed to be UTC.
     """
+
     def _datetime_command_line_argument_type(input_string):
         """
         A very flexible date/time parser to be used as a command line argument
@@ -54,7 +55,7 @@ def datetime_command_line_argument_type(naive):
                 return cast_datetime_to_utc(parsed)
 
         except (OverflowError, TypeError, ValueError):
-            raise ArgumentTypeError('Unable to convert provided value to date/time')
+            raise ArgumentTypeError("Unable to convert provided value to date/time")
 
     return _datetime_command_line_argument_type
 
@@ -68,4 +69,4 @@ def get_date_from_datetime(date_time, **kwargs):
     try:
         return date_time.date()
     except Exception:
-        return kwargs.get('default', date_time)
+        return kwargs.get("default", date_time)

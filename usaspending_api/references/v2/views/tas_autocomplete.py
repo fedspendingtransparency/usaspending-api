@@ -1,7 +1,8 @@
+from collections import OrderedDict
 from copy import deepcopy
 from rest_framework.response import Response
-from collections import OrderedDict
 from rest_framework.views import APIView
+from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -9,31 +10,18 @@ from usaspending_api.references.models import CGAC
 
 
 TINY_SHIELD_MODELS = [
-    {"name": "filters|ata",  "key": "filters|ata",  "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|aid",  "key": "filters|aid",  "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|ata", "key": "filters|ata", "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|aid", "key": "filters|aid", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|bpoa", "key": "filters|bpoa", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|epoa", "key": "filters|epoa", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|a",    "key": "filters|a",    "type": "text", "text_type": "search", "allow_nulls": True},
+    {"name": "filters|a", "key": "filters|a", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "filters|main", "key": "filters|main", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|sub",  "key": "filters|sub",  "type": "text", "text_type": "search", "allow_nulls": True},
-
+    {"name": "filters|sub", "key": "filters|sub", "type": "text", "text_type": "search", "allow_nulls": True},
     {"name": "limit", "key": "limit", "type": "integer", "max": 500, "default": 10},
 ]
 
 
-COMPONENT_MAPPING = {
-    "ata":  "allocation_transfer_agency_id",
-    "aid":  "agency_id",
-    "bpoa": "beginning_period_of_availability",
-    "epoa": "ending_period_of_availability",
-    "a":    "availability_type_code",
-    "main": "main_account_code",
-    "sub":  "sub_account_code",
-}
-
-
 class TASAutocomplete(APIView):
-
     @staticmethod
     def _parse_and_validate_request(request_data):
         return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
@@ -41,10 +29,10 @@ class TASAutocomplete(APIView):
     @staticmethod
     def _business_logic(filters, requested_component, limit):
 
-        requested_column = COMPONENT_MAPPING[requested_component]
+        requested_column = TAS_COMPONENT_TO_FIELD_MAPPING[requested_component]
         kwargs = {}
         for current_component, current_value in filters.items():
-            current_column = COMPONENT_MAPPING[current_component]
+            current_column = TAS_COMPONENT_TO_FIELD_MAPPING[current_component]
             if current_value is None:
                 kwargs[current_column + "__isnull"] = True
             elif current_column == requested_column:
@@ -71,11 +59,13 @@ class TASAutocomplete(APIView):
             # Build a new result set with the requested_component, agency_name,
             # and agency_abbreviation.
             results = [
-                OrderedDict([
-                    (requested_component, r),
-                    ("agency_name", agency_names.get(r)),
-                    ("agency_abbreviation", agency_abbreviations.get(r)),
-                ])
+                OrderedDict(
+                    [
+                        (requested_component, r),
+                        ("agency_name", agency_names.get(r)),
+                        ("agency_abbreviation", agency_abbreviations.get(r)),
+                    ]
+                )
                 for r in results
             ]
 

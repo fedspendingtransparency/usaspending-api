@@ -33,9 +33,13 @@ class Agency(models.Model):
             an Agency instance
 
         """
-        return Agency.objects.filter(
-            toptier_agency__cgac_code=toptier_cgac_code,
-            subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
+        return (
+            Agency.objects.filter(
+                toptier_agency__cgac_code=toptier_cgac_code, subtier_agency__name=F("toptier_agency__name")
+            )
+            .order_by("-update_date")
+            .first()
+        )
 
     @staticmethod
     def get_by_subtier(subtier_code):
@@ -51,7 +55,7 @@ class Agency(models.Model):
         If called with None / empty subtier code, returns None
         """
         if subtier_code:
-            return Agency.objects.filter(subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
+            return Agency.objects.filter(subtier_agency__subtier_code=subtier_code).order_by("-update_date").first()
 
     @staticmethod
     def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
@@ -66,10 +70,13 @@ class Agency(models.Model):
             an Agency instance
 
         """
-        return Agency.objects.filter(
-            toptier_agency__cgac_code=toptier_cgac_code,
-            subtier_agency__subtier_code=subtier_code
-        ).order_by('-update_date').first()
+        return (
+            Agency.objects.filter(
+                toptier_agency__cgac_code=toptier_cgac_code, subtier_agency__subtier_code=subtier_code
+            )
+            .order_by("-update_date")
+            .first()
+        )
 
     @staticmethod
     def get_by_subtier_only(subtier_code):

@@ -118,16 +118,16 @@ def insert_new_fabs(to_insert):
 
         # Create new LegalEntityLocation and LegalEntity from the row data
         legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-        recipient_name = row['awardee_or_recipient_legal']
+        recipient_name = row["awardee_or_recipient_legal"]
         legal_entity = LegalEntity.objects.create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
+            recipient_unique_id=row["awardee_or_recipient_uniqu"],
             recipient_name=recipient_name if recipient_name is not None else "",
-            parent_recipient_unique_id=row['ultimate_parent_unique_ide'],
+            parent_recipient_unique_id=row["ultimate_parent_unique_ide"],
         )
         legal_entity_value_map = {
             "location": legal_entity_location,
-            "business_categories": get_business_categories(row=row, data_type='fabs'),
-            "business_types_description": row['business_types_desc'],
+            "business_categories": get_business_categories(row=row, data_type="fabs"),
+            "business_types_description": row["business_types_desc"],
         }
         legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -140,10 +140,10 @@ def insert_new_fabs(to_insert):
 
         # Create the summary Award
         (created, award) = Award.get_or_create_summary_award(
-            generated_unique_award_id=row['unique_award_key'],
-            fain=row['fain'],
-            uri=row['uri'],
-            record_type=row['record_type'],
+            generated_unique_award_id=row["unique_award_key"],
+            fain=row["fain"],
+            uri=row["uri"],
+            record_type=row["record_type"],
         )
         award.save()
 
@@ -151,9 +151,9 @@ def insert_new_fabs(to_insert):
         update_award_ids.append(award.id)
 
         try:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S.%f").date()
         except ValueError:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S").date()
 
         parent_txn_value_map = {
             "award": award,
@@ -161,12 +161,12 @@ def insert_new_fabs(to_insert):
             "funding_agency": funding_agency,
             "recipient": legal_entity,
             "place_of_performance": pop_location,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            "action_date": format_date(row['action_date']),
+            "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
+            "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
+            "action_date": format_date(row["action_date"]),
             "last_modified_date": last_mod_date,
-            "type_description": row['assistance_type_desc'],
-            "transaction_unique_id": row['afa_generated_unique'],
+            "type_description": row["assistance_type_desc"],
+            "transaction_unique_id": row["afa_generated_unique"],
         }
 
         transaction_normalized_dict = load_data_into_model(
@@ -178,18 +178,15 @@ def insert_new_fabs(to_insert):
         )
 
         financial_assistance_data = load_data_into_model(
-            TransactionFABS(),  # thrown away
-            row,
-            field_map=fabs_field_map,
-            as_dict=True
+            TransactionFABS(), row, field_map=fabs_field_map, as_dict=True  # thrown away
         )
 
         # Hack to cut back on the number of warnings dumped to the log.
-        financial_assistance_data['updated_at'] = cast_datetime_to_utc(financial_assistance_data['updated_at'])
-        financial_assistance_data['created_at'] = cast_datetime_to_utc(financial_assistance_data['created_at'])
-        financial_assistance_data['modified_at'] = cast_datetime_to_utc(financial_assistance_data['modified_at'])
+        financial_assistance_data["updated_at"] = cast_datetime_to_utc(financial_assistance_data["updated_at"])
+        financial_assistance_data["created_at"] = cast_datetime_to_utc(financial_assistance_data["created_at"])
+        financial_assistance_data["modified_at"] = cast_datetime_to_utc(financial_assistance_data["modified_at"])
 
-        afa_generated_unique = financial_assistance_data['afa_generated_unique']
+        afa_generated_unique = financial_assistance_data["afa_generated_unique"]
         unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
         if unique_fabs.first():

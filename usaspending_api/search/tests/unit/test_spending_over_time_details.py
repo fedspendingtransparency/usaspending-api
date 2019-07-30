@@ -47,12 +47,7 @@ def pragmatic_fixture(db):
         federal_action_obligation=0,
         type="07",
     )
-    mommy.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        piid="piiiiid",
-        federal_action_obligation=9900,
-    )
+    mommy.make("awards.TransactionFPDS", transaction_id=1, piid="piiiiid", federal_action_obligation=9900)
     mommy.make(
         "awards.TransactionFABS",
         transaction_id=2,
@@ -81,7 +76,7 @@ def pragmatic_fixture(db):
 
 
 def get_spending_over_time_url():
-    return '/api/v2/search/spending_over_time/'
+    return "/api/v2/search/spending_over_time/"
 
 
 def confirm_proper_ordering(group, results):
@@ -126,7 +121,7 @@ def test_spending_over_time_fy_ordering(populate_models, client, mock_matviews_q
         ],
     }
 
-    resp = client.post(get_spending_over_time_url(), content_type='application/json', data=json.dumps(test_payload))
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
@@ -190,7 +185,7 @@ def test_spending_over_time_month_ordering(populate_models, client, mock_matview
         ],
     }
 
-    resp = client.post(get_spending_over_time_url(), content_type='application/json', data=json.dumps(test_payload))
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
@@ -233,7 +228,7 @@ def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_m
         "group": "month",
     }
 
-    resp = client.post(get_spending_over_time_url(), content_type='application/json', data=json.dumps(test_payload))
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
@@ -249,7 +244,7 @@ def test_generated_pragmatic_obligation_calculation(pragmatic_fixture, refresh_m
     example_loan = SummaryTransactionView.objects.filter(type="07").values("generated_pragmatic_obligation")
     assert int(example_loan[0]["generated_pragmatic_obligation"]) == 1000000
 
-    example_contract = SummaryTransactionView.objects \
-        .filter(action_date="2010-10-01") \
-        .values("generated_pragmatic_obligation")
+    example_contract = SummaryTransactionView.objects.filter(action_date="2010-10-01").values(
+        "generated_pragmatic_obligation"
+    )
     assert int(example_contract[0]["generated_pragmatic_obligation"]) == 9900

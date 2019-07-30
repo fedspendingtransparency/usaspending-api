@@ -28,13 +28,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--full-reload",
             action="store_true",
-            help="Empties the USAspending subaward and broker_subaward tables before loading."
+            help="Empties the USAspending subaward and broker_subaward tables before loading.",
         )
 
         parser.add_argument(
             "--sql",
             action="store_true",
-            help="For debugging.  Log all SQL statements.  More verbose than you might expect."
+            help="For debugging.  Log all SQL statements.  More verbose than you might expect.",
         )
 
     def handle(self, *args, **options):
@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
             if self.full_reload:
                 logger.info("--full-reload flag supplied.  Performing a full reload.")
-                where = ''
+                where = ""
 
             else:
                 max_id, max_created_at, max_updated_at = self._get_maxes()
@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 if max_id is None and max_created_at is None and max_updated_at is None:
                     logger.info("USAspending's broker_subaward table is empty.  Promoting to full reload.")
                     self.full_reload = True
-                    where = ''
+                    where = ""
 
                 else:
                     logger.info(
@@ -87,7 +87,7 @@ class Command(BaseCommand):
         """
         Read in a SQL file, perform any injections, execute the results.
         """
-        filepath = os.path.join(os.path.split(__file__)[0], 'load_subawards_sql', filename)
+        filepath = os.path.join(os.path.split(__file__)[0], "load_subawards_sql", filename)
 
         with open(filepath) as f:
             sql = f.read()
@@ -145,10 +145,7 @@ class Command(BaseCommand):
         if self.full_reload:
             where = "where award_id is not null"
         else:
-            where = (
-                "where award_id in (select award_id from "
-                "temp_load_subawards_subaward where award_id is not null)"
-            )
+            where = "where award_id in (select award_id from temp_load_subawards_subaward where award_id is not null)"
 
         with transaction.atomic():
             if self.full_reload:
@@ -180,14 +177,14 @@ class Command(BaseCommand):
         wheres = []
         for column, value in where_columns.items():
             if value is not None:
-                wheres.append(SQL('{} > {}').format(Identifier(column), Literal(value)))
+                wheres.append(SQL("{} > {}").format(Identifier(column), Literal(value)))
 
         if wheres:
             # Because our where clause is embedded in a dblink, we need to
             # wrap it in a literal again to get everything escaped properly.
-            where = SQL('where {}').format(SQL(' or ').join(wheres))
+            where = SQL("where {}").format(SQL(" or ").join(wheres))
             where = Literal(convert_composable_query_to_string(where))
             where = convert_composable_query_to_string(where)
             return where[1:-1]  # Remove outer quotes
 
-        return ''
+        return ""
