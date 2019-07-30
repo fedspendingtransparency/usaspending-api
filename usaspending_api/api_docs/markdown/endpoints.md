@@ -35,12 +35,20 @@ The currently available endpoints are listed in the following table.
 
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
+|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Agency Identifier (AID) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Beginning Period of Availability (BPOA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Ending Period of Availability (EPOA) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Availability Type Code (A) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Main Account Code (MAIN) filtered by other components provided in the request filter. | 
+|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Sub-Account Code (SUB) filtered by other components provided in the request filter. | 
 |[/api/v2/autocomplete/awarding_agency](/api/v2/autocomplete/awarding_agency)|POST| Returns awarding agencies matching the specified search text|
 |[/api/v2/autocomplete/cfda](/api/v2/autocomplete/cfda)|POST| Returns CFDA programs matching the specified search text|
 |[/api/v2/autocomplete/funding_agency](/api/v2/autocomplete/funding_agency)|POST| Returns funding agencies matching the specified search text|
 |[/api/v2/autocomplete/naics](/api/v2/autocomplete/naics)|POST| Returns NAICS objects matching the specified search text|
 |[/api/v2/autocomplete/psc](/api/v2/autocomplete/psc)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.|
 |[/api/v2/autocomplete/recipient](/api/v2/autocomplete/recipient)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
+|[/api/v2/autocomplete/city](/api/v2/autocomplete/city)|POST| Returns city names matching the search text, sorted by relevance|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/)|POST| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
 |[/api/v2/awards/idvs/activity/](/api/v2/awards/idvs/activity/)|POST| Returns information about child awards and grandchild awards for a given IDV (Indefinite Delivery Vehicle).|

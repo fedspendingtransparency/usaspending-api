@@ -118,6 +118,10 @@ def awards_and_transactions(db):
         "modified_at": "2000-01-02T00:00:00Z",
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
     }
     cont_data = {
         "awardee_or_recipient_legal": "John's Pizza",
@@ -190,6 +194,10 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
     }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFPDS", **cont_data)
@@ -497,6 +505,15 @@ expected_response_cont = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "executive_details": {"officers": []},
+    "executive_details": {"officers": [
+        {
+            "name": "Tom",
+            "amount": 10000.00
+        },
+        {
+            "name": "Stan Burger",
+            "amount": 1234.00
+        }
+    ]},
     "date_signed": "2004-03-02",
 }

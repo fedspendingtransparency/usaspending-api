@@ -2,6 +2,21 @@ from collections import OrderedDict
 
 # For all *_FIELDS ordered dictionaries:
 #  Key:Value => (DB field, API response field)
+OFFICER_FIELDS = OrderedDict(
+    [
+        ("officer_1_name", "_officer_1_name"),
+        ("officer_1_amount", "_officer_1_amount"),
+        ("officer_2_name", "_officer_2_name"),
+        ("officer_2_amount", "_officer_2_amount"),
+        ("officer_3_name", "_officer_3_name"),
+        ("officer_3_amount", "_officer_3_amount"),
+        ("officer_4_name", "_officer_4_name"),
+        ("officer_4_amount", "_officer_4_amount"),
+        ("officer_5_name", "_officer_5_name"),
+        ("officer_5_amount", "_officer_5_amount"),
+    ]
+)
+
 
 FABS_AWARD_FIELDS = OrderedDict(
     [
@@ -101,6 +116,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("place_of_performance_forei", "_pop_foreign_province"),
         ("awarding_office_name", "_awarding_office_name"),
         ("funding_office_name", "_funding_office_name"),
+        *OFFICER_FIELDS.items(),
     ]
 )
 
@@ -203,21 +219,6 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_performance_zip5", "_pop_zip5"),
         ("awarding_office_name", "_awarding_office_name"),
         ("funding_office_name", "_funding_office_name"),
-    ]
-)
-
-
-OFFICER_FIELDS = OrderedDict(
-    [
-        ("officer_1_name", "officer_1_name"),
-        ("officer_1_amount", "officer_1_amount"),
-        ("officer_2_name", "officer_2_name"),
-        ("officer_2_amount", "officer_2_amount"),
-        ("officer_3_name", "officer_3_name"),
-        ("officer_3_amount", "officer_3_amount"),
-        ("officer_4_name", "officer_4_name"),
-        ("officer_4_amount", "officer_4_amount"),
-        ("officer_5_name", "officer_5_name"),
-        ("officer_5_amount", "officer_5_amount"),
+        *OFFICER_FIELDS.items(),
     ]
 )
