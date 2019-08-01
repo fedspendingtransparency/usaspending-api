@@ -26,6 +26,14 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
         + subawards (optional, boolean)
             True to group by sub-awards instead of prime awards. Defaults to false.
             + Default: false
+    + Body
+        
+            { 
+                "group": "fiscal_year", 
+                "filters": { 
+                    "keywords": ["Filter is required"] 
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes

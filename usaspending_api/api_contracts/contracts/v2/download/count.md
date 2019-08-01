@@ -17,6 +17,13 @@ Returns the number of transactions that would be included in a download request 
 + Request (application/json)
     + Attributes (object)
         + filters (required, FilterObject)
+    + Body
+        
+            {
+                "filters": { 
+                    "keywords": ["Filter is required"] 
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes

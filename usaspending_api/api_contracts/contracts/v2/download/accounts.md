@@ -20,13 +20,22 @@ This endpoint returns the generated file's metadata.
         + `account_level`: (required, enum[string])
             The account level is used to filter for a specific type of file.
             + Members
-                + treasury_account
-                + federal_account
+                + `treasury_account`
+                + `federal_account`
         + `file_format`: `csv` (optional, string)
             The file format that should be returned.
             + Default: `csv`
         + `filters`: (required, FilterObject)
             The filters used to filter the data
+    + Body
+    
+            {
+                "account_level": "treasury_account",
+                "filters": {
+                    "fy": "2017",
+                    "quarter: "1"
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes

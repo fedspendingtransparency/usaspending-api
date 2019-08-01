@@ -24,13 +24,22 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `geo_layer` (required, enum[string])
             Set the type of areas in the response
             + Members
-                + state
-                + county
-                + district
+                + `state`
+                + `county`
+                + `district`
         + `geo_layer_filters` (required, array[string])
-            - DC
-            - MD
-            - VA
+            - `DC`
+            - `MD`
+            - `VA`
+    + Body
+        
+            { 
+                "filters": { 
+                    "keywords": ["Filter is required"] 
+                },
+                "scope": "place_of_performance",
+                "geo_layer": "state" 
+            }
 
 
 + Response 200 (application/json)
@@ -62,14 +71,14 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `recipient_scope` (optional, enum[string])
     + domestic
     + foreign
-+ `recipient_locations` (optional, array[LocationObject])
++ `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
     See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
 + `award_ids`: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
-+ `award_amounts` (optional, array[AwardAmounts])
++ `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes`: 311812 (optional, array[string])
 + `psc_codes`: 8940, 8910 (optional, array[string])

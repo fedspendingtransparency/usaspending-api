@@ -16,6 +16,13 @@ This endpoint takes award filters, and returns the number of awards in each awar
         + filters (required, FilterObject)
         + subawards: false (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+    + Body
+        
+            { 
+                "filters": { 
+                    "keywords": ["Filter is required"] 
+                } 
+            }
 
 + Response 200 (application/json)
     + Attributes
@@ -40,21 +47,21 @@ This endpoint takes award filters, and returns the number of awards in each awar
     + domestic
     + foreign
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
-+ `agencies` (optional, array[AgencyObject])
++ `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
     A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
 + `recipient_scope` (optional, enum[string])
     + domestic
     + foreign
-+ `recipient_locations` (optional, array[LocationObject])
++ `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
     See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
 + `award_ids`: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
-+ `award_amounts` (optional, array[AwardAmounts])
++ `award_amounts` (optional, array[AwardAmounts], fixed-type),
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes`: 311812 (optional, array[string])
 + `psc_codes`: 8940, 8910 (optional, array[string])

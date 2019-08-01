@@ -39,6 +39,14 @@ This endpoint returns a list of the top results of specific categories sorted by
             The number of results to include per page
         + page: 1 (optional, number)
             The page of results to return based on the limit
+    + Body
+        
+            {
+                "category": "awarding_agency",
+                "filters": { 
+                    "keywords": ["Filter is required"] 
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes

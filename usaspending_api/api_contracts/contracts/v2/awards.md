@@ -21,21 +21,21 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Request A request with a contract id (application/json)
     + Parameters
-        + `award_id`: `CONT_AWD_SP045003WG347_9700_-NONE-_-NONE-`
+        + `award_id`: `CONT_AWD_H907_9700_SPE2DX16D1500_9700`
 
 + Response 200 (application/json)
     + Attributes (ContractResponse)
 
 + Request A request with a financial assistance id (application/json)
     + Parameters
-        + `award_id`: `ASST_NON_0000000000001828_1665`
+        + `award_id`: `ASST_NON_12FA00PY54661041_12D2`
 
 + Response 200 (application/json)
     + Attributes (FinancialAssistanceResponse)
 
 + Request A request with an IDV id (application/json)
     + Parameters
-        + `award_id`: `CONT_IDV_N0018918D0057_9700`
+        + `award_id`: `CONT_IDV_FA304715A0037_9700`
 
 + Response 200 (application/json)
     + Attributes (IDVResponse)

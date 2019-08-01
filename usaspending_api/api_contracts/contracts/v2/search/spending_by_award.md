@@ -17,7 +17,7 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (optional, FilterObject)
+        + `filters` (required, FilterObject)
         + `fields` (required, SpendingByAwardFields)
             See options at https://github.com/fedspendingtransparency/usaspending-api/blob/stg/usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award.md#fields
         + `limit`: 60 (optional, number)
@@ -30,6 +30,26 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
         + `subawards`: false (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+    + Body
+
+            {
+                "filters": { 
+                    "award_type_codes": ["A", "B", "C"]
+                },
+                "fields": [ 
+                    "Award ID",
+                    "Recipient Name",
+                    "Start Date",
+                    "End Date",
+                    "Award Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Contract Award Type",
+                    "Award Type",
+                    "Funding Agency",
+                    "Funding Sub Agency" 
+                ]
+            }
 
 + Response 200 (application/json)
     + Attributes
