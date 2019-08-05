@@ -26,9 +26,10 @@ from usaspending_api.awards.v2.filters.matview_filters import (
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.download.helpers.download_annotations_helper import (
+from usaspending_api.download.helpers.download_annotation_functions import (
     universal_transaction_matview_annotations,
     universal_award_matview_annotations,
+    subaward_annotations
 )
 
 
@@ -82,6 +83,7 @@ VALUE_MAPPINGS = {
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": subaward_download,
         "is_for_idv": False,
+        "annotations_function": subaward_annotations,
     },
     # Appropriations Account Data
     "account_balances": {

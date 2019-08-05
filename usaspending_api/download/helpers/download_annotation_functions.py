@@ -1,6 +1,7 @@
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models.functions import Concat
 from django.db.models import Value
+from usaspending_api.common.helpers.orm_helpers import FiscalYear
 
 
 def universal_transaction_matview_annotations():
@@ -14,7 +15,8 @@ def universal_transaction_matview_annotations():
             ),
             ";",
             distinct=True,
-        )
+        ),
+        "action_date_fiscal_year": FiscalYear("action_date")
     }
     return annotation_fields
 
@@ -31,5 +33,12 @@ def universal_award_matview_annotations():
             ";",
             distinct=True,
         )
+    }
+    return annotation_fields
+
+
+def subaward_annotations():
+    annotation_fields = {
+        "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date")
     }
     return annotation_fields
