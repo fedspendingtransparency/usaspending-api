@@ -446,3 +446,21 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
     )
     # One result is returned when searching for "Foreign" recipients
     assert len(resp.data["results"]) == 1
+
+#test subaward types
+@pytest.mark.django_db
+def test_spending_by_subaward_type_success(client, refresh_matviews):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "fields": ["Sub-Award ID"],
+                "filters": {
+                    "award_type_codes": ["10","06","07","08","09","11"]
+                },
+                "subawards": True
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
