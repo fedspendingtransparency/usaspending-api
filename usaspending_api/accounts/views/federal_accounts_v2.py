@@ -106,7 +106,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
 
 class SpendingOverTimeFederalAccountsViewSet(APIView):
     """
-    This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
+    This route takes a federal_account DB ID and returns the data required to visualized the spending over time graphic.
 
     endpoint_doc: federal_account/spending_over_time.md
     """
