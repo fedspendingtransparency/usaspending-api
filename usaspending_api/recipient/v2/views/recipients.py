@@ -2,11 +2,11 @@ import logging
 import uuid
 
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.db.models import F, Sum
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
@@ -264,7 +264,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest", subawar
     return results
 
 
-class RecipientOverView(APIDocumentationView):
+class RecipientOverView(APIView):
     @cache_response()
     def get(self, request, recipient_id):
         get_request = request.query_params
@@ -326,7 +326,7 @@ def extract_hash_name_from_duns(duns):
         return qs_hash["recipient_hash"], qs_hash["legal_business_name"]
 
 
-class ChildRecipients(APIDocumentationView):
+class ChildRecipients(APIView):
     @cache_response()
     def get(self, request, duns):
         get_request = request.query_params

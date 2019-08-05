@@ -14,7 +14,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
     """
     Returns financial spending data by object class for the latest quarter based on the given fiscal year.
-    endpoint_doc: /financial_spending/major_object_class.md
+    endpoint_doc: financial_spending/major_object_class.md
     """
 
     serializer_class = ObjectClassFinancialSpendingSerializer
@@ -93,7 +93,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
 class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
     """
     Returns financial spending data by object class for the latest quarter in the given fiscal year.
-    endpoint_doc: /financial_spending/object_class.md
+    endpoint_doc: financial_spending/object_class.md
     """
 
     serializer_class = MinorObjectClassFinancialSpendingSerializer

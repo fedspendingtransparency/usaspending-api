@@ -1,13 +1,18 @@
-from rest_framework.renderers import BrowsableAPIRenderer
-from django.core.paginator import Page
-from rest_framework.request import override_method
+import logging
+import os
+import re
+
 from django import forms
-from rest_framework import VERSION
-from django.utils.safestring import SafeText
+from django.core.paginator import Page
+from django.utils.safestring import mark_safe
+from html import escape
+from rest_framework.renderers import BrowsableAPIRenderer
+from rest_framework.request import override_method
+from urllib.parse import quote, urljoin
 from usaspending_api.settings import BASE_DIR
-from collections import OrderedDict
-from django.conf import settings
-from rest_framework.settings import api_settings
+
+
+logger = logging.getLogger("console")
 
 
 class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
@@ -62,100 +67,181 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
             return GenericContentForm()
 
 
-class DocumentApiRenderer(BrowsableAPIRenderer):
-    # template = 'rest_framework/doc_api.html'
+ENDPOINT_DOC_PATTERN = re.compile(r"\b(?P<remove>endpoint_doc:\s*(?P<endpoint_doc>[^\s<]+))")
+INFERRED_DOC_PATTERN = re.compile(r"^/api/v\d+/(?P<path>.+?)/?$")
+VERSION_PATTERN = re.compile(r"^/api/(?P<version>v\d+)/.+$")
+EMPTY_PARAGRAPH_PATTERN = re.compile(r"\s*<p>\s*</p>\s*", re.MULTILINE)
 
-    def get_context(self, data, accepted_media_type, renderer_context):
-        """
-        Returns the context used to render.
-        """
-        view = renderer_context["view"]
-        request = renderer_context["request"]
-        response = renderer_context["response"]
-        renderer = self.get_default_renderer(view)
+BASE_URL = "https://github.com/fedspendingtransparency/usaspending-api/blob/{git_branch}/usaspending_api"
+SEARCH_LOCATIONS = (
+    "usaspending_api/api_contracts/contracts/{version}",
+    "usaspending_api/api_contracts/contracts",
+    "usaspending_api/api_docs/api_documentation",
+)
 
-        raw_data_post_form = self.get_raw_data_form(data, view, "POST", request)
-        raw_data_put_form = self.get_raw_data_form(data, view, "PUT", request)
-        raw_data_patch_form = self.get_raw_data_form(data, view, "PATCH", request)
-        raw_data_put_or_patch_form = raw_data_put_form or raw_data_patch_form
 
-        response_headers = OrderedDict(sorted(response.items()))
-        renderer_content_type = ""
-        if renderer:
-            renderer_content_type = "%s" % renderer.media_type
-            if renderer.charset:
-                renderer_content_type += " ;%s" % renderer.charset
-        response_headers["Content-Type"] = renderer_content_type
+class DocumentAPIRenderer(BrowsableAPIRenderer):
+    """
+    A new flavor of documentation renderer that injects a link to our full blown
+    markdown documentation into the Django Rest Framework endpoint.
 
-        if getattr(view, "paginator", None) and view.paginator.display_page_controls:
-            paginator = view.paginator
-        else:
-            paginator = None
+    There are two ways to do API endpoint documentation:
 
-        csrf_cookie_name = settings.CSRF_COOKIE_NAME
-        csrf_header_name = getattr(settings, "CSRF_HEADER_NAME", "HTTP_X_CSRFToken")  # Fallback for Django 1.8
-        if csrf_header_name.startswith("HTTP_"):
-            csrf_header_name = csrf_header_name[5:]
-        csrf_header_name = csrf_header_name.replace("_", "-")
+        1]  The developer can explicitly add "endpoint_doc:" followed by a
+            relative file path to the markdown documentation for the endpoint
+            on its own line in the view docstring.  The file path should be
+            relative to usaspending_api/api_contracts/contracts/{version}.  See
+            other endpoints for examples of how this should look.
 
-        context = {
-            "content": self.get_content(renderer, data, accepted_media_type, renderer_context),
-            "view": view,
-            "request": request,
-            "response": response,
-            "user": request.user,
-            "description": self.get_description(view, response.status_code),
-            "name": self.get_name(view),
-            "version": VERSION,
-            "paginator": paginator,
-            "breadcrumblist": self.get_breadcrumbs(request),
-            "allowed_methods": view.allowed_methods,
-            "available_formats": [renderer_cls.format for renderer_cls in view.renderer_classes],
-            "response_headers": response_headers,
-            "put_form": self.get_rendered_html_form(data, view, "PUT", request),
-            "post_form": self.get_rendered_html_form(data, view, "POST", request),
-            "delete_form": self.get_rendered_html_form(data, view, "DELETE", request),
-            "options_form": self.get_rendered_html_form(data, view, "OPTIONS", request),
-            "filter_form": self.get_filter_form(data, view, request),
-            "raw_data_put_form": raw_data_put_form,
-            "raw_data_post_form": raw_data_post_form,
-            "raw_data_patch_form": raw_data_patch_form,
-            "raw_data_put_or_patch_form": raw_data_put_or_patch_form,
-            "display_edit_forms": bool(response.status_code != 403),
-            "api_settings": api_settings,
-            "csrf_cookie_name": csrf_cookie_name,
-            "csrf_header_name": csrf_header_name,
-        }
+        2]  If the "endpoint_doc:" tag does not exist or the document pointed
+            to by "endpoint_doc:" does not exist, we will attempt to infer the
+            documentation from the API endpoint URL.
 
-        # Inject markdown code
-        # markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-        # markdown_text = markdown_file.read()
-        # print(markdown_text)
-        #
-        # context['description'] = markdown_text
+    As of this writing, there are three locations where documentation can live:
 
-        context_array = (context["description"]).split("endpoint_doc: ")
-        if len(context_array) > 1:
-            context_array[0] = context_array[0].replace("<p>", "")
-            context_array[1] = context_array[1].replace("</p>", "")
+        -   usaspending_api/api_contracts/contracts/<version> -> We are currently
+            in the process of reorganizing our contracts to support versioning
+            along with the actual endpoints they document.  This is the preferred
+            location.
 
-            git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
+        -   usaspending_api/api_contracts/contracts -> This is a slightly older
+            location for API contracts (prior to versioning) and is deprecated.
 
-            git_branch = str(git_head_file.read()).split("/")[-1]
-            git_branch = (
-                "https://github.com/fedspendingtransparency/usaspending-api/blob/"
-                "{}/usaspending_api/api_docs/api_documentation".format(git_branch)
-            )
+        -   usaspending_api/api_docs/api_documentation -> This location holds the
+            older style free form markdown documentation and is also deprecated.
 
-            doc_location = context_array[1].split()[0]
+    We will search these directories for documentation in the order listed in
+    SEARCH_LOCATIONS.
+    """
+    def get_context(self, *args, **kwargs):
+        context = super(DocumentAPIRenderer, self).get_context(*args, **kwargs)
 
-            path = "{}{}".format(git_branch, str(doc_location))
-            path = path.replace("\n", "")
-            path = path.replace(" ", "%20")
-            doc_description = "<p>{}\n\nDocumentation on this endpoint can be found <a href={}>here<a>.</p>".format(
-                context_array[0], path
-            )
+        request_path = self.renderer_context["request"].path
 
-            context["description"] = SafeText(doc_description)
+        description, endpoint_doc = self._get_description_and_endpoint_doc(context)
+        inferred_doc = self._get_inferred_doc(request_path)
+        version = self._get_api_version(request_path)
+
+        doc_path = self._get_doc_path(version, endpoint_doc) or self._get_doc_path(version, inferred_doc)
+        doc_url = self._get_github_url(doc_path, self._get_current_git_branch())
+
+        if not doc_url:
+            logger.warning("Unable to find documentation for endpoint {}".format(request_path))
+
+        description = self._update_description(description, doc_path)
+        description = self._add_url_to_description(description, doc_url)
+
+        context["description"] = mark_safe(description)
 
         return context
+
+    @staticmethod
+    def _get_description_and_endpoint_doc(context):
+        """
+        Digs the description out of the context, extracts "endpoint_doc" if there is
+        one, cleans up the description a little, and returns (description, endpoint_doc)
+        """
+        description = context.get("description") or ""
+        endpoint_doc = ""
+        match = ENDPOINT_DOC_PATTERN.search(description)
+        if match:
+            endpoint_doc = match.group("endpoint_doc")
+            description = description[:match.start("remove")] + description[match.end("remove"):]
+        description = EMPTY_PARAGRAPH_PATTERN.sub(" ", description).strip()
+        return description, endpoint_doc
+
+    @staticmethod
+    def _get_inferred_doc(request_path):
+        """
+        Using the request URL path, generate an inferred documentation path.  If
+        all goes well
+
+            usaspending_api/api_contracts/contracts/v2/download/accounts
+
+        should turn into something like
+
+            download/accounts.md
+
+        """
+        match = INFERRED_DOC_PATTERN.search(request_path)
+        return (match.group("path") + ".md") if match else ""
+
+    @staticmethod
+    def _get_api_version(request_path):
+        """
+        Using the request URL path, let's figure out which version of the API
+        we're dealing with here.  API URLs usually resemble
+
+            usaspending_api/api_contracts/contracts/v2/download/accounts
+
+        where the version number in this case is "v2".
+        """
+        match = VERSION_PATTERN.search(request_path)
+        return match.group("version") if match else ""
+
+    @staticmethod
+    def _get_doc_path(version, doc):
+        """
+        Given an API version and a candidate relative doc path, let's see if
+        we can find a file that meets our needs.
+        """
+        if doc:
+            file = os.path.split(doc)[1]
+            for location in SEARCH_LOCATIONS:
+                # Don't attempt to check a location where a version
+                # is required but we don't have one.
+                if "{version}" not in location or version:
+                    doc_path = os.path.join(BASE_DIR, location.format(version=version), doc)
+                    # This is stupid.  This is a workaround for case insensitive file systems.
+                    if os.path.exists(doc_path) and file in os.listdir(os.path.dirname(doc_path)):
+                        return doc_path
+        return ""
+
+    @staticmethod
+    def _get_current_git_branch():
+        """
+        This is a bit of legacy code to figure out which git branch is current.
+        It works and I don't know a better way so I'm leaving it... for now...
+        """
+        file_path = os.path.join(BASE_DIR, ".git/HEAD")
+        with open(file_path) as f:
+            return f.read().split("/")[-1].strip()
+
+    @staticmethod
+    def _get_github_url(doc_path, git_branch):
+        """
+        Convert a file path to a GitHub URL.
+        """
+        if doc_path.startswith(BASE_DIR):
+            doc_path = doc_path[len(BASE_DIR):].lstrip("/")
+            return urljoin(BASE_URL, quote(doc_path)).format(git_branch=git_branch)
+        return ""
+
+    @staticmethod
+    def _update_description(description, doc_path):
+        """
+        If the view does not have its own docstring, let's see if we can figure
+        one out from the markdown file located at doc_path.  We will only check
+        the first 10 lines for something that might be a docstring.
+        """
+        if not doc_path or description:
+            return description
+
+        lines = []
+        with open(doc_path) as f:
+            for n, line in enumerate(f):
+                line = line.strip()
+                if line and not line.startswith(("FORMAT", "HOST", "#", "+", "*", "-")):
+                    lines.append(line)
+                elif n > 10 or lines:
+                    break
+
+        return "<p>{}</p>".format(escape(" ".join(lines))) if lines else ""
+
+    @staticmethod
+    def _add_url_to_description(description, doc_url):
+        if doc_url:
+            return description + '\n<p>Documentation for this endpoint can be found <a href="{}">here</a>.</p>'.format(
+                doc_url
+            )
+        return description

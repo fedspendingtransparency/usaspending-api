@@ -3,10 +3,10 @@ from collections import OrderedDict
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import validate_post_request
 
@@ -60,10 +60,10 @@ ROLLUP_SQL = SQL(
 
 
 @validate_post_request([get_internal_or_generated_award_id_model()])
-class IDVFundingRollupViewSet(APIDocumentationView):
+class IDVFundingRollupViewSet(APIView):
     """
     Returns File C funding totals associated with an IDV's children.
-    endpoint_doc: /awards/idvs/funding_rollup.md
+    endpoint_doc: awards/idvs/funding_rollup.md
     """
 
     @staticmethod

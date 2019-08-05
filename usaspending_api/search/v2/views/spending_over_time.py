@@ -28,7 +28,7 @@ API_VERSION = settings.API_VERSION
 class SpendingOverTimeVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
-    endpoint_doc: /advanced_award_search/spending_over_time.md
+    endpoint_doc: advanced_award_search/spending_over_time.md
     """
 
     def validate_request_data(self, json_data):

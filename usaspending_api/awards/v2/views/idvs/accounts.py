@@ -3,6 +3,7 @@ from collections import OrderedDict
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination
@@ -10,7 +11,6 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
-from usaspending_api.common.views import APIDocumentationView
 
 
 SORTABLE_COLUMNS = {
@@ -114,7 +114,7 @@ TINYSHIELD_MODELS.append(get_internal_or_generated_award_id_model())
 
 
 @validate_post_request(TINYSHIELD_MODELS)
-class IDVAccountsViewSet(APIDocumentationView):
+class IDVAccountsViewSet(APIView):
     @staticmethod
     def _business_logic(request_data: dict) -> list:
         # By this point, our award_id has been validated and cleaned up by

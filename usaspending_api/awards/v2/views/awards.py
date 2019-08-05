@@ -4,6 +4,7 @@ from django.db.models import Max
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.data_layer.orm import (
@@ -12,16 +13,15 @@ from usaspending_api.awards.v2.data_layer.orm import (
     construct_assistance_response,
 )
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.tinyshield import TinyShield
 
 
 logger = logging.getLogger("console")
 
 
-class AwardLastUpdatedViewSet(APIDocumentationView):
+class AwardLastUpdatedViewSet(APIView):
     """Return all award spending by award type for a given fiscal year and agency id.
-    endpoint_doc: /awards/last_updated.md
+    endpoint_doc: awards/last_updated.md
     """
 
     @cache_response()
@@ -34,9 +34,9 @@ class AwardLastUpdatedViewSet(APIDocumentationView):
         return Response(response)
 
 
-class AwardRetrieveViewSet(APIDocumentationView):
+class AwardRetrieveViewSet(APIView):
     """
-    endpoint_doc: /awards/awards.md
+    endpoint_doc: awards/awards.md
     """
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:

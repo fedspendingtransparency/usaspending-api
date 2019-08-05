@@ -7,6 +7,7 @@ from datetime import datetime
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Sum
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models_matviews import SummaryStateView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -14,7 +15,6 @@ from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.recipient.models import StateData
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 
@@ -95,7 +95,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
     return results
 
 
-class StateMetaDataViewSet(APIDocumentationView):
+class StateMetaDataViewSet(APIView):
     def get_state_data(self, state_data_results, field, year=None):
         """Finds which earliest or latest state data to use based on the year and what data is available"""
         state_data = OrderedDict(
@@ -165,7 +165,7 @@ if "idvs" in _all_award_types_mappings:
     del _all_award_types_mappings["idvs"]
 
 
-class StateAwardBreakdownViewSet(APIDocumentationView):
+class StateAwardBreakdownViewSet(APIView):
     @cache_response()
     def get(self, request, fips):
         get_request = request.query_params
@@ -179,7 +179,7 @@ class StateAwardBreakdownViewSet(APIDocumentationView):
         return Response(results)
 
 
-class ListStates(APIDocumentationView):
+class ListStates(APIView):
     @cache_response()
     def get(self, request):
         populate_fips()

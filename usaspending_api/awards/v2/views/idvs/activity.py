@@ -4,11 +4,11 @@ from copy import copy, deepcopy
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -128,7 +128,7 @@ def _prepare_tiny_shield_models():
 TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
-class IDVActivityViewSet(APIDocumentationView):
+class IDVActivityViewSet(APIView):
     """
     Returns award funding info for children and grandchildren of an IDV.  Used
     to power the Activity visualization on IDV Summary page.

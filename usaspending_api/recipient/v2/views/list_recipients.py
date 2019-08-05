@@ -2,11 +2,11 @@ import logging
 import copy
 
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.db.models import F, Q
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import update_model_in_list
@@ -70,10 +70,10 @@ def get_recipients(filters={}):
     return results, page_metadata
 
 
-class ListRecipients(APIDocumentationView):
+class ListRecipients(APIView):
     """
     This route takes a single keyword filter (and pagination filters), and returns a list of recipients
-    endpoint_doc: /recipient/list_recipients.md
+    endpoint_doc: recipient/list_recipients.md
     """
 
     @cache_response()

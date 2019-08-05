@@ -8,7 +8,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
 
-    endpoint_doc: /download/custom_award_data_download.md
+    endpoint_doc: download/custom_award_data_download.md
     """
 
     def post(self, request):

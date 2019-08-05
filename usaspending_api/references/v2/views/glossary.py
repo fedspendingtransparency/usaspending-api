@@ -1,10 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.views import APIView
 
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.helpers.generic_helper import get_pagination
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.models import Definition
 
@@ -16,7 +16,7 @@ class DefinitionSerializer(LimitableSerializer):
         fields = ["term", "slug", "data_act_term", "plain", "official", "resources"]
 
 
-class GlossaryViewSet(APIDocumentationView):
+class GlossaryViewSet(APIView):
     """
     This view returns paginated glossary terms in a list
     """

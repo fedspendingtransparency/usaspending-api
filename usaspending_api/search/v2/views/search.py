@@ -36,7 +36,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 class SpendingByAwardVisualizationViewSet(APIView):
     """
     This route takes award filters and fields, and returns the fields of the filtered awards.
-    endpoint_doc: /advanced_award_search/spending_by_award.md
+    endpoint_doc: advanced_award_search/spending_by_award.md
     """
 
     @cache_response()
@@ -203,7 +203,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
-        endpoint_doc: /advanced_award_search/spending_by_award_count.md
+        endpoint_doc: advanced_award_search/spending_by_award_count.md
     """
 
     @cache_response()

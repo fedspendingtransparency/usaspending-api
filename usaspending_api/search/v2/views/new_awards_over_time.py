@@ -23,7 +23,7 @@ API_VERSION = settings.API_VERSION
 
 class NewAwardsOverTimeVisualizationViewSet(APIView):
     """
-    endpoint_doc: /advanced_award_search/new_awards_over_time.md
+    endpoint_doc: advanced_award_search/new_awards_over_time.md
     """
 
     def validate_api_request(self, json_payload):

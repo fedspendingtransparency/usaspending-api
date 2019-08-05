@@ -15,7 +15,7 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 class AwardTypeAwardSpendingViewSet(CachedDetailViewSet):
     """
     Return all award spending by award type for a given fiscal year and agency id
-    endpoint_doc: /award_spending/award_category.md
+    endpoint_doc: award_spending/award_category.md
     """
 
     serializer_class = AwardTypeAwardSpendingSerializer
@@ -57,7 +57,7 @@ class AwardTypeAwardSpendingViewSet(CachedDetailViewSet):
 class RecipientAwardSpendingViewSet(CachedDetailViewSet):
     """
     Return all award spending by recipient for a given fiscal year and agency id
-    endpoint_doc: /award_spending/recipient.md
+    endpoint_doc: award_spending/recipient.md
     """
 
     serializer_class = RecipientAwardSpendingSerializer

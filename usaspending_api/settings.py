@@ -195,7 +195,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "usaspending_api.common.pagination.UsaspendingPagination",
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
-        "usaspending_api.common.renderers.DocumentApiRenderer",
+        "usaspending_api.common.renderers.DocumentAPIRenderer",
         "usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms",
     ),
 }

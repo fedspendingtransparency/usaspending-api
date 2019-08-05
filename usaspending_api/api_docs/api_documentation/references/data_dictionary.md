@@ -3,7 +3,9 @@
 
 **Method:** `GET`
 
-This route takes no parameters and returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary
+This route takes no parameters and returns a
+JSON structure of the Schema team's Rosetta
+Crosswalk Data Dictionary
 
 ### Request
 *Not Applicable*
