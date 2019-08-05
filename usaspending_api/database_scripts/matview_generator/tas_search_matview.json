@@ -1,5 +1,5 @@
 {
-  "final_name": "tas_award_matview",
+  "final_name": "tas_search_matview",
   "refresh": true,
   "matview_sql": [
     "select distinct",
@@ -13,7 +13,7 @@
     "        coalesce(taa.main_account_code, ''),",
     "        coalesce(taa.sub_account_code, ''),",
     "        faba.award_id",
-    "    ))::uuid tas_award_id,",
+    "    ))::uuid tas_search_id,",
     "    taa.allocation_transfer_agency_id,",
     "    taa.agency_id,",
     "    taa.beginning_period_of_availability,",
@@ -32,9 +32,9 @@
   ],
   "indexes": [
     {
-      "name": "tas_award_id",
+      "name": "tas_search_id",
       "unique": true,
-      "columns": [{"name": "tas_award_id"}]
+      "columns": [{"name": "tas_search_id"}]
     }, {
       "name": "allocation_transfer_agency_id",
       "columns": [{"name": "allocation_transfer_agency_id"}]

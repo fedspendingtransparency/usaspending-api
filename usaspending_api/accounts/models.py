@@ -427,9 +427,26 @@ class BudgetAuthority(models.Model):
         unique_together = (("agency_identifier", "fr_entity_code", "year"),)
 
 
-class TASAwardMatview(models.Model):
+class TASAutocompleteMatview(models.Model):
 
-    tas_award_id = models.UUIDField(primary_key=True)
+    tas_autocomplete_id = models.IntegerField(primary_key=True)
+    allocation_transfer_agency_id = models.TextField(null=True)
+    agency_id = models.TextField()
+    beginning_period_of_availability = models.TextField(null=True)
+    ending_period_of_availability = models.TextField(null=True)
+    availability_type_code = models.TextField(null=True)
+    main_account_code = models.TextField()
+    sub_account_code = models.TextField(null=True)
+
+    class Meta:
+
+        db_table = "tas_autocomplete_matview"
+        managed = False
+
+
+class TASSearchMatview(models.Model):
+
+    tas_search_id = models.UUIDField(primary_key=True)
     allocation_transfer_agency_id = models.TextField(null=True)
     agency_id = models.TextField()
     beginning_period_of_availability = models.TextField(null=True)
@@ -441,5 +458,5 @@ class TASAwardMatview(models.Model):
 
     class Meta:
 
-        db_table = "tas_award_matview"
+        db_table = "tas_search_matview"
         managed = False
