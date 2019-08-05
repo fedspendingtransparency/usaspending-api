@@ -6,8 +6,8 @@ Sets up mappings from column names used in downloads to the query paths used to 
 Not in use while we pull CSV data from the non-historical tables. Until we switch to pulling CSV downloads from the
 historical tables TransactionFPDS and TransactionFABS, import download_column_lookups.py instead.
 
-NOTE: To allow for annotations to be used on download a pair of ("<alias>", None) is used so that a placeholder 
-for the column is made, but it can be removed to avoid being used as a query path. 
+NOTE: To allow for annotations to be used on download a pair of ("<alias>", None) is used so that a placeholder
+for the column is made, but it can be removed to avoid being used as a query path.
 """
 """
 Code to generate these from spreadsheets:
