@@ -17,6 +17,8 @@ from usaspending_api.awards.v2.lookups.lookups import (
     contract_subaward_mapping,
     grant_subaward_mapping,
     idv_type_mapping,
+    assistance_type_mapping,
+    subcontracts_mapping
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
     award_contracts_mapping,
@@ -109,13 +111,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
             if subawards:
-                if set(filters["award_type_codes"]) <= set(
-                    list(contract_type_mapping) + list(idv_type_mapping)
-                ):  # Subaward contracts
+                if set(filters["award_type_codes"]) <= set(subcontracts_mapping):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
-                elif set(filters["award_type_codes"]) <= set(list(grant_type_mapping) # Subaward grants
-                                                             + list(loan_type_mapping)
-                                                             + list(non_loan_assistance_type_mapping)):
+                elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
                     sort_filters = [grant_subaward_mapping[sort]]
                 else:
                     msg = """Award Type codes limited for Subawards.
