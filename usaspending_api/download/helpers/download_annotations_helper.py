@@ -4,7 +4,6 @@ from django.db.models import Value
 
 
 def universal_transaction_matview_annotations():
-    # transaction__award__financial_set__treasury_account__federal_account__agency_identifier
     federal_account_query_path = "transaction__award__financial_set__treasury_account__federal_account"
     annotation_fields = {
         "federal_accounts_funding_this_award": StringAgg(
@@ -21,7 +20,6 @@ def universal_transaction_matview_annotations():
 
 
 def universal_award_matview_annotations():
-    # transaction__award__financial_set__treasury_account__federal_account__agency_identifier
     federal_account_query_path = "award__financial_set__treasury_account__federal_account"
     annotation_fields = {
         "federal_accounts_funding_this_award": StringAgg(
