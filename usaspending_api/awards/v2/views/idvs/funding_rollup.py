@@ -15,7 +15,8 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 # the File D (awards) data not File C (financial_accounts_by_awards).  Also,
 # even though this query structure looks terrible, it managed to boost
 # performance a bit.
-ROLLUP_SQL = SQL("""
+ROLLUP_SQL = SQL(
+    """
     with gather_award_ids as (
         select  award_id
         from    parent_award
@@ -54,7 +55,8 @@ ROLLUP_SQL = SQL("""
             taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join agency aa on aa.id = gfaba.awarding_agency_id
         left outer join agency af on af.id = gfaba.funding_agency_id
-""")
+"""
+)
 
 
 @validate_post_request([get_internal_or_generated_award_id_model()])
@@ -69,13 +71,10 @@ class IDVFundingRollupViewSet(APIDocumentationView):
         # By this point, our award_id has been validated and cleaned up by
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
-        award_id = request_data['award_id']
-        award_id_column = 'award_id' if type(award_id) is int else 'generated_unique_award_id'
+        award_id = request_data["award_id"]
+        award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
 
-        sql = ROLLUP_SQL.format(
-            award_id_column=Identifier(award_id_column),
-            award_id=Literal(award_id),
-        )
+        sql = ROLLUP_SQL.format(award_id_column=Identifier(award_id_column), award_id=Literal(award_id))
 
         return execute_sql_to_ordered_dictionary(sql)[0]
 

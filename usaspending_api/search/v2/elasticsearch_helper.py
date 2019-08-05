@@ -19,11 +19,22 @@ TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 def es_sanitize(input_string):
     """ Escapes reserved elasticsearch characters and removes when necessary """
 
-    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', '', input_string)
+    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', "", input_string)
     if len(processed_string) != len(input_string):
         msg = "Stripped characters from input string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, input_string))
     return processed_string
+
+
+def es_minimal_sanitize(keyword):
+    keyword = concat_if_array(keyword)
+    """Remove Lucene special characters instead of escaping for now"""
+    processed_string = re.sub(r"[/:][^!]", "", keyword)
+    if len(processed_string) != len(keyword):
+        msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, keyword))
+        keyword = processed_string
+    return keyword
 
 
 def swap_keys(dictionary_):
@@ -37,7 +48,7 @@ def format_for_frontend(response):
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = es_sanitize(concat_if_array(keyword))
+    keyword = es_minimal_sanitize(concat_if_array(keyword))
     query = {
         "dis_max": {
             "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]

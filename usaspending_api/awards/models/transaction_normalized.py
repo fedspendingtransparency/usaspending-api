@@ -27,21 +27,17 @@ class TransactionNormalized(models.Model):
         help_text="The plain text description of the transaction type",
     )
     period_of_performance_start_date = models.DateField(
-        verbose_name="Period of Performance Start Date",
-        null=True,
-        help_text="The period of performance start date",
+        verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date"
     )
     period_of_performance_current_end_date = models.DateField(
         verbose_name="Period of Performance Current End Date",
         null=True,
-        help_text="The current end date of the period of " "performance",
+        help_text="The current end date of the period of performance",
     )
     action_date = models.DateField(
         verbose_name="Transaction Date", help_text="The date this transaction was actioned", db_index=True
     )
-    action_type = models.TextField(
-        blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D"
-    )
+    action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
     action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(
         max_digits=23,
@@ -49,21 +45,21 @@ class TransactionNormalized(models.Model):
         decimal_places=2,
         blank=True,
         null=True,
-        help_text="The obligation of the federal government for this " "transaction",
+        help_text="The obligation of the federal government for this transaction",
     )
     original_loan_subsidy_cost = models.DecimalField(
         max_digits=23,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The original_loan_subsidy_cost for loan type " "transactions",
+        help_text="The original_loan_subsidy_cost for loan type transactions",
     )
     face_value_loan_guarantee = models.DecimalField(
         max_digits=23,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The face_value_loan_guarantee for loan type " "transactions",
+        help_text="The face_value_loan_guarantee for loan type transactions",
     )
     modification_number = models.TextField(
         blank=True,
@@ -83,18 +79,12 @@ class TransactionNormalized(models.Model):
         null=True,
         help_text="The agency which is funding this transaction",
     )
-    recipient = models.ForeignKey(
-        "references.LegalEntity", null=True, help_text="The recipient for this transaction"
-    )
+    recipient = models.ForeignKey("references.LegalEntity", null=True, help_text="The recipient for this transaction")
     description = models.TextField(null=True, help_text="The description of this transaction")
     place_of_performance = models.ForeignKey(
-        "references.Location",
-        null=True,
-        help_text="The location where the work on this transaction was performed",
+        "references.Location", null=True, help_text="The location where the work on this transaction was performed"
     )
-    drv_award_transaction_usaspend = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    drv_award_transaction_usaspend = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
@@ -104,26 +94,16 @@ class TransactionNormalized(models.Model):
     last_modified_date = models.DateField(
         blank=True, null=True, help_text="The date this transaction was last modified"
     )
-    certified_date = models.DateField(
-        blank=True, null=True, help_text="The date this transaction was certified"
-    )
+    certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(
         auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API"
     )
     update_date = models.DateTimeField(
-        auto_now=True,
-        null=True,
-        help_text="The last time this transaction was updated in the API",
-        db_index=True,
+        auto_now=True, null=True, help_text="The last time this transaction was updated in the API", db_index=True
     )
-    fiscal_year = models.IntegerField(
-        blank=True, null=True, help_text="Fiscal Year calculated based on Action Date"
-    )
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     transaction_unique_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Transaction Unique ID"
-    )
-    generated_unique_award_id = models.TextField(
-        blank=False, null=False, default="NONE", verbose_name="Generated Unique Award ID"
     )
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     funding_amount = models.DecimalField(
@@ -131,7 +111,7 @@ class TransactionNormalized(models.Model):
         decimal_places=2,
         blank=True,
         null=True,
-        help_text="Assistance data variable.  non_federal_funding_amount + " "federal_action_obligation",
+        help_text="Assistance data variable.  non_federal_funding_amount + federal_action_obligation",
     )
     non_federal_funding_amount = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, help_text="Assistance Data variable."
@@ -163,9 +143,7 @@ class TransactionNormalized(models.Model):
         Transactions must be unique on Award, Awarding Agency, and Mod Number
         """
         transaction = (
-            cls.objects.filter(
-                award=kwargs.get("award"), modification_number=kwargs.get("modification_number")
-            )
+            cls.objects.filter(award=kwargs.get("award"), modification_number=kwargs.get("modification_number"))
             .order_by("-update_date")
             .first()
         )

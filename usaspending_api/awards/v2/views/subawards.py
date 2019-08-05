@@ -29,8 +29,16 @@ class SubawardsViewSet(APIDocumentationView):
 
     def _parse_and_validate_request(self, request_dict):
         models = deepcopy(PAGINATION)
-        models.append({"key": "award_id", "name": "award_id", "type": "integer",
-                      "optional": True, "default": None, "allow_nulls": True})
+        models.append(
+            {
+                "key": "award_id",
+                "name": "award_id",
+                "type": "integer",
+                "optional": True,
+                "default": None,
+                "allow_nulls": True,
+            }
+        )
         for model in models:
             # Change sort to an enum of the desired values
             if model["name"] == "sort":
@@ -51,14 +59,12 @@ class SubawardsViewSet(APIDocumentationView):
             queryset = queryset.filter(award_id=request_data["award_id"])
 
         if request_data["order"] == "desc":
-            queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
+            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True))
         else:
-            queryset = queryset.order_by(F(request_data["sort"]).asc(nulls_first=True))
+            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True))
 
-        rows = list(queryset[lower_limit:upper_limit + 1])
-        return [
-            {k: row[v] for k, v in self.subaward_lookup.items() if k != "award_id"}
-            for row in rows]
+        rows = list(queryset[lower_limit : upper_limit + 1])
+        return [{k: row[v] for k, v in self.subaward_lookup.items() if k != "award_id"} for row in rows]
 
     @cache_response()
     def post(self, request):
@@ -66,9 +72,6 @@ class SubawardsViewSet(APIDocumentationView):
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
 
-        response = {
-            "page_metadata": page_metadata,
-            "results": results[:request_data["limit"]],
-        }
+        response = {"page_metadata": page_metadata, "results": results[: request_data["limit"]]}
 
         return Response(response)

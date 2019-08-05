@@ -28,17 +28,15 @@ def test_program_activity_fresh_load():
             budget_year'
     """
 
-    call_command('load_program_activity', 'usaspending_api/references/tests/data/program_activity.csv')
+    call_command("load_program_activity", "usaspending_api/references/tests/data/program_activity.csv")
 
-    expected_results = {
-        'count': 6,
-        'program_activity_name_lowercase_found': False
-    }
+    expected_results = {"count": 6, "program_activity_name_lowercase_found": False}
 
     actual_results = {
-        'count': RefProgramActivity.objects.count(),
-        'program_activity_name_lowercase_found': all(name.islower() for name in RefProgramActivity.objects.
-                                                     values_list('program_activity_name', flat=True))
+        "count": RefProgramActivity.objects.count(),
+        "program_activity_name_lowercase_found": all(
+            name.islower() for name in RefProgramActivity.objects.values_list("program_activity_name", flat=True)
+        ),
     }
 
     assert expected_results == actual_results

@@ -6,14 +6,14 @@ from django.db import connection
 
 
 class Command(BaseCommand):
-    help = 'One-time fixer to fill missing location.zip5 from zip4'
+    help = "One-time fixer to fill missing location.zip5 from zip4"
 
     # Estimated runtime, based on simple linear extrap: 10 hours
 
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     LIMIT = 10000
-    regexp = r'^(\d{5})\-?(\d{4})?$'
+    regexp = r"^(\d{5})\-?(\d{4})?$"
 
     fixable_rows = """
               SELECT location_id
@@ -21,7 +21,9 @@ class Command(BaseCommand):
           WHERE  zip5 IS NULL
           AND    zip4 IS NOT NULL
           AND    zip4 ~* '{}'
-    """.format(regexp)
+    """.format(
+        regexp
+    )
 
     update_qry = """
        WITH target_ids AS (
@@ -33,12 +35,15 @@ class Command(BaseCommand):
        FROM   target_ids
        WHERE  rl.location_id = target_ids.location_id;
     """.format(
-        fixable_rows=fixable_rows, limit=LIMIT, regexp=regexp)
+        fixable_rows=fixable_rows, limit=LIMIT, regexp=regexp
+    )
 
     unfixed_qry = """
         SELECT EXISTS (
             {fixable_rows}
-        )""".format(fixable_rows=fixable_rows)
+        )""".format(
+        fixable_rows=fixable_rows
+    )
 
     def handle(self, *args, **options):
         overall_start_time = time.time()
@@ -50,7 +55,6 @@ class Command(BaseCommand):
                 cursor.execute(self.unfixed_qry)
                 unfixed = cursor.fetchone()[0]
                 elapsed = time.time() - start_time
-                self.logger.info('Batch of <= {} fixed in {} seconds'.format(
-                    self.LIMIT, elapsed))
+                self.logger.info("Batch of <= {} fixed in {} seconds".format(self.LIMIT, elapsed))
         overall_elapsed = time.time() - overall_start_time
-        self.logger.info('Finished in {} seconds'.format(overall_elapsed))
+        self.logger.info("Finished in {} seconds".format(overall_elapsed))

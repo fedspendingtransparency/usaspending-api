@@ -70,18 +70,15 @@ def create_idv_test_data():
             toptier_agency_id=funding_toptier_agency.toptier_agency_id,
         )
 
-        transaction_normalized = mommy.make(
-            'awards.TransactionNormalized',
-            id=7000 + award_id,
-            award_id=award_id
-        )
+        transaction_normalized = mommy.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
 
         mommy.make(
-            'awards.TransactionFPDS',
+            "awards.TransactionFPDS",
             transaction_id=transaction_normalized.id,
-            funding_agency_name='subtier_funding_agency_name_%s' % transaction_normalized.id,
-            ordering_period_end_date='2018-01-%02d' % award_id,
+            funding_agency_name="subtier_funding_agency_name_%s" % transaction_normalized.id,
+            ordering_period_end_date="2018-01-%02d" % award_id,
             awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
+            period_of_perf_potential_e="2018-08-%02d" % award_id,
         )
 
         mommy.make(
@@ -90,8 +87,8 @@ def create_idv_test_data():
             generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
             type=("IDV_%s" if award_id in IDVS else "CONTRACT_%s") % string_award_id,
             piid="piid_%s" % string_award_id,
-            type_description='type_description_%s' % string_award_id,
-            description='description_%s' % string_award_id,
+            type_description="type_description_%s" % string_award_id,
+            description="description_%s" % string_award_id,
             fpds_agency_id="fpds_agency_id_%s" % string_award_id,
             parent_award_piid=("piid_%s" % string_parent_award_id) if string_parent_award_id else None,
             fpds_parent_agency_id=("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None,
@@ -100,8 +97,8 @@ def create_idv_test_data():
             latest_transaction_id=transaction_normalized.id,
             total_obligation=100000 + award_id,
             base_and_all_options_value=500000 + award_id,
-            period_of_performance_current_end_date='2018-03-%02d' % award_id,
-            period_of_performance_start_date='2018-02-%02d' % award_id,
+            period_of_performance_current_end_date="2018-03-%02d" % award_id,
+            period_of_performance_start_date="2018-02-%02d" % award_id,
         )
 
         submission_attributes = mommy.make(
@@ -175,9 +172,9 @@ def create_idv_test_data():
     for award_id in IDVS:
         string_award_id = str(award_id).zfill(3)
         mommy.make(
-            'awards.ParentAward',
+            "awards.ParentAward",
             award_id=award_id,
-            generated_unique_award_id='GENERATED_UNIQUE_AWARD_ID_%s' % string_award_id,
+            generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
             rollup_total_obligation=300000 + award_id,
             parent_award_id=PARENTS.get(award_id),
             rollup_contract_count=400000 + award_id,

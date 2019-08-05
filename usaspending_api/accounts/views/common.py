@@ -9,6 +9,7 @@ class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin, AggregateQue
     """
     Return aggregated FinancialAccountsByAward information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -23,6 +24,7 @@ class FinancialAccountsByAwardListViewSet(FilterQuerysetMixin, CachedDetailViewS
     """
     Handles requests for financial account data grouped by award.
     """
+
     serializer_class = FinancialAccountsByAwardsSerializer
 
     def get_queryset(self):

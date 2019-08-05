@@ -8,7 +8,7 @@ from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
-from usaspending_api.awards.v2.filters.location_filter_geocode import build_es_city_query
+from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
 
 
 models = [
@@ -51,9 +51,7 @@ class CityAutocompleteViewSet(APIDocumentationView):
         search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = ["{}_city_name".format(scope),
-                         "{}_state_code".format(scope),
-                         "{}_country_code.keyword".format(scope)]
+        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope), "{}_country_code".format(scope)]
 
         query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
         sorted_results = query_elasticsearch(query)
@@ -74,30 +72,18 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
-    if country == 'FOREIGN':
+    if country != "USA":
         aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
     else:
         aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
     query = {
         "_source": return_fields,
         "size": 0,
-        "query": {
-            "bool": {
-                "filter": {
-                    "bool": query_string
-                }
-            }
-        },
+        "query": {"bool": {"filter": {"bool": query_string}}},
         "aggs": {
-            "cities": {
-                "terms": {
-                    "field": "{}.keyword".format(return_fields[0]),
-                    "size": city_buckets,
-                },
-                "aggs": aggs,
-            }
+            "cities": {"terms": {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}, "aggs": aggs}
         },
-        "size": 0
+        "size": 0,
     }
     return query
 
@@ -113,24 +99,41 @@ def create_es_search(scope, search_text, country=None, state=None):
             state: optional state selected by user
     """
     # The base query that will do a wildcard term-level query
-    query = {
-        "must": [
+    query = {"must": [{"wildcard": {"{}_city_name.keyword".format(scope): search_text + "*"}}]}
+    if country != "USA":
+        # A non-USA selected country
+        if country != ALL_FOREIGN_COUNTRIES:
+            query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
+        # Create a "Should Not" query with a nested bool, to get everything non-USA
+        query["should"] = [
             {
-                "wildcard": {
-                    "{}_city_name.keyword".format(scope): search_text + "*"
+                "bool": {
+                    "must": {"exists": {"field": "{}_country_code".format(scope)}},
+                    "must_not": [
+                        {"match": {"{}_country_code".format(scope): "USA"}},
+                        {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}},
+                    ],
                 }
             }
         ]
-    }
-    return build_es_city_query(query, False, scope, country, state)
+
+        query["minimum_should_match"] = 1
+    else:
+        # USA is selected as country
+        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        query["should"].append({"bool": {"must_not": {"exists": {"field": "{}_country_code".format(scope)}}}})
+        query["minimum_should_match"] = 1
+        # null country codes are being considered as USA country codes
+
+    if state:
+        # If a state was provided, include it in the filter to limit hits
+        query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
+
+    return query
 
 
 def build_country_match(country_match_scope, country_match_country):
-    country_match = {
-        "match": {
-            "{}_country_code".format(country_match_scope): country_match_country
-        }
-    }
+    country_match = {"match": {"{}_country_code".format(country_match_scope): country_match_country}}
     return country_match
 
 
@@ -140,7 +143,7 @@ def query_elasticsearch(query):
     results = []
     if hits and hits["hits"]["total"] > 0:
         results = parse_elasticsearch_response(hits)
-        results = sorted(results, key=lambda x: (x["city_name"], x["state_code"]))
+        results = sorted(results, key=lambda x: x.pop("hits"), reverse=True)
     return results
 
 
@@ -149,8 +152,16 @@ def parse_elasticsearch_response(hits):
     for city in hits["aggregations"]["cities"]["buckets"]:
         if len(city["states"]["buckets"]) > 0:
             for state_code in city["states"]["buckets"]:
-                results.append(OrderedDict([("city_name", city["key"]), ("state_code", state_code["key"])]))
+                results.append(
+                    OrderedDict(
+                        [
+                            ("city_name", city["key"]),
+                            ("state_code", state_code["key"]),
+                            ("hits", state_code["doc_count"]),
+                        ]
+                    )
+                )
         else:
             # for cities without states, useful for foreign country results
-            results.append(OrderedDict([("city_name", city["key"]), ("state_code", None)]))
+            results.append(OrderedDict([("city_name", city["key"]), ("state_code", None), ("hits", city["doc_count"])]))
     return results

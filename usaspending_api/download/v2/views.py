@@ -9,9 +9,9 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['awards', 'sub_awards']
-        request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request, 'award')
+        request.data["award_levels"] = ["awards", "sub_awards"]
+        request.data["constraint_type"] = "row_count"
+        return BaseDownloadViewSet.post(self, request, "award")
 
 
 class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
@@ -22,7 +22,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        return BaseDownloadViewSet.post(self, request, 'idv')
+        return BaseDownloadViewSet.post(self, request, "idv")
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -34,9 +34,9 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['transactions', 'sub_awards']
-        request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request, 'award')
+        request.data["award_levels"] = ["transactions", "sub_awards"]
+        request.data["constraint_type"] = "row_count"
+        return BaseDownloadViewSet.post(self, request, "award")
 
 
 class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
@@ -47,9 +47,9 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     """
 
     def post(self, request):
-        request.data['award_levels'] = ['sub_awards']
-        request.data['constraint_type'] = 'row_count'
-        return BaseDownloadViewSet.post(self, request, 'award')
+        request.data["award_levels"] = ["sub_awards"]
+        request.data["constraint_type"] = "row_count"
+        return BaseDownloadViewSet.post(self, request, "award")
 
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
@@ -62,4 +62,4 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
 
-        return BaseDownloadViewSet.post(self, request, 'account')
+        return BaseDownloadViewSet.post(self, request, "account")

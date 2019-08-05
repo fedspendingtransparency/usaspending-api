@@ -1,6 +1,6 @@
 # <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USAspending API"></p>
 
-[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Build Status](https://travis-ci.com/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.com/fedspendingtransparency/usaspending-api) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
@@ -28,12 +28,12 @@ Now, navigate to the base file directory where you will store the USAspending re
     $ cd usaspending-api
 
 ## Database Setup
-There are two options for how you want to setup your database in order to run the API.  You can:  
-    1. Use your own local postgres database for the API to use.  
+There are two options for how you want to setup your database in order to run the API.  You can:
+    1. Use your own local postgres database for the API to use.
     2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database
 
 #### Option 1: Using a Locally Hosted Postgres Database
-Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult: 
+Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
  - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
 Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
@@ -41,18 +41,18 @@ Make sure to grant whatever user you created for the data_store api database sup
     postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
 
 #### Option 2: Using the Docker Compose Postgres Database
-See below for basic setup instructions. For help with Docker Compose:  
- - [Docker Installation](https://docs.docker.com/install/)  
- - [Docker Compose](https://docs.docker.com/compose/)  
+See below for basic setup instructions. For help with Docker Compose:
+ - [Docker Installation](https://docs.docker.com/install/)
+ - [Docker Compose](https://docs.docker.com/compose/)
 
 
-### Database Setup and Initialization w/Docker Compose
+### Database Setup and Initialization with Docker Compose
 
-- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.** 
+- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.**
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.  
+	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
 
 	- `docker-compose up usaspending-db-migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/]().
 
@@ -63,6 +63,14 @@ See below for basic setup instructions. For help with Docker Compose:
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
+## Elasticsearch Setup
+Some of the API endpoints reach into Elasticsearch for data.
+
+- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+
+- The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
+
+- Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
 ## Running the API
 `docker-compose up usaspending-api`
@@ -84,10 +92,3 @@ _Note: it is possible to run ad-hoc commands out of a Docker container once you 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 
 For details on how our data loaders modify incoming data, see [data_changes.md](data_changes.md).
-
-## Public Domain License
-
-This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the CC0 1.0 Universal public domain dedication.
-
-All contributions to this project will be released under the CC0 dedication. By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
-got

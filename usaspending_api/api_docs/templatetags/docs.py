@@ -10,26 +10,27 @@ register = template.Library()
 
 @register.simple_tag(takes_context=True)
 def display_docs(context):
-    contents = get_contents_from_markdown(context.get('markdown', None), index=1)
+    contents = get_contents_from_markdown(context.get("markdown", None), index=1)
     return markdown.markdown(contents, extensions=[GithubFlavoredMarkdownExtension()])
 
 
 @register.simple_tag(takes_context=True)
 def display_contents(context):
-    contents = get_contents_from_markdown(context.get('markdown', None))
+    contents = get_contents_from_markdown(context.get("markdown", None))
     return markdown.markdown(contents, extensions=[GithubFlavoredMarkdownExtension()])
 
 
 def get_contents_from_markdown(markdown_file=None, split_string="[//]: # (Begin Content)", index=0):
-    '''
+    """
     Splits the markdown file according to a specified string, and, if the data exists, returns the appropriate
     markdown data.
-    '''
+    """
     contents = ""
     if markdown_file:
         try:
-            full_text = open(os.path.join(settings.BASE_DIR, 'usaspending_api', 'api_docs', 'markdown',
-                                          markdown_file)).read()
+            full_text = open(
+                os.path.join(settings.BASE_DIR, "usaspending_api", "api_docs", "markdown", markdown_file)
+            ).read()
             split = full_text.split(split_string)
             if index < len(split):
                 contents = split[index]

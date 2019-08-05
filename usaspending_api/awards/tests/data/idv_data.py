@@ -38,7 +38,7 @@ def set_up_related_award_objects():
         "recipient_name": "John's Pizza",
         "recipient_unique_id": 456,
         "parent_recipient_unique_id": 123,
-        "business_categories": ['small_business'],
+        "business_categories": ["small_business"],
         "location": Location.objects.get(pk=1),
     }
 

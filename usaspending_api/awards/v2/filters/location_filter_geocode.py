@@ -1,18 +1,12 @@
-from django.conf import settings
 from django.db.models import Q
-from itertools import chain
-from typing import Optional
 
-from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
-ALL_FOREIGN_COUNTIRES = "FOREIGN"
+ALL_FOREIGN_COUNTRIES = "FOREIGN"
 
 
-def geocode_filter_locations(
-    scope: str, values: list, use_matview: bool = False, desired_id_field: str = "award_id"
-) -> Q:
+def geocode_filter_locations(scope: str, values: list, use_matview: bool = False) -> Q:
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -31,36 +25,35 @@ def geocode_filter_locations(
     # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
         country_qs = None
-        if country != ALL_FOREIGN_COUNTIRES:
-            country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
+        if country != ALL_FOREIGN_COUNTRIES:
+            country_qs = Q(**{q_str.format(scope, country_code) + "__exact": country})
         state_qs = Q()
 
-        for state_zip_key, state_values in state_zip.items():
+        for state_zip_key, location_values in state_zip.items():
+
             if state_zip_key == "city":
-                state_inner_qs = create_city_name_queryset(scope, desired_id_field, state_values, country)
-            elif state_zip_key == 'zip':
-                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__in': state_values})
+                state_inner_qs = Q(**{q_str.format(scope, "city_name") + "__in": location_values})
+            elif state_zip_key == "zip":
+                state_inner_qs = Q(**{q_str.format(scope, "zip5") + "__in": location_values})
             else:
-                state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
+                state_inner_qs = Q(**{q_str.format(scope, "state_code") + "__exact": state_zip_key.upper()})
                 county_qs = Q()
                 district_qs = Q()
                 city_qs = Q()
 
-                if state_values['county']:
-                    county_qs = Q(**{q_str.format(scope, 'county_code') + '__in': state_values['county']})
-                if state_values['district']:
-                    district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
-                if state_values["city"]:
-                    city_qs = create_city_name_queryset(
-                        scope, desired_id_field, state_values["city"], country, state_zip_key
-                    )
-                state_inner_qs &= (county_qs | district_qs | city_qs)
+                if location_values["county"]:
+                    county_qs = Q(**{q_str.format(scope, "county_code") + "__in": location_values["county"]})
+                if location_values["district"]:
+                    district_qs = Q(**{q_str.format(scope, "congressional_code") + "__in": location_values["district"]})
+                if location_values["city"]:
+                    city_qs = Q(**{q_str.format(scope, "city_name") + "__in": location_values["city"]})
+                state_inner_qs &= county_qs | district_qs | city_qs
 
             state_qs |= state_inner_qs
         if country_qs:
-            or_queryset |= (country_qs & state_qs)
+            or_queryset |= country_qs & state_qs
         else:
-            or_queryset |= (state_qs)
+            or_queryset |= state_qs
     return or_queryset
 
 
@@ -77,39 +70,46 @@ def create_nested_object(values):
 
     nested_locations = {}
     for v in values:
+        upper_case_dict_values(v)
+        city = v.get("city")
+        country = v.get("country")
+        county = v.get("county")
+        district = v.get("district")
+        state = v.get("state")
+        zip = v.get("zip")
         # First level in location filtering in country
         # All location requests must have a country otherwise there will be a key error
-        if nested_locations.get(v['country']) is None:
-            nested_locations[v['country']] = {}
+        if nested_locations.get(country) is None:
+            nested_locations[country] = {}
 
         # Initialize the list
-        if 'zip' in v and not nested_locations[v['country']].get('zip'):
-            nested_locations[v['country']]['zip'] = []
+        if zip and not nested_locations[country].get("zip"):
+            nested_locations[country]["zip"] = []
 
-        if 'city' in v and not nested_locations[v['country']].get('city'):
-            nested_locations[v['country']]['city'] = []
+        if city and not nested_locations[country].get("city"):
+            nested_locations[country]["city"] = []
 
         # Second level of filtering is zip and state
         # Requests must have a country+zip or country+state combination
-        if 'zip' in v:
+        if zip:
             # Appending zips so we don't overwrite
-            nested_locations[v['country']]['zip'].append(v['zip'])
+            nested_locations[country]["zip"].append(zip)
 
         # If we have a state, add it to the list
-        if 'state' in v and nested_locations[v['country']].get(v['state']) is None:
-            nested_locations[v['country']][v['state']] = {'county': [], 'district': [], 'city': []}
+        if state and nested_locations[country].get(state) is None:
+            nested_locations[country][state] = {"county": [], "district": [], "city": []}
 
         # Based on previous checks, there will always be a state if either of these exist
-        if v.get('county'):
-            nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
+        if county:
+            nested_locations[country][state]["county"].extend(get_fields_list("county", county))
 
-        if v.get('district'):
-            nested_locations[v['country']][v['state']]['district'].extend(get_fields_list('district', v['district']))
+        if district:
+            nested_locations[country][state]["district"].extend(get_fields_list("district", district))
 
-        if 'city' in v and 'state' in v:
-            nested_locations[v['country']][v['state']]['city'].append(v["city"])
-        elif 'city' in v:
-            nested_locations[v['country']]['city'].append(v['city'])
+        if city and state:
+            nested_locations[country][state]["city"].append(city)
+        elif city:
+            nested_locations[country]["city"].append(city)
 
     return nested_locations
 
@@ -117,16 +117,16 @@ def create_nested_object(values):
 def location_error_handling(fields):
     """ Raise the relevant error for location keys. """
     # Request must have country, and can only have 3 fields, and must have state if there is county or district
-    if 'country' not in fields:
-        raise InvalidParameterException('Invalid filter:  Missing necessary location field: country.')
+    if "country" not in fields:
+        raise InvalidParameterException("Invalid filter:  Missing necessary location field: country.")
 
-    if 'state' not in fields and('county' in fields or 'district' in fields):
-        raise InvalidParameterException('Invalid filter:  Missing necessary location field: state.')
+    if "state" not in fields and ("county" in fields or "district" in fields):
+        raise InvalidParameterException("Invalid filter:  Missing necessary location field: state.")
 
 
 def get_fields_list(scope, field_value):
     """ List of values to search for; `field_value`, plus possibly variants on it """
-    if scope in ['congressional_code', 'county_code']:
+    if scope in ["congressional_code", "county_code"]:
         try:
             # Congressional and county codes are not uniform and contain multiple variables
             # In the location table Ex congressional code (01): '01', '1.0', '1'
@@ -144,153 +144,12 @@ def return_query_string(use_matview: bool) -> tuple:
     if use_matview:  # de-normalized
         # Queries going through the references_location table will not require a join
         # Example "pop__county_code"
-        q_str = '{0}_{1}'
-        country_code_col = 'country_code'  # Matviews use country_code ex: pop_country_code
+        q_str = "{0}_{1}"
+        country_code_col = "country_code"  # Matviews use country_code ex: pop_country_code
     else:
         # Queries going through the references_location table will require a join in the filter
         # Example "place_of_performance__county_code"
-        q_str = '{0}__{1}'
-        country_code_col = 'location_country_code'  # References_location table uses the col location_country_code
+        q_str = "{0}__{1}"
+        country_code_col = "location_country_code"  # References_location table uses the col location_country_code
 
     return q_str, country_code_col
-
-
-def create_city_name_queryset(
-    scope: str, desired_id_field: str, list_of_cities: list, country_code: str, state_code: Optional[str] = None
-) -> Q:
-    """
-    Given a list of city names and the scope, return a django queryset.
-    scope = "pop" or "recipient_location"
-    list_of_city_names is a list of strings
-    country_code is the country code to limit the query and results from Elasticsearch
-    state_code (optional) is the state code if the search should be limited to that state
-    """
-    matching_awards = set(
-        chain(*[get_record_ids_by_city(
-            scope, desired_id_field, city, country_code, state_code) for city in list_of_cities]
-        )
-    )
-    result_queryset = Q(pk=None)  # If there are no city results in Elasticsearch, use this always falsey Q filter
-
-    if matching_awards:
-        result_queryset = Q(**{desired_id_field + "__in": matching_awards})
-    return result_queryset
-
-
-def build_es_city_query(query: object, bool_should: bool,
-                        scope: str, country_code: str,
-                        state_code: Optional[str] = None):
-    if country_code != "USA":
-        # A non-USA selected country
-        if country_code != ALL_FOREIGN_COUNTIRES:
-            if bool_should:
-                query["bool"]["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
-            else:
-                query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country_code}})
-        # Create a "Should Not" query with a nested bool, to get everything non-USA
-        if bool_should:
-            query["bool"]["should"] = [
-              {
-                "bool": {
-                  "must": {
-                    "exists": {
-                      "field": "{}_country_code".format(scope)
-                    }
-                  },
-                }
-              }
-            ]
-            query["bool"]["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                                              {"match_phrase": {
-                                                                "{}_country_code".format(scope): "UNITED STATES"}}]
-            query["bool"]["minimum_should_match"] = 1
-        else:
-            query["should"] = [
-              {
-                "bool": {
-                  "must": {
-                    "exists": {
-                      "field": "{}_country_code".format(scope)
-                    }
-                  },
-                }
-              }
-            ]
-            query["should"][0]["bool"]["must_not"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                                      {"match_phrase": {
-                                                         "{}_country_code".format(scope): "UNITED STATES"}}]
-            query["minimum_should_match"] = 1
-    else:
-        # USA is selected as country
-        if bool_should:
-            query["bool"]["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                                       {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
-            query["bool"]["should"].append({
-                  "bool": {
-                    "must_not": {
-                      "exists": {
-                        "field": "{}_country_code".format(scope)
-                      }
-                    },
-                  }
-                })
-            query["bool"]["minimum_should_match"] = 1
-        else:
-            query["should"] = [{"match": {"{}_country_code".format(scope): "USA"}},
-                               {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}}]
-            query["should"].append({
-                  "bool": {
-                    "must_not": {
-                      "exists": {
-                        "field": "{}_country_code".format(scope)
-                      }
-                    },
-                  }
-                })
-            query["minimum_should_match"] = 1
-        # null country codes are being considered as USA country codes
-
-    if state_code:
-        # If a state was provided, include it in the filter to limit hits
-        query["bool"]["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state_code).upper()}})
-
-    return query
-
-
-def get_record_ids_by_city(
-    scope: str, desired_id_field: str, city: str, country_code: str, state_code: Optional[str] = None
-) -> list:
-    """
-    Craft an elasticsearch query to return award ids by city or an empty list
-    if there were no matches.
-    """
-    # Search using a "filter" instead of a "query" to leverage ES caching
-    query = {
-        "bool": {
-            "must": [
-                {"match": {"{}_city_name.keyword".format(scope): es_sanitize(city).upper()}},
-            ]
-        }
-    }
-    query = build_es_city_query(query, True, scope, country_code, state_code)
-    search_body = {
-        "_source": [desired_id_field],
-        "size": 0,
-        "query": query,
-        "aggs": {"id_groups": {"terms": {"field": desired_id_field, "size": 50000}}},
-    }
-
-    return elasticsearch_results(search_body)
-
-
-def elasticsearch_results(body: dict) -> list:
-    """
-    Run provided query and return a list of award ids or an empty list if there
-    were no hits.
-    """
-    hits = es_client_query(body=body, index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), retries=5)
-
-    if hits and hits["hits"]["total"]:
-        return [result["key"] for result in hits["aggregations"]["id_groups"]["buckets"]]
-    else:
-        return []

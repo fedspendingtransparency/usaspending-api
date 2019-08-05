@@ -17,7 +17,8 @@ from usaspending_api.broker.helpers.last_load_date import get_last_load_date, up
 from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import (
     update_awards,
     update_contract_awards,
@@ -205,6 +206,21 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5",
         }
 
+        fpds_normalized_field_map = {"type": "contract_award_type", "description": "award_description"}
+
+        fpds_field_map = {
+            "officer_1_name": "high_comp_officer1_full_na",
+            "officer_1_amount": "high_comp_officer1_amount",
+            "officer_2_name": "high_comp_officer2_full_na",
+            "officer_2_amount": "high_comp_officer2_amount",
+            "officer_3_name": "high_comp_officer3_full_na",
+            "officer_3_amount": "high_comp_officer3_amount",
+            "officer_4_name": "high_comp_officer4_full_na",
+            "officer_4_amount": "high_comp_officer4_amount",
+            "officer_5_name": "high_comp_officer5_full_na",
+            "officer_5_amount": "high_comp_officer5_amount",
+        }
+
         for index, row in enumerate(to_insert, 1):
             upper_case_dict_values(row)
 
@@ -232,22 +248,9 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-            # Generate the unique Award ID
-            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            generated_unique_id = (
-                "CONT_AW_"
-                + (row["agency_id"] if row["agency_id"] else "-NONE-")
-                + "_"
-                + (row["referenced_idv_agency_iden"] if row["referenced_idv_agency_iden"] else "-NONE-")
-                + "_"
-                + (row["piid"] if row["piid"] else "-NONE-")
-                + "_"
-                + (row["parent_award_id"] if row["parent_award_id"] else "-NONE-")
-            )
-
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(
-                generated_unique_award_id=generated_unique_id, piid=row["piid"]
+                generated_unique_award_id=row["unique_award_key"], piid=row["piid"]
             )
             award.parent_award_piid = row.get("parent_award_id")
             award.save()
@@ -280,23 +283,26 @@ class Command(BaseCommand):
                 "action_date": format_date(row["action_date"]),
                 "last_modified_date": last_mod_date,
                 "transaction_unique_id": row["detached_award_proc_unique"],
-                "generated_unique_award_id": generated_unique_id,
                 "is_fpds": True,
                 "type": award_type,
                 "type_description": award_type_desc,
             }
 
-            contract_field_map = {"description": "award_description"}
-
             transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
-                field_map=contract_field_map,
+                field_map=fpds_normalized_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True,
             )
 
-            contract_instance = load_data_into_model(TransactionFPDS(), row, as_dict=True)  # thrown away
+            contract_instance = load_data_into_model(
+                # TransactionFPDS() is "thrown" away
+                TransactionFPDS(),
+                row,
+                field_map=fpds_field_map,
+                as_dict=True,
+            )
 
             detached_award_proc_unique = contract_instance["detached_award_proc_unique"]
             unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
@@ -325,31 +331,7 @@ class Command(BaseCommand):
             legal_entity.transaction_unique_id = detached_award_proc_unique
             legal_entity.save()
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--date",
-            dest="date",
-            nargs="+",
-            type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
-        )
-
-    @transaction.atomic
-    def handle(self, *args, **options):
-        logger.info("==== Starting FPDS nightly data load ====")
-
-        if options.get("date"):
-            date = options.get("date")[0]
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-        else:
-            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
-            date = get_last_load_date("fpds", default=default_last_load_date).date()
-        processing_start_datetime = datetime.now(timezone.utc)
-
-        logger.info("Processing data for FPDS starting from %s" % date)
-
-        with timer("retrieval of deleted FPDS IDs", logger.info):
-            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+    def perform_load(self, ids_to_delete, ids_to_insert):
 
         if len(ids_to_delete) > 0:
             with timer("deletion of all stale FPDS data", logger.info):
@@ -357,13 +339,10 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to delete at this juncture")
 
-        with timer("retrieval of new/modified FPDS data ID list", logger.info):
-            total_insert = self.get_fpds_transaction_ids(date=date)
-
-        if len(total_insert) > 0:
+        if len(ids_to_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                self.insert_all_new_fpds(total_insert)
+                self.insert_all_new_fpds(ids_to_insert)
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
@@ -383,7 +362,60 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
 
+    def nightly_loader(self, start_date):
+
+        logger.info("==== Starting FPDS nightly data load ====")
+
+        if start_date:
+            date = start_date
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        else:
+            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).date()
+        processing_start_datetime = datetime.now(timezone.utc)
+
+        logger.info("Processing data for FPDS starting from %s" % date)
+
+        with timer("retrieval of new/modified FPDS data ID list", logger.info):
+            ids_to_insert = self.get_fpds_transaction_ids(date=date)
+
+        with timer("retrieval of deleted FPDS IDs", logger.info):
+            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+
+        self.perform_load(ids_to_delete, ids_to_insert)
+
         # Update the date for the last time the data load was run
         update_last_load_date("fpds", processing_start_datetime)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
+
+    def load_specific_transactions(self, detached_award_procurement_ids):
+        logger.info("==== Starting FPDS (re)load of specific transactions ====")
+
+        self.perform_load(detached_award_procurement_ids, detached_award_procurement_ids)
+
+        logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
+
+    def add_arguments(self, parser):
+        mutually_exclusive_group = parser.add_mutually_exclusive_group()
+
+        mutually_exclusive_group.add_argument(
+            "--date",
+            dest="date",
+            type=str,
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
+        )
+
+        mutually_exclusive_group.add_argument(
+            "--detached-award-procurement-ids",
+            nargs="+",
+            type=int,
+            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+        )
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        if options["detached_award_procurement_ids"] is not None:
+            self.load_specific_transactions(options["detached_award_procurement_ids"])
+        else:
+            self.nightly_loader(options["date"])

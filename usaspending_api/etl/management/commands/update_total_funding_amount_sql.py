@@ -10,26 +10,29 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
 
         with connection.cursor() as curs:
             start = datetime.now()
-            logger.info('Running updates on transaction_normalized')
+            logger.info("Running updates on transaction_normalized")
             curs.execute(self.TRANSACTION_NORMALIZED_TFA)
-            logger.info('Finished updates on transaction_normalized in %s seconds (%s rows updated)' %
-                        (str(datetime.now() - start), curs.rowcount))
+            logger.info(
+                "Finished updates on transaction_normalized in %s seconds (%s rows updated)"
+                % (str(datetime.now() - start), curs.rowcount)
+            )
 
             start = datetime.now()
-            logger.info('Running updates on awards')
+            logger.info("Running updates on awards")
             curs.execute(self.AWARDS_TFA)
-            logger.info('Finished updates on awards in %s seconds (%s rows updated)' %
-                        (str(datetime.now() - start), curs.rowcount))
+            logger.info(
+                "Finished updates on awards in %s seconds (%s rows updated)"
+                % (str(datetime.now() - start), curs.rowcount)
+            )
 
     TRANSACTION_NORMALIZED_TFA = """
         UPDATE transaction_normalized AS txn

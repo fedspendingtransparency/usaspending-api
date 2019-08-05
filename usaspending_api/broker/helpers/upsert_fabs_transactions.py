@@ -10,7 +10,8 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer
+from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
@@ -92,22 +93,41 @@ def insert_new_fabs(to_insert):
         "foreign_city_name": "legal_entity_foreign_city",
     }
 
+    fabs_normalized_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+        "funding_amount": "total_funding_amount",
+    }
+
+    fabs_field_map = {
+        "officer_1_name": "high_comp_officer1_full_na",
+        "officer_1_amount": "high_comp_officer1_amount",
+        "officer_2_name": "high_comp_officer2_full_na",
+        "officer_2_amount": "high_comp_officer2_amount",
+        "officer_3_name": "high_comp_officer3_full_na",
+        "officer_3_amount": "high_comp_officer3_amount",
+        "officer_4_name": "high_comp_officer4_full_na",
+        "officer_4_amount": "high_comp_officer4_amount",
+        "officer_5_name": "high_comp_officer5_full_na",
+        "officer_5_amount": "high_comp_officer5_amount",
+    }
+
     update_award_ids = []
     for row in to_insert:
         upper_case_dict_values(row)
 
         # Create new LegalEntityLocation and LegalEntity from the row data
         legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-        recipient_name = row['awardee_or_recipient_legal']
+        recipient_name = row["awardee_or_recipient_legal"]
         legal_entity = LegalEntity.objects.create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
+            recipient_unique_id=row["awardee_or_recipient_uniqu"],
             recipient_name=recipient_name if recipient_name is not None else "",
-            parent_recipient_unique_id=row['ultimate_parent_unique_ide'],
+            parent_recipient_unique_id=row["ultimate_parent_unique_ide"],
         )
         legal_entity_value_map = {
             "location": legal_entity_location,
-            "business_categories": get_business_categories(row=row, data_type='fabs'),
-            "business_types_description": row['business_types_desc'],
+            "business_categories": get_business_categories(row=row, data_type="fabs"),
+            "business_types_description": row["business_types_desc"],
         }
         legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -118,31 +138,12 @@ def insert_new_fabs(to_insert):
         awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
         funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-        # Generate the unique Award ID
-        # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
-
-        # this will raise an exception if the cast to an int fails, that's ok since we don't want to process
-        # non-numeric record type values
-        record_type_int = int(row['record_type'])
-        if record_type_int == 1:
-            uri = row['uri'] if row['uri'] else '-NONE-'
-            fain = '-NONE-'
-        elif record_type_int in (2, 3):
-            uri = '-NONE-'
-            fain = row['fain'] if row['fain'] else '-NONE-'
-        else:
-            msg = "Invalid record type encountered for the following afa_generated_unique record: {}"
-            raise Exception(msg.format(row['afa_generated_unique']))
-
-        astac = row["awarding_sub_tier_agency_c"] if row["awarding_sub_tier_agency_c"] else "-NONE-"
-        generated_unique_id = "ASST_AW_{}_{}_{}".format(astac, fain, uri)
-
         # Create the summary Award
         (created, award) = Award.get_or_create_summary_award(
-            generated_unique_award_id=generated_unique_id,
-            fain=row['fain'],
-            uri=row['uri'],
-            record_type=row['record_type'],
+            generated_unique_award_id=row["unique_award_key"],
+            fain=row["fain"],
+            uri=row["uri"],
+            record_type=row["record_type"],
         )
         award.save()
 
@@ -150,46 +151,42 @@ def insert_new_fabs(to_insert):
         update_award_ids.append(award.id)
 
         try:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S.%f").date()
         except ValueError:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S").date()
+
         parent_txn_value_map = {
             "award": award,
             "awarding_agency": awarding_agency,
             "funding_agency": funding_agency,
             "recipient": legal_entity,
             "place_of_performance": pop_location,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            "action_date": format_date(row['action_date']),
+            "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
+            "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
+            "action_date": format_date(row["action_date"]),
             "last_modified_date": last_mod_date,
-            "type_description": row['assistance_type_desc'],
-            "transaction_unique_id": row['afa_generated_unique'],
-            "generated_unique_award_id": generated_unique_id,
-        }
-
-        fad_field_map = {
-            "type": "assistance_type",
-            "description": "award_description",
-            "funding_amount": "total_funding_amount",
+            "type_description": row["assistance_type_desc"],
+            "transaction_unique_id": row["afa_generated_unique"],
         }
 
         transaction_normalized_dict = load_data_into_model(
             TransactionNormalized(),  # thrown away
             row,
-            field_map=fad_field_map,
+            field_map=fabs_normalized_field_map,
             value_map=parent_txn_value_map,
             as_dict=True,
         )
 
-        financial_assistance_data = load_data_into_model(TransactionFABS(), row, as_dict=True)  # thrown away
+        financial_assistance_data = load_data_into_model(
+            TransactionFABS(), row, field_map=fabs_field_map, as_dict=True  # thrown away
+        )
 
         # Hack to cut back on the number of warnings dumped to the log.
-        financial_assistance_data['updated_at'] = cast_datetime_to_utc(financial_assistance_data['updated_at'])
-        financial_assistance_data['created_at'] = cast_datetime_to_utc(financial_assistance_data['created_at'])
-        financial_assistance_data['modified_at'] = cast_datetime_to_utc(financial_assistance_data['modified_at'])
+        financial_assistance_data["updated_at"] = cast_datetime_to_utc(financial_assistance_data["updated_at"])
+        financial_assistance_data["created_at"] = cast_datetime_to_utc(financial_assistance_data["created_at"])
+        financial_assistance_data["modified_at"] = cast_datetime_to_utc(financial_assistance_data["modified_at"])
 
-        afa_generated_unique = financial_assistance_data['afa_generated_unique']
+        afa_generated_unique = financial_assistance_data["afa_generated_unique"]
         unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
         if unique_fabs.first():

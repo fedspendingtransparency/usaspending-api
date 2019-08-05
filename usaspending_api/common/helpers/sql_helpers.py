@@ -1,129 +1,93 @@
-import datetime
 import logging
 import os
 
 from collections import OrderedDict
 from django.conf import settings
 from django.db import connections, router
-from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Func, IntegerField
 from psycopg2.sql import Composable, Identifier, SQL
 
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
-TYPES_TO_QUOTE_IN_SQL = (str, datetime.date)
+
+def build_dsn_string(db_settings):
+    """
+    This function parses the Django database configuration in settings.py and
+    returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
+    a PostgreSQL database
+    """
+    return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db_settings)
 
 
 def get_database_dsn_string():
-    """
-        This function parses the Django database configuration in settings.py and
-        returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
-        a PostgreSQL database
-        Will return a different database configuration for local vs deployed.
-    """
-
     if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
-        db = settings.DATABASES["db_source"]
+        return build_dsn_string(settings.DATABASES["db_source"])
     elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
-        db = settings.DATABASES["default"]
+        return build_dsn_string(settings.DATABASES["default"])
     else:
         raise Exception("No valid database connection is configured")
 
-    return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db)
+
+def get_broker_dsn_string():
+    if "data_broker" in settings.DATABASES:  # Primary DB connection in a deployed environment
+        return build_dsn_string(settings.DATABASES["data_broker"])
+    else:
+        raise Exception("No valid Broker database connection is configured")
 
 
 def read_sql_file(file_path):
     # Read in SQL file and extract commands into a list
     _, file_extension = os.path.splitext(file_path)
 
-    if file_extension != '.sql':
+    if file_extension != ".sql":
         raise InvalidParameterException("Invalid file provided. A file with extension '.sql' is required.")
 
     # Open and read the file as a single buffer
-    with open(file_path, 'r') as fd:
+    with open(file_path, "r") as fd:
         sql_file = fd.read()
 
     # all SQL commands (split on ';') and trimmed for whitespaces
-    return [command.strip() for command in sql_file.split(';') if command]
+    return [command.strip() for command in sql_file.split(";") if command]
 
 
-def generate_raw_quoted_query(queryset):
-    """
-    Generates the raw sql from a queryset with quotable types quoted.
-    This function provided benefit since the Django queryset.query doesn't quote
-        some types such as dates and strings. If Django is updated to fix this,
-        please use that instead.
-
-    Note: To add new python data types that should be quoted in queryset.query output,
-        add them to TYPES_TO_QUOTE_IN_SQL global
-    """
-    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
-    str_fix_params = []
-    for param in params:
-        if isinstance(param, TYPES_TO_QUOTE_IN_SQL):
-            # single quotes are escaped with two '' for strings in sql
-            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
-            str_fix_param = '\'{}\''.format(param)
-        elif isinstance(param, list):
-            str_fix_param = 'ARRAY{}'.format(param)
-        else:
-            str_fix_param = param
-        str_fix_params.append(str_fix_param)
-    return sql % tuple(str_fix_params)
-
-
-class FiscalMonth(Func):
-    function = "EXTRACT"
-    template = "%(function)s(MONTH from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
-
-
-class FiscalQuarter(Func):
-    function = "EXTRACT"
-    template = "%(function)s(QUARTER from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
-
-
-class FiscalYear(Func):
-    function = "EXTRACT"
-    template = "%(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months')"
-    output_field = IntegerField()
-
-
-def _build_order_by_column(column, order, null):
+def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
     """
     Build a single column of the order by clause.  This takes one column and
     turns it into something like:
 
-        my_column asc nulls first
+        "my_table"."my_column" asc nulls first
 
+    sort_column - The column name in question.  Can be qualified (e.g. "awards.id").
+    sort_order  - "asc" for ascending, "desc" for descending, None for default
+                  database ordering.
+    sort_null   - "first" if you want to see nulls first in the results, "last"
+                  to see nulls last, or None for the default database behavior.
+
+    Returns a string with the freshly built order by.
     """
-    bits = []
-
-    if type(column) is not str:
-        raise ValueError('Provided sort_column is not a string')
+    if type(sort_column) is not str:
+        raise ValueError("Provided sort_column is not a string")
 
     # Split to handle column qualifiers (awards.id => "awards"."id").
-    bits.append(SQL('.').join([Identifier(c) for c in column.split('.')]))
+    bits = [SQL(".").join([Identifier(c) for c in sort_column.split(".")])]
 
-    if order is not None:
-        if order not in ('asc', 'desc'):
-            raise ValueError('sort_orders must be either "asc" or "desc"')
-        bits.append(SQL(order))
+    if sort_order is not None:
+        if sort_order not in ("asc", "desc"):
+            raise ValueError('sort_order must be either "asc" or "desc"')
+        bits.append(SQL(sort_order))
 
-    if null is not None:
-        if null not in ('first', 'last'):
-            raise ValueError('nulls must be either "first" or "last"')
-        bits.append(SQL('nulls %s' % null))
+    if sort_null is not None:
+        if sort_null not in ("first", "last"):
+            raise ValueError('sort_null must be either "first" or "last"')
+        bits.append(SQL("nulls %s" % sort_null))
 
-    return SQL(' ').join(bits)
+    return SQL(" ").join(bits)
 
 
-def build_composable_order_by(sort_columns, sort_orders=None, nulls=None):
+def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
     """
     Given columns, sort orders, and null ordering directives, build a SQL
     "order by" clause as a Composable object.
@@ -138,7 +102,7 @@ def build_composable_order_by(sort_columns, sort_orders=None, nulls=None):
                    occur.  If one is supplied, every sort column will be sorted
                    in the same order.  If more than one sort order is supplied,
                    the number must match the number of sort columns provided.
-    nulls        - Either None, a single NULL handling directive as a string,
+    sort_nulls   - Either None, a single NULL handling directive as a string,
                    or an iterable of NULL handling directive strings ("first"
                    or "last").  If none are supplied, NULL handling will not be
                    incorporated into the SQL statement causing default database
@@ -152,7 +116,7 @@ def build_composable_order_by(sort_columns, sort_orders=None, nulls=None):
     """
     # Shortcut everything if there's nothing to do.
     if not sort_columns:
-        return SQL('')
+        return SQL("")
 
     # To simplify processing, make all of our parameters iterables of the same length.
     if type(sort_columns) is str:
@@ -163,24 +127,95 @@ def build_composable_order_by(sort_columns, sort_orders=None, nulls=None):
     if type(sort_orders) in (str, type(None)):
         sort_orders = [sort_orders] * column_count
 
-    if type(nulls) in (str, type(None)):
-        nulls = [nulls] * column_count
+    if type(sort_nulls) in (str, type(None)):
+        sort_nulls = [sort_nulls] * column_count
 
     if len(sort_orders) != column_count:
         raise ValueError(
-            'Number of sort_orders (%s) does not match number of sort_columns (%s)' % (len(sort_orders), column_count)
+            "Number of sort_orders (%s) does not match number of sort_columns (%s)" % (len(sort_orders), column_count)
         )
 
-    if len(nulls) != column_count:
+    if len(sort_nulls) != column_count:
         raise ValueError(
-            'Number of nulls (%s) does not match number of sort_columns (%s)' % (len(nulls), column_count)
+            "Number of sort_nulls (%s) does not match number of sort_columns (%s)" % (len(sort_nulls), column_count)
         )
 
     order_bys = []
-    for column, order, null in zip(sort_columns, sort_orders, nulls):
+    for column, order, null in zip(sort_columns, sort_orders, sort_nulls):
         order_bys.append(_build_order_by_column(column, order, null))
 
-    return SQL('order by ') + SQL(', ').join(order_bys)
+    return SQL("order by ") + SQL(", ").join(order_bys)
+
+
+def convert_composable_query_to_string(sql, model=Award, cursor=None):
+    """
+    A composable query is one built using psycopg2 Identifier, Literal, and SQL
+    helper objects.  While Django itself seems to have no problem understanding
+    composable queries, the django-debug-toolbar chokes on them so we need to
+    convert them to string queries before running them.
+
+    sql    - Can be either a sql string statement or a psycopg2 Composable
+             object (Identifier, Literal, SQL, etc).
+    model  - A Django model that represents a database table germaine to your
+             query.  If one is not supplied, Award will be used since it is
+             fairly central to the database as a whole.
+    cursor - If you happen to have a database cursor, feel free to pass that in.
+
+    """
+    if isinstance(sql, Composable):
+        if cursor is None:
+            connection = get_connection(model)
+            with connection.cursor() as _cursor:
+                return sql.as_string(_cursor.connection)
+        else:
+            return sql.as_string(cursor.connection)
+    return sql
+
+
+def execute_update_sql(sql, model=Award):
+    """
+    Executes a sql query against a database that perform some sort of update
+    (INSERT, UPDATE, etc).
+
+    sql     - Can be either a sql string statement or a psycopg2 Composable
+              object (Identifier, Literal, SQL, etc).
+    model   - A Django model that represents a database table germaine to your
+              query.  If one is not supplied, Award will be used since it is
+              fairly central to the database as a whole.
+
+    Returns a CLOSED cursor.  Can be used for row counts and what not, but is
+    no longer operational.
+    """
+    connection = get_connection(model, False)
+    with connection.cursor() as cursor:
+        # Because django-debug-toolbar does not understand Composable queries,
+        # we need to convert the query to a string before executing it.
+        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
+        return cursor
+
+
+def execute_fetchall(sql, model=Award, fetcher=None):
+    """
+    Executes a read only sql query against a database.
+
+    sql     - Can be either a sql string statement or a psycopg2 Composable
+              object (Identifier, Literal, SQL, etc).
+    model   - A Django model that represents a database table germaine to your
+              query.  If one is not supplied, Award will be used since it is
+              fairly central to the database as a whole.
+    fetcher - A function to format fetchall results in a specific way.
+
+    Returns query results in the format dictated by the fetcher or a list of
+    tuples if no fetcher is supplied.
+    """
+    connection = get_connection(model)
+    with connection.cursor() as cursor:
+        # Because django-debug-toolbar does not understand Composable queries,
+        # we need to convert the query to a string before executing it.
+        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
+        if fetcher is not None:
+            return fetcher(cursor)
+        return cursor.fetchall()
 
 
 def execute_sql_to_ordered_dictionary(sql, model=Award):
@@ -193,30 +228,9 @@ def execute_sql_to_ordered_dictionary(sql, model=Award):
             query.  If one is not supplied, Award will be used since it is
             fairly central to the database as a whole.
 
-    !! IMPORTANT !! IMPORTANT !! IMPORTANT !! IMPORTANT !! IMPORTANT !!
-
-    This function will read all query results into memory before returning
-    them.  Only use this function if you are POSITIVE your query will not
-    consume all available resources on the server.
-
-    Additionally, this function assumes a single result from the cursor.  If
-    running multiple queries in a single statement, please do not use this
-    function.
-
-    !! END IMPORTANT !! END IMPORTANT !! END IMPORTANT !! END IMPORTANT !!
-
     Returns query results as a list of ordered dictionaries.
     """
-    connection = get_connection(model)
-    with connection.cursor() as cursor:
-        # Because django-debug-toolbar does not understand Composable queries,
-        # we need to convert the query to a string before executing it.
-        if isinstance(sql, Composable):
-            _sql = sql.as_string(cursor.connection)
-        else:
-            _sql = sql
-        cursor.execute(_sql)
-        return fetchall_to_ordered_dictionary(cursor)
+    return execute_fetchall(sql, model, fetchall_to_ordered_dictionary)
 
 
 def fetchall_to_ordered_dictionary(cursor):
