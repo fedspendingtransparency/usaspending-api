@@ -7,6 +7,7 @@ from usaspending_api.common.helpers.orm_helpers import FiscalYear
 def universal_transaction_matview_annotations():
     federal_account_query_path = "transaction__award__financial_set__treasury_account__federal_account"
     annotation_fields = {
+        "action_date_fiscal_year": FiscalYear("action_date"),
         "federal_accounts_funding_this_award": StringAgg(
             Concat(
                 "{}__agency_identifier".format(federal_account_query_path),
@@ -15,8 +16,7 @@ def universal_transaction_matview_annotations():
             ),
             ";",
             distinct=True,
-        ),
-        "action_date_fiscal_year": FiscalYear("action_date")
+        )
     }
     return annotation_fields
 
