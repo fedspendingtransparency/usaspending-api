@@ -3,7 +3,7 @@
   "refresh": true,
   "matview_sql": [
     "select",
-    "    min(treasury_account_identifier) tas_autocomplete_id,",
+    "    min(taa.treasury_account_identifier) tas_autocomplete_id,",
     "    taa.allocation_transfer_agency_id,",
     "    taa.agency_id,",
     "    taa.beginning_period_of_availability,",
