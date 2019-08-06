@@ -18,7 +18,8 @@ from usaspending_api.awards.v2.lookups.lookups import (
     grant_subaward_mapping,
     idv_type_mapping,
     assistance_type_mapping,
-    subcontracts_mapping
+    subcontracts_mapping,
+    direct_payment_type_mapping
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
     award_contracts_mapping,
@@ -233,35 +234,34 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             queryset, model = spending_by_award_count(filters)
 
         if subawards:
-            queryset = queryset.values("award_type").annotate(category_count=Count("subaward_id"))
+            queryset = queryset.values("prime_award_type").annotate(category_count=Count("subaward_id"))
         elif model == "SummaryAwardView":
-            queryset = queryset.values("category").annotate(category_count=Sum("counts"))
+            queryset = queryset.values("type").annotate(category_count=Sum("counts"))
         else:
-            queryset = queryset.values("category").annotate(category_count=Count("category"))
-
-        categories = (
-            {
-                "contract": "contracts",
-                "idv": "idvs",
-                "grant": "grants",
-                "direct payment": "direct_payments",
-                "loans": "loans",
-                "other": "other",
-            }
-            if not subawards
-            else {"procurement": "subcontracts", "grant": "subgrants"}
-        )
-
-        category_name = "category" if not subawards else "award_type"
+            queryset = queryset.values("type").annotate(category_count=Count("category"))
 
         # DB hit here
         for award in queryset:
-            if award[category_name] is None:
-                result_key = "other" if not subawards else "subcontracts"
-            elif award[category_name] not in categories.keys():
-                result_key = "other"
+            if subawards:
+                if award["prime_award_type"] in assistance_type_mapping.keys():
+                    result_key = "subgrants"
+                else:
+                    result_key = "subcontracts"
             else:
-                result_key = categories[award[category_name]]
+                if award["type"] in contract_type_mapping.keys():
+                    result_key = "contracts"
+                elif award["type"] in idv_type_mapping.keys():
+                    result_key = "idvs"
+                elif award["type"] in grant_type_mapping.keys():
+                    result_key = "grants"
+                elif award["type"] in direct_payment_type_mapping.keys():
+                    result_key = "direct_payments"
+                elif award["type"] in contract_type_mapping.keys():
+                    result_key = "contracts"
+                elif award["type"] in loan_type_mapping.keys():
+                    result_key = "loans"
+                else:
+                    result_key = "other"
 
             results[result_key] += award["category_count"]
 
