@@ -25,7 +25,7 @@
     "    taa.main_account_code,",
     "    taa.sub_account_code",
     "order by",
-    "    taa.agency_id, taa.main_account_code"
+    "    taa.main_account_code, taa.agency_id"
   ],
   "indexes": [
     {
