@@ -427,9 +427,34 @@ class BudgetAuthority(models.Model):
         unique_together = (("agency_identifier", "fr_entity_code", "year"),)
 
 
-class TASAwardMatview(models.Model):
+class TASAutocompleteMatview(models.Model):
+    """
+    Supports TAS autocomplete.  For performance reasons, pre-filters the TAS
+    codes/numbers/symbols/whatever that can be linked to File D data.  Very
+    closely related to TASSearchMatview, but does not link to the actual File D
+    data (the difference between thousands of rows and millions).
+    """
+    tas_autocomplete_id = models.IntegerField(primary_key=True)
+    allocation_transfer_agency_id = models.TextField(null=True)
+    agency_id = models.TextField()
+    beginning_period_of_availability = models.TextField(null=True)
+    ending_period_of_availability = models.TextField(null=True)
+    availability_type_code = models.TextField(null=True)
+    main_account_code = models.TextField()
+    sub_account_code = models.TextField(null=True)
 
-    tas_award_id = models.UUIDField(primary_key=True)
+    class Meta:
+
+        db_table = "tas_autocomplete_matview"
+        managed = False
+
+
+class TASSearchMatview(models.Model):
+    """
+    Supports TAS search.  Links TASes to anything with an award id.  Is
+    filtered in the materialized view to only include TAS with File D data.
+    """
+    tas_search_id = models.IntegerField(primary_key=True)
     allocation_transfer_agency_id = models.TextField(null=True)
     agency_id = models.TextField()
     beginning_period_of_availability = models.TextField(null=True)
@@ -441,5 +466,5 @@ class TASAwardMatview(models.Model):
 
     class Meta:
 
-        db_table = "tas_award_matview"
+        db_table = "tas_search_matview"
         managed = False
