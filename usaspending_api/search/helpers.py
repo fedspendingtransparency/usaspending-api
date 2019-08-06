@@ -1,6 +1,6 @@
 from django.db.models import Q
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.accounts.models import TASAwardMatview
+from usaspending_api.accounts.models import TASSearchMatview
 from usaspending_api.common.helpers.orm_helpers import generate_where_clause
 
 
@@ -12,7 +12,7 @@ def build_tas_codes_filter(queryset, model, value):
     that should give us a better query plan.
     """
 
-    # Build the filtering for the tas_award_matview.
+    # Build the filtering for the tas_search_matview.
     or_queryset = Q()
     for tas in value:
         or_queryset |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas.items()})
@@ -21,11 +21,11 @@ def build_tas_codes_filter(queryset, model, value):
         # Now that we've built the actual filter, let's turn it into SQL that we
         # can provide to the queryset.extra method.  We do this by converting the
         # queryset to raw SQL.
-        where_sql, where_params = generate_where_clause(TASAwardMatview.objects.filter(or_queryset))
+        where_sql, where_params = generate_where_clause(TASSearchMatview.objects.filter(or_queryset))
         return queryset.extra(
-            tables=[TASAwardMatview._meta.db_table],
+            tables=[TASSearchMatview._meta.db_table],
             where=[
-                '"{}".award_id = "{}".award_id'.format(TASAwardMatview._meta.db_table, model._meta.db_table),
+                '"{}".award_id = "{}".award_id'.format(TASSearchMatview._meta.db_table, model._meta.db_table),
                 where_sql,
             ],
             params=where_params
