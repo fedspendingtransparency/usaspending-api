@@ -345,13 +345,13 @@ def apply_annotations_to_sql(raw_query, aliases):
     query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|\(SELECT|FROM)", raw_query)[0]
+    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|\(SELECT|FROM)", raw_query)[0]
     just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(",")]
 
     # Create a list from the derived values between SELECT and FROM
     remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall(r"(CASE|CONCAT|SUM|COALESCE|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects)
+    deriv_str_lookup = re.findall(r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects)
     deriv_dict = {}
     for str_match in deriv_str_lookup:
         # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list

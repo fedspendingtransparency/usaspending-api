@@ -5,6 +5,9 @@ Sets up mappings from column names used in downloads to the query paths used to 
 
 Not in use while we pull CSV data from the non-historical tables. Until we switch to pulling CSV downloads from the
 historical tables TransactionFPDS and TransactionFABS, import download_column_lookups.py instead.
+
+NOTE: To allow for annotations to be used on download a pair of ("<alias>", None) is used so that a placeholder
+for the column is made, but it can be removed to avoid being used as a query path.
 """
 """
 Code to generate these from spreadsheets:
@@ -13,6 +16,7 @@ tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financ
 d2_columns.csv
 
 """
+
 
 query_paths = {
     "award": {
@@ -50,6 +54,7 @@ query_paths = {
                 ("funding_sub_agency_name", "award__latest_transaction__contract_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "award__latest_transaction__contract_data__funding_office_code"),
                 ("funding_office_name", "award__latest_transaction__contract_data__funding_office_name"),
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "award__latest_transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "award__latest_transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "award__latest_transaction__contract_data__sam_exception"),
@@ -539,6 +544,16 @@ query_paths = {
                     "sba_certified_8a_joint_venture",
                     "award__latest_transaction__contract_data__sba_certified_8_a_joint_ve",
                 ),
+                ("highly_compensated_officer_1_name", "award__latest_transaction__contract_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "award__latest_transaction__contract_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "award__latest_transaction__contract_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "award__latest_transaction__contract_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "award__latest_transaction__contract_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "award__latest_transaction__contract_data__officer_2_amount"),
+                ("highly_compensated_officer_4_name", "award__latest_transaction__contract_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "award__latest_transaction__contract_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "award__latest_transaction__contract_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "award__latest_transaction__contract_data__officer_5_amount"),
                 ("last_modified_date", "award__latest_transaction__contract_data__last_modified"),
             ]
         ),
@@ -568,6 +583,7 @@ query_paths = {
                 ("funding_sub_agency_name", "award__latest_transaction__assistance_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "award__latest_transaction__assistance_data__funding_office_code"),
                 ("funding_office_name", "award__latest_transaction__assistance_data__funding_office_name"),
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "award__latest_transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -657,6 +673,16 @@ query_paths = {
                 ("business_types_description", "award__latest_transaction__assistance_data__business_types_desc"),
                 ("record_type_code", "award__latest_transaction__assistance_data__record_type"),
                 ("record_type_description", "award__latest_transaction__assistance_data__record_type_description"),
+                ("highly_compensated_officer_1_name", "award__latest_transaction__assistance_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "award__latest_transaction__assistance_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "award__latest_transaction__assistance_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "award__latest_transaction__assistance_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "award__latest_transaction__assistance_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "award__latest_transaction__assistance_data__officer_3_amount"),
+                ("highly_compensated_officer_4_name", "award__latest_transaction__assistance_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "award__latest_transaction__assistance_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "award__latest_transaction__assistance_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "award__latest_transaction__assistance_data__officer_5_amount"),
                 ("last_modified_date", "award__latest_transaction__assistance_data__modified_at"),
             ]
         ),
@@ -695,6 +721,7 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__contract_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__contract_data__funding_office_code"),
                 ("funding_office_name", "transaction__contract_data__funding_office_name"),
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
@@ -988,6 +1015,16 @@ query_paths = {
                     "transaction__contract_data__historically_underutilized",
                 ),
                 ("sba_certified_8a_joint_venture", "transaction__contract_data__sba_certified_8_a_joint_ve"),
+                ("highly_compensated_officer_1_name", "transaction__contract_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "transaction__contract_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "transaction__contract_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "transaction__contract_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "transaction__contract_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "transaction__contract_data__officer_2_amount"),
+                ("highly_compensated_officer_4_name", "transaction__contract_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "transaction__contract_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "transaction__contract_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "transaction__contract_data__officer_5_amount"),
                 ("last_modified_date", "transaction__contract_data__last_modified"),
             ]
         ),
@@ -1020,6 +1057,7 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__assistance_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__assistance_data__funding_office_code"),
                 ("funding_office_name", "transaction__assistance_data__funding_office_name"),
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_name", "transaction__assistance_data__ultimate_parent_legal_enti"),
@@ -1083,6 +1121,16 @@ query_paths = {
                 ("action_type_description", "transaction__assistance_data__action_type_description"),
                 ("record_type_code", "transaction__assistance_data__record_type"),
                 ("record_type_description", "transaction__assistance_data__record_type_description"),
+                ("highly_compensated_officer_1_name", "transaction__assistance_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "transaction__assistance_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "transaction__assistance_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "transaction__assistance_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "transaction__assistance_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "transaction__assistance_data__officer_2_amount"),
+                ("highly_compensated_officer_4_name", "transaction__assistance_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "transaction__assistance_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "transaction__assistance_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "transaction__assistance_data__officer_5_amount"),
                 ("last_modified_date", "transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1489,18 +1537,23 @@ query_paths = {
         ),
     },
 }
-
 # IDV Orders are nearly identical to awards but start from the Awards table
 # instead of from UniversalAwardView materialized view so we need to lop off
 # the leading "award__" bit.
 query_paths["idv_orders"] = {
-    "d1": OrderedDict([(k, v[7:] if v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items()])
+    "d1": OrderedDict(
+        [(k, v[7:] if v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items() if v is not None]
+    )
 }
 
 # Likewise, IDV Transactions start directly in TransactionFPDS instead of
 # UniversalTransactionView.
 query_paths["idv_transaction_history"] = {
     "d1": OrderedDict(
-        [(k, v[13:] if v.startswith("transaction__") else v) for k, v in query_paths["transaction"]["d1"].items()]
+        [
+            (k, v[13:] if v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction"]["d1"].items()
+            if v is not None
+        ]
     )
 }
