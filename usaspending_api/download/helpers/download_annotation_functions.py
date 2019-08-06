@@ -39,6 +39,7 @@ def universal_award_matview_annotations():
 
 def subaward_annotations():
     annotation_fields = {
-        "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date")
+        "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
+        "prime_award_action_date_fiscal_year": FiscalYear("award__date_signed")
     }
     return annotation_fields
