@@ -48,6 +48,10 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunSQL(
-            sql='drop materialized view if exists tas_award_matview',
+            sql=[
+                'drop materialized view if exists tas_award_matview',
+                'drop materialized view if exists tas_award_matview_old',
+                'drop materialized view if exists tas_award_matview_temp',
+            ],
         ),
     ]
