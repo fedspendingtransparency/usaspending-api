@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TASSearchMatview',
             fields=[
-                ('tas_search_id', models.UUIDField(primary_key=True, serialize=False)),
+                ('tas_search_id', models.IntegerField(primary_key=True, serialize=False)),
                 ('allocation_transfer_agency_id', models.TextField(null=True)),
                 ('agency_id', models.TextField()),
                 ('beginning_period_of_availability', models.TextField(null=True)),
