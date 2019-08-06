@@ -2,7 +2,7 @@
   "final_name": "tas_search_matview",
   "refresh": true,
   "matview_sql": [
-    "select distinct",
+    "select",
     "    min(faba.financial_accounts_by_awards_id) tas_search_id,",
     "    taa.allocation_transfer_agency_id,",
     "    taa.agency_id,",
@@ -27,7 +27,7 @@
     "    taa.sub_account_code,",
     "    faba.award_id",
     "order by",
-    "    taa.agency_id, taa.main_account_code, faba.award_id"
+    "    taa.main_account_code, taa.agency_id, faba.award_id"
   ],
   "indexes": [
     {
