@@ -19,7 +19,8 @@ def build_tas_codes_filter(queryset, model, tas_filters):
 
         # Build a full text OR query (any one of the TASes can match).  This is
         # done by concatenating the TASes together using pipes.
-        tases = "|".join(TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True))
+        tas_labels = TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True)
+        tas_query = "|".join(tas_labels or [])
 
         # Perform a full text query.  To do this, we will simply cast the query
         # to tsquery.  Doing this performs no pre-processing on the query string.
@@ -28,7 +29,7 @@ def build_tas_codes_filter(queryset, model, tas_filters):
         # punctuation which is a problem for TASes.
         return queryset.extra(
             where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
-            params=[tases]
+            params=[tas_query]
         )
 
     return queryset
