@@ -1,34 +1,46 @@
 from django.db.models import Q
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.accounts.models import TASSearchMatview
-from usaspending_api.common.helpers.orm_helpers import generate_where_clause
+from usaspending_api.accounts.models import TASAutocompleteMatview
 
 
-def build_tas_codes_filter(queryset, model, value):
+def build_tas_codes_filter(queryset, model, tas_filters):
     """
-    Build the TAS codes filter.  Because of performance issues, the normal
-    trick of checking for award_id in a subquery wasn't cutting it.  To
-    work around this, we're going to use the query.extra function to add SQL
-    that should give us a better query plan.
+    We're using full text indexes to find TAS.  To query these, we will need
+    to grab all of the valid TAS for the provided filter, construct a full text
+    query string, then perform a full text search.
     """
 
-    # Build the filtering for the tas_search_matview.
-    or_queryset = Q()
-    for tas in value:
-        or_queryset |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas.items()})
+    # Build the query to grab all valid TASes for the provided filters.
+    where = Q()
+    for tas_filter in tas_filters:
+        where |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
 
-    if or_queryset:
-        # Now that we've built the actual filter, let's turn it into SQL that we
-        # can provide to the queryset.extra method.  We do this by converting the
-        # queryset to raw SQL.
-        where_sql, where_params = generate_where_clause(TASSearchMatview.objects.filter(or_queryset))
-        return queryset.extra(
-            tables=[TASSearchMatview._meta.db_table],
-            where=[
-                '"{}".award_id = "{}".award_id'.format(TASSearchMatview._meta.db_table, model._meta.db_table),
-                where_sql,
-            ],
-            params=where_params
+    # If we found any TASes, construct the full text search string.  This
+    # construction has to match the manner in which tas_ts_vector is built in
+    # the materialized views.  It should resemble something like:
+    #
+    #   072_019_2013_2018__1031_000|075_019_2018_2022__1031_001
+    #
+    # Where underscores are used to separate the 7 TAS components.  Pipes are
+    # used to separate the TASes as this is the syntax for OR in Postgres full
+    # text jargon.
+    if where:
+        tases = "|".join(
+            "{}_{}_{}_{}_{}_{}_{}".format(
+                tas.allocation_transfer_agency_id or "",
+                tas.agency_id or "",
+                tas.beginning_period_of_availability or "",
+                tas.ending_period_of_availability or "",
+                tas.availability_type_code or "",
+                tas.main_account_code or "",
+                tas.sub_account_code or "",
+            )
+            for tas in TASAutocompleteMatview.objects.filter(where)
         )
+        if tases:
+            return queryset.extra(
+                where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
+                params=[tases]
+            )
 
     return queryset

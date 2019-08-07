@@ -10,6 +10,7 @@ class SubawardView(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
+    tas_ts_vector = SearchVectorField()
     latest_transaction_id = models.IntegerField()
     last_modified_date = models.DateField()
     subaward_number = models.TextField()
