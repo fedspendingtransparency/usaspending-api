@@ -19,7 +19,6 @@ from usaspending_api.awards.v2.lookups.lookups import (
     idv_type_mapping,
     assistance_type_mapping,
     procurement_mapping,
-    direct_payment_type_mapping,
     all_award_types_mappings
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
@@ -241,10 +240,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             queryset = queryset.values("type").annotate(category_count=Count("category"))
 
-
         all_awards_types_to_category = {type_code: category for category, type_codes in all_award_types_mappings.items()
                                         for type_code in type_codes}
-        print(all_awards_types_to_category)
         category_type = "type" if not subawards else "prime_award_type"
 
         # DB hit here
