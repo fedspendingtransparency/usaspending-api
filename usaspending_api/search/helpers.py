@@ -15,28 +15,17 @@ def build_tas_codes_filter(queryset, model, tas_filters):
     for tas_filter in tas_filters:
         where |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
 
-    # If we found any TASes, construct the full text search string.  This
-    # construction has to match the manner in which tas_ts_vector is built in
-    # the materialized views.  It should resemble something like:
-    #
-    #   072_019_2013_2018__1031_000|075_019_2018_2022__1031_001
-    #
-    # Where underscores are used to separate the 7 TAS components.  Pipes are
-    # used to separate the TASes as this is the syntax for OR in Postgres full
-    # text jargon.
     if where:
-        tases = "|".join(
-            "{}_{}_{}_{}_{}_{}_{}".format(
-                tas.allocation_transfer_agency_id or "",
-                tas.agency_id or "",
-                tas.beginning_period_of_availability or "",
-                tas.ending_period_of_availability or "",
-                tas.availability_type_code or "",
-                tas.main_account_code or "",
-                tas.sub_account_code or "",
-            )
-            for tas in TASAutocompleteMatview.objects.filter(where)
-        )
+
+        # Build a full text OR query (any one of the TASes can match).  This is
+        # done by concatenating the TASes together using pipes.
+        tases = "|".join(TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True))
+
+        # Perform a full text query.  To do this, we will simply cast the query
+        # to tsquery.  Doing this performs no pre-processing on the query string.
+        # If we were to run it through one of the full text query functions (for
+        # example to_tsquery) much pre-processing will occur including removing
+        # punctuation which is a problem for TASes.
         return queryset.extra(
             where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
             params=[tases]

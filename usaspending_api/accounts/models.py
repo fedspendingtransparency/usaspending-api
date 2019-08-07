@@ -442,6 +442,7 @@ class TASAutocompleteMatview(models.Model):
     availability_type_code = models.TextField(null=True)
     main_account_code = models.TextField()
     sub_account_code = models.TextField(null=True)
+    tas_rendering_label = models.TextField()
 
     class Meta:
 
