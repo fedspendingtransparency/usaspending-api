@@ -19,8 +19,7 @@ def build_tas_codes_filter(queryset, model, tas_filters):
 
         # Build a full text OR query (any one of the TASes can match).  This is
         # done by concatenating the TASes together using pipes.
-        tas_labels = TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True)
-        tas_query = "|".join(tas_labels or [])
+        tas_query = "|".join(TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True))
 
         # Perform a full text query.  To do this, we will simply cast the query
         # to tsquery.  Doing this performs no pre-processing on the query string.
