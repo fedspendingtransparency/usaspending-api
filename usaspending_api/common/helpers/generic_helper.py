@@ -29,7 +29,8 @@ TEMP_SQL_FILES = [
     "../matviews/summary_view_psc_codes.sql",
     "../matviews/universal_award_matview.sql",
     "../matviews/universal_transaction_matview.sql",
-    "../matviews/tas_award_matview.sql",
+    "../matviews/tas_autocomplete_matview.sql",
+    "../matviews/tas_search_matview.sql",
     "../tableviews/universal_transaction_tableview.sql",
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
