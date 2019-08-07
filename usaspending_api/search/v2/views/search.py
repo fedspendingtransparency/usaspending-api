@@ -18,8 +18,9 @@ from usaspending_api.awards.v2.lookups.lookups import (
     grant_subaward_mapping,
     idv_type_mapping,
     assistance_type_mapping,
-    subcontracts_mapping,
-    direct_payment_type_mapping
+    procurement_mapping,
+    direct_payment_type_mapping,
+    all_award_types_mappings
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
     award_contracts_mapping,
@@ -112,7 +113,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
             if subawards:
-                if set(filters["award_type_codes"]) <= set(subcontracts_mapping):  # Subaward contracts
+                if set(filters["award_type_codes"]) <= set(procurement_mapping):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
                 elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
                     sort_filters = [grant_subaward_mapping[sort]]
@@ -240,6 +241,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             queryset = queryset.values("type").annotate(category_count=Count("category"))
 
+
+        all_awards_types_to_category = {type_code: category for category, type_codes in all_award_types_mappings.items()
+                                        for type_code in type_codes}
+        print(all_awards_types_to_category)
+        category_type = "type" if not subawards else "prime_award_type"
+
         # DB hit here
         for award in queryset:
             if subawards:
@@ -248,20 +255,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 else:
                     result_key = "subcontracts"
             else:
-                if award["type"] in contract_type_mapping.keys():
-                    result_key = "contracts"
-                elif award["type"] in idv_type_mapping.keys():
-                    result_key = "idvs"
-                elif award["type"] in grant_type_mapping.keys():
-                    result_key = "grants"
-                elif award["type"] in direct_payment_type_mapping.keys():
-                    result_key = "direct_payments"
-                elif award["type"] in contract_type_mapping.keys():
-                    result_key = "contracts"
-                elif award["type"] in loan_type_mapping.keys():
-                    result_key = "loans"
-                else:
+                if award[category_type] is None or award[category_type] not in all_awards_types_to_category:
                     result_key = "other"
+                else:
+                    result_key = all_awards_types_to_category[award[category_type]]
+                    if result_key == "other_financial_assistance":
+                        result_key = "other"
 
             results[result_key] += award["category_count"]
 
