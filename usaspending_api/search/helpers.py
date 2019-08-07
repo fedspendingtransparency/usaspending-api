@@ -37,10 +37,9 @@ def build_tas_codes_filter(queryset, model, tas_filters):
             )
             for tas in TASAutocompleteMatview.objects.filter(where)
         )
-        if tases:
-            return queryset.extra(
-                where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
-                params=[tases]
-            )
+        return queryset.extra(
+            where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
+            params=[tases]
+        )
 
     return queryset
