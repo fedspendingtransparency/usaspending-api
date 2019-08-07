@@ -705,6 +705,7 @@ query_paths = {
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
                 ("action_date", "transaction__action_date"),
+                ("action_date_fiscal_year", None),
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
                 ("period_of_performance_current_end_date", "transaction__contract_data__period_of_performance_curr"),
                 ("period_of_performance_potential_end_date", "transaction__contract_data__period_of_perf_potential_e"),
@@ -1043,6 +1044,7 @@ query_paths = {
                 ("total_subsidy_cost", "transaction__award__total_subsidy_cost"),
                 ("total_loan_value", "transaction__award__total_loan_value"),
                 ("action_date", "transaction__action_date"),
+                ("action_date_fiscal_year", None),
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "transaction__period_of_performance_current_end_date"),
                 ("awarding_agency_code", "transaction__assistance_data__awarding_agency_code"),
@@ -1143,6 +1145,7 @@ query_paths = {
                 ("prime_award_parent_piid", "award__parent_award_piid"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
+                ("subaward_action_date_fiscal_year", None),
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
@@ -1175,7 +1178,8 @@ query_paths = {
                 ),
                 ("prime_awardee_duns", "award__latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__contract_data__awardee_or_recipient_legal"),
-                ("prime_award_date_signed", "award__date_signed"),
+                ("prime_award_action_date", "award__date_signed"),
+                ("prime_award_action_date_fiscal_year", None),
                 ("prime_award_amount", "award__total_obligation"),
                 ("subawardee_duns", "subaward__recipient_unique_id"),
                 ("subawardee_name", "subaward__recipient_name"),
@@ -1222,6 +1226,7 @@ query_paths = {
                 ("prime_award_fain", "award__fain"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
+                ("subaward_action_date_fiscal_year", None),
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__assistance_data__awarding_agency_code"),
@@ -1250,7 +1255,8 @@ query_paths = {
                     "prime_award_principal_place_country",
                     "award__latest_transaction__assistance_data__place_of_perform_country_c",
                 ),
-                ("prime_award_date_signed", "award__date_signed"),
+                ("prime_award_action_date", "award__date_signed"),
+                ("prime_award_action_date_fiscal_year", None),
                 ("prime_award_amount", "award__total_obligation"),
                 ("prime_awardee_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
@@ -1537,12 +1543,13 @@ query_paths = {
         ),
     },
 }
+
 # IDV Orders are nearly identical to awards but start from the Awards table
 # instead of from UniversalAwardView materialized view so we need to lop off
 # the leading "award__" bit.
 query_paths["idv_orders"] = {
     "d1": OrderedDict(
-        [(k, v[7:] if v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items() if v is not None]
+        [(k, v[7:] if v is not None and v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items()]
     )
 }
 
@@ -1551,9 +1558,8 @@ query_paths["idv_orders"] = {
 query_paths["idv_transaction_history"] = {
     "d1": OrderedDict(
         [
-            (k, v[13:] if v.startswith("transaction__") else v)
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
             for k, v in query_paths["transaction"]["d1"].items()
-            if v is not None
         ]
     )
 }
