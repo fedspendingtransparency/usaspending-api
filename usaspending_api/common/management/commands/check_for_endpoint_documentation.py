@@ -24,4 +24,3 @@ class Command(BaseCommand):
             exit(1)
 
         print("Looks like endpoint documentation is happy, healthy, wealthy, and wise")
-
