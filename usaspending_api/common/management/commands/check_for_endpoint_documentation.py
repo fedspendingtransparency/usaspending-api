@@ -22,3 +22,6 @@ class Command(BaseCommand):
             for message in messages:
                 print(message)
             exit(1)
+
+        print("Looks like endpoint documentation is happy, healthy, wealthy, and wise")
+
