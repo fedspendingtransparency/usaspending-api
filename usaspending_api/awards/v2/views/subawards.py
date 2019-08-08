@@ -13,8 +13,11 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 
 class SubawardsViewSet(APIView):
     """
-    endpoint_doc: awards/subawards.md
+    This route sends a request to the backend to retrieve subawards either
+    related, optionally, to a specific parent award, or for all parent
+    awards if desired.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/subawards.md"
 
     subaward_lookup = {
         # "Display Name": "database_column"

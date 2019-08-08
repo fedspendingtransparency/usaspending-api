@@ -18,8 +18,10 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
-    """Returns financial spending data by object class.
-    endpoint_doc: federal_account/available_object_classes.md"""
+    """
+    Returns financial spending data by object class.
+    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/available_object_classes.md"
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -74,9 +76,8 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     """
     This route sends a request to the backend to retrieve budget information for a federal account.
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
-
-    endpoint_doc: federal_account/fiscal_year_snapshot.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/fiscal_year_snapshot.md"
 
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
@@ -107,8 +108,6 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
 class SpendingOverTimeFederalAccountsViewSet(APIView):
     """
     This route takes a federal_account DB ID and returns the data required to visualized the spending over time graphic.
-
-    endpoint_doc: federal_account/spending_over_time.md
     """
 
     @cache_response()
@@ -376,8 +375,6 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
     """
     This route takes a federal_account DB ID and returns the data required to visualized
     the Spending By Category graphic.
-
-    endpoint_doc: federal_account/spending_by_category.md
     """
 
     @cache_response()
@@ -428,8 +425,8 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
 class FederalAccountViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a federal account based on its federal_account_code.
-    endpoint_doc: federal_account/federal_account.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     @cache_response()
     def get(self, request, fed_acct_code, format=None):
@@ -446,8 +443,8 @@ class FederalAccountViewSet(APIView):
 class FederalAccountsViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
-    endpoint_doc: federal_account/federal_account.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     def _parse_and_validate_request(self, request_dict):
         """ Validate the Request object includes the required fields """

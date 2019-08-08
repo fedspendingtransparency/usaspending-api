@@ -172,9 +172,10 @@ TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 
 class IDVAwardsViewSet(APIView):
-    """Returns the direct children of an IDV.
-    endpoint_doc: awards/idvs/awards.md
     """
+    Returns the direct children of an IDV.
+    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/idvs/awards.md"
 
     @staticmethod
     def _parse_and_validate_request(request: dict) -> dict:

@@ -32,6 +32,7 @@ before_script:
 script:
   - flake8
   - pytest --cov=usaspending_api
+  - ./manage.py check_for_endpoint_documentation
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
 after_success:

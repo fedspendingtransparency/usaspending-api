@@ -16,9 +16,8 @@ from usaspending_api.references.models import ToptierAgency
 class DownloadListAgenciesViewSet(APIView):
     """
     This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
-
-    endpoint_doc: download/list_agencies.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_agencies.md"
 
     # Get list of agencies without duplicates
     modified_agencies_list = os.path.join(

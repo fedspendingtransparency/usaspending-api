@@ -265,6 +265,11 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest", subawar
 
 
 class RecipientOverView(APIView):
+    """
+    This endpoint returns a high-level overview of a specific recipient, given its id.
+    """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/recipient/RecipientProfile.md"
+
     @cache_response()
     def get(self, request, recipient_id):
         get_request = request.query_params
@@ -327,6 +332,11 @@ def extract_hash_name_from_duns(duns):
 
 
 class ChildRecipients(APIView):
+    """
+    This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
+    """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/recipient/RecipientProfile.md"
+
     @cache_response()
     def get(self, request, duns):
         get_request = request.query_params

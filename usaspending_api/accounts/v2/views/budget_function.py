@@ -8,10 +8,10 @@ from usaspending_api.common.cache_decorator import cache_response
 
 class ListBudgetFunctionViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve all Budget Functions associated with a TAS, ordered by Budget
-        Function code.
-    endpoint_doc: budget_functions/list_budget_function.md
+    This route sends a request to the backend to retrieve all Budget Functions associated with a TAS,
+    ordered by Budget Function code.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/budget_functions/list_budget_function.md"
 
     @cache_response()
     def get(self, request):
@@ -28,10 +28,10 @@ class ListBudgetFunctionViewSet(APIView):
 
 class ListBudgetSubfunctionViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve all Budget Subfunctions associated with a TAS, ordered by
-        Budget Subfunction code. Can be filtered by Budget Function.
-    endpoint_doc: budget_functions/list_budget_subfunction.md
+    This route sends a request to the backend to retrieve all Budget Subfunctions associated with a TAS,
+    ordered by Budget Subfunction code. Can be filtered by Budget Function.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/budget_functions/list_budget_subfunction.md"
 
     @cache_response()
     def post(self, request):

@@ -115,6 +115,11 @@ TINYSHIELD_MODELS.append(get_internal_or_generated_award_id_model())
 
 @validate_post_request(TINYSHIELD_MODELS)
 class IDVAccountsViewSet(APIView):
+    """
+    These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
+    """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/awards/idvs/Accounts.md"
+
     @staticmethod
     def _business_logic(request_data: dict) -> list:
         # By this point, our award_id has been validated and cleaned up by

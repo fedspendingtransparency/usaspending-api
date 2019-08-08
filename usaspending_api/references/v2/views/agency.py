@@ -14,8 +14,8 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARM
 class AgencyViewSet(APIView):
     """
     Return an agency name and active fy.
-    endpoint_doc: agency.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/agency.md"
 
     @cache_response()
     def get(self, request, pk, format=None):

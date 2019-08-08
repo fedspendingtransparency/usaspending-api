@@ -43,8 +43,9 @@ models = [
 @validate_post_request(models)
 class CityAutocompleteViewSet(APIView):
     """
-    endpoint_doc: autocomplete/City.md
+    This end point returns a list of cities for a given limit, country, search string, and optional state code.
     """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/City.md"
 
     @cache_response()
     def post(self, request, format=None):

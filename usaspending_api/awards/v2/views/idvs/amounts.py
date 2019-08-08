@@ -17,9 +17,10 @@ logger = logging.getLogger("console")
 
 
 class IDVAmountsViewSet(APIView):
-    """Returns counts and dollar figures for a specific IDV.
-    endpoint_doc: awards/idvs/amounts.md
     """
+    Returns counts and dollar figures for a specific IDV.
+    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/idvs/amounts.md"
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:

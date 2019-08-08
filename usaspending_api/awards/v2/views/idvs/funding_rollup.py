@@ -63,8 +63,8 @@ ROLLUP_SQL = SQL(
 class IDVFundingRollupViewSet(APIView):
     """
     Returns File C funding totals associated with an IDV's children.
-    endpoint_doc: awards/idvs/funding_rollup.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/idvs/funding_rollup.md"
 
     @staticmethod
     def _business_logic(request_data: dict) -> OrderedDict:

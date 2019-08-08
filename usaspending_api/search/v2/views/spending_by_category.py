@@ -68,8 +68,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by the defined category/scope.
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
-    endpoint_doc: advanced_award_search/spending_by_category.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_category.md"
 
     @cache_response()
     def post(self, request: dict):

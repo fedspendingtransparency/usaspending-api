@@ -15,9 +15,8 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 class DownloadTransactionCountViewSet(APIView):
     """
     Returns the number of transactions that would be included in a download request for the given filter set.
-
-    endpoint_doc: download/download_count.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/download_count.md"
 
     @cache_response()
     def post(self, request):

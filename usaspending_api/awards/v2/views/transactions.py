@@ -15,8 +15,10 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 
 class TransactionViewSet(APIView):
     """
-    endpoint_doc: awards/transactions.md
+    This route sends a request to the backend to retrieve transactions related to
+    a specific parent award.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/transactions.md"
 
     transaction_lookup = {
         # "Display Name": "database_column"

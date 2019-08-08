@@ -20,9 +20,10 @@ logger = logging.getLogger("console")
 
 
 class AwardLastUpdatedViewSet(APIView):
-    """Return all award spending by award type for a given fiscal year and agency id.
-    endpoint_doc: awards/last_updated.md
     """
+    Return all award spending by award type for a given fiscal year and agency id.
+    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/last_updated.md"
 
     @cache_response()
     def get(self, request):
@@ -36,8 +37,9 @@ class AwardLastUpdatedViewSet(APIView):
 
 class AwardRetrieveViewSet(APIView):
     """
-    endpoint_doc: awards/awards.md
+    This route sends a request to the backend to retrieve data about a specific award
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/awards.md"
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
         request_dict = {"generated_unique_award_id": provided_award_id}
