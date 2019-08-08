@@ -13,4 +13,3 @@ DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_old;
 DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_old;
 DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_old;
 DROP MATERIALIZED VIEW IF EXISTS tas_autocomplete_matview;
-DROP MATERIALIZED VIEW IF EXISTS tas_search_matview;
