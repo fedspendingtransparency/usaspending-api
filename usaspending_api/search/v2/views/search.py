@@ -1,28 +1,36 @@
 import copy
 
 from django.conf import settings
-from django.db.models import Sum, Count, F
+from django.db.models import Count, F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import (
+    ReportingAwardContractsView,
+    ReportingAwardDirectPaymentsView,
+    ReportingAwardGrantsView,
+    ReportingAwardIdvsView,
+    ReportingAwardLoansView,
+    ReportingAwardOtherView,
+)
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.lookups.lookups import (
+    contract_subaward_mapping,
     contract_type_mapping,
+    direct_payment_type_mapping,
+    grant_subaward_mapping,
+    grant_type_mapping,
+    idv_type_mapping,
     loan_type_mapping,
     non_loan_assistance_type_mapping,
-    grant_type_mapping,
-    contract_subaward_mapping,
-    grant_subaward_mapping,
-    idv_type_mapping,
+    other_type_mapping,
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
     award_contracts_mapping,
+    award_idv_mapping,
     loan_award_mapping,
     non_loan_assistance_award_mapping,
-    award_idv_mapping,
 )
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
@@ -30,6 +38,30 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+
+
+def obtain_view_from_award_group(type_list):
+    types = set(type_list)
+    if types <= set(contract_type_mapping.keys()):
+        print("CONTRACTS")
+        return ReportingAwardContractsView
+    elif types <= set(idv_type_mapping.keys()):
+        print("IDVS")
+        return ReportingAwardIdvsView
+    elif types <= set(grant_type_mapping.keys()):
+        print("GRANTS")
+        return ReportingAwardGrantsView
+    elif types <= set(loan_type_mapping.keys()):
+        print("LOANS")
+        return ReportingAwardLoansView
+    elif types <= set(other_type_mapping.keys()):
+        print("OTHER")
+        return ReportingAwardOtherView
+    elif types <= set(direct_payment_type_mapping.keys()):
+        print("OTHER")
+        return ReportingAwardDirectPaymentsView
+    else:
+        raise Exception("FAIL")
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -93,7 +125,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if grant_subaward_mapping.get(field):
                     values.add(grant_subaward_mapping.get(field))
         else:
-            queryset = matview_search_filter(filters, UniversalAwardView).values()
+            model = obtain_view_from_award_group(filters["award_type_codes"])
+            queryset = matview_search_filter(filters, model).values()
             values = {"award_id", "piid", "fain", "uri", "type"}
 
             for field in fields:
@@ -227,18 +260,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             # "Special case": there will never be results when the website provides this value
             return Response({"results": results})
 
-        if subawards:
-            queryset = subaward_filter(filters)
-        else:
-            queryset, model = spending_by_award_count(filters)
-
-        if subawards:
-            queryset = queryset.values("award_type").annotate(category_count=Count("subaward_id"))
-        elif model == "SummaryAwardView":
-            queryset = queryset.values("category").annotate(category_count=Sum("counts"))
-        else:
-            queryset = queryset.values("category").annotate(category_count=Count("category"))
-
         categories = (
             {
                 "contract": "contracts",
@@ -252,17 +273,25 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             else {"procurement": "subcontracts", "grant": "subgrants"}
         )
 
-        category_name = "category" if not subawards else "award_type"
+        if subawards:
+            queryset = subaward_filter(filters)
+            queryset = queryset.values("award_type").annotate(category_count=Count("subaward_id"))
+            # DB hit here
+            for award in queryset:
+                if award["award_type"] is None:
+                    result_key = "other" if not subawards else "subcontracts"
+                elif award["award_type"] not in categories.keys():
+                    result_key = "other"
+                else:
+                    result_key = categories[award["award_type"]]
 
-        # DB hit here
-        for award in queryset:
-            if award[category_name] is None:
-                result_key = "other" if not subawards else "subcontracts"
-            elif award[category_name] not in categories.keys():
-                result_key = "other"
-            else:
-                result_key = categories[award[category_name]]
-
-            results[result_key] += award["category_count"]
+                results[result_key] += award["category_count"]
+        else:
+            results["contracts"] = matview_search_filter(filters, ReportingAwardContractsView).count()
+            results["idvs"] = matview_search_filter(filters, ReportingAwardIdvsView).count()
+            results["grants"] = matview_search_filter(filters, ReportingAwardGrantsView).count()
+            results["direct_payments"] = matview_search_filter(filters, ReportingAwardDirectPaymentsView).count()
+            results["loans"] = matview_search_filter(filters, ReportingAwardLoansView).count()
+            results["other"] = matview_search_filter(filters, ReportingAwardOtherView).count()
 
         return Response({"results": results})

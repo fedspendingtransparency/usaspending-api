@@ -1,6 +1,5 @@
 import logging
 
-from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SummaryPscCodesView
@@ -27,12 +26,6 @@ MATVIEW_SELECTOR = {
         "prevent_values": {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
         "examine_values": {"time_period": [only_action_date_type]},
         "model": SummaryView,
-    },
-    "SummaryAwardView": {
-        "allowed_filters": ["time_period", "award_type_codes", "agencies"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryAwardView,
     },
     "SummaryPscCodesView": {
         "allowed_filters": ["time_period", "award_type_codes"],
@@ -259,19 +252,6 @@ def spending_by_geography(filters):
         "SummaryTransactionView",
         "UniversalTransactionView",
     ]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            model = view
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset, model
-
-
-def spending_by_award_count(filters):
-    view_chain = ["SummaryAwardView", "UniversalAwardView"]
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
