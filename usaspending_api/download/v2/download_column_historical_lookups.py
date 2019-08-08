@@ -1149,7 +1149,7 @@ query_paths = {
                 ("prime_award_parent_piid", "award__parent_award_piid"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
-                ("subaward_action_date_fiscal_year", None), # Annotation is used to create this column
+                ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
