@@ -707,7 +707,7 @@ query_paths = {
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
                 ("action_date", "transaction__action_date"),
-                ("action_date_fiscal_year", None), # Annotation is used to create this column
+                ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
                 ("period_of_performance_current_end_date", "transaction__contract_data__period_of_performance_curr"),
                 ("period_of_performance_potential_end_date", "transaction__contract_data__period_of_perf_potential_e"),
