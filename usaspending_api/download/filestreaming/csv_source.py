@@ -46,7 +46,15 @@ class CsvSource:
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
-        query_paths = [self.query_paths[hn] for hn in headers if self.query_paths[hn] is not None]
         annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
         annotations = annotations_function() if annotations_function is not None else {}
+
+        query_paths = []
+        for hn in headers:
+            if self.query_paths[hn] is None:
+                if annotations[hn] is None:
+                    Exception("Annotated column {} is not in annotations function".format(hn))
+            else:
+                query_paths.append(self.query_paths[hn])
+
         return self.queryset.values(*query_paths, **annotations)
