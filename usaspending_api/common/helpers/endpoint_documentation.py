@@ -6,7 +6,7 @@ from usaspending_api.settings import BASE_DIR
 
 # Typically we only care about v2 API endpoints, but if we ever add v3 or
 # whatever, add the base path to this tuple.
-CURRENT_ENDPOINT_PREFIXES = ("/api/v2/","/api/v1/",)
+CURRENT_ENDPOINT_PREFIXES = ("/api/v2/",)
 
 ENDPOINTS_MD = "usaspending_api/api_docs/markdown/endpoints.md"
 
