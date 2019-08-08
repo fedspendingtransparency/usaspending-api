@@ -31,9 +31,9 @@ def test_spending_by_award_subawards_fail(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Sub-Award ID"], "filters": {"award_type_codes": ["06"]}, "subawards": True}),
+        data=json.dumps({"fields": ["Sub-Award ID"], "filters": {"award_type_codes": ["X"]}, "subawards": True}),
     )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db

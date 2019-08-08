@@ -26,6 +26,13 @@ from usaspending_api.awards.v2.filters.matview_filters import (
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.download.helpers.download_annotation_functions import (
+    universal_transaction_matview_annotations,
+    universal_award_matview_annotations,
+    subaward_annotations,
+    idv_order_annotations,
+    idv_transaction_annotations,
+)
 
 
 LookupType = namedtuple("LookupType", ["id", "name", "desc"])
@@ -54,6 +61,7 @@ VALUE_MAPPINGS = {
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": universal_award_matview_filter,
         "is_for_idv": False,
+        "annotations_function": universal_award_matview_annotations,
     },
     # Transaction Level
     "transactions": {
@@ -65,6 +73,7 @@ VALUE_MAPPINGS = {
         "assistance_data": "transaction__assistance_data",
         "filter_function": universal_transaction_matview_filter,
         "is_for_idv": False,
+        "annotations_function": universal_transaction_matview_annotations,
     },
     # SubAward Level
     "sub_awards": {
@@ -76,6 +85,7 @@ VALUE_MAPPINGS = {
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": subaward_download,
         "is_for_idv": False,
+        "annotations_function": subaward_annotations,
     },
     # Appropriations Account Data
     "account_balances": {
@@ -111,6 +121,7 @@ VALUE_MAPPINGS = {
         "contract_data": "latest_transaction__contract_data",
         "filter_function": idv_order_filter,
         "is_for_idv": True,
+        "annotations_function": idv_order_annotations,
     },
     "idv_federal_account_funding": {
         "source_type": "account",
@@ -128,6 +139,7 @@ VALUE_MAPPINGS = {
         "contract_data": "contract_data",
         "filter_function": idv_transaction_filter,
         "is_for_idv": True,
+        "annotations_function": idv_transaction_annotations,
     },
 }
 

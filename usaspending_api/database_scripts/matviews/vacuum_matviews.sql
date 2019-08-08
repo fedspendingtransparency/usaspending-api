@@ -12,4 +12,5 @@ VACUUM ANALYZE VERBOSE summary_view_naics_codes;
 VACUUM ANALYZE VERBOSE summary_view_psc_codes;
 VACUUM ANALYZE VERBOSE universal_award_matview;
 VACUUM ANALYZE VERBOSE universal_transaction_matview;
-VACUUM ANALYZE VERBOSE tas_award_matview;
+VACUUM ANALYZE VERBOSE tas_autocomplete_matview;
+VACUUM ANALYZE VERBOSE tas_search_matview;
