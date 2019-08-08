@@ -432,7 +432,7 @@ class TASAutocompleteMatview(models.Model):
     Supports TAS autocomplete.  For performance reasons, pre-filters the TAS
     codes/numbers/symbols/whatever that can be linked to File D data.
     """
-    tas_autocomplete_id = models.TextField(primary_key=True)
+    tas_autocomplete_id = models.IntegerField(primary_key=True)
     allocation_transfer_agency_id = models.TextField(null=True)
     agency_id = models.TextField()
     beginning_period_of_availability = models.TextField(null=True)
