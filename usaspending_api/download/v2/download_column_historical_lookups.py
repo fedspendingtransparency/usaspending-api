@@ -705,7 +705,7 @@ query_paths = {
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
                 ("action_date", "transaction__action_date"),
-                ("action_date_fiscal_year", None),
+                ("action_date_fiscal_year", None), # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
                 ("period_of_performance_current_end_date", "transaction__contract_data__period_of_performance_curr"),
                 ("period_of_performance_potential_end_date", "transaction__contract_data__period_of_perf_potential_e"),
@@ -1044,7 +1044,7 @@ query_paths = {
                 ("total_subsidy_cost", "transaction__award__total_subsidy_cost"),
                 ("total_loan_value", "transaction__award__total_loan_value"),
                 ("action_date", "transaction__action_date"),
-                ("action_date_fiscal_year", None),
+                ("action_date_fiscal_year", None), # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "transaction__period_of_performance_current_end_date"),
                 ("awarding_agency_code", "transaction__assistance_data__awarding_agency_code"),
@@ -1145,7 +1145,7 @@ query_paths = {
                 ("prime_award_parent_piid", "award__parent_award_piid"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
-                ("subaward_action_date_fiscal_year", None),
+                ("subaward_action_date_fiscal_year", None), # Annotation is used to create this column
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
@@ -1179,7 +1179,7 @@ query_paths = {
                 ("prime_awardee_duns", "award__latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__contract_data__awardee_or_recipient_legal"),
                 ("prime_award_action_date", "award__date_signed"),
-                ("prime_award_action_date_fiscal_year", None),
+                ("prime_award_action_date_fiscal_year", None), # Annotation is used to create this column
                 ("prime_award_amount", "award__total_obligation"),
                 ("subawardee_duns", "subaward__recipient_unique_id"),
                 ("subawardee_name", "subaward__recipient_name"),
@@ -1226,7 +1226,7 @@ query_paths = {
                 ("prime_award_fain", "award__fain"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
-                ("subaward_action_date_fiscal_year", None),
+                ("subaward_action_date_fiscal_year", None), # Annotation is used to create this column
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__assistance_data__awarding_agency_code"),
@@ -1256,7 +1256,7 @@ query_paths = {
                     "award__latest_transaction__assistance_data__place_of_perform_country_c",
                 ),
                 ("prime_award_action_date", "award__date_signed"),
-                ("prime_award_action_date_fiscal_year", None),
+                ("prime_award_action_date_fiscal_year", None), # Annotation is used to create this column
                 ("prime_award_amount", "award__total_obligation"),
                 ("prime_awardee_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
