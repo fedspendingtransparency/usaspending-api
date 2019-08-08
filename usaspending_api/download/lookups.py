@@ -31,7 +31,7 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     universal_award_matview_annotations,
     subaward_annotations,
     idv_order_annotations,
-    idv_transaction_annotations
+    idv_transaction_annotations,
 )
 
 
@@ -121,7 +121,7 @@ VALUE_MAPPINGS = {
         "contract_data": "latest_transaction__contract_data",
         "filter_function": idv_order_filter,
         "is_for_idv": True,
-        "annotations_function": idv_order_annotations
+        "annotations_function": idv_order_annotations,
     },
     "idv_federal_account_funding": {
         "source_type": "account",
@@ -139,7 +139,7 @@ VALUE_MAPPINGS = {
         "contract_data": "contract_data",
         "filter_function": idv_transaction_filter,
         "is_for_idv": True,
-        "annotations_function": idv_transaction_annotations
+        "annotations_function": idv_transaction_annotations,
     },
 }
 
