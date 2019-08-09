@@ -12,10 +12,13 @@ from usaspending_api.awards.models_matviews import (
     ReportingAwardIdvsView,
     ReportingAwardLoansView,
     ReportingAwardOtherView,
+    ReportingAwardDownloadView,
 )
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
+    all_award_types_mappings,
+    assistance_type_mapping,
     contract_subaward_mapping,
     contract_type_mapping,
     direct_payment_type_mapping,
@@ -25,6 +28,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     other_type_mapping,
+    procurement_mapping,
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
     award_contracts_mapping,
@@ -142,11 +146,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
         if sort:
             if subawards:
-                if set(filters["award_type_codes"]) <= set(
-                    list(contract_type_mapping) + list(idv_type_mapping)
-                ):  # Subaward contracts
+                if set(filters["award_type_codes"]) <= set(procurement_mapping):  # Subaward contracts
                     sort_filters = [contract_subaward_mapping[sort]]
-                elif set(filters["award_type_codes"]) <= set(grant_type_mapping):  # Subaward grants
+                elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
                     sort_filters = [grant_subaward_mapping[sort]]
                 else:
                     msg = """Award Type codes limited for Subawards.
@@ -260,38 +262,39 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             # "Special case": there will never be results when the website provides this value
             return Response({"results": results})
 
-        categories = (
-            {
-                "contract": "contracts",
-                "idv": "idvs",
-                "grant": "grants",
-                "direct payment": "direct_payments",
-                "loans": "loans",
-                "other": "other",
-            }
-            if not subawards
-            else {"procurement": "subcontracts", "grant": "subgrants"}
-        )
-
         if subawards:
             queryset = subaward_filter(filters)
-            queryset = queryset.values("award_type").annotate(category_count=Count("subaward_id"))
+            queryset = queryset.values("prime_award_type").annotate(category_count=Count("subaward_id"))
             # DB hit here
             for award in queryset:
-                if award["award_type"] is None:
-                    result_key = "other" if not subawards else "subcontracts"
-                elif award["award_type"] not in categories.keys():
-                    result_key = "other"
+                if award["prime_award_type"] in assistance_type_mapping.keys():
+                    result_key = "subgrants"
                 else:
-                    result_key = categories[award["award_type"]]
-
-                results[result_key] += award["category_count"]
+                    result_key = "subcontracts"
         else:
-            results["contracts"] = matview_search_filter(filters, ReportingAwardContractsView).count()
-            results["idvs"] = matview_search_filter(filters, ReportingAwardIdvsView).count()
-            results["grants"] = matview_search_filter(filters, ReportingAwardGrantsView).count()
-            results["direct_payments"] = matview_search_filter(filters, ReportingAwardDirectPaymentsView).count()
-            results["loans"] = matview_search_filter(filters, ReportingAwardLoansView).count()
-            results["other"] = matview_search_filter(filters, ReportingAwardOtherView).count()
+            queryset = matview_search_filter(filters, ReportingAwardDownloadView)
+            queryset = queryset.values("type").annotate(category_count=Count("category"))
+
+        all_awards_types_to_category = {type_code: category for category, type_codes in all_award_types_mappings.items()
+                                        for type_code in type_codes}
+        category_type = "type" if not subawards else "prime_award_type"
+
+        # DB hit here
+        for award in queryset:
+            if award[category_type] is None or award[category_type] not in all_awards_types_to_category:
+                result_key = "other"
+            else:
+                result_key = all_awards_types_to_category[award[category_type]]
+                if result_key == "other_financial_assistance":
+                    result_key = "other"
+            results[result_key] += award["category_count"]
+
+        # else:
+        #     results["contracts"] = matview_search_filter(filters, ReportingAwardContractsView).count()
+        #     results["idvs"] = matview_search_filter(filters, ReportingAwardIdvsView).count()
+        #     results["grants"] = matview_search_filter(filters, ReportingAwardGrantsView).count()
+        #     results["direct_payments"] = matview_search_filter(filters, ReportingAwardDirectPaymentsView).count()
+        #     results["loans"] = matview_search_filter(filters, ReportingAwardLoansView).count()
+        #     results["other"] = matview_search_filter(filters, ReportingAwardOtherView).count()
 
         return Response({"results": results})
