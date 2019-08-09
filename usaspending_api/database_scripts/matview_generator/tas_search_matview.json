@@ -3,61 +3,27 @@
   "refresh": true,
   "matview_sql": [
     "select",
-    "    min(faba.financial_accounts_by_awards_id) tas_search_id,",
-    "    taa.allocation_transfer_agency_id,",
-    "    taa.agency_id,",
-    "    taa.beginning_period_of_availability,",
-    "    taa.ending_period_of_availability,",
-    "    taa.availability_type_code,",
-    "    taa.main_account_code,",
-    "    taa.sub_account_code,",
-    "    faba.award_id",
+    "    faba.award_id,",
+    "    (string_agg(taa.tas_rendering_label, ' '::text))::tsvector as tas_ts_vector",
     "from",
     "    treasury_appropriation_account taa",
-    "    inner join financial_accounts_by_awards faba on taa.treasury_account_identifier = faba.treasury_account_id",
+    "    inner join financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id",
     "where",
     "    faba.award_id is not null",
     "group by",
-    "    taa.allocation_transfer_agency_id,",
-    "    taa.agency_id,",
-    "    taa.beginning_period_of_availability,",
-    "    taa.ending_period_of_availability,",
-    "    taa.availability_type_code,",
-    "    taa.main_account_code,",
-    "    taa.sub_account_code,",
     "    faba.award_id",
     "order by",
-    "    taa.main_account_code, taa.agency_id, faba.award_id"
+    "    faba.award_id"
   ],
   "indexes": [
     {
-      "name": "tas_search_id",
-      "unique": true,
-      "columns": [{"name": "tas_search_id"}]
-    }, {
-      "name": "allocation_transfer_agency_id",
-      "columns": [{"name": "allocation_transfer_agency_id"}]
-    }, {
-      "name": "agency_id",
-      "columns": [{"name": "agency_id"}]
-    }, {
-      "name": "beginning_period_of_availability",
-      "columns": [{"name": "beginning_period_of_availability"}]
-    }, {
-      "name": "ending_period_of_availability",
-      "columns": [{"name": "ending_period_of_availability"}]
-    }, {
-      "name": "availability_type_code",
-      "columns": [{"name": "availability_type_code"}]
-    }, {
-      "name": "main_account_code",
-      "columns": [{"name": "main_account_code"}]
-    }, {
-      "name": "sub_account_code",
-      "columns": [{"name": "sub_account_code"}]
-    }, {
       "name": "award_id",
+      "unique": true,
       "columns": [{"name": "award_id"}]
+    }, {
+      "name": "tas_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "tas_ts_vector"}]
     }
   ]
 }
