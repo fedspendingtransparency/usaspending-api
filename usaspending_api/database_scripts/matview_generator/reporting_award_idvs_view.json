@@ -147,7 +147,6 @@
       "columns": [{"name": "award_id"}]
     }, {
       "name": "category",
-
       "columns": [{"name": "category"}]
     }, {
       "name": "type",
@@ -155,11 +154,9 @@
       "columns": [{"name": "type"}]
     }, {
       "name": "ordered_type",
-
       "columns": [{"name": "type", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_type_desc",
-
       "columns": [{"name": "type_description", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_fain",
@@ -175,11 +172,9 @@
       "columns": [{"name": "total_obligation"}]
     }, {
       "name": "ordered_total_obligation",
-
       "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
-
       "columns": [{"name": "total_obl_bin"}]
     }, {
       "name": "total_subsidy_cost",
@@ -191,23 +186,18 @@
       "columns": [{"name": "total_loan_value"}]
     }, {
       "name": "ordered_total_subsidy_cost",
-
       "columns": [{"name": "total_subsidy_cost", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_total_loan_value",
-
       "columns": [{"name": "total_loan_value", "order": "DESC NULLS LAST"}]
     }, {
       "name": "period_of_performance_start_date",
-
       "columns": [{"name": "period_of_performance_start_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "period_of_performance_current_end_date",
-
       "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_ordering_period_end_date",
-
       "columns": [{"name": "ordering_period_end_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "recipient_name",
@@ -223,7 +213,6 @@
       "columns": [{"name": "parent_recipient_unique_id"}]
     }, {
       "name": "action_date",
-
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "last_modified_date",
@@ -238,11 +227,9 @@
       "columns": [{"name": "funding_agency_id", "order": "ASC NULLS LAST"}]
     }, {
       "name": "ordered_awarding_toptier_agency_name",
-
       "columns": [{"name": "awarding_toptier_agency_name", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_awarding_subtier_agency_name",
-
       "columns": [{"name": "awarding_subtier_agency_name", "order": "DESC NULLS LAST"}]
     }, {
       "name": "awarding_toptier_agency_name",
@@ -398,15 +385,12 @@
       "columns": [{"name": "recipient_name_ts_vector"}]
     }, {
       "name": "compound_psc_action_date",
-
       "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_naics_action_date",
-
       "columns": [{"name": "naics_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_cfda_action_date",
-
       "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }, {
       "name": "tas_ts_vector",
