@@ -2,6 +2,7 @@ from usaspending_api.awards.models_matviews.reporting_award_all_download_view im
 from usaspending_api.awards.models_matviews.reporting_award_all_pre2008_view import ReportingAwardAllPre2008View
 from usaspending_api.awards.models_matviews.reporting_award_contracts_view import ReportingAwardContractsView
 from usaspending_api.awards.models_matviews.reporting_award_directpayments_view import ReportingAwardDirectPaymentsView
+from usaspending_api.awards.models_matviews.reporting_award_download_view import ReportingAwardDownloadView
 from usaspending_api.awards.models_matviews.reporting_award_grants_view import ReportingAwardGrantsView
 from usaspending_api.awards.models_matviews.reporting_award_idvs_view import ReportingAwardIdvsView
 from usaspending_api.awards.models_matviews.reporting_award_loans_view import ReportingAwardLoansView
@@ -25,6 +26,7 @@ __all__ = [
     "ReportingAwardAllPre2008View",
     "ReportingAwardContractsView",
     "ReportingAwardDirectPaymentsView",
+    "ReportingAwardDownloadView",
     "ReportingAwardGrantsView",
     "ReportingAwardIdvsView",
     "ReportingAwardLoansView",
