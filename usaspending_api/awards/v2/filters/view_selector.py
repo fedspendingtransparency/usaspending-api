@@ -9,7 +9,6 @@ from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
 from usaspending_api.awards.models_matviews import SummaryTransactionRecipientView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
-from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_total_obligation_enum
@@ -144,36 +143,6 @@ MATVIEW_SELECTOR = {
         "prevent_values": {},
         "examine_values": {},
         "model": UniversalTransactionView,
-    },
-    "UniversalAwardView": {
-        "allowed_filters": [
-            "keywords",
-            "time_period",
-            "award_type_codes",
-            "agencies",
-            "legal_entities",
-            "recipient_search_text",
-            "recipient_scope",
-            "recipient_locations",
-            "recipient_type_names",
-            "place_of_performance_scope",
-            "place_of_performance_locations",
-            "award_amounts",
-            "award_ids",
-            "program_numbers",
-            "naics_codes",
-            "psc_codes",
-            "contract_pricing_type_codes",
-            "set_aside_type_codes",
-            "extent_competed_type_codes",
-            "federal_account_ids",
-            "object_class",
-            "program_activity",
-            "tas_codes",
-        ],
-        "prevent_values": {},
-        "examine_values": {},
-        "model": UniversalAwardView,
     },
 }
 

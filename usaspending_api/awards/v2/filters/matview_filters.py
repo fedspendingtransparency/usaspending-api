@@ -18,9 +18,6 @@ from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_
 logger = logging.getLogger(__name__)
 
 
-LIST_OF_AWARD_MODELS = ["UniversalAwardView", "SummaryAwardView"]
-
-
 def universal_award_matview_filter(filters):
     return matview_search_filter(filters, UniversalAwardView, for_downloads=True)
 

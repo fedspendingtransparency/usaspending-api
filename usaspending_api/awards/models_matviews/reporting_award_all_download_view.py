@@ -5,7 +5,7 @@ from django.db import models
 from usaspending_api.awards.models import Award
 
 
-class UniversalAwardView(models.Model):
+class ReportingAwardAllDownloadView(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
@@ -86,4 +86,4 @@ class UniversalAwardView(models.Model):
 
     class Meta:
         managed = False
-        db_table = "universal_award_matview"
+        db_table = "reporting_award_all_download_view"

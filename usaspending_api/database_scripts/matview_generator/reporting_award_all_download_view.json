@@ -1,5 +1,5 @@
 {
-  "final_name": "universal_award_matview",
+  "final_name": "reporting_award_all_download_view",
   "refresh": true,
   "matview_sql": [
     "SELECT",

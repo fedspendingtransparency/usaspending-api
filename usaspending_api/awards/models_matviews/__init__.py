@@ -1,3 +1,4 @@
+from usaspending_api.awards.models_matviews.reporting_award_all_download_view import ReportingAwardAllDownloadView
 from usaspending_api.awards.models_matviews.reporting_award_contracts_view import ReportingAwardContractsView
 from usaspending_api.awards.models_matviews.reporting_award_directpayments_view import ReportingAwardDirectPaymentsView
 from usaspending_api.awards.models_matviews.reporting_award_grants_view import ReportingAwardGrantsView
@@ -15,11 +16,11 @@ from usaspending_api.awards.models_matviews.summary_transaction_month_view impor
 from usaspending_api.awards.models_matviews.summary_transaction_recipient_view import SummaryTransactionRecipientView
 from usaspending_api.awards.models_matviews.summary_transaction_view import SummaryTransactionView
 from usaspending_api.awards.models_matviews.summary_view import SummaryView
-from usaspending_api.awards.models_matviews.universal_award_matview import UniversalAwardView
 from usaspending_api.awards.models_matviews.universal_transaction_matview import UniversalTransactionView
 
 
 __all__ = [
+    "ReportingAwardAllDownloadView",
     "ReportingAwardContractsView",
     "ReportingAwardDirectPaymentsView",
     "ReportingAwardGrantsView",
@@ -37,6 +38,5 @@ __all__ = [
     "SummaryTransactionRecipientView",
     "SummaryTransactionView",
     "SummaryView",
-    "UniversalAwardView",
     "UniversalTransactionView",
 ]
