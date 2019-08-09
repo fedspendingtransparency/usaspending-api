@@ -1,4 +1,3 @@
-from usaspending_api.awards.models_matviews.reporting_award_all_download_view import ReportingAwardAllDownloadView
 from usaspending_api.awards.models_matviews.reporting_award_all_pre2008_view import ReportingAwardAllPre2008View
 from usaspending_api.awards.models_matviews.reporting_award_contracts_view import ReportingAwardContractsView
 from usaspending_api.awards.models_matviews.reporting_award_directpayments_view import ReportingAwardDirectPaymentsView
@@ -22,7 +21,6 @@ from usaspending_api.awards.models_matviews.universal_transaction_matview import
 
 
 __all__ = [
-    "ReportingAwardAllDownloadView",
     "ReportingAwardAllPre2008View",
     "ReportingAwardContractsView",
     "ReportingAwardDirectPaymentsView",

@@ -4,8 +4,10 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
+VIEW_NAME = "reporting_award_download_view"
+
 CREATE_VIEW = (
-    "CREATE VIEW reporting_award_download AS ("
+    "CREATE VIEW {} AS ("
     "  SELECT * FROM reporting_award_contracts_view"
     "  UNION ALL"
     "  SELECT * FROM reporting_award_directpayments_view"
@@ -29,4 +31,9 @@ class Migration(migrations.Migration):
         ('awards', '0057_reporting_matviews'),
     ]
 
-    operations = [migrations.RunSQL(sql=CREATE_VIEW, reverse_sql="DROP VIEW reporting_award_download")]
+    operations = [
+        migrations.RunSQL(
+            sql=str(CREATE_VIEW).format(VIEW_NAME),
+            reverse_sql="DROP VIEW {}".format(VIEW_NAME),
+        )
+    ]
