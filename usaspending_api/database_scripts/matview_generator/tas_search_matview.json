@@ -7,7 +7,7 @@
     "    (string_agg(taa.tas_rendering_label, ' '::text))::tsvector as tas_ts_vector",
     "from",
     "    treasury_appropriation_account taa",
-    "    inner join financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id",
+    "    inner join financial_accounts_by_awards faba on taa.treasury_account_identifier = faba.treasury_account_id",
     "where",
     "    faba.award_id is not null",
     "group by",
