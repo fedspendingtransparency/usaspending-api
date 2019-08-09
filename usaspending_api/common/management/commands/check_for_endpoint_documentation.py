@@ -23,4 +23,15 @@ class Command(BaseCommand):
                 print(message)
             exit(1)
 
-        print("Looks like endpoint documentation is happy, healthy, wealthy, and wise")
+        # By request, let's count how much documentation falls in the contracts directory vs not-contracts.
+        contract_count = sum(
+            getattr(e[1].callback.cls, "endpoint_doc", "").startswith("usaspending_api/api_contracts/contracts/")
+            for e in endpoints
+        )
+
+        print("Looks like endpoint documentation is happy, healthy, wealthy, and wise.  Current tally:")
+        print("    contract count: {:,}".format(contract_count))
+        print("    non-contract count: {:,}".format(len(endpoints) - contract_count))
+        if (len(endpoints) - contract_count) == 0:
+            print()
+            print("*** GOOD JOB TEAM! ***")

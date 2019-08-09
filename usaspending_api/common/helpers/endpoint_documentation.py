@@ -107,12 +107,3 @@ def validate_docs(url, url_object, master_endpoint_list):
         messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
 
     return messages
-
-
-__all__ = [
-    "CURRENT_ENDPOINT_PREFIXES",
-    "case_sensitive_file_exists",
-    "get_endpoint_urls_doc_paths_and_docstrings",
-    "get_endpoints_from_endpoints_markdown",
-    "validate_docs",
-]
