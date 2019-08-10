@@ -4,12 +4,12 @@ from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
@@ -17,9 +17,11 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-class ObjectClassFederalAccountsViewSet(APIDocumentationView):
-    """Returns financial spending data by object class.
-    endpoint_doc: /federal_account/avalible_object_classes.md"""
+class ObjectClassFederalAccountsViewSet(APIView):
+    """
+    Returns financial spending data by object class.
+    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/available_object_classes.md"
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -70,13 +72,12 @@ class ObjectClassFederalAccountsViewSet(APIDocumentationView):
         return Response({"results": result})
 
 
-class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
+class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     """
     This route sends a request to the backend to retrieve budget information for a federal account.
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
-
-    endpoint_doc: /federal_account/fiscal_year_snapshot.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/fiscal_year_snapshot.md"
 
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
@@ -104,11 +105,9 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
             return Response({})
 
 
-class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
+class SpendingOverTimeFederalAccountsViewSet(APIView):
     """
-    This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
-
-    endpoint_doc: /federal_account/spending_over_time.md
+    This route takes a federal_account DB ID and returns the data required to visualized the spending over time graphic.
     """
 
     @cache_response()
@@ -372,12 +371,10 @@ def federal_account_filter(filters, extra=""):
     return result
 
 
-class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
+class SpendingByCategoryFederalAccountsViewSet(APIView):
     """
     This route takes a federal_account DB ID and returns the data required to visualized
     the Spending By Category graphic.
-
-    endpoint_doc: /federal_account/spending_by_category.md
     """
 
     @cache_response()
@@ -425,11 +422,11 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
         return Response(result)
 
 
-class FederalAccountViewSet(APIDocumentationView):
+class FederalAccountViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a federal account based on its federal_account_code.
-    endpoint_doc: /federal_account/federal_account.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     @cache_response()
     def get(self, request, fed_acct_code, format=None):
@@ -443,11 +440,11 @@ class FederalAccountViewSet(APIDocumentationView):
         return Response(federal_account[0])
 
 
-class FederalAccountsViewSet(APIDocumentationView):
+class FederalAccountsViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
-    endpoint_doc: /federal_account/federal_account.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     def _parse_and_validate_request(self, request_dict):
         """ Validate the Request object includes the required fields """
