@@ -9,7 +9,6 @@ class ReportingAwardAllPre2008View(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
-    tas_ts_vector = SearchVectorField()
     award = models.OneToOneField(Award, primary_key=True)
     category = models.TextField()
     type = models.TextField()

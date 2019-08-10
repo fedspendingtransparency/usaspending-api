@@ -10,8 +10,6 @@
     "  to_tsvector(CONCAT_WS(' ', awards.fain, awards.uri)) AS award_ts_vector,",
     "  to_tsvector(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name_ts_vector,",
     "",
-    "  tasv.tas_ts_vector,",
-    "",
     "  awards.id AS award_id,",
     "  awards.category,",
     "  awards.type,",
@@ -118,17 +116,6 @@
     "LEFT OUTER JOIN",
     "  subtier_agency AS SFA",
     "    ON (FA.subtier_agency_id = SFA.subtier_agency_id)",
-    "LEFT OUTER JOIN (",
-    "  SELECT",
-    "    faba.award_id,",
-    "    STRING_AGG(taa.tas_rendering_label, ' ')::TSVECTOR tas_ts_vector",
-    "  FROM",
-    "      treasury_appropriation_account taa",
-    "      inner join financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id",
-    "  WHERE",
-    "      faba.award_id IS NOT NULL",
-    "  GROUP BY",
-    "      faba.award_id) tasv ON tasv.award_id = awards.id",
     "WHERE",
     "  latest_transaction.action_date >= '2007-10-01'",
     "  AND awards.type IN ('06','10')",
@@ -403,10 +390,6 @@
       "name": "compound_cfda_action_date",
 
       "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
-    }, {
-      "name": "tas_ts_vector",
-      "method": "GIN",
-      "columns": [{"name": "tas_ts_vector"}]
     }
   ]
 }
