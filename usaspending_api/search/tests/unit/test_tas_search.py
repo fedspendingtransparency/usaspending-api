@@ -5,7 +5,6 @@ from model_mommy import mommy
 from rest_framework import status
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.search.helpers import build_tas_codes_filter
 
 
 @pytest.fixture
@@ -259,12 +258,3 @@ def test_spending_by_category(client, mock_tas_data, refresh_matviews):
     resp = client.post("/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(data))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
-
-
-def test_build_tas_codes_filter(db):
-    """
-    Test to help cover a code path that is not easy to get to via the API.
-    """
-    queryset = FinancialAccountsByAwards.objects.all()
-    queryset = build_tas_codes_filter(queryset, FinancialAccountsByAwards, [])
-    assert not queryset.query.where

@@ -30,10 +30,13 @@ def build_tas_codes_filter(queryset, model, tas_filters):
         # that we can provide to the queryset.extra method.  We do this by converting
         # the queryset to raw SQL and nabbing the where clause.
         where_sql, where_params = generate_where_clause(tas_queryset)
-
         return queryset.extra(
-            where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(model._meta.db_table)],
-            params=[tas_query]
+            tables=[TASSearchMatview._meta.db_table],
+            where=[
+                '"{}".award_id = "{}".award_id'.format(TASSearchMatview._meta.db_table, model._meta.db_table),
+                where_sql,
+            ],
+            params=where_params
         )
 
     return queryset

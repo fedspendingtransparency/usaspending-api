@@ -23,7 +23,7 @@
     "  award_report_fy_month,",
     "  award_report_fy_year,",
     "",
-    "  sub.award_id,",
+    "  award_id,",
     "  awarding_agency_id,",
     "  funding_agency_id,",
     "  awarding_toptier_agency_name,",
