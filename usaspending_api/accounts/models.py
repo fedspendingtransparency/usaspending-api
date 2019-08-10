@@ -1,10 +1,11 @@
 from collections import defaultdict
 from decimal import Decimal
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models, connection
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.models import ToptierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class FederalAccount(models.Model):
@@ -445,4 +446,18 @@ class TASAutocompleteMatview(models.Model):
     class Meta:
 
         db_table = "tas_autocomplete_matview"
+        managed = False
+
+
+class TASSearchMatview(models.Model):
+    """
+    Supports TAS search.  Links TASes to anything with an award id.  Is
+    filtered in the materialized view to only include TAS with File D data.
+    """
+    award_id = models.BigIntegerField(primary_key=True)
+    tas_ts_vector = SearchVectorField()
+
+    class Meta:
+
+        db_table = "tas_search_matview"
         managed = False

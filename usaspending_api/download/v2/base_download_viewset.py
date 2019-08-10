@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 from django.conf import settings
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -24,7 +24,7 @@ from usaspending_api.download.v2.request_validations import (
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
-class BaseDownloadViewSet(APIDocumentationView):
+class BaseDownloadViewSet(APIView):
     s3_handler = S3Handler(
         bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
