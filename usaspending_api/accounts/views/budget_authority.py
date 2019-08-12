@@ -9,7 +9,6 @@ from usaspending_api.common.views import CachedDetailViewSet
 class BudgetAuthorityViewSet(CachedDetailViewSet):
     """
     Return historical budget authority for a given agency id.
-    endpoint_doc: /budget_authority/agencies.md
     """
 
     serializer_class = BudgetAuthoritySerializer

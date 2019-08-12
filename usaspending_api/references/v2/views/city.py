@@ -1,9 +1,9 @@
 from django.conf import settings
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from collections import OrderedDict
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.views import APIDocumentationView
 
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
@@ -41,10 +41,11 @@ models = [
 
 
 @validate_post_request(models)
-class CityAutocompleteViewSet(APIDocumentationView):
+class CityAutocompleteViewSet(APIView):
     """
-    endpoint_doc: usaspending_api/api_contracts/autocomplete/City.md
+    This end point returns a list of cities for a given limit, country, search string, and optional state code.
     """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/City.md"
 
     @cache_response()
     def post(self, request, format=None):

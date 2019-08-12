@@ -32,6 +32,7 @@ def mock_tas_data(db):
         availability_type_code="X",
         beginning_period_of_availability="2011",
         ending_period_of_availability="2013",
+        tas_rendering_label="028-028-2011/2013-X-8006-000",
     )
     mommy.make(
         TreasuryAppropriationAccount,
@@ -43,6 +44,7 @@ def mock_tas_data(db):
         availability_type_code=None,
         beginning_period_of_availability="2012",
         ending_period_of_availability="2013",
+        tas_rendering_label="004-028-2012/2013-8006-005",
     )
     mommy.make(
         TreasuryAppropriationAccount,
@@ -54,6 +56,7 @@ def mock_tas_data(db):
         availability_type_code="X",
         beginning_period_of_availability="2001",
         ending_period_of_availability="2002",
+        tas_rendering_label="001-011-2001/2002-X-8007-001",
     )
 
     mommy.make(FinancialAccountsByAwards, treasury_account_id=1, award_id=1)

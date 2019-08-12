@@ -180,7 +180,7 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
 
 @method_decorator(deprecated, name="list")
 @method_decorator(deprecated, name="retrieve")
-class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
+class TransactionListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
     Handles requests for award transaction data.
@@ -201,7 +201,7 @@ class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
 
 @method_decorator(deprecated, name="list")
 @method_decorator(deprecated, name="retrieve")
-class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
+class TransactionRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
     Handles requests for award transaction data.

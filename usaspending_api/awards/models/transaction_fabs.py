@@ -123,4 +123,4 @@ class TransactionFABS(models.Model):
 
     class Meta:
         db_table = "transaction_fabs"
-        unique_together = (("awarding_sub_tier_agency_c", "award_modification_amendme", "fain", "uri"),)
+        unique_together = (("awarding_sub_tier_agency_c", "award_modification_amendme", "fain", "uri", "cfda_number"),)
