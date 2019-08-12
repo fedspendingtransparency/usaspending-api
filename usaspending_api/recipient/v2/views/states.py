@@ -194,7 +194,7 @@ class ListStates(APIView):
     """
     This endpoint returns a list of states and their amounts.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/state.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/state.md"
 
     @cache_response()
     def get(self, request):
