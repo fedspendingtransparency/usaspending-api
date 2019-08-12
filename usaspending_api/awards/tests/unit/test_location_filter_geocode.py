@@ -1,7 +1,7 @@
 import pytest
 
 from model_mommy import mommy
-from usaspending_api.awards.models_matviews import ReportingAwardAllDownloadView
+from usaspending_api.awards.models_matviews import ReportingAwardDownloadView
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
     geocode_filter_locations,
@@ -87,7 +87,7 @@ def award_data_fixture(db):
 
 def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
 
-    to = ReportingAwardAllDownloadView.objects
+    to = ReportingAwardDownloadView.objects
 
     values = [
         {"city": "McCool Junction", "state": "TX", "country": "USA"},
