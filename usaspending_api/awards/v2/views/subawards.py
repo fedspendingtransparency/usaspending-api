@@ -2,19 +2,22 @@ from copy import deepcopy
 
 from django.db.models import F
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 
 
-class SubawardsViewSet(APIDocumentationView):
+class SubawardsViewSet(APIView):
     """
-    endpoint_doc: /awards/subawards.md
+    This route sends a request to the backend to retrieve subawards either
+    related, optionally, to a specific parent award, or for all parent
+    awards if desired.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/subawards.md"
 
     subaward_lookup = {
         # "Display Name": "database_column"

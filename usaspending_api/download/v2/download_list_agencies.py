@@ -4,21 +4,20 @@ import pandas as pd
 from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.lookups import CFO_CGACS
 from usaspending_api.references.models import ToptierAgency
 
 
-class DownloadListAgenciesViewSet(APIDocumentationView):
+class DownloadListAgenciesViewSet(APIView):
     """
     This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
-
-    endpoint_doc: /download/list_agencies.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_agencies.md"
 
     # Get list of agencies without duplicates
     modified_agencies_list = os.path.join(

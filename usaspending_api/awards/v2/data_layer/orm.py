@@ -41,6 +41,8 @@ def construct_assistance_response(requested_award_dict):
         return None
     response.update(award)
 
+    response["executive_details"] = create_officers_object(award, FABS_ASSISTANCE_FIELDS, "fabs")
+
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
     cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
@@ -83,9 +85,10 @@ def construct_contract_response(requested_award_dict):
         return None
     response.update(award)
 
+    response["executive_details"] = create_officers_object(award, FPDS_CONTRACT_FIELDS, "fpds")
+
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
-    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -134,11 +137,13 @@ def construct_idv_response(requested_award_dict):
     response.update(award)
 
     parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
+
+    response["executive_details"] = create_officers_object(award, mapper, "fpds")
+
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
     response["parent_award"] = parent_award
     response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
-    response["executive_details"] = create_officers_object(transaction)
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -233,15 +238,21 @@ def create_place_of_performance_object(db_row_dict):
     )
 
 
-def create_officers_object(db_row_dict):
+def create_officers_object(award, mapper, transaction_type):
+
+    transaction = fetch_latest_ec_details(award["id"], mapper, transaction_type)
+
     officers = []
-    for officer_num in range(1, 6):
-        officer_name_key = "_officer_{}_name".format(officer_num)
-        officer_amount_key = "_officer_{}_amount".format(officer_num)
-        officer_name = db_row_dict.get(officer_name_key)
-        officer_amount = db_row_dict.get(officer_amount_key)
-        if officer_name or officer_amount:
-            officers.append({"name": officer_name, "amount": officer_amount})
+
+    if transaction:
+        for officer_num in range(1, 6):
+            officer_name_key = "_officer_{}_name".format(officer_num)
+            officer_amount_key = "_officer_{}_amount".format(officer_num)
+            officer_name = transaction.get(officer_name_key)
+            officer_amount = transaction.get(officer_amount_key)
+            if officer_name or officer_amount:
+                officers.append({"name": officer_name, "amount": officer_amount})
+
     return {"officers": officers}
 
 
@@ -308,6 +319,18 @@ def fetch_fabs_details_by_pk(primary_key, mapper):
 def fetch_fpds_details_by_pk(primary_key, mapper):
     vals, ann = split_mapper_into_qs(mapper)
     return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
+
+
+def fetch_latest_ec_details(award_id, mapper, transaction_type):
+    vals, ann = split_mapper_into_qs(mapper)
+    model = TransactionFPDS if transaction_type == "fpds" else TransactionFABS
+    retval = (
+        model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False)
+        .values(*vals)
+        .annotate(**ann)
+        .order_by("-action_date")
+    )
+    return retval.first()
 
 
 def fetch_agency_details(agency_id):

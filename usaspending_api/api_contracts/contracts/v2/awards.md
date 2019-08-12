@@ -37,10 +37,10 @@ This endpoint returns a list of data that is associated with the award profile p
 # Data Structures
 
 ## ContractResponse (object)
-+ `category`: `contract` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + contract
-+ `type`: `D` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + A
         + B
@@ -70,10 +70,10 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 
 ## IDVResponse (object)
-+ category: `idv` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + idv
-+ type: `IDV_E` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + `IDV_A`
         + `IDV_B`
@@ -83,40 +83,40 @@ This endpoint returns a list of data that is associated with the award profile p
         + `IDV_C`
         + `IDV_D`
         + `IDV_E`
-+ type_description: `Blanket Purchase Agreements (BPA) Calls` (required, string)
-+ generated_unique_award_id: `6657452ew23` (required, string)
-+ piid: `W31P4Q15A0024` (required, string)
++ `type_description`: `Blanket Purchase Agreements (BPA) Calls` (required, string)
++ `generated_unique_award_id`: `6657452ew23` (required, string)
++ `piid`: `W31P4Q15A0024` (required, string)
     Award id
-+ parent_award_piid: `1301` (required, string, nullable)
++ `parent_award_piid`: `1301` (required, string, nullable)
     null if the IDV has no parent
-+ parent_generated_unique_award_id: `CONT_IDV_W56HZV10AA913_9700` (required, nullable)
++ `parent_generated_unique_award_id`: `CONT_IDV_W56HZV10AA913_9700` (required, nullable)
     null if the IDV has no parent
-+ description: `ewraijwrw` (required, string, nullable)
++ `description`: `ewraijwrw` (required, string, nullable)
     Description of the first transaction for this award
-+ total_obligation: 30400 (required, number, nullable)
-+ base_exercised_options: 23000 (required, number, nullable)
-+ base_and_all_options: 24500 (required, number)
++ `total_obligation`: 30400 (required, number, nullable)
++ `base_exercised_options`: 23000 (required, number, nullable)
++ `base_and_all_options`: 24500 (required, number)
     The ceiling and amount of the award
-+ date_signed: `2006-01-15` (required, string, nullable)
-+ subaward_count: 430 (required, number)
-+ total_subaward_amount: 35345353453 (required, number, nullable)
-+ awarding_agency (required, Agency, fixed-type)
-+ funding_agency (required, Agency, fixed-type, nullable)
-+ recipient (required, Recipient, fixed-type)
-+ period_of_performance (required, PeriodOfPerformance, fixed-type)
-+ place_of_performance (required, Location, fixed-type)
-+ latest_transaction_contract_data (required, ContractDetails, fixed-type)
-+ executive_details (required, Executive, fixed-type)
-+ parent_award (required, ParentIDVDetails, fixed-type, nullable)
++ `date_signed`: `2006-01-15` (required, string, nullable)
++ `subaward_count`: 430 (required, number)
++ `total_subaward_amount`: 35345353453 (required, number, nullable)
++ `awarding_agency` (required, Agency, fixed-type)
++ `funding_agency` (required, Agency, fixed-type, nullable)
++ `recipient` (required, Recipient, fixed-type)
++ `period_of_performance` (required, PeriodOfPerformance, fixed-type)
++ `place_of_performance` (required, Location, fixed-type)
++ `latest_transaction_contract_data` (required, ContractDetails, fixed-type)
++ `executive_details` (required, Executive, fixed-type)
++ `parent_award` (required, ParentIDVDetails, fixed-type, nullable)
 
 ## FinancialAssistanceResponse (object)
-+ category: `loans` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + loans
         + other
         + direct payment
         + grant
-+ type: `07` (required, enum[string])
++ `type` (required, enum[string])
     + Members
         + `02`
         + `03`
@@ -128,34 +128,35 @@ This endpoint returns a list of data that is associated with the award profile p
         + `09`
         + `10`
         + `11`
-+ type_description: `Direct Loans` (required, string)
-+ generated_unique_award_id: `42954959` (required, string)
-+ fain: `43533A3` (required, string, nullable)
-+ uri: `5341QQ` (required, string, nullable)
-+ description: `ewraijwrw` (required, string, nullable)
-+ transaction_obligated_amount: 10700 (required, number, nullable)
++ `type_description`: `Direct Loans` (required, string)
++ `generated_unique_award_id`: `42954959` (required, string)
++ `fain`: `43533A3` (required, string, nullable)
++ `uri`: `5341QQ` (required, string, nullable)
++ `description`: `ewraijwrw` (required, string, nullable)
++ `transaction_obligated_amount`: 10700 (required, number, nullable)
     Used for Funding Obligated on Grants pages
-+ total_obligation: 2324 (required, number, nullable)
-+ base_exercised_options (required, number, nullable)
-+ total_subsidy_cost: 123 (required, number, nullable)
++ `total_obligation`: 2324 (required, number, nullable)
++ `base_exercised_options` (required, number, nullable)
++ `total_subsidy_cost`: 123 (required, number, nullable)
     null except for loans
-+ total_loan_value: 24343 (required, number, nullable)
++ `total_loan_value`: 24343 (required, number, nullable)
     null except for loans
-+ non_federal_funding (required, number, nullable)
++ `non_federal_funding` (required, number, nullable)
     null except for grants
-+ total_funding (required, number, nullable)
++ `total_funding` (required, number, nullable)
     null except for grants
-+ date_signed: `2006-01-15` (required, string, nullable)
-+ subaward_count: 430 (required, number)
-+ total_subaward_amount: 35345353453 (required, number, nullable)
-+ cfda_objectives: `Some HTML string` (required, string, nullable)
-+ cfda_number: `0.434` (required, string, nullable)
-+ cfda_title: `Flood Insurance` (required, string, nullable)
-+ awarding_agency (required, Agency, fixed-type)
-+ funding_agency (required, Agency, fixed-type, nullable)
-+ recipient (required, Recipient, fixed-type)
-+ period_of_performance (required, PeriodOfPerformanceAssistance, fixed-type)
-+ place_of_performance (required, Location, fixed-type)
++ `date_signed`: `2006-01-15` (required, string, nullable)
++ `subaward_count`: 430 (required, number)
++ `total_subaward_amount`: 35345353453 (required, number, nullable)
++ `cfda_objectives`: `Some HTML string` (required, string, nullable)
++ `cfda_number`: `0.434` (required, string, nullable)
++ `cfda_title`: `Flood Insurance` (required, string, nullable)
++ `awarding_agency` (required, Agency, fixed-type)
++ `funding_agency` (required, Agency, fixed-type, nullable)
++ `recipient` (required, Recipient, fixed-type)
++ `period_of_performance` (required, PeriodOfPerformanceAssistance, fixed-type)
++ `place_of_performance` (required, Location, fixed-type)
++ `executive_details` (required, Executive, fixed-type)
 
 ## Agency (object)
 + id: 123 (required, number)
@@ -291,7 +292,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `type_set_aside_description` (required, string, nullable)
 
 ## Executive
-+ officers (required, array[Officer])
++ officers (required, array[Officer], fixed-type)
 
 ## Officer
 + name: `John Doe` (required, string)

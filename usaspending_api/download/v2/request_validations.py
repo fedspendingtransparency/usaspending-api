@@ -1,9 +1,13 @@
+from copy import deepcopy
 from django.conf import settings
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.common.validator.utils import get_model_by_name
 from usaspending_api.download.helpers import check_types_and_assign_defaults, parse_limit, validate_time_periods
 from usaspending_api.download.lookups import (
     VALUE_MAPPINGS,
@@ -43,6 +47,7 @@ def validate_award_request(request_data):
     json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
 
     _validate_and_update_locations(filters, json_request)
+    _validate_tas_codes(filters, json_request)
 
     # Validate time periods
     total_range_count = validate_time_periods(filters, json_request)
@@ -198,6 +203,15 @@ def _validate_and_update_locations(filters, json_request):
                     raise InvalidParameterException("Location is not a dictionary: {}".format(location_dict))
                 location_error_handling(location_dict.keys())
             json_request["filters"][location_filter] = filters[location_filter]
+
+
+def _validate_tas_codes(filters, json_request):
+    if "tas_codes" in filters:
+        tas_codes = {"filters": {"tas_codes": filters["tas_codes"]}}
+        models = [deepcopy(get_model_by_name(AWARD_FILTER, "tas_codes"))]
+        tas_codes = TinyShield(models).block(tas_codes)
+        if tas_codes:
+            json_request["filters"]["tas_codes"] = tas_codes["filters"]["tas_codes"]
 
 
 def _validate_required_parameters(request_data, required_parameters):
