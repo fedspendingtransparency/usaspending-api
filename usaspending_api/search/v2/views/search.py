@@ -272,8 +272,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 else:
                     result_key = "subcontracts"
         else:
-            queryset = matview_search_filter(filters, ReportingAwardDownloadView)
-            queryset = queryset.values("type").annotate(category_count=Count("category"))
+            # queryset = matview_search_filter(filters, ReportingAwardDownloadView)
+            # queryset = queryset.values("type").annotate(category_count=Count("category"))
+            from usaspending_api.common.data_connectors.async_spending_by_award_count import get_values
+            results = get_values(filters)
+            return Response({"results": results})
 
         all_awards_types_to_category = {type_code: category for category, type_codes in all_award_types_mappings.items()
                                         for type_code in type_codes}
