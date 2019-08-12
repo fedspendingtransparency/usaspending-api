@@ -17,7 +17,6 @@ from usaspending_api.awards.models_matviews import (
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
-    all_award_types_mappings,
     assistance_type_mapping,
     contract_subaward_mapping,
     contract_type_mapping,
@@ -39,11 +38,10 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.helpers.sql_helpers import execute_fetchall
+from usaspending_api.common.data_connectors.async_spending_by_award_count import async_fetch_category_counts
 
 
 def obtain_view_from_award_group(type_list):
@@ -75,6 +73,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     """
     This route takes award filters and fields, and returns the fields of the filtered awards.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award.md"
 
     @cache_response()
@@ -241,6 +240,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award_count.md"
 
     @cache_response()
@@ -276,7 +276,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 results[result_key] += award["category_count"]
 
         else:
-            QUERIES = {
+            category_to_model = {
                 "contracts": ReportingAwardContractsView,
                 "direct_payments": ReportingAwardDirectPaymentsView,
                 "grants": ReportingAwardGrantsView,
@@ -284,13 +284,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "loans": ReportingAwardLoansView,
                 "other": ReportingAwardOtherView,
             }
-
-            query = ""
-            for k, v in QUERIES.items():
-                sql = generate_raw_quoted_query(matview_search_filter(filters, v).annotate(count=Count('*')).values("count"))
-                query += " SELECT '{0}' AS category, COUNT(*) AS count FROM ({1}) as {0}_sub UNION".format(k, sql)
-            query = query[:-6]
-            # print(query)
-            results = {row[0]: row[1] for row in execute_fetchall(query)}
+            results = async_fetch_category_counts(filters, category_to_model)
 
         return Response({"results": results})
