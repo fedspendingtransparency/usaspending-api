@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # Sub Account Code [/api/v2/autocomplete/accounts/sub/]
 
-This endpoint powers the USAspending.gov Sub Account Code (SUB) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.  It returns the list of potential Sub Account Codes narrowed by other components supplied in the Treasury Account filter.
+This endpoint powers the USAspending.gov Sub Account Code (SUB) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.
 
-## POST
+## List of potential Sub Account Codes [POST /api/v2/autocomplete/accounts/sub/]
 
 + Request (application/json)
 
@@ -13,7 +13,7 @@ This endpoint powers the USAspending.gov Sub Account Code (SUB) autocomplete in 
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: 10
+            + Default: `10`
 
     + Body
 

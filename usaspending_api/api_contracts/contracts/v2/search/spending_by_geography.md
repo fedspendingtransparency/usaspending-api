@@ -1,15 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Spending by Geography [/api/v2/search/spending_by_geography/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## Spending by Geography [/api/v2/search/spending_by_geography/]
+## List aggregated obligation amounts [POST /api/v2/search/spending_by_geography/]
 
 This endpoint takes award filters, and returns aggregated obligation amounts in different geographic areas.
-
-### Spending by Geography [POST]
 
 + Request (application/json)
     + Attributes (object)

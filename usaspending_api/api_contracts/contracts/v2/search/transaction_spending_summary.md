@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/search/transaction_spending_summary/]
 
-Returns the high-level aggregations of the counts and dollar amounts for all transactions which match the keyword filter
+## Returns aggregations of counts and amounts for transactions [POST /api/v2/search/transaction_spending_summary/]
 
-## POST
+Returns the high-level aggregations of the counts and dollar amounts for all transactions which match the keyword filter
 
 + Request (application/json)
     + Attributes (object)

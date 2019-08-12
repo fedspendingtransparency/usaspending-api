@@ -1,19 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Profile
+# Recipient Duns [/api/v2/recipient/duns/]
 
 These endpoints are used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
 
-# Group Landing Page
-
-This endpoint supports the recipient landing page, which provides a list of all recipients for which individual profile pages are available on USAspending.gov.
-
-## List Recipients [/api/v2/recipient/duns/]
+## List Recipients [POST /api/v2/recipient/duns/]
 
 This endpoint returns a list of recipients, their level, DUNS, and amount.
-
-### List Recipients [POST]
 
 + Request (application/json)
     + Attributes (object)
@@ -49,23 +43,19 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
 + Response 200 (application/json)
     + Attributes (RecipientsListResponse)
 
-# Group Profile Page
-
-These endpoints support the individual Recipient Profile pages that display data for a specific DUNS.
-
-## Recipient Overview [/api/v2/recipient/duns/{recipient_id}/{?year}]
+## Get Recipient Overview [GET /api/v2/recipient/duns/{recipient_id}/{?year}]
 
 This endpoint returns a high-level overview of a specific recipient, given its id.
 
 + Parameters
+
     + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
         A unique identifier for the recipient at a specific level (parent, child, or neither).
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
-### Get Recipient Overview [GET]
-
 + Response 200 (application/json)
+
     + Attributes (RecipientOverview)
 
 # Data Structures
@@ -105,7 +95,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     Recipient's DUNS (Data Universal Numbering System) number. `null` when no DUNS is provided.
 + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
     A unique identifier for the recipient.
-+  parents: (required, array[ParentRecipient], fixed-type)
++  parents (required, array[ParentRecipient], fixed-type)
 + `parent_name`: The XYZ Corporation (required, string, nullable)
     Parent recipient's name. `null` if the recipient does not have a parent recipient.
 + `parent_duns`: `001006361` (required, string, nullable)

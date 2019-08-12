@@ -1,11 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending Explorer
+# Spending Explorer [/api/v2/spending/]
 
 These endpoints are used to power USAspending.gov's Spending Explorer. This data can be used to drill down into specific subsets of data by level of detail.
-
-# Group General Spending
 
 The Spending Explorer requires the top-level (or entry point) filter to be one of three types:
 
@@ -13,11 +11,9 @@ The Spending Explorer requires the top-level (or entry point) filter to be one o
 * Agency (`agency`)
 * Object Class (`object_class`)
 
-## Spending Explorer [/api/v2/spending/]
+## Spending Explorer Data [POST /api/v2/spending/]
 
-### Spending Explorer Data [POST]
-
- **General Spending Explorer Data**
+**General Spending Explorer Data**
 
 The general Spending Explorer response will contain only one filter (required), a fiscal year and quarter to limit the data to. The data will include _all_ quarters up to and including the specified quarter in the given fiscal year.
 
@@ -31,23 +27,6 @@ Note that data for the latest complete quarter is not available until 45 days af
 
 Using the response from the general Spending Explorer, you can drill down to more detailed grouping fields. However, you must limit the scope of your request to one of the top-level groups and, optionally, additional lower-level groups. Each of your groups will combine to become the scope of your request. For example, if you filter by "Department of Justice" and "Salaries and Expenses," you will only see spending breakdowns for "Salaries and Expenses" within "Department of Justice."
 
-
-+ Request General Spending Explorer(application/json)
-    + Attributes (object)
-        + type: `agency` (required, enum[string])
-            + `budget_function`
-            + `agency`
-            + `object_class`
-        + `filters` (required, GeneralFilter, fixed-type)
-
-+ Response 200 (application/json)
-    + Attributes (object)
-        + total: 126073789264.49 (required, number, nullable)
-            Total should only be null when there are no results.
-        + end_date: `2017-09-30` (required, string)
-            This is the "as-of" date for the data being returned.
-        + results (required, array[SpendingExplorerGeneralResponse, SpendingExplorerGeneralUnreportedResponse], fixed-type)
- 
 + Request Specific Spending Explorer (application/json)
     + Attributes (object)
         + type: `program_activity` (required, enum[string])
@@ -68,6 +47,24 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + end_date: `2017-09-30` (required, string)
             This is the "as-of" date for the data being returned.
         + results (required, array[SpendingExplorerDetailedResponse], fixed-type)
+
++ Request General Spending Explorer (application/json)
+    + Attributes (object)
+        + type: `agency` (required, enum[string])
+            + `budget_function`
+            + `agency`
+            + `object_class`
+        + `filters` (required, GeneralFilter, fixed-type)
+
++ Response 200 (application/json)
+    + Attributes (object)
+        + total: 126073789264.49 (required, number, nullable)
+            Total should only be null when there are no results.
+        + end_date: `2017-09-30` (required, string)
+            This is the "as-of" date for the data being returned.
+        + results (required, array[SpendingExplorerGeneralResponse, SpendingExplorerGeneralUnreportedResponse], fixed-type)
+ 
+
 
 # Data Structures
 

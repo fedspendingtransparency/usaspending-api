@@ -1,19 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Spending by Award [/api/v2/search/spending_by_award/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoints supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-# Group Visualizations
-
-These endpoints return data that are grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
-
-## Spending by Award [/api/v2/search/spending_by_award/]
+## List fields of filtered awards [POST /api/v2/search/spending_by_award/]
 
 This endpoint takes award filters and fields, and returns the fields of the filtered awards.
-
-### Spending by Award [POST]
 
 + Request (application/json)
     + Attributes (object)

@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Activity [/api/v2/awards/idvs/activity/]
 
-This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity visualization on IDV Summary Pages. It returns information about child awards and grandchild awards for a given IDV.
+This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity visualization on IDV Summary Pages.
 
-## POST
+## List child and grandchild awards for a given IDV [POST /api/v2/awards/idvs/activity/]
 
 + Request (application/json)
     + Attributes (object)

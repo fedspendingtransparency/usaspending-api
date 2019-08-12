@@ -1,16 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-
-# Federal Account Landing Page
+# Federal Accounts Landing Page [/api/v2/federal_accounts/]
 
 This endpoint supports the federal account landing page, which provides a list of all federal accounts for which individual federal accounts pages are available on USAspending.gov.
 
-## List Federal Accounts [/api/v2/federal_accounts/]
+## List Federal Accounts [POST /api/v2/federal_accounts/]
 
 This endpoint returns a list of federal accounts, their number, name, managing agency, and budgetary resources.
-
-### List Federal Accounts [POST]
 
 + Request (application/json)
     + Attributes (object)
@@ -37,23 +34,16 @@ This endpoint returns a list of federal accounts, their number, name, managing a
         + `next`: 2 (number, required, nullable)
         + `fy`: `2018` (string, required)
         + `results` (array[FederalAccountListing], fixed-type)
- 
-# Federal Account Profile
 
-## Group Profile Page
 
-This endpoint supports individual federal account profile pages.
-
-## Account Overview [/api/v2/federal_accounts/{accountNumber}/]
+## Get Account Overview [GET /api/v2/federal_accounts/{accountNumber}/]
 
 This endpoint returns the agency identifier, account code, title, and database id for the given federal account.
 
 + Parameters
     + accountNumber: `011-1022` (required, string)
-        The Federal Account symbol comprised of Agency Code and Main Account Code. A unique identifier for federal accounts. 
-
-### Get Account Overview [GET]
-
+        The Federal Account symbol comprised of Agency Code and Main Account Code. A unique identifier for federal accounts.
+        
 + Response 200 (application/json)
     + Attributes
         + `agency_identifier`: `011` (required, string)

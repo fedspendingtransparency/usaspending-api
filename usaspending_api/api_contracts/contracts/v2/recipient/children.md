@@ -1,27 +1,23 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Profile
+# Recipient Children [/api/v2/recipient/children/]
 
 This endpoint is used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
 
-# Group Profile Page
-
-This endpoint supports the individual Recipient Profile pages that display data for a specific DUNS.
-
-## Recipient Children [/api/v2/recipient/children/{duns}/{?year}]
+## Get Recipient Children [GET /api/v2/recipient/children/{duns}/{?year}]
 
 This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
 
 + Parameters
+
     + duns: `001006360` (required, string)
         Parent recipient's DUNS.
     + year: `2017` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
-### Get Recipient Children [GET]
-
 + Response 200 (application/json)
+
     + Attributes (array[ChildRecipient], fixed-type)
 
 # Data Structures

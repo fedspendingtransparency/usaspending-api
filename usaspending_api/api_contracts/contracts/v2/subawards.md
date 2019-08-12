@@ -1,19 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Subawards
-
-These endpoints are used to power USAspending.gov's subaward listings.
-
-# Subaward List
-
-This endpoint returns a filtered set of subawards.
-
-## Subawards [/api/v2/subawards/]
+# Subawards [/api/v2/subawards/]
 
 This endpoint returns a list of data that is associated with the award profile page.
 
-### Subawards [POST]
+## List filtered subawards [POST /api/v2/subawards/]
+
+This endpoint returns a filtered set of subawards.
 
 + Request (application/json)
     + Attributes (object)
@@ -36,7 +30,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 + desc 
             + Default: desc
         + `award_id` (optional, number)
-            + Award ID of parent Award
+            Award ID of parent Award
             
 + Response 200 (application/json)
     + Attributes

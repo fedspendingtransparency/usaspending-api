@@ -1,11 +1,11 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Profile
+# Federal Obligations [/api/v2/federal_obligations/]
 
-These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
+This endpoint is used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-## Federal Accounts [/api/v2/federal_obligations/{?fiscal_year,funding_agency_id,limit,page}]
+## Get amount obligated to federal accounts [GET /api/v2/federal_obligations/{?fiscal_year,funding_agency_id,limit,page}]
 
 This endpoint returns the amount that the specific agency has obligated to various federal accounts in a given fiscal year.
 
@@ -18,9 +18,7 @@ This endpoint returns the amount that the specific agency has obligated to vario
         The maximum number of results to return in the response.
     + page: 1 (optional, number)
         The response page to return (the record offset is (`page` - 1) * `limit`).
-
-### Get Federal Accounts [GET]
-
+        
 + Response 200 (application/json)
     + Attributes
         + results (required, array[FederalAccount], fixed-type)

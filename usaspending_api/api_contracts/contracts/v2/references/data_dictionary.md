@@ -1,14 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Data Dictionary
+# Data Dictionary [/api/v2/references/data_dictionary/]
+
 This endpoint powers USAspending.gov's data dictionary page.
 
-## Data Dictionary [/api/v2/references/data_dictionary/]
+## Return data for latest data dictionary [GET /api/v2/references/data_dictionary/]
 
 This endpoint returns data corresponding to the latest data dictionary csv file.
-
-### Data Dictonary [GET]
 
 + Response 200 (application/json)
     + Attributes
@@ -18,9 +17,9 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
 
 ## DataDictionary (object)
 + metadata (required, DictionaryMetadata)
-+ sections: (array[Section], fixed-type)
-+ headers: (array[Column], fixed-type)
-+ rows: (required, array, fixed-type)
++ sections (array[Section], fixed-type)
++ headers (array[Column], fixed-type)
++ rows (required, array, fixed-type)
     + `Lorem ipsum`, `dolor sit amet`, `consectetur adipiscing elit` (array[string], nullable)
 
 ## Section (object)

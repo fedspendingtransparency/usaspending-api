@@ -1,40 +1,31 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# State Profile
+# State Overview [/api/v2/recipient/state/]
 
 These endpoints are used to power USAspending.gov's state profile pages. This data can be used to visualize the government spending that occurs in a specific state or territory.
 
-# Group Landing Page
 
-These endpoints support the state profile landing page, which provides a list of all states and territories for which individual profile pages are available on USAspending.gov.
-
-## List States [/api/v2/recipient/state/]
+## Get List States [GET /api/v2/recipient/state/]
 
 This endpoint returns a list of states and their amounts.
-
-### Get List States [GET]
 
 + Response 200 (application/json)
     + Attributes (array[StateListing], fixed-type)
 
-# Group Profile Page
-
-These endpoints support the individual State Profile pages that display data for a specific state or territory.
-
-## State Overview [/api/v2/recipient/state/{fips}/{?year}]
+## Get State Overview [GET /api/v2/recipient/state/{fips}/{?year}]
 
 This endpoint returns a high-level overview of a specific state or territory, given its USAspending.gov `id`.
 
 + Parameters
+
     + fips: 51 (required, string)
         The FIPS code for the state you want to view. You must include leading zeros.
     + year: 2017 (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
 
-### Get State Overview [GET]
-
 + Response 200 (application/json)
+
     + Attributes (StateOverview)
 
 # Data Structures

@@ -3,16 +3,16 @@ HOST: https://api.usaspending.gov
 
 # Availability Type Code [/api/v2/autocomplete/accounts/a/]
 
-This endpoint powers the USAspending.gov Availability Type Code (A) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.  It returns the list of potential Availability Type Codes narrowed by other components supplied in the Treasury Account filter.
+This endpoint powers the USAspending.gov Availability Type Code (A) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.
 
-## POST
+## List of potential Availability Type Codes [POST /api/v2/autocomplete/accounts/a/]
 
 + Request (application/json)
     + Attributes (object)
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: 10
+            + Default: `10`
 
     + Body
 

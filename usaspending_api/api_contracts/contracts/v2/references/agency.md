@@ -1,25 +1,21 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Profile
+# Agency Overview [/api/v2/references/agency/]
 
 These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-# Group Profile Page
-
-These endpoints support the individual Agency Profile pages that display data for a specific agency.
-
-## Agency Overview [/api/v2/references/agency/{id}/]
+## Get Agency Overview [GET /api/v2/references/agency/{id}/]
 
 This endpoint returns a high-level overview of a specific government agency, given its USAspending.gov `id`.
 
 + Parameters
+
     + id: 456 (required, number)
         The unique USAspending.gov agency identifier. This ID is the `agency_id` value returned in the `/api/v2/references/toptier_agencies/` endpoint.
-
-### Get Agency Overview [GET]
-
+        
 + Response 200 (application/json)
+
     + Attributes
         + results (required, AgencyOverview)
 

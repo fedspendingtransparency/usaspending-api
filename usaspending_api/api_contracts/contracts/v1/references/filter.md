@@ -5,10 +5,6 @@ HOST: https://api.usaspending.gov
 
 These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-# Group Visualizations
-
-These endpoints return data that are grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
-
 ## Generated Filter Hash for URL [/api/v1/references/filter/]
 
 Generates a hash for URL, based on selected filter criteria.
@@ -99,33 +95,3 @@ Generates a hash for URL, based on selected filter criteria.
 
 ### FilterObjectAwardTypes (array)
 List of filterable award types
-
-### Sample
-- A
-- B
-- C
-- D
-
-### Default
-- 02
-- 03
-- 04
-- 05
-- 06
-- 07
-- 08
-- 09
-- 10
-- 11
-- A
-- B
-- C
-- D
-- IDV_A
-- IDV_B
-- IDV_B_A
-- IDV_B_B
-- IDV_B_C
-- IDV_C
-- IDV_D
-- IDV_E

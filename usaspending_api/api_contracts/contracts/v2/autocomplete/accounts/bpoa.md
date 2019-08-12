@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # Beginning Period of Availability [/api/v2/autocomplete/accounts/bpoa/]
 
-This endpoint powers the USAspending.gov Beginning Period of Availability (BPOA) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.  It returns the list of potential Beginning Period of Availabilities narrowed by other components supplied in the Treasury Account filter.
+This endpoint powers the USAspending.gov Beginning Period of Availability (BPOA) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.
 
-## POST
+## List of potential Beginning Period of Availabilities [POST /api/v2/autocomplete/accounts/bpoa/]
 
 + Request (application/json)
 
@@ -13,7 +13,7 @@ This endpoint powers the USAspending.gov Beginning Period of Availability (BPOA)
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: 10
+            + Default: `10`
 
     + Body
 

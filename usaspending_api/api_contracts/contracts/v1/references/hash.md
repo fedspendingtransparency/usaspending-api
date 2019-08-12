@@ -1,22 +1,14 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Restore Filters From URL Hash [/api/v1/references/hash/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+Restores selected filter criteria, based on URL hash. Supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-# Group Visualizations
-
-These endpoints return data that are grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
-
-## Restore Filters From URL Hash [/api/v1/references/hash/]
-
-Restores selected filter criteria, based on URL hash.
-
-### Restore Filters From URL Hash Data [POST]
+## Restore Filters From URL Hash Data [POST]
 + Request (application/json)
     + Attributes (object)
-        + hash : `5703c297b902ac3b76088c5c275b53f9` (required, string)
+        + hash : `128e62e0afe7696f850576ee6d443b4a` (required, string)
 
 + Response 200 (application/json)
     + Attributes

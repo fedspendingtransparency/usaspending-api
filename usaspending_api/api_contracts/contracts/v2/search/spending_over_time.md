@@ -1,19 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Spending Over Time [/api/v2/search/spending_over_time/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-# Group Visualizations
-
-These endpoints return data that are grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
-
-## Spending Over Time [/api/v2/search/spending_over_time/]
+## List aggregated award amounts by time period [POST]
 
 This endpoint returns a list of aggregated award amounts grouped by time period in ascending order (earliest to most recent).
-
-### Spending Over Time [POST]
 
 + Request (application/json)
     + Attributes (object)

@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/awards/idvs/funding/]
 
-Returns File C financial data for an IDV (Indefinite Delivery Vehicle) award's descendant contracts.  Used to populate the Federal Account Funding tab on the IDV summary page.
+Used to populate the Federal Account Funding tab on the IDV summary page.
 
-## POST
+## List File C financial data for an IDV award's descendant contracts [POST /api/v2/awards/idvs/funding/]
 
 + Request (application/json)
     + Attributes (object)

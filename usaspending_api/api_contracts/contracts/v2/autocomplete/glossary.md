@@ -2,7 +2,7 @@
 
 This endpoint returns glossary autocomplete data for submitted text snippet.
 
-## List Autocomplete Glossary [POST]
+## List Autocomplete Glossary [POST /api/v2/autocomplete/glossary]
 
 + Request (application/json)
 
@@ -10,7 +10,7 @@ This endpoint returns glossary autocomplete data for submitted text snippet.
 
         + `search_text`: `aw` (required, string)
         The text snippet that you are trying to autocomplete using a glossary term.
-        + `limit`: 10 (optional, number)
+        + `limit`: `10` (optional, number)
         Maximum number to return
 
 + Response 200 (application/json)

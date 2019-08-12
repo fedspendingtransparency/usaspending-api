@@ -1,23 +1,23 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Profile
+# Major Object Classes [/api/v2/financial_spending/major_object_class/]
 
 These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-## Major Object Classes [/api/v2/financial_spending/major_object_class/{?fiscal_year,funding_agency_id}]
+## Get Major Object Classes [GET /api/v2/financial_spending/major_object_class/{?fiscal_year,funding_agency_id}]
 
 This endpoint returns the total amount that a specific agency has obligated to major object classes in a given fiscal year.
 
 + Parameters
+
     + fiscal_year: 2017 (required, number)
         The fiscal year that you are querying data for.
     + funding_agency_id: 456 (required, number)
         The unique USAspending.gov agency identifier. This ID is the `agency_id` value returned in the `/api/v2/references/toptier_agencies/` endpoint.
-
-### Get Major Object Classes [GET]
-
+        
 + Response 200 (application/json)
+
     + Attributes
         + results (required, array[MajorObjectClass], fixed-type)
 

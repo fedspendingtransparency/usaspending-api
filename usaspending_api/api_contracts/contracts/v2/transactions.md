@@ -1,14 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Transactions Page
+# Transactions [/api/v2/transactions/]
+
 This endpoint is used to power the Transaction History tables on USAspending.gov's award summary pages. This data can be used to better understand the details of specific transactions on a given award.
 
-## Transactions [/api/v2/transactions/]
+## List transactions [POST /api/v2/transactions/]
 
 This endpoint returns a list of transactions, their amount, type, action date, action type, modification number, and description.
-
-### Transactions [POST]
 
 + Request (application/json)
     + Attributes (object)

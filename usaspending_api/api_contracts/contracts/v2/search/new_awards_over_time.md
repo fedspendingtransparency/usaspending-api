@@ -1,19 +1,14 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Profile
+
+# New Awards Over Time [/api/v2/search/new_awards_over_time/]
 
 This endpoint is used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
 
-# Group Profile Page
+## List count of new awards [POST /api/v2/search/new_awards_over_time/]
 
-These endpoints support the individual Recipient Profile pages that display data for a specific DUNS.
-
-## New Awards Over Time [/api/v2/search/new_awards_over_time/]
-
-This endpoint returns a the count of new awards grouped by time period in ascending order (earliest to most recent).
-
-### Recipient Spending Over Time [POST]
+This endpoint returns the count of new awards grouped by time period in ascending order (earliest to most recent).
 
 + Request (application/json)
     + Attributes (object)

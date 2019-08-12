@@ -3,9 +3,7 @@ HOST: https://api.usaspending.gov
 
 # IDV Related Awards [/api/v2/awards/idvs/awards/]
 
-Returns child IDVs, child awards, or grandchild awards for the indicated IDV (Indefinite Delivery Vehicle).
-
-## POST
+## List child IDVs, child awards, or grandchild awards for IDV [POST /api/v2/awards/idvs/awards/]
 
 + Request (application/json)
     + Attributes (object)

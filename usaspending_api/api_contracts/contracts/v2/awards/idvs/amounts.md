@@ -3,12 +3,12 @@ HOST: https://api.usaspending.gov
 
 # IDV Award Amounts [/api/v2/awards/idvs/amounts/{award_id}/]
 
-Returns aggregated award counts and funding amounts for IDV (Indefinite Delivery Vehicle) contracts.  Used to populate the Federal Account Funding tab on the IDV summary page.
+Used to populate the Federal Account Funding tab on the IDV summary page.
 
-## GET
+## Get aggregated award counts and funding amounts for IDV contracts [GET /api/v2/awards/idvs/amounts/{award_id}/]
 
 + Parameters
-    + `award_id`: `CONT_IDV_GS23F0170L_4730` (required, string)
+    + `award_id`: `CONT_IDV_FA304715A0037_9700` (required, string)
          Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
 
 + Response 200 (application/json)

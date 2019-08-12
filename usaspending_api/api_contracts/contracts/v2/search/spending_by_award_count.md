@@ -1,15 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Spending by Award Count [/api/v2/search/spending_by_award_count/]
 
 These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## Spending by Award Count [/api/v2/search/spending_by_award_count/]
+## Number of awards for each type [POST /api/v2/search/spending_by_award_count/]
 
 This endpoint takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, Other and IDVs).
-
-### Spending by Award Count [POST]
 
 + Request (application/json)
     + Attributes (object)

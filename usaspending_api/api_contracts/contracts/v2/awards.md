@@ -1,23 +1,17 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Award Profile
+# Awards [/api/v2/awards/]
 
-These endpoints are used to power USAspending.gov's award profile pages. This data can be used to view details about a specific award.
+This endpoint is used to power USAspending.gov's award profile pages. This data can be used to view details about a specific award.
 
-# Group Award Page
-
-These endpoints support the individual Award pages that display data for a specific award type.
-
-## Awards [/api/v2/awards/{award_id}/]
+## Return data associated with award profile [GET /api/v2/awards/{award_id}/]
 
 This endpoint returns a list of data that is associated with the award profile page.
 
 + Parameters
     + award_id: `TEST` (required, string)
         Accepts the v2 generated award hash or internal database id.
-
-### Award [GET]
 
 + Request A request with a contract id (application/json)
     + Parameters
@@ -302,82 +296,3 @@ This endpoint returns a list of data that is associated with the award profile p
 ## Officer
 + name: `John Doe` (required, string)
 + amount: 234242 (required, number)
-<!--
-# Group Tables
-
-These endpoints support the tables on the individual Award Profile pages.
-
-## SubAwards [/api/v2/subawards/]
-
-This endpoint returns a list of sub-awards, their amount, action date, recipient name, and description.
-
-### SubAwards [POST]
-
-+ Request (application/json)
-    + Attributes (object)
-        + award_id: 123 (optional, string)
-            The internal id of the award to filter on. If not included, all sub-awards are returned.
-        + limit: 15 (optional, number)
-            The number of results to include per page.
-            + Default: 10
-        + page: 1 (optional, number)
-            The page of results to return based on the limit.
-            + Default: 1
-        + sort: subaward_number (optional, enum[string])
-            The field results are sorted by.
-            + Default: subaward_number
-            + Members
-                + subaward_number
-                + description
-                + action_date
-                + amount
-                + recipient_name
-        + order: desc (optional, string)
-            The direction results are sorted by. `asc` for ascending, `desc` for descending.
-            + Default: desc
-
-+ Response 200 (application/json)
-    + Attributes
-        + results (array[SubAwardResult], fixed-type)
-        + page_metadata (PageMetaDataObject)
-
-# Data Structures
-
-## SubAwardResult (object)
-+ id: `1` (required, string)
-    The internal sub-award id.
-+ subaward_number: `2-A` (required, string)
-    The sub-award id.
-+ description: description (required, string)
-+ action_date: `1999-01-15` (required, string)
-    Action date in the format `YYYY-MM-DD`.
-+ amount: 1234.56 (required, number)
-    Monetary value of the sub-award.
-+ recipient_name: Recipient A (required, string)
-
-
-## FinancialSystemDetailsResult(object)
-+ submission_id: 123 (required, number)
-+ reporting_fiscal_year: 2018 (required, number)
-+ reporting_fiscal_quarter: 4 (required, number)
-+ submission_date: `FY 2018 Q4` (required, string)
-    A string comprised of the reporting fiscal year and quarter that can be used for sorting by submission date.
-+ obligated_amount: 45600000.00 (required, number)
-+ federal_account_name: `Science, Energy Programs, Energy` (required, string)
-+ federal_account_number: `089-0222` (required, string)
-+ treasury_account_symbol: `089-X-0222-000` (required, string)
-+ treasury_account_identifier: 19163 (required, number)
-    Internal id for the treasury account.
-+ major_object_class_name: `Acquisition of assets` (required, string)
-+ major_object_class_code: `30` (required, string)
-+ object_class_name: `Land and structures` (required, string)
-+ object_class_code: `320` (required, string)
-+ program_activity_name: `ADVANCED SCIENTIFIC COMPUTING RESEARCH` (required, string)
-+ program_activity_code: `0002` (required, string)
-
-## PageMetaDataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
-
- -->

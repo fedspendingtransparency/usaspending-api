@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/search/spending_by_transaction_count/]
 
-Returns the counts of transaction records which match the keyword grouped by award categories.
+## Returns the count of transaction records [POST /api/v2/search/spending_by_transaction_count/]
 
-## POST
+Returns the counts of transaction records which match the keyword grouped by award categories.
 
 + Request (application/json)
     + Attributes (object)

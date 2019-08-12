@@ -3,9 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/search/spending_by_transaction/]
 
-Returns transaction records which match the keyword and award type code filters.
+## List transaction records [POST /api/v2/search/spending_by_transaction/]
 
-## POST
+Returns transaction records which match the keyword and award type code filters.
 
 + Request (application/json)
     + Attributes (object)

@@ -1,19 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Advanced Search
+# Spending By Category [/api/v2/search/spending_by_category/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-# Group Visualizations
-
-These endpoints return data that are grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page.
-
-## Spending By Category [/api/v2/search/spending_by_category/]
+## List top results of categories [POST /api/v2/search/spending_by_category/]
 
 This endpoint returns a list of the top results of specific categories sorted by the total amounts in descending order.
-
-### Spending By Category [POST]
 
 + Request (application/json)
     + Attributes (object)
