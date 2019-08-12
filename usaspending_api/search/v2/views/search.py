@@ -12,8 +12,8 @@ from usaspending_api.awards.models_matviews import (
     ReportingAwardIdvsView,
     ReportingAwardLoansView,
     ReportingAwardOtherView,
-    ReportingAwardDownloadView,
 )
+
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -39,9 +39,11 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
+from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.common.helpers.sql_helpers import execute_fetchall
 
 
 def obtain_view_from_award_group(type_list):
@@ -271,33 +273,24 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                     result_key = "subgrants"
                 else:
                     result_key = "subcontracts"
+                results[result_key] += award["category_count"]
+
         else:
-            # queryset = matview_search_filter(filters, ReportingAwardDownloadView)
-            # queryset = queryset.values("type").annotate(category_count=Count("category"))
-            from usaspending_api.common.data_connectors.async_spending_by_award_count import get_values
-            results = get_values(filters)
-            return Response({"results": results})
+            QUERIES = {
+                "contracts": ReportingAwardContractsView,
+                "direct_payments": ReportingAwardDirectPaymentsView,
+                "grants": ReportingAwardGrantsView,
+                "idvs": ReportingAwardIdvsView,
+                "loans": ReportingAwardLoansView,
+                "other": ReportingAwardOtherView,
+            }
 
-        all_awards_types_to_category = {type_code: category for category, type_codes in all_award_types_mappings.items()
-                                        for type_code in type_codes}
-        category_type = "type" if not subawards else "prime_award_type"
-
-        # DB hit here
-        for award in queryset:
-            if award[category_type] is None or award[category_type] not in all_awards_types_to_category:
-                result_key = "other"
-            else:
-                result_key = all_awards_types_to_category[award[category_type]]
-                if result_key == "other_financial_assistance":
-                    result_key = "other"
-            results[result_key] += award["category_count"]
-
-        # else:
-        #     results["contracts"] = matview_search_filter(filters, ReportingAwardContractsView).count()
-        #     results["idvs"] = matview_search_filter(filters, ReportingAwardIdvsView).count()
-        #     results["grants"] = matview_search_filter(filters, ReportingAwardGrantsView).count()
-        #     results["direct_payments"] = matview_search_filter(filters, ReportingAwardDirectPaymentsView).count()
-        #     results["loans"] = matview_search_filter(filters, ReportingAwardLoansView).count()
-        #     results["other"] = matview_search_filter(filters, ReportingAwardOtherView).count()
+            query = ""
+            for k, v in QUERIES.items():
+                sql = generate_raw_quoted_query(matview_search_filter(filters, v).annotate(count=Count('*')).values("count"))
+                query += " SELECT '{0}' AS category, COUNT(*) AS count FROM ({1}) as {0}_sub UNION".format(k, sql)
+            query = query[:-6]
+            # print(query)
+            results = {row[0]: row[1] for row in execute_fetchall(query)}
 
         return Response({"results": results})
