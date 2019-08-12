@@ -67,7 +67,6 @@ AWARD_MAPPINGS = {
 
 
 class Command(BaseCommand):
-
     def download(self, award_type, agency="all", generate_since=None):
         """ Create a delta file based on award_type, and agency_code (or all agencies) """
         logger.info(

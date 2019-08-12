@@ -45,8 +45,8 @@ def awards_and_transactions(db):
     }
 
     sub_agency = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    trans_asst = {"pk": 1}
-    trans_cont = {"pk": 2}
+    trans_asst = {"pk": 1, "award_id": 1}
+    trans_cont = {"pk": 2, "award_id": 2}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
@@ -68,10 +68,7 @@ def awards_and_transactions(db):
         "location": Location.objects.get(pk=2),
     }
 
-    le = {
-        "pk": 1,
-        "business_categories": ["small_business"],
-    }
+    le = {"pk": 1, "business_categories": ["small_business"]}
 
     ag = {
         "pk": 1,
@@ -248,22 +245,19 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_2_model)
 
 
-@pytest.mark.django_db
-def test_award_last_updated_endpoint(client):
+@pytest.fixture
+def update_awards(db):
+    mommy.make("awards.Award", pk=11)
+    mommy.make("awards.Award", pk=12)
+
+
+def test_award_last_updated_endpoint(client, update_awards):
     """Test the awards endpoint."""
-
-    test_date = datetime.datetime.now()
-    test_date_reformatted = test_date.strftime("%m/%d/%Y")
-
-    mommy.make("awards.Award", update_date=test_date)
-    mommy.make("awards.Award", update_date="")
-
     resp = client.get("/api/v2/awards/last_updated/")
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["last_updated"] == test_date_reformatted
+    assert resp.data["last_updated"] == datetime.datetime.now().strftime("%m/%d/%Y")
 
 
-@pytest.mark.django_db
 def test_award_endpoint_generated_id(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
@@ -341,11 +335,10 @@ expected_response_asst = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "period_of_performance": {
-        "start_date": "2004-02-04",
-        "end_date": "2005-02-04",
-        "last_modified_date": "2000-01-02",
+    "executive_details": {
+        "officers": [{"name": "John Apple", "amount": 50000.00}, {"name": "Wally World", "amount": 4623.00}]
     },
+    "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -505,15 +498,8 @@ expected_response_cont = {
     },
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
-    "executive_details": {"officers": [
-        {
-            "name": "Tom",
-            "amount": 10000.00
-        },
-        {
-            "name": "Stan Burger",
-            "amount": 1234.00
-        }
-    ]},
+    "executive_details": {
+        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+    },
     "date_signed": "2004-03-02",
 }

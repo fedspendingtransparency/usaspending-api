@@ -50,6 +50,7 @@ class LoggingMiddleware(MiddlewareMixin):
     * ERROR: To log something went wrong in the application
 
     """
+
     server_logger = logging.getLogger("server")
 
     start = None
@@ -64,14 +65,14 @@ class LoggingMiddleware(MiddlewareMixin):
             "remote_addr": get_remote_addr(request),
             "host": request.get_host(),
             "method": request.method,
-            "timestamp": now().strftime('%m/%d/%y %H:%M:%S')
+            "timestamp": now().strftime("%m/%d/%y %H:%M:%S"),
         }
 
         try:
             # When request body is returned  as <class 'bytes'>
-            self.log["request"] = getattr(request, '_body', request.body).decode('ASCII')
+            self.log["request"] = getattr(request, "_body", request.body).decode("ASCII")
         except UnicodeDecodeError:
-            self.log["request"] = getattr(request, '_body', request.body)
+            self.log["request"] = getattr(request, "_body", request.body)
 
     def process_response(self, request, response):
         """
@@ -85,18 +86,18 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["response_ms"] = self.get_response_ms()
         self.log["traceback"] = None
         if response._headers:
-            if 'key' in response._headers and len(response._headers['key']) >= 2:
-                self.log["cache_key"] = response._headers['key'][1]
-            if 'cache-trace' in response._headers and len(response._headers['cache-trace']) >= 2:
-                self.log["cache_trace"] = response._headers['cache-trace'][1]
+            if "key" in response._headers and len(response._headers["key"]) >= 2:
+                self.log["cache_key"] = response._headers["key"][1]
+            if "cache-trace" in response._headers and len(response._headers["cache-trace"]) >= 2:
+                self.log["cache_trace"] = response._headers["cache-trace"][1]
 
         if 100 <= status_code < 400:
             # Logged at an INFO level: 1xx (Informational), 2xx (Success), 3xx Redirection
-            self.log["status"] = 'INFO'
+            self.log["status"] = "INFO"
             self.server_logger.info(self.get_message_string(), extra=self.log)
         elif 400 <= status_code < 500:
             # Logged at an WARNING level: 4xx (Client error)
-            self.log["status"] = 'WARNING'
+            self.log["status"] = "WARNING"
 
             # Get response message
             try:
@@ -104,12 +105,12 @@ class LoggingMiddleware(MiddlewareMixin):
                 self.log["error_msg"] = str(response.data)
             except AttributeError:
                 # For cases when Django responds with an error template, get the response content (byte string)
-                self.log["error_msg"] = response.getvalue().decode('ASCII')
+                self.log["error_msg"] = response.getvalue().decode("ASCII")
 
             # Adding separate error message to message field for user to view error on Kibana default view
-            error_msg_str = '['+self.log["error_msg"]+']'
+            error_msg_str = "[" + self.log["error_msg"] + "]"
 
-            self.server_logger.warning('{} {}'.format(self.get_message_string(), error_msg_str), extra=self.log)
+            self.server_logger.warning("{} {}".format(self.get_message_string(), error_msg_str), extra=self.log)
         else:
             # 500 or greater messages will be processed by the process_exception function
             pass
@@ -118,8 +119,10 @@ class LoggingMiddleware(MiddlewareMixin):
 
     def get_message_string(self):
         """Returns logging info as string for message"""
-        return "[{timestamp}] [{status}] [{method}] [{path} : {status_code}]" \
-               " [{remote_addr}] [{host}] [{response_ms}]".format(**self.log)
+        return (
+            "[{timestamp}] [{status}] [{method}] [{path} : {status_code}]"
+            " [{remote_addr}] [{host}] [{response_ms}]".format(**self.log)
+        )
 
     def process_exception(self, request, exception):
         """
@@ -130,8 +133,8 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.log["status_code"] = 500  # Unable to get status code from exception server return 500 as default
         self.log["response_ms"] = self.get_response_ms()
-        self.log["status"] = 'ERROR'
-        self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
+        self.log["status"] = "ERROR"
+        self.log["timestamp"] = now().strftime("%d/%m/%y %H:%M:%S")
         self.log["traceback"] = traceback.format_exc()
 
         self.server_logger.error("%s", self.get_message_string(), extra=self.log)

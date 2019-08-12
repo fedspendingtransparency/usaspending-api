@@ -11,8 +11,8 @@ from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_tran
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
-logger = logging.getLogger('console')
-VALID_DB_CURSORS = ['default', 'data_broker']
+logger = logging.getLogger("console")
+VALID_DB_CURSORS = ["default", "data_broker"]
 
 
 @pytest.fixture()
@@ -21,7 +21,7 @@ def mock_db_cursor(monkeypatch, request):
 
     for cursor in VALID_DB_CURSORS:
         if cursor in db_cursor_dict:
-            data_file_key = cursor + '_data_file'
+            data_file_key = cursor + "_data_file"
 
             if data_file_key not in db_cursor_dict:
                 # Missing data file for the mocked cursor. Skipping PhonyCursor setup.
@@ -30,7 +30,7 @@ def mock_db_cursor(monkeypatch, request):
             db_cursor_dict[cursor].cursor.return_value = PhonyCursor(db_cursor_dict[data_file_key])
             del db_cursor_dict[data_file_key]
 
-    monkeypatch.setattr('django.db.connections', db_cursor_dict)
+    monkeypatch.setattr("django.db.connections", db_cursor_dict)
 
 
 @pytest.fixture()
@@ -38,7 +38,7 @@ def mock_psc(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_psc_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.references.models.PSC.objects', mock_psc_qs)
+    monkeypatch.setattr("usaspending_api.references.models.PSC.objects", mock_psc_qs)
 
     yield mock_psc_qs
 
@@ -50,7 +50,7 @@ def mock_cfda(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_cfda_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.references.models.Cfda.objects', mock_cfda_qs)
+    monkeypatch.setattr("usaspending_api.references.models.Cfda.objects", mock_cfda_qs)
 
     yield mock_cfda_qs
 
@@ -61,7 +61,7 @@ def mock_cfda(monkeypatch):
 def mock_naics(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_naics_qs = MockSet()
-    monkeypatch.setattr('usaspending_api.references.models.NAICS.objects', mock_naics_qs)
+    monkeypatch.setattr("usaspending_api.references.models.NAICS.objects", mock_naics_qs)
     yield mock_naics_qs
     mock_naics_qs.delete()
 
@@ -71,7 +71,7 @@ def mock_recipients(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_recipient_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.references.models.LegalEntity.objects', mock_recipient_qs)
+    monkeypatch.setattr("usaspending_api.references.models.LegalEntity.objects", mock_recipient_qs)
 
     yield mock_recipient_qs
 
@@ -83,7 +83,7 @@ def mock_federal_account(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_federal_accounts_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.accounts.models.FederalAccount.objects', mock_federal_accounts_qs)
+    monkeypatch.setattr("usaspending_api.accounts.models.FederalAccount.objects", mock_federal_accounts_qs)
 
     yield mock_federal_accounts_qs
 
@@ -95,7 +95,7 @@ def mock_tas(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_tas_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.accounts.models.TreasuryAppropriationAccount.objects', mock_tas_qs)
+    monkeypatch.setattr("usaspending_api.accounts.models.TreasuryAppropriationAccount.objects", mock_tas_qs)
 
     yield mock_tas_qs
 
@@ -107,7 +107,7 @@ def mock_award(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_award_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.awards.models.Award.objects', mock_award_qs)
+    monkeypatch.setattr("usaspending_api.awards.models.Award.objects", mock_award_qs)
 
     yield mock_award_qs
 
@@ -119,7 +119,7 @@ def mock_subaward(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_subaward_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.awards.models.Subaward.objects', mock_subaward_qs)
+    monkeypatch.setattr("usaspending_api.awards.models.Subaward.objects", mock_subaward_qs)
 
     yield mock_subaward_qs
 
@@ -131,7 +131,7 @@ def mock_financial_account(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_financial_accounts_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.awards.models.FinancialAccountsByAwards.objects', mock_financial_accounts_qs)
+    monkeypatch.setattr("usaspending_api.awards.models.FinancialAccountsByAwards.objects", mock_financial_accounts_qs)
 
     yield mock_financial_accounts_qs
 
@@ -143,7 +143,7 @@ def mock_transaction(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_transaciton_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.awards.models.TransactionNormalized.objects', mock_transaciton_qs)
+    monkeypatch.setattr("usaspending_api.awards.models.TransactionNormalized.objects", mock_transaciton_qs)
 
     yield mock_transaciton_qs
 
@@ -157,14 +157,14 @@ def mock_agencies(monkeypatch):
     mock_toptier_agency_qs = MockSet()
     mock_subtier_agency_qs = MockSet()
 
-    monkeypatch.setattr('usaspending_api.references.models.Agency.objects', mock_agency_qs)
-    monkeypatch.setattr('usaspending_api.references.models.ToptierAgency.objects', mock_toptier_agency_qs)
-    monkeypatch.setattr('usaspending_api.references.models.SubtierAgency.objects', mock_subtier_agency_qs)
+    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", mock_agency_qs)
+    monkeypatch.setattr("usaspending_api.references.models.ToptierAgency.objects", mock_toptier_agency_qs)
+    monkeypatch.setattr("usaspending_api.references.models.SubtierAgency.objects", mock_subtier_agency_qs)
 
     mocked_agencies = {
-        'agency': mock_agency_qs,
-        'toptier_agency': mock_toptier_agency_qs,
-        'subtier_agency': mock_subtier_agency_qs
+        "agency": mock_agency_qs,
+        "toptier_agency": mock_toptier_agency_qs,
+        "subtier_agency": mock_subtier_agency_qs,
     }
 
     yield mocked_agencies
@@ -178,20 +178,20 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SubawardView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryAwardView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryPscCodesView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryStateView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionFedAcctView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionRecipientView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryTransactionView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.SummaryView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalAwardView.objects', mock_qs)
-    monkeypatch.setattr('usaspending_api.awards.models_matviews.UniversalTransactionView.objects', mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SubawardView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryAwardView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryPscCodesView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryStateView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionFedAcctView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionRecipientView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalAwardView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", mock_qs)
 
     yield mock_qs
 
@@ -202,9 +202,9 @@ def pytest_configure():
     # To make sure the test setup process doesn't try
     # to set up another test db, remove everything but the default
     # DATABASE_URL from the list of databases in django settings
-    test_db = settings.DATABASES.pop('default', None)
+    test_db = settings.DATABASES.pop("default", None)
     settings.DATABASES.clear()
-    settings.DATABASES['default'] = test_db
+    settings.DATABASES["default"] = test_db
     # Also remove any database routers
     settings.DATABASE_ROUTERS.clear()
 
@@ -218,31 +218,21 @@ def local(request):
     return request.config.getoption("--local")
 
 
-@pytest.fixture(scope='session')
-def django_db_setup(django_db_blocker,
-                    django_db_keepdb,
-                    local,
-                    request):
+@pytest.fixture(scope="session")
+def django_db_setup(django_db_blocker, django_db_keepdb, local, request):
 
     from pytest_django.compat import setup_databases, teardown_databases
 
     setup_databases_args = {}
 
     with django_db_blocker.unblock():
-        db_cfg = setup_databases(
-            verbosity=pytest.config.option.verbose,
-            interactive=False,
-            **setup_databases_args
-        )
+        db_cfg = setup_databases(verbosity=pytest.config.option.verbose, interactive=False, **setup_databases_args)
         generate_matviews()
         ensure_transaction_delta_view_exists()
 
     def teardown_database():
         with django_db_blocker.unblock():
-            teardown_databases(
-                db_cfg,
-                verbosity=pytest.config.option.verbose,
-            )
+            teardown_databases(db_cfg, verbosity=pytest.config.option.verbose)
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)

@@ -12,11 +12,7 @@ TEST_JSON_DOC = json.dumps({"headers": ["brats", "burgers"], "data": {"rows": [0
 
 @pytest.fixture
 def rosetta_data(db):
-    mommy.make(
-        Rosetta,
-        document_name="api_response",
-        document=TEST_JSON_DOC,
-    )
+    mommy.make(Rosetta, document_name="api_response", document=TEST_JSON_DOC)
 
 
 @pytest.mark.django_db

@@ -28,8 +28,7 @@ def agency_file_fixture(monkeypatch, transactional_db):
         return new_cgacs
 
     monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_cgacs.Command._get_new_cgacs",
-        _get_new_cgacs
+        "usaspending_api.references.management.commands.load_cgacs.Command._get_new_cgacs", _get_new_cgacs
     )
 
 

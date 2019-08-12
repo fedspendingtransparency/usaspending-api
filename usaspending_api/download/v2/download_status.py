@@ -13,9 +13,9 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
     def get(self, request):
         """Obtain status for the download job matching the file name provided"""
         get_request = request.query_params
-        file_name = get_request.get('file_name')
+        file_name = get_request.get("file_name")
 
         if not file_name:
-            raise InvalidParameterException('Missing one or more required query parameters: file_name')
+            raise InvalidParameterException("Missing one or more required query parameters: file_name")
 
         return self.get_download_response(file_name=file_name)

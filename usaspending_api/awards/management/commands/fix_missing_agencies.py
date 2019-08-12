@@ -10,7 +10,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 BATCH_SIZE = 10000
 
@@ -18,7 +18,7 @@ BATCH_SIZE = 10000
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('--batch', type=int, default=BATCH_SIZE, help="ID range to update per query")
+        parser.add_argument("--batch", type=int, default=BATCH_SIZE, help="ID range to update per query")
 
     def _run_updaters(self, curs, table, updaters, options, start_time):
         for (descrip, base_qry) in updaters:
@@ -27,33 +27,35 @@ class Command(BaseCommand):
                 qry = base_qry.format(floor=floor, ceiling=ceiling)
                 curs.execute(qry)
                 elapsed = time.time() - start_time
-                logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
+                logger.info("{}: ID {} to {}, {} s".format(descrip, floor, ceiling, elapsed))
 
     def handle(self, *args, **options):
 
         start = time.time()
         with connection.cursor() as curs:
             # create matview
-            logger.info('Creating matview')
+            logger.info("Creating matview")
             curs.execute(self.MATVIEW_CREATE)
-            logger.info('Time to create matview: {}'.format(time.time() - start))
+            logger.info("Time to create matview: {}".format(time.time() - start))
 
             # run the queries
             self._run_updaters(
-                curs=curs, table='awards', updaters=self.AWARD_UPDATERS, options=options, start_time=start)
+                curs=curs, table="awards", updaters=self.AWARD_UPDATERS, options=options, start_time=start
+            )
             self._run_updaters(
                 curs=curs,
-                table='transaction_normalized',
+                table="transaction_normalized",
                 updaters=self.TRANSACTION_NORMALIZED_UPDATERS,
                 options=options,
-                start_time=start)
+                start_time=start,
+            )
 
             # drop the matview
-            logger.info('Dropping matview')
+            logger.info("Dropping matview")
             curs.execute(self.MATVIEW_DELETE)
 
     def find_batches(self, curs, table, options):
-        batch = options['batch']
+        batch = options["batch"]
         curs.execute(self.BOUNDARY_FINDER.format(table))
         (lowest, highest) = curs.fetchone()
         floor = (lowest // batch) * batch
@@ -86,7 +88,9 @@ class Command(BaseCommand):
 
     # Tuples of ( description, query)
     AWARD_UPDATERS = (
-        ('Awarding agency for FPDS', """
+        (
+            "Awarding agency for FPDS",
+            """
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
@@ -104,8 +108,11 @@ class Command(BaseCommand):
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    """),
-        ('Funding agency for FPDS', """
+    """,
+        ),
+        (
+            "Funding agency for FPDS",
+            """
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
@@ -123,8 +130,11 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    """),
-        ('Awarding agency for FABS', """
+    """,
+        ),
+        (
+            "Awarding agency for FABS",
+            """
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
@@ -142,8 +152,11 @@ class Command(BaseCommand):
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    """),
-        ('Funding agency for FABS', """
+    """,
+        ),
+        (
+            "Funding agency for FABS",
+            """
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
@@ -161,11 +174,14 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    """),
+    """,
+        ),
     )
 
     TRANSACTION_NORMALIZED_UPDATERS = (
-        ('Awarding agency in transaction_normalized for FPDS', """
+        (
+            "Awarding agency in transaction_normalized for FPDS",
+            """
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
@@ -182,8 +198,11 @@ class Command(BaseCommand):
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.transaction_id = transaction_normalized.id
-    """),
-        ('Funding agency in transaction_normalized for FPDS', """
+    """,
+        ),
+        (
+            "Funding agency in transaction_normalized for FPDS",
+            """
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
@@ -201,8 +220,11 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.transaction_id = transaction_normalized.id
-    """),
-        ('Awarding agency in transaction_normalized for FABS', """
+    """,
+        ),
+        (
+            "Awarding agency in transaction_normalized for FABS",
+            """
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
@@ -219,8 +241,11 @@ class Command(BaseCommand):
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.transaction_id = transaction_normalized.id
-    """),
-        ('Funding agency in transaction_normalized for FABS', """
+    """,
+        ),
+        (
+            "Funding agency in transaction_normalized for FABS",
+            """
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
@@ -237,5 +262,6 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.transaction_id = transaction_normalized.id
-    """),
+    """,
+        ),
     )

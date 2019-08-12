@@ -12,7 +12,7 @@ def test_naics_existing_and_new_files():
 
     """
 
-    call_command('load_naics')
+    call_command("load_naics")
 
     naics = NAICS.objects.all()
     naics_count_2017 = naics.filter(year=2017).count()

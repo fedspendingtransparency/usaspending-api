@@ -7,12 +7,11 @@ from usaspending_api.awards.models.transaction_delta import CHUNK_SIZE
 
 
 class TransactionDeltaTestCase(TransactionTestCase):
-
     def setUp(self):
         for _id in range(1, 5):
-            mommy.make('awards.TransactionNormalized', id=_id)
-            mommy.make('awards.TransactionFPDS', transaction_id=_id)
-            mommy.make('awards.Award', id=_id, latest_transaction_id=_id)
+            mommy.make("awards.TransactionNormalized", id=_id)
+            mommy.make("awards.TransactionFPDS", transaction_id=_id)
+            mommy.make("awards.Award", id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_get_max_created_at():
@@ -36,7 +35,7 @@ class TransactionDeltaTestCase(TransactionTestCase):
         assert TransactionDelta.objects.count() == 1
 
         with self.assertRaises(ValueError):
-            TransactionDelta.objects.update_or_create_transaction('A')
+            TransactionDelta.objects.update_or_create_transaction("A")
         with self.assertRaises(IntegrityError):
             TransactionDelta.objects.update_or_create_transaction(-1)
 
@@ -58,7 +57,7 @@ class TransactionDeltaTestCase(TransactionTestCase):
         assert TransactionDelta.objects.count() == 1
 
         with self.assertRaises(ValueError):
-            TransactionDelta.objects.update_or_create_transactions(['A'])
+            TransactionDelta.objects.update_or_create_transactions(["A"])
         with self.assertRaises(IntegrityError):
             TransactionDelta.objects.update_or_create_transactions([-1])
 
@@ -66,7 +65,7 @@ class TransactionDeltaTestCase(TransactionTestCase):
         assert TransactionDelta.objects.count() == 2
 
         with self.assertRaises(ValueError):
-            TransactionDelta.objects.update_or_create_transactions([1, 'A'])
+            TransactionDelta.objects.update_or_create_transactions([1, "A"])
         with self.assertRaises(IntegrityError):
             TransactionDelta.objects.update_or_create_transactions([1, -1])
 

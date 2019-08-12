@@ -15,13 +15,7 @@ from usaspending_api.awards.tests.unit.test_subawards import subaward_1, subawar
 def test_subaward_success(client, refresh_matviews):
 
     resp = client.post(
-        '/api/v2/subawards/',
-        content_type='application/json',
-        data=json.dumps(
-            {
-                "order": "desc",
-                "limit": 100
-            })
+        "/api/v2/subawards/", content_type="application/json", data=json.dumps({"order": "desc", "limit": 100})
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -30,14 +24,9 @@ def test_subaward_success(client, refresh_matviews):
 def test_subaward_failure(client, refresh_matviews):
 
     resp = client.post(
-        '/api/v2/subawards/',
-        content_type='application/json',
-        data=json.dumps(
-            {
-                "order": "desc",
-                "limit": 100,
-                "award_id": "not an integer",
-            })
+        "/api/v2/subawards/",
+        content_type="application/json",
+        data=json.dumps({"order": "desc", "limit": 100, "award_id": "not an integer"}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -50,16 +39,11 @@ def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
     resp = client.post(
-        '/api/v2/subawards/',
-        content_type='application/json',
-        data=json.dumps(
-            {
-                "order": "desc",
-                "limit": 100,
-                "award_id": 99,
-            })
+        "/api/v2/subawards/",
+        content_type="application/json",
+        data=json.dumps({"order": "desc", "limit": 100, "award_id": 99}),
     )
-    assert len(json.loads(resp.content.decode("utf-8"))['results']) == 3
+    assert len(json.loads(resp.content.decode("utf-8"))["results"]) == 3
 
 
 @pytest.mark.django_db
@@ -68,13 +52,8 @@ def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_4])
     resp = client.post(
-        '/api/v2/subawards/',
-        content_type='application/json',
-        data=json.dumps(
-            {
-                "order": "desc",
-                "limit": 100,
-                "award_id": 88,
-            })
+        "/api/v2/subawards/",
+        content_type="application/json",
+        data=json.dumps({"order": "desc", "limit": 100, "award_id": 88}),
     )
-    assert json.loads(resp.content.decode("utf-8"))['results'][0]['id'] == 12
+    assert json.loads(resp.content.decode("utf-8"))["results"][0]["id"] == 12

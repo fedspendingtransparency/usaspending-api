@@ -20,25 +20,25 @@ def test_program_activity_fresh_load():
             year
     """
 
-    call_command('load_state_data', 'usaspending_api/recipient/tests/data/CensusStateData.csv')
+    call_command("load_state_data", "usaspending_api/recipient/tests/data/CensusStateData.csv")
 
     expected_results = {
-        'count': 448,
-        'states_count': 50,
-        'territories_count': 5,
-        'districts_count': 1,
-        'years_count': 8
+        "count": 448,
+        "states_count": 50,
+        "territories_count": 5,
+        "districts_count": 1,
+        "years_count": 8,
     }
 
     def count_type(type):
-        return StateData.objects.filter(type=type).values('type', 'fips').distinct('fips').count()
+        return StateData.objects.filter(type=type).values("type", "fips").distinct("fips").count()
 
     actual_results = {
-        'count': StateData.objects.count(),
-        'states_count': count_type('state'),
-        'territories_count': count_type('territory'),
-        'districts_count': count_type('district'),
-        'years_count': StateData.objects.distinct('year').count()
+        "count": StateData.objects.count(),
+        "states_count": count_type("state"),
+        "territories_count": count_type("territory"),
+        "districts_count": count_type("district"),
+        "years_count": StateData.objects.distinct("year").count(),
     }
 
     assert expected_results == actual_results

@@ -15,23 +15,24 @@ from usaspending_api.references.models import Agency
 logger = logging.getLogger(__name__)
 
 TEMP_SQL_FILES = [
-    '../matviews/subaward_view.sql',
-    '../matviews/summary_award_view.sql',
-    '../matviews/summary_state_view.sql',
-    '../matviews/summary_transaction_fed_acct_view.sql',
-    '../matviews/summary_transaction_geo_view.sql',
-    '../matviews/summary_transaction_month_view.sql',
-    '../matviews/summary_transaction_recipient_view.sql',
-    '../matviews/summary_transaction_view.sql',
-    '../matviews/summary_view.sql',
-    '../matviews/summary_view_cfda_number.sql',
-    '../matviews/summary_view_naics_codes.sql',
-    '../matviews/summary_view_psc_codes.sql',
-    '../matviews/universal_award_matview.sql',
-    '../matviews/universal_transaction_matview.sql',
+    "../matviews/subaward_view.sql",
+    "../matviews/summary_award_view.sql",
+    "../matviews/summary_state_view.sql",
+    "../matviews/summary_transaction_fed_acct_view.sql",
+    "../matviews/summary_transaction_geo_view.sql",
+    "../matviews/summary_transaction_month_view.sql",
+    "../matviews/summary_transaction_recipient_view.sql",
+    "../matviews/summary_transaction_view.sql",
+    "../matviews/summary_view.sql",
+    "../matviews/summary_view_cfda_number.sql",
+    "../matviews/summary_view_naics_codes.sql",
+    "../matviews/summary_view_psc_codes.sql",
+    "../matviews/universal_award_matview.sql",
+    "../matviews/universal_transaction_matview.sql",
+    "../matviews/tas_award_matview.sql",
 ]
 MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
-ENUM_FILE = ['usaspending_api/database_scripts/matviews/functions_and_enums.sql']
+ENUM_FILE = ["usaspending_api/database_scripts/matviews/functions_and_enums.sql"]
 
 
 def read_text_file(filepath):
@@ -42,10 +43,10 @@ def read_text_file(filepath):
 
 def validate_date(date):
     if not isinstance(date, (datetime.datetime, datetime.date)):
-        raise TypeError('Incorrect parameter type provided')
+        raise TypeError("Incorrect parameter type provided")
 
     if not (date.day or date.month or date.year):
-        raise Exception('Malformed date object provided')
+        raise Exception("Malformed date object provided")
 
 
 def check_valid_toptier_agency(agency_id):
@@ -87,7 +88,7 @@ generate_fiscal_period = generate_fiscal_month
 def generate_date_from_string(date_str):
     """ Expects a string with format YYYY-MM-DD. returns datetime.date """
     try:
-        return datetime.date(*[int(x) for x in date_str.split('-')])
+        return datetime.date(*[int(x) for x in date_str.split("-")])
     except Exception as e:
         logger.error(str(e))
     return None
@@ -130,8 +131,8 @@ def create_full_time_periods(min_date, max_date, group, columns):
         ending = int(generate_fiscal_month(max_date))
         rollover = 12
     else:  # Quarters
-        period = int(generate_fiscal_year_and_quarter(min_date).split('-Q')[-1])
-        ending = int(generate_fiscal_year_and_quarter(max_date).split('-Q')[-1])
+        period = int(generate_fiscal_year_and_quarter(min_date).split("-Q")[-1])
+        ending = int(generate_fiscal_year_and_quarter(max_date).split("-Q")[-1])
         rollover = 4
 
     results = []
@@ -170,8 +171,8 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
                     item[column_name] = row[column_in_queryset]
 
     for result in results:
-        result['time_period']['fiscal_year'] = result['time_period']['fy']
-        del result['time_period']['fy']
+        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
+        del result["time_period"]["fy"]
     return results
 
 
@@ -200,7 +201,7 @@ def generate_matviews():
 def get_sql(sql_files):
     data = []
     for file in sql_files:
-        with open(file, 'r') as myfile:
+        with open(file, "r") as myfile:
             data.append(myfile.read())
     return data
 
@@ -220,14 +221,18 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
         if fiscal_quarter:
             # If the fiscal quarter requested is not yet completed (or within 45 days of being completed), error out
             if current_fiscal_quarter <= fiscal_quarter:
-                raise InvalidParameterException("Requested fiscal year and quarter must have been completed over 45 "
-                                                "days prior to the current date.")
+                raise InvalidParameterException(
+                    "Requested fiscal year and quarter must have been completed over 45 "
+                    "days prior to the current date."
+                )
         # If no fiscal quarter has been requested
         else:
             # If it's currently the first quarter (or within 45 days of the first quarter), throw an error
             if current_fiscal_quarter == 1:
-                raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must "
-                                                "be completed for over 45 days.")
+                raise InvalidParameterException(
+                    "Cannot obtain data for current fiscal year. At least one quarter must "
+                    "be completed for over 45 days."
+                )
             # roll back to the last completed fiscal quarter if it's any other quarter
             else:
                 fiscal_quarter = current_fiscal_quarter - 1
@@ -237,12 +242,13 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
         if not fiscal_quarter:
             fiscal_quarter = 4
     else:
-        raise InvalidParameterException("Cannot obtain data for future fiscal years or fiscal years that have not "
-                                        "been active for over 45 days.")
+        raise InvalidParameterException(
+            "Cannot obtain data for future fiscal years or fiscal years that have not been active for over 45 days."
+        )
 
     # get the fiscal date
     fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
-    fiscal_date = datetime.datetime.strftime(fiscal_date, '%Y-%m-%d')
+    fiscal_date = datetime.datetime.strftime(fiscal_date, "%Y-%m-%d")
 
     return fiscal_date, fiscal_quarter
 
@@ -256,18 +262,18 @@ def get_pagination(results, limit, page, benchmarks=False):
         "next": None,
         "previous": None,
         "hasNext": False,
-        "hasPrevious": False
+        "hasPrevious": False,
     }
     if limit < 1 or page < 1:
         return [], page_metadata
 
-    page_metadata["hasNext"] = (limit * page < len(results))
-    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < len(results))
+    page_metadata["hasNext"] = limit * page < len(results)
+    page_metadata["hasPrevious"] = page > 1 and limit * (page - 2) < len(results)
 
     if not page_metadata["hasNext"]:
-        paginated_results = results[limit * (page - 1):]
+        paginated_results = results[limit * (page - 1) :]
     else:
-        paginated_results = results[limit * (page - 1):limit * page]
+        paginated_results = results[limit * (page - 1) : limit * page]
 
     page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
     page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
@@ -284,13 +290,13 @@ def get_pagination_metadata(total_return_count, limit, page):
         "next": None,
         "previous": None,
         "hasNext": False,
-        "hasPrevious": False
+        "hasPrevious": False,
     }
     if limit < 1 or page < 1:
         return page_metadata
 
-    page_metadata["hasNext"] = (limit * page < total_return_count)
-    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < total_return_count)
+    page_metadata["hasNext"] = limit * page < total_return_count
+    page_metadata["hasPrevious"] = page > 1 and limit * (page - 2) < total_return_count
     page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
     page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
     return page_metadata
@@ -305,7 +311,7 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
         "next": page + 1 if has_next else None,
         "previous": page - 1 if has_previous else None,
         "hasNext": has_next,
-        "hasPrevious": has_previous
+        "hasPrevious": has_previous,
     }
     return page_metadata
 
@@ -324,13 +330,13 @@ def fy(raw_date):
         if raw_date.month > 9:
             result += 1
     except AttributeError:
-        raise TypeError('{} needs year and month attributes'.format(raw_date))
+        raise TypeError("{} needs year and month attributes".format(raw_date))
 
     return result
 
 
 # Raw SQL run during a migration
-FY_PG_FUNCTION_DEF = '''
+FY_PG_FUNCTION_DEF = """
     CREATE OR REPLACE FUNCTION fy(raw_date DATE)
     RETURNS integer AS $$
           DECLARE result INTEGER;
@@ -376,16 +382,16 @@ FY_PG_FUNCTION_DEF = '''
             RETURN result;
           END;
         $$ LANGUAGE plpgsql;
-        '''
+        """
 
-FY_FROM_TEXT_PG_FUNCTION_DEF = '''
+FY_FROM_TEXT_PG_FUNCTION_DEF = """
     CREATE OR REPLACE FUNCTION fy(raw_date TEXT)
     RETURNS integer AS $$
           BEGIN
             RETURN fy(raw_date::DATE);
           END;
         $$ LANGUAGE plpgsql;
-        '''
+        """
 """
 Filtering on `field_name__fy` is present for free on all Date fields.
 To add this field to the serializer:
@@ -404,7 +410,7 @@ Also, query performance will stink unless/until the field is indexed.
 CREATE INDEX ON awards(FY(field_name))
 """
 
-CORRECTED_CGAC_PG_FUNCTION_DEF = '''
+CORRECTED_CGAC_PG_FUNCTION_DEF = """
     CREATE FUNCTION corrected_cgac(text) RETURNS text AS $$
     SELECT
         CASE $1
@@ -414,11 +420,11 @@ CORRECTED_CGAC_PG_FUNCTION_DEF = '''
         WHEN '352' THEN '7801' -- FCA
         WHEN '537' THEN '9566' -- FHFA
         ELSE $1 END;
-    $$ LANGUAGE SQL;'''
+    $$ LANGUAGE SQL;"""
 
-REV_CORRECTED_CGAC_PG_FUNCTION_DEF = '''
+REV_CORRECTED_CGAC_PG_FUNCTION_DEF = """
     DROP FUNCTION corrected_cgac(text);
-'''
+"""
 
 CREATE_READONLY_SQL = """DO $$ BEGIN
 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN

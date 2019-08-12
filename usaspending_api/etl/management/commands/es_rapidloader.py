@@ -37,7 +37,7 @@ from usaspending_api.etl.es_etl_helpers import take_snapshot
 
 DEFAULT_DATETIME = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
 
-if 'https' in settings.ES_HOSTNAME:
+if "https" in settings.ES_HOSTNAME:
     ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300, use_ssl=True, verify_certs=True, ca_certs=certifi.where())
 else:
     ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)

@@ -47,11 +47,7 @@ def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
 
 
 def fetch_recipient_hash_using_duns(recipient_unique_id):
-    recipient = (
-        RecipientLookup.objects.filter(duns=recipient_unique_id)
-        .values("recipient_hash")
-        .first()
-    )
+    recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
 
     return recipient["recipient_hash"] if recipient else None
 

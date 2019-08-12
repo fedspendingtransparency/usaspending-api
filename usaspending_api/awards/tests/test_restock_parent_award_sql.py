@@ -14,7 +14,7 @@ c1 = {
     "base_and_all_options_value": 2000,
     "base_exercised_options_val": 3000,
     "type": "A",
-    }
+}
 c2 = {
     "generated_unique_award_id": "c2",
     "piid": "7890",
@@ -24,7 +24,7 @@ c2 = {
     "base_and_all_options_value": 2000,
     "base_exercised_options_val": 3000,
     "type": "A",
-    }
+}
 c3 = {
     "generated_unique_award_id": "c3",
     "piid": "ABCD",
@@ -33,8 +33,8 @@ c3 = {
     "total_obligation": 1000,
     "base_and_all_options_value": 2000,
     "base_exercised_options_val": 3000,
-    "type": "A"
-    }
+    "type": "A",
+}
 p1 = {
     "generated_unique_award_id": "p1",
     "piid": "ABCD_PARENT_1",
@@ -45,7 +45,7 @@ p1 = {
     "base_and_all_options_value": 0,
     "base_exercised_options_val": 0,
     "type": "IDV_A",
-    }
+}
 
 c4 = {
     "generated_unique_award_id": "c4",
@@ -55,8 +55,8 @@ c4 = {
     "total_obligation": 1000,
     "base_and_all_options_value": 1000,
     "base_exercised_options_val": 1000,
-    "type": "A"
-    }
+    "type": "A",
+}
 p2 = {
     "generated_unique_award_id": "p2",
     "piid": "ABCD_PARENT_2",
@@ -67,7 +67,7 @@ p2 = {
     "base_and_all_options_value": 0,
     "base_exercised_options_val": 0,
     "type": "IDV_A",
-    }
+}
 
 tp1 = {
     "generated_unique_award_id": "tp1",
@@ -79,19 +79,20 @@ tp1 = {
     "base_and_all_options_value": 0,
     "base_exercised_options_val": 0,
     "type": "IDV_A",
-    }
+}
 
 
 def set_up_db(*awards):
     set_up_related_award_objects()
     award_dict = create_tree(awards)
     for award in award_dict:
-        mommy.make('awards.Award', **award)
-    call_command('restock_parent_award')
+        mommy.make("awards.Award", **award)
+    call_command("restock_parent_award")
 
 
 def modify_award_dict(award, updated_param_dict):
     from copy import deepcopy
+
     local_award = deepcopy(award)
     for key, value in updated_param_dict.items():
         local_award[key] = value
@@ -138,11 +139,9 @@ def test_basic_idv_aggregation_3_level(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_idv_aggregation_3_level_ignore_idv_internal_values(client):
-    p1_with_internal_value = modify_award_dict(p1, {
-                    "total_obligation": 1000,
-                    "base_and_all_options_value": 1000,
-                    "base_exercised_options_val": 1000
-                    })
+    p1_with_internal_value = modify_award_dict(
+        p1, {"total_obligation": 1000, "base_and_all_options_value": 1000, "base_exercised_options_val": 1000}
+    )
     set_up_db(c1, c2, c3, p1_with_internal_value, c4, p2, tp1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
     assert parent_1.direct_base_exercised_options_val == 9000
@@ -182,10 +181,9 @@ def test_idv_aggregation_3_level_self_parented_award(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_idv_aggregation_3_level_circular_referencing_idvs(client):
-    child_referencing_parent = modify_award_dict(tp1, {
-        "parent_award_piid": "ABCD_PARENT_1",
-        "fpds_parent_agency_id": "1234"
-        })
+    child_referencing_parent = modify_award_dict(
+        tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
+    )
     set_up_db(p1, child_referencing_parent)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="tp1")
     assert parent_1.direct_base_exercised_options_val == 0
@@ -217,16 +215,13 @@ def test_idv_aggregation_3_level_circular_referencing_idvs(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_idv_aggregation_3_level_circular_referencing_idv_and_child(client):
-    child_referencing_parent = modify_award_dict(tp1, {
-        "parent_award_piid": "ABCD_PARENT_1",
-        "fpds_parent_agency_id": "1234"
-        })
-    true_child = modify_award_dict(p1, {
-        "type": "A",
-        "total_obligation": 1000,
-        "base_and_all_options_value": 2000,
-        "base_exercised_options_val": 3000,
-        })
+    child_referencing_parent = modify_award_dict(
+        tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
+    )
+    true_child = modify_award_dict(
+        p1,
+        {"type": "A", "total_obligation": 1000, "base_and_all_options_value": 2000, "base_exercised_options_val": 3000},
+    )
     set_up_db(true_child, child_referencing_parent)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="tp1")
     assert parent_1.direct_base_exercised_options_val == 3000

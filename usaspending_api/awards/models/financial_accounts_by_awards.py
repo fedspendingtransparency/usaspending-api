@@ -8,9 +8,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
     submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     award = models.ForeignKey("awards.Award", models.CASCADE, null=True, related_name="financial_set")
-    program_activity = models.ForeignKey(
-        "references.RefProgramActivity", models.DO_NOTHING, null=True, db_index=True
-    )
+    program_activity = models.ForeignKey("references.RefProgramActivity", models.DO_NOTHING, null=True, db_index=True)
     object_class = models.ForeignKey("references.ObjectClass", models.DO_NOTHING, null=True, db_index=True)
     piid = models.TextField(blank=True, null=True)
     parent_award_id = models.TextField(blank=True, null=True)
@@ -82,12 +80,8 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
-    gross_outlay_amount_by_award_fyb = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    gross_outlay_amount_by_award_cpe = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    gross_outlay_amount_by_award_fyb = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    gross_outlay_amount_by_award_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     obligations_incurred_total_by_award_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )

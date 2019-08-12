@@ -11,7 +11,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
 BATCH_DOWNLOAD_SIZE = 100000
@@ -20,16 +20,16 @@ BATCH_DOWNLOAD_SIZE = 100000
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('--batch', type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
-        parser.add_argument('--min_transaction_id', type=int, default=1, help="Begin at transaction ID")
-        parser.add_argument('--max_transaction_id', type=int, default=0, help="End at transaction ID")
+        parser.add_argument("--batch", type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
+        parser.add_argument("--min_transaction_id", type=int, default=1, help="Begin at transaction ID")
+        parser.add_argument("--max_transaction_id", type=int, default=0, help="End at transaction ID")
 
     def handle(self, *args, **options):
 
         start = time.time()
         with connection.cursor() as curs:
             batches = list(self.find_batches(curs, options))
-            for base_qry in QUERIES.split('\n\n'):
+            for base_qry in QUERIES.split("\n\n"):
                 base_qry = base_qry.strip()
                 if not base_qry:
                     continue
@@ -40,19 +40,19 @@ class Command(BaseCommand):
                         qry = string.Template(base_qry).safe_substitute(floor=floor, ceiling=ceiling)
                         curs.execute(qry)
                         elapsed = time.time() - start
-                        logger.info('ID {} to {}, {} s'.format(floor, ceiling, elapsed))
+                        logger.info("ID {} to {}, {} s".format(floor, ceiling, elapsed))
                 else:  # simple query, no iterating over batch
                     curs.execute(base_qry)
                     elapsed = time.time() - start
-                    logger.info('{} s'.format(elapsed))
+                    logger.info("{} s".format(elapsed))
 
     def find_batches(self, curs, options):
-        batch = options['batch']
+        batch = options["batch"]
         curs.execute(self.BOUNDARY_FINDER)
         (lowest, highest) = curs.fetchone()
-        lowest = max(lowest, options['min_transaction_id'])
-        if options['max_transaction_id']:
-            highest = min(highest, options['max_transaction_id'])
+        lowest = max(lowest, options["min_transaction_id"])
+        if options["max_transaction_id"]:
+            highest = min(highest, options["max_transaction_id"])
         floor = (lowest // batch) * batch
         while floor <= highest:
             yield (floor, floor + batch)

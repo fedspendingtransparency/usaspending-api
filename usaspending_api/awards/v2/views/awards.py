@@ -28,8 +28,8 @@ class AwardLastUpdatedViewSet(APIDocumentationView):
     def get(self, request):
         """Return latest updated date for Awards"""
 
-        max_update_date = Award.objects.all().aggregate(Max('update_date'))['update_date__max']
-        response = {"last_updated": max_update_date.strftime('%m/%d/%Y')}
+        max_update_date = Award.objects.all().aggregate(Max("update_date"))["update_date__max"]
+        response = {"last_updated": max_update_date.strftime("%m/%d/%Y")}
 
         return Response(response)
 

@@ -168,9 +168,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
-    copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, filename=filename
-    )
+    copy_sql = COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
 
     count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
 
@@ -520,7 +518,7 @@ def delete_query(response):
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]
 
 
 def delete_transactions_from_es(client, id_list, job_id, config, index=None):

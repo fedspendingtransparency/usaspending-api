@@ -10,11 +10,10 @@ from usaspending_api.references.models import Definition
 
 
 class DefinitionSerializer(LimitableSerializer):
-
     class Meta:
 
         model = Definition
-        fields = ['term', 'slug', 'data_act_term', 'plain', 'official', 'resources']
+        fields = ["term", "slug", "data_act_term", "plain", "official", "resources"]
 
 
 class GlossaryViewSet(APIDocumentationView):
@@ -28,8 +27,8 @@ class GlossaryViewSet(APIDocumentationView):
         Accepts only pagination-related query parameters
         """
         models = [
-            {'name': 'page', 'key': 'page', 'type': 'integer', 'default': 1, 'min': 1},
-            {'name': 'limit', 'key': 'limit', 'type': 'integer', 'default': 500, 'min': 1, 'max': 500},
+            {"name": "page", "key": "page", "type": "integer", "default": 1, "min": 1},
+            {"name": "limit", "key": "limit", "type": "integer", "default": 500, "min": 1, "max": 500},
         ]
 
         # Can't use the TinyShield decorator (yet) because this is a GET request only
@@ -42,9 +41,6 @@ class GlossaryViewSet(APIDocumentationView):
         queryset, pagination = get_pagination(queryset, int(limit), int(page))
 
         serializer = DefinitionSerializer(queryset, many=True)
-        response = {
-            "page_metadata": pagination,
-            "results": serializer.data
-        }
+        response = {"page_metadata": pagination, "results": serializer.data}
 
         return Response(response)

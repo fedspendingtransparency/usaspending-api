@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
@@ -70,8 +70,10 @@ class Command(BaseCommand):
                     AND UPPER(dap.legal_entity_country_code) = 'USA'"""
         )
 
-        logger.info("Finished FPDS legal entity 9-digit zips without dashes, starting FPDS legal entity 9-digit zips "
-                    "with dashes")
+        logger.info(
+            "Finished FPDS legal entity 9-digit zips without dashes, starting FPDS legal entity 9-digit zips "
+            "with dashes"
+        )
 
         # FPDS LE 9-digit dash
         sess.execute(
@@ -346,26 +348,29 @@ class Command(BaseCommand):
         logger.info("Finished FPDS PPOP location updates, finished location updates")
 
     def add_arguments(self, parser):
-        parser.add_argument('-mv', '--matview', help='Create the matviews, make sure they do not already exist',
-                            action='store_true')
-        parser.add_argument('-dmv', '--delete_matview', help='Delete the matviews', action='store_true')
-        parser.add_argument('-fpdsle', '--fpds_le', help='Run FPDS Legal Entity updates', action='store_true')
-        parser.add_argument('-fpdsppop', '--fpds_ppop', help='Run FPDS PPOP updates', action='store_true')
-        parser.add_argument('-fabsle', '--fabs_le', help='Run FABS Legal Entity updates', action='store_true')
-        parser.add_argument('-fabsppop', '--fabs_ppop', help='Run FABS PPOP updates', action='store_true')
-        parser.add_argument('-l', '--location', help='Fix location county codes/names', action='store_true')
-        parser.add_argument('-a', '--all', help='Run all updates without creating or deleting matviews',
-                            action='store_true')
-        parser.add_argument('-am', '--all_matview', help='Run all updates and create and delete matviews',
-                            action='store_true')
+        parser.add_argument(
+            "-mv", "--matview", help="Create the matviews, make sure they do not already exist", action="store_true"
+        )
+        parser.add_argument("-dmv", "--delete_matview", help="Delete the matviews", action="store_true")
+        parser.add_argument("-fpdsle", "--fpds_le", help="Run FPDS Legal Entity updates", action="store_true")
+        parser.add_argument("-fpdsppop", "--fpds_ppop", help="Run FPDS PPOP updates", action="store_true")
+        parser.add_argument("-fabsle", "--fabs_le", help="Run FABS Legal Entity updates", action="store_true")
+        parser.add_argument("-fabsppop", "--fabs_ppop", help="Run FABS PPOP updates", action="store_true")
+        parser.add_argument("-l", "--location", help="Fix location county codes/names", action="store_true")
+        parser.add_argument(
+            "-a", "--all", help="Run all updates without creating or deleting matviews", action="store_true"
+        )
+        parser.add_argument(
+            "-am", "--all_matview", help="Run all updates and create and delete matviews", action="store_true"
+        )
 
     def handle(self, *args, **options):
         with connection.cursor() as sess:
 
             logger.info("Starting county code fixes")
 
-            if options['all_matview'] or options['all']:
-                if options['all_matview']:
+            if options["all_matview"] or options["all"]:
+                if options["all_matview"]:
                     self.create_matviews(sess)
 
                 self.update_fpds_le(sess)
@@ -374,22 +379,22 @@ class Command(BaseCommand):
                 self.update_fabs_ppop(sess)
                 self.update_location(sess)
 
-                if options['all_matview']:
+                if options["all_matview"]:
                     self.delete_matviews(sess)
             else:
-                if options['matview']:
+                if options["matview"]:
                     self.create_matviews(sess)
-                if options['fpds_le']:
+                if options["fpds_le"]:
                     self.update_fpds_le(sess)
-                if options['fpds_ppop']:
+                if options["fpds_ppop"]:
                     self.update_fpds_ppop(sess)
-                if options['fabs_le']:
+                if options["fabs_le"]:
                     self.update_fabs_le(sess)
-                if options['fabs_ppop']:
+                if options["fabs_ppop"]:
                     self.update_fabs_ppop(sess)
-                if options['location']:
+                if options["location"]:
                     self.update_location(sess)
-            if options['delete_matview']:
+            if options["delete_matview"]:
                 self.delete_matviews(sess)
 
             logger.info("Completed county code fixes")

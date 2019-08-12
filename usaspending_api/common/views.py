@@ -12,8 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 import logging
 
 
-class AutocompleteView(AutocompleteResponseMixin,
-                       APIView):
+class AutocompleteView(AutocompleteResponseMixin, APIView):
 
     exception_logger = logging.getLogger("exceptions")
 
@@ -24,8 +23,7 @@ class AutocompleteView(AutocompleteResponseMixin,
     @cache_response()
     def post(self, request, *args, **kwargs):
         try:
-            response = self.build_response(
-                request, queryset=self.get_queryset(), serializer=self.serializer_class)
+            response = self.build_response(request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
             response = {"message": str(e)}
@@ -92,14 +90,14 @@ class CachedDetailViewSet(DetailViewSet):
 
 class MarkdownView(TemplateView):
 
-    template_name = 'index.html'
-    markdown = ''
+    template_name = "index.html"
+    markdown = ""
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(TemplateView, self).get_context_data(**kwargs)
         # Add in the markdown to the context, for use in the template tags
-        context.update({'markdown': self.markdown})
+        context.update({"markdown": self.markdown})
         return context
 
 

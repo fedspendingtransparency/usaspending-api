@@ -5,20 +5,21 @@ class LimitableSerializer(serializers.ModelSerializer):
     prefetchable = True
 
     """Extends the model serializer to support field limiting."""
+
     def __init__(self, *args, **kwargs):
         # Grab any kwargs include and exclude fields, these are typically
         # passed in by a parent serializer to the child serializer
-        kwargs_has_include = 'fields' in kwargs
-        kwargs_has_exclude = 'exclude' in kwargs
-        kwargs_include_fields = kwargs.pop('fields', [])
-        kwargs_exclude_fields = kwargs.pop('exclude', [])
+        kwargs_has_include = "fields" in kwargs
+        kwargs_has_exclude = "exclude" in kwargs
+        kwargs_include_fields = kwargs.pop("fields", [])
+        kwargs_exclude_fields = kwargs.pop("exclude", [])
 
         # Initialize now that kwargs have been cleared
         super(LimitableSerializer, self).__init__(*args, **kwargs)
 
-        current_viewset = self.context.get('view')
+        current_viewset = self.context.get("view")
 
-        request = self.context.get('request', None)
+        request = self.context.get("request", None)
         params = {}
         if request:
             params = dict(request.query_params)
@@ -29,16 +30,16 @@ class LimitableSerializer(serializers.ModelSerializer):
 
         # If no kwargs excludes, check the request
         if not kwargs_has_exclude:
-            param_exclude_fields = params.get('exclude', [])
+            param_exclude_fields = params.get("exclude", [])
 
         if not kwargs_has_include:
-            param_include_fields = params.get('fields', [])
+            param_include_fields = params.get("fields", [])
 
         exclude_fields = []
         include_fields = []
 
         # Allow excluded and included fields if we are not verbose
-        if not self.context.get('verbose', True) or not params.get("verbose", False):
+        if not self.context.get("verbose", True) or not params.get("verbose", False):
             # Otherwise, use the fields from the lists
             exclude_fields = param_exclude_fields + kwargs_exclude_fields
 
@@ -82,9 +83,9 @@ class LimitableSerializer(serializers.ModelSerializer):
 
                 child_args = {
                     **kwargs,
-                    "context": {**self.context, 'verbose': False},  # Do not verbos-ify child objects
+                    "context": {**self.context, "verbose": False},  # Do not verbos-ify child objects
                     "fields": child_include_fields,
-                    "exclude": child_exclude_fields
+                    "exclude": child_exclude_fields,
                 }
                 self.fields[field] = children[field]["class"](**child_args)
 
@@ -125,14 +126,14 @@ class LimitableSerializer(serializers.ModelSerializer):
         matched = []
         child_fields = []
         for field in fields:
-            if field[:len(pattern)] == pattern:
-                child_fields.append(field[len(pattern):])
+            if field[: len(pattern)] == pattern:
+                child_fields.append(field[len(pattern) :])
                 matched.append(field)
         return child_fields, matched
 
     @classmethod
     def setup_eager_loading(cls, queryset, prefix=""):
-        '''
+        """
         This method will set up prefetch and selected related statements appropriately
         on a specified query set based upon the serializer's nested_serializer parameter
         in the Meta class. It will return the modified queryset.
@@ -144,13 +145,13 @@ class LimitableSerializer(serializers.ModelSerializer):
         This prefix flag allows us to accomplish this.
         N.B.: When doing a 1-1 fk relation, select_related() should be used (this join is performed in the SQL);
               When doing a 1-m or m-m relation, prefetch_related() should be used (this join is performed via Python)
-        '''
+        """
         try:
             # Grab the nested serializers (aka children)
             children = cls.Meta.nested_serializers
             for child in children:
                 serializer_class = children[child]["class"]
-                if (not hasattr(serializer_class, 'prefetchable')) or (not serializer_class.prefetchable):
+                if (not hasattr(serializer_class, "prefetchable")) or (not serializer_class.prefetchable):
                     continue
                 queryset = queryset.prefetch_related(prefix + child)
                 # Since the child might have nested serializers, we set up on that too
@@ -163,15 +164,14 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 
 class AggregateSerializer(serializers.Serializer):
-
     def __init__(self, *args, **kwargs):
         super(AggregateSerializer, self).__init__(*args, **kwargs)
 
-        request = self.context.get('request', None)
+        request = self.context.get("request", None)
         params = dict(request.query_params)
         params.update(dict(request.data))
 
-        include_fields = params.get('group')
+        include_fields = params.get("group")
         if not isinstance(include_fields, list):
             include_fields = [include_fields]
 

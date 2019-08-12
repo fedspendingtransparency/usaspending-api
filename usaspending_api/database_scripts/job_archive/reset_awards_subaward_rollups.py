@@ -179,9 +179,7 @@ class Timer:
         d, h = divmod(h, 24)
 
         return (
-            " ".join(
-                f.format(b) for f, b in zip(cls._formats, tuple(int(n) for n in (d, h, m, s, ms))) if b > 0
-            )
+            " ".join(f.format(b) for f, b in zip(cls._formats, tuple(int(n) for n in (d, h, m, s, ms))) if b > 0)
             or "less than a millisecond"
         )
 
@@ -242,9 +240,11 @@ if __name__ == "__main__":
                 total_affected += affected
                 ratio = (max_chunk_id - min_id + 1) / id_diff
                 remaining = uat.estimated_remaining_runtime((max_chunk_id - min_id + 1) / id_diff)
-                print("[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}".format(
-                    ratio, min_chunk_id, max_chunk_id, affected, t.as_string(t.elapsed), t.as_string(remaining)
-                ))
+                print(
+                    "[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}".format(
+                        ratio, min_chunk_id, max_chunk_id, affected, t.as_string(t.elapsed), t.as_string(remaining)
+                    )
+                )
 
         print("{:,} awards updated in total".format(total_affected))
 

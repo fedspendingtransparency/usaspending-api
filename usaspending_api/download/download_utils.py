@@ -42,7 +42,7 @@ def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
 
 def log_new_download_job(request, download_job):
     write_to_download_log(
-        message='Starting new download job [{}]'.format(download_job.download_job_id),
+        message="Starting new download job [{}]".format(download_job.download_job_id),
         download_job=download_job,
-        other_params={'request_addr': get_remote_addr(request)}
+        other_params={"request_addr": get_remote_addr(request)},
     )

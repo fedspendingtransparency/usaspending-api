@@ -8,7 +8,6 @@ BASE_ENDPOINT = "/api/v2/autocomplete/accounts/"
 
 
 class TASAutocompleteTestCase(TestCase):
-
     @classmethod
     def setUpTestData(cls):
         mommy.make("references.CGAC", cgac_code="000", agency_name="Agency 000", agency_abbreviation="A000")
@@ -74,35 +73,39 @@ class TASAutocompleteTestCase(TestCase):
         self._post(
             endpoint,
             {},
-            {"results": [
-                {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
-                {"ata": "001", "agency_name": None, "agency_abbreviation": None},
-                {"ata": None, "agency_name": None, "agency_abbreviation": None},
-            ]},
+            {
+                "results": [
+                    {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
+                    {"ata": "001", "agency_name": None, "agency_abbreviation": None},
+                    {"ata": None, "agency_name": None, "agency_abbreviation": None},
+                ]
+            },
         )
 
         # Test with limit.
         self._post(
             endpoint,
             {"limit": 1},
-            {"results": [{"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"}]}
+            {"results": [{"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"}]},
         )
 
         # Test with filter on component of interest.
         self._post(
             endpoint,
             {"filters": {"ata": "0"}},
-            {"results": [
-                {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
-                {"ata": "001", "agency_name": None, "agency_abbreviation": None},
-            ]},
+            {
+                "results": [
+                    {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
+                    {"ata": "001", "agency_name": None, "agency_abbreviation": None},
+                ]
+            },
         )
 
         # Test with null filter on component of interest.
         self._post(
             endpoint,
             {"filters": {"ata": None}},
-            {"results": [{"ata": None, "agency_name": None, "agency_abbreviation": None}]}
+            {"results": [{"ata": None, "agency_name": None, "agency_abbreviation": None}]},
         )
 
         # Test with a bunch of filters.

@@ -10,7 +10,7 @@ class ExternalDataType(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'external_data_type'
+        db_table = "external_data_type"
 
 
 class ExternalDataLoadDate(models.Model):
@@ -20,5 +20,5 @@ class ExternalDataLoadDate(models.Model):
 
     class Meta:
         managed = True
-        unique_together = (('last_load_date', 'external_data_type'),)
-        db_table = 'external_data_load_date'
+        unique_together = (("last_load_date", "external_data_type"),)
+        db_table = "external_data_load_date"

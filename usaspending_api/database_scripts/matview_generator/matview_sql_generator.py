@@ -105,7 +105,7 @@ def get_git_commit(characters=8, filename=None):
     shell = subprocess.run(cmd_args, stdout=subprocess.PIPE, check=True)
     if shell.stdout:
         # First character is a '#' so skip it
-        return shell.stdout[1:characters + 1].decode()
+        return shell.stdout[1 : characters + 1].decode()
     return None
 
 
