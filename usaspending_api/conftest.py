@@ -180,9 +180,9 @@ def mock_matviews_qs(monkeypatch):
     mock_qs = MockSet()  # mock queryset
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardAllPre2008View.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardContractsView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardDirectpaymentsView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardDirectPaymentsView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardGrantsView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardIdvView.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardIdvsView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardLoansView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ReportingAwardOtherView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.SubawardView.objects", mock_qs)

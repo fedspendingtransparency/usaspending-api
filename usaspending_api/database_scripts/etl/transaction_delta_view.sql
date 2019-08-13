@@ -22,7 +22,7 @@ SELECT
 
   TM.update_date,
   TM.modification_number,
-  UAM.award_id,
+  AWD.award_id,
   UTM.piid,
   UTM.fain,
   UTM.uri,
@@ -32,26 +32,26 @@ SELECT
   UTM.product_or_service_description,
   UTM.naics_code,
   UTM.naics_description,
-  UAM.type_description,
+  AWD.type_description,
   UTM.award_category,
   UTM.recipient_unique_id,
   UTM.parent_recipient_unique_id,
   UTM.recipient_name,
 
   UTM.action_date,
-  UAM.period_of_performance_start_date,
-  UAM.period_of_performance_current_end_date,
-  UAM.ordering_period_end_date,
+  AWD.period_of_performance_start_date,
+  AWD.period_of_performance_current_end_date,
+  FPDS.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
-  UAM.fiscal_year AS award_fiscal_year,
-  UAM.total_obligation AS award_amount,
+  AWD.fiscal_year AS award_fiscal_year,
+  AWD.total_obligation AS award_amount,
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
   UTM.original_loan_subsidy_cost,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
-  UAM.awarding_toptier_agency_name,
+  UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
   UTM.funding_subtier_agency_name,
@@ -90,5 +90,5 @@ FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
-JOIN awards AW ON (UAM.award_id = AW.id);
+LEFT OUTER JOIN awards AWD ON (UTM.award_id = AWD.award_id)
+JOIN awards AW ON (AWD.award_id = AW.id);
