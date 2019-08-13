@@ -5,28 +5,17 @@ from django.db.models import Count, F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models_matviews import (
-    MatviewAwardContracts,
-    MatviewAwardDirectPayments,
-    MatviewAwardGrants,
-    MatviewAwardIdvs,
-    MatviewAwardLoans,
-    MatviewAwardOther,
-)
-
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
     contract_subaward_mapping,
     contract_type_mapping,
-    direct_payment_type_mapping,
     grant_subaward_mapping,
     grant_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
     non_loan_assistance_type_mapping,
-    other_type_mapping,
     procurement_mapping,
 )
 from usaspending_api.awards.v2.lookups.matview_lookups import (
@@ -42,30 +31,10 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.data_connectors.async_spending_by_award_count import async_fetch_category_counts
-
-
-def obtain_view_from_award_group(type_list):
-    types = set(type_list)
-    if types <= set(contract_type_mapping.keys()):
-        print("CONTRACTS")
-        return MatviewAwardContracts
-    elif types <= set(idv_type_mapping.keys()):
-        print("IDVS")
-        return MatviewAwardIdvs
-    elif types <= set(grant_type_mapping.keys()):
-        print("GRANTS")
-        return MatviewAwardGrants
-    elif types <= set(loan_type_mapping.keys()):
-        print("LOANS")
-        return MatviewAwardLoans
-    elif types <= set(other_type_mapping.keys()):
-        print("OTHER")
-        return MatviewAwardOther
-    elif types <= set(direct_payment_type_mapping.keys()):
-        print("OTHER")
-        return MatviewAwardDirectPayments
-    else:
-        raise Exception("FAIL")
+from usaspending_api.common.helpers.orm_helpers import (
+    category_to_award_materialized_views,
+    obtain_view_from_award_group,
+)
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -274,16 +243,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 else:
                     result_key = "subcontracts"
                 results[result_key] += award["category_count"]
-
         else:
-            category_to_model = {
-                "contracts": MatviewAwardContracts,
-                "direct_payments": MatviewAwardDirectPayments,
-                "grants": MatviewAwardGrants,
-                "idvs": MatviewAwardIdvs,
-                "loans": MatviewAwardLoans,
-                "other": MatviewAwardOther,
-            }
-            results = async_fetch_category_counts(filters, category_to_model)
+            results = async_fetch_category_counts(filters, category_to_award_materialized_views())
 
         return Response({"results": results})

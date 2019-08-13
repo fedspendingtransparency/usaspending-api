@@ -26,7 +26,7 @@ SELECT
   UTM.piid,
   UTM.fain,
   UTM.uri,
-  AW.description AS award_description,
+  AWD.description AS award_description,
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,
@@ -90,5 +90,4 @@ FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT OUTER JOIN awards AWD ON (UTM.award_id = AWD.id)
-JOIN awards AW ON (AWD.award_id = AW.id);
+LEFT OUTER JOIN awards AWD ON (UTM.award_id = AWD.id);

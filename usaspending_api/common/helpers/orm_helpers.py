@@ -2,9 +2,35 @@ from datetime import date
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
 from usaspending_api.common.helpers.sql_helpers import get_connection
+from usaspending_api.awards.models_matviews import (
+    MatviewAwardContracts,
+    MatviewAwardDirectPayments,
+    MatviewAwardGrants,
+    MatviewAwardIdvs,
+    MatviewAwardLoans,
+    MatviewAwardOther,
+)
 
+from usaspending_api.awards.v2.lookups.lookups import (
+    contract_type_mapping,
+    direct_payment_type_mapping,
+    grant_type_mapping,
+    idv_type_mapping,
+    loan_type_mapping,
+    other_type_mapping,
+)
 
 TYPES_TO_QUOTE_IN_SQL = (str, date)
+
+
+CATEGORY_TO_MODEL = {
+    "contracts": {"model": MatviewAwardContracts, "types": set(contract_type_mapping.keys())},
+    "direct_payments": {"model": MatviewAwardDirectPayments, "types": set(direct_payment_type_mapping.keys())},
+    "grants": {"model": MatviewAwardGrants, "types": set(grant_type_mapping.keys())},
+    "idvs": {"model": MatviewAwardIdvs, "types": set(idv_type_mapping.keys())},
+    "loans": {"model": MatviewAwardLoans, "types": set(loan_type_mapping.keys())},
+    "other": {"model": MatviewAwardOther, "types": set(other_type_mapping.keys())},
+}
 
 
 class FiscalMonth(Func):
@@ -57,3 +83,17 @@ def generate_where_clause(queryset):
     """
     compiler = queryset.query.get_compiler(get_connection().alias)
     return queryset.query.where.as_sql(compiler, compiler.connection)
+
+
+def obtain_view_from_award_group(type_list):
+    types = set(type_list)
+
+    for category, values in CATEGORY_TO_MODEL.items():
+        if types <= values["types"]:
+            return values["model"]
+    else:
+        raise Exception("Invalid type list. Types cross categories")
+
+
+def category_to_award_materialized_views():
+    return {k: v["model"] for k, v in CATEGORY_TO_MODEL.items()}
