@@ -119,4 +119,4 @@ class UsaspendingPagination(BasePagination):
     def to_html(self):
         template = loader.get_template(self.template)
         context = self.get_html_context()
-        return template.render(template, context)
+        return template.render(context)

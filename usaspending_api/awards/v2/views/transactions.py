@@ -3,20 +3,22 @@ from copy import deepcopy
 from django.db.models import F
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import TinyShield
 
 
-class TransactionViewSet(APIDocumentationView):
+class TransactionViewSet(APIView):
     """
-    endpoint_doc: /awards/transactions.md
+    This route sends a request to the backend to retrieve transactions related to
+    a specific parent award.
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/transactions.md"
 
     transaction_lookup = {
         # "Display Name": "database_column"
