@@ -6,12 +6,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.models_matviews import (
-    ReportingAwardContractsView,
-    ReportingAwardDirectPaymentsView,
-    ReportingAwardGrantsView,
-    ReportingAwardIdvsView,
-    ReportingAwardLoansView,
-    ReportingAwardOtherView,
+    MatviewAwardContracts,
+    MatviewAwardDirectPayments,
+    MatviewAwardGrants,
+    MatviewAwardIdvs,
+    MatviewAwardLoans,
+    MatviewAwardOther,
 )
 
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
@@ -48,22 +48,22 @@ def obtain_view_from_award_group(type_list):
     types = set(type_list)
     if types <= set(contract_type_mapping.keys()):
         print("CONTRACTS")
-        return ReportingAwardContractsView
+        return MatviewAwardContracts
     elif types <= set(idv_type_mapping.keys()):
         print("IDVS")
-        return ReportingAwardIdvsView
+        return MatviewAwardIdvs
     elif types <= set(grant_type_mapping.keys()):
         print("GRANTS")
-        return ReportingAwardGrantsView
+        return MatviewAwardGrants
     elif types <= set(loan_type_mapping.keys()):
         print("LOANS")
-        return ReportingAwardLoansView
+        return MatviewAwardLoans
     elif types <= set(other_type_mapping.keys()):
         print("OTHER")
-        return ReportingAwardOtherView
+        return MatviewAwardOther
     elif types <= set(direct_payment_type_mapping.keys()):
         print("OTHER")
-        return ReportingAwardDirectPaymentsView
+        return MatviewAwardDirectPayments
     else:
         raise Exception("FAIL")
 
@@ -277,12 +277,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         else:
             category_to_model = {
-                "contracts": ReportingAwardContractsView,
-                "direct_payments": ReportingAwardDirectPaymentsView,
-                "grants": ReportingAwardGrantsView,
-                "idvs": ReportingAwardIdvsView,
-                "loans": ReportingAwardLoansView,
-                "other": ReportingAwardOtherView,
+                "contracts": MatviewAwardContracts,
+                "direct_payments": MatviewAwardDirectPayments,
+                "grants": MatviewAwardGrants,
+                "idvs": MatviewAwardIdvs,
+                "loans": MatviewAwardLoans,
+                "other": MatviewAwardOther,
             }
             results = async_fetch_category_counts(filters, category_to_model)
 

@@ -1,21 +1,21 @@
 BEGIN;
 
-DROP VIEW IF EXISTS reporting_award_download_view;
+DROP VIEW IF EXISTS vw_award_download;
 
-CREATE VIEW reporting_award_download_view AS (
-  SELECT * FROM reporting_award_contracts_view
+CREATE VIEW vw_award_download AS (
+  SELECT * FROM mv_award_contracts
   UNION ALL
-  SELECT * FROM reporting_award_directpayments_view
+  SELECT * FROM mv_award_directpayments
   UNION ALL
-  SELECT * FROM reporting_award_grants_view
+  SELECT * FROM mv_award_grants
   UNION ALL
-  SELECT * FROM reporting_award_idvs_view
+  SELECT * FROM mv_award_idvs
   UNION ALL
-  SELECT * FROM reporting_award_loans_view
+  SELECT * FROM mv_award_loans
   UNION ALL
-  SELECT * FROM reporting_award_other_view
+  SELECT * FROM mv_award_other
   UNION ALL
-  SELECT * FROM reporting_award_all_pre2008_view
+  SELECT * FROM mv_award_all_pre2008
 )
 
 COMMIT;

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ReportingAwardAllPre2008View',
+            name='MatviewAwardAllPre2008',
             fields=[
                 ('award', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='awards.Award')),
                 ('type', models.TextField()),
@@ -51,12 +51,12 @@ class Migration(migrations.Migration):
                 ('recipient_id', models.IntegerField()),
             ],
             options={
-                'db_table': 'reporting_award_all_pre2008_view',
+                'db_table': 'mv_award_all_pre2008',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardContractsView',
+            name='MatviewAwardContracts',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -126,12 +126,12 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_contracts_view',
+                'db_table': 'mv_award_contracts',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardDirectPaymentsView',
+            name='MatviewAwardDirectPayments',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -201,12 +201,12 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_directpayments_view',
+                'db_table': 'mv_award_directpayments',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardGrantsView',
+            name='MatviewAwardGrants',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -276,12 +276,12 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_grants_view',
+                'db_table': 'mv_award_grants',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardIdvsView',
+            name='MatviewAwardIdvs',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -351,12 +351,12 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_idvs_view',
+                'db_table': 'mv_award_idvs',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardLoansView',
+            name='MatviewAwardLoans',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -426,12 +426,12 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_loans_view',
+                'db_table': 'mv_award_loans',
                 'managed': False,
             },
         ),
         migrations.CreateModel(
-            name='ReportingAwardOtherView',
+            name='MatviewAwardOther',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -501,7 +501,7 @@ class Migration(migrations.Migration):
                 ('naics_description', models.TextField()),
             ],
             options={
-                'db_table': 'reporting_award_other_view',
+                'db_table': 'mv_award_other',
                 'managed': False,
             },
         ),

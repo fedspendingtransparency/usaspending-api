@@ -1,5 +1,5 @@
 {
-  "final_name": "reporting_award_loans_view",
+  "final_name": "mv_award_directpayments",
   "refresh": true,
   "matview_sql": [
     "SELECT",
@@ -118,7 +118,7 @@
     "    ON (FA.subtier_agency_id = SFA.subtier_agency_id)",
     "WHERE",
     "  latest_transaction.action_date >= '2007-10-01'",
-    "  AND awards.type IN ('07','08')",
+    "  AND awards.type IN ('06','10')",
     "ORDER BY",
     "  awards.total_obligation DESC NULLS LAST"
   ],

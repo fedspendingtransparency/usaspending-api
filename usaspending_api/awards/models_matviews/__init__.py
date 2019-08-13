@@ -1,11 +1,11 @@
-from usaspending_api.awards.models_matviews.reporting_award_all_pre2008_view import ReportingAwardAllPre2008View
-from usaspending_api.awards.models_matviews.reporting_award_contracts_view import ReportingAwardContractsView
-from usaspending_api.awards.models_matviews.reporting_award_directpayments_view import ReportingAwardDirectPaymentsView
-from usaspending_api.awards.models_matviews.reporting_award_download_view import ReportingAwardDownloadView
-from usaspending_api.awards.models_matviews.reporting_award_grants_view import ReportingAwardGrantsView
-from usaspending_api.awards.models_matviews.reporting_award_idvs_view import ReportingAwardIdvsView
-from usaspending_api.awards.models_matviews.reporting_award_loans_view import ReportingAwardLoansView
-from usaspending_api.awards.models_matviews.reporting_award_other_view import ReportingAwardOtherView
+from usaspending_api.awards.models_matviews.mv_award_all_pre2008 import MatviewAwardAllPre2008
+from usaspending_api.awards.models_matviews.mv_award_contracts import MatviewAwardContracts
+from usaspending_api.awards.models_matviews.mv_award_directpayments import MatviewAwardDirectPayments
+from usaspending_api.awards.models_matviews.vw_award_download import ReportingAwardDownloadView
+from usaspending_api.awards.models_matviews.mv_award_grants import MatviewAwardGrants
+from usaspending_api.awards.models_matviews.mv_award_idvs import MatviewAwardIdvs
+from usaspending_api.awards.models_matviews.mv_award_loans import MatviewAwardLoans
+from usaspending_api.awards.models_matviews.mv_award_other import MatviewAwardOther
 from usaspending_api.awards.models_matviews.subaward_view import SubawardView
 from usaspending_api.awards.models_matviews.summary_cfda_numbers_view import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews.summary_naics_codes_view import SummaryNaicsCodesView
@@ -21,14 +21,14 @@ from usaspending_api.awards.models_matviews.universal_transaction_matview import
 
 
 __all__ = [
-    "ReportingAwardAllPre2008View",
-    "ReportingAwardContractsView",
-    "ReportingAwardDirectPaymentsView",
+    "MatviewAwardAllPre2008",
+    "MatviewAwardContracts",
+    "MatviewAwardDirectPayments",
     "ReportingAwardDownloadView",
-    "ReportingAwardGrantsView",
-    "ReportingAwardIdvsView",
-    "ReportingAwardLoansView",
-    "ReportingAwardOtherView",
+    "MatviewAwardGrants",
+    "MatviewAwardIdvs",
+    "MatviewAwardLoans",
+    "MatviewAwardOther",
     "SubawardView",
     "SummaryCfdaNumbersView",
     "SummaryNaicsCodesView",

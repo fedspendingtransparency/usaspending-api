@@ -1,5 +1,5 @@
 {
-  "final_name": "reporting_award_grants_view",
+  "final_name": "mv_award_grants",
   "refresh": true,
   "matview_sql": [
     "SELECT",
