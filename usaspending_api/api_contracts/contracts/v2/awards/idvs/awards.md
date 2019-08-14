@@ -3,7 +3,9 @@ HOST: https://api.usaspending.gov
 
 # IDV Related Awards [/api/v2/awards/idvs/awards/]
 
-## List child IDVs, child awards, or grandchild awards for IDV [POST /api/v2/awards/idvs/awards/]
+## POST
+
+List child IDVs, child awards, or grandchild awards for IDV
 
 + Request (application/json)
     + Attributes (object)
@@ -15,12 +17,12 @@ HOST: https://api.usaspending.gov
             + Members
                 + `child_awards`
                 + `grandchild_awards`
-        + `limit`: `5` (optional, number)
+        + `limit`: 5 (optional, number)
             The number of results to include per page.
-            + Default: `10`
-        + `page`: `1` (optional, number)
+            + Default: 10
+        + `page`: 1 (optional, number)
             The page of results to return based on the limit.
-            + Default: `1`
+            + Default: 1
         + `sort`: `period_of_performance_start_date` (optional, enum[string])
             The field results are sorted by.
             + Default: `period_of_performance_start_date`
@@ -104,25 +106,25 @@ HOST: https://api.usaspending.gov
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ `page`: `2` (required, number)
-+ `hasNext`: `false` (required, boolean)
-+ `hasPrevious`: `false` (required, boolean)
-+ `next`: `3` (required, number, nullable)
-+ `previous`: `1` (required, number, nullable)
++ `page`: 2 (required, number)
++ `hasNext`: false (required, boolean)
++ `hasPrevious`: false (required, boolean)
++ `next`: 3 (required, number, nullable)
++ `previous`: 1 (required, number, nullable)
 
 ## IDVRelatedAwardsResponse (object)
-+ `award_id`: `69054107` (required, number)
++ `award_id`: 69054107 (required, number)
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
 + `award_type`: `BPA`(required, string)
 + `description`: `OTHER THAN SCHEDULE,IGF::OT::IGF` (required, string, nullable)
 + `funding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
 + `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
-+ `funding_agency_id`: `634` (required, number)
-+ `awarding_agency_id`: `634` (required, number)
++ `funding_agency_id`: 634 (required, number)
++ `awarding_agency_id`: 634 (required, number)
 + `generated_unique_award_id`: `CONT_IDV_DJB30605051_1540` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
-+ `obligated_amount`: `22570355.24` (required, number)
++ `obligated_amount`: 22570355.24 (required, number)
 + `period_of_performance_current_end_date`: `2015-02-19` (required, string, nullable)
     The ending date of the award in the format `YYYY-MM-DD`
 + `period_of_performance_start_date`: `2014-10-01` (required, string, nullable)

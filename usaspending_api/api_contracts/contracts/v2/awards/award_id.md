@@ -1,16 +1,16 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Awards [/api/v2/awards/]
+# Awards [/api/v2/awards/{award_id}/]
 
 This endpoint is used to power USAspending.gov's award profile pages. This data can be used to view details about a specific award.
 
-## Return data associated with award profile [GET /api/v2/awards/{award_id}/]
+## GET
 
 This endpoint returns a list of data that is associated with the award profile page.
 
 + Parameters
-    + award_id: `TEST` (required, string)
+    + `award_id`: `TEST` (required, string)
         Accepts the v2 generated award hash or internal database id.
 
 + Request A request with a contract id (application/json)
@@ -39,13 +39,13 @@ This endpoint returns a list of data that is associated with the award profile p
 ## ContractResponse (object)
 + `category` (required, enum[string])
     + Members
-        + contract
+        + `contract`
 + `type` (required, enum[string])
     + Members
-        + A
-        + B
-        + C
-        + D
+        + `A`
+        + `B`
+        + `C`
+        + `D`
 + `type_description`: `Definitive Contracts` (required, string)
 + `generated_unique_award_id`: `25764264` (required, string)
 + `piid`: `W31P4Q15A0024` (required, string)
@@ -72,7 +72,7 @@ This endpoint returns a list of data that is associated with the award profile p
 ## IDVResponse (object)
 + `category` (required, enum[string])
     + Members
-        + idv
+        + `idv`
 + `type` (required, enum[string])
     + Members
         + `IDV_A`
@@ -112,10 +112,10 @@ This endpoint returns a list of data that is associated with the award profile p
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
     + Members
-        + loans
-        + other
-        + direct payment
-        + grant
+        + `loans`
+        + `other`
+        + `direct payment`
+        + `grant`
 + `type` (required, enum[string])
     + Members
         + `02`
@@ -159,40 +159,40 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 
 ## Agency (object)
-+ id: 123 (required, number)
-+ toptier_agency (required, TopTierAgency, nullable)
-+ subtier_agency (required, SubTierAgency, nullable)
-+ office_agency_name: `STRATEGIC SYSTEMS` (required, string, nullable)
++ `id`: 123 (required, number)
++ `toptier_agency` (required, TopTierAgency, nullable)
++ `subtier_agency` (required, SubTierAgency, nullable)
++ `office_agency_name`: `STRATEGIC SYSTEMS` (required, string, nullable)
 
 ## ParentIDVDetails (object)
-+ award_id: 5738 (required, number, nullable)
-+ idv_type_description: `test` (required, string, nullable)
-+ type_of_idc_description: `r3w` (required, string, nullable)
-+ agency_id: `123` (required, string)
-+ agency_name `Department of Justice` (required, string)
-+ multiple_or_single_aw_desc: `something` (required, string)
-+ piid: `345` (required, string)
++ `award_id`: 5738 (required, number, nullable)
++ `idv_type_description`: `test` (required, string, nullable)
++ `type_of_idc_description`: `r3w` (required, string, nullable)
++ `agency_id`: `123` (required, string)
++ `agency_name`: `Department of Justice` (required, string)
++ `multiple_or_single_aw_desc`: `something` (required, string)
++ `piid`: `345` (required, string)
 
 ## TopTierAgency (object)
-+ name: `Department of Defense` (required, string, nullable)
-+ abbreviation: `DOD` (required, string, nullable)
++ `name`: `Department of Defense` (required, string, nullable)
++ `abbreviation`: `DOD` (required, string, nullable)
 
 ## SubTierAgency (object)
-+ name: `Department of Navy` (required, string, nullable)
-+ abbreviation: `DON` (required, string, nullable)
++ `name`: `Department of Navy` (required, string, nullable)
++ `abbreviation`: `DON` (required, string, nullable)
 
 ## Recipient (object)
-+ recipient_name: `Booz Allen Hamilton` (required, string, nullable)
-+ recipient_hash: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string)
-+ recipient_unique_id: `2424224` (required, string, nullable)
++ `recipient_name`: `Booz Allen Hamilton` (required, string, nullable)
++ `recipient_hash`: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string)
++ `recipient_unique_id`: `2424224` (required, string, nullable)
     The recipient's DUNS
-+ parent_recipient_name: `HoneyWell` (string, nullable)
-+ parent_recipient_hash: `18e9854a-6e51-29fe-0add-4f2ad80a4010-P` (string, nullable)
-+ parent_recipient_unique_id: `2424232` (required, string, nullable)
++ `parent_recipient_name`: `HoneyWell` (string, nullable)
++ `parent_recipient_hash`: `18e9854a-6e51-29fe-0add-4f2ad80a4010-P` (string, nullable)
++ `parent_recipient_unique_id`: `2424232` (required, string, nullable)
     The recipient's parent's DUNS
-+ location (required, Location, nullable)
++ `location` (required, Location, nullable)
     The recipeint's location
-+ business_categories (required, array[string])
++ `business_categories` (required, array[string])
     Names of the recipients' business catagories in human readable format
 
 ##PeriodOfPerformance
@@ -292,8 +292,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `type_set_aside_description` (required, string, nullable)
 
 ## Executive
-+ officers (required, array[Officer], fixed-type)
++ `officers` (required, array[Officer], fixed-type)
 
 ## Officer
-+ name: `John Doe` (required, string)
-+ amount: 234242 (required, number)
++ `name`: `John Doe` (required, string)
++ `amount`: 234242 (required, number)

@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 These endpoints are used to power USAspending.gov's download center.
 
-## List metadata for generated files [POST /api/v2/download/accounts/]
+## POST
 
 Generate files and return metadata using filters on custom account 
 
@@ -23,20 +23,20 @@ Generate files and return metadata using filters on custom account
             The filters used to filter the data
 
 + Response 200 (application/json)
-    + Attributes
-        + `results` (array[CustomDataResult], fixed-type)
+    + Attributes (object)
+        + `results` (required, array[CustomDataResult], fixed-type)
 
 # Data Structures
 
 ## CustomDataResult (object)
-+ `total_size`: `35.055` (required, number)
++ `total_size`: 35.055 (required, number)
     The total size of the file being returned
 + `file_name`: `012_account_balances_20180613140845.zip` (required, string)
-+ `total_rows`: `652` (required, number)
-+ `total_columns`: `27` (required, number)
++ `total_rows`: 652 (required, number)
++ `total_columns`: 27 (required, number)
 + `url`: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
     Where the file lives in S3
-+ `message` (optional, nullable)
++ `message` (optional, string, nullable)
 + `status`: `finished` (required, enum[string])
     + Members
         + `ready`

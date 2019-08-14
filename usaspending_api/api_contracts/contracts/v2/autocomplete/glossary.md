@@ -1,17 +1,22 @@
+FORMAT: 1A
+HOST: https://api.usaspending.gov
+
 # Glossary Autocomplete [/api/v2/autocomplete/glossary/]
 
 This endpoint returns glossary autocomplete data for submitted text snippet.
 
-## List Autocomplete Glossary [POST /api/v2/autocomplete/glossary]
+## POST
+
+List Autocomplete Glossary 
 
 + Request (application/json)
 
     + Attributes
 
         + `search_text`: `aw` (required, string)
-        The text snippet that you are trying to autocomplete using a glossary term.
-        + `limit`: `10` (optional, number)
-        Maximum number to return
+            The text snippet that you are trying to autocomplete using a glossary term.
+        + `limit`: 10 (optional, number)
+            Maximum number to return
 
 + Response 200 (application/json)
     + Attributes

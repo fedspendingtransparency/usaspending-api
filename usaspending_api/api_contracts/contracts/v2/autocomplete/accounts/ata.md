@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 This endpoint powers the USAspending.gov Allocation Transfer Agency Identifier (ATA) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.
 
-## List of potential Allocation Transfer Agency Identifiers [POST /api/v2/autocomplete/accounts/ata/]
+## POST
+
+List of potential Allocation Transfer Agency Identifiers 
 
 + Request (application/json)
 
@@ -13,7 +15,7 @@ This endpoint powers the USAspending.gov Allocation Transfer Agency Identifier (
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: `10`
+            + Default: 10
 
     + Body
 

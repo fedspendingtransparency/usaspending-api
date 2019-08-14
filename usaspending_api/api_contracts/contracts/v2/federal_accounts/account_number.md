@@ -1,39 +1,25 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Federal Accounts Landing Page [/api/v2/federal_accounts/]
+# Federal Accounts Landing Page [/api/v2/federal_accounts/{account_number}/]
 
 This endpoint supports the federal account landing page, which provides a list of all federal accounts for which individual federal accounts pages are available on USAspending.gov.
 
-## POST
+## GET
 
-This endpoint returns a list of federal accounts, their number, name, managing agency, and budgetary resources.
+This endpoint returns the agency identifier, account code, title, and database id for the given federal account.
 
-+ Request (application/json)
-    + Attributes (object)
-        + `filters` (optional, TimeFilterObject)
-            The filter takes a fiscal year, but if one is not provided, it defaults to the last certified fiscal year.
-        + `sort` (optional, SortObject)
-        + `limit`: 50 (optional, number)
-            The number of results to include per page.
-            + Default: 50
-        + `page`: 1 (optional, number)
-            The page of results to return based on the limit.
-            + Default: 1
-        + `keyword`: `test` (optional, string)
-            The keyword that you want to search on. Can be used to search by name, number, managing agency, and budgetary resources.
-
++ Parameters
+    + `account_number`: `011-1022` (required, string)
+        The Federal Account symbol comprised of Agency Code and Main Account Code. A unique identifier for federal accounts.
+        
 + Response 200 (application/json)
     + Attributes
-        + `previous` (optional, number, nullable)
-        + `count`: 1 (required, number)
-        + `limit`: 50 (required, number)
-        + `hasNext`: false (boolean, required)
-        + `page`: 1 (number, required)
-        + `hasPrevious`: false (boolean, required)
-        + `next`: 2 (number, required, nullable)
-        + `fy`: `2018` (string, required)
-        + `results` (array[FederalAccountListing], fixed-type)
+        + `agency_identifier`: `011` (required, string)
+        + `main_account_code`: `1022` (required, string)
+        + `federal_account_code`: `011-1022` (required, string)
+        + `account_title`: `International Security Assistance` (required, string)
+        + `id`: 1234 (required, number)
 
 # Data Structures
 

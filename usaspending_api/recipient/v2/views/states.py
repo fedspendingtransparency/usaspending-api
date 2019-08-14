@@ -99,7 +99,7 @@ class StateMetaDataViewSet(APIView):
     """
     This route returns basic information about the specified state.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/state.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/state/fips.md"
 
     def get_state_data(self, state_data_results, field, year=None):
         """Finds which earliest or latest state data to use based on the year and what data is available"""
@@ -175,7 +175,7 @@ class StateAwardBreakdownViewSet(APIView):
     This endpoint returns the award amounts and totals, based on award
     type, of a specific state or territory, given its USAspending.gov `id`.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/state.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/state/awards/fips.md"
 
     @cache_response()
     def get(self, request, fips):

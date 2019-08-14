@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 This endpoint powers the USAspending.gov Agency Identifier (AID) autocomplete in the Advanced Search -> Program Source -> Treasury and Federal Account filters.
 
-## List of potential Agency Identifiers [POST /api/v2/autocomplete/accounts/aid/]
+## POST
+
+List of potential Agency Identifiers 
 
 + Request (application/json)
 
@@ -13,7 +15,7 @@ This endpoint powers the USAspending.gov Agency Identifier (AID) autocomplete in
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: `10`
+            + Default: 10
 
     + Body
 

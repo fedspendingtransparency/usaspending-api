@@ -5,14 +5,17 @@ HOST: https://api.usaspending.gov
 
 These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
 
-## List Federal Accounts for a given IDV [POST /api/v2/awards/idvs/accounts/]
+## POST
+
+List Federal Accounts for a given IDV 
+
 + Request (application/json)
     + Attributes
         + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string) 
             IDV to return accounts for
-        + `page`: `1` (optional, number)
+        + `page`: 1 (optional, number)
             Page number to return
-        + `limit`: `10` (optional, number)
+        + `limit`: 10 (optional, number)
             Maximum number to return
         + `order`: `desc` (optional, string)
             Direction of sort
@@ -28,17 +31,17 @@ These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts
 # Data Structures
 
 ## PageMetadata (object)
-+ `page`: `1` (required, number)
-+ `next`: `2` (required, number, nullable)
-+ `count`: `4` (required, number)
-+ `previous`: `1` (required, number, nullable)
-+ `hasNext`: `true` (required, boolean)
-+ `hasPrevious`: `false` (required, boolean)
++ `page`: 1 (required, number)
++ `next`: 2 (required, number, nullable)
++ `count`: 4 (required, number)
++ `previous`: 1 (required, number, nullable)
++ `hasNext`: true (required, boolean)
++ `hasPrevious`: false (required, boolean)
 
 ## AccountListing (object)
-+ `total_transaction_obligated_amount`: `1234.56` (required, number)
++ `total_transaction_obligated_amount`: 1234.56 (required, number)
 + `federal_account`: `075-1301` (required, string)
 + `account_title`: `Bureau of Consumer Financial Protection Fund` (required, string)
 + `funding_agency_abbreviation`: `NIH` (required, string)
 + `funding_agency_name`: `National Institutes of Health` (required, string)
-+ `funding_agency_id`: `123` (required, number)
++ `funding_agency_id`: 123 (required, number)

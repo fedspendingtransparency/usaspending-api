@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## Number of transactions in download [POST /api/v2/download/count/]
+## POST
 
 Returns the number of transactions that would be included in a download request for the given filter set.
 
@@ -15,7 +15,7 @@ Returns the number of transactions that would be included in a download request 
 
 + Response 200 (application/json)
     + Attributes
-        + `transaction_rows_gt_limit`: `true` (required, boolean)
+        + `transaction_rows_gt_limit`: true (required, boolean)
             A boolean returning whether the transaction count is over the maximum row limit.
 
 # Data Structures
@@ -24,27 +24,29 @@ Returns the number of transactions that would be included in a download request 
 + `keywords`: `poptarts` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
-    + domestic
-    + foreign
+    + Members
+        + `domestic`
+        + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
     A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
 + `recipient_scope` (optional, enum[string])
-    + domestic
-    + foreign
+    + Members
+        + `domestic`
+        + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
     See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
-+ `award_ids`: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
++ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN`  (optional, array[string])
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: 311812 (optional, array[string])
-+ `psc_codes`: 8940, 8910 (optional, array[string])
++ `naics_codes`: `311812` (optional, array[string])
++ `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
@@ -54,8 +56,9 @@ Returns the number of transactions that would be included in a download request 
 + `start_date`: `2017-10-01` (required, string)
 + `end_date`: `2018-09-30` (required, string)
 + `date_type` (optional, enum[string])
-    + action_date
-    + last_modified_date
+    + Members
+        + `action_date`
+        + `last_modified_date`
 
 ## LocationObject (object)
 + `country`: `USA` (required, string)
@@ -65,16 +68,18 @@ Returns the number of transactions that would be included in a download request 
 
 ## AgencyObject (object)
 + `type` (required, enum[string])
-    + awarding
-    + funding
+    + Members
+        + `awarding`
+        + `funding`
 + `tier` (required, enum[string])
-    + toptier
-    + subtier
+    + Members
+        + `toptier`
+        + `subtier`
 + `name`: `Department of Defense` (required, string)
 
 ## AwardAmounts (object)
 + `lower_bound` (optional, number)
-+ `upper_bound`: `1000000` (optional, number)
++ `upper_bound`: 1000000 (optional, number)
 
 ## TASCodeObject (object)
 + `ata` (optional, string, nullable)
@@ -87,7 +92,7 @@ Returns the number of transactions that would be included in a download request 
     Ending Period of Availability - four digits
 + `a` (optional, string, nullable)
     Availability Type Code - X or null
-+ `main`: `30` (required, string)
++ `main`: `3500` (required, string)
     Main Account Code - four digits
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits

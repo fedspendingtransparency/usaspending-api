@@ -5,38 +5,41 @@ HOST: https://api.usaspending.gov
 
 Restores selected filter criteria, based on URL hash. Supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## Restore Filters From URL Hash Data [POST]
+## POST
+
+Restore Filters From URL Hash Data 
+
 + Request (application/json)
     + Attributes (object)
-        + hash : `128e62e0afe7696f850576ee6d443b4a` (required, string)
+        + `hash` : `128e62e0afe7696f850576ee6d443b4a` (required, string)
 
 + Response 200 (application/json)
     + Attributes
-        + filter (optional, object)
-            + filters (optional, object)
-                + awardAmounts (required, object)
-                + awardType (required, array[string])
-                + extentCompeted (required, array[string])
-                + keyword (required, object)
-                + locationDomesticForeign (required, string)
-                + pricingType (required, array[string])
-                + recipientDomesticForeign (required, string)
-                + recipientType (required, array[string])
-                + selectedAwardIDs (required, object)
-                + selectedAwardingAgencies (required, object)
-                + selectedCFDA (required, object)
-                + selectedFundingAgencies (required, object)
-                + selectedLocations (required, object)
-                + selectedNAICS (required, object)
-                + selectedPSC (required, object)
-                + selectedRecipientLocations (required, object)
-                + selectedRecipients (required, array[string])
-                + setAside (required, array[string])
-                + timePeriodEnd (required, string, nullable)
-                + timePeriodFY (required, array[string])
-                + timePeriodStart (required, string, nullable)
-                + timePeriodType (required, string)
-            + version (optional, string)
+        + `filter` (optional, object)
+            + `filters` (optional, object)
+                + `awardAmounts` (required, object)
+                + `awardType` (required, array[string])
+                + `extentCompeted` (required, array[string])
+                + `keyword` (required, object)
+                + `locationDomesticForeign` (required, string)
+                + `pricingType` (required, array[string])
+                + `recipientDomesticForeign` (required, string)
+                + `recipientType` (required, array[string])
+                + `selectedAwardIDs` (required, object)
+                + `selectedAwardingAgencies` (required, object)
+                + `selectedCFDA` (required, object)
+                + `selectedFundingAgencies` (required, object)
+                + `selectedLocations` (required, object)
+                + `selectedNAICS` (required, object)
+                + `selectedPSC` (required, object)
+                + `selectedRecipientLocations` (required, object)
+                + `selectedRecipients` (required, array[string])
+                + `setAside` (required, array[string])
+                + `timePeriodEnd` (required, string, nullable)
+                + `timePeriodFY` (required, array[string])
+                + `timePeriodStart` (required, string, nullable)
+                + `timePeriodType` (required, string)
+            + `version` (optional, string)
 
     + Body
 

@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/search/spending_by_transaction/]
 
-## List transaction records [POST /api/v2/search/spending_by_transaction/]
+## POST
 
 Returns transaction records which match the keyword and award type code filters.
 
@@ -31,9 +31,9 @@ Returns transaction records which match the keyword and award type code filters.
 
 + Response 200 (application/json)
     + Attributes
-        + results (required, array[TransactionResponse], fixed-type)
-        + page_metadata (required, PageMetaDataObject, fixed-type)
-        + limit: 10 (required, number)
+        + `results` (required, array[TransactionResponse], fixed-type)
+        + `page_metadata` (required, PageMetaDataObject, fixed-type)
+        + `limit`: 10 (required, number)
 
     + Body
 
@@ -150,69 +150,69 @@ Returns transaction records which match the keyword and award type code filters.
 List of filterable award types
 
 ### Sample
-- IDV_A
-- IDV_B
-- IDV_B_A
-- IDV_B_B
-- IDV_B_C
-- IDV_C
-- IDV_D
-- IDV_E
+- `IDV_A`
+- `IDV_B`
+- `IDV_B_A`
+- `IDV_B_B`
+- `IDV_B_C`
+- `IDV_C`
+- `IDV_D`
+- `IDV_E`
 
 ### Default
-- 02
-- 03
-- 04
-- 05
-- 06
-- 07
-- 08
-- 09
-- 10
-- 11
-- A
-- B
-- C
-- D
-- IDV_A
-- IDV_B
-- IDV_B_A
-- IDV_B_B
-- IDV_B_C
-- IDV_C
-- IDV_D
-- IDV_E
+- `02`
+- `03`
+- `04`
+- `05`
+- `06`
+- `07`
+- `08`
+- `09`
+- `10`
+- `11`
+- `A`
+- `B`
+- `C`
+- `D`
+- `IDV_A`
+- `IDV_B`
+- `IDV_B_A`
+- `IDV_B_B`
+- `IDV_B_C`
+- `IDV_C`
+- `IDV_D`
+- `IDV_E`
 
 ## FieldNameObject (array)
 List of column names to request
 
 ### Sample
-- Action Date
-- Award ID
-- Award Type
-- Awarding Agency
-- Awarding Sub Agency
-- Mod
-- Recipient Name
-- Transaction Amount
+- `Action Date`
+- `Award ID`
+- `Award Type`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Mod`
+- `Recipient Name`
+- `Transaction Amount`
 
 ### Default
-- Action Date
-- Award ID
-- Award Type
-- Awarding Agency
-- Awarding Sub Agency
-- awarding_agency_id
-- Funding Agency
-- Funding Sub Agency
-- internal_id
-- Issued Date
-- Last Date to Order
-- Loan Value
-- Mod
-- Recipient Name
-- Subsidy Cost
-- Transaction Amount
+- `Action Date`
+- `Award ID`
+- `Award Type`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `awarding_agency_id`
+- `Funding Agency`
+- `Funding Sub Agency`
+- `internal_id`
+- `Issued Date`
+- `Last Date to Order`
+- `Loan Value`
+- `Mod`
+- `Recipient Name`
+- `Subsidy Cost`
+- `Transaction Amount`
 
 
 ## FilterObject (object)

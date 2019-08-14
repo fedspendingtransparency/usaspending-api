@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 Used to populate the Federal Account Funding tab on the IDV summary page.
 
-## Get aggregated award counts and funding amounts for IDV contracts [GET /api/v2/awards/idvs/amounts/{award_id}/]
+## GET
+
+Get aggregated award counts and funding amounts for IDV contracts 
 
 + Parameters
     + `award_id`: `CONT_IDV_FA304715A0037_9700` (required, string)

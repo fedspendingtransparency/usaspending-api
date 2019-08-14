@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 This endpoints supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
-## List fields of filtered awards [POST /api/v2/search/spending_by_award/]
+## POST
 
 This endpoint takes award filters and fields, and returns the fields of the filtered awards.
 
@@ -56,19 +56,6 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 ## SpendingByAwardFields (array)
 List of table columns
 
-### Sample
-- Award ID
-- Recipient Name
-- Start Date
-- End Date
-- Award Amount
-- Awarding Agency
-- Awarding Sub Agency
-- Contract Award Type
-- Award Type
-- Funding Agency
-- Funding Sub Agency
-
 ### Default
 - `Award ID`
 - `Recipient Name`
@@ -117,35 +104,37 @@ List of table columns
 + `internal_id`  (optional, string)
 
 ## PageMetadataObject (object)
-+ page (required, number)
-+ hasNext (required, boolean)
++ `page` (required, number)
++ `hasNext` (required, boolean)
 
 ## Filter Objects
 ### FilterObject (object)
-+ `keywords` : poptarts (optional, array[string])
++ `keywords` : `poptarts` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
-    + domestic
-    + foreign
+    + Members
+        + `domestic`
+        + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
-+ `agencies` (optional, array[AgencyObject])
++ `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
     A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
 + `recipient_scope` (optional, enum[string])
-    + domestic
-    + foreign
-+ `recipient_locations` (optional, array[LocationObject])
+    + Members
+        + `domestic`
+        + `foreign`
++ `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
     See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
     See use at
     https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
-+ `award_ids`: SPE30018FLGFZ, SPE30018FLJFN (optional, array[string])
-+ `award_amounts` (optional, array[AwardAmounts])
++ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
++ `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: 311812 (optional, array[string])
-+ `psc_codes`: 8940, 8910 (optional, array[string])
++ `naics_codes`: `311812` (optional, array[string])
++ `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
@@ -155,23 +144,26 @@ List of table columns
 + `start_date`: `2017-10-01` (required, string)
 + `end_date`: `2018-09-30` (required, string)
 + `date_type` (optional, enum[string])
-    + action_date
-    + last_modified_date
+    + Members
+        + `action_date`
+        + `last_modified_date`
 
 ### LocationObject (object)
-+ country: `USA` (required, string)
-+ state: `VA` (optional, string)
-+ county (optional, string)
-+ city (optional, string)
++ `country`: `USA` (required, string)
++ `state`: `VA` (optional, string)
++ `county` (optional, string)
++ `city` (optional, string)
 
 ### AgencyObject (object)
-+ type (required, enum[string])
-    + awarding
-    + funding
-+ tier (required, enum[string])
-    + toptier
-    + subtier
-+ name: `Department of Defense` (required, string)
++ `type` (required, enum[string])
+    + Members
+        + `awarding`
+        + `funding`
++ `tier` (required, enum[string])
+    + Members
+        + `toptier`
+        + `subtier`
++ `name`: `Department of Defense` (required, string)
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
@@ -196,32 +188,32 @@ List of table columns
 ### FilterObjectAwardTypes (array)
 List of filterable award types
 
-### Sample
-- A
-- B
-- C
-- D
+#### Sample
+- `A`
+- `B`
+- `C`
+- `D`
 
-### Default
-- 02
-- 03
-- 04
-- 05
-- 06
-- 07
-- 08
-- 09
-- 10
-- 11
-- A
-- B
-- C
-- D
-- IDV_A
-- IDV_B
-- IDV_B_A
-- IDV_B_B
-- IDV_B_C
-- IDV_C
-- IDV_D
-- IDV_E
+#### Default
+- `02`
+- `03`
+- `04`
+- `05`
+- `06`
+- `07`
+- `08`
+- `09`
+- `10`
+- `11`
+- `A`
+- `B`
+- `C`
+- `D`
+- `IDV_A`
+- `IDV_B`
+- `IDV_B_A`
+- `IDV_B_B`
+- `IDV_B_C`
+- `IDV_C`
+- `IDV_D`
+- `IDV_E`

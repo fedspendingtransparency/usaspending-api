@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 This endpoint returns a list of data that is associated with the award profile page.
 
-## List filtered subawards [POST /api/v2/subawards/]
+## POST
 
 This endpoint returns a filtered set of subawards.
 
@@ -17,18 +17,18 @@ This endpoint returns a filtered set of subawards.
             + Default: 10
         + `sort` (required, enum[string], fixed-type)
             + Members
-                + subaward_number
-                + id
-                + description
-                + action_date
-                + amount
-                + recipient_name
-                + award_id
+                + `subaward_number`
+                + `id`
+                + `description`
+                + `action_date`
+                + `amount`
+                + `recipient_name`
+                + `award_id`
         + `order` (required, enum[string], fixed-type)
             + Members
-                + asc
-                + desc 
-            + Default: desc
+                + `asc`
+                + `desc`
+            + Default: `desc`
         + `award_id` (optional, number)
             Award ID of parent Award
             
@@ -48,9 +48,9 @@ This endpoint returns a filtered set of subawards.
 + `description` (required, string)
 
 ## PageMetadataObject (object)
-+ page (required, number)
-+ next (required, number, nullable)
-+ previous (required, number, nullable)
-+ hasNext (required, boolean)
-+ hasPrevious (required, boolean)
++ `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
 

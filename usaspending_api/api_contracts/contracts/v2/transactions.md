@@ -5,21 +5,21 @@ HOST: https://api.usaspending.gov
 
 This endpoint is used to power the Transaction History tables on USAspending.gov's award summary pages. This data can be used to better understand the details of specific transactions on a given award.
 
-## List transactions [POST /api/v2/transactions/]
+## POST
 
 This endpoint returns a list of transactions, their amount, type, action date, action type, modification number, and description.
 
 + Request (application/json)
     + Attributes (object)
-        + award_id: `12342er` (required, string)
+        + `award_id`: `12342er` (required, string)
             The internal id of the award to filter on.
-        + limit: 15 (optional, number)
+        + `limit`: 15 (optional, number)
             The number of results to include per page.
             + Default: 10
-        + page: 1 (optional, number)
+        + `page`: 1 (optional, number)
             The page of results to return based on the limit.
             + Default: 1
-        + sort: action_date (optional, enum[string])
+        + `sort`: action_date (optional, enum[string])
             The field results are sorted by.
             + Default: `action_date`
             + Members
@@ -29,39 +29,39 @@ This endpoint returns a list of transactions, their amount, type, action date, a
                 + `face_value_loan_guarantee`
                 + `original_loan_subsidy_cost`
                 + `action_type_description`
-                + description
-        + order: desc (optional, string)
+                + `description`
+        + `order`: desc (optional, string)
             The direction results are sorted by. `asc` for ascending, `desc` for descending.
-            + Default: desc
+            + Default: `desc`
 
 + Response 200 (application/json)
     + Attributes
-        + results (array[TransactionResult], fixed-type)
-        + page_metadata (PageMetaDataObject)
+        + `results` (array[TransactionResult], fixed-type)
+        + `page_metadata` (PageMetaDataObject)
 
 # Data Structures
 
 ## TransactionResult (object)
-+ id: `1` (required, string)
++ `id`: `1` (required, string)
     The internal transaction id.
-+ type: A (required, string)
++ `type`: `A` (required, string)
     Award type code
-+ type_description: BPA (required, string)
-+ action_date: `1999-01-15` (required, string)
++ `type_description`: `BPA` (required, string)
++ `action_date`: `1999-01-15` (required, string)
     Action date in the format `YYYY-MM-DD`.
-+ action_type: C (required, string, nullable)
++ `action_type`: `C` (required, string, nullable)
     Action type code
-+ action_type_description: description (required, string)
-+ modification_number: `0` (required, string)
-+ description: MANAGEMENT AND OPERATIONS (required, string, nullable)
-+ federal_action_obligation: 1234.56 (required, number, nullable)
++ `action_type_description`: `description` (required, string)
++ `modification_number`: `0` (required, string)
++ `description: MANAGEMENT AND OPERATIONS (required, string, nullable)
++ `federal_action_obligation`: 1234.56 (required, number, nullable)
     Monetary value of the transaction. Null for results with award type codes that correspond to loans.
-+ face_value_loan_guarantee: 1234.56 (required, number, nullable)
++ `face_value_loan_guarantee`: 1234.56 (required, number, nullable)
     Face value of the loan. Null for results with award type codes that **do not** correspond to loans.
-+ original_loan_subsidy_cost: 234.12 (required, number, nullable)
++ `original_loan_subsidy_cost`: 234.12 (required, number, nullable)
     Original subsidy cost of the loan. Null for results with award type codes that **do not** correspond to loans.
 
 ## PageMetaDataObject (object)
-+ page: 1 (required, number)
-+ hasNext: false (required, boolean)
-+ hasPrevious: false (required, boolean)
++ `page`: 1 (required, number)
++ `hasNext`: false (required, boolean)
++ `hasPrevious`: false (required, boolean)

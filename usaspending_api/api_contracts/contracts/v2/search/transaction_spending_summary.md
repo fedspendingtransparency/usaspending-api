@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # IDV Funding [/api/v2/search/transaction_spending_summary/]
 
-## Returns aggregations of counts and amounts for transactions [POST /api/v2/search/transaction_spending_summary/]
+## POST
 
 Returns the high-level aggregations of the counts and dollar amounts for all transactions which match the keyword filter
 
@@ -14,9 +14,9 @@ Returns the high-level aggregations of the counts and dollar amounts for all tra
 
 + Response 200 (application/json)
     + Attributes
-        + results (required, object)
-            - prime_awards_obligation_amount: 1000000 (required, number)
-            - prime_awards_count: 3 (required, number)
+        + `results` (required, object)
+            - `prime_awards_obligation_amount`: 1000000 (required, number)
+            - `prime_awards_count`: 3 (required, number)
 
     + Body
 

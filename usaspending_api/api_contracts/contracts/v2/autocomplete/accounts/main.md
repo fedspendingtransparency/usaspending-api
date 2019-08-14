@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 This endpoint powers the USAspending.gov Main Account Code (MAIN) autocomplete in the Advanced Search -> Program Source -> Treasury and Federal Account filters.
 
-## List of potential Main Account Codes [POST /api/v2/autocomplete/accounts/main/]
+## POST
+
+List of potential Main Account Codes 
 
 + Request (application/json)
 
@@ -13,7 +15,7 @@ This endpoint powers the USAspending.gov Main Account Code (MAIN) autocomplete i
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: `10`
+            + Default: 10
 
     + Body
 
@@ -56,7 +58,7 @@ Each component listed here may be omitted, null, or a string value.  If omitted,
     Ending Period of Availability (4 characters). TAS only.
 + `a` (optional, string, nullable)
     Availability Type Code (1 character). Will either be 'X' or null. TAS only.
-+ `main`: `30` (optional, string, nullable)
++ `main` (optional, string, nullable)
     Main Account Code (4 characters).
 + `sub` (optional, string, nullable)
     Sub Account Code (3 characters). TAS only.

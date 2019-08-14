@@ -1,11 +1,11 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Toptier Agency Profile [/api/v2/references/toptier_agencies/]
+# Toptier Agency Profile [/api/v2/references/toptier_agencies/{?sort,order}]
 
 These endpoints are used to power USAspending.gov's agency profile pages. This data can be used to better understand the different ways that a specific agency spends money.
 
-## List Toptier Agencies [GET /api/v2/references/toptier_agencies/{?sort,order}]
+## GET
 
 This endpoint returns a list of toptier agencies, their budgetary resources, and and the percent of the total government budget authority this agency accounts for.
 

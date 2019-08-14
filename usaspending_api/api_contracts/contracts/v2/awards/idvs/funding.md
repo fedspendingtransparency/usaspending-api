@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 Used to populate the Federal Account Funding tab on the IDV summary page.
 
-## List File C financial data for an IDV award's descendant contracts [POST /api/v2/awards/idvs/funding/]
+## POST
+
+List File C financial data for an IDV award's descendant contracts
 
 + Request (application/json)
     + Attributes (object)
@@ -121,8 +123,8 @@ Used to populate the Federal Account Funding tab on the IDV summary page.
 
 ## PageMetaDataObject (object)
 + `page`: 2 (required, number)
-+ `hasNext`: `false` (required, boolean)
-+ `hasPrevious`: `false` (required, boolean)
++ `hasNext`: false (required, boolean)
++ `hasPrevious`: false (required, boolean)
 + `next`: 3 (required, number, nullable)
 + `previous`: 1 (required, number, nullable)
 

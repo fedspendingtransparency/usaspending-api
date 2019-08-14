@@ -5,7 +5,9 @@ HOST: https://api.usaspending.gov
 
 This endpoint powers the USAspending.gov Ending Period of Availability (EPOA) autocomplete in the Advanced Search -> Program Source -> Treasury Account filter.
 
-## List of potential Ending Period of Availabilities [POST /api/v2/autocomplete/accounts/epoa/]
+## POST
+
+List of potential Ending Period of Availabilities 
 
 + Request (application/json)
 
@@ -13,7 +15,7 @@ This endpoint powers the USAspending.gov Ending Period of Availability (EPOA) au
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
             Maximum number of results to return.
-            + Default: `10`
+            + Default: 10
 
     + Body
 
