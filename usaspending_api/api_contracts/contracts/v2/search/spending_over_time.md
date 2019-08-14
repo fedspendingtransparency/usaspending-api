@@ -55,7 +55,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 
 ## Filter Objects
 ### FilterObject (object)
-+ `keywords` : `poptarts` (optional, array[string])
++ `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

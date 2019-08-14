@@ -39,7 +39,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
 ## Filter Objects
 ### FilterObject (object)
-+ `keywords` : `poptarts` (optional, array[string])
++ `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
