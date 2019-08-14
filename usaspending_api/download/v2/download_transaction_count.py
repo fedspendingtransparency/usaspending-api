@@ -3,21 +3,20 @@ import copy
 from django.conf import settings
 from django.db.models import Sum
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 
 
-class DownloadTransactionCountViewSet(APIDocumentationView):
+class DownloadTransactionCountViewSet(APIView):
     """
     Returns the number of transactions that would be included in a download request for the given filter set.
-
-    endpoint_doc: /download/download_count.md
     """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/download_count.md"
 
     @cache_response()
     def post(self, request):

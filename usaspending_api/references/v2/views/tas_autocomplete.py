@@ -22,6 +22,11 @@ TINY_SHIELD_MODELS = [
 
 
 class TASAutocomplete(APIView):
+    """
+    This endpoint supports all of the various TAS autocomplete components (ATA, AID, BPOA, EPOA, A, MAIN, SUB).
+    """
+    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/aid.md"
+
     @staticmethod
     def _parse_and_validate_request(request_data):
         return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
