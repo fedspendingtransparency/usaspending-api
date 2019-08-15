@@ -1,16 +1,12 @@
 import json
-
 import pytest
+
+from django_mock_queries.query import MockModel
+from model_mommy import mommy
 from rest_framework import status
 
-# Third-party app imports
-from django_mock_queries.query import MockModel
-
-# Imports from your apps
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.tests.test_mock_data_search import all_filters
-
-from model_mommy import mommy
 
 
 @pytest.fixture
@@ -19,7 +15,6 @@ def award_data_fixture(db):
     mommy.make("references.LegalEntity", legal_entity_id=20)
     mommy.make(
         "awards.Award",
-        recipient_id=20,
         base_and_all_options_value=None,
         base_exercised_options_val=None,
         category="loans",
@@ -44,6 +39,7 @@ def award_data_fixture(db):
         period_of_performance_start_date="2009-09-10",
         piid=None,
         potential_total_value_of_award=None,
+        recipient_id=20,
         subaward_count=0,
         total_funding_amount=5907041570,
         total_loan_value=5907041570,
