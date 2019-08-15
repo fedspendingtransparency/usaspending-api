@@ -1,10 +1,10 @@
-from usaspending_api.awards.models_matviews.mv_award_all_pre2008 import MatviewAwardAllPre2008
-from usaspending_api.awards.models_matviews.mv_award_contracts import MatviewAwardContracts
-from usaspending_api.awards.models_matviews.mv_award_directpayments import MatviewAwardDirectPayments
-from usaspending_api.awards.models_matviews.mv_award_grants import MatviewAwardGrants
-from usaspending_api.awards.models_matviews.mv_award_idvs import MatviewAwardIdvs
-from usaspending_api.awards.models_matviews.mv_award_loans import MatviewAwardLoans
-from usaspending_api.awards.models_matviews.mv_award_other import MatviewAwardOther
+from usaspending_api.awards.models_matviews.mv_search_award_all_pre2008 import MatviewSearchAwardAllPre2008
+from usaspending_api.awards.models_matviews.mv_search_award_contract import MatviewSearchAwardContract
+from usaspending_api.awards.models_matviews.mv_search_award_directpayment import MatviewSearchAwardDirectPayment
+from usaspending_api.awards.models_matviews.mv_search_award_grant import MatviewSearchAwardGrant
+from usaspending_api.awards.models_matviews.mv_search_award_idv import MatviewSearchAwardIDV
+from usaspending_api.awards.models_matviews.mv_search_award_loan import MatviewSearchAwardLoan
+from usaspending_api.awards.models_matviews.mv_search_award_other import MatviewSearchAwardOther
 from usaspending_api.awards.models_matviews.subaward_view import SubawardView
 from usaspending_api.awards.models_matviews.summary_cfda_numbers_view import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews.summary_naics_codes_view import SummaryNaicsCodesView
@@ -17,18 +17,17 @@ from usaspending_api.awards.models_matviews.summary_transaction_recipient_view i
 from usaspending_api.awards.models_matviews.summary_transaction_view import SummaryTransactionView
 from usaspending_api.awards.models_matviews.summary_view import SummaryView
 from usaspending_api.awards.models_matviews.universal_transaction_matview import UniversalTransactionView
-from usaspending_api.awards.models_matviews.vw_award_download import ViewAwardDownload
+from usaspending_api.awards.models_matviews.vw_search_award import ViewSearchAward
 
 
 __all__ = [
-    "MatviewAwardAllPre2008",
-    "MatviewAwardContracts",
-    "MatviewAwardDirectPayments",
-    "ViewAwardDownload",
-    "MatviewAwardGrants",
-    "MatviewAwardIdvs",
-    "MatviewAwardLoans",
-    "MatviewAwardOther",
+    "MatviewSearchAwardAllPre2008",
+    "MatviewSearchAwardContract",
+    "MatviewSearchAwardDirectPayment",
+    "MatviewSearchAwardGrant",
+    "MatviewSearchAwardIDV",
+    "MatviewSearchAwardLoan",
+    "MatviewSearchAwardOther",
     "SubawardView",
     "SummaryCfdaNumbersView",
     "SummaryNaicsCodesView",
@@ -41,4 +40,5 @@ __all__ = [
     "SummaryTransactionView",
     "SummaryView",
     "UniversalTransactionView",
+    "ViewSearchAward",
 ]

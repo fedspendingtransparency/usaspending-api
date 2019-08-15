@@ -1,5 +1,5 @@
 {
-  "final_name": "mv_award_other",
+  "final_name": "mv_search_award_other",
   "refresh": true,
   "matview_sql": [
     "SELECT",

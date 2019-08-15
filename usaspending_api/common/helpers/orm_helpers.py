@@ -3,12 +3,12 @@ from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.awards.models_matviews import (
-    MatviewAwardContracts,
-    MatviewAwardDirectPayments,
-    MatviewAwardGrants,
-    MatviewAwardIdvs,
-    MatviewAwardLoans,
-    MatviewAwardOther,
+    MatviewSearchAwardContract,
+    MatviewSearchAwardDirectPayment,
+    MatviewSearchAwardGrant,
+    MatviewSearchAwardIDV,
+    MatviewSearchAwardLoan,
+    MatviewSearchAwardOther,
 )
 
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -24,12 +24,12 @@ TYPES_TO_QUOTE_IN_SQL = (str, date)
 
 
 CATEGORY_TO_MODEL = {
-    "contracts": {"model": MatviewAwardContracts, "types": set(contract_type_mapping.keys())},
-    "direct_payments": {"model": MatviewAwardDirectPayments, "types": set(direct_payment_type_mapping.keys())},
-    "grants": {"model": MatviewAwardGrants, "types": set(grant_type_mapping.keys())},
-    "idvs": {"model": MatviewAwardIdvs, "types": set(idv_type_mapping.keys())},
-    "loans": {"model": MatviewAwardLoans, "types": set(loan_type_mapping.keys())},
-    "other": {"model": MatviewAwardOther, "types": set(other_type_mapping.keys())},
+    "contracts": {"model": MatviewSearchAwardContract, "types": set(contract_type_mapping.keys())},
+    "direct_payments": {"model": MatviewSearchAwardDirectPayment, "types": set(direct_payment_type_mapping.keys())},
+    "grants": {"model": MatviewSearchAwardGrant, "types": set(grant_type_mapping.keys())},
+    "idvs": {"model": MatviewSearchAwardIDV, "types": set(idv_type_mapping.keys())},
+    "loans": {"model": MatviewSearchAwardLoan, "types": set(loan_type_mapping.keys())},
+    "other": {"model": MatviewSearchAwardOther, "types": set(other_type_mapping.keys())},
 }
 
 

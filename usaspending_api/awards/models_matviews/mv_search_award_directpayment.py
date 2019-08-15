@@ -5,7 +5,7 @@ from django.db import models
 from usaspending_api.awards.models import Award
 
 
-class MatviewAwardAllPre2008(models.Model):
+class MatviewSearchAwardDirectPayment(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
@@ -85,4 +85,4 @@ class MatviewAwardAllPre2008(models.Model):
 
     class Meta:
         managed = False
-        db_table = "mv_award_all_pre2008"
+        db_table = "mv_search_award_directpayment"
