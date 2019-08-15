@@ -130,6 +130,8 @@
     "sub_recovery_model_q2": false,
     "sub_compensation_q1": null,
     "sub_compensation_q2": null,
+    "place_of_perform_street": "123 street st",
+    "sub_place_of_perform_street": "321 street st",
     "imported": false
   },
   {
@@ -263,6 +265,8 @@
     "sub_recovery_model_q2": false,
     "sub_compensation_q1": null,
     "sub_compensation_q2": null,
+    "place_of_perform_street": "456 street st",
+    "sub_place_of_perform_street": "654 street st",
     "imported": false
   },
   {
@@ -396,6 +400,8 @@
     "sub_recovery_model_q2": null,
     "sub_compensation_q1": false,
     "sub_compensation_q2": false,
+    "place_of_perform_street": "789 street st",
+    "sub_place_of_perform_street": "987 street st",
     "imported": false
   },
   {
@@ -529,6 +535,8 @@
     "sub_recovery_model_q2": null,
     "sub_compensation_q1": false,
     "sub_compensation_q2": false,
+    "place_of_perform_street": "000 street st",
+    "sub_place_of_perform_street": "999 street st",
     "imported": false
   }
 ]
