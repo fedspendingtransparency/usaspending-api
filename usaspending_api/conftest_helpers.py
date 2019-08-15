@@ -36,7 +36,6 @@ class TestElasticSearchIndex:
         """
         self.delete_index()
         self._refresh_materialized_views()
-        ensure_transaction_delta_view_exists()
         self.client.indices.create(self.index_name, self.mapping)
         create_aliases(self.client, self.index_name, True)
         self._add_contents()
@@ -94,4 +93,3 @@ def ensure_transaction_delta_view_exists():
         transaction_delta_view = f.read()
     with connection.cursor() as cursor:
         cursor.execute(transaction_delta_view)
-        cursor.execute("COMMIT;")
