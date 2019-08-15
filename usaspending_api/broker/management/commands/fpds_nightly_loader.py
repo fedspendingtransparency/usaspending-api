@@ -28,12 +28,17 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
 BATCH_FETCH_SIZE = 25000
+
+
+def read_afa_ids_from_file(afa_id_file_path):
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return tuple(l.decode("utf-8").rstrip() for l in f if l)
 
 
 class Command(BaseCommand):
@@ -389,9 +394,12 @@ class Command(BaseCommand):
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
 
-    def load_specific_transactions(self, detached_award_procurement_ids):
+    def load_specific_transactions(self, explicit_ids, ids_file):
         logger.info("==== Starting FPDS (re)load of specific transactions ====")
 
+        ids_from_file = read_afa_ids_from_file(ids_file) if ids_file else None
+
+        detached_award_procurement_ids = explicit_ids + ids_from_file
         self.perform_load(detached_award_procurement_ids, detached_award_procurement_ids)
 
         logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
