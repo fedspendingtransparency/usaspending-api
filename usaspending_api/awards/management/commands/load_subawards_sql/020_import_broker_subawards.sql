@@ -137,6 +137,8 @@ insert into broker_subaward (
     sub_recovery_model_q2,
     sub_compensation_q1,
     sub_compensation_q2,
+    place_of_perform_street,
+    sub_place_of_perform_street,
     imported
 )
 
@@ -271,6 +273,8 @@ select
     cast(sub_recovery_model_q2 as boolean),
     cast(sub_compensation_q1 as boolean),
     cast(sub_compensation_q2 as boolean),
+    place_of_perform_street,
+    sub_place_of_perform_street,
     false
 
 from
@@ -407,7 +411,9 @@ from
                 sub_recovery_model_q1,
                 sub_recovery_model_q2,
                 sub_compensation_q1,
-                sub_compensation_q2
+                sub_compensation_q2,
+                place_of_perform_street,
+                sub_place_of_perform_street
 
             from
                 subaward
@@ -544,7 +550,9 @@ from
         sub_recovery_model_q1 boolean,
         sub_recovery_model_q2 boolean,
         sub_compensation_q1 boolean,
-        sub_compensation_q2 boolean
+        sub_compensation_q2 boolean,
+        place_of_perform_street text,
+        sub_place_of_perform_street text
     )
 
 on conflict (id) do update set
@@ -677,4 +685,6 @@ on conflict (id) do update set
     sub_recovery_model_q2 = cast(excluded.sub_recovery_model_q2 as boolean),
     sub_compensation_q1 = cast(excluded.sub_compensation_q1 as boolean),
     sub_compensation_q2 = cast(excluded.sub_compensation_q2 as boolean),
+    place_of_perform_street = excluded.place_of_perform_street,
+    sub_place_of_perform_street = excluded.sub_place_of_perform_street,
     imported = false;
