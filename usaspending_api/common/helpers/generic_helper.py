@@ -196,12 +196,13 @@ def within_one_year(d1, d2):
 
 
 def generate_matviews():
-    with connection.cursor() as c:
-        c.execute(CREATE_READONLY_SQL)
-        c.execute(get_sql(ENUM_FILE)[0])
+    with connection.cursor() as cursor:
+        cursor.execute(CREATE_READONLY_SQL)
+        cursor.execute(get_sql(ENUM_FILE)[0])
         subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
-            c.execute(file)
+            cursor.execute(file)
+        cursor.execute("COMMIT")
 
 
 def get_sql(sql_files):

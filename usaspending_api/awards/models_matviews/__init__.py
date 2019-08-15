@@ -1,7 +1,6 @@
 from usaspending_api.awards.models_matviews.mv_award_all_pre2008 import MatviewAwardAllPre2008
 from usaspending_api.awards.models_matviews.mv_award_contracts import MatviewAwardContracts
 from usaspending_api.awards.models_matviews.mv_award_directpayments import MatviewAwardDirectPayments
-from usaspending_api.awards.models_matviews.vw_award_download import ReportingAwardDownloadView
 from usaspending_api.awards.models_matviews.mv_award_grants import MatviewAwardGrants
 from usaspending_api.awards.models_matviews.mv_award_idvs import MatviewAwardIdvs
 from usaspending_api.awards.models_matviews.mv_award_loans import MatviewAwardLoans
@@ -18,13 +17,14 @@ from usaspending_api.awards.models_matviews.summary_transaction_recipient_view i
 from usaspending_api.awards.models_matviews.summary_transaction_view import SummaryTransactionView
 from usaspending_api.awards.models_matviews.summary_view import SummaryView
 from usaspending_api.awards.models_matviews.universal_transaction_matview import UniversalTransactionView
+from usaspending_api.awards.models_matviews.vw_award_download import ViewAwardDownload
 
 
 __all__ = [
     "MatviewAwardAllPre2008",
     "MatviewAwardContracts",
     "MatviewAwardDirectPayments",
-    "ReportingAwardDownloadView",
+    "ViewAwardDownload",
     "MatviewAwardGrants",
     "MatviewAwardIdvs",
     "MatviewAwardLoans",
