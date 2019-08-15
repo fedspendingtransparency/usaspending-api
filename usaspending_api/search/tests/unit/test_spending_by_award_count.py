@@ -149,7 +149,6 @@ def get_spending_by_award_count_url():
     return "/api/v2/search/spending_by_award_count/"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_count(client, db, award_data_fixture, refresh_matviews):
     test_payload = {
@@ -174,7 +173,6 @@ def test_spending_by_award_count(client, db, award_data_fixture, refresh_matview
     assert expected_response == resp.data, "Unexpected or missing content!"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_count_idvs(client, db, award_data_fixture, refresh_matviews):
     test_payload = {

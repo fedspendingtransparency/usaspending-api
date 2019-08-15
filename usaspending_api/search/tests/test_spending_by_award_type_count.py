@@ -54,7 +54,6 @@ def award_data_fixture(db):
     )
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_type_success(client, refresh_matviews):
 
@@ -74,7 +73,6 @@ def test_spending_by_award_type_success(client, refresh_matviews):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_type_failure(client):
     """Verify error on bad autocomplete request for budget function."""
@@ -87,7 +85,6 @@ def test_spending_by_award_type_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_no_intersection(client, db, award_data_fixture, refresh_matviews):
 
@@ -114,7 +111,6 @@ def test_spending_by_award_no_intersection(client, db, award_data_fixture, refre
     }, "Results returned, they should all be 0"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
     mock_model_1 = MockModel(

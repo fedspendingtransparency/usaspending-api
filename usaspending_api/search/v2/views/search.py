@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
+    all_awards_types_to_category,
     assistance_type_mapping,
     contract_subaward_mapping,
     contract_type_mapping,
@@ -30,7 +31,8 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.data_connectors.async_spending_by_award_count import async_fetch_category_counts
+
+# from usaspending_api.common.data_connectors.async_spending_by_award_count import async_fetch_category_counts
 from usaspending_api.common.helpers.orm_helpers import (
     category_to_award_materialized_views,
     obtain_view_from_award_group,
@@ -244,6 +246,21 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                     result_key = "subcontracts"
                 results[result_key] += award["category_count"]
         else:
-            results = async_fetch_category_counts(filters, category_to_award_materialized_views())
+            querysets = [
+                matview_search_filter(filters, model)
+                .values("type")
+                .annotate(category_count=Count("award_id"))
+                .values("category_count", "type")
+                for category, model in category_to_award_materialized_views().items()
+            ]
+
+            # use the first QS in the list as the "base" queryset and union all of the querysets together
+            for row in querysets.pop().union(*querysets, all=True):
+                group = (
+                    "other"
+                    if all_awards_types_to_category[row["type"]] == "other_financial_assistance"
+                    else all_awards_types_to_category[row["type"]]
+                )
+                results[group] += row["category_count"]
 
         return Response({"results": results})

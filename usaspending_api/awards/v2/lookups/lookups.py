@@ -224,3 +224,7 @@ all_award_types_mappings = {
     "loans": list(loan_type_mapping),
     "other_financial_assistance": list(other_type_mapping),
 }
+
+all_awards_types_to_category = {
+    type_code: category for category, type_codes in all_award_types_mappings.items() for type_code in type_codes
+}
