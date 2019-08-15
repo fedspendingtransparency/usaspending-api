@@ -68,9 +68,7 @@ class TestElasticSearchIndex:
         changes to the underlying tables.
         """
         with connection.cursor() as cursor:
-            cursor.execute(
-                "refresh materialized view universal_transaction_matview;"
-            )
+            cursor.execute("refresh materialized view universal_transaction_matview;")
 
     @staticmethod
     def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):
@@ -95,3 +93,4 @@ def ensure_transaction_delta_view_exists():
         transaction_delta_view = f.read()
     with connection.cursor() as cursor:
         cursor.execute(transaction_delta_view)
+        cursor.execute("COMMIT;")

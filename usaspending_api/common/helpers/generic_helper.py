@@ -202,7 +202,7 @@ def generate_matviews():
         subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             cursor.execute(file)
-        cursor.execute("COMMIT")
+        cursor.execute("COMMIT;")
 
 
 def get_sql(sql_files):
