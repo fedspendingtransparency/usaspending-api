@@ -1,5 +1,5 @@
 {
-  "final_name": "mv_award_idvs",
+  "final_name": "mv_search_award_idv",
   "refresh": true,
   "matview_sql": [
     "SELECT",

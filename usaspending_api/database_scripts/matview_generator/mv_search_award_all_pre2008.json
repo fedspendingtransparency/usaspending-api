@@ -1,5 +1,5 @@
 {
-  "final_name": "mv_award_all_pre2008",
+  "final_name": "mv_search_award_all_pre2008",
   "refresh": true,
   "matview_sql": [
     "SELECT",
