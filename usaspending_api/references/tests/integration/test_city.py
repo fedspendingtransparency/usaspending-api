@@ -7,7 +7,9 @@ from model_mommy import mommy
 @pytest.fixture
 def award_data_fixture(db):
     mommy.make("references.LegalEntity", legal_entity_id=1999999)
-    mommy.make("awards.TransactionNormalized", id=1999999, award_id=1999999, action_date="2010-10-01", is_fpds=True, type="A")
+    mommy.make(
+        "awards.TransactionNormalized", id=1999999, award_id=1999999, action_date="2010-10-01", is_fpds=True, type="A"
+    )
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=1999999,
@@ -18,11 +20,19 @@ def award_data_fixture(db):
         piid="IND12PB00323",
     )
     mommy.make(
-        "awards.Award", id=1999999, latest_transaction_id=1999999, recipient_id=1999999, is_fpds=True, type="A", piid="IND12PB00323"
+        "awards.Award",
+        id=1999999,
+        latest_transaction_id=1999999,
+        recipient_id=1999999,
+        is_fpds=True,
+        type="A",
+        piid="IND12PB00323",
     )
 
     mommy.make("references.LegalEntity", legal_entity_id=2888888)
-    mommy.make("awards.TransactionNormalized", id=2888888, award_id=2888888, action_date="2011-11-11", is_fpds=True, type="A")
+    mommy.make(
+        "awards.TransactionNormalized", id=2888888, award_id=2888888, action_date="2011-11-11", is_fpds=True, type="A"
+    )
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=2888888,
@@ -32,10 +42,20 @@ def award_data_fixture(db):
         legal_entity_country_code="GBR",
         piid="0001",
     )
-    mommy.make("awards.Award", id=2888888, latest_transaction_id=2888888, recipient_id=2888888, is_fpds=True, type="A", piid="0001")
+    mommy.make(
+        "awards.Award",
+        id=2888888,
+        latest_transaction_id=2888888,
+        recipient_id=2888888,
+        is_fpds=True,
+        type="A",
+        piid="0001",
+    )
 
     mommy.make("references.LegalEntity", legal_entity_id=3777777)
-    mommy.make("awards.TransactionNormalized", id=3777777, award_id=3777777, action_date="2018-01-01", is_fpds=True, type="04")
+    mommy.make(
+        "awards.TransactionNormalized", id=3777777, award_id=3777777, action_date="2018-01-01", is_fpds=True, type="04"
+    )
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=3777777,
@@ -44,9 +64,19 @@ def award_data_fixture(db):
         legal_entity_state_code="PA",
         piid="0002",
     )
-    mommy.make("awards.Award", id=3777777, latest_transaction_id=3777777, recipient_id=3777777, is_fpds=True, type="04", piid="0002")
+    mommy.make(
+        "awards.Award",
+        id=3777777,
+        latest_transaction_id=3777777,
+        recipient_id=3777777,
+        is_fpds=True,
+        type="04",
+        piid="0002",
+    )
     mommy.make("references.LegalEntity", legal_entity_id=4666666)
-    mommy.make("awards.TransactionNormalized", id=4666666, award_id=4666666, action_date="2011-11-11", is_fpds=True, type="A")
+    mommy.make(
+        "awards.TransactionNormalized", id=4666666, award_id=4666666, action_date="2011-11-11", is_fpds=True, type="A"
+    )
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=4666666,
@@ -56,7 +86,15 @@ def award_data_fixture(db):
         legal_entity_country_code="USA",
         piid="0003",
     )
-    mommy.make("awards.Award", id=4666666, latest_transaction_id=4666666, recipient_id=4666666, is_fpds=True, type="A", piid="0003")
+    mommy.make(
+        "awards.Award",
+        id=4666666,
+        latest_transaction_id=4666666,
+        recipient_id=4666666,
+        is_fpds=True,
+        type="A",
+        piid="0003",
+    )
 
 
 @pytest.mark.django_db
