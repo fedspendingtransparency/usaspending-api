@@ -138,7 +138,7 @@ insert into broker_subaward (
     sub_compensation_q1,
     sub_compensation_q2,
     place_of_perform_street,
-    sub_place_of_perform_street
+    sub_place_of_perform_street,
     imported
 )
 
@@ -274,7 +274,7 @@ select
     cast(sub_compensation_q1 as boolean),
     cast(sub_compensation_q2 as boolean),
     place_of_perform_street,
-    sub_place_of_perform_street
+    sub_place_of_perform_street,
     false
 
 from
