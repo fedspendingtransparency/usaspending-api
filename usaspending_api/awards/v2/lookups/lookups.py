@@ -215,7 +215,7 @@ assistance_type_mapping = {
     **other_type_mapping,
 }
 non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}
-procurement_mapping = {**contract_type_mapping, **idv_type_mapping}
+procurement_type_mapping = {**contract_type_mapping, **idv_type_mapping}
 all_award_types_mappings = {
     "contracts": list(contract_type_mapping),
     "direct_payments": list(direct_payment_type_mapping),
