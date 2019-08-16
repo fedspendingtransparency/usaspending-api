@@ -1,11 +1,10 @@
 import logging
 import pytz
 
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
-from django.db import connections
 from datetime import datetime
-from functools import reduce
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+from django.db import connections
 
 logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
@@ -26,7 +25,7 @@ class Command(BaseCommand):
             broker_cursor = broker_conn.cursor()
             api_conn = connections["default"]
             api_cursor = api_conn.cursor()
-        except Exception as err:  # NOQA
+        except Exception as err:
             logger.critical("Could not connect to database(s).")
             logger.critical(err)
             return
@@ -88,8 +87,8 @@ class Command(BaseCommand):
 
                 if certify_date > most_recently_loaded_date:
                     missing_submissions.append((submission_id, agency_name, certify_date, most_recently_loaded_date))
-            except Exception as error:  # NOQA
-                logger.debug("Submission {} failed in pull from broker: {}".format(submission_id, error))
+            except Exception as error:
+                logger.exception("Submission {} failed in pull from broker: {}".format(submission_id, error))
                 failed_submissions.append(submission_id)
         logger.info("Total missing submissions: {}".format(len(missing_submissions)))
         logger.info("-----------------------------------")
@@ -109,12 +108,10 @@ class Command(BaseCommand):
                 try:
                     call_command("load_submission", "--noclean", submission_id)
                 except Exception as error:
-                    logger.debug("Submission {} failed to load: {}".format(submission_id, error))
+                    logger.exception("Submission {} failed to load: {}".format(submission_id, error))
                     failed_submissions.append(submission_id)
 
         # If there were any failures, display them
-        if failed_submissions.__len__() > 0:
-            message = "The following submissions failed:\n"
-            message = message + reduce((lambda msg, failed_id: str(msg) + " " + str(failed_id)), failed_submissions)
-            logger.error(message)
+        if failed_submissions:
+            logger.error("The following submissions failed: {}".format(", ".join(failed_submissions)))
             exit(3)
