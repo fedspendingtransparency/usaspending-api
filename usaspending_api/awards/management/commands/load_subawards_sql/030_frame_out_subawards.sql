@@ -107,7 +107,7 @@ select
     upper(sub_awardee_or_recipient_uniqu),                  -- recipient_unique_id
     upper(sub_place_of_perform_city_name),                  -- pop_city_name
     upper(sub_place_of_perform_state_name),                 -- pop_state_name
-    null,                                                   -- pop_street_address - didn't make it into new broker subaward table - see DEV-2889
+    upper(sub_place_of_perform_street),                     -- pop_street_address
     upper(sub_legal_entity_city_name),                      -- recipient_location_city_name
     upper(sub_dba_name),                                    -- dba_name
     upper(sub_ultimate_parent_legal_enti),                  -- parent_recipient_name
