@@ -88,7 +88,7 @@ class TASAutocomplete(APIView):
         return Response(results)
 
 
-class TASATAAutocomplete(TASAutocomplete):
+class TASAutocompleteATA(TASAutocomplete):
     """
     Returns the list of potential Allocation Transfer Agency Identifiers
     narrowed by other components supplied in the Treasury Account filter.
@@ -97,7 +97,7 @@ class TASATAAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/ata.md"
 
 
-class TASAIDAutocomplete(TASAutocomplete):
+class TASAutocompleteAID(TASAutocomplete):
     """
     Returns the list of potential Agency Identifiers narrowed by other
     components supplied in the Treasury Account or Federal Account filter.
@@ -106,7 +106,7 @@ class TASAIDAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/aid.md"
 
 
-class TASBPOAAutocomplete(TASAutocomplete):
+class TASAutocompleteBPOA(TASAutocomplete):
     """
     Returns the list of potential Beginning Period of Availabilities
     narrowed by other components supplied in the Treasury Account filter.
@@ -115,7 +115,7 @@ class TASBPOAAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/bpoa.md"
 
 
-class TASEPOAAutocomplete(TASAutocomplete):
+class TASAutocompleteEPOA(TASAutocomplete):
     """
     Returns the list of potential Ending Period of Availabilities
     narrowed by other components supplied in the Treasury Account filter.
@@ -124,7 +124,7 @@ class TASEPOAAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/epoa.md"
 
 
-class TASAAutocomplete(TASAutocomplete):
+class TASAutocompleteA(TASAutocomplete):
     """
     Returns the list of potential Availability Type Codes
     narrowed by other components supplied in the Treasury Account filter.
@@ -133,7 +133,7 @@ class TASAAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/a.md"
 
 
-class TASMAINAutocomplete(TASAutocomplete):
+class TASAutocompleteMAIN(TASAutocomplete):
     """
     Returns the list of potential Main Account Codes narrowed by other
     components supplied in the Treasury Account or Federal Account filter.
@@ -142,7 +142,7 @@ class TASMAINAutocomplete(TASAutocomplete):
     endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/main.md"
 
 
-class TASSUBAutocomplete(TASAutocomplete):
+class TASAutocompleteSUB(TASAutocomplete):
     """
     Returns the list of potential Sub Account Codes
     narrowed by other components supplied in the Treasury Account filter.
