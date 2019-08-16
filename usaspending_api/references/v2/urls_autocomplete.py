@@ -9,7 +9,15 @@ from usaspending_api.references.v2.views.autocomplete import (
     GlossaryAutocompleteViewSet,
 )
 from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
-from usaspending_api.references.v2.views.tas_autocomplete import TASAutocomplete
+from usaspending_api.references.v2.views.tas_autocomplete import (
+    TASATAAutocomplete,
+    TASAIDAutocomplete,
+    TASBPOAAutocomplete,
+    TASEPOAAutocomplete,
+    TASAAutocomplete,
+    TASMAINAutocomplete,
+    TASSUBAutocomplete
+)
 
 
 urlpatterns = [
@@ -21,5 +29,11 @@ urlpatterns = [
     url(r"^recipient", RecipientAutocompleteViewSet.as_view()),
     url(r"^glossary", GlossaryAutocompleteViewSet.as_view()),
     url(r"^city", CityAutocompleteViewSet.as_view()),
-    url(r"^accounts/(?P<requested_component>ata|aid|bpoa|epoa|a|main|sub)", TASAutocomplete.as_view()),
+    url(r"^accounts/ata", TASATAAutocomplete.as_view()),
+    url(r"^accounts/aid", TASAIDAutocomplete.as_view()),
+    url(r"^accounts/bpoa", TASBPOAAutocomplete.as_view()),
+    url(r"^accounts/epoa", TASEPOAAutocomplete.as_view()),
+    url(r"^accounts/a", TASAAutocomplete.as_view()),
+    url(r"^accounts/main", TASMAINAutocomplete.as_view()),
+    url(r"^accounts/sub", TASSUBAutocomplete.as_view()),
 ]
