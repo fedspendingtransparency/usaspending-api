@@ -114,4 +114,4 @@ class Command(BaseCommand):
         # If there were any failures, display them
         if failed_submissions:
             logger.error("The following submissions failed: {}".format(", ".join(failed_submissions)))
-            exit(3)
+            raise SystemExit(3)
