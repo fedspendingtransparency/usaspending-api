@@ -429,7 +429,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         if any([options["detached_award_procurement_ids"], options["id_file"]]) is not None:
-            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else None
+            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else set()
             detached_award_procurement_ids = list(set(options["detached_award_procurement_ids"]) | ids_from_file)
 
             self.load_specific_transactions(detached_award_procurement_ids)
