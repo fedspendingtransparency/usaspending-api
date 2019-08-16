@@ -314,14 +314,18 @@ def get_submission_attributes(broker_submission_id, submission_data):
         submission_data["reporting_fiscal_period"],
     )
 
-    # if another submission lists the previous submission as it's previous submission, set to null and update later
+    # if another submission lists the previous submission as its previous submission, set to null and update later
     potential_conflicts = []
     if previous_submission:
         potential_conflicts = SubmissionAttributes.objects.filter(previous_submission=previous_submission)
         if potential_conflicts:
             logger.info("==== ATTENTION! Previous Submission ID Conflict Detected ====")
             for conflict in potential_conflicts:
-                logger.info("Temporarily setting {}'s Previous Submission ID from {} to Null".format(conflict, previous_submission.submission_id))
+                logger.info(
+                    "Temporarily setting {}'s Previous Submission ID from {} to null".format(
+                        conflict, previous_submission.submission_id
+                    )
+                )
                 conflict.previous_submission = None
                 conflict.save()
 
