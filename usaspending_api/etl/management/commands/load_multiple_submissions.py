@@ -107,11 +107,14 @@ class Command(BaseCommand):
                 submission_id = next_missing_sub[0]
                 try:
                     call_command("load_submission", "--noclean", submission_id)
+                except SystemExit:
+                    logger.info("Submission {} failed to load: {}".format(submission_id))
+                    failed_submissions.append(str(submission_id))
                 except Exception as error:
                     logger.exception("Submission {} failed to load: {}".format(submission_id, error))
                     failed_submissions.append(str(submission_id))
 
         # If there were any failures, display them
         if failed_submissions:
-            logger.error("The following submissions failed: {}".format(", ".join(failed_submissions)))
+            logger.error("The following submissions failed: {}. Script Complete.".format(", ".join(failed_submissions)))
             raise SystemExit(3)
