@@ -89,7 +89,7 @@ class Command(BaseCommand):
                     missing_submissions.append((submission_id, agency_name, certify_date, most_recently_loaded_date))
             except Exception as error:
                 logger.exception("Submission {} failed in pull from broker: {}".format(submission_id, error))
-                failed_submissions.append(submission_id)
+                failed_submissions.append(str(submission_id))
         logger.info("Total missing submissions: {}".format(len(missing_submissions)))
         logger.info("-----------------------------------")
         for next_missing_sub in missing_submissions:
@@ -109,7 +109,7 @@ class Command(BaseCommand):
                     call_command("load_submission", "--noclean", submission_id)
                 except Exception as error:
                     logger.exception("Submission {} failed to load: {}".format(submission_id, error))
-                    failed_submissions.append(submission_id)
+                    failed_submissions.append(str(submission_id))
 
         # If there were any failures, display them
         if failed_submissions:
