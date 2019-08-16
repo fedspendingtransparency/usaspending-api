@@ -28,12 +28,17 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
 BATCH_FETCH_SIZE = 25000
+
+
+def read_afa_ids_from_file(afa_id_file_path):
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return set(tuple(l.decode("utf-8").rstrip() for l in f if l))
 
 
 class Command(BaseCommand):
@@ -413,9 +418,21 @@ class Command(BaseCommand):
             help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
         )
 
+        parser.add_argument(
+            "--id-file",
+            metavar="FILEPATH",
+            type=str,
+            help="A file containing only transaction IDs (detached_award_procurement_id) "
+            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
-        if options["detached_award_procurement_ids"] is not None:
-            self.load_specific_transactions(options["detached_award_procurement_ids"])
+        if any([options["detached_award_procurement_ids"], options["id_file"]]):
+            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else set()
+            explicit_ids = set(options["detached_award_procurement_ids"]) if options["detached_award_procurement_ids"] else set()
+            detached_award_procurement_ids = list(explicit_ids | ids_from_file)
+
+            self.load_specific_transactions(detached_award_procurement_ids)
         else:
             self.nightly_loader(options["date"])
