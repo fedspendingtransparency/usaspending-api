@@ -1,10 +1,16 @@
-import json
+# Stdlib imports
 import pytest
-
-from model_mommy import mommy
+import json
 from rest_framework import status
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+
+# Core Django imports
+
+# Third-party app imports
+from model_mommy import mommy
+
+# Imports from your apps
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
 @pytest.fixture

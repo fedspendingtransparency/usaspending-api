@@ -96,4 +96,4 @@ def obtain_view_from_award_group(type_list):
 
 
 def category_to_award_materialized_views():
-    return {k: v["model"] for k, v in CATEGORY_TO_MODEL.items()}
+    return {category: values["model"] for category, values in CATEGORY_TO_MODEL.items()}

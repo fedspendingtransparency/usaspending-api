@@ -89,28 +89,24 @@ def state_data(db):
     location_tt = mommy.make("references.Location", location_country_code="USA", state_code="TT")
     mommy.make(
         "awards.TransactionNormalized",
-        id=1,
         place_of_performance=location_ts,
         federal_action_obligation=100000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        id=2,
         place_of_performance=location_ts,
         federal_action_obligation=100000,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        id=3,
         place_of_performance=location_td,
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        id=4,
         place_of_performance=location_tt,
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
@@ -181,7 +177,6 @@ def state_view_data(db, monkeypatch):
 
     trans_old = mommy.make(
         "awards.TransactionNormalized",
-        id=5,
         award=award_old,
         type="A",
         place_of_performance=location,
@@ -192,7 +187,6 @@ def state_view_data(db, monkeypatch):
 
     trans_cur = mommy.make(
         "awards.TransactionNormalized",
-        id=6,
         award=award_cur,
         type="B",
         place_of_performance=location,
