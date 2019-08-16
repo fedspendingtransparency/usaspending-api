@@ -30,6 +30,8 @@ class Command(BaseCommand):
                 except CommandError:
                     logger.info("Error reported using fy/q combination: {} {}".format(fy, q))
                     continue
+                except Exception:
+                    logger.exception("Submission(s) errored in FY{} Q{}".format(fy, q))
         elif options["ids"]:
             for idx in options["ids"]:
                 logger.info("Running submission load for submission id {}".format(idx))
@@ -38,3 +40,5 @@ class Command(BaseCommand):
                 except CommandError:
                     logger.info("Skipping submission ID {} due to CommandError (bad ID)".format(idx))
                     continue
+                except Exception:
+                    logger.exception("Submission {} FAILED".format(idx))
