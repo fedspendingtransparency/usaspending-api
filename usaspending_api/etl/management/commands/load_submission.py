@@ -340,7 +340,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
     value_map = {
         "broker_submission_id": broker_submission_id,
         "reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"]),
-        "previous_submission": None if previous_submission is None else previous_submission,
+        "previous_submission": previous_submission,
         # pull in broker's last update date to use as certified date
         "certified_date": submission_data["updated_at"].date()
         if type(submission_data["updated_at"]) == datetime
@@ -357,11 +357,11 @@ def get_submission_attributes(broker_submission_id, submission_data):
             conflict.cgac_code, conflict.reporting_fiscal_year, conflict.reporting_fiscal_period
         )
         logger.info(
-            "New Previous Submission ID for Submission ID {} was mapped to {} ".format(
+            "New Previous Submission ID for Submission ID {} permanently mapped to {} ".format(
                 conflict.submission_id, remapped_previous
             )
         )
-        conflict.previous_submission = None if remapped_previous is None else remapped_previous
+        conflict.previous_submission = remapped_previous
         conflict.save()
 
     return new_submission
