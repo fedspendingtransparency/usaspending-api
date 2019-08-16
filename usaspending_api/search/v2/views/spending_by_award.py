@@ -2,14 +2,13 @@ import copy
 import json
 
 from django.conf import settings
-from django.db.models import Count, F
+from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
-    all_awards_types_to_category,
     assistance_type_mapping,
     contract_subaward_mapping,
     contract_type_mapping,
@@ -31,10 +30,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-from usaspending_api.common.helpers.orm_helpers import (
-    category_to_award_materialized_views,
-    obtain_view_from_award_group,
-)
+from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -77,7 +73,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 {"limit": self.limit, "results": [], "page_metadata": {"page": self.page, "hasNext": False}}
             )
 
-        self.sort = json_request.get("sort", self.fields[0])
+        self.sort = json_request.get("sort") or self.fields[0]
         if self.sort not in self.fields:
             raise InvalidParameterException(
                 "Sort value '{}' not found in requested fields: {}".format(self.sort, self.fields)
@@ -141,49 +137,47 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 values.add(award_idv_mapping.get(field))
 
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
-        if self.sort:
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
-                sort_filters = [award_contracts_mapping[self.sort]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-                sort_filters = [loan_award_mapping[self.sort]]
-            elif set(filters["award_type_codes"]) <= set(idv_type_mapping):  # idvs
-                sort_filters = [award_idv_mapping[self.sort]]
-            else:  # assistance data
-                sort_filters = [non_loan_assistance_award_mapping[self.sort]]
+        if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
+            sort_filters = [award_contracts_mapping[self.sort]]
+        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+            sort_filters = [loan_award_mapping[self.sort]]
+        elif set(filters["award_type_codes"]) <= set(idv_type_mapping):  # idvs
+            sort_filters = [award_idv_mapping[self.sort]]
+        else:  # assistance data
+            sort_filters = [non_loan_assistance_award_mapping[self.sort]]
 
-            # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
-            if self.sort == "Award ID":
-                if self.order == "desc":
-                    queryset = queryset.order_by(
-                        F("piid").desc(nulls_last=True), F("fain").desc(nulls_last=True), F("uri").desc(nulls_last=True)
-                    ).values(*list(values))
-                else:
-                    queryset = queryset.order_by(
-                        F("piid").asc(nulls_last=True), F("fain").asc(nulls_last=True), F("uri").asc(nulls_last=True)
-                    ).values(*list(values))
-            elif self.order == "desc":
-                queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+        # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
+        if self.sort == "Award ID":
+            if self.order == "desc":
+                queryset = queryset.order_by(
+                    F("piid").desc(nulls_last=True), F("fain").desc(nulls_last=True), F("uri").desc(nulls_last=True)
+                ).values(*list(values))
             else:
-                queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
+                queryset = queryset.order_by(
+                    F("piid").asc(nulls_last=True), F("fain").asc(nulls_last=True), F("uri").asc(nulls_last=True)
+                ).values(*list(values))
+        elif self.order == "desc":
+            queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
+        else:
+            queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
-        limited_queryset = queryset[self.lower_bound : self.upper_bound]  # lower limit : upper limit
+        limited_queryset = queryset[self.lower_bound : self.upper_bound]
         has_next = len(limited_queryset) > self.limit
 
         results = []
         for award in limited_queryset[: self.limit]:
             row = {"internal_id": award["award_id"]}
 
-            if award["type"] in loan_type_mapping:  # loans
+            if award["type"] in loan_type_mapping:
                 for field in self.fields:
                     row[field] = award.get(loan_award_mapping.get(field))
-            elif award["type"] in non_loan_assistance_type_mapping:  # assistance data
+            elif award["type"] in non_loan_assistance_type_mapping:
                 for field in self.fields:
                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
             elif award["type"] in idv_type_mapping:
                 for field in self.fields:
                     row[field] = award.get(award_idv_mapping.get(field))
-            elif (award["type"] is None and award["piid"]) or award["type"] in contract_type_mapping:
-                # IDV + contract
+            elif award["type"] in contract_type_mapping:
                 for field in self.fields:
                     row[field] = award.get(award_contracts_mapping.get(field))
 
@@ -225,14 +219,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if grant_subaward_mapping.get(field):
                 values.add(grant_subaward_mapping.get(field))
 
-        if self.sort:
-            if set(filters["award_type_codes"]) <= set(procurement_type_mapping):  # Subaward contracts
-                sort_filters = [contract_subaward_mapping[self.sort]]
-            elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
-                sort_filters = [grant_subaward_mapping[self.sort]]
-            else:
-                msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.sort)
-                raise InvalidParameterException(msg)
+        if set(filters["award_type_codes"]) <= set(procurement_type_mapping):
+            sort_filters = [contract_subaward_mapping[self.sort]]
+        elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
+            sort_filters = [grant_subaward_mapping[self.sort]]
+        else:
+            msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.sort)
+            raise InvalidParameterException(msg)
 
         if self.sort == "Award ID":
             if self.order == "desc":
@@ -248,7 +241,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         else:
             queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
 
-        limited_queryset = queryset[self.lower_bound : self.upper_bound]  # lower limit : upper limit
+        limited_queryset = queryset[self.lower_bound : self.upper_bound]
         has_next = len(limited_queryset) > self.limit
 
         results = []
@@ -264,63 +257,3 @@ class SpendingByAwardVisualizationViewSet(APIView):
             results.append(row)
 
         return {"limit": self.limit, "results": results, "page_metadata": {"page": self.page, "hasNext": has_next}}
-
-
-@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
-class SpendingByAwardCountVisualizationViewSet(APIView):
-    """
-    This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
-    """
-
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award_count.md"
-
-    @cache_response()
-    def post(self, request):
-        models = [{"name": "subawards", "key": "subawards", "type": "boolean", "default": False}]
-        models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
-        json_request = TinyShield(models).block(request.data)
-        filters = json_request.get("filters", None)
-        subawards = json_request["subawards"]
-        if filters is None:
-            raise InvalidParameterException("Missing required request parameters: 'filters'")
-
-        results = (
-            {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
-            if not subawards
-            else {"subcontracts": 0, "subgrants": 0}
-        )
-
-        if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
-            # "Special case": there will never be results when the website provides this value
-            return Response({"results": results})
-
-        if subawards:
-            queryset = subaward_filter(filters)
-            queryset = queryset.values("prime_award_type").annotate(category_count=Count("subaward_id"))
-            # DB hit here
-            for award in queryset:
-                if award["prime_award_type"] in assistance_type_mapping.keys():
-                    result_key = "subgrants"
-                else:
-                    result_key = "subcontracts"
-                results[result_key] += award["category_count"]
-        else:
-            querysets = [
-                matview_search_filter(filters, model)
-                .values("type")
-                .annotate(category_count=Count("award_id"))
-                .values("category_count", "type")
-                for category, model in category_to_award_materialized_views().items()
-            ]
-
-            # use the first QS in the list as the "base" queryset and union all of the querysets together
-            for row in querysets.pop().union(*querysets, all=True):
-                group = (
-                    "other"
-                    if all_awards_types_to_category[row["type"]] == "other_financial_assistance"
-                    else all_awards_types_to_category[row["type"]]
-                )
-                results[group] += row["category_count"]
-
-        return Response({"results": results})
