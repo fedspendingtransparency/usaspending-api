@@ -94,12 +94,13 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
     @staticmethod
     def _get_current_git_branch(default=None):
         """
-        This is a bit of legacy code to figure out which git branch is current.
+        Attempt to figure out which git branch is current.  .git/HEAD typically
+        follows a structure of refs/heads/<branch name>.  We want <branch name>.
         """
         file_path = os.path.join(BASE_DIR, ".git/HEAD")
         if case_sensitive_file_exists(file_path):
             with open(file_path) as f:
-                return f.read().split("/")[-1].strip()
+                return "/".join(f.read().split("/", 2)[2:]).strip()
         return default
 
     @staticmethod
