@@ -39,7 +39,7 @@ BATCH_FETCH_SIZE = 25000
 
 def read_afa_ids_from_file(afa_id_file_path):
     with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
-        return list(tuple(l.decode("utf-8").rstrip() for l in f if l))
+        return set(tuple(l.decode("utf-8").rstrip() for l in f if l))
 
 
 class Command(BaseCommand):
@@ -395,12 +395,8 @@ class Command(BaseCommand):
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
 
-    def load_specific_transactions(self, explicit_ids, ids_file):
+    def load_specific_transactions(self, detached_award_procurement_ids):
         logger.info("==== Starting FPDS (re)load of specific transactions ====")
-
-        ids_from_file = read_afa_ids_from_file(ids_file) if ids_file else None
-
-        detached_award_procurement_ids = safe_add(explicit_ids, ids_from_file)
 
         self.perform_load(detached_award_procurement_ids, detached_award_procurement_ids)
 
@@ -428,12 +424,17 @@ class Command(BaseCommand):
             metavar="FILEPATH",
             type=str,
             help="A file containing only transaction IDs (detached_award_procurement_id) "
-                 "to reload, one ID per line. Nonexistent IDs will be ignored.",
+            "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
         if any([options["detached_award_procurement_ids"], options["id_file"]]) is not None:
-            self.load_specific_transactions(options["detached_award_procurement_ids"], options["id_file"])
+
+            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else None
+
+            detached_award_procurement_ids = set(options["detached_award_procurement_ids"]) | ids_from_file
+
+            self.load_specific_transactions(detached_award_procurement_ids)
         else:
             self.nightly_loader(options["date"])
