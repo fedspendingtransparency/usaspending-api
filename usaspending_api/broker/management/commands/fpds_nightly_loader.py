@@ -430,7 +430,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if any([options["detached_award_procurement_ids"], options["id_file"]]):
             ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else set()
-            detached_award_procurement_ids = list(set(options["detached_award_procurement_ids"]) | ids_from_file)
+            explicit_ids = set(options["detached_award_procurement_ids"]) if options["detached_award_procurement_ids"] else set()
+            detached_award_procurement_ids = list(explicit_ids | ids_from_file)
 
             self.load_specific_transactions(detached_award_procurement_ids)
         else:
