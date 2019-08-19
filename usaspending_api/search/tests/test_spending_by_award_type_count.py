@@ -114,7 +114,6 @@ def test_spending_by_award_no_intersection(client, db, award_data_fixture, refre
     }, "Results returned, they should all be 0"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
     mock_model_1 = MockModel(

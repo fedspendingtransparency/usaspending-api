@@ -12,13 +12,16 @@ from usaspending_api.awards.models_matviews import (
 )
 
 from usaspending_api.awards.v2.lookups.lookups import (
+    assistance_type_mapping,
     contract_type_mapping,
     direct_payment_type_mapping,
     grant_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
     other_type_mapping,
+    procurement_type_mapping,
 )
+
 
 TYPES_TO_QUOTE_IN_SQL = (str, date)
 
@@ -31,6 +34,10 @@ CATEGORY_TO_MODEL = {
     "loans": {"model": MatviewSearchAwardLoan, "types": set(loan_type_mapping.keys())},
     "other": {"model": MatviewSearchAwardOther, "types": set(other_type_mapping.keys())},
 }
+
+
+class AwardGroupsException(Exception):
+    """Custom Exception for a specific event"""
 
 
 class FiscalMonth(Func):
@@ -92,7 +99,26 @@ def obtain_view_from_award_group(type_list):
         if types <= values["types"]:
             return values["model"]
     else:
-        raise Exception("Invalid type list. Types cross categories")
+        raise AwardGroupsException("Invalid type list. Types cross categories")
+
+
+def award_types_are_valid_groups(type_list):
+    is_valid = False
+    try:
+        obtain_view_from_award_group(type_list)
+        is_valid = True
+    except AwardGroupsException:
+        pass
+
+    return is_valid
+
+
+def subaward_types_are_valid_groups(type_list):
+    is_valid = True
+    if set(type_list) - set(procurement_type_mapping.keys()) and set(type_list) - set(assistance_type_mapping.keys()):
+        return False
+
+    return is_valid
 
 
 def category_to_award_materialized_views():

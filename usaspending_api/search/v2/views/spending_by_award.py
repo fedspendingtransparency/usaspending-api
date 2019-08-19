@@ -30,7 +30,11 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
+from usaspending_api.common.helpers.orm_helpers import (
+    obtain_view_from_award_group,
+    award_types_are_valid_groups,
+    subaward_types_are_valid_groups,
+)
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -58,6 +62,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 m["optional"] = False
 
         json_request = TinyShield(models).block(request.data)
+        self._response_dict = {"limit": None, "results": [], "page_metadata": {"page": 0, "hasNext": False}}
         self.fields = json_request["fields"]
         filters = json_request.get("filters", {})
         subawards = json_request["subawards"]
@@ -69,9 +74,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            return Response(
-                {"limit": self.limit, "results": [], "page_metadata": {"page": self.page, "hasNext": False}}
-            )
+            self.populate_response(limit=self.limit, page=self.page)
+            return Response(self._response_dict)
 
         self.sort = json_request.get("sort") or self.fields[0]
         if self.sort not in self.fields:
@@ -80,16 +84,17 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
 
         if subawards:
-            return Response(self._handle_subawards(filters))
+            self._handle_subawards(filters)
+        else:
+            self._handle_awards(filters)
 
-        return Response(self._handle_awards(filters))
+        return Response(self._response_dict)
 
     def _handle_awards(self, filters):
         """ Award logic for SpendingByAward"""
-        try:
-            obtain_view_from_award_group(filters["award_type_codes"])
-        except Exception:
 
+        if not award_types_are_valid_groups(filters["award_type_codes"]):
+            # Return a JSON response describing the award type groupings
             error_msg = (
                 '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
                 '"award_type_groups": {{'
@@ -109,16 +114,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
             raise UnprocessableEntityException(json.loads(error_msg))
 
-        awards_values = (
+        field_external_name_list = (
             list(award_contracts_mapping.keys())
             + list(loan_award_mapping.keys())
             + list(non_loan_assistance_award_mapping.keys())
             + list(award_idv_mapping.keys())
         )
 
-        if self.sort not in awards_values:
+        if self.sort not in field_external_name_list:
             raise InvalidParameterException(
-                "Sort value '{}' not found in Award mappings: {}".format(self.sort, awards_values)
+                "Sort value '{}' not found in Award mappings: {}".format(self.sort, field_external_name_list)
             )
 
         # build sql query filters
@@ -137,16 +142,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 values.add(award_idv_mapping.get(field))
 
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):  # contracts
+        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
             sort_filters = [award_contracts_mapping[self.sort]]
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):
             sort_filters = [loan_award_mapping[self.sort]]
-        elif set(filters["award_type_codes"]) <= set(idv_type_mapping):  # idvs
+        elif set(filters["award_type_codes"]) <= set(idv_type_mapping):
             sort_filters = [award_idv_mapping[self.sort]]
         else:  # assistance data
             sort_filters = [non_loan_assistance_award_mapping[self.sort]]
 
-        # Explictly set NULLS LAST in the ordering to encourage the usage of the indexes
         if self.sort == "Award ID":
             if self.order == "desc":
                 queryset = queryset.order_by(
@@ -156,10 +160,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(
                     F("piid").asc(nulls_last=True), F("fain").asc(nulls_last=True), F("uri").asc(nulls_last=True)
                 ).values(*list(values))
-        elif self.order == "desc":
-            queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
         else:
-            queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
+            queryset = self.standard_queryset_sort(queryset, sort_filters[0], self.order, values)
 
         limited_queryset = queryset[self.lower_bound : self.upper_bound]
         has_next = len(limited_queryset) > self.limit
@@ -188,14 +190,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         break
             results.append(row)
 
-        return {"limit": self.limit, "results": results, "page_metadata": {"page": self.page, "hasNext": has_next}}
+        self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
 
     def _handle_subawards(self, filters):
         """ sub-award logic for SpendingByAward"""
+
         # Test to ensure the award types are a proper subset of at least one group (contracts or grants)
-        if set(filters["award_type_codes"]) - set(procurement_type_mapping.keys()) and set(
-            filters["award_type_codes"]
-        ) - set(assistance_type_mapping.keys()):
+        if not subaward_types_are_valid_groups(filters["award_type_codes"]):
+            # Return a JSON response describing the award type groupings
             error_msg = (
                 '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
                 '"award_type_groups": {{'
@@ -204,10 +206,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             ).format(json.dumps(procurement_type_mapping), json.dumps(assistance_type_mapping))
             raise UnprocessableEntityException(json.loads(error_msg))
 
-        subawards_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-        if self.sort not in subawards_values:
+        field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+        if self.sort not in field_external_name_list:
             raise InvalidParameterException(
-                "Sort value '{}' not found in Sub-Award mappings: {}".format(self.sort, subawards_values)
+                "Sort value '{}' not found in Sub-Award mappings: {}".format(self.sort, field_external_name_list)
             )
 
         queryset = subaward_filter(filters)
@@ -236,10 +238,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(
                     F("award__piid").asc(nulls_last=True), F("award__fain").asc(nulls_last=True)
                 ).values(*list(values))
-        elif self.order == "desc":
-            queryset = queryset.order_by(F(sort_filters[0]).desc(nulls_last=True)).values(*list(values))
         else:
-            queryset = queryset.order_by(F(sort_filters[0]).asc(nulls_last=True)).values(*list(values))
+            queryset = self.standard_queryset_sort(queryset, sort_filters[0], self.order, values)
 
         limited_queryset = queryset[self.lower_bound : self.upper_bound]
         has_next = len(limited_queryset) > self.limit
@@ -256,4 +256,19 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     row[field] = award.get(grant_subaward_mapping[field])
             results.append(row)
 
-        return {"limit": self.limit, "results": results, "page_metadata": {"page": self.page, "hasNext": has_next}}
+        self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
+
+    def populate_response(self, limit=None, results=None, page=None, has_next=None):
+        self._response_dict["limit"] = limit if limit else self._response_dict["limit"]
+        self._response_dict["results"] = results if results else self._response_dict["results"]
+        self._response_dict["page_metadata"]["page"] = page if page else self._response_dict["page_metadata"]["page"]
+        self._response_dict["page_metadata"]["hasNext"] = (
+            has_next if has_next else self._response_dict["page_metadata"]["hasNext"]
+        )
+
+    def standard_queryset_sort(self, queryset, sort_field, order, values):
+        """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
+        if order == "desc":
+            return queryset.order_by(F(sort_field).desc(nulls_last=True)).values(*list(values))
+        else:
+            queryset.order_by(F(sort_field).asc(nulls_last=True)).values(*list(values))
