@@ -1,20 +1,19 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Funding Accounts
+# Award Federal Accounts
 
-These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
+These endpoints are used to power USAspending.gov's Award Summary page Federal Accounts visualization section.
 
-## List Federal Accounts [/api/v2/awards/idvs/accounts/]
+## List Federal Accounts [/api/v2/awards/accounts/]
 
 This endpoint returns a list of federal accounts under a given IDV.
-
 
 ### List Federal Accounts [POST]
 + Request (application/json)
     + Attributes
         + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string) 
-            IDV to return accounts for
+            Award to return accounts for
         + `page`: 1 (optional, number)
             Page number to return
         + `limit`: 10 (optional, number)
@@ -28,7 +27,6 @@ This endpoint returns a list of federal accounts under a given IDV.
     + Attributes 
        + `results` (required, array[AccountListing], fixed-type)
        + `page_metadata` (required, PageMetadata, fixed-type)
-
 
 # Data Structures
 

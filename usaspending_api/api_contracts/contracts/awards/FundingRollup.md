@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Funding Rollup [/api/v2/awards/idvs/funding_rollup/]
+# Award Funding Rollup [/api/v2/awards/funding_rollup/]
 
-This end point returns award metadata summing the total transaction obligations and counting awarding agencies, funding agencies, and federal accounts for an IDV's children and grandchildren.
+This endpoint returns the total transaction obligations and count of awarding agencies, funding agencies, and federal accounts for an award.
 
 ## POST
 
@@ -11,11 +11,11 @@ This end point returns award metadata summing the total transaction obligations 
     + Attributes (object)
         + `award_id`: `CONT_IDV_N0018918D0057_9700` (required, string)
 + Response 200 (application/json)
-    + Attributes (IDVFundingRollUpResponse)
+    + Attributes (FundingRollUpResponse)
 
 # Data Structures
 
-## IDVFundingRollUpResponse (object)
+## FundingRollUpResponse (object)
 + total_transaction_obligated_amount: 42946881.56 (required, number)
 + awarding_agency_count: 27 (required, number)
 + funding_agency_count: 27 (required, number)
