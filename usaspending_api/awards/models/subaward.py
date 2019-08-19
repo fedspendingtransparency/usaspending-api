@@ -54,7 +54,7 @@ class Subaward(models.Model):
     )
     unique_award_key = models.TextField(blank=True, null=True, db_index=True)
 
-    latest_transaction_id = models.IntegerField(null=True, blank=True)
+    latest_transaction_id = models.BigIntegerField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
 
     awarding_toptier_agency_name = models.TextField(null=True, blank=True)
