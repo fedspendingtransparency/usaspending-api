@@ -29,17 +29,11 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
 BATCH_FETCH_SIZE = 25000
-
-
-def read_afa_ids_from_file(afa_id_file_path):
-    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
-        return set(tuple(l.decode("utf-8").rstrip() for l in f if l))
 
 
 class Command(BaseCommand):
@@ -339,23 +333,16 @@ class Command(BaseCommand):
 
     def perform_load(self, ids_to_delete, ids_to_insert):
 
-        for delete_index in range(0, len(ids_to_delete), BATCH_FETCH_SIZE):
-            with timer("deletion of all stale FPDS data (batch {} of {})"
-                       .format(int((delete_index / BATCH_FETCH_SIZE) + 1),
-                               ceil(len(ids_to_delete) / BATCH_FETCH_SIZE)),
-                       logger.info):
-                self.delete_stale_fpds(ids_to_delete=ids_to_delete[delete_index:delete_index + BATCH_FETCH_SIZE])
-
-        if len(ids_to_delete) == 0:
+        if len(ids_to_delete) > 0:
+            with timer("deletion of all stale FPDS data", logger.info):
+                self.delete_stale_fpds(ids_to_delete=ids_to_delete)
+        else:
             logger.info("No FPDS records to delete at this juncture")
 
-        for insert_index in range(0, len(ids_to_delete), BATCH_FETCH_SIZE):
-            logger.info("update batch {} of {}"
-                        .format(int((insert_index / BATCH_FETCH_SIZE) + 1),
-                                ceil(len(ids_to_insert) / BATCH_FETCH_SIZE)))
+        if len(ids_to_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                self.insert_all_new_fpds(ids_to_insert[insert_index:insert_index + BATCH_FETCH_SIZE])
+                self.insert_all_new_fpds(ids_to_insert)
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
@@ -372,8 +359,7 @@ class Command(BaseCommand):
             # Check the linkages from file C to FPDS records and update any that are missing
             with timer("updating C->D linkages", logger.info):
                 update_c_to_d_linkages("contract")
-
-        if len(ids_to_delete) == 0:
+        else:
             logger.info("No FPDS records to insert or modify at this juncture")
 
     def nightly_loader(self, start_date):
@@ -410,6 +396,16 @@ class Command(BaseCommand):
 
         logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
 
+    def load_fpds_from_file(self, afa_id_file_path):
+        with open(afa_id_file_path) as file:
+            next_batch = []
+            for line in file.readlines():
+                next_batch.append(line)
+                if len(next_batch) >= BATCH_FETCH_SIZE:
+                    logger.info("Full batch pulled from file. Loading immediately...")
+                    self.load_specific_transactions(next_batch)
+                    next_batch.clear()
+
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group()
 
@@ -437,11 +433,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if any([options["detached_award_procurement_ids"], options["id_file"]]):
-            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else set()
-            explicit_ids = set(options["detached_award_procurement_ids"]) if options["detached_award_procurement_ids"] else set()
-            detached_award_procurement_ids = list(explicit_ids | ids_from_file)
+        if options["id_file"]:
+            self.load_fpds_from_file(options["id_file"])
 
-            self.load_specific_transactions(detached_award_procurement_ids)
+        if options["detached_award_procurement_ids"]:
+            explicit_ids = options["detached_award_procurement_ids"]
+
+            self.load_specific_transactions(explicit_ids)
         else:
             self.nightly_loader(options["date"])
