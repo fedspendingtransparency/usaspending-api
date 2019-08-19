@@ -5,6 +5,7 @@ import os
 import re
 import time
 
+from math import ceil
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -338,16 +339,25 @@ class Command(BaseCommand):
 
     def perform_load(self, ids_to_delete, ids_to_insert):
 
-        if len(ids_to_delete) > 0:
-            with timer("deletion of all stale FPDS data", logger.info):
-                self.delete_stale_fpds(ids_to_delete=ids_to_delete)
-        else:
+        delete_index = 0
+        while delete_index < ids_to_delete.__len__():
+            with timer("deletion of all stale FPDS data (batch {} of {})"
+                       .format(int((delete_index/BATCH_FETCH_SIZE)+1), ceil(ids_to_delete.__len__() / BATCH_FETCH_SIZE)),
+                       logger.info):
+                self.delete_stale_fpds(ids_to_delete=ids_to_delete[delete_index:delete_index + BATCH_FETCH_SIZE])
+            delete_index += BATCH_FETCH_SIZE
+
+        if delete_index == 0:
             logger.info("No FPDS records to delete at this juncture")
 
-        if len(ids_to_insert) > 0:
+        insert_index = 0
+        while insert_index < ids_to_insert.__len__():
+            logger.info("update batch {} of {}"
+                        .format(int((insert_index / BATCH_FETCH_SIZE) + 1),
+                                ceil(ids_to_insert.__len__() / BATCH_FETCH_SIZE)))
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                self.insert_all_new_fpds(ids_to_insert)
+                self.insert_all_new_fpds(ids_to_insert[insert_index:insert_index + BATCH_FETCH_SIZE])
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
@@ -364,7 +374,9 @@ class Command(BaseCommand):
             # Check the linkages from file C to FPDS records and update any that are missing
             with timer("updating C->D linkages", logger.info):
                 update_c_to_d_linkages("contract")
-        else:
+            insert_index += BATCH_FETCH_SIZE
+
+        if insert_index == 0:
             logger.info("No FPDS records to insert or modify at this juncture")
 
     def nightly_loader(self, start_date):
