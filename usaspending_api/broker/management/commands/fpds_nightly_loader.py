@@ -342,7 +342,8 @@ class Command(BaseCommand):
         delete_index = 0
         while delete_index < ids_to_delete.__len__():
             with timer("deletion of all stale FPDS data (batch {} of {})"
-                       .format(int((delete_index/BATCH_FETCH_SIZE)+1), ceil(ids_to_delete.__len__() / BATCH_FETCH_SIZE)),
+                       .format(int((delete_index / BATCH_FETCH_SIZE) + 1),
+                               ceil(ids_to_delete.__len__() / BATCH_FETCH_SIZE)),
                        logger.info):
                 self.delete_stale_fpds(ids_to_delete=ids_to_delete[delete_index:delete_index + BATCH_FETCH_SIZE])
             delete_index += BATCH_FETCH_SIZE
