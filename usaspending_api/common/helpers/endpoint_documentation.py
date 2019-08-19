@@ -90,7 +90,9 @@ def validate_docs(url, url_object, master_endpoint_list):
             absolute_endpoint_doc = os.path.join(BASE_DIR, endpoint_doc)
             if not case_sensitive_file_exists(absolute_endpoint_doc):
                 messages.append(
-                    "{}.endpoint_doc ({}) references a file that does not exist".format(qualified_name, url)
+                    "{}.endpoint_doc ({}) references a file that does not exist ({})".format(
+                        qualified_name, url, endpoint_doc
+                    )
                 )
 
     if not (view_class.__doc__ or "").strip():
