@@ -103,21 +103,32 @@ def obtain_view_from_award_group(type_list):
 
 
 def award_types_are_valid_groups(type_list):
+    """
+        Check to ensure the award type list is a subset of the different
+        award groups aka "award categories" used for Spending By Award.
+    """
     is_valid = False
     try:
         obtain_view_from_award_group(type_list)
         is_valid = True
     except AwardGroupsException:
+        # If this error was thrown, it means is_valid is still False.
         pass
 
     return is_valid
 
 
 def subaward_types_are_valid_groups(type_list):
+    """
+        Check to ensure the award type list is a subset of the different
+        award groups aka "award categories" used for Spending By Sub-Award.
+    """
+    types = set(type_list)
     is_valid = True
-    if set(type_list) - set(procurement_type_mapping.keys()) and set(type_list) - set(assistance_type_mapping.keys()):
-        return False
-
+    # If type_list has elements outside of procurement_type_mapping and assistance_type_mapping, then it isn't a subset
+    #   of either category so it should produce an API error response.
+    if types.difference(set(procurement_type_mapping.keys())) and types.difference(set(assistance_type_mapping.keys())):
+        is_valid = False
     return is_valid
 
 

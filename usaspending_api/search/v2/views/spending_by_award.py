@@ -46,7 +46,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     This route takes award filters and fields, and returns the fields of the filtered awards.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/search/AdvancedSearch.md"
 
     @cache_response()
     def post(self, request):
@@ -62,7 +62,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 m["optional"] = False
 
         json_request = TinyShield(models).block(request.data)
-        self._response_dict = {"limit": None, "results": [], "page_metadata": {"page": 0, "hasNext": False}}
+        self._response_dict = {"limit": None, "results": None, "page_metadata": {"page": None, "hasNext": None}}
         self.fields = json_request["fields"]
         filters = json_request.get("filters", {})
         subawards = json_request["subawards"]
@@ -74,7 +74,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            self.populate_response(limit=self.limit, page=self.page)
+            self.populate_response(limit=self.limit, results=[], page=self.page, has_next=False)
             return Response(self._response_dict)
 
         self.sort = json_request.get("sort") or self.fields[0]
@@ -258,13 +258,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
 
-    def populate_response(self, limit=None, results=None, page=None, has_next=None):
-        self._response_dict["limit"] = limit if limit else self._response_dict["limit"]
-        self._response_dict["results"] = results if results else self._response_dict["results"]
-        self._response_dict["page_metadata"]["page"] = page if page else self._response_dict["page_metadata"]["page"]
-        self._response_dict["page_metadata"]["hasNext"] = (
-            has_next if has_next else self._response_dict["page_metadata"]["hasNext"]
-        )
+    def populate_response(self, limit, results, page, has_next):
+            self._response_dict["limit"] = limit
+            self._response_dict["results"] = results
+            self._response_dict["page_metadata"]["page"] = page
+            self._response_dict["page_metadata"]["hasNext"] = has_next
 
     def standard_queryset_sort(self, queryset, sort_field, order, values):
         """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""

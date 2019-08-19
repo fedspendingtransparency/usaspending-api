@@ -23,7 +23,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award_count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/search/SpendingByAwardCount.md"
 
     @cache_response()
     def post(self, request):
@@ -48,15 +48,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if not subawards:
             results = async_fetch_category_counts(filters, category_to_award_materialized_views())
         else:
-            queryset = subaward_filter(filters)
-            queryset = queryset.values("prime_award_type").annotate(category_count=Count("subaward_id"))
+            queryset = subaward_filter(filters).values("prime_award_type").annotate(category_count=Count("subaward_id"))
 
             for award in queryset:
+                result_key = "subcontracts"
                 if award["prime_award_type"] in assistance_type_mapping.keys():
                     result_key = "subgrants"
-                else:
-                    result_key = "subcontracts"
                 results[result_key] += award["category_count"]
-            return Response({"results": results})
 
         return Response({"results": results})
