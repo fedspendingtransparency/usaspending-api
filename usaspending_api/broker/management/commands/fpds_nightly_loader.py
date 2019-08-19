@@ -5,7 +5,6 @@ import os
 import re
 import time
 
-from math import ceil
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
