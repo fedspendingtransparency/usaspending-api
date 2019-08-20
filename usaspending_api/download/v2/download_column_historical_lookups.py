@@ -1226,7 +1226,7 @@ query_paths = {
                 ("subawardee_congressional_district", "broker_subaward__sub_legal_entity_congressional"),
                 ("subawardee_foreign_postal_code", "broker_subaward__sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "broker_subaward__sub_business_types"),
-                # ("subaward_primary_place_of_performance_address_line_1", ""),
+                ("subaward_primary_place_of_performance_address_line_1", "broker_subaward__place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "broker_subaward__sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
@@ -1346,7 +1346,7 @@ query_paths = {
                 ("subawardee_congressional_district", "broker_subaward__sub_legal_entity_congressional"),
                 ("subawardee_foreign_postal_code", "broker_subaward__sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "broker_subaward__sub_business_types"),
-                # ("subaward_primary_place_of_performance_address_line_1", ""),
+                ("subaward_primary_place_of_performance_address_line_1", "broker_subaward__place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "broker_subaward__sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
