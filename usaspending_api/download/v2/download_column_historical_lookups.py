@@ -116,8 +116,8 @@ query_paths = {
                     "award__latest_transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "award__latest_transaction__contract_data__pulled_from"),
-                ("award_type_code", "award__latest_transaction__contract_data__contract_award_type"),
-                ("award_type", "award__latest_transaction__contract_data__contract_award_type_desc"),
+                ("award_type_code", "award__latest_transaction__contract_data__contract_award_type"),  # Column is appended to in account_download.py
+                ("award_type", "award__latest_transaction__contract_data__contract_award_type_desc"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 (
@@ -283,8 +283,8 @@ query_paths = {
                 ),
                 ("other_statutory_authority", "award__latest_transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "award__latest_transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "award__latest_transaction__contract_data__referenced_idv_type"),
-                ("parent_award_type", "award__latest_transaction__contract_data__referenced_idv_type_desc"),
+                ("parent_award_type_code", "award__latest_transaction__contract_data__referenced_idv_type"),  # Column is appended to in account_download.py
+                ("parent_award_type", "award__latest_transaction__contract_data__referenced_idv_type_desc"),  # Column is appended to in account_download.py
                 (
                     "parent_award_single_or_multiple_code",
                     "award__latest_transaction__contract_data__referenced_mult_or_single",
@@ -545,6 +545,7 @@ query_paths = {
                     "sba_certified_8a_joint_venture",
                     "award__latest_transaction__contract_data__sba_certified_8_a_joint_ve",
                 ),
+                ("solicitation_date", "award__latest_transaction__contract_data__solicitation_date"),
                 ("highly_compensated_officer_1_name", "award__latest_transaction__contract_data__officer_1_name"),
                 ("highly_compensated_officer_1_amount", "award__latest_transaction__contract_data__officer_1_amount"),
                 ("highly_compensated_officer_2_name", "award__latest_transaction__contract_data__officer_2_name"),
@@ -707,7 +708,7 @@ query_paths = {
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
                 ("action_date", "transaction__action_date"),
-                ("action_date_fiscal_year", None),
+                ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
                 ("period_of_performance_current_end_date", "transaction__contract_data__period_of_performance_curr"),
                 ("period_of_performance_potential_end_date", "transaction__contract_data__period_of_perf_potential_e"),
@@ -759,8 +760,8 @@ query_paths = {
                     "transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "transaction__contract_data__pulled_from"),
-                ("award_type_code", "transaction__contract_data__contract_award_type"),
-                ("award_type", "transaction__contract_data__contract_award_type_desc"),
+                ("award_type_code", "transaction__contract_data__contract_award_type"),  # Column is appended to in account_download.py
+                ("award_type", "transaction__contract_data__contract_award_type_desc"),  # Column is appended to in account_download.py
                 ("idv_type_code", "transaction__contract_data__idv_type"),
                 ("idv_type", "transaction__contract_data__idv_type_description"),
                 ("multiple_or_single_award_idv_code", "transaction__contract_data__multiple_or_single_award_i"),
@@ -860,8 +861,8 @@ query_paths = {
                 ("interagency_contracting_authority", "transaction__contract_data__interagency_contract_desc"),
                 ("other_statutory_authority", "transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "transaction__contract_data__referenced_idv_type"),
-                ("parent_award_type", "transaction__contract_data__referenced_idv_type_desc"),
+                ("parent_award_type_code", "transaction__contract_data__referenced_idv_type"),  # Column is appended to in account_download.py
+                ("parent_award_type", "transaction__contract_data__referenced_idv_type_desc"),  # Column is appended to in account_download.py
                 ("parent_award_single_or_multiple_code", "transaction__contract_data__referenced_mult_or_single"),
                 ("parent_award_single_or_multiple", "transaction__contract_data__referenced_mult_or_si_desc"),
                 ("major_program", "transaction__contract_data__major_program"),
@@ -1019,6 +1020,7 @@ query_paths = {
                     "transaction__contract_data__historically_underutilized",
                 ),
                 ("sba_certified_8a_joint_venture", "transaction__contract_data__sba_certified_8_a_joint_ve"),
+                ("solicitation_date", "transaction__contract_data__solicitation_date"),
                 ("highly_compensated_officer_1_name", "transaction__contract_data__officer_1_name"),
                 ("highly_compensated_officer_1_amount", "transaction__contract_data__officer_1_amount"),
                 ("highly_compensated_officer_2_name", "transaction__contract_data__officer_2_name"),
@@ -1047,7 +1049,7 @@ query_paths = {
                 ("total_subsidy_cost", "transaction__award__total_subsidy_cost"),
                 ("total_loan_value", "transaction__award__total_loan_value"),
                 ("action_date", "transaction__action_date"),
-                ("action_date_fiscal_year", None),
+                ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "transaction__period_of_performance_current_end_date"),
                 ("awarding_agency_code", "transaction__assistance_data__awarding_agency_code"),
@@ -1149,7 +1151,7 @@ query_paths = {
                 ("prime_award_parent_piid", "award__parent_award_piid"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
-                ("subaward_action_date_fiscal_year", None),
+                ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
@@ -1183,7 +1185,7 @@ query_paths = {
                 ("prime_awardee_duns", "award__latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__contract_data__awardee_or_recipient_legal"),
                 ("prime_award_action_date", "award__date_signed"),
-                ("prime_award_action_date_fiscal_year", None),
+                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_amount", "award__total_obligation"),
                 ("subawardee_duns", "subaward__recipient_unique_id"),
                 ("subawardee_name", "subaward__recipient_name"),
@@ -1230,7 +1232,7 @@ query_paths = {
                 ("prime_award_fain", "award__fain"),
                 ("subaward_amount", "subaward__amount"),
                 ("subaward_action_date", "subaward__action_date"),
-                ("subaward_action_date_fiscal_year", None),
+                ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("subaward_report_year", "subaward__award_report_fy_year"),
                 ("subaward_report_month", "subaward__award_report_fy_month"),
                 ("prime_awarding_agency_code", "award__latest_transaction__assistance_data__awarding_agency_code"),
@@ -1260,7 +1262,7 @@ query_paths = {
                     "award__latest_transaction__assistance_data__place_of_perform_country_c",
                 ),
                 ("prime_award_action_date", "award__date_signed"),
-                ("prime_award_action_date_fiscal_year", None),
+                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_amount", "award__total_obligation"),
                 ("prime_awardee_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
@@ -1314,12 +1316,12 @@ query_paths = {
                 ("availability_type_code", "treasury_account_identifier__availability_type_code"),
                 ("main_account_code", "treasury_account_identifier__main_account_code"),
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 (
                     "budget_authority_unobligated_balance_brought_forward",
@@ -1350,9 +1352,9 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
                 (
@@ -1393,12 +1395,12 @@ query_paths = {
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1415,9 +1417,9 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -1446,12 +1448,12 @@ query_paths = {
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1463,8 +1465,8 @@ query_paths = {
                 ("fain", "fain"),
                 ("uri", "uri"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("award_type_code", "award_type_code"),
-                ("award_type", "award_type"),
+                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
+                ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
@@ -1499,9 +1501,9 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("submission_period", "reporting_period_end"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -1514,8 +1516,8 @@ query_paths = {
                 ("fain", "fain"),
                 ("uri", "uri"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("award_type_code", "award_type_code"),
-                ("award_type", "award_type"),
+                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
+                ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),

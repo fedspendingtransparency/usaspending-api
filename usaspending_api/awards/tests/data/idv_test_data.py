@@ -163,6 +163,15 @@ def create_idv_test_data():
             duns="duns_%s" % (7000 + award_id),
         )
 
+        mommy.make(
+            "recipient.RecipientProfile",
+            id=8000 + award_id,
+            recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
+            recipient_level="R",
+            recipient_name="recipient_name_%s" % (7000 + award_id),
+            recipient_unique_id="duns_%s" % (7000 + award_id),
+        )
+
     # We'll need some parent_awards.  We "hard code" values here rather than
     # generate them using the restock_parent_award script because we do a lot
     # of procedurally generated testing which would be difficult to do if

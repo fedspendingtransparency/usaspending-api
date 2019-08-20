@@ -137,6 +137,8 @@ class BrokerSubaward(models.Model):
     sub_recovery_model_q2 = models.NullBooleanField(null=True, blank=True)
     sub_compensation_q1 = models.NullBooleanField(null=True, blank=True)
     sub_compensation_q2 = models.NullBooleanField(null=True, blank=True)
+    place_of_perform_street = models.TextField(null=True, blank=True)
+    sub_place_of_perform_street = models.TextField(null=True, blank=True)
 
     # Not shown here is an index on imported where imported is True.
     # Also, this name is a bit of a misnomer.  This will be True if the
