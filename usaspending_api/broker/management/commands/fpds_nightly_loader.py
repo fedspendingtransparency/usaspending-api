@@ -395,10 +395,15 @@ class Command(BaseCommand):
 
     @staticmethod
     def next_batch_generator(file):
-        yield file.readlines(BATCH_FETCH_SIZE)
+        while True:
+            lines = file.readlines(BATCH_FETCH_SIZE)
+            lines = list(map(lambda bianary: bianary.decode(), lines))
+            if len(lines) == 0:
+                break
+            yield lines
 
     def load_fpds_from_file(self, afa_id_file_path):
-        with RetrieveFileFromUri(afa_id_file_path).get_file_object(True) as file:
+        with RetrieveFileFromUri(afa_id_file_path).get_file_object() as file:
             for next_batch in self.next_batch_generator(file):
                 logger.info("Loading batch from provided file...")
                 self.load_specific_transactions(next_batch)
