@@ -393,18 +393,15 @@ class Command(BaseCommand):
 
         logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
 
+    @staticmethod
+    def next_batch_generator(file):
+        yield file.readlines(BATCH_FETCH_SIZE)
+
     def load_fpds_from_file(self, afa_id_file_path):
         with RetrieveFileFromUri(afa_id_file_path).get_file_object(True) as file:
-            next_batch = []
-            for line in file.readlines():
-                print(line)
-                next_batch.append(line)
-                if len(next_batch) >= BATCH_FETCH_SIZE:
-                    logger.info("Loading batch from provided file...")
-                    self.load_specific_transactions(next_batch)
-                    next_batch.clear()
-            #  Load final batch
-            self.load_specific_transactions(next_batch)
+            for next_batch in self.next_batch_generator(file):
+                logger.info("Loading batch from provided file...")
+                self.load_specific_transactions(next_batch)
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group()
