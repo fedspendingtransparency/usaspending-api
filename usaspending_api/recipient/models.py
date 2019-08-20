@@ -130,7 +130,7 @@ class RecipientLookup(models.Model):
 
 
 class SummaryAwardRecipient(models.Model):
-    award_id = models.IntegerField(primary_key=True)
+    award_id = models.BigIntegerField(primary_key=True)
     action_date = models.DateField(blank=True, db_index=True)
     recipient_hash = models.UUIDField(null=True, db_index=True)
     parent_recipient_unique_id = models.TextField(null=True, db_index=True)
