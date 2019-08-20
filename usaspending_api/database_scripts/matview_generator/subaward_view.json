@@ -4,6 +4,7 @@
   "matview_sql": [
     "SELECT",
     "  id AS subaward_id,",
+    "  id AS broker_subaward_id,",
     "  to_tsvector(CONCAT_WS(' ',",
     "    sub.recipient_name,",
     "    psc.description,",
@@ -108,6 +109,10 @@
       "unique": true,
       "columns": [{"name": "subaward_id"}]
     }, {
+      "name": "broker_subaward_id",
+      "unique": true,
+      "columns": [{"name":  "broker_subaward_id"}]
+    },{
       "name": "award_type",
       "where": "award_type IS NOT NULL",
       "columns": [{"name": "award_type"}]

@@ -58,5 +58,11 @@ def subaward_annotations():
     annotation_fields = {
         "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
         "prime_award_action_date_fiscal_year": FiscalYear("award__date_signed"),
+        "prime_award_federal_accounts_funding_this_award": StringAgg(
+            "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
+        ),
+        "prime_award_treasury_accounts_funding_this_award": StringAgg(
+            "award__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
+        ),
     }
     return annotation_fields
