@@ -398,7 +398,7 @@ class Command(BaseCommand):
             for line in file.readlines():
                 next_batch.append(line)
                 if len(next_batch) >= BATCH_FETCH_SIZE:
-                    logger.info("Full batch pulled from file. Loading immediately...")
+                    logger.info("Loading ids from file filled max batch size. Loading immediately...")
                     self.load_specific_transactions(next_batch)
                     next_batch.clear()
             #  Load final batch
