@@ -2,12 +2,14 @@ import itertools
 import logging
 
 from django.db.models import Q
+
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models_matviews import ViewSearchAward, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
 from usaspending_api.search.helpers import build_tas_codes_filter
@@ -24,6 +26,11 @@ def universal_award_matview_filter(filters):
 
 def universal_transaction_matview_filter(filters):
     return matview_search_filter(filters, UniversalTransactionView, for_downloads=True)
+
+
+def matview_search_filter_determine_award_matview_model(filters):
+    model = obtain_view_from_award_group(filters.get("award_type_codes"))
+    return matview_search_filter(filters, model)
 
 
 def matview_search_filter(filters, model, for_downloads=False):

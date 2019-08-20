@@ -59,8 +59,8 @@ class FiscalYear(Func):
 
 
 def generate_raw_quoted_query(queryset):
-    """
-    Generates the raw sql from a queryset with quotable types quoted.
+    """Generates the raw sql from a queryset with quotable types quoted.
+
     This function provided benefit since the Django queryset.query doesn't quote
         some types such as dates and strings. If Django is updated to fix this,
         please use that instead.
@@ -84,28 +84,28 @@ def generate_raw_quoted_query(queryset):
 
 
 def generate_where_clause(queryset):
-    """
-    Returns the SQL and params from a queryset all ready to be plugged into an
-    extra method.
-    """
+    """Returns the SQL and params from a queryset all ready to be plugged into an extra method."""
     compiler = queryset.query.get_compiler(get_connection().alias)
     return queryset.query.where.as_sql(compiler, compiler.connection)
 
 
 def obtain_view_from_award_group(type_list):
-    types = set(type_list)
+    if not type_list:
+        raise AwardGroupsException("Invalid award type list: No types provided.")
 
+    type_set = set(type_list)
     for category, values in CATEGORY_TO_MODEL.items():
-        if types <= values["types"]:
+        if type_set <= values["types"]:
             return values["model"]
     else:
-        raise AwardGroupsException("Invalid type list. Types cross categories")
+        raise AwardGroupsException("Invalid award type list: Types cross multiple categories.")
 
 
-def award_types_are_valid_groups(type_list):
-    """
-        Check to ensure the award type list is a subset of the different
-        award groups aka "award categories" used for Spending By Award.
+def award_types_are_valid_groups(type_list: list) -> bool:
+    """Check to ensure the award type list is a subset of one and only one award group.
+
+    Groups: are Contracts, Loans, Grants, etc.
+    If false, the award type codes aren't a subset of any category.
     """
     is_valid = False
     try:
@@ -119,17 +119,14 @@ def award_types_are_valid_groups(type_list):
 
 
 def subaward_types_are_valid_groups(type_list):
+    """Check to ensure the award type list is a subset of one and only one award group.
+
+    Groups: are "Procurement" and "Assistance"
+    If false, the award type codes aren't a subset of either category.
     """
-        Check to ensure the award type list is a subset of the different
-        award groups aka "award categories" used for Spending By Sub-Award.
-    """
-    types = set(type_list)
-    is_valid = True
-    # If type_list has elements outside of procurement_type_mapping and assistance_type_mapping, then it isn't a subset
-    #   of either category so it should produce an API error response.
-    if types.difference(set(procurement_type_mapping.keys())) and types.difference(set(assistance_type_mapping.keys())):
-        is_valid = False
-    return is_valid
+    is_procurement = set(type_list).difference(set(procurement_type_mapping.keys()))
+    is_assistance = set(type_list).difference(set(assistance_type_mapping.keys()))
+    return bool(is_procurement) != bool(is_assistance)  # clever XOR logic
 
 
 def category_to_award_materialized_views():
