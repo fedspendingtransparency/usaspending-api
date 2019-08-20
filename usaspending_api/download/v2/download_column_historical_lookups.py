@@ -1165,8 +1165,8 @@ query_paths = {
                 ("prime_award_funding_sub_agency_name", "broker_subaward__funding_sub_tier_agency_na"),
                 ("prime_award_funding_office_code", "broker_subaward__funding_office_code"),
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
-                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
@@ -1285,8 +1285,8 @@ query_paths = {
                 ("prime_award_funding_sub_agency_name", "broker_subaward__funding_sub_tier_agency_na"),
                 ("prime_award_funding_office_code", "broker_subaward__funding_office_code"),
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
-                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
