@@ -355,9 +355,6 @@ class Command(BaseCommand):
             with timer("updating award category variables", logger.info):
                 update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
-            # Check the linkages from file C to FPDS records and update any that are missing
-            with timer("updating C->D linkages", logger.info):
-                update_c_to_d_linkages("contract")
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
 
@@ -404,6 +401,8 @@ class Command(BaseCommand):
                     logger.info("Full batch pulled from file. Loading immediately...")
                     self.load_specific_transactions(next_batch)
                     next_batch.clear()
+            #  Load final batch
+            self.load_specific_transactions(next_batch)
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group()
@@ -441,3 +440,7 @@ class Command(BaseCommand):
             self.load_specific_transactions(explicit_ids)
         else:
             self.nightly_loader(options["date"])
+
+        # Check the linkages from file C to FPDS records and update any that are missing
+        with timer("updating C->D linkages", logger.info):
+            update_c_to_d_linkages("contract")
