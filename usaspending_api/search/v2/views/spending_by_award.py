@@ -259,10 +259,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
 
     def populate_response(self, limit, results, page, has_next):
-            self._response_dict["limit"] = limit
-            self._response_dict["results"] = results
-            self._response_dict["page_metadata"]["page"] = page
-            self._response_dict["page_metadata"]["hasNext"] = has_next
+        self._response_dict["limit"] = limit
+        self._response_dict["results"] = results
+        self._response_dict["page_metadata"]["page"] = page
+        self._response_dict["page_metadata"]["hasNext"] = has_next
 
     def standard_queryset_sort(self, queryset, sort_field, order, values):
         """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""

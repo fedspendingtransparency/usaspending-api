@@ -11,7 +11,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0057_auto_20190810_0246'),
+        ('awards', '0060_transactionfpds_solicitation_date'),
     ]
 
     operations = [
