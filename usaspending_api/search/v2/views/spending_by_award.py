@@ -200,14 +200,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def populate_attributes_for_subawards(self, filters):
         """ sub-award logic for SpendingByAward"""
+        minimum_db_fields = {"subaward_number", "piid", "fain", "award_type"}
+        api_to_db_mapping_list = [contract_subaward_mapping, grant_subaward_mapping]
 
         self.base_queryset = subaward_filter(filters)
         self.award_semaphore = "award_type"
-        minimum_db_fields = {"subaward_number", "piid", "fain", "award_type"}
         self.award_id_fields = ["award__piid", "award__fain"]
         self.internal_id_field = "subaward_number"
-        api_to_db_mapping_list = [contract_subaward_mapping, grant_subaward_mapping]
         self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
+        self.type_code_to_field_map = {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping}
 
         if self.pagination["sort_key"] == "Award ID":
             self.sort_by_fields = self.award_id_fields
@@ -216,17 +217,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
             self.sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
 
-        self.type_code_to_field_map = {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping}
-
     def populate_attributes_for_awards(self, filters):
         """ Award logic for SpendingByAward"""
         minimum_db_fields = {"award_id", "piid", "fain", "uri", "type"}
         model = obtain_view_from_award_group(filters["award_type_codes"])
         api_to_db_mapping_list = [
             award_contracts_mapping,
+            award_idv_mapping,
             loan_award_mapping,
             non_loan_assistance_award_mapping,
-            award_idv_mapping,
         ]
 
         self.base_queryset = matview_search_filter(filters, model).values()  # build sql query filters
@@ -234,6 +233,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.award_id_fields = ["piid", "fain", "uri"]
         self.internal_id_field = "award_id"
         self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
+        self.type_code_to_field_map = {
+            **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
+            **{award_type: award_idv_mapping for award_type in award_idv_mapping},
+            **{award_type: loan_award_mapping for award_type in loan_type_mapping},
+            **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
+        }
 
         if self.pagination["sort_key"] == "Award ID":
             self.sort_by_fields = self.award_id_fields
@@ -245,13 +250,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             self.sort_by_fields = [award_idv_mapping[self.pagination["sort_key"]]]
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
             self.sort_by_fields = [non_loan_assistance_award_mapping[self.pagination["sort_key"]]]
-
-        self.type_code_to_field_map = {
-            **{award_type: loan_award_mapping for award_type in loan_type_mapping},
-            **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
-            **{award_type: award_idv_mapping for award_type in award_idv_mapping},
-            **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
-        }
 
     def get_database_fields(self, values: set, mapping_list_of_dicts: list) -> set:
         for field in self.fields:
