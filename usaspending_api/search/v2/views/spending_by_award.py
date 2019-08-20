@@ -51,37 +51,33 @@ class SpendingByAwardVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all awards matching the provided filters and limits"""
-        models = [
-            {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-        ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
-        for m in models:
-            if m["name"] in ("award_type_codes", "fields"):
-                m["optional"] = False
 
-        json_request = TinyShield(models).block(request.data)
-        self._response_dict = {"limit": None, "results": None, "page_metadata": {"page": None, "hasNext": None}}
-        self.fields = json_request["fields"]
-        filters = json_request.get("filters", {})
+        json_request = self.validate_request_data(request.data)
+        filters = json_request["filters"]
         subawards = json_request["subawards"]
-        self.order = json_request["order"]
-        self.limit = json_request["limit"]
-        self.page = json_request["page"]
-        self.lower_bound = (self.page - 1) * self.limit
-        self.upper_bound = self.page * self.limit + 1
+        self.fields = json_request["fields"]
+        self.pagination = {
+            "limit": json_request["limit"],
+            "lower_bound": (json_request["page"] - 1) * json_request["limit"],
+            "page": json_request["page"],
+            "sort_key": json_request.get("sort") or self.fields[0],
+            "sort_order": json_request["order"],
+            "upper_bound": json_request["page"] * json_request["limit"] + 1,
+        }
+
+        self._response_dict = {
+            "limit": self.pagination["limit"],
+            "results": None,
+            "page_metadata": {"page": self.pagination["page"], "hasNext": None},
+        }
 
         if "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            self.populate_response(limit=self.limit, results=[], page=self.page, has_next=False)
+            self.populate_response(results=[], has_next=False)
             return Response(self._response_dict)
 
-        self.sort = json_request.get("sort") or self.fields[0]
-        if self.sort not in self.fields:
-            raise InvalidParameterException(
-                "Sort value '{}' not found in requested fields: {}".format(self.sort, self.fields)
-            )
+        self.raise_if_award_types_not_valid_subset(filters["award_type_codes"], subawards)
+        self.raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, subawards)
 
         if subawards:
             self._handle_subawards(filters)
@@ -92,39 +88,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def _handle_awards(self, filters):
         """ Award logic for SpendingByAward"""
-
-        if not award_types_are_valid_groups(filters["award_type_codes"]):
-            # Return a JSON response describing the award type groupings
-            error_msg = (
-                '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
-                '"award_type_groups": {{'
-                '"contracts": {},'
-                '"loans": {},'
-                '"idvs": {},'
-                '"grants": {},'
-                '"other_financial_assistance": {},'
-                '"direct_payments": {}}}}}'
-            ).format(
-                json.dumps(contract_type_mapping),
-                json.dumps(loan_type_mapping),
-                json.dumps(idv_type_mapping),
-                json.dumps(grant_type_mapping),
-                json.dumps(direct_payment_type_mapping),
-                json.dumps(other_type_mapping),
-            )
-            raise UnprocessableEntityException(json.loads(error_msg))
-
-        field_external_name_list = (
-            list(award_contracts_mapping.keys())
-            + list(loan_award_mapping.keys())
-            + list(non_loan_assistance_award_mapping.keys())
-            + list(award_idv_mapping.keys())
-        )
-
-        if self.sort not in field_external_name_list:
-            raise InvalidParameterException(
-                "Sort value '{}' not found in Award mappings: {}".format(self.sort, field_external_name_list)
-            )
 
         # build sql query filters
         model = obtain_view_from_award_group(filters["award_type_codes"])
@@ -142,32 +105,27 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 values.add(award_idv_mapping.get(field))
 
         # Modify queryset to be ordered by requested "sort" in the request or default value(s)
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-            sort_filters = [award_contracts_mapping[self.sort]]
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):
-            sort_filters = [loan_award_mapping[self.sort]]
-        elif set(filters["award_type_codes"]) <= set(idv_type_mapping):
-            sort_filters = [award_idv_mapping[self.sort]]
-        else:  # assistance data
-            sort_filters = [non_loan_assistance_award_mapping[self.sort]]
-
-        if self.sort == "Award ID":
-            if self.order == "desc":
-                queryset = queryset.order_by(
-                    F("piid").desc(nulls_last=True), F("fain").desc(nulls_last=True), F("uri").desc(nulls_last=True)
-                ).values(*list(values))
-            else:
-                queryset = queryset.order_by(
-                    F("piid").asc(nulls_last=True), F("fain").asc(nulls_last=True), F("uri").asc(nulls_last=True)
-                ).values(*list(values))
+        if self.pagination["sort_key"] == "Award ID":
+            sort_by_fields = ["piid", "fain", "uri"]
         else:
-            queryset = self.standard_queryset_sort(queryset, sort_filters[0], self.order, values)
+            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+                sort_filter = award_contracts_mapping[self.pagination["sort_key"]]
+            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):
+                sort_filter = loan_award_mapping[self.pagination["sort_key"]]
+            elif set(filters["award_type_codes"]) <= set(idv_type_mapping):
+                sort_filter = award_idv_mapping[self.pagination["sort_key"]]
+            else:  # assistance data
+                sort_filter = non_loan_assistance_award_mapping[self.pagination["sort_key"]]
+            sort_by_fields = [sort_filter]
 
-        limited_queryset = queryset[self.lower_bound : self.upper_bound]
-        has_next = len(limited_queryset) > self.limit
+        queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
+        queryset = queryset.values(*list(values))
+
+        limited_queryset = queryset[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
+        has_next = len(limited_queryset) > self.pagination["limit"]
 
         results = []
-        for award in limited_queryset[: self.limit]:
+        for award in limited_queryset[: self.pagination["limit"]]:
             row = {"internal_id": award["award_id"]}
 
             if award["type"] in loan_type_mapping:
@@ -188,29 +146,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     if award[id_type]:
                         row["Award ID"] = award[id_type]
                         break
+
             results.append(row)
 
-        self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
+        self.populate_response(results=results, has_next=has_next)
 
     def _handle_subawards(self, filters):
         """ sub-award logic for SpendingByAward"""
-
-        # Test to ensure the award types are a proper subset of at least one group (contracts or grants)
-        if not subaward_types_are_valid_groups(filters["award_type_codes"]):
-            # Return a JSON response describing the award type groupings
-            error_msg = (
-                '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
-                '"award_type_groups": {{'
-                '"procurement": {},'
-                '"assistance": {}}}}}'
-            ).format(json.dumps(procurement_type_mapping), json.dumps(assistance_type_mapping))
-            raise UnprocessableEntityException(json.loads(error_msg))
-
-        field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-        if self.sort not in field_external_name_list:
-            raise InvalidParameterException(
-                "Sort value '{}' not found in Sub-Award mappings: {}".format(self.sort, field_external_name_list)
-            )
 
         queryset = subaward_filter(filters)
         values = {"subaward_number", "piid", "fain", "award_type"}
@@ -221,31 +163,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if grant_subaward_mapping.get(field):
                 values.add(grant_subaward_mapping.get(field))
 
-        if set(filters["award_type_codes"]) <= set(procurement_type_mapping):
-            sort_filters = [contract_subaward_mapping[self.sort]]
-        elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
-            sort_filters = [grant_subaward_mapping[self.sort]]
+        # Modify queryset to be ordered by requested "sort" in the request or default value(s)
+        if self.pagination["sort_key"] == "Award ID":
+            sort_by_fields = ["award__piid", "award__fain"]
         else:
-            msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.sort)
-            raise InvalidParameterException(msg)
-
-        if self.sort == "Award ID":
-            if self.order == "desc":
-                queryset = queryset.order_by(
-                    F("award__piid").desc(nulls_last=True), F("award__fain").desc(nulls_last=True)
-                ).values(*list(values))
+            if set(filters["award_type_codes"]) <= set(procurement_type_mapping):
+                sort_filter = contract_subaward_mapping[self.pagination["sort_key"]]
+            elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
+                sort_filter = grant_subaward_mapping[self.pagination["sort_key"]]
             else:
-                queryset = queryset.order_by(
-                    F("award__piid").asc(nulls_last=True), F("award__fain").asc(nulls_last=True)
-                ).values(*list(values))
-        else:
-            queryset = self.standard_queryset_sort(queryset, sort_filters[0], self.order, values)
+                msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.pagination["sort_key"])
+                raise InvalidParameterException(msg)
 
-        limited_queryset = queryset[self.lower_bound : self.upper_bound]
-        has_next = len(limited_queryset) > self.limit
+            sort_by_fields = [sort_filter]
+
+        queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
+        queryset = queryset.values(*list(values))
+
+        limited_queryset = queryset[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
+        has_next = len(limited_queryset) > self.pagination["limit"]
 
         results = []
-        for award in limited_queryset[: self.limit]:
+        for award in limited_queryset[: self.pagination["limit"]]:
             row = {"internal_id": award["subaward_number"]}
 
             if award["award_type"] == "procurement":
@@ -256,17 +195,104 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     row[field] = award.get(grant_subaward_mapping[field])
             results.append(row)
 
-        self.populate_response(limit=self.limit, results=results, page=self.page, has_next=has_next)
+        self.populate_response(results=results, has_next=has_next)
 
-    def populate_response(self, limit, results, page, has_next):
-        self._response_dict["limit"] = limit
+    def populate_response(self, results, has_next):
         self._response_dict["results"] = results
-        self._response_dict["page_metadata"]["page"] = page
         self._response_dict["page_metadata"]["hasNext"] = has_next
 
-    def standard_queryset_sort(self, queryset, sort_field, order, values):
+    def custom_queryset_order_by(self, queryset, sort_field_names, order):
         """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
+
         if order == "desc":
-            return queryset.order_by(F(sort_field).desc(nulls_last=True)).values(*list(values))
+            order_by_list = [F(field).desc(nulls_last=True) for field in sort_field_names]
         else:
-            queryset.order_by(F(sort_field).asc(nulls_last=True)).values(*list(values))
+            order_by_list = [F(field).asc(nulls_last=True) for field in sort_field_names]
+
+        return queryset.order_by(*order_by_list)
+
+    @staticmethod
+    def validate_request_data(request_data):
+        models = [
+            {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+        ]
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(PAGINATION))
+        for m in models:
+            if m["name"] in ("award_type_codes", "fields"):
+                m["optional"] = False
+
+        return TinyShield(models).block(request_data)
+
+    @staticmethod
+    def raise_if_award_types_not_valid_subset(award_type_codes, is_subaward=False):
+        """
+            Test to ensure the award types are a subset of only one group.
+            For Awards: contracts, idvs, direct_payments, loans, grants, other assistance
+            For Sub-Awards: procurement, assistance
+
+            If the types are not a valid subset:
+                Raise API exception with a JSON response describing the award type groupings
+        """
+        if is_subaward:
+            if not subaward_types_are_valid_groups(award_type_codes):
+                # Return a JSON response describing the award type groupings
+                error_msg = (
+                    '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
+                    '"award_type_groups": {{'
+                    '"procurement": {},'
+                    '"assistance": {}}}}}'
+                ).format(json.dumps(procurement_type_mapping), json.dumps(assistance_type_mapping))
+                raise UnprocessableEntityException(json.loads(error_msg))
+
+        else:
+            if not award_types_are_valid_groups(award_type_codes):
+                error_msg = (
+                    '{{"message": "\'award_type_codes\' array can only contain types codes of one group.",'
+                    '"award_type_groups": {{'
+                    '"contracts": {},'
+                    '"loans": {},'
+                    '"idvs": {},'
+                    '"grants": {},'
+                    '"other_financial_assistance": {},'
+                    '"direct_payments": {}}}}}'
+                ).format(
+                    json.dumps(contract_type_mapping),
+                    json.dumps(loan_type_mapping),
+                    json.dumps(idv_type_mapping),
+                    json.dumps(grant_type_mapping),
+                    json.dumps(direct_payment_type_mapping),
+                    json.dumps(other_type_mapping),
+                )
+                raise UnprocessableEntityException(json.loads(error_msg))
+
+    @staticmethod
+    def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
+        """
+            Test to ensure sort key is present for the group of Awards or Sub-Awards
+            Raise API exception if sort key is not present
+        """
+        msg_prefix = ""
+        if is_subaward:
+            msg_prefix = "Sub-"
+            field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+        else:
+            field_external_name_list = (
+                list(award_contracts_mapping.keys())
+                + list(loan_award_mapping.keys())
+                + list(non_loan_assistance_award_mapping.keys())
+                + list(award_idv_mapping.keys())
+            )
+
+        if sort_key not in field_external_name_list:
+            raise InvalidParameterException(
+                "Sort value '{}' not found in {}Award mappings: {}".format(
+                    sort_key, msg_prefix, field_external_name_list
+                )
+            )
+
+        if sort_key not in field_list:
+            raise InvalidParameterException(
+                "Sort value '{}' not found in requested fields: {}".format(sort_key, field_list)
+            )
