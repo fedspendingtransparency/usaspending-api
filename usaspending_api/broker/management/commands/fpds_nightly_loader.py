@@ -28,6 +28,7 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("console")
 
@@ -393,12 +394,13 @@ class Command(BaseCommand):
         logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
 
     def load_fpds_from_file(self, afa_id_file_path):
-        with open(afa_id_file_path) as file:
+        with RetrieveFileFromUri(afa_id_file_path).get_file_object(True) as file:
             next_batch = []
             for line in file.readlines():
+                print(line)
                 next_batch.append(line)
                 if len(next_batch) >= BATCH_FETCH_SIZE:
-                    logger.info("Loading ids from file filled max batch size. Loading immediately...")
+                    logger.info("Loading batch from provided file...")
                     self.load_specific_transactions(next_batch)
                     next_batch.clear()
             #  Load final batch
@@ -425,7 +427,7 @@ class Command(BaseCommand):
             "--id-file",
             metavar="FILEPATH",
             type=str,
-            help="A file containing only transaction IDs (detached_award_procurement_id) "
+            help="(OPTIONAL) A file containing only transaction IDs (detached_award_procurement_id) "
             "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
 
