@@ -314,6 +314,21 @@ def get_submission_attributes(broker_submission_id, submission_data):
         submission_data["reporting_fiscal_period"],
     )
 
+    # if another submission lists the previous submission as its previous submission, set to null and update later
+    potential_conflicts = []
+    if previous_submission:
+        potential_conflicts = SubmissionAttributes.objects.filter(previous_submission=previous_submission)
+        if potential_conflicts:
+            logger.info("==== ATTENTION! Previous Submission ID Conflict Detected ====")
+            for conflict in potential_conflicts:
+                logger.info(
+                    "Temporarily setting {}'s Previous Submission ID from {} to null".format(
+                        conflict, previous_submission.submission_id
+                    )
+                )
+                conflict.previous_submission = None
+                conflict.save()
+
     # Update and save submission attributes
     field_map = {
         "reporting_period_start": "reporting_start_date",
@@ -325,16 +340,31 @@ def get_submission_attributes(broker_submission_id, submission_data):
     value_map = {
         "broker_submission_id": broker_submission_id,
         "reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"]),
-        "previous_submission": None if previous_submission is None else previous_submission,
+        "previous_submission": previous_submission,
         # pull in broker's last update date to use as certified date
         "certified_date": submission_data["updated_at"].date()
         if type(submission_data["updated_at"]) == datetime
         else None,
     }
 
-    return load_data_into_model(
+    new_submission = load_data_into_model(
         submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True
     )
+
+    # If there were any submissions which were temporarily modified, reassign the submission
+    for conflict in potential_conflicts:
+        remapped_previous = get_previous_submission(
+            conflict.cgac_code, conflict.reporting_fiscal_year, conflict.reporting_fiscal_period
+        )
+        logger.info(
+            "New Previous Submission ID for Submission ID {} permanently mapped to {} ".format(
+                conflict.submission_id, remapped_previous
+            )
+        )
+        conflict.previous_submission = remapped_previous
+        conflict.save()
+
+    return new_submission
 
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
