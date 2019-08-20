@@ -71,138 +71,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "page_metadata": {"page": self.pagination["page"], "hasNext": None},
         }
 
-        if "no intersection" in filters["award_type_codes"]:
-            # "Special case": there will never be results when the website provides this value
-            self.populate_response(results=[], has_next=False)
-            return Response(self._response_dict)
-
         self.raise_if_award_types_not_valid_subset(filters["award_type_codes"], subawards)
         self.raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, subawards)
+        self.return_if_no_intersection(filters["award_type_codes"])
+        self.create_class_attributes(filters, subawards)
 
-        if subawards:
-            self._construct_subaward_variables(filters)
-        else:
-            self._construct_award_variables(filters)
-
-        self.fetch_data()
-
-        return Response(self._response_dict)
-
-    def fetch_data(self):
-        queryset = self.custom_queryset_order_by(self.queryset, self.sort_by_fields, self.pagination["sort_order"])
-        queryset = queryset.values(*list(self.database_fields))
-
-        limited_queryset = queryset[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
-        has_next = len(limited_queryset) > self.pagination["limit"]
-
-        results = []
-        for record in limited_queryset[: self.pagination["limit"]]:
-            row = {"internal_id": record[self.internal_id_field]}
-
-            for field in self.fields:
-                row[field] = record.get(self.type_code_to_field_map[record[self.award_semaphore]].get(field))
-
-            if "Award ID" in self.fields:
-                for id_type in self.award_id_fields:
-                    if record[id_type]:
-                        row["Award ID"] = record[id_type]
-                        break
-
-            results.append(row)
-
-        self.populate_response(results=results, has_next=has_next)
-
-    def _construct_award_variables(self, filters):
-        """ Award logic for SpendingByAward"""
-
-        # build sql query filters
-        model = obtain_view_from_award_group(filters["award_type_codes"])
-        self.queryset = matview_search_filter(filters, model).values()
-        self.award_semaphore = "type"
-        minimum_db_fields = {"award_id", "piid", "fain", "uri", "type"}
-        self.award_id_fields = ["piid", "fain", "uri"]
-        self.internal_id_field = "award_id"
-        api_to_db_mapping_list = [
-            award_contracts_mapping,
-            loan_award_mapping,
-            non_loan_assistance_award_mapping,
-            award_idv_mapping,
-        ]
-
-        self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
-
-        # Modify queryset to be ordered by requested "sort" in the request or default value(s)
-        if self.pagination["sort_key"] == "Award ID":
-            self.sort_by_fields = self.award_id_fields
-        else:
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-                self.sort_by_fields = [award_contracts_mapping[self.pagination["sort_key"]]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):
-                self.sort_by_fields = [loan_award_mapping[self.pagination["sort_key"]]]
-            elif set(filters["award_type_codes"]) <= set(idv_type_mapping):
-                self.sort_by_fields = [award_idv_mapping[self.pagination["sort_key"]]]
-            elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                self.sort_by_fields = [non_loan_assistance_award_mapping[self.pagination["sort_key"]]]
-            else:
-                msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.pagination["sort_key"])
-                raise InvalidParameterException(msg)
-
-        self.type_code_to_field_map = {}
-        for award_type in loan_type_mapping:
-            self.type_code_to_field_map[award_type] = loan_award_mapping
-        for award_type in non_loan_assistance_type_mapping:
-            self.type_code_to_field_map[award_type] = non_loan_assistance_award_mapping
-        for award_type in award_idv_mapping:
-            self.type_code_to_field_map[award_type] = award_idv_mapping
-        for award_type in contract_type_mapping:
-            self.type_code_to_field_map[award_type] = award_contracts_mapping
-
-    def _construct_subaward_variables(self, filters):
-        """ sub-award logic for SpendingByAward"""
-
-        self.queryset = subaward_filter(filters)
-        self.award_semaphore = "award_type"
-        minimum_db_fields = {"subaward_number", "piid", "fain", "award_type"}
-        self.award_id_fields = ["award__piid", "award__fain"]
-        self.internal_id_field = "subaward_number"
-        api_to_db_mapping_list = [contract_subaward_mapping, grant_subaward_mapping]
-        self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
-
-        # Modify queryset to be ordered by requested "sort" in the request or default value(s)
-        if self.pagination["sort_key"] == "Award ID":
-            self.sort_by_fields = self.award_id_fields
-        else:
-            if set(filters["award_type_codes"]) <= set(procurement_type_mapping):
-                self.sort_by_fields = [contract_subaward_mapping[self.pagination["sort_key"]]]
-            elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
-                self.sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
-            else:
-                msg = "Sort key '{}' doesn't exist for the selected Award group".format(self.pagination["sort_key"])
-                raise InvalidParameterException(msg)
-
-        self.type_code_to_field_map = {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping}
-
-    def get_database_fields(self, values: set, mapping_list_of_dicts: list) -> set:
-        for field in self.fields:
-            for mapping in mapping_list_of_dicts:
-                if mapping.get(field):
-                    values.add(mapping.get(field))
-
-        return values
-
-    def populate_response(self, results, has_next):
-        self._response_dict["results"] = results
-        self._response_dict["page_metadata"]["hasNext"] = has_next
-
-    def custom_queryset_order_by(self, queryset, sort_field_names, order):
-        """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
-
-        if order == "desc":
-            order_by_list = [F(field).desc(nulls_last=True) for field in sort_field_names]
-        else:
-            order_by_list = [F(field).asc(nulls_last=True) for field in sort_field_names]
-
-        return queryset.order_by(*order_by_list)
+        return Response(self.create_response(self.construct_queryset()))
 
     @staticmethod
     def validate_request_data(request_data):
@@ -289,3 +163,116 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException(
                 "Sort value '{}' not found in requested fields: {}".format(sort_key, field_list)
             )
+
+    def return_if_no_intersection(self, award_type_codes):
+        if "no intersection" in award_type_codes:
+            # "Special case": there will never be results when the website provides this value
+            return Response(self.populate_response(results=[], has_next=False))
+
+    def create_class_attributes(self, filters, subawards):
+        if subawards:
+            self.populate_attributes_for_subawards(filters)
+        else:
+            self.populate_attributes_for_awards(filters)
+
+    def construct_queryset(self):
+        queryset = self.custom_queryset_order_by(self.base_queryset, self.sort_by_fields, self.pagination["sort_order"])
+        queryset = queryset.values(*list(self.database_fields))
+        return queryset[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
+
+    def create_response(self, queryset):
+        has_next = len(queryset) > self.pagination["limit"]
+        results = []
+        for record in queryset[: self.pagination["limit"]]:
+            row = {"internal_id": record[self.internal_id_field]}
+
+            for field in self.fields:
+                row[field] = record.get(self.type_code_to_field_map[record[self.award_semaphore]].get(field))
+
+            if "Award ID" in self.fields:
+                for id_type in self.award_id_fields:
+                    if record[id_type]:
+                        row["Award ID"] = record[id_type]
+                        break
+            results.append(row)
+
+        return self.populate_response(results=results, has_next=has_next)
+
+    def populate_attributes_for_subawards(self, filters):
+        """ sub-award logic for SpendingByAward"""
+
+        self.base_queryset = subaward_filter(filters)
+        self.award_semaphore = "award_type"
+        minimum_db_fields = {"subaward_number", "piid", "fain", "award_type"}
+        self.award_id_fields = ["award__piid", "award__fain"]
+        self.internal_id_field = "subaward_number"
+        api_to_db_mapping_list = [contract_subaward_mapping, grant_subaward_mapping]
+        self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
+
+        if self.pagination["sort_key"] == "Award ID":
+            self.sort_by_fields = self.award_id_fields
+        elif set(filters["award_type_codes"]) <= set(procurement_type_mapping):
+            self.sort_by_fields = [contract_subaward_mapping[self.pagination["sort_key"]]]
+        elif set(filters["award_type_codes"]) <= set(assistance_type_mapping):
+            self.sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
+
+        self.type_code_to_field_map = {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping}
+
+    def populate_attributes_for_awards(self, filters):
+        """ Award logic for SpendingByAward"""
+        minimum_db_fields = {"award_id", "piid", "fain", "uri", "type"}
+        model = obtain_view_from_award_group(filters["award_type_codes"])
+        api_to_db_mapping_list = [
+            award_contracts_mapping,
+            loan_award_mapping,
+            non_loan_assistance_award_mapping,
+            award_idv_mapping,
+        ]
+
+        self.base_queryset = matview_search_filter(filters, model).values()  # build sql query filters
+        self.award_semaphore = "type"
+        self.award_id_fields = ["piid", "fain", "uri"]
+        self.internal_id_field = "award_id"
+        self.database_fields = self.get_database_fields(minimum_db_fields, api_to_db_mapping_list)
+
+        if self.pagination["sort_key"] == "Award ID":
+            self.sort_by_fields = self.award_id_fields
+        elif set(filters["award_type_codes"]) <= set(contract_type_mapping):
+            self.sort_by_fields = [award_contracts_mapping[self.pagination["sort_key"]]]
+        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):
+            self.sort_by_fields = [loan_award_mapping[self.pagination["sort_key"]]]
+        elif set(filters["award_type_codes"]) <= set(idv_type_mapping):
+            self.sort_by_fields = [award_idv_mapping[self.pagination["sort_key"]]]
+        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
+            self.sort_by_fields = [non_loan_assistance_award_mapping[self.pagination["sort_key"]]]
+
+        self.type_code_to_field_map = {
+            **{award_type: loan_award_mapping for award_type in loan_type_mapping},
+            **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
+            **{award_type: award_idv_mapping for award_type in award_idv_mapping},
+            **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
+        }
+
+    def get_database_fields(self, values: set, mapping_list_of_dicts: list) -> set:
+        for field in self.fields:
+            for mapping in mapping_list_of_dicts:
+                if mapping.get(field):
+                    values.add(mapping.get(field))
+
+        return values
+
+    def custom_queryset_order_by(self, queryset, sort_field_names, order):
+        """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
+
+        if order == "desc":
+            order_by_list = [F(field).desc(nulls_last=True) for field in sort_field_names]
+        else:
+            order_by_list = [F(field).asc(nulls_last=True) for field in sort_field_names]
+
+        return queryset.order_by(*order_by_list)
+
+    def populate_response(self, results, has_next):
+        self._response_dict["results"] = results
+        self._response_dict["page_metadata"]["hasNext"] = has_next
+
+        return self._response_dict
