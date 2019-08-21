@@ -221,6 +221,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `city_name`: `McLean` (required, string, nullable)
 + `county_name`: `Fairfax` (required, string, nullable)
 + `state_code`: `VA` (required, string, nullable)
++ `state_name`: `Virginia` (required, string, nullable)
 + `zip5`: `22102` (required, string, nullable)
 + `zip4` (required, string, nullable)
 + `foreign_postal_code` (required, string, nullable)

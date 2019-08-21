@@ -20,6 +20,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
+from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
 
@@ -225,7 +226,10 @@ def create_place_of_performance_object(db_row_dict):
             ("country_name", db_row_dict["_pop_country_name"]),
             ("county_name", db_row_dict["_pop_county_name"]),
             ("city_name", db_row_dict["_pop_city_name"]),
-            ("state_code", db_row_dict["_pop_state_code"]),
+            ("state_code", db_row_dict["_pop_state_code"] if db_row_dict.get("_pop_state_code", None)
+                else state_code_from_name(db_row_dict.get("_pop_state_name", None))),
+            ("state_name", db_row_dict["_pop_state_name"] if db_row_dict.get("_pop_state_name", None)
+                else state_name_from_code(db_row_dict.get("_pop_state_code", None))),
             ("congressional_code", db_row_dict["_pop_congressional_code"]),
             ("zip4", db_row_dict["_pop_zip4"]),
             ("zip5", db_row_dict["_pop_zip5"]),
