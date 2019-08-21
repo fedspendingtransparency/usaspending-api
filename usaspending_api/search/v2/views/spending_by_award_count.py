@@ -50,7 +50,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if not subawards:
             results = async_fetch_category_counts(filters, category_to_award_materialized_views())
         else:
-            queryset = subaward_filter(filters).values("prime_award_type").annotate(category_count=Count("*"))
+            queryset = subaward_filter(filters).values("prime_award_type").annotate(category_count=Count("subaward_id"))
 
             for award in queryset:
                 result_key = "subcontracts"
