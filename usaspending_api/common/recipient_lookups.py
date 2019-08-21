@@ -1,4 +1,4 @@
-from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 
 
 def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
@@ -34,7 +34,11 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_u
         }
     )
 
-    return combine_recipient_hash_and_level(recipient_hash, recipient_level)
+    # Confirm that a recipient profile exists for the recipient information we have collected/generated.
+    if RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).exists():
+        return combine_recipient_hash_and_level(recipient_hash, recipient_level)
+
+    return None
 
 
 def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
