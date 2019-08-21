@@ -5,7 +5,7 @@ from django.db import models
 from usaspending_api.awards.models import Award
 
 
-class BaseSearchAwardModel(models.Model):
+class BaseAwardSearchModel(models.Model):
     """This is an Abstract Base Class for a number of materialized view models
 
     The models which inherit this shouldn't include additional fields without

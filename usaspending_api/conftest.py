@@ -178,13 +178,13 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardAllPre2008.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardContract.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardDirectPayment.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardGrant.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardIDV.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardLoan.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.MatviewSearchAwardOther.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.ContractAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.DirectPaymentAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.GrantAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.IDVAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.LoanAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.OtherAwardSearchMatview.objects", mock_qs)
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.Pre2008AwardSearchMatview.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.SubawardView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects", mock_qs)

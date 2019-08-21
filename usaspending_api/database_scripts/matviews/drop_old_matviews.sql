@@ -1,10 +1,10 @@
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_all_pre2008;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_contract;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_directpayment;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_grant;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_idv;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_loan;
-DROP MATERIALIZED VIEW IF EXISTS mv_search_award_other;
+DROP MATERIALIZED VIEW IF EXISTS mv_contract_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_directpayment_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_grant_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_idv_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_loan_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_other_award_search;
+DROP MATERIALIZED VIEW IF EXISTS mv_pre2008_award_search;
 DROP MATERIALIZED VIEW IF EXISTS subaward_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_state_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_transaction_fed_acct_view_old;

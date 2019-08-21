@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='MatviewSearchAwardAllPre2008',
+            name='Pre2008AwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -87,11 +87,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_all_pre2008',
+                'db_table': 'mv_pre2008_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardContract',
+            name='ContractAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -162,11 +162,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_contract',
+                'db_table': 'mv_contract_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardDirectPayment',
+            name='DirectPaymentAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -237,11 +237,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_directpayment',
+                'db_table': 'mv_directpayment_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardGrant',
+            name='GrantAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -312,11 +312,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_grant',
+                'db_table': 'mv_grant_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardIDV',
+            name='IDVAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -387,11 +387,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_idv',
+                'db_table': 'mv_idv_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardLoan',
+            name='LoanAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -462,11 +462,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_loan',
+                'db_table': 'mv_loan_award_search',
             },
         ),
         migrations.CreateModel(
-            name='MatviewSearchAwardOther',
+            name='OtherAwardSearchMatview',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -537,11 +537,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'mv_search_award_other',
+                'db_table': 'mv_other_award_search',
             },
         ),
         migrations.CreateModel(
-            name='ViewSearchAward',
+            name='AwardSearchView',
             fields=[
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
@@ -612,7 +612,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'managed': False,
-                'db_table': 'vw_search_award',
+                'db_table': 'vw_award_search',
             },
         ),
     ]
