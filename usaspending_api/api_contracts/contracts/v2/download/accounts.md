@@ -24,26 +24,23 @@ Generate files and return metadata using filters on custom account
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[CustomDataResult], fixed-type)
+        + `total_size`: 35.055 (required, number)
+           The total size of the file being returned
+        + `file_name`: `012_account_balances_20180613140845.zip` (required, string)
+        + `total_rows`: 652 (required, number)
+        + `total_columns`: 27 (required, number)
+        + `url`: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
+           Where the file lives in S3
+        + `message` (optional, string, nullable)
+        + `status`: `finished` (required, enum[string])
+            + Members
+                + `ready`
+                + `running`
+                + `finished`
+                + `failed`
+        + `seconds_elapsed`: `10.061132` (required, string)
 
 # Data Structures
-
-## CustomDataResult (object)
-+ `total_size`: 35.055 (required, number)
-    The total size of the file being returned
-+ `file_name`: `012_account_balances_20180613140845.zip` (required, string)
-+ `total_rows`: 652 (required, number)
-+ `total_columns`: 27 (required, number)
-+ `url`: `S3/path_to/bucket/012_account_balances_20180613140845.zip` (required, string)
-    Where the file lives in S3
-+ `message` (optional, string, nullable)
-+ `status`: `finished` (required, enum[string])
-    + Members
-        + `ready`
-        + `running`
-        + `finished`
-        + `failed`
-+ `seconds_elapsed`: `10.061132` (required, string)
 
 ## FilterObject (object)
 + `agency`: `all` (optional, string)

@@ -82,10 +82,7 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
-    See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
-    See use at
-    https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
@@ -109,6 +106,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `state`: `VA` (optional, string)
 + `county` (optional, string)
 + `city` (optional, string)
++ `district` (optional, string)
++ `zip` (optional, string)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

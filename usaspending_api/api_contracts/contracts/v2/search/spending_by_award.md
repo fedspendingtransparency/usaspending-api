@@ -13,7 +13,6 @@ This endpoint takes award filters and fields, and returns the fields of the filt
     + Attributes (object)
         + `filters` (required, FilterObject)
         + `fields` (required, SpendingByAwardFields)
-            See options at https://github.com/fedspendingtransparency/usaspending-api/blob/stg/usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_award.md#fields
         + `limit`: 60 (optional, number)
             How many results are returned. If no limit is specified, the limit is set to 10.
         + `order`: `desc` (optional, string)
@@ -126,10 +125,7 @@ List of table columns
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
-    See options at https://github.com/fedspendingtransparency/usaspending-api/wiki/Recipient-Business-Types
 + `award_type_codes` (optional, FilterObjectAwardTypes)
-    See use at
-    https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
@@ -153,6 +149,8 @@ List of table columns
 + `state`: `VA` (optional, string)
 + `county` (optional, string)
 + `city` (optional, string)
++ `district` (optional, string)
++ `zip` (optional, string)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

@@ -218,5 +218,3 @@ List of column names to request
 ## FilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)
-    See use at
-    https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation#award-type
