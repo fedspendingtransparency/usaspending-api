@@ -310,7 +310,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         broker_transactions = self.fetch_broker_objects([24066416, 24066963, 24067231])
 
-        self.load_transactions(broker_transactions)
+        load_objects = self.generate_load_objects(broker_transactions)
+
+        self.load_transactions(load_objects["transaction_normalized"],load_objects["transaction_fpds"])
 
     def fetch_broker_objects(self, id_list):
         detached_award_procurements = []
@@ -330,8 +332,17 @@ class Command(BaseCommand):
 
         return detached_award_procurements
 
-    def load_transactions(self, broker_objects):
+
+    def generate_load_objects(self, broker_objects):
+        return_dict = {}
+
+        for broker_object in broker_objects:
+            print(broker_object["detached_award_procurement_id"])
+
+        return return_dict
+
+
+    def load_transactions(self, transaction_normalized, transaction_fpds):
         with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
             with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                for broker_object in broker_objects:
-                    print(broker_object["detached_award_procurement_id"])
+                pass
