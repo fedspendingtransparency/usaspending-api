@@ -93,7 +93,7 @@ def test_defaults(cursor_fixture):
     assert subaward.type_set_aside is None
     assert subaward.pop_city_name == "SAN DIEGO"
     assert subaward.pop_state_name is None
-    assert subaward.pop_street_address is None
+    assert subaward.pop_street_address == "654 STREET ST"
     assert subaward.recipient_location_city_code is None
     assert subaward.recipient_location_city_name == "SAN DIEGO"
     assert subaward.dba_name is None
