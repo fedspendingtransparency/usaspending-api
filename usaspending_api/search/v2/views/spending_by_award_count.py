@@ -1,5 +1,4 @@
 import copy
-import json
 
 from django.conf import settings
 from django.db.models import Count
@@ -10,7 +9,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException, NoIntersectionException
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -45,7 +44,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            raise NoIntersectionException(json.loads(json.dumps({"results": results})))
+            return Response({"results": results})
 
         if not subawards:
             results = async_fetch_category_counts(filters, category_to_award_materialized_views())

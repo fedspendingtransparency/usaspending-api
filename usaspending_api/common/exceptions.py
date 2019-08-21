@@ -2,13 +2,6 @@ from rest_framework.exceptions import APIException
 from rest_framework import status
 
 
-class NoIntersectionException(APIException):
-    """Exception for timeout for an API endpoint."""
-    status_code = status.HTTP_200_OK
-    default_detail = "Unmet data expectations: response contains no data"
-    default_code = "no_data"
-
-
 class NoDataFoundException(APIException):
     """Exception when no data were returned in query when there should always be data"""
     status_code = status.HTTP_204_NO_CONTENT

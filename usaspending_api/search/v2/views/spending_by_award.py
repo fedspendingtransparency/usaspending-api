@@ -1,5 +1,4 @@
 import copy
-import json
 
 from django.conf import settings
 from django.db.models import F
@@ -26,7 +25,6 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 )
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import NoIntersectionException
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -90,7 +88,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
 
-        self.raise_if_no_intersection()  # Raises exception, but API response is a HTTP 200 with a JSON payload
+        if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
+            return Response(self.populate_response(results=[], has_next=False))
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
@@ -110,10 +109,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return TinyShield(models).block(request_data)
 
-    def raise_if_no_intersection(self):
+    def if_no_intersection(self):
         # "Special case" behavior: there will never be results when the website provides this value
-        if "no intersection" in self.filters["award_type_codes"]:
-            raise NoIntersectionException(json.loads(json.dumps(self.populate_response(results=[], has_next=False))))
+        return "no intersection" in self.filters["award_type_codes"]
 
     def construct_queryset(self):
         sort_by_fields = self.get_sort_by_fields()
