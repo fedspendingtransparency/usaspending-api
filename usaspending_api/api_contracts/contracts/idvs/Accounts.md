@@ -27,21 +27,44 @@ This endpoint returns a list of federal accounts under a given IDV.
     + Attributes 
        + `results` (required, array[AccountListing], fixed-type)
        + `page_metadata` (required, PageMetadata, fixed-type)
+    + Body
+        
+        {
+            "results": [
+                {
+                    "total_transaction_obligated_amount": 1234.56,
+                    "federal_account": "075-1301",
+                    "account_title": "Bureau of Consumer Financial Protection Fund",
+                    "funding_agency_abbreviation": "NIH",
+                    "funding_agency_name": "National Institutes of Health",
+                    "funding_agency_id": 123
+                }
+            ],
+            "page_metadata": {
+                "page": 1,
+                "next": 2,
+                "count": 4,
+                "previous": 1,
+                "hasNext": true,
+                "hasPrevious": false
+            }
+        }
+        
 
 # Data Structures
 
 ## PageMetadata (object)
-+ page: 1 (required, number)
-+ next: 2 (required, number, nullable)
-+ count: 4 (required, number)
-+ previous: 1 (required, number, nullable)
-+ hasNext: true (required, boolean)
-+ hasPrevious: false (required, boolean)
++ page (required, number)
++ next (required, number, nullable)
++ count (required, number)
++ previous (required, number, nullable)
++ hasNext (required, boolean)
++ hasPrevious (required, boolean)
 
 ## AccountListing (object)
-+ total_transaction_obligated_amount: 1234.56 (required, number)
-+ federal_account: `075-1301` (required, string)
-+ account_title: `Bureau of Consumer Financial Protection Fund` (required, string)
-+ funding_agency_abbreviation: `NIH` (required, string)
-+ funding_agency_name: `National Institutes of Health` (required, string)
-+ funding_agency_id: 123 (required, number)
++ total_transaction_obligated_amount (required, number)
++ federal_account (required, string)
++ account_title (required, string)
++ funding_agency_abbreviation (required, string)
++ funding_agency_name (required, string)
++ funding_agency_id (required, number)

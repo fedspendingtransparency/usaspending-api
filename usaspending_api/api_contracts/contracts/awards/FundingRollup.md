@@ -11,12 +11,16 @@ This endpoint returns the total transaction obligations and count of awarding ag
     + Attributes (object)
         + `award_id`: `CONT_IDV_N0018918D0057_9700` (required, string)
 + Response 200 (application/json)
-    + Attributes (FundingRollUpResponse)
+    + Attributes
+        + total_transaction_obligated_amount (required, number)
+        + awarding_agency_count (required, number)
+        + funding_agency_count (required, number)
+        + federal_account_count (required, number)
+    + Body
 
-# Data Structures
-
-## FundingRollUpResponse (object)
-+ total_transaction_obligated_amount: 42946881.56 (required, number)
-+ awarding_agency_count: 27 (required, number)
-+ funding_agency_count: 27 (required, number)
-+ federal_account_count: 47 (required, number)
+        {
+            "total_transaction_obligated_amount": 42946881.56,
+            "awarding_agency_count": 27,
+            "funding_agency_count": 28,
+            "federal_account_count": 47
+        }
