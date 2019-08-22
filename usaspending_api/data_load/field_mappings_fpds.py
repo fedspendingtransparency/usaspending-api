@@ -1,4 +1,4 @@
-from usaspending_api.data_load.derived_functions_fpds import calculate_usaspending_unique_transaction_id
+from usaspending_api.data_load.derived_functions_fpds import calculate_fiscal_year
 
 transaction_fpds_columns = ["detached_award_procurement_id",
                            "detached_award_proc_unique",
@@ -316,7 +316,12 @@ transaction_normalized_columns = {"federal_action_obligation": "federal_action_o
                                   "last_modified": "last_modified_date"}
 
 # usaspending column name -> derivation function
-transaction_normalized_functions = {"usaspending_unique_transaction_id": lambda broker: None,
-                                    "original_loan_subsidy_cost": lambda broker: None,
-                                    "face_value_loan_guarantee": lambda broker: None,
-                                    "non_federal_funding_amount": lambda broker: None}
+transaction_normalized_functions = {"usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
+                                    "original_loan_subsidy_cost": lambda broker: None,  # FABS only
+                                    "face_value_loan_guarantee": lambda broker: None,  # FABS only
+                                    "non_federal_funding_amount": lambda broker: None,  # FABS only
+                                    "drv_potential_total_award_value_amount_adjustment": lambda broker: None,  # ?
+                                    "drv_current_total_award_value_amount_adjustment": lambda broker: None,  # ?
+                                    "drv_award_transaction_usaspend": lambda broker: None,  # ?
+                                    "certified_date": lambda broker: None,  # ?
+                                    "fiscal_year": calculate_fiscal_year}

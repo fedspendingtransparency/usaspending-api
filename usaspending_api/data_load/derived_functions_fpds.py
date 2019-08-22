@@ -1,4 +1,4 @@
+from usaspending_api.common.helpers.generic_helper import fy
 
-
-def calculate_usaspending_unique_transaction_id(broker_input):
-    return None
+def calculate_fiscal_year(broker_input):
+    return fy(broker_input["action_date"])
