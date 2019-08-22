@@ -166,7 +166,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + cfda_number: (required, string)
 + cfda_title: (required, string)
 + cfda_objectives: (required, string) 
-+ amount: (required number)
++ cfda_amount: (required number)
 
 ## Agency (object)
 + id: 123 (required, number)

@@ -292,10 +292,10 @@ expected_response_asst = {
     "description": "lorem ipsum",
     "cfda_info": [
         {
-            "objectives": None,
-            "amount": None,
+            "cfda_objectives": None,
+            "cfda_amount": None,
             "cfda_number": "1234",
-            "program_title": "Shiloh"
+            "cfda_title": "Shiloh"
         }
     ],
     "base_and_all_options": None,

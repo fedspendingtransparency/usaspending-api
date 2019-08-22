@@ -382,11 +382,11 @@ def fetch_all_cfda_details(award):
         details = fetch_cfda_details_using_cfda_number(key)
         c.append({
             "cfda_number": key,
-            "amount": cfdas[key],
-            "program_title": details["program_title"],
-            "objectives": details["objectives"]
+            "cfda_amount": cfdas[key],
+            "cfda_title": details["program_title"],
+            "cfda_objectives": details["objectives"]
         })
-    c.sort(key=lambda x: x["amount"], reverse=True)
+    c.sort(key=lambda x: x["cfda_amount"], reverse=True)
     return c
 
 
