@@ -268,7 +268,7 @@ class RecipientOverView(APIView):
     """
     This endpoint returns a high-level overview of a specific recipient, given its id.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/recipient/RecipientProfile.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
 
     @cache_response()
     def get(self, request, recipient_id):
@@ -335,7 +335,7 @@ class ChildRecipients(APIView):
     """
     This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/recipient/RecipientProfile.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
 
     @cache_response()
     def get(self, request, duns):

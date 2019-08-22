@@ -203,7 +203,7 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This endpoint returns glossary autocomplete data for submitted text snippet.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/Glossary.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/glossary.md"
 
     @cache_response()
     def post(self, request):

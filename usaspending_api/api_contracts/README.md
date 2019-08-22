@@ -9,10 +9,14 @@ See [Tools for Testing and Mocking](tools-for-contracts.md)
 
 ## Guidelines to Remember when Writing Contracts
 1. One endpoint per markdown file
-1. Markdown filenames should be in "CamelCase"
+1. Endpoints that are different HTTP methods can share one markdown file
+1. Markdown filenames should be in snake_case
 1. Folder structure should mimic the URL and use "snake_case"
-    - Don't include "api/v2" in the folder structure
+    - Mimic the URL path after `api/`
     - Currently, API Contracts are not being written for v1 endpoints
 1. Don't include example values in the response objects
-1. Since underscores can cause parsing troubles, escape all example strings with backticks: "\`"
-1. If any key contains an underscore, escape it with backticks and all other sister keys in that list/object/enum
+1. Escape all items represented as strings by JSON with backticks: "\`"
+    - This avoids issues with special characters and helps with consistency
+    - This includes all keys and string values
+
+Follow this link to see an [API Contract template](template.md)
