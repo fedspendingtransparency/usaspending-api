@@ -24,7 +24,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     (Contracts, Loans, Grants, etc.)
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/search/SpendingByAwardCount.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_award_count.md"
 
     @cache_response()
     def post(self, request):

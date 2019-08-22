@@ -69,7 +69,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     This route takes award filters and fields, and returns the fields of the filtered awards.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/search/AdvancedSearch.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_award.md"
 
     @cache_response()
     def post(self, request):
