@@ -52,7 +52,7 @@ def awards_and_transactions(db):
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
     parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
     recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
-    mommy.make("references.Cfda", program_number=1234)
+    mommy.make("references.Cfda", program_number=1234, program_title="Shiloh")
     mommy.make("references.Location", **parent_loc)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
@@ -290,9 +290,14 @@ expected_response_asst = {
     "fain": None,
     "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
     "description": "lorem ipsum",
-    "cfda_objectives": None,
-    "cfda_number": "1234",
-    "cfda_title": "Shiloh",
+    "cfda_info": [
+        {
+            "objectives": None,
+            "amount": None,
+            "cfda_number": "1234",
+            "program_title": "Shiloh"
+        }
+    ],
     "base_and_all_options": None,
     "base_exercised_options": None,
     "non_federal_funding": None,
