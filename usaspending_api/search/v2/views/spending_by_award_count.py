@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.orm_helpers import category_to_award_materia
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.data_connectors.async_spending_by_award_count import async_fetch_category_counts
+from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -47,7 +47,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             return Response({"results": results})
 
         if not subawards:
-            results = async_fetch_category_counts(filters, category_to_award_materialized_views())
+            results = fetch_all_category_counts(filters, category_to_award_materialized_views())
         else:
             queryset = subaward_filter(filters).values("prime_award_type").annotate(category_count=Count("subaward_id"))
 

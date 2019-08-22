@@ -7,7 +7,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.data_connectors.async_sql_query import async_run_select
 
 
-def async_fetch_category_counts(filters, category_to_model_dict):
+def fetch_all_category_counts(filters, category_to_model_dict):
     loop = asyncio.new_event_loop()
     results = {}
     for k, v in category_to_model_dict.items():

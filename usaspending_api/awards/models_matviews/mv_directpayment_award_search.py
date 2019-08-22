@@ -1,4 +1,4 @@
-from usaspending_api.awards.models_matviews.base_mv_model import BaseAwardSearchModel
+from usaspending_api.awards.models_matviews.base_award_search import BaseAwardSearchModel
 
 
 class DirectPaymentAwardSearchMatview(BaseAwardSearchModel):
