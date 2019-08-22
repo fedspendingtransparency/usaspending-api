@@ -1,5 +1,6 @@
 from os import environ
 import psycopg2
+from collections import OrderedDict
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
@@ -62,7 +63,7 @@ def generate_load_objects(broker_objects):
             recipient_location[recipient_location_columns[key]] = broker_object[key]
 
         for key in recipient_location_functions:
-            recipient_location[recipient_location_functions[key]] = broker_object[key]
+            recipient_location[key] = recipient_location_functions[key](broker_object)
 
         connected_objects["references_location"] = recipient_location
 
@@ -100,4 +101,42 @@ def load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             for load_object in load_objects:
-                print(load_object["legal_entity"]["recipient_name"])
+                columns, values = setup_load_lists(load_object, "references_location")
+
+                recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
+                    .format(columns, values)
+                cursor.execute(recipient_location_sql)
+                results = cursor.fetchall()
+
+                load_object["legal_entity"]["location_id"] = results[0][0]
+
+                columns, values = setup_load_lists(load_object, "legal_entity")
+
+                recipient_location_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id" \
+                    .format(columns, values)
+                cursor.execute(recipient_location_sql)
+                results = cursor.fetchall()
+                print("Behold! I have made a new legal entity with a primary key of {}!".format(results[0][0]))
+
+
+def setup_load_lists(load_object, table):
+    columns = []
+    values = []
+    for key in OrderedDict(load_object[table]).keys():
+        columns.append(key)
+        val = load_object[table][key]
+        if isinstance(val, str):
+            values.append("\'{}\'".format(val))
+        elif val is None:
+            values.append("null")
+        elif isinstance(val, list):
+            print(",".join(val))
+            values.append("\'{" + (",".join(val)) + "}\'")  # noqa
+        else:
+            values.append(val)
+
+    col_string = "({})".format(",".join(map(str, columns)))
+    val_string = "({})".format(",".join(map(str, values)))
+
+    return col_string, val_string
+

@@ -343,7 +343,8 @@ legal_entity_columns = {"detached_award_proc_unique": "transaction_unique_id",
                         }
 
 # usaspending column name -> derivation function
-legal_entity_functions = {"data_source": lambda broker: "DBR"}
+legal_entity_functions = {"data_source": lambda broker: "DBR",
+                          "business_categories": lambda broker: ["filler 1", "filler 2"]}
 
 # broker column name -> usaspending column name
 recipient_location_columns = {
@@ -352,5 +353,7 @@ recipient_location_columns = {
 
 # usaspending column name -> derivation function
 recipient_location_functions = {
-
+                                "place_of_performance_flag": lambda broker: False,
+                                "recipient_flag": lambda broker: True,
+                                "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
                                 }
