@@ -45,10 +45,7 @@ def construct_assistance_response(requested_award_dict):
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
-    cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
-    response["cfda_number"] = transaction["cfda_number"]
-    response["cfda_title"] = transaction["cfda_title"]
-    response["cfda_objectives"] = cfda_info.get("objectives")
+    response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
@@ -368,6 +365,29 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
     if le:
         return le["business_categories"]
     return []
+
+
+def fetch_all_cfda_details(award):
+    queryset = TransactionFABS.objects.filter(fain=award["fain"]).values("cfda_number", "federal_action_obligation")
+    cfdas = {}
+    for item in queryset:
+        if cfdas.get(item["cfda_number"]):
+            cfdas.update({item["cfda_number"]: cfdas.get(item["cfda_number"]) + item["federal_action_obligation"]})
+        else:
+            cfdas.update({item["cfda_number"]: item["federal_action_obligation"]})
+
+    c = []
+
+    for key in cfdas.keys():
+        details = fetch_cfda_details_using_cfda_number(key)
+        c.append({
+            "cfda_number": key,
+            "amount": cfdas[key],
+            "program_title": details["program_title"],
+            "objectives": details["objectives"]
+        })
+    c.sort(key=lambda x: x["amount"], reverse=True)
+    return c
 
 
 def fetch_cfda_details_using_cfda_number(cfda):
