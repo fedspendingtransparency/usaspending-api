@@ -226,7 +226,7 @@ def create_place_of_performance_object(db_row_dict):
             ("country_name", db_row_dict["_pop_country_name"]),
             ("county_name", db_row_dict["_pop_county_name"]),
             ("city_name", db_row_dict["_pop_city_name"]),
-            ("state_code", db_row_dict["_pop_state_code"] if db_row_dict.get("_pop_state_code", None)
+            ("state_code", db_row_dict["_pop_state_code"] if db_row_dict["_pop_state_code"]
                 else state_code_from_name(db_row_dict.get("_pop_state_name", None))),
             ("state_name", db_row_dict["_pop_state_name"] if db_row_dict.get("_pop_state_name", None)
                 else state_name_from_code(db_row_dict.get("_pop_state_code", None))),
