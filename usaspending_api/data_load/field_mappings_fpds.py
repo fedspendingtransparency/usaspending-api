@@ -1,15 +1,17 @@
-from usaspending_api.data_load.derived_functions_fpds import calculate_fiscal_year
+from usaspending_api.data_load.derived_field_functions_fpds import calculate_fiscal_year, calculate_awarding_agency, \
+ calculate_funding_agency
 
+# maps directly for detached_award_procurement
 transaction_fpds_columns = ["detached_award_procurement_id",
-                           "detached_award_proc_unique",
-                           "piid",
-                           "agency_id",
-                           "awarding_sub_tier_agency_c",
-                           "awarding_sub_tier_agency_n",
-                           "awarding_agency_code",
-                           "awarding_agency_name",
-                           "parent_award_id",
-                           "award_modification_amendme",
+                            "detached_award_proc_unique",
+                            "piid",
+                            "agency_id",
+                            "awarding_sub_tier_agency_c",
+                            "awarding_sub_tier_agency_n",
+                            "awarding_agency_code",
+                            "awarding_agency_name",
+                            "parent_award_id",
+                            "award_modification_amendme",
                             "type_of_contract_pricing",
                             "type_of_contract_pric_desc",
                             "contract_award_type",
@@ -324,4 +326,31 @@ transaction_normalized_functions = {"usaspending_unique_transaction_id": lambda 
                                     "drv_current_total_award_value_amount_adjustment": lambda broker: None,  # ?
                                     "drv_award_transaction_usaspend": lambda broker: None,  # ?
                                     "certified_date": lambda broker: None,  # ?
-                                    "fiscal_year": calculate_fiscal_year}
+                                    "fiscal_year": calculate_fiscal_year,
+                                    "awarding_agency_id": calculate_awarding_agency,
+                                    "funding_agency_id": calculate_funding_agency}
+
+# broker column name -> usaspending column name
+legal_entity_columns = {"detached_award_proc_unique": "transaction_unique_id",
+                        "awardee_or_recipient_uniqu": "recipient_unique_id",
+                        "awardee_or_recipient_legal": "recipient_name",
+                        "vendor_doing_as_business_n": "vendor_doing_as_business_name",
+                        "vendor_phone_number": "vendor_phone_number",
+                        "vendor_fax_number": "vendor_fax_number",
+                        "limited_liability_corporat": "limited_liability_corporation",
+                        "sole_proprietorship": "sole_proprietorship",
+                        "partnership_or_limited_lia": "partnership_or_limited_liability_partnership"
+                        }
+
+# usaspending column name -> derivation function
+legal_entity_functions = {"data_source": lambda broker: "DBR"}
+
+# broker column name -> usaspending column name
+recipient_location_columns = {
+                              "place_of_perform_country_c": "location_country_code"
+                              }
+
+# usaspending column name -> derivation function
+recipient_location_functions = {
+
+                                }
