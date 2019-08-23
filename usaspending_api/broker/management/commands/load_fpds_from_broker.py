@@ -7,4 +7,4 @@ class Command(BaseCommand):
     help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
 
     def handle(self, *args, **options):
-        run_fpds_load([24066416, 24066963, 24067231])
+        run_fpds_load([24066416])

@@ -4,12 +4,23 @@ from collections import OrderedDict
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
-    recipient_location_functions, place_of_performance_columns, place_of_performance_functions
+    recipient_location_functions, place_of_performance_columns, place_of_performance_functions, award_functions
 from usaspending_api.data_load.data_load_helpers import subtier_agency_list, format_value_for_sql
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
 BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+
+
+def run_fpds_load(id_list):
+    load_reference_data()
+
+    broker_transactions = fetch_broker_objects(id_list)
+
+    load_objects = generate_load_objects(broker_transactions)
+
+    load_transactions(load_objects)
+
 
 def load_reference_data():
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
@@ -22,15 +33,6 @@ def load_reference_data():
             results = cursor.fetchall()
             for result in results:
                 subtier_agency_list[result["subtier_code"]] = result
-
-def run_fpds_load(id_list):
-    load_reference_data()
-
-    broker_transactions = fetch_broker_objects(id_list)
-
-    load_objects = generate_load_objects(broker_transactions)
-
-    load_transactions(load_objects)
 
 
 def fetch_broker_objects(id_list):
@@ -87,6 +89,15 @@ def generate_load_objects(broker_objects):
 
         connected_objects["place_of_performance_location"] = place_of_performance_location
 
+        # matching award. NOT a real db object, but needs to be stored when making the link in load_transactions
+        connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
+
+        # award. NOT used if a matching award is found later
+        award = {"is_fpds": True}
+        for key in award_functions:
+            award[key] = award_functions[key](broker_object)
+        connected_objects["award"] = award
+
         # transaction_normalized
         transaction_normalized = {"is_fpds": True}
         for key in transaction_normalized_columns:
@@ -100,7 +111,7 @@ def generate_load_objects(broker_objects):
         # transaction_fpds
         transaction_fpds = {}
         for key in transaction_fpds_columns:
-            transaction_fpds[key] = broker_object[key]
+            transaction_fpds[transaction_fpds_columns[key]] = broker_object[key]
         connected_objects["transaction_fpds"] = transaction_fpds
 
         retval.append(connected_objects)
@@ -125,6 +136,7 @@ def load_transactions(load_objects):
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
                 load_object["transaction_normalized"]["recipient_id"] = results[0][0]
+                load_object["award"]["recipient_id"] = results[0][0]
 
                 columns, values = setup_load_lists(load_object, "place_of_performance_location")
                 recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
@@ -132,6 +144,26 @@ def load_transactions(load_objects):
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
                 load_object["transaction_normalized"]["place_of_performance_id"] = results[0][0]
+                load_object["award"]["place_of_performance_id"] = results[0][0]
+
+                # Try to find an award for this transaction to belong to
+                find_matching_award_sql = "select id from awards where generated_unique_award_id = \'{}\'"\
+                    .format(load_object["generated_unique_award_id"])
+                cursor.execute(find_matching_award_sql)
+                results = cursor.fetchall()
+
+                # If there is an award, we still need to update it with values from its new latest transaction
+                if len(results) > 0:
+
+                    load_object["transaction_normalized"]["award_id"] = results[0][0]
+                # If there is no award, we need to create one
+                else:
+                    columns, values = setup_load_lists(load_object, "award")
+                    generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id"\
+                        .format(columns, values)
+                    cursor.execute(generate_matching_award_sql)
+                    results = cursor.fetchall()
+                    load_object["transaction_normalized"]["award_id"] = results[0][0]
 
                 columns, values = setup_load_lists(load_object, "transaction_normalized")
                 recipient_location_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id" \
@@ -146,6 +178,7 @@ def load_transactions(load_objects):
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
                 print("created fpds transaction {}".format(results[0][0]))
+
 
 def setup_load_lists(load_object, table):
     columns = []
