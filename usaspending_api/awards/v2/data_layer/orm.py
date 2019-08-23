@@ -375,18 +375,18 @@ def fetch_all_cfda_details(award):
     cfdas = {}
     for item in queryset:
         # sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back
-        num = item["cfda_number"]
-        if len(num) < 6:
-            num += "0" * (6 - len(num))
-        if cfdas.get(num):
+        cfda_number = item.get("cfda_number")
+        if cfda_number and len(cfda_number) < 6:
+            cfda_number += "0" * (6 - len(cfda_number))
+        if cfdas.get(cfda_number):
             cfdas.update(
                 {
-                    num: {
-                        "federal_action_obligation": cfdas[num]["federal_action_obligation"]
+                    cfda_number: {
+                        "federal_action_obligation": cfdas[cfda_number]["federal_action_obligation"]
                         + Decimal(item["federal_action_obligation"] or 0),
-                        "non_federal_funding_amount": cfdas[num]["non_federal_funding_amount"]
+                        "non_federal_funding_amount": cfdas[cfda_number]["non_federal_funding_amount"]
                         + Decimal(item["non_federal_funding_amount"] or 0),
-                        "total_funding_amount": cfdas[num]["total_funding_amount"]
+                        "total_funding_amount": cfdas[cfda_number]["total_funding_amount"]
                         + Decimal(item["total_funding_amount"] or 0),
                     }
                 }
@@ -394,7 +394,7 @@ def fetch_all_cfda_details(award):
         else:
             cfdas.update(
                 {
-                    num: {
+                    cfda_number: {
                         "federal_action_obligation": Decimal(item["federal_action_obligation"] or 0),
                         "non_federal_funding_amount": Decimal(item["non_federal_funding_amount"] or 0),
                         "total_funding_amount": Decimal(item["total_funding_amount"] or 0),
