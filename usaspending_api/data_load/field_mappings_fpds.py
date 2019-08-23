@@ -357,3 +357,26 @@ recipient_location_functions = {
                                 "recipient_flag": lambda broker: True,
                                 "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
                                 }
+
+# broker column name -> usaspending column name
+place_of_performance_columns = {
+                                "place_of_perform_city_name": "city_name",
+                                "place_of_perform_county_na": "county_name",
+                                }
+
+# usaspending column name -> derivation function
+place_of_performance_functions = {
+                                  "state_description": lambda broker: None,
+                                  "city_code": lambda broker: None,
+                                  "address_line1": lambda broker: None,
+                                  "address_line2": lambda broker: None,
+                                  "address_line3": lambda broker: None,
+                                  "foreign_location_description": lambda broker: None,
+                                  "zip4": lambda broker: None,
+                                  "foreign_postal_code": lambda broker: None,
+                                  "foreign_province": lambda broker: None,
+                                  "foreign_city_name": lambda broker: None,
+                                  "place_of_performance_flag": lambda broker: True,
+                                  "recipient_flag": lambda broker: False,
+                                  "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
+                                  }

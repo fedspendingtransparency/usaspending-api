@@ -1,5 +1,5 @@
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.data_load.reference_values import subtier_agency_list
+from usaspending_api.data_load.data_load_helpers import subtier_agency_list
 
 
 def calculate_fiscal_year(broker_input):

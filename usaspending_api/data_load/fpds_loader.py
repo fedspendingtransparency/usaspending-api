@@ -4,8 +4,8 @@ from collections import OrderedDict
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
-    recipient_location_functions
-from usaspending_api.data_load.reference_values import subtier_agency_list
+    recipient_location_functions, place_of_performance_columns, place_of_performance_functions
+from usaspending_api.data_load.data_load_helpers import subtier_agency_list, format_value_for_sql
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
@@ -57,7 +57,7 @@ def generate_load_objects(broker_objects):
     for broker_object in broker_objects:
         connected_objects = {}
 
-        # references_location
+        # recipient_location
         recipient_location = {"is_fpds": True}
         for key in recipient_location_columns:
             recipient_location[recipient_location_columns[key]] = broker_object[key]
@@ -65,7 +65,7 @@ def generate_load_objects(broker_objects):
         for key in recipient_location_functions:
             recipient_location[key] = recipient_location_functions[key](broker_object)
 
-        connected_objects["references_location"] = recipient_location
+        connected_objects["recipient_location"] = recipient_location
 
         # legal entity
         legal_entity = {"is_fpds": True}
@@ -76,6 +76,16 @@ def generate_load_objects(broker_objects):
             legal_entity[key] = legal_entity_functions[key](broker_object)
 
         connected_objects["legal_entity"] = legal_entity
+
+        # place_of_performance_location
+        place_of_performance_location = {"is_fpds": True}
+        for key in place_of_performance_columns:
+            place_of_performance_location[place_of_performance_columns[key]] = broker_object[key]
+
+        for key in place_of_performance_functions:
+            place_of_performance_location[key] = place_of_performance_functions[key](broker_object)
+
+        connected_objects["place_of_performance_location"] = place_of_performance_location
 
         # transaction_normalized
         transaction_normalized = {"is_fpds": True}
@@ -101,23 +111,41 @@ def load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             for load_object in load_objects:
-                columns, values = setup_load_lists(load_object, "references_location")
 
+                columns, values = setup_load_lists(load_object, "recipient_location")
                 recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
                     .format(columns, values)
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
-
                 load_object["legal_entity"]["location_id"] = results[0][0]
 
                 columns, values = setup_load_lists(load_object, "legal_entity")
-
                 recipient_location_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id" \
                     .format(columns, values)
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
-                print("Behold! I have made a new legal entity with a primary key of {}!".format(results[0][0]))
+                load_object["transaction_normalized"]["recipient_id"] = results[0][0]
 
+                columns, values = setup_load_lists(load_object, "place_of_performance_location")
+                recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
+                    .format(columns, values)
+                cursor.execute(recipient_location_sql)
+                results = cursor.fetchall()
+                load_object["transaction_normalized"]["place_of_performance_id"] = results[0][0]
+
+                columns, values = setup_load_lists(load_object, "transaction_normalized")
+                recipient_location_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id" \
+                    .format(columns, values)
+                cursor.execute(recipient_location_sql)
+                results = cursor.fetchall()
+                load_object["transaction_fpds"]["transaction_id"] = results[0][0]
+
+                columns, values = setup_load_lists(load_object, "transaction_fpds")
+                recipient_location_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id" \
+                    .format(columns, values)
+                cursor.execute(recipient_location_sql)
+                results = cursor.fetchall()
+                print("created fpds transaction {}".format(results[0][0]))
 
 def setup_load_lists(load_object, table):
     columns = []
@@ -125,15 +153,7 @@ def setup_load_lists(load_object, table):
     for key in OrderedDict(load_object[table]).keys():
         columns.append(key)
         val = load_object[table][key]
-        if isinstance(val, str):
-            values.append("\'{}\'".format(val))
-        elif val is None:
-            values.append("null")
-        elif isinstance(val, list):
-            print(",".join(val))
-            values.append("\'{" + (",".join(val)) + "}\'")  # noqa
-        else:
-            values.append(val)
+        values.append(format_value_for_sql(val))
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = "({})".format(",".join(map(str, values)))
