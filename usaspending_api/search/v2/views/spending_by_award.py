@@ -45,7 +45,7 @@ GLOBAL_MAP = {
         "internal_id_field": "award_id",
         "type_code_to_field_map": {
             **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
-            **{award_type: award_idv_mapping for award_type in award_idv_mapping},
+            **{award_type: award_idv_mapping for award_type in idv_type_mapping},
             **{award_type: loan_award_mapping for award_type in loan_type_mapping},
             **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
         },
