@@ -1,6 +1,6 @@
 import copy
 import logging
-import re
+from decimal import Decimal
 
 from collections import OrderedDict
 from django.db.models import Sum
@@ -369,22 +369,25 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
 
 
 def fetch_all_cfda_details(award):
-    queryset = TransactionFABS.objects.filter(transaction__award_id=award["id"],).values(
-        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount")
+    queryset = TransactionFABS.objects.filter(transaction__award_id=award["id"]).values(
+        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount"
+    )
     cfdas = {}
     for item in queryset:
         # sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back
-        num = re.sub(r"^\d*\.\d\d$", "\\g<0>0", item["cfda_number"])
+        num = item["cfda_number"]
+        if len(num) < 6:
+            num += "0" * (6 - len(num))
         if cfdas.get(num):
             cfdas.update(
                 {
                     num: {
                         "federal_action_obligation": cfdas[num]["federal_action_obligation"]
-                        + float(item["federal_action_obligation"] or 0),
+                        + Decimal(item["federal_action_obligation"] or 0),
                         "non_federal_funding_amount": cfdas[num]["non_federal_funding_amount"]
-                        + float(item["non_federal_funding_amount"] or 0),
+                        + Decimal(item["non_federal_funding_amount"] or 0),
                         "total_funding_amount": cfdas[num]["total_funding_amount"]
-                        + float(item["total_funding_amount"] or 0),
+                        + Decimal(item["total_funding_amount"] or 0),
                     }
                 }
             )
@@ -392,24 +395,24 @@ def fetch_all_cfda_details(award):
             cfdas.update(
                 {
                     num: {
-                        "federal_action_obligation": float(item["federal_action_obligation"] or 0),
-                        "non_federal_funding_amount": float(item["non_federal_funding_amount"] or 0),
-                        "total_funding_amount": float(item["total_funding_amount"] or 0),
+                        "federal_action_obligation": Decimal(item["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": Decimal(item["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": Decimal(item["total_funding_amount"] or 0),
                     }
                 }
             )
 
     c = []
-    for key in cfdas.keys():
-        details = fetch_cfda_details_using_cfda_number(key)
+    for cfda_number in cfdas.keys():
+        details = fetch_cfda_details_using_cfda_number(cfda_number)
         if details.get("url") == "None;":
             details.update({"url": None})
         c.append(
             {
-                "cfda_number": key,
-                "federal_action_obligation_amount": cfdas[key]["federal_action_obligation"],
-                "non_federal_funding_amount": cfdas[key]["non_federal_funding_amount"],
-                "total_funding_amount": cfdas[key]["total_funding_amount"],
+                "cfda_number": cfda_number,
+                "federal_action_obligation_amount": cfdas[cfda_number]["federal_action_obligation"],
+                "non_federal_funding_amount": cfdas[cfda_number]["non_federal_funding_amount"],
+                "total_funding_amount": cfdas[cfda_number]["total_funding_amount"],
                 "cfda_title": details.get("program_title"),
                 "cfda_popular_name": details.get("popular_name"),
                 "cfda_objectives": details.get("objectives"),
@@ -426,8 +429,9 @@ def fetch_all_cfda_details(award):
 def fetch_cfda_details_using_cfda_number(cfda):
     c = (
         Cfda.objects.filter(program_number=cfda)
-        .values("program_title", "objectives", "federal_agency", "website_address", "url", "obligations",
-                "popular_name")
+        .values(
+            "program_title", "objectives", "federal_agency", "website_address", "url", "obligations", "popular_name"
+        )
         .first()
     )
     if not c:
