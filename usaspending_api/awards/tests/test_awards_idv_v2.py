@@ -466,6 +466,7 @@ expected_response_idv = {
         "city_name": "Austin",
         "county_name": "Tripoli",
         "state_code": "TX",
+        "state_name": "Texas",
         "zip5": "40221",
         "zip4": "2135",
         "foreign_postal_code": None,
