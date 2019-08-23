@@ -40,8 +40,6 @@ SELECT
             toptier_agency
         WHERE
             toptier_agency.cgac_code = broker_tas.allocation_transfer_agency
-        ORDER BY
-            toptier_agency.fpds_code
         LIMIT 1
     ) AS awarding_toptier_agency_id,
     broker_tas.beginning_period_of_availa AS beginning_period_of_availability,
@@ -66,8 +64,6 @@ SELECT
             toptier_agency
         WHERE
             toptier_agency.cgac_code = broker_tas.agency_identifier
-        ORDER BY
-            toptier_agency.fpds_code
         LIMIT 1
     ) AS funding_toptier_agency_id,
     broker_tas.main_account_code,
