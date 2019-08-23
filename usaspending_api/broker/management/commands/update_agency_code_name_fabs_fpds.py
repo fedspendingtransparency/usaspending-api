@@ -97,8 +97,8 @@ class Command(BaseCommand):
             fund_where = "funding_sub_tier_agency_co = '{}'".format(sub_tiers)
         elif sub_tiers and len(sub_tiers) > 1:
             subtiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
-            award_where = "awarding_sub_tier_agency_c IN ({})".format(subtiers_str)
-            fund_where = "funding_sub_tier_agency_co IN ({})".format(subtiers_str)
+            award_where = "awarding_sub_tier_agency_c IN {}".format(subtiers_str)
+            fund_where = "funding_sub_tier_agency_co IN {}".format(subtiers_str)
 
         # if there's a range we add it to the name of the table
         if year_range:
