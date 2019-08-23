@@ -424,7 +424,7 @@ def fetch_all_cfda_details(award):
                 "cfda_federal_agency": details.get("federal_agency"),
                 "cfda_website": details.get("website_address"),
                 "sam_website": details.get("url"),
-                "obligations": details.get("obligations"),
+                "cfda_obligations": details.get("obligations"),
             }
         )
     c.sort(key=lambda x: x["total_funding_amount"], reverse=True)
