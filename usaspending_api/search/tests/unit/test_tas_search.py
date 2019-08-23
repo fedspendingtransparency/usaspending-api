@@ -97,9 +97,33 @@ def mock_tas_data(db):
     mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", recipient_id=1, type="B")
     mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", recipient_id=1, type="C")
 
-    mommy.make("awards.Subaward", id=1, award_id=1, amount=123.45, prime_award_type="A")
-    mommy.make("awards.Subaward", id=2, award_id=2, amount=5000.00, prime_award_type="A")
-    mommy.make("awards.Subaward", id=3, award_id=3, amount=0.00, prime_award_type="A")
+    mommy.make(
+        "awards.Subaward",
+        id=1,
+        award_id=1,
+        amount=123.45,
+        prime_award_type="A",
+        award_type="procurement",
+        subaward_number="1A",
+    )
+    mommy.make(
+        "awards.Subaward",
+        id=2,
+        award_id=2,
+        amount=5000.00,
+        prime_award_type="A",
+        award_type="procurement",
+        subaward_number="2A",
+    )
+    mommy.make(
+        "awards.Subaward",
+        id=3,
+        award_id=3,
+        amount=0.00,
+        prime_award_type="A",
+        award_type="procurement",
+        subaward_number="3A",
+    )
 
 
 @pytest.mark.django_db
