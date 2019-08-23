@@ -156,7 +156,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
 
-##CFDAInfo (array)
+##CFDAInfo (object)
 + cfda_number: (required, string)
 + cfda_title: (required, string)
 + cfda_objectives: (required, string) 
