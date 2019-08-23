@@ -397,7 +397,7 @@ class Command(BaseCommand):
     def next_batch_generator(file):
         while True:
             lines = file.readlines(BATCH_FETCH_SIZE)
-            lines = list(map(lambda bianary: bianary.decode(), lines))
+            lines = list(map(lambda binary: binary.decode(), lines))
             if len(lines) == 0:
                 break
             yield lines
