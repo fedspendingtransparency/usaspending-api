@@ -6,15 +6,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -49,7 +48,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if not subawards:
             results = fetch_all_category_counts(filters, category_to_award_materialized_views())
         else:
-            queryset = subaward_filter(filters).values("award_type").annotate(count=Count("subaward_id"))
+            # Explicitly check the Sub-Award Records to be linked to a Prime Award to include in the counts.
+            queryset = (
+                subaward_filter(filters)
+                .filter(award_id__isnull=False)
+                .values("award_type")
+                .annotate(count=Count("subaward_id"))
+            )
+
             results["subgrants"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "grant"])
             results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
 
