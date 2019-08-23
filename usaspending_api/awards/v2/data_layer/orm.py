@@ -369,17 +369,8 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
 
 
 def fetch_all_cfda_details(award):
-    # we default to fain because we don't have a good link between award -> fabs
-    # if the award doesn't have fain, use uri, if no uri, use latest transaction
-    filter = {"fain": award["fain"]}
-    if award["fain"] is None:
-        if award["uri"] is None:
-            filter = {"pk": award["_trx"]}
-        else:
-            filter = {"uri": award["uri"]}
-    queryset = TransactionFABS.objects.filter(**filter).values(
-        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount"
-    )
+    queryset = TransactionFABS.objects.filter(transaction__award_id=award["id"],).values(
+        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount")
     cfdas = {}
     for item in queryset:
         # sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back
@@ -388,11 +379,11 @@ def fetch_all_cfda_details(award):
             cfdas.update(
                 {
                     num: {
-                        "federal_action_obligation": float(cfdas[num]["federal_action_obligation"] or 0)
+                        "federal_action_obligation": cfdas[num]["federal_action_obligation"]
                         + float(item["federal_action_obligation"] or 0),
-                        "non_federal_funding_amount": float(cfdas[num]["non_federal_funding_amount"] or 0)
+                        "non_federal_funding_amount": cfdas[num]["non_federal_funding_amount"]
                         + float(item["non_federal_funding_amount"] or 0),
-                        "total_funding_amount": float(cfdas[num]["total_funding_amount"] or 0)
+                        "total_funding_amount": cfdas[num]["total_funding_amount"]
                         + float(item["total_funding_amount"] or 0),
                     }
                 }
