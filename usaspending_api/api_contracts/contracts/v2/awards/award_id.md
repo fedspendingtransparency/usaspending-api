@@ -154,7 +154,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `period_of_performance` (required, PeriodOfPerformanceAssistance, fixed-type)
 + `place_of_performance` (required, Location, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
-+ `cfda_info` (required, CFDAList, fixed-type)
++ `cfda_info` (required, array[CFDAInfo], fixed-type)
 
 ##CFDAInfo (array)
 + cfda_number: (required, string)
