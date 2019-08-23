@@ -283,7 +283,6 @@ The response object structure is the same whether you are making a GET or a POST
         "subtier_code": "7300",
         "name": "SMALL BUSINESS ADMINISTRATION"
       },
-      "office_agency": null
     },
     "recipient": {
       "legal_entity_id": 799999094,
@@ -587,7 +586,6 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
           "subtier_code": "97JC",
           "name": "MISSILE DEFENSE AGENCY (MDA)"
         },
-        "office_agency": null
       },
 
        . . .
@@ -601,7 +599,6 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
           "subtier_code": "97F7",
           "name": "JOINT IMPROVISED EXPLOSIVE DEVICE DEFEAT ORGANIZATION (JIEDDO)"
         },
-        "office_agency": null
       }
     ],
     "subtier_agency__name": [
@@ -614,7 +611,6 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
           "subtier_code": "8925",
           "name": "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
         },
-        "office_agency": null
       },
 
       . . .
@@ -628,7 +624,6 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
           "subtier_code": "9700",
           "name": "DEPT OF DEFENSE"
         },
-        "office_agency": null
       }
     ]
   }
