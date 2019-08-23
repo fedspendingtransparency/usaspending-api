@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 
 from collections import OrderedDict
 from django.db.models import Sum
@@ -368,30 +369,74 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
 
 
 def fetch_all_cfda_details(award):
-    queryset = TransactionFABS.objects.filter(fain=award["fain"]).values("cfda_number", "federal_action_obligation")
+    # we default to fain because we don't have a good link between award -> fabs
+    # if the award doesn't have fain, use uri, if no uri, use latest transaction
+    filter = {"fain": award["fain"]}
+    if award["fain"] is None:
+        if award["uri"] is None:
+            filter = {"pk": award["_trx"]}
+        else:
+            filter = {"uri": award["uri"]}
+    queryset = TransactionFABS.objects.filter(**filter).values(
+        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount"
+    )
     cfdas = {}
     for item in queryset:
-        if cfdas.get(item["cfda_number"]):
-            cfdas.update({item["cfda_number"]: cfdas.get(item["cfda_number"]) + item["federal_action_obligation"]})
+        # sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back
+        num = re.sub(r"^\d*\.\d\d$", "\\g<0>0", item["cfda_number"])
+        if cfdas.get(num):
+            cfdas.update(
+                {
+                    num: {
+                        "federal_action_obligation": float(cfdas[num]["federal_action_obligation"] or 0)
+                        + float(item["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": float(cfdas[num]["non_federal_funding_amount"] or 0)
+                        + float(item["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": float(cfdas[num]["total_funding_amount"] or 0)
+                        + float(item["total_funding_amount"] or 0),
+                    }
+                }
+            )
         else:
-            cfdas.update({item["cfda_number"]: item["federal_action_obligation"]})
+            cfdas.update(
+                {
+                    num: {
+                        "federal_action_obligation": float(item["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": float(item["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": float(item["total_funding_amount"] or 0),
+                    }
+                }
+            )
 
     c = []
-
     for key in cfdas.keys():
         details = fetch_cfda_details_using_cfda_number(key)
-        c.append({
-            "cfda_number": key,
-            "cfda_amount": cfdas[key],
-            "cfda_title": details["program_title"],
-            "cfda_objectives": details["objectives"]
-        })
-    c.sort(key=lambda x: x["cfda_amount"], reverse=True)
+        if details.get("url") == "None;":
+            details.update({"url": None})
+        c.append(
+            {
+                "cfda_number": key,
+                "federal_action_obligation_amount": cfdas[key]["federal_action_obligation"],
+                "non_federal_funding_amount": cfdas[key]["non_federal_funding_amount"],
+                "total_funding_amount": cfdas[key]["total_funding_amount"],
+                "cfda_title": details.get("program_title"),
+                "cfda_objectives": details.get("objectives"),
+                "cfda_federal_agency": details.get("federal_agency"),
+                "cfda_website": details.get("website_address"),
+                "sam_website": details.get("url"),
+                "obligations": details.get("obligations"),
+            }
+        )
+    c.sort(key=lambda x: x["total_funding_amount"], reverse=True)
     return c
 
 
 def fetch_cfda_details_using_cfda_number(cfda):
-    c = Cfda.objects.filter(program_number=cfda).values("program_title", "objectives").first()
+    c = (
+        Cfda.objects.filter(program_number=cfda)
+        .values("program_title", "objectives", "federal_agency", "website_address", "url", "obligations")
+        .first()
+    )
     if not c:
         return {}
     return c

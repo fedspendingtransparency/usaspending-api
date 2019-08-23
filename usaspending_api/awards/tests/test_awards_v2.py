@@ -293,9 +293,15 @@ expected_response_asst = {
     "cfda_info": [
         {
             "cfda_objectives": None,
-            "cfda_amount": None,
             "cfda_number": "1234",
-            "cfda_title": "Shiloh"
+            "cfda_title": "Shiloh",
+            "federal_action_obligation_amount": None,
+            "non_federal_funding_amount": None,
+            "total_funding_amount": None,
+            "cfda_federal_agency": None,
+            "cfda_website": None,
+            "sam_website": None,
+            "obligations": None,
         }
     ],
     "base_and_all_options": None,
