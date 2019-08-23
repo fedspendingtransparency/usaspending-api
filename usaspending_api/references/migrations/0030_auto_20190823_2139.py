@@ -12,13 +12,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='agency',
-            name='office_agency',
-        ),
         migrations.AlterUniqueTogether(
             name='agency',
             unique_together=set([('toptier_agency', 'subtier_agency')]),
+        ),
+        migrations.RemoveField(
+            model_name='agency',
+            name='office_agency',
         ),
         migrations.DeleteModel(
             name='OfficeAgency',
