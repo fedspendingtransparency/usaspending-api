@@ -5,7 +5,15 @@ from django.db import models
 from usaspending_api.awards.models import Award
 
 
-class UniversalAwardView(models.Model):
+class BaseAwardSearchModel(models.Model):
+    """This is an Abstract Base Class for a number of materialized view models
+
+    The models which inherit this shouldn't include additional fields without
+    careful consideration of the:
+        - "Search View",
+        - Django filter queryset logic for matviews
+        - API views obtaining data from the matviews
+    """
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
@@ -84,5 +92,4 @@ class UniversalAwardView(models.Model):
     naics_description = models.TextField()
 
     class Meta:
-        managed = False
-        db_table = "universal_award_matview"
+        abstract = True

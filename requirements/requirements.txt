@@ -44,4 +44,5 @@ urllib3==1.24.2
 xlrd==1.0.0
 jsonpickle==0.9.6
 filechunkio==1.8
-pip==19.1.1
+pip==19.2.2
+asyncpg==0.18.3
