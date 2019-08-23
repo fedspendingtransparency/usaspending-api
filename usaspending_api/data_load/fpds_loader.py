@@ -154,7 +154,8 @@ def load_transactions(load_objects):
 
                 # If there is an award, we still need to update it with values from its new latest transaction
                 if len(results) > 0:
-
+                    update_values_str = ""
+                    update_award_sql = "UPDATE awards SET {} where id = {}".format(update_values_str, results[0][0])
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
                 # If there is no award, we need to create one
                 else:
