@@ -333,7 +333,7 @@ def fetch_latest_ec_details(award_id, mapper, transaction_type):
 
 def fetch_agency_details(agency_id):
     values = [
-        "toptier_agency__fpds_code",
+        "toptier_agency__cgac_code",
         "toptier_agency__name",
         "toptier_agency__abbreviation",
         "subtier_agency__subtier_code",
@@ -348,7 +348,7 @@ def fetch_agency_details(agency_id):
             "id": agency_id,
             "toptier_agency": {
                 "name": agency["toptier_agency__name"],
-                "code": agency["toptier_agency__fpds_code"],
+                "code": agency["toptier_agency__cgac_code"],
                 "abbreviation": agency["toptier_agency__abbreviation"],
             },
             "subtier_agency": {

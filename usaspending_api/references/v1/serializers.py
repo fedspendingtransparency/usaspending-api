@@ -18,7 +18,7 @@ class ToptierAgencySerializer(LimitableSerializer):
     class Meta:
         model = ToptierAgency
         fields = "__all__"
-        default_fields = ["cgac_code", "fpds_code", "name", "abbreviation"]
+        default_fields = ["cgac_code", "name", "abbreviation"]
 
 
 class SubtierAgencySerializer(LimitableSerializer):
