@@ -1,7 +1,6 @@
 from datetime import date
-from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Func, IntegerField
-from usaspending_api.common.helpers.sql_helpers import get_connection
+from usaspending_api.common.helpers.sql_helpers import get_connection, get_primary_db_name
 from usaspending_api.awards.models_matviews import (
     ContractAwardSearchMatview,
     DirectPaymentAwardSearchMatview,
@@ -68,7 +67,7 @@ def generate_raw_quoted_query(queryset):
     Note: To add new python data types that should be quoted in queryset.query output,
         add them to TYPES_TO_QUOTE_IN_SQL global
     """
-    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
+    sql, params = queryset.query.get_compiler(get_primary_db_name()).as_sql()
     str_fix_params = []
     for param in params:
         if isinstance(param, TYPES_TO_QUOTE_IN_SQL):

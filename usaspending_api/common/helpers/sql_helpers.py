@@ -13,22 +13,32 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger("console")
 
 
-def build_dsn_string(db_settings):
+def get_primary_db_name():
+    """Obtain the name of the database configured.
+
+    DO NOT USE from django.db import DEFAULT_DB_ALIAS !!!!!!!!!!!!!!!!!!!!!
     """
-    This function parses the Django database configuration in settings.py and
-    returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
+    if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
+        return "db_source"
+    elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
+        return "default"
+    else:
+        raise Exception("No valid database connection is configured")
+
+
+def build_dsn_string(db_settings):
+    """This function parses the Django database configuration in settings.py
+
+    Returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
     a PostgreSQL database
     """
     return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db_settings)
 
 
 def get_database_dsn_string():
-    if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
-        return build_dsn_string(settings.DATABASES["db_source"])
-    elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
-        return build_dsn_string(settings.DATABASES["default"])
-    else:
-        raise Exception("No valid database connection is configured")
+    """Return the connection string for the active primary DB"""
+    database = settings.DATABASES[get_primary_db_name()]
+    return build_dsn_string(database)
 
 
 def get_broker_dsn_string():
@@ -54,9 +64,9 @@ def read_sql_file(file_path):
 
 
 def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
-    """
-    Build a single column of the order by clause.  This takes one column and
-    turns it into something like:
+    """ Build a single column of the order by clause.
+
+    This takes one column and turns it into something like:
 
         "my_table"."my_column" asc nulls first
 
@@ -88,8 +98,7 @@ def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
 
 
 def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
-    """
-    Given columns, sort orders, and null ordering directives, build a SQL
+    """Given columns, sort orders, and null ordering directives, build a SQL
     "order by" clause as a Composable object.
 
     sort_columns - Either a single column name as a string or an iterable of
