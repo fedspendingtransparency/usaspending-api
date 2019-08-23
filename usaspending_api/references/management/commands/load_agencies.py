@@ -70,7 +70,6 @@ class Command(BaseCommand):
                 reader = csv.DictReader(csvfile)
 
                 for row in reader:
-                    fpds_code = row.get("FPDS DEPARTMENT ID", "")
                     cgac_code = row.get("CGAC AGENCY CODE", "")
                     frec_code = row.get("FREC", "")
                     department_name = row.get("AGENCY NAME", "")
@@ -110,7 +109,6 @@ class Command(BaseCommand):
                             toptier_agency.cgac_code = cgac_code
                             toptier_agency.abbreviation = department_abbr
 
-                        toptier_agency.fpds_code = fpds_code
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename

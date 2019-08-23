@@ -80,10 +80,10 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
     def update_agency_linkages(self):
         self.awarding_toptier_agency = (
-            ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).order_by("fpds_code").first()
+            ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).first()
         )
         self.funding_toptier_agency = (
-            ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").first()
+            ToptierAgency.objects.filter(cgac_code=self.agency_id).first()
         )
 
     @staticmethod
