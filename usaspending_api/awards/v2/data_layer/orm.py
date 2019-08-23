@@ -420,6 +420,7 @@ def fetch_all_cfda_details(award):
                 "non_federal_funding_amount": cfdas[key]["non_federal_funding_amount"],
                 "total_funding_amount": cfdas[key]["total_funding_amount"],
                 "cfda_title": details.get("program_title"),
+                "cfda_popular_name": details.get("popular_name"),
                 "cfda_objectives": details.get("objectives"),
                 "cfda_federal_agency": details.get("federal_agency"),
                 "cfda_website": details.get("website_address"),
@@ -434,7 +435,8 @@ def fetch_all_cfda_details(award):
 def fetch_cfda_details_using_cfda_number(cfda):
     c = (
         Cfda.objects.filter(program_number=cfda)
-        .values("program_title", "objectives", "federal_agency", "website_address", "url", "obligations")
+        .values("program_title", "objectives", "federal_agency", "website_address", "url", "obligations",
+                "popular_name")
         .first()
     )
     if not c:

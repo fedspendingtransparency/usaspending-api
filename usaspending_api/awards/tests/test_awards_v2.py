@@ -303,6 +303,7 @@ expected_response_asst = {
             "cfda_website": None,
             "sam_website": None,
             "cfda_obligations": None,
+            "cfda_popular_name": None,
         }
     ],
     "base_and_all_options": None,
