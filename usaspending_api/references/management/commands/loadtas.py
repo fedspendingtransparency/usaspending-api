@@ -55,10 +55,8 @@ class Command(BaseCommand):
             "main_account_code": lambda row: row["MAIN"].strip(),
             "sub_account_code": lambda row: row["SUB"].strip(),
             "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip())
-            .order_by("fpds_code")
             .first(),
             "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip())
-            .order_by("fpds_code")
             .first(),
         }
 
