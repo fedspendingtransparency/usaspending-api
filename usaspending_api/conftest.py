@@ -178,6 +178,7 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.AwardSummaryMatview.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.ContractAwardSearchMatview.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.DirectPaymentAwardSearchMatview.objects", mock_qs)
     monkeypatch.setattr("usaspending_api.awards.models_matviews.GrantAwardSearchMatview.objects", mock_qs)
