@@ -167,7 +167,7 @@ def _configure_database_connection(environment_variable, **additional_options):
     additional_options are any additional options you want to provide to the connection.
     """
     config = dj_database_url.parse(
-        dj_database_url.parse(os.environ.get(environment_variable)),
+        os.environ.get(environment_variable),
         conn_max_age=CONNECTION_MAX_SECONDS
     )
     if additional_options:
