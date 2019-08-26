@@ -3,7 +3,7 @@ import os
 
 from collections import OrderedDict
 from django.conf import settings
-from django.db import connections, router
+from django.db import connections, router, DEFAULT_DB_ALIAS
 from psycopg2.sql import Composable, Identifier, SQL
 
 from usaspending_api.awards.models import Award
@@ -23,10 +23,8 @@ def build_dsn_string(db_settings):
 
 
 def get_database_dsn_string():
-    if "db_source" in settings.DATABASES:  # Primary DB connection in a deployed environment
-        return build_dsn_string(settings.DATABASES["db_source"])
-    elif "default" in settings.DATABASES:  # For single DB connections used in scripts and local dev
-        return build_dsn_string(settings.DATABASES["default"])
+    if DEFAULT_DB_ALIAS in settings.DATABASES:
+        return build_dsn_string(settings.DATABASES[DEFAULT_DB_ALIAS])
     else:
         raise Exception("No valid database connection is configured")
 
