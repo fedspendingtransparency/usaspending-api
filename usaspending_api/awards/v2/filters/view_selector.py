@@ -240,16 +240,11 @@ def spending_by_geography(filters):
 
 
 def spending_by_award_count(filters):
-    view_chain = ["AwardSummaryMatview"]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            model = view
-            break
+    if can_use_view(filters, "AwardSummaryMatview"):
+        queryset = get_view_queryset(filters, "AwardSummaryMatview")
+        return queryset, "AwardSummaryMatview"
     else:
-        raise InvalidParameterException
-
-    return queryset, model
+        return None, None
 
 
 def download_transaction_count(filters):

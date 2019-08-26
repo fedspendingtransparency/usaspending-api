@@ -56,20 +56,13 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
     @staticmethod
     def handle_awards(filters, results_object):
-        use_async = True
-        try:
-            queryset, model = spending_by_award_count(filters)
-            use_async = False
-        except InvalidParameterException:
-            # If spending_by_award_count() doesn't find a suitable model to use,
-            # it will raise InvalidParameterException. In this instance it is
-            # permissable to swallow the exception and "fall-back" to the async function
-            pass
+        queryset, model = spending_by_award_count(filters)  # Will return None, None if it cannot use a summary matview
 
-        if use_async:
+        if not model:  # DON"T use queryset in the conditional! Wasteful DB query
             return fetch_all_category_counts(filters, category_to_award_materialized_views())
 
         queryset = queryset.values("type").annotate(category_count=Sum("counts"))
+
         for award in queryset:
             if award["type"] is None or award["type"] not in all_awards_types_to_category:
                 result_key = "other"
