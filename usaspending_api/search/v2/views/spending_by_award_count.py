@@ -1,11 +1,13 @@
 import copy
 
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
@@ -37,26 +39,68 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
-        results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+        empty_results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
         if subawards:
-            results = {"subcontracts": 0, "subgrants": 0}
+            empty_results = {"subcontracts": 0, "subgrants": 0}
 
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            return Response({"results": results})
+            return Response({"results": empty_results})
 
-        if not subawards:
-            results = fetch_all_category_counts(filters, category_to_award_materialized_views())
+        if subawards:
+            results = self.handle_subawards(filters)
         else:
-            # Explicitly check the Sub-Award Records to be linked to a Prime Award to include in the counts.
-            queryset = (
-                subaward_filter(filters)
-                .filter(award_id__isnull=False)
-                .values("award_type")
-                .annotate(count=Count("subaward_id"))
-            )
-
-            results["subgrants"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "grant"])
-            results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
+            results = self.handle_awards(filters, empty_results)
 
         return Response({"results": results})
+
+    @staticmethod
+    def handle_awards(filters: dict, results_object: dict) -> dict:
+        """Turn the filters into the result dictionary when dealing with Awards
+
+        For performance reasons, there are two execution paths. One is to use a "summary"
+        award materialized view which contains a subset of fields and has some aggregation
+        to speed up the large general queries.
+
+        For more specific queries, use concurrent SQL queries to obtain the counts
+        """
+        queryset, model = spending_by_award_count(filters)  # Will return None, None if it cannot use a summary matview
+
+        if not model:  # DON'T use `queryset` in the conditional! Wasteful DB query
+            return fetch_all_category_counts(filters, category_to_award_materialized_views())
+
+        queryset = queryset.values("type").annotate(category_count=Sum("counts"))
+
+        for award in queryset:
+            if award["type"] is None or award["type"] not in all_awards_types_to_category:
+                result_key = "other"
+            else:
+                result_key = all_awards_types_to_category[award["type"]]
+                if result_key == "other_financial_assistance":
+                    result_key = "other"
+
+            results_object[result_key] += award["category_count"]
+        return results_object
+
+    @staticmethod
+    def handle_subawards(filters: dict) -> dict:
+        """Turn the filters into the result dictionary when dealing with Sub-Awards
+
+        Note: Due to how the Django ORM joins to the awards table as an
+        INNER JOIN, it is necessary to explicitly enforce the aggregations
+        to only count Sub-Awards that are linked to a Prime Award.
+
+        Remove the filter and update if we can move away from this behavior.
+        """
+        queryset = (
+            subaward_filter(filters)
+            .filter(award_id__isnull=False)
+            .values("award_type")
+            .annotate(count=Count("subaward_id"))
+        )
+
+        results = {}
+        results["subgrants"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "grant"])
+        results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
+
+        return results

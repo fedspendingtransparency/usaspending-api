@@ -1,3 +1,4 @@
+from usaspending_api.awards.models_matviews.mv_award_summary import AwardSummaryMatview
 from usaspending_api.awards.models_matviews.mv_contract_award_search import ContractAwardSearchMatview
 from usaspending_api.awards.models_matviews.mv_directpayment_award_search import DirectPaymentAwardSearchMatview
 from usaspending_api.awards.models_matviews.mv_grant_award_search import GrantAwardSearchMatview
@@ -22,6 +23,7 @@ from usaspending_api.awards.models_matviews.vw_award_search import AwardSearchVi
 
 __all__ = [
     "AwardSearchView",
+    "AwardSummaryMatview",
     "ContractAwardSearchMatview",
     "DirectPaymentAwardSearchMatview",
     "GrantAwardSearchMatview",
