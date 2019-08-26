@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connections, DEFAULT_DB_ALIAS
 
 logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         try:
             broker_conn = connections["data_broker"]
             broker_cursor = broker_conn.cursor()
-            api_conn = connections["default"]
+            api_conn = connections[DEFAULT_DB_ALIAS]
             api_cursor = api_conn.cursor()
         except Exception as err:
             logger.critical("Could not connect to database(s).")
