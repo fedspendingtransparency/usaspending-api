@@ -123,25 +123,28 @@ def load_transactions(load_objects):
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             for load_object in load_objects:
 
-                columns, values = setup_load_lists(load_object, "recipient_location")
-                recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
-                    .format(columns, values)
+                columns, values, pairs = setup_load_lists(load_object, "recipient_location")
+                recipient_location_sql = "INSERT INTO references_location {} VALUES {} " \
+                                         "RETURNING location_id"\
+                    .format(columns, values, pairs)
                 cursor.execute(recipient_location_sql)
                 results = cursor.fetchall()
                 load_object["legal_entity"]["location_id"] = results[0][0]
 
-                columns, values = setup_load_lists(load_object, "legal_entity")
-                recipient_location_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id" \
-                    .format(columns, values)
-                cursor.execute(recipient_location_sql)
+                columns, values, pairs = setup_load_lists(load_object, "legal_entity")
+                recipient_sql = "INSERT INTO legal_entity {} VALUES {} " \
+                                "RETURNING legal_entity_id" \
+                    .format(columns, values, pairs)
+                cursor.execute(recipient_sql)
                 results = cursor.fetchall()
                 load_object["transaction_normalized"]["recipient_id"] = results[0][0]
                 load_object["award"]["recipient_id"] = results[0][0]
 
-                columns, values = setup_load_lists(load_object, "place_of_performance_location")
-                recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id"\
-                    .format(columns, values)
-                cursor.execute(recipient_location_sql)
+                columns, values, pairs = setup_load_lists(load_object, "place_of_performance_location")
+                pop_location_sql = "INSERT INTO references_location {} VALUES {} "\
+                                   "RETURNING location_id"\
+                    .format(columns, values, pairs)
+                cursor.execute(pop_location_sql)
                 results = cursor.fetchall()
                 load_object["transaction_normalized"]["place_of_performance_id"] = results[0][0]
                 load_object["award"]["place_of_performance_id"] = results[0][0]
@@ -154,9 +157,11 @@ def load_transactions(load_objects):
 
                 # If there is an award, we still need to update it with values from its new latest transaction
                 if len(results) > 0:
-                    update_values_str = ""
-                    update_award_sql = "UPDATE awards SET {} where id = {}".format(update_values_str, results[0][0])
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
+                    update_award_str = "place_of_performance_id = {}, recipient_id = {}"\
+                        .format(load_object["award"]["place_of_performance_id"], load_object["award"]["recipient_id"])
+                    update_award_sql = "UPDATE awards SET {} where id = {}".format(update_award_str, results[0][0])
+                    cursor.execute(update_award_sql)
                 # If there is no award, we need to create one
                 else:
                     columns, values = setup_load_lists(load_object, "award")
@@ -166,31 +171,67 @@ def load_transactions(load_objects):
                     results = cursor.fetchall()
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
 
-                columns, values = setup_load_lists(load_object, "transaction_normalized")
-                recipient_location_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id" \
-                    .format(columns, values)
-                cursor.execute(recipient_location_sql)
+                # Determine if we are making a new transaction, or updating an old one
+                find_matching_transaction_sql = "select id from transaction_normalized " \
+                                                "where transaction_unique_id = \'{}\'"\
+                    .format(load_object["transaction_normalized"]["transaction_unique_id"])
+                cursor.execute(find_matching_transaction_sql)
                 results = cursor.fetchall()
-                load_object["transaction_fpds"]["transaction_id"] = results[0][0]
 
-                columns, values = setup_load_lists(load_object, "transaction_fpds")
-                recipient_location_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id" \
-                    .format(columns, values)
-                cursor.execute(recipient_location_sql)
-                results = cursor.fetchall()
-                print("created fpds transaction {}".format(results[0][0]))
+                if len(results) > 0:
+                    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
+                    load_object["transaction_fpds"]["transaction_id"] = results[0][0]
+                    load_object["award"]["latest_tranaction_id"] = results[0][0]
+                    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " \
+                                                 "where transaction_unique_id = \'{}\'" \
+                        .format(pairs, load_object["transaction_normalized"]["transaction_unique_id"])
+                    cursor.execute(transaction_normalized_sql)
+
+                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
+                    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " \
+                                           "where transaction_id = {}" \
+                        .format(pairs, load_object["transaction_fpds"]["transaction_id"])
+                    cursor.execute(transaction_fpds_sql)
+
+                    print("updated fpds transaction {}".format(results[0][0]))
+                else:
+                    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
+                    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
+                                                 "RETURNING id"\
+                        .format(columns, values)
+                    cursor.execute(transaction_normalized_sql)
+                    results = cursor.fetchall()
+                    load_object["transaction_fpds"]["transaction_id"] = results[0][0]
+                    load_object["award"]["latest_tranaction_id"] = results[0][0]
+
+                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
+                    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} " \
+                                           "RETURNING transaction_id" \
+                        .format(columns, values)
+                    cursor.execute(transaction_fpds_sql)
+                    results = cursor.fetchall()
+
+                    print("created fpds transaction {}".format(results[0][0]))
+
+                # No matter what, we need to go back and update the award's latest transaction to the award we just made
+                update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}"\
+                    .format(results[0][0], load_object["award"]["latest_tranaction_id"])
+                cursor.execute(update_award_lastest_transaction_sql)
 
 
 def setup_load_lists(load_object, table):
     columns = []
     values = []
+    update_pairs = []
     for key in OrderedDict(load_object[table]).keys():
         columns.append(key)
-        val = load_object[table][key]
-        values.append(format_value_for_sql(val))
+        val = format_value_for_sql(load_object[table][key])
+        values.append(val)
+        update_pairs.append(" {}={}".format(key, val))
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = "({})".format(",".join(map(str, values)))
+    pairs_string = ",".join(update_pairs)
 
-    return col_string, val_string
+    return col_string, val_string, pairs_string
 
