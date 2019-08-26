@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
@@ -15,7 +16,6 @@ from usaspending_api.common.helpers.orm_helpers import category_to_award_materia
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -55,10 +55,18 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return Response({"results": results})
 
     @staticmethod
-    def handle_awards(filters, results_object):
+    def handle_awards(filters: dict, results_object: dict) -> dict:
+        """Turn the filters into the result dictionary when dealing with Awards
+
+        For performance reasons, there are two execution paths. One is to use a "summary"
+        award materialized view which contains a subset of fields and has some aggregation
+        to speed up the large general queries.
+
+        For more specific queries, use concurrent SQL queries to obtain the counts
+        """
         queryset, model = spending_by_award_count(filters)  # Will return None, None if it cannot use a summary matview
 
-        if not model:  # DON"T use queryset in the conditional! Wasteful DB query
+        if not model:  # DON'T use `queryset` in the conditional! Wasteful DB query
             return fetch_all_category_counts(filters, category_to_award_materialized_views())
 
         queryset = queryset.values("type").annotate(category_count=Sum("counts"))
@@ -75,12 +83,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return results_object
 
     @staticmethod
-    def handle_subawards(filters):
-        """ Queryset and result object creation when dealing with Sub-Awards
+    def handle_subawards(filters: dict) -> dict:
+        """Turn the filters into the result dictionary when dealing with Sub-Awards
 
-        Note: Due to how the Django ORM joins to the awards table as an INNER JOIN,
-        it is necessary to  explicitly enforce the Sub-Award records for this endpoint
-        to only return the counts of Sub-Awards which are linked to a Prime Award.
+        Note: Due to how the Django ORM joins to the awards table as an
+        INNER JOIN, it is necessary to explicitly enforce the aggregations
+        to only count Sub-Awards that are linked to a Prime Award.
 
         Remove the filter and update if we can move away from this behavior.
         """
