@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import connections, transaction, DEFAULT_DB_ALIAS
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.helpers.find_related_awards import find_related_awards
@@ -140,7 +140,7 @@ class Command(BaseCommand):
         update_award_str_ids = ",".join([str(update_result) for update_result in update_award_ids])
         delete_award_str_ids = ",".join([str(deleted_result) for deleted_result in delete_award_ids])
 
-        db_cursor = connections["default"].cursor()
+        db_cursor = connections[DEFAULT_DB_ALIAS].cursor()
         queries = []
 
         if delete_transaction_ids:
