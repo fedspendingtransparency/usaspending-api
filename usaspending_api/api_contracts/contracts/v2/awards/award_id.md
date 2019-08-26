@@ -148,15 +148,27 @@ This endpoint returns a list of data that is associated with the award profile p
 + `date_signed`: `2006-01-15` (required, string, nullable)
 + `subaward_count`: 430 (required, number)
 + `total_subaward_amount`: 35345353453 (required, number, nullable)
-+ `cfda_objectives`: `Some HTML string` (required, string, nullable)
-+ `cfda_number`: `0.434` (required, string, nullable)
-+ `cfda_title`: `Flood Insurance` (required, string, nullable)
 + `awarding_agency` (required, Agency, fixed-type)
 + `funding_agency` (required, Agency, fixed-type, nullable)
 + `recipient` (required, Recipient, fixed-type)
 + `period_of_performance` (required, PeriodOfPerformanceAssistance, fixed-type)
 + `place_of_performance` (required, Location, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
++ `cfda_info` (required, array[CFDAInfo], fixed-type)
+
+## CFDAInfo (object)
++ `cfda_number` (required, string)
++ `cfda_title` (required, string, nullable)
++ `cfda_objectives` (required, string, nullable) 
++ `federal_action_obligation_amount` (required, number)
++ `non_federal_funding_amount` (required, number, nullable)
++ `total_funding_amount` (required, number, nullable)
++ `cfda_federal_agency` (required, string, nullable)
++ `cfda_website` (required, string, nullable)
++ `sam_website` (required, string, nullable)
++ `cfda_obligations` (required, string, nullable)
+    Description of the type of spending, the fiscal years, and the amount, as well as miscellaneous other details
++ `cfda_popular_name` (required, string, nullable)
 
 ## Agency (object)
 + `id`: 123 (required, number)
@@ -195,14 +207,14 @@ This endpoint returns a list of data that is associated with the award profile p
 + `business_categories` (required, array[string])
     Names of the recipients' business catagories in human readable format
 
-##PeriodOfPerformance
+## PeriodOfPerformance
 + `start_date`: `2004-02-19` (required, string)
 + `end_date`: `2005-02-19` (required, string)
     Corresponds to database fields current_end_date for contracts and ordering_period_end_date for IDVs
 + `last_modified_date`: `2301-02-20` (required, string)
 + `potential_end_date`: `2301-02-23` (required, string, nullable)
 
-##PeriodOfPerformanceAssistance
+## PeriodOfPerformanceAssistance
 + `start_date`: `2004-02-19` (required, string, nullable)
 + `end_date`: `2005-02-19` (required, string, nullable)
 + `last_modified_date`: `2301-02-20` (required, string, nullable)
