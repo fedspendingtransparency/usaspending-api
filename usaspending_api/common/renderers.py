@@ -1,13 +1,20 @@
-from rest_framework.renderers import BrowsableAPIRenderer
-from django.core.paginator import Page
-from rest_framework.request import override_method
+import logging
+import os
+
 from django import forms
-from rest_framework import VERSION
-from django.utils.safestring import SafeText
+from django.core.paginator import Page
+from django.utils.safestring import mark_safe
+from rest_framework.renderers import BrowsableAPIRenderer
+from rest_framework.request import override_method
+from urllib.parse import quote, urljoin
+from usaspending_api.common.helpers.endpoint_documentation import case_sensitive_file_exists
 from usaspending_api.settings import BASE_DIR
-from collections import OrderedDict
-from django.conf import settings
-from rest_framework.settings import api_settings
+
+
+logger = logging.getLogger("console")
+
+
+BASE_GITHUB_URL = "https://github.com/fedspendingtransparency/usaspending-api/blob/{git_branch}/usaspending_api"
 
 
 class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
@@ -62,100 +69,54 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
             return GenericContentForm()
 
 
-class DocumentApiRenderer(BrowsableAPIRenderer):
-    # template = 'rest_framework/doc_api.html'
-
+class DocumentAPIRenderer(BrowsableAPIRenderer):
+    """
+    Add link to the documentation to the endpoint description.
+    """
     def get_context(self, data, accepted_media_type, renderer_context):
         """
-        Returns the context used to render.
+        Override get_context to insert the documentation link in the description.
         """
-        view = renderer_context["view"]
-        request = renderer_context["request"]
-        response = renderer_context["response"]
-        renderer = self.get_default_renderer(view)
+        context = super(DocumentAPIRenderer, self).get_context(data, accepted_media_type, renderer_context)
 
-        raw_data_post_form = self.get_raw_data_form(data, view, "POST", request)
-        raw_data_put_form = self.get_raw_data_form(data, view, "PUT", request)
-        raw_data_patch_form = self.get_raw_data_form(data, view, "PATCH", request)
-        raw_data_put_or_patch_form = raw_data_put_form or raw_data_patch_form
-
-        response_headers = OrderedDict(sorted(response.items()))
-        renderer_content_type = ""
-        if renderer:
-            renderer_content_type = "%s" % renderer.media_type
-            if renderer.charset:
-                renderer_content_type += " ;%s" % renderer.charset
-        response_headers["Content-Type"] = renderer_content_type
-
-        if getattr(view, "paginator", None) and view.paginator.display_page_controls:
-            paginator = view.paginator
-        else:
-            paginator = None
-
-        csrf_cookie_name = settings.CSRF_COOKIE_NAME
-        csrf_header_name = getattr(settings, "CSRF_HEADER_NAME", "HTTP_X_CSRFToken")  # Fallback for Django 1.8
-        if csrf_header_name.startswith("HTTP_"):
-            csrf_header_name = csrf_header_name[5:]
-        csrf_header_name = csrf_header_name.replace("_", "-")
-
-        context = {
-            "content": self.get_content(renderer, data, accepted_media_type, renderer_context),
-            "view": view,
-            "request": request,
-            "response": response,
-            "user": request.user,
-            "description": self.get_description(view, response.status_code),
-            "name": self.get_name(view),
-            "version": VERSION,
-            "paginator": paginator,
-            "breadcrumblist": self.get_breadcrumbs(request),
-            "allowed_methods": view.allowed_methods,
-            "available_formats": [renderer_cls.format for renderer_cls in view.renderer_classes],
-            "response_headers": response_headers,
-            "put_form": self.get_rendered_html_form(data, view, "PUT", request),
-            "post_form": self.get_rendered_html_form(data, view, "POST", request),
-            "delete_form": self.get_rendered_html_form(data, view, "DELETE", request),
-            "options_form": self.get_rendered_html_form(data, view, "OPTIONS", request),
-            "filter_form": self.get_filter_form(data, view, request),
-            "raw_data_put_form": raw_data_put_form,
-            "raw_data_post_form": raw_data_post_form,
-            "raw_data_patch_form": raw_data_patch_form,
-            "raw_data_put_or_patch_form": raw_data_put_or_patch_form,
-            "display_edit_forms": bool(response.status_code != 403),
-            "api_settings": api_settings,
-            "csrf_cookie_name": csrf_cookie_name,
-            "csrf_header_name": csrf_header_name,
-        }
-
-        # Inject markdown code
-        # markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-        # markdown_text = markdown_file.read()
-        # print(markdown_text)
-        #
-        # context['description'] = markdown_text
-
-        context_array = (context["description"]).split("endpoint_doc: ")
-        if len(context_array) > 1:
-            context_array[0] = context_array[0].replace("<p>", "")
-            context_array[1] = context_array[1].replace("</p>", "")
-
-            git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
-
-            git_branch = str(git_head_file.read()).split("/")[-1]
-            git_branch = (
-                "https://github.com/fedspendingtransparency/usaspending-api/blob/"
-                "{}/usaspending_api/api_docs/api_documentation".format(git_branch)
-            )
-
-            doc_location = context_array[1].split()[0]
-
-            path = "{}{}".format(git_branch, str(doc_location))
-            path = path.replace("\n", "")
-            path = path.replace(" ", "%20")
-            doc_description = "<p>{}\n\nDocumentation on this endpoint can be found <a href={}>here<a>.</p>".format(
-                context_array[0], path
-            )
-
-            context["description"] = SafeText(doc_description)
+        view = renderer_context.get("view") or context.get("view")
+        if view:
+            endpoint_doc = getattr(view, "endpoint_doc", None)
+            if endpoint_doc:
+                git_branch = self._get_current_git_branch("master")
+                endpoint_doc = os.path.join(BASE_DIR, endpoint_doc)
+                endpoint_url = self._build_github_url(endpoint_doc, git_branch)
+                description = self._add_url_to_description(context.get("description") or "", endpoint_url)
+                context["description"] = mark_safe(description)
 
         return context
+
+    @staticmethod
+    def _get_current_git_branch(default=None):
+        """
+        Attempt to figure out which git branch is current.  .git/HEAD typically
+        follows a structure of refs/heads/<branch name>.  We want <branch name>.
+        """
+        file_path = os.path.join(BASE_DIR, ".git/HEAD")
+        if case_sensitive_file_exists(file_path):
+            with open(file_path) as f:
+                return "/".join(f.read().split("/", 2)[2:]).strip()
+        return default
+
+    @staticmethod
+    def _build_github_url(doc_path, git_branch):
+        """
+        Convert a file path to a GitHub URL.
+        """
+        if doc_path.startswith(BASE_DIR):
+            doc_path = doc_path[len(BASE_DIR):].lstrip("/")
+            return urljoin(BASE_GITHUB_URL, quote(doc_path)).format(git_branch=git_branch)
+        return ""
+
+    @staticmethod
+    def _add_url_to_description(description, endpoint_url):
+        if endpoint_url:
+            return '{}\n<p>Documentation for this endpoint can be found <a href="{}">here</a>.</p>'.format(
+                description, endpoint_url
+            ).strip()
+        return description

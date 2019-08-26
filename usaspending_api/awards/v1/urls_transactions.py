@@ -3,8 +3,8 @@ from django.conf.urls import url
 from usaspending_api.awards.v1 import views
 
 # map reqest types to viewset method; replace this with a router
-transaction_list = views.TransactionListViewset.as_view({"get": "list", "post": "list"})
-transaction_detail = views.TransactionRetrieveViewset.as_view({"get": "retrieve", "post": "retrieve"})
+transaction_list = views.TransactionListViewSet.as_view({"get": "list", "post": "list"})
+transaction_detail = views.TransactionRetrieveViewSet.as_view({"get": "retrieve", "post": "retrieve"})
 transaction_total = views.TransactionAggregateViewSet.as_view({"get": "list", "post": "list"})
 
 urlpatterns = [
