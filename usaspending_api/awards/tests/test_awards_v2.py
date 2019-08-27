@@ -46,16 +46,45 @@ def awards_and_transactions(db):
 
     sub_agency = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
     trans_asst = {"pk": 1, "award_id": 1}
+    trans_asst2 = {"pk": 3, "award_id": 3}
+    trans_asst3 = {"pk": 4, "award_id": 3}
+    trans_asst4 = {"pk": 5, "award_id": 3}
     trans_cont = {"pk": 2, "award_id": 2}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
-    mommy.make("references.Cfda", program_number=1234)
+    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    mommy.make("references.Cfda", program_number=12.340)
+    mommy.make(
+        "references.Cfda",
+        program_number=10.001,
+        program_title="CFDA Title",
+        objectives="objectives",
+        obligations="whatever",
+        popular_name="Popular",
+        url="www.website.com",
+        website_address="www.website.biz",
+        federal_agency="Agency 1",
+    )
+    mommy.make(
+        "references.Cfda",
+        program_number=10.002,
+        program_title="CFDA Title 2",
+        obligations="whatever",
+        objectives="objectives",
+        popular_name="Popular",
+        url="www.website.com",
+        website_address="www.website.biz",
+        federal_agency="Agency 2",
+    )
     mommy.make("references.Location", **parent_loc)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
+    mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
+    mommy.make("recipient.RecipientProfile", **recipient_profile)
     mommy.make("references.SubtierAgency", **sub_agency)
     mommy.make("references.ToptierAgency", **sub_agency)
     mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
@@ -78,6 +107,9 @@ def awards_and_transactions(db):
     }
 
     mommy.make("awards.TransactionNormalized", **trans_asst)
+    mommy.make("awards.TransactionNormalized", **trans_asst2)
+    mommy.make("awards.TransactionNormalized", **trans_asst3)
+    mommy.make("awards.TransactionNormalized", **trans_asst4)
     mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
@@ -86,7 +118,7 @@ def awards_and_transactions(db):
     asst_data = {
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
-        "cfda_number": 1234,
+        "cfda_number": 12.340,
         "cfda_title": "Shiloh",
         "awardee_or_recipient_legal": "John's Pizza",
         "awardee_or_recipient_uniqu": "456",
@@ -120,6 +152,130 @@ def awards_and_transactions(db):
         "officer_2_name": "Wally World",
         "officer_2_amount": 4623.00,
     }
+
+    asst_data2 = {
+        "pk": 3,
+        "transaction": TransactionNormalized.objects.get(pk=3),
+        "cfda_number": 10.001,
+        "federal_action_obligation": 100,
+        "non_federal_funding_amount": 0,
+        "total_funding_amount": 100,
+        "cfda_title": "CFDA Title",
+        "awardee_or_recipient_legal": "John's Pizza",
+        "awardee_or_recipient_uniqu": "456",
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_unique_ide": "123",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_state_code": "NC",
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_congressional": "90",
+        "legal_entity_zip_last4": "5312",
+        "legal_entity_zip5": "12204",
+        "place_of_perform_country_c": "PDA",
+        "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_na": "Tripoli",
+        "place_of_performance_city": "Austin",
+        "place_of_perfor_state_code": "TX",
+        "place_of_performance_congr": "-0-",
+        "place_of_perform_zip_last4": "2135",
+        "place_of_performance_zip5": "40221",
+        "place_of_performance_forei": None,
+        "modified_at": "2000-01-02T00:00:00Z",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
+    }
+
+    asst_data3 = {
+        "pk": 4,
+        "transaction": TransactionNormalized.objects.get(pk=4),
+        "cfda_number": "10.002",
+        "cfda_title": "CFDA Title 2",
+        "federal_action_obligation": 400,
+        "non_federal_funding_amount": 0,
+        "total_funding_amount": 400,
+        "awardee_or_recipient_legal": "John's Pizza",
+        "awardee_or_recipient_uniqu": "456",
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_unique_ide": "123",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_state_code": "NC",
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_congressional": "90",
+        "legal_entity_zip_last4": "5312",
+        "legal_entity_zip5": "12204",
+        "place_of_perform_country_c": "PDA",
+        "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_na": "Tripoli",
+        "place_of_performance_city": "Austin",
+        "place_of_perfor_state_code": "TX",
+        "place_of_performance_congr": "-0-",
+        "place_of_perform_zip_last4": "2135",
+        "place_of_performance_zip5": "40221",
+        "place_of_performance_forei": None,
+        "modified_at": "2000-01-02T00:00:00Z",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
+    }
+
+    asst_data4 = {
+        "pk": 5,
+        "transaction": TransactionNormalized.objects.get(pk=5),
+        "cfda_number": "10.002",
+        "cfda_title": "CFDA Title 2",
+        "federal_action_obligation": 100,
+        "non_federal_funding_amount": 0,
+        "total_funding_amount": 100,
+        "awardee_or_recipient_legal": "John's Pizza",
+        "awardee_or_recipient_uniqu": "456",
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_unique_ide": "123",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_state_code": "NC",
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_congressional": "90",
+        "legal_entity_zip_last4": "5312",
+        "legal_entity_zip5": "12204",
+        "place_of_perform_country_c": "PDA",
+        "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_na": "Tripoli",
+        "place_of_performance_city": "Austin",
+        "place_of_perfor_state_code": "TX",
+        "place_of_performance_congr": "-0-",
+        "place_of_perform_zip_last4": "2135",
+        "place_of_performance_zip5": "40221",
+        "place_of_performance_forei": None,
+        "modified_at": "2000-01-02T00:00:00Z",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
+    }
+
     cont_data = {
         "awardee_or_recipient_legal": "John's Pizza",
         "awardee_or_recipient_uniqu": "456",
@@ -197,6 +353,9 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
     }
     mommy.make("awards.TransactionFABS", **asst_data)
+    mommy.make("awards.TransactionFABS", **asst_data2)
+    mommy.make("awards.TransactionFABS", **asst_data3)
+    mommy.make("awards.TransactionFABS", **asst_data4)
     mommy.make("awards.TransactionFPDS", **cont_data)
     award_1_model = {
         "pk": 1,
@@ -241,8 +400,32 @@ def awards_and_transactions(db):
         "date_signed": "2004-03-02",
     }
 
+    award_3_model = {
+        "pk": 3,
+        "type": "03",
+        "type_description": "FORMULA GRANT (A)",
+        "category": "grant",
+        "piid": "0001",
+        "parent_award_piid": "0001",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 600,
+        "base_and_all_options_value": 600,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "",
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "total_subaward_amount": 0,
+        "subaward_count": 0,
+        "date_signed": "2004-03-02",
+    }
+
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
+    mommy.make("awards.Award", **award_3_model)
 
 
 @pytest.fixture
@@ -277,6 +460,41 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
 
 
+def test_award_mulitple_cfdas(client, awards_and_transactions):
+
+    resp = client.get("/api/v2/awards/3/")
+    print(json.loads(resp.content.decode("utf-8"))["cfda_info"])
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["cfda_info"] == [
+        {
+            "cfda_objectives": "objectives",
+            "cfda_number": "10.002",
+            "cfda_title": "CFDA Title 2",
+            "federal_action_obligation_amount": 500.0,
+            "non_federal_funding_amount": 0.0,
+            "total_funding_amount": 500.0,
+            "cfda_federal_agency": "Agency 2",
+            "cfda_website": "www.website.biz",
+            "sam_website": "www.website.com",
+            "cfda_obligations": "whatever",
+            "cfda_popular_name": "Popular",
+        },
+        {
+            "cfda_objectives": "objectives",
+            "cfda_number": "10.001",
+            "cfda_title": "CFDA Title",
+            "federal_action_obligation_amount": 100.0,
+            "non_federal_funding_amount": 0.0,
+            "total_funding_amount": 100.0,
+            "cfda_federal_agency": "Agency 1",
+            "cfda_website": "www.website.biz",
+            "sam_website": "www.website.com",
+            "cfda_obligations": "whatever",
+            "cfda_popular_name": "Popular",
+        },
+    ]
+
+
 expected_response_asst = {
     "id": 1,
     "type": "11",
@@ -286,9 +504,21 @@ expected_response_asst = {
     "fain": None,
     "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
     "description": "lorem ipsum",
-    "cfda_objectives": None,
-    "cfda_number": "1234",
-    "cfda_title": "Shiloh",
+    "cfda_info": [
+        {
+            "cfda_objectives": None,
+            "cfda_number": "12.340",
+            "cfda_title": None,
+            "federal_action_obligation_amount": 0.0,
+            "non_federal_funding_amount": 0.0,
+            "total_funding_amount": 0.0,
+            "cfda_federal_agency": None,
+            "cfda_website": None,
+            "sam_website": None,
+            "cfda_obligations": None,
+            "cfda_popular_name": None,
+        }
+    ],
     "base_and_all_options": None,
     "base_exercised_options": None,
     "non_federal_funding": None,
@@ -347,6 +577,7 @@ expected_response_asst = {
         "city_name": "Austin",
         "county_name": "Tripoli",
         "state_code": "TX",
+        "state_name": "Texas",
         "zip5": "40221",
         "zip4": "2135",
         "foreign_postal_code": None,
@@ -420,6 +651,7 @@ expected_response_cont = {
         "city_name": "Charlotte",
         "county_name": "BUNCOMBE",
         "state_code": "NC",
+        "state_name": "North Carolina",
         "zip5": "12204",
         "zip4": "5312",
         "foreign_postal_code": None,

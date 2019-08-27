@@ -63,15 +63,12 @@ class TestElasticSearchIndex:
     @staticmethod
     def _refresh_materialized_views():
         """
-        These two materialized views are used by transaction_delta_view.sql, so
-        we will need to refresh them in order for transaction_delta_view to see
-        changes to their underlying tables.
+        This materialized view is used by transaction_delta_view.sql, so
+        we will need to refresh it in order for transaction_delta_view to see
+        changes to the underlying tables.
         """
         with connection.cursor() as cursor:
-            cursor.execute(
-                "refresh materialized view universal_award_matview; "
-                "refresh materialized view universal_transaction_matview;"
-            )
+            cursor.execute("refresh materialized view universal_transaction_matview;")
 
     @staticmethod
     def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):

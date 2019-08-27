@@ -118,7 +118,7 @@ class IDVAccountsViewSet(APIView):
     """
     These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/awards/idvs/Accounts.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/idvs/accounts.md"
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:

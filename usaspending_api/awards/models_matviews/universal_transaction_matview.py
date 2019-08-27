@@ -15,7 +15,7 @@ class UniversalTransactionView(models.Model):
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     action_type = models.TextField()
-    award_id = models.IntegerField()
+    award_id = models.BigIntegerField()
     award_category = models.TextField()
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
