@@ -13,6 +13,8 @@
     "  to_tsvector(CONCAT_WS(' ', piid, fain, subaward_number)) AS award_ts_vector,",
     "  to_tsvector(COALESCE(sub.recipient_name, '')) AS recipient_name_ts_vector,",
     "",
+    "  tas.treasury_account_identifiers,",
+    "",
     "  latest_transaction_id,",
     "  last_modified_date,",
     "  subaward_number,",
@@ -24,7 +26,7 @@
     "  award_report_fy_month,",
     "  award_report_fy_year,",
     "",
-    "  award_id,",
+    "  sub.award_id,",
     "  awarding_agency_id,",
     "  funding_agency_id,",
     "  awarding_toptier_agency_name,",
@@ -100,6 +102,18 @@
     "    duns",
     "  FROM recipient_lookup AS rlv",
     "  ) parent_recipient_lookup ON parent_recipient_lookup.duns = parent_recipient_unique_id AND parent_recipient_unique_id IS NOT NULL",
+    "LEFT OUTER JOIN (",
+    "  SELECT",
+    "    faba.award_id,",
+    "    ARRAY_AGG(DISTINCT taa.treasury_account_identifier) treasury_account_identifiers",
+    "  FROM",
+    "    treasury_appropriation_account taa",
+    "    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id",
+    "  WHERE",
+    "    faba.award_id IS NOT NULL",
+    "  GROUP BY",
+    "    faba.award_id",
+    ") tas ON (tas.award_id = sub.award_id)",
     "ORDER BY",
     "  amount DESC NULLS LAST"
   ],
@@ -287,6 +301,11 @@
       "name": "recipient_name_ts_vector",
       "method": "GIN",
       "columns": [{"name": "recipient_name_ts_vector"}]
+    }, {
+      "name": "treasury_account_identifiers",
+      "method": "GIN",
+      "where": "treasury_account_identifiers IS NOT NULL",
+      "columns": [{"name": "treasury_account_identifiers", "opclass": "gin__int_ops"}]
     }, {
       "name": "compound_psc_action_date",
       "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]

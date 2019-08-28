@@ -13,6 +13,8 @@
     "  to_tsvector(awards.piid) AS award_ts_vector,",
     "  to_tsvector(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal)) AS recipient_name_ts_vector,",
     "",
+    "  tas.treasury_account_identifiers,",
+    "",
     "  awards.id AS award_id,",
     "  awards.category,",
     "  awards.type,",
@@ -121,6 +123,18 @@
     "LEFT OUTER JOIN",
     "  subtier_agency AS SFA",
     "    ON (FA.subtier_agency_id = SFA.subtier_agency_id)",
+    "LEFT OUTER JOIN (",
+    "  SELECT",
+    "    faba.award_id,",
+    "    ARRAY_AGG(DISTINCT taa.treasury_account_identifier) treasury_account_identifiers",
+    "  FROM",
+    "    treasury_appropriation_account taa",
+    "    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id",
+    "  WHERE",
+    "    faba.award_id IS NOT NULL",
+    "  GROUP BY",
+    "    faba.award_id",
+    ") tas ON (tas.award_id = awards.id)",
     "WHERE",
     "  latest_transaction.action_date >= '2007-10-01'",
     "  AND awards.type LIKE 'IDV%'",
@@ -370,6 +384,11 @@
       "name": "recipient_name_ts_vector",
       "method": "GIN",
       "columns": [{"name": "recipient_name_ts_vector"}]
+    }, {
+      "name": "treasury_account_identifiers",
+      "method": "GIN",
+      "where": "treasury_account_identifiers IS NOT NULL",
+      "columns": [{"name": "treasury_account_identifiers", "opclass": "gin__int_ops"}]
     }, {
       "name": "compound_psc_action_date",
       "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
