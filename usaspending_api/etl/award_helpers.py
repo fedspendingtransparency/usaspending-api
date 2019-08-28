@@ -2,8 +2,7 @@ import logging
 
 from django.db import connection
 from django.db.models import Case, Value, When, TextField
-from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.references.models import Agency
+from usaspending_api.awards.models import Award
 
 
 logger = logging.getLogger("console")
@@ -249,94 +248,6 @@ def update_award_categories(award_tuple=None):
             output_field=TextField(),
         )
     )
-
-
-def get_award_financial_transaction(row):
-    """
-    For specified award financial (aka "File C") data, try to find a matching transaction (aka "File D"). We sometimes
-    need to do this  because File C doesn't always have the level of award/transaction specificity that we want, so we
-    try to find a matching File D record to grab the additional information.
-
-    For example, when trying to match award financial information to an award record, we need the awarding subtier
-    agency, which isn't supplied on File C. Thus, we'll use this function to find a File D record and use the subtier
-    agency information supplied there.
-
-    If we find more than one match, return the record with this most recent action date.
-
-    Args:
-        row: an object containing these attributes:
-
-        row.toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
-        row.piid: piid from File C (contract awards only)
-        row.parent_award_id: parent award id from File C (contract awards only)
-        row.fain: fain from File C (assistance awards only)
-        row.uri: uri from File C (assistance awards only)
-
-    Returns:
-        A TransactionNormalized model instance
-    """
-    # @todo: refactor this into methods on the TransactionFABS
-    # and TransactionFPDS models
-
-    if row.fain is not None and row.uri is not None:
-        # this is an assistance award id'd by fain
-        txn = (
-            TransactionNormalized.objects.filter(
-                awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-                assistance_data__fain=row.fain,
-                assistance_data__uri=row.uri,
-            )
-            .order_by("-action_date")
-            .values("awarding_agency")
-            .first()
-        )
-
-    elif row.fain is not None:
-        # this is an assistance award id'd by fain
-        txn = (
-            TransactionNormalized.objects.filter(
-                awarding_agency__toptier_agency__cgac_code=row.agency_identifier, assistance_data__fain=row.fain
-            )
-            .order_by("-action_date")
-            .values("awarding_agency")
-            .first()
-        )
-
-    elif row.uri is not None:
-        # this is an assistance award id'd by uri
-        txn = (
-            TransactionNormalized.objects.filter(
-                awarding_agency__toptier_agency__cgac_code=row.agency_identifier, assistance_data__uri=row.uri
-            )
-            .order_by("-action_date")
-            .values("awarding_agency")
-            .first()
-        )
-
-    else:
-        # this is a contract award
-        txn = (
-            TransactionNormalized.objects.filter(
-                awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
-                contract_data__piid=row.piid,
-                contract_data__parent_award_id=row.parent_award_id,
-            )
-            .order_by("-action_date")
-            .values("awarding_agency")
-            .first()
-        )
-
-    return str(txn["awarding_agency"]) if txn else None
-
-
-def get_awarding_agency(row):
-    if row.txn:
-        # We found a matching transaction, so grab its awarding agency info and pass it get_or_create_summary_award
-        return Agency.objects.get(id=int(row.txn))
-    else:
-        # No matching transaction found, so find/create Award by using toptier agency only, since CGAC code is the only
-        # piece of awarding agency info that we have.
-        return Agency.get_by_toptier(row.agency_identifier)
 
 
 def award_types(row):

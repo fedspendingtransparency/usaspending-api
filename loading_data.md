@@ -53,7 +53,7 @@ This will load data into your USAspending database in the following order:
 
 ## Historic USAspending Data
 
-*This section needs to be updated. The commands listed below may be different than those in the current version of the USAspending API.*
+**This section desperately needs to be updated. The commands listed below are most definitely obsolete.**
 
 Award data from the [current USAspending site](https://www.usaspending.gov/) comes in two different formats:
 - Contracts

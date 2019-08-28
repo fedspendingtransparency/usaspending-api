@@ -111,9 +111,9 @@ class Command(BaseCommand):
         for submission in missing_submissions:
             submission_id = submission[0]
             try:
-                call_command("load_submission", "--noclean", submission_id)
+                call_command("load_submission", submission_id)
             except SystemExit:
-                logger.info("Submission {} failed to load: {}".format(submission_id))
+                logger.info("Submission failed to load: {}".format(submission_id))
                 failed_submissions.append(str(submission_id))
             except Exception:
                 logger.exception("Submission {} failed to load".format(submission_id))
