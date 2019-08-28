@@ -15,13 +15,14 @@ from usaspending_api.references.models import Agency
 logger = logging.getLogger(__name__)
 
 TEMP_SQL_FILES = [
-    "../matviews/mv_pre2008_award_search.sql",
+    "../matviews/mv_award_summary.sql",
     "../matviews/mv_contract_award_search.sql",
     "../matviews/mv_directpayment_award_search.sql",
     "../matviews/mv_grant_award_search.sql",
     "../matviews/mv_idv_award_search.sql",
     "../matviews/mv_loan_award_search.sql",
     "../matviews/mv_other_award_search.sql",
+    "../matviews/mv_pre2008_award_search.sql",
     "../matviews/subaward_view.sql",
     "../matviews/summary_state_view.sql",
     "../matviews/summary_transaction_fed_acct_view.sql",

@@ -2,6 +2,7 @@
 
 # Core Django imports
 from django.core.management import call_command
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Q
 
 # Third-party app imports
@@ -15,7 +16,7 @@ from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Tran
 
 
 DB_CURSOR_PARAMS = {
-    "default": MagicMock(),
+    DEFAULT_DB_ALIAS: MagicMock(),
     "data_broker": MagicMock(),
     "data_broker_data_file": "usaspending_api/etl/tests/data/submission_data.json",
 }

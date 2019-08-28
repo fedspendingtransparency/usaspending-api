@@ -2,6 +2,7 @@
 
 # Core Django imports
 from django.core.management import call_command
+from django.db import DEFAULT_DB_ALIAS
 
 # Third-party app imports
 import pytest
@@ -12,7 +13,7 @@ from usaspending_api.references.models import GTASTotalObligation
 
 
 DB_CURSOR_PARAMS = {
-    "default": MagicMock(),
+    DEFAULT_DB_ALIAS: MagicMock(),
     "data_broker": MagicMock(),
     "data_broker_data_file": "usaspending_api/references/tests/data/broker_gtas.json",
 }
