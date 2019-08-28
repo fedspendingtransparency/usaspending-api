@@ -41,7 +41,7 @@ def test_get_by_toptier():
     """Test Agency lookup by toptier CGAC code."""
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="yo")
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -62,7 +62,7 @@ def test_get_by_subtier():
     """Test Agency lookup by subtier."""
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -86,7 +86,6 @@ def test_get_by_toptier_subtier():
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -94,7 +93,7 @@ def test_get_by_toptier_subtier():
     )
     agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
 
-    # lookup should return agency w/ most recent updatea_date that
+    # lookup should return agency w/ most recent updated_date that
     # matches the toptier and subtier code
     assert Agency.get_by_toptier_subtier("xyz", "abc") == agency1
     # if there's no match, we should get none

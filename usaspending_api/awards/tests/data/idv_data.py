@@ -2,7 +2,7 @@ from model_mommy import mommy
 from copy import deepcopy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
 
 
 def set_up_related_award_objects():
@@ -31,7 +31,6 @@ def set_up_related_award_objects():
     mommy.make("recipient.DUNS", **duns)
     mommy.make("references.SubtierAgency", **subag)
     mommy.make("references.ToptierAgency", **subag)
-    mommy.make("references.OfficeAgency", name="office_agency", pk=1)
 
     le = {
         "pk": 1,
@@ -46,7 +45,6 @@ def set_up_related_award_objects():
         "pk": 1,
         "toptier_agency": ToptierAgency.objects.get(pk=1),
         "subtier_agency": SubtierAgency.objects.get(pk=1),
-        "office_agency": OfficeAgency.objects.get(pk=1),
     }
 
     mommy.make("awards.TransactionNormalized", **trans_cont)
