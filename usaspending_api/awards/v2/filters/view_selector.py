@@ -1,5 +1,6 @@
 import logging
 
+from usaspending_api.awards.models_matviews import AwardSummaryMatview
 from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SummaryPscCodesView
@@ -20,6 +21,12 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger(__name__)
 
 MATVIEW_SELECTOR = {
+    "AwardSummaryMatview": {
+        "allowed_filters": ["time_period", "award_type_codes", "agencies"],
+        "prevent_values": {},
+        "examine_values": {"time_period": [only_action_date_type]},
+        "model": AwardSummaryMatview,
+    },
     "SummaryView": {
         "allowed_filters": ["time_period", "award_type_codes", "agencies"],
         "prevent_values": {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
@@ -230,6 +237,14 @@ def spending_by_geography(filters):
         raise InvalidParameterException
 
     return queryset, model
+
+
+def spending_by_award_count(filters):
+    if can_use_view(filters, "AwardSummaryMatview"):
+        queryset = get_view_queryset(filters, "AwardSummaryMatview")
+        return queryset, "AwardSummaryMatview"
+    else:
+        return None, None
 
 
 def download_transaction_count(filters):

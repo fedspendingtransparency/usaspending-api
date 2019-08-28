@@ -1,3 +1,4 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_award_summary;
 DROP MATERIALIZED VIEW IF EXISTS mv_contract_award_search;
 DROP MATERIALIZED VIEW IF EXISTS mv_directpayment_award_search;
 DROP MATERIALIZED VIEW IF EXISTS mv_grant_award_search;
