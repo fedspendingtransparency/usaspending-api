@@ -331,7 +331,7 @@ transaction_normalized_functions = {"is_fpds": lambda broker: True,
                                     "non_federal_funding_amount": lambda broker: None  # FABS only
                                     }
 
-# broker column name -> usaspending column name
+# usaspending column name -> broker column name
 legal_entity_columns = {"recipient_name": "awardee_or_recipient_legal",
                         "vendor_doing_as_business_name": "vendor_doing_as_business_n",
                         "vendor_phone_number": "vendor_phone_number",
@@ -357,25 +357,92 @@ legal_entity_columns = {"recipient_name": "awardee_or_recipient_legal",
                         "township_local_government": "township_local_government",
                         "us_state_government": "us_state_government",
                         "us_federal_government": "us_federal_government",
-                        
-                        
-                        "detached_award_proc_unique": "transaction_unique_id",
-                        "awardee_or_recipient_uniqu": "recipient_unique_id",
-                        "awardee_or_recipient_legal": "recipient_name",
-                        "vendor_doing_as_business_n": "vendor_doing_as_business_name",
-                        "vendor_phone_number": "vendor_phone_number",
-                        "vendor_fax_number": "vendor_fax_number",
-                        "limited_liability_corporat": "limited_liability_corporation",
-                        "sole_proprietorship": "sole_proprietorship",
-                        "partnership_or_limited_lia": "partnership_or_limited_liability_partnership"
+                        "federal_agency": "federal_agency",
+                        "federally_funded_research_and_development_corp": "federally_funded_research",
+                        "us_tribal_government": "us_tribal_government",
+                        "foreign_government": "foreign_government",
+                        "community_developed_corporation_owned_firm": "community_developed_corpor",
+                        "labor_surplus_area_firm": "labor_surplus_area_firm",
+                        "small_agricultural_cooperative": "small_agricultural_coopera",
+                        "international_organization": "international_organization",
+                        "us_government_entity": "us_government_entity",
+                        "emerging_small_business": "emerging_small_business",
+                        "8a_program_participant": "c8a_program_participant",
+                        "sba_certified_8a_joint_venture": "sba_certified_8_a_joint_ve",
+                        "dot_certified_disadvantage": "dot_certified_disadvantage",
+                        "self_certified_small_disadvantaged_business": "self_certified_small_disad",
+                        "historically_underutilized_business_zone": "historically_underutilized",
+                        "small_disadvantaged_business": "small_disadvantaged_busine",
+                        "the_ability_one_program": "the_ability_one_program",
+                        "historically_black_college": "historically_black_college",
+                        "1862_land_grant_college": "c1862_land_grant_college",
+                        "1890_land_grant_college": "c1890_land_grant_college",
+                        "1994_land_grant_college": "c1994_land_grant_college",
+                        "minority_institution": "minority_institution",
+                        "private_university_or_college": "private_university_or_coll",
+                        "school_of_forestry": "school_of_forestry",
+                        "state_controlled_institution_of_higher_learning": "state_controlled_instituti",
+                        "tribal_college": "tribal_college",
+                        "veterinary_college": "veterinary_college",
+                        "educational_institution": "educational_institution",
+                        "alaskan_native_servicing_institution": "alaskan_native_servicing_i",
+                        "community_development_corporation": "community_development_corp",
+                        "native_hawaiian_servicing_institution": "native_hawaiian_servicing",
+                        "domestic_shelter": "domestic_shelter",
+                        "manufacturer_of_goods": "manufacturer_of_goods",
+                        "hospital_flag": "hospital_flag",
+                        "veterinary_hospital": "veterinary_hospital",
+                        "hispanic_servicing_institution": "hispanic_servicing_institu",
+                        "woman_owned_business": "veteran_owned_business",
+                        "minority_owned_business": "minority_owned_business",
+                        "women_owned_small_business": "women_owned_small_business",
+                        "economically_disadvantaged_women_owned_small_business": "economically_disadvantaged",
+                        "joint_venture_women_owned_small_business": "joint_venture_women_owned",
+                        "joint_venture_economic_disadvantaged_women_owned_small_bus": "joint_venture_economically",
+                        "veteran_owned_business": "veteran_owned_business",
+                        "service_disabled_veteran_owned_business": "service_disabled_veteran_o",
+                        "contracts": "contracts",
+                        "grants": "grants",
+                        "receives_contracts_and_grants": "receives_contracts_and_gra",
+                        "airport_authority": "airport_authority",
+                        "council_of_governments": "council_of_governments",
+                        "housing_authorities_public_tribal": "housing_authorities_public",
+                        "interstate_entity": "interstate_entity",
+                        "planning_commission": "planning_commission",
+                        "port_authority": "port_authority",
+                        "transit_authority": "transit_authority",
+                        "foreign_owned_and_located": "foreign_owned_and_located",
+                        "american_indian_owned_business": "american_indian_owned_busi",
+                        "alaskan_native_owned_corporation_or_firm": "alaskan_native_owned_corpo",
+                        "indian_tribe_federally_recognized": "indian_tribe_federally_rec",
+                        "native_hawaiian_owned_business": "native_hawaiian_owned_busi",
+                        "tribally_owned_business": "tribally_owned_business",
+                        "asian_pacific_american_owned_business": "asian_pacific_american_own",
+                        "black_american_owned_business": "black_american_owned_busin",
+                        "hispanic_american_owned_business": "hispanic_american_owned_bu",
+                        "native_american_owned_business": "native_american_owned_busi",
+                        "subcontinent_asian_asian_indian_american_owned_business": "subcontinent_asian_asian_i",
+                        "other_minority_owned_business": "other_minority_owned_busin",
+                        "us_local_government": "us_local_government",
+                        "undefinitized_action": "undefinitized_action",
+                        "domestic_or_foreign_entity": "domestic_or_foreign_entity",
+                        "domestic_or_foreign_entity_description": "domestic_or_foreign_e_desc",
+                        "division_name": "division_name",
+                        "division_number": "division_number_or_office"
                         }
 
 # usaspending column name -> derivation function
 legal_entity_functions = {"is_fpds": lambda broker: True,
                           "data_source": lambda broker: "DBR",
                           "parent_recipient_unique_id": lambda broker: None,  # FABS only
-                          ""
-                          "business_categories": lambda broker: ["filler 1", "filler 2"]}
+                          "business_categories": lambda broker: ["filler 1", "filler 2"],
+                          "city_township_government": lambda broker: None,  # ?
+                          "special_district_government": lambda broker: None,  # ?
+                          "small_business": lambda broker: None,  # ?
+                          "small_business_description": lambda broker: None,  # ?
+                          "individual": lambda broker: None,  # ?
+                          "parent_recipient_name": lambda broker: None,  # ?
+                          }
 
 # broker column name -> usaspending column name
 recipient_location_columns = {
@@ -389,10 +456,12 @@ recipient_location_functions = {"is_fpds": lambda broker: True,
                                 "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
                                 }
 
-# broker column name -> usaspending column name
+# usaspending column name -> broker column name
 place_of_performance_columns = {
-                                "place_of_perform_city_name": "city_name",
-                                "place_of_perform_county_na": "county_name",
+                                "city_name": "place_of_perform_city_name",
+                                "location_country_code": "place_of_perform_country_c",
+                                "county_name": "place_of_perform_county_na",
+                                "state_code": "place_of_performance_state"
                                 }
 
 # usaspending column name -> derivation function
@@ -412,6 +481,7 @@ place_of_performance_functions = {"is_fpds": lambda broker: True,
                                   "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
                                   }
 
+# usaspending column name -> derivation function
 award_functions = {
                    "is_fpds": lambda broker: True,
                    "generated_unique_award_id": lambda broker: broker["unique_award_key"],

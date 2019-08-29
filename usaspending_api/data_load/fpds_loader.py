@@ -75,7 +75,7 @@ def generate_load_objects(broker_objects):
         # legal entity
         legal_entity = {}
         for key in legal_entity_columns:
-            legal_entity[legal_entity_columns[key]] = broker_object[key]
+            legal_entity[key] = broker_object[legal_entity_columns[key]]
 
         for key in legal_entity_functions:
             legal_entity[key] = legal_entity_functions[key](broker_object)
@@ -85,7 +85,7 @@ def generate_load_objects(broker_objects):
         # place_of_performance_location
         place_of_performance_location = {}
         for key in place_of_performance_columns:
-            place_of_performance_location[place_of_performance_columns[key]] = broker_object[key]
+            place_of_performance_location[key] = broker_object[place_of_performance_columns[key]]
 
         for key in place_of_performance_functions:
             place_of_performance_location[key] = place_of_performance_functions[key](broker_object)
