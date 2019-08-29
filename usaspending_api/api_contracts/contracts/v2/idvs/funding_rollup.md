@@ -12,10 +12,10 @@ This endpoint returns award metadata summing the total transaction obligations a
         + `award_id`: `CONT_IDV_N0018918D0057_9700` (required, string)
 + Response 200 (application/json)
     + Attributes
-        + total_transaction_obligated_amount (required, number)
-        + awarding_agency_count (required, number)
-        + funding_agency_count (required, number)
-        + federal_account_count (required, number)
+        + `total_transaction_obligated_amount` (required, number)
+        + `awarding_agency_count` (required, number)
+        + `funding_agency_count` (required, number)
+        + `federal_account_count` (required, number)
     + Body
 
         {

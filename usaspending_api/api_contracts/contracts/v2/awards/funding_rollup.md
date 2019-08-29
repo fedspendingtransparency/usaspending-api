@@ -9,13 +9,13 @@ This endpoint returns the total transaction obligations and count of awarding ag
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_IDV_N0018918D0057_9700` (required, string)
+        + `award_id`: `CONT_AWD_DEAC5206NA25396_8900_-NONE-_-NONE-` (required, string)
 + Response 200 (application/json)
     + Attributes
-        + total_transaction_obligated_amount (required, number)
-        + awarding_agency_count (required, number)
-        + funding_agency_count (required, number)
-        + federal_account_count (required, number)
+        + `total_transaction_obligated_amount` (required, number)
+        + `awarding_agency_count` (required, number)
+        + `funding_agency_count` (required, number)
+        + `federal_account_count` (required, number)
     + Body
 
         {
