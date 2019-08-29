@@ -18,9 +18,9 @@ This endpoint returns award metadata summing the total transaction obligations a
         + `federal_account_count` (required, number)
     + Body
 
-        {
-            "total_transaction_obligated_amount": 42946881.56,
-            "awarding_agency_count": 27,
-            "funding_agency_count": 28,
-            "federal_account_count": 47
-        }
+            {
+                "total_transaction_obligated_amount": 42946881.56,
+                "awarding_agency_count": 27,
+                "funding_agency_count": 28,
+                "federal_account_count": 47
+            }

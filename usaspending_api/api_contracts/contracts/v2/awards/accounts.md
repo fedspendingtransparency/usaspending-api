@@ -29,26 +29,26 @@ This endpoint returns a list of federal accounts under a given award.
        + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
         
-        {
-            "results": [
-                {
-                    "total_transaction_obligated_amount": 1234.56,
-                    "federal_account": "075-1301",
-                    "account_title": "Bureau of Consumer Financial Protection Fund",
-                    "funding_agency_abbreviation": "NIH",
-                    "funding_agency_name": "National Institutes of Health",
-                    "funding_agency_id": 123
+            {
+                "results": [
+                    {
+                        "total_transaction_obligated_amount": 1234.56,
+                        "federal_account": "075-1301",
+                        "account_title": "Bureau of Consumer Financial Protection Fund",
+                        "funding_agency_abbreviation": "NIH",
+                        "funding_agency_name": "National Institutes of Health",
+                        "funding_agency_id": 123
+                    }
+                ],
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "count": 4,
+                    "previous": 1,
+                    "hasNext": true,
+                    "hasPrevious": false
                 }
-            ],
-            "page_metadata": {
-                "page": 1,
-                "next": 2,
-                "count": 4,
-                "previous": 1,
-                "hasNext": true,
-                "hasPrevious": false
             }
-        }
         
 
 # Data Structures
