@@ -3,7 +3,12 @@ from django.conf import settings
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import (
+    award_type_mapping,
+    contract_type_mapping,
+    idv_type_mapping,
+    assistance_type_mapping,
+)
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -73,7 +78,7 @@ def validate_award_request(request_data):
 
 def validate_idv_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid = _validate_award_id(request_data)
+    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
 
     return {
         "account_level": "treasury_account",
@@ -86,6 +91,52 @@ def validate_idv_request(request_data):
             "idv_award_id": award_id,
             "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
         },
+        "limit": parse_limit(request_data),
+        "include_data_dictionary": True,
+    }
+
+
+def validate_contract_request(request_data):
+    _validate_required_parameters(request_data, ["award_id"])
+    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+
+    return {
+        "account_level": "treasury_account",
+        "download_types": ["contract_sub_awards", "contract_transactions", "contract_federal_account_funding"],
+        "file_format": request_data.get("file_format", "csv"),
+        "include_file_description": {
+            "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
+            "destination": "readme.txt",
+        },
+        "piid": piid,
+        "is_for_idv": False,
+        "is_for_contract": True,
+        "is_for_assistance": False,
+        "filters": {"award_id": award_id, "award_type_codes": tuple(set(contract_type_mapping))},
+        "limit": parse_limit(request_data),
+        "include_data_dictionary": True,
+    }
+
+
+def validate_assistance_request(request_data):
+    _validate_required_parameters(request_data, ["award_id"])
+    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award = fain
+    if "AGG" in generated_unique_award_id:
+        award = uri
+    return {
+        "account_level": "treasury_account",
+        "download_types": ["assistance_transactions", "assistance_sub_awards", "assistance_federal_account_funding"],
+        "file_format": request_data.get("file_format", "csv"),
+        "include_file_description": {
+            "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
+            "destination": "readme.txt",
+        },
+        "id_type": award,
+        "is_for_idv": False,
+        "is_for_contract": False,
+        "is_for_assistance": True,
+        "filters": {"award_id": award_id, "award_type_codes": tuple(set(assistance_type_mapping))},
         "limit": parse_limit(request_data),
         "include_data_dictionary": True,
     }
@@ -143,15 +194,19 @@ def _validate_award_id(request_data):
     if award_id_type not in (str, int):
         raise InvalidParameterException("Award id must be either a string or an integer")
     if award_id_type is int or award_id.isdigit():
-        award = Award.objects.filter(id=int(award_id), type__startswith="IDV").values_list("id", "piid").first()
+        award = (
+            Award.objects.filter(id=int(award_id))
+            .values_list("id", "piid", "fain", "uri", "generated_unique_award_id")
+            .first()
+        )
     else:
         award = (
-            Award.objects.filter(generated_unique_award_id=award_id, type__startswith="IDV")
-            .values_list("id", "piid")
+            Award.objects.filter(generated_unique_award_id=award_id)
+            .values_list("id", "piid", "fain", "uri", "generated_unique_award_id")
             .first()
         )
     if not award:
-        raise InvalidParameterException("Unable to find an IDV matching the provided award id")
+        raise InvalidParameterException("Unable to find award matching the provided award id")
     return award
 
 

@@ -43,6 +43,7 @@ def generate_csvs(download_job):
     columns = json_request.get("columns", None)
     limit = json_request.get("limit", None)
     piid = json_request.get("piid", None)
+    id_type = json_request.get("id_type")
 
     file_name = start_download(download_job)
     try:
@@ -59,7 +60,7 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, piid, zip_file_path, limit)
+            parse_source(source, columns, download_job, working_dir, piid, id_type, zip_file_path, limit)
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -156,7 +157,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, zip_file_path, limit):
+def parse_source(source, columns, download_job, working_dir, piid, id_type, zip_file_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {
         "d1": "contracts",
@@ -168,9 +169,12 @@ def parse_source(source, columns, download_job, working_dir, piid, zip_file_path
         # Use existing detailed filename from parent file for monthly files
         # e.g. `019_Assistance_Delta_20180917_%s.csv`
         source_name = strip_file_extension(download_job.file_name)
-    elif source.is_for_idv:
+    elif source.is_for_idv or source.is_for_contract:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
         source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+    elif source.is_for_assistance:
+        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+        source_name = file_name_pattern.format(id_type=slugify_text_for_file_names(id_type, "UNKNOWN", 50))
     else:
         source_name = "{}_{}_{}".format(
             source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]["download_name"]
