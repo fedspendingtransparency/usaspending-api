@@ -15,24 +15,24 @@ class Command(BaseCommand):
     def get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range=None, sub_tiers=None):
         # Base WHERE clauses
         broker_where = """action_date::date >= ''{fy_start}''::date
-            AND action_date::date <= ''{fy_end}''::date;""".format(
+            AND action_date::date <= ''{fy_end}''::date""".format(
             fy_start=fy_start, fy_end=fy_end
         )
         usaspending_where = """action_date::date >= '{fy_start}'::date
-        AND action_date::date <= '{fy_end}'::date;""".format(
+        AND action_date::date <= '{fy_end}'::date""".format(
             fy_start=fy_start, fy_end=fy_end
         )
 
         # If we're doing everything before a certain fiscal year
         if year_range == "pre":
-            broker_where = "action_date::date < ''{fy_start}''::date;".format(fy_start=fy_start)
-            usaspending_where = "action_date::date < '{fy_start}'::date;".format(fy_start=fy_start)
+            broker_where = "action_date::date < ''{fy_start}''::date".format(fy_start=fy_start)
+            usaspending_where = "action_date::date < '{fy_start}'::date".format(fy_start=fy_start)
             fiscal_year = "pre_" + str(fiscal_year)
 
         # If we're doing everything after a certain fiscal year
         if year_range == "post":
-            broker_where = "action_date::date > ''{fy_end}''::date;".format(fy_end=fy_end)
-            usaspending_where = "action_date::date > '{fy_end}'::date;".format(fy_end=fy_end)
+            broker_where = "action_date::date > ''{fy_end}''::date".format(fy_end=fy_end)
+            usaspending_where = "action_date::date > '{fy_end}'::date".format(fy_end=fy_end)
             fiscal_year = "post_" + str(fiscal_year)
 
         table = "detached_award_procurement"
@@ -49,6 +49,8 @@ class Command(BaseCommand):
             sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
             subtier_condition = "(awarding_agency_code IN {sub_tiers} OR funding_agency_code IN {sub_tiers})"
             broker_where += " AND " + subtier_condition.format(sub_tiers=sub_tiers_str)
+        broker_where += ';'
+        usaspending_where += ';'
 
         sql_statment = """
         CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
