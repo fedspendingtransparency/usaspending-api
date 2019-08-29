@@ -196,7 +196,7 @@ def load_transactions(load_objects):
                         .format(pairs, load_object["transaction_fpds"]["transaction_id"])
                     cursor.execute(transaction_fpds_sql)
 
-                    logger.debug("updated fpds transaction {}".format(results[0][0]))
+                    logger.info("updated fpds transaction {}".format(results[0][0]))
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
@@ -214,7 +214,7 @@ def load_transactions(load_objects):
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
 
-                    logger.debug("created fpds transaction {}".format(results[0][0]))
+                    logger.info("created fpds transaction {}".format(results[0][0]))
 
                 # No matter what, we need to go back and update the award's latest transaction to the award we just made
                 update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}"\
@@ -227,7 +227,7 @@ def setup_load_lists(load_object, table):
     values = []
     update_pairs = []
     for key in OrderedDict(load_object[table]).keys():
-        columns.append(key)
+        columns.append("\"{}\"".format(key))
         val = format_value_for_sql(load_object[table][key])
         values.append(val)
         update_pairs.append(" {}={}".format(key, val))

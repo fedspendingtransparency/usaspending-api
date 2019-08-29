@@ -1,5 +1,5 @@
 from usaspending_api.data_load.derived_field_functions_fpds import calculate_fiscal_year, calculate_awarding_agency, \
- calculate_funding_agency
+ calculate_funding_agency, unique_transaction_id
 
 # broker column name -> usaspending column name
 transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_procurement_id",
@@ -301,7 +301,7 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "high_comp_officer5_full_na": "officer_5_name"}
 
 # broker column name -> usaspending column name
-transaction_normalized_columns = {"detached_award_proc_unique": "transaction_unique_id",
+transaction_normalized_columns = {
                                   "federal_action_obligation": "federal_action_obligation",
                                   "period_of_performance_star": "period_of_performance_start_date",
                                   "period_of_performance_curr": "period_of_performance_current_end_date",
@@ -311,12 +311,12 @@ transaction_normalized_columns = {"detached_award_proc_unique": "transaction_uni
                                   "federal_action_obligation": "federal_action_obligation",
                                   "award_description": "description",
                                   "last_modified": "last_modified_date",
-                                  "detached_award_proc_unique": "detached_award_proc_unique",
                                   "award_modification_amendme": "modification_number",
                                   "unique_award_key": "unique_award_key"}
 
 # usaspending column name -> derivation function
 transaction_normalized_functions = {"is_fpds": lambda broker: True,
+                                    "transaction_unique_id": unique_transaction_id,
                                     "usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
                                     "original_loan_subsidy_cost": lambda broker: None,  # FABS only
                                     "face_value_loan_guarantee": lambda broker: None,  # FABS only
@@ -433,6 +433,7 @@ legal_entity_columns = {"recipient_name": "awardee_or_recipient_legal",
 
 # usaspending column name -> derivation function
 legal_entity_functions = {"is_fpds": lambda broker: True,
+                          "transaction_unique_id": unique_transaction_id,
                           "data_source": lambda broker: "DBR",
                           "parent_recipient_unique_id": lambda broker: None,  # FABS only
                           "business_categories": lambda broker: ["filler 1", "filler 2"],
@@ -453,7 +454,7 @@ recipient_location_columns = {
 recipient_location_functions = {"is_fpds": lambda broker: True,
                                 "place_of_performance_flag": lambda broker: False,
                                 "recipient_flag": lambda broker: True,
-                                "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
+                                "transaction_unique_id": unique_transaction_id
                                 }
 
 # usaspending column name -> broker column name
@@ -478,14 +479,14 @@ place_of_performance_functions = {"is_fpds": lambda broker: True,
                                   "foreign_city_name": lambda broker: None,
                                   "place_of_performance_flag": lambda broker: True,
                                   "recipient_flag": lambda broker: False,
-                                  "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
+                                  "transaction_unique_id": unique_transaction_id
                                   }
 
 # usaspending column name -> derivation function
 award_functions = {
                    "is_fpds": lambda broker: True,
                    "generated_unique_award_id": lambda broker: broker["unique_award_key"],
-                   "transaction_unique_id": lambda broker: "tHiS_v@LuE-iS/mIsSiNG",
+                   "transaction_unique_id": unique_transaction_id,
                    "subaward_count": lambda broker: 0,
                    "awarding_agency_id": calculate_awarding_agency,
                    "funding_agency_id": calculate_funding_agency,

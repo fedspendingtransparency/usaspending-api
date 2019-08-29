@@ -20,3 +20,7 @@ def calculate_funding_agency(broker_input):
         return funding_agency["id"]
     else:
         return None
+
+
+def unique_transaction_id(broker_input):
+    return "tHiS_v@LuE-iS/mIsSiNG"
