@@ -46,7 +46,7 @@ class Command(BaseCommand):
             subtier_cond = "(awarding_sub_tier_agency_c = {sub_tier} OR funding_sub_tier_agency_co = {sub_tier})"
             broker_where += " AND " + subtier_cond.format(sub_tier=sub_tiers[0])
         elif sub_tiers and len(sub_tiers) > 1:
-            sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
+            sub_tiers_str = '({})'.format(','.join(['\'\'{}\'\''.format(sub_tier) for sub_tier in sub_tiers]))
             subtier_cond = "(awarding_sub_tier_agency_c IN {sub_tiers} OR funding_sub_tier_agency_co IN {sub_tiers})"
             broker_where += " AND " + subtier_cond.format(sub_tiers=sub_tiers_str)
         broker_where += ';'
@@ -95,7 +95,6 @@ class Command(BaseCommand):
             broker_where=broker_where,
             usaspending_where=usaspending_where,
         )
-
         return sql_statment
 
     @staticmethod
