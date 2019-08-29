@@ -346,7 +346,17 @@ legal_entity_columns = {"recipient_name": "awardee_or_recipient_legal",
                         "nonprofit_organization": "nonprofit_organization",
                         "corporate_entity_tax_exempt": "corporate_entity_tax_exemp",
                         "corporate_entity_not_tax_exempt": "corporate_entity_not_tax_e",
-                        "other_not_for_profit_organization": "other_not_for_profit_organ"
+                        "other_not_for_profit_organization": "other_not_for_profit_organ",
+                        "sam_exception": "sam_exception",
+                        "city_local_government": "city_local_government",
+                        "county_local_government": "county_local_government",
+                        "inter_municipal_local_government": "inter_municipal_local_gove",
+                        "local_government_owned": "local_government_owned",
+                        "municipality_local_government": "municipality_local_governm",
+                        "school_district_local_government": "school_district_local_gove",
+                        "township_local_government": "township_local_government",
+                        "us_state_government": "us_state_government",
+                        "us_federal_government": "us_federal_government",
                         
                         
                         "detached_award_proc_unique": "transaction_unique_id",
