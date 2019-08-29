@@ -23,14 +23,21 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "ultimate_parent_unique_ide": "ultimate_parent_unique_ide",
                             "award_description": "award_description",
                             "place_of_performance_zip4a": "place_of_performance_zip4a",
+                            "place_of_performance_zip5": "place_of_performance_zip5",
+                            "place_of_perform_zip_last4": "place_of_perform_zip_last4",
                             "place_of_perform_city_name": "place_of_perform_city_name",
+                            "place_of_perform_county_co": "place_of_perform_county_co",
                             "place_of_perform_county_na": "place_of_perform_county_na",
                             "place_of_performance_congr": "place_of_performance_congr",
                             "awardee_or_recipient_legal": "awardee_or_recipient_legal",
                             "legal_entity_city_name": "legal_entity_city_name",
+                            "legal_entity_county_code": "legal_entity_county_code",
+                            "legal_entity_county_name": "legal_entity_county_name",
                             "legal_entity_state_code": "legal_entity_state_code",
                             "legal_entity_state_descrip": "legal_entity_state_descrip",
                             "legal_entity_zip4": "legal_entity_zip4",
+                            "legal_entity_zip5": "legal_entity_zip5",
+                            "legal_entity_zip_last4": "legal_entity_zip_last4",
                             "legal_entity_congressional": "legal_entity_congressional",
                             "legal_entity_address_line1": "legal_entity_address_line1",
                             "legal_entity_address_line2": "legal_entity_address_line2",
@@ -47,6 +54,9 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "federal_action_obligation": "federal_action_obligation",
                             "current_total_value_award": "current_total_value_award",
                             "potential_total_value_awar": "potential_total_value_awar",
+                            "total_obligated_amount": "total_obligated_amount",
+                            "base_exercised_options_val": "base_exercised_options_val",
+                            "base_and_all_options_value": "base_and_all_options_value",
                             "funding_sub_tier_agency_co": "funding_sub_tier_agency_co",
                             "funding_sub_tier_agency_na": "funding_sub_tier_agency_na",
                             "funding_office_code": "funding_office_code",
@@ -257,8 +267,6 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "undefinitized_action_desc": "undefinitized_action_desc",
                             "domestic_or_foreign_entity": "domestic_or_foreign_entity",
                             "domestic_or_foreign_e_desc": "domestic_or_foreign_e_desc",
-                            "pulled_from": "pulled_from",
-                            "last_modified": "last_modified",
                             "annual_revenue": "annual_revenue",
                             "division_name": "division_name",
                             "division_number_or_office": "division_number_or_office",
@@ -269,25 +277,17 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "vendor_legal_org_name": "vendor_legal_org_name",
                             "vendor_location_disabled_f": "vendor_location_disabled_f",
                             "vendor_site_code": "vendor_site_code",
+                            "pulled_from": "pulled_from",
+                            "last_modified": "last_modified",
                             "initial_report_date": "initial_report_date",
-                            "base_and_all_options_value": "base_and_all_options_value",
-                            "base_exercised_options_val": "base_exercised_options_val",
-                            "total_obligated_amount": "total_obligated_amount",
-                            "place_of_perform_country_n": "place_of_perform_country_n",
-                            "place_of_perform_state_nam": "place_of_perform_state_nam",
                             "referenced_idv_agency_name": "referenced_idv_agency_name",
                             "award_or_idv_flag": "award_or_idv_flag",
-                            "legal_entity_county_code": "legal_entity_county_code",
-                            "legal_entity_county_name": "legal_entity_county_name",
-                            "legal_entity_zip5": "legal_entity_zip5",
-                            "legal_entity_zip_last4": "legal_entity_zip_last4",
-                            "place_of_perform_county_co": "place_of_perform_county_co",
-                            "place_of_performance_zip5": "place_of_performance_zip5",
-                            "place_of_perform_zip_last4": "place_of_perform_zip_last4",
+                            "place_of_perform_country_n": "place_of_perform_country_n",
+                            "place_of_perform_state_nam": "place_of_perform_state_nam",
                             "cage_code": "cage_code",
+                            "inherently_government_desc": "inherently_government_desc",
                             "inherently_government_func": "inherently_government_func",
                             "organizational_type": "organizational_type",
-                            "inherently_government_desc": "inherently_government_desc",
                             "unique_award_key": "unique_award_key",
                             "high_comp_officer1_amount": "officer_1_amount",
                             "high_comp_officer1_full_na": "officer_1_name",
@@ -298,40 +298,45 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "high_comp_officer4_amount": "officer_4_amount",
                             "high_comp_officer4_full_na": "officer_5_name",
                             "high_comp_officer5_amount": "officer_5_amount",
-                            "high_comp_officer5_full_na": "officer_5_name",
-                            "award_modification_amendme": "award_modification_amendme"}
+                            "high_comp_officer5_full_na": "officer_5_name"}
 
 # broker column name -> usaspending column name
-transaction_normalized_columns = {"federal_action_obligation": "federal_action_obligation",
+transaction_normalized_columns = {"detached_award_proc_unique": "transaction_unique_id",
+                                  "federal_action_obligation": "federal_action_obligation",
+                                  "period_of_performance_star": "period_of_performance_start_date",
+                                  "period_of_performance_curr": "period_of_performance_current_end_date",
                                   "action_date": "action_date",
                                   "action_type": "action_type",
                                   "action_type_description": "action_type_description",
-                                  "period_of_performance_star": "period_of_performance_start_date",
-                                  "period_of_performance_curr": "period_of_performance_current_end_date",
-                                  "detached_award_proc_unique": "detached_award_proc_unique",
+                                  "federal_action_obligation": "federal_action_obligation",
                                   "award_description": "description",
                                   "last_modified": "last_modified_date",
-                                  "federal_action_obligation": "federal_action_obligation",
+                                  "detached_award_proc_unique": "detached_award_proc_unique",
                                   "award_modification_amendme": "modification_number",
-                                  "detached_award_proc_unique": "transaction_unique_id",
-                                  "unique_award_key": "unique_award_key",
-                                  "last_modified": "last_modified_date"}
+                                  "unique_award_key": "unique_award_key"}
 
 # usaspending column name -> derivation function
-transaction_normalized_functions = {"usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
+transaction_normalized_functions = {"is_fpds": lambda broker: True,
+                                    "usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
                                     "original_loan_subsidy_cost": lambda broker: None,  # FABS only
                                     "face_value_loan_guarantee": lambda broker: None,  # FABS only
-                                    "non_federal_funding_amount": lambda broker: None,  # FABS only
                                     "drv_potential_total_award_value_amount_adjustment": lambda broker: None,  # ?
                                     "drv_current_total_award_value_amount_adjustment": lambda broker: None,  # ?
                                     "drv_award_transaction_usaspend": lambda broker: None,  # ?
                                     "certified_date": lambda broker: None,  # ?
                                     "fiscal_year": calculate_fiscal_year,
                                     "awarding_agency_id": calculate_awarding_agency,
-                                    "funding_agency_id": calculate_funding_agency}
+                                    "funding_agency_id": calculate_funding_agency,
+                                    "funding_amount": lambda broker: None,
+                                    "non_federal_funding_amount": lambda broker: None  # FABS only
+                                    }
 
 # broker column name -> usaspending column name
-legal_entity_columns = {"detached_award_proc_unique": "transaction_unique_id",
+legal_entity_columns = {"recipient_name": "awardee_or_recipient_legal",
+                        "vendor_doing_as_business_name": "vendor_doing_as_business_n",
+                        "vendor_phone_number": "vendor_phone_number",
+                        "vendor_fax_number": "vendor_fax_number",
+                        "detached_award_proc_unique": "transaction_unique_id",
                         "awardee_or_recipient_uniqu": "recipient_unique_id",
                         "awardee_or_recipient_legal": "recipient_name",
                         "vendor_doing_as_business_n": "vendor_doing_as_business_name",
@@ -343,7 +348,10 @@ legal_entity_columns = {"detached_award_proc_unique": "transaction_unique_id",
                         }
 
 # usaspending column name -> derivation function
-legal_entity_functions = {"data_source": lambda broker: "DBR",
+legal_entity_functions = {"is_fpds": lambda broker: True,
+                          "data_source": lambda broker: "DBR",
+                          "parent_recipient_unique_id": lambda broker: None,  # FABS only
+                          ""
                           "business_categories": lambda broker: ["filler 1", "filler 2"]}
 
 # broker column name -> usaspending column name
@@ -352,7 +360,7 @@ recipient_location_columns = {
                               }
 
 # usaspending column name -> derivation function
-recipient_location_functions = {
+recipient_location_functions = {"is_fpds": lambda broker: True,
                                 "place_of_performance_flag": lambda broker: False,
                                 "recipient_flag": lambda broker: True,
                                 "transaction_unique_id": lambda broker: "not sure what to put here so yeah filler"
@@ -365,7 +373,7 @@ place_of_performance_columns = {
                                 }
 
 # usaspending column name -> derivation function
-place_of_performance_functions = {
+place_of_performance_functions = {"is_fpds": lambda broker: True,
                                   "state_description": lambda broker: None,
                                   "city_code": lambda broker: None,
                                   "address_line1": lambda broker: None,
@@ -382,6 +390,7 @@ place_of_performance_functions = {
                                   }
 
 award_functions = {
+                   "is_fpds": lambda broker: True,
                    "generated_unique_award_id": lambda broker: broker["unique_award_key"],
                    "transaction_unique_id": lambda broker: "tHiS_v@LuE-iS/mIsSiNG",
                    "subaward_count": lambda broker: 0,

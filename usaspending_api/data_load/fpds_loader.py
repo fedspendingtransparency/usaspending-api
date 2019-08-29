@@ -1,6 +1,7 @@
 from os import environ
 import psycopg2
 from collections import OrderedDict
+import logging
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
@@ -10,6 +11,8 @@ from usaspending_api.data_load.data_load_helpers import subtier_agency_list, for
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
 BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+
+logger = logging.getLogger()
 
 
 def run_fpds_load(id_list):
@@ -60,7 +63,7 @@ def generate_load_objects(broker_objects):
         connected_objects = {}
 
         # recipient_location
-        recipient_location = {"is_fpds": True}
+        recipient_location = {}
         for key in recipient_location_columns:
             recipient_location[recipient_location_columns[key]] = broker_object[key]
 
@@ -70,7 +73,7 @@ def generate_load_objects(broker_objects):
         connected_objects["recipient_location"] = recipient_location
 
         # legal entity
-        legal_entity = {"is_fpds": True}
+        legal_entity = {}
         for key in legal_entity_columns:
             legal_entity[legal_entity_columns[key]] = broker_object[key]
 
@@ -80,7 +83,7 @@ def generate_load_objects(broker_objects):
         connected_objects["legal_entity"] = legal_entity
 
         # place_of_performance_location
-        place_of_performance_location = {"is_fpds": True}
+        place_of_performance_location = {}
         for key in place_of_performance_columns:
             place_of_performance_location[place_of_performance_columns[key]] = broker_object[key]
 
@@ -93,13 +96,13 @@ def generate_load_objects(broker_objects):
         connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
 
         # award. NOT used if a matching award is found later
-        award = {"is_fpds": True}
+        award = {}
         for key in award_functions:
             award[key] = award_functions[key](broker_object)
         connected_objects["award"] = award
 
         # transaction_normalized
-        transaction_normalized = {"is_fpds": True}
+        transaction_normalized = {}
         for key in transaction_normalized_columns:
             transaction_normalized[transaction_normalized_columns[key]] = broker_object[key]
 
@@ -193,7 +196,7 @@ def load_transactions(load_objects):
                         .format(pairs, load_object["transaction_fpds"]["transaction_id"])
                     cursor.execute(transaction_fpds_sql)
 
-                    print("updated fpds transaction {}".format(results[0][0]))
+                    logger.debug("updated fpds transaction {}".format(results[0][0]))
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
@@ -211,7 +214,7 @@ def load_transactions(load_objects):
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
 
-                    print("created fpds transaction {}".format(results[0][0]))
+                    logger.debug("created fpds transaction {}".format(results[0][0]))
 
                 # No matter what, we need to go back and update the award's latest transaction to the award we just made
                 update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}"\
