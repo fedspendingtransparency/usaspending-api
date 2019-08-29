@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = "Update Agency codes from broker that are 999 in the website or that are associated with a certain sub tier"
 
     @staticmethod
-    def get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range=None):
+    def get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range=None, sub_tiers=None):
         # Base WHERE clauses
         broker_where = """action_date::date >= ''{fy_start}''::date
             AND action_date::date <= ''{fy_end}''::date;""".format(
@@ -41,6 +41,14 @@ class Command(BaseCommand):
             broker_where = "is_active IS TRUE AND " + broker_where
             table = "published_award_financial_assistance"
             unique = "afa_generated_unique"
+
+        if sub_tiers and len(sub_tiers) == 1:
+            subtier_condition = "(awarding_agency_code = {sub_tier} OR funding_agency_code = {sub_tier})"
+            broker_where += " AND " + subtier_condition.format(sub_tier=sub_tiers[0])
+        elif sub_tiers and len(sub_tiers) > 1:
+            sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
+            subtier_condition = "(awarding_agency_code IN {sub_tiers} OR funding_agency_code IN {sub_tiers})"
+            broker_where += " AND " + subtier_condition.format(sub_tiers=sub_tiers_str)
 
         sql_statment = """
         CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
@@ -96,9 +104,9 @@ class Command(BaseCommand):
             award_where = "awarding_sub_tier_agency_c = '{}'".format(sub_tiers)
             fund_where = "funding_sub_tier_agency_co = '{}'".format(sub_tiers)
         elif sub_tiers and len(sub_tiers) > 1:
-            subtiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
-            award_where = "awarding_sub_tier_agency_c IN {}".format(subtiers_str)
-            fund_where = "funding_sub_tier_agency_co IN {}".format(subtiers_str)
+            sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
+            award_where = "awarding_sub_tier_agency_c IN {}".format(sub_tiers_str)
+            fund_where = "funding_sub_tier_agency_co IN {}".format(sub_tiers_str)
 
         # if there's a range we add it to the name of the table
         if year_range:
@@ -160,12 +168,13 @@ class Command(BaseCommand):
         start = time.perf_counter()
 
         # Comparing broker rows with website for a specific fiscal year
-        db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range))
+        db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range, sub_tiers))
 
         end = time.perf_counter()
+        condition_str = ' with sub_tiers {}'.format(sub_tiers) if sub_tiers else ''
         logger.info(
-            "Finished retrieving {}FY{} data from broker {} to update in website in {}s".format(
-                year_range or "", fiscal_year, table_type.upper(), end - start
+            "Finished retrieving {}FY{} data from broker {}{} to update in website in {}s".format(
+                year_range or "", fiscal_year, table_type.upper(), condition_str, end - start
             )
         )
 
