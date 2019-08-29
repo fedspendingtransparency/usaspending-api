@@ -43,12 +43,12 @@ class Command(BaseCommand):
             unique = "afa_generated_unique"
 
         if sub_tiers and len(sub_tiers) == 1:
-            subtier_condition = "(awarding_agency_code = {sub_tier} OR funding_agency_code = {sub_tier})"
-            broker_where += " AND " + subtier_condition.format(sub_tier=sub_tiers[0])
+            subtier_cond = "(awarding_sub_tier_agency_c = {sub_tier} OR funding_sub_tier_agency_co = {sub_tier})"
+            broker_where += " AND " + subtier_cond.format(sub_tier=sub_tiers[0])
         elif sub_tiers and len(sub_tiers) > 1:
             sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
-            subtier_condition = "(awarding_agency_code IN {sub_tiers} OR funding_agency_code IN {sub_tiers})"
-            broker_where += " AND " + subtier_condition.format(sub_tiers=sub_tiers_str)
+            subtier_cond = "(awarding_sub_tier_agency_c IN {sub_tiers} OR funding_sub_tier_agency_co IN {sub_tiers})"
+            broker_where += " AND " + subtier_cond.format(sub_tiers=sub_tiers_str)
         broker_where += ';'
         usaspending_where += ';'
 
