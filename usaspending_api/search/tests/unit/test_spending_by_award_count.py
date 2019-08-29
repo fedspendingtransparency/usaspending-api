@@ -148,18 +148,7 @@ def award_data_fixture(db):
 def get_spending_by_award_count_url():
     return "/api/v2/search/spending_by_award_count/"
 
-# ===================================================
-# Below tests SKIPPED due to the introduction of asyncpg.
-# asyncpg is a different library to open DB connections to Postgres and supports async functions
-# The test data fixtures hold an open idle DB transaction which blocks SQL queries using the new connection
-# These test need to be re-implemented, but the team has allowed this feature to move forward
-# As the task is much larger than anticipated
 
-# Tony Aug 2019
-# ===================================================
-
-
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_count(client, db, award_data_fixture, refresh_matviews):
     test_payload = {
@@ -184,7 +173,6 @@ def test_spending_by_award_count(client, db, award_data_fixture, refresh_matview
     assert expected_response == resp.data, "Unexpected or missing content!"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_count_idvs(client, db, award_data_fixture, refresh_matviews):
     test_payload = {

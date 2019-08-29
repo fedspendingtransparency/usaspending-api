@@ -1,6 +1,6 @@
 import logging
 
-from django.db import connections, transaction
+from django.db import connections, transaction, DEFAULT_DB_ALIAS
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.etl.award_helpers import update_awards
@@ -41,7 +41,7 @@ def delete_stale_fabs(ids_to_delete):
 
     if queries:
         db_query = "".join(queries)
-        db_cursor = connections["default"].cursor()
+        db_cursor = connections[DEFAULT_DB_ALIAS].cursor()
         db_cursor.execute(db_query, [])
 
     # Update Awards

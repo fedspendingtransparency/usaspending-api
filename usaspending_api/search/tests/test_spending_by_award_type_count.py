@@ -53,18 +53,7 @@ def award_data_fixture(db):
         uri=None,
     )
 
-# ===================================================
-# Below tests SKIPPED due to the introduction of asyncpg.
-# asyncpg is a different library to open DB connections to Postgres and supports async functions
-# The test data fixtures hold an open idle DB transaction which blocks SQL queries using the new connection
-# These test need to be re-implemented, but the team has allowed this feature to move forward
-# As the task is much larger than anticipated
 
-# Tony Aug 2019
-# ===================================================
-
-
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_type_success(client, refresh_matviews):
 
@@ -76,6 +65,21 @@ def test_spending_by_award_type_success(client, refresh_matviews):
     )
     assert resp.status_code == status.HTTP_200_OK
 
+
+# ===================================================
+# Below test SKIPPED due to the introduction of asyncpg.
+# asyncpg is a different library to open DB connections to Postgres and supports async functions
+# The test data fixtures hold an open idle DB transaction which blocks SQL queries using the new connection
+# These test need to be re-implemented, but the team has allowed this feature to move forward
+# As the task is much larger than anticipated
+
+# Tony, August 2019
+# ===================================================
+
+
+@pytest.mark.skip
+@pytest.mark.django_db(transaction=True)
+def test_spending_by_award_count_filters(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award_count",
         content_type="application/json",
@@ -84,7 +88,6 @@ def test_spending_by_award_type_success(client, refresh_matviews):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_type_failure(client):
     """Verify error on bad autocomplete request for budget function."""
@@ -97,7 +100,6 @@ def test_spending_by_award_type_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_no_intersection(client, db, award_data_fixture, refresh_matviews):
 
