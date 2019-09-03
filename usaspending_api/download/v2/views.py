@@ -41,7 +41,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
     This route sends a request to the backend to begin generating a zipfile of Assistance data in CSV form for download.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/assistance.md"
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/assistance_download.md"
 
     def post(self, request):
         return BaseDownloadViewSet.post(self, request, "assistance")
