@@ -38,6 +38,7 @@ def test_download_contract_endpoint(client, award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["url"]
+    assert "CONT_piid1" in resp.json()["url"]
 
 
 @pytest.mark.django_db
@@ -46,3 +47,4 @@ def test_download_assistance_endpoint(client, award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["url"]
+    assert "ASST_fain" in resp.json()["url"]
