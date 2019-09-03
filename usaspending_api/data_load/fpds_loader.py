@@ -2,6 +2,8 @@ from os import environ
 import psycopg2
 from collections import OrderedDict
 import logging
+import time
+import math
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
@@ -12,17 +14,36 @@ from usaspending_api.data_load.data_load_helpers import subtier_agency_list, for
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
 BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
 
-logger = logging.getLogger()
+
+class Timer:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.end = time.perf_counter()
+        self.elapsed = self.end - self.start
+        self.elapsed_as_string = self.pretty_print_duration(self.elapsed)
+
+    @staticmethod
+    def pretty_print_duration(elapsed):
+        f, s = math.modf(elapsed)
+        m, s = divmod(s, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d.%04d" % (h, m, s, f * 10000)
 
 
 def run_fpds_load(id_list):
-    load_reference_data()
+    with Timer() as chunk_timer:
+        load_reference_data()
 
-    broker_transactions = fetch_broker_objects(id_list)
+        broker_transactions = fetch_broker_objects(id_list)
 
-    load_objects = generate_load_objects(broker_transactions)
+        load_objects = generate_load_objects(broker_transactions)
 
-    load_transactions(load_objects)
+        load_transactions(load_objects)
+        chunk_timer.__exit__()
+        print(chunk_timer.elapsed_as_string)
 
 
 def load_reference_data():
@@ -167,7 +188,7 @@ def load_transactions(load_objects):
                     cursor.execute(update_award_sql)
                 # If there is no award, we need to create one
                 else:
-                    columns, values = setup_load_lists(load_object, "award")
+                    columns, values, pairs = setup_load_lists(load_object, "award")
                     generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id"\
                         .format(columns, values)
                     cursor.execute(generate_matching_award_sql)
@@ -175,28 +196,29 @@ def load_transactions(load_objects):
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
 
                 # Determine if we are making a new transaction, or updating an old one
-                find_matching_transaction_sql = "select id from transaction_normalized " \
-                                                "where transaction_unique_id = \'{}\'"\
-                    .format(load_object["transaction_normalized"]["transaction_unique_id"])
+                find_matching_transaction_sql = "select transaction_id from transaction_fpds " \
+                                                "where detached_award_procurement_id = \'{}\'"\
+                    .format(load_object["transaction_fpds"]["detached_award_procurement_id"])
                 cursor.execute(find_matching_transaction_sql)
                 results = cursor.fetchall()
 
                 if len(results) > 0:
+                    print("trying to update {}".format(load_object["transaction_fpds"]["detached_award_procurement_id"]))
+                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
+                    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " \
+                                           "where detached_award_procurement_id = {}" \
+                        .format(pairs, load_object["transaction_fpds"]["detached_award_procurement_id"])
+                    cursor.execute(transaction_fpds_sql)
+
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     load_object["transaction_fpds"]["transaction_id"] = results[0][0]
                     load_object["award"]["latest_tranaction_id"] = results[0][0]
                     transaction_normalized_sql = "UPDATE transaction_normalized SET {} " \
-                                                 "where transaction_unique_id = \'{}\'" \
-                        .format(pairs, load_object["transaction_normalized"]["transaction_unique_id"])
+                                                 "where id  = \'{}\'" \
+                        .format(pairs, load_object["transaction_fpds"]["transaction_id"])
                     cursor.execute(transaction_normalized_sql)
 
-                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-                    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " \
-                                           "where transaction_id = {}" \
-                        .format(pairs, load_object["transaction_fpds"]["transaction_id"])
-                    cursor.execute(transaction_fpds_sql)
-
-                    logger.info("updated fpds transaction {}".format(results[0][0]))
+                    print("updated fpds transaction {}".format(results[0][0]))
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
@@ -214,7 +236,7 @@ def load_transactions(load_objects):
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
 
-                    logger.info("created fpds transaction {}".format(results[0][0]))
+                    print("created fpds transaction {}".format(results[0][0]))
 
                 # No matter what, we need to go back and update the award's latest transaction to the award we just made
                 update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}"\

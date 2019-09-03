@@ -23,4 +23,4 @@ def calculate_funding_agency(broker_input):
 
 
 def unique_transaction_id(broker_input):
-    return "tHiS_v@LuE-iS/mIsSiNG"
+    return broker_input["detached_award_proc_unique"]
