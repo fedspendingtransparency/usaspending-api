@@ -398,5 +398,8 @@
       "name": "compound_cfda_action_date",
       "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }
+  ],
+  "stats": [
+    {"name": "tas_and_dates", "columns": ["treasury_account_identifiers", "type", "action_date"]}
   ]
 }

@@ -304,7 +304,6 @@
     }, {
       "name": "treasury_account_identifiers",
       "method": "GIN",
-      "where": "treasury_account_identifiers IS NOT NULL",
       "columns": [{"name": "treasury_account_identifiers", "opclass": "gin__int_ops"}]
     }, {
       "name": "compound_psc_action_date",
