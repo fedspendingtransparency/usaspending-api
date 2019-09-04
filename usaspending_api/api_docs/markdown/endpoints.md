@@ -45,6 +45,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/recipient/](/api/v2/autocomplete/recipient/)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
+|[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
+|[/api/v2/awards/funding_rollup](/api/v2/awards/funding_rollup)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for an award|
 |[/api/v2/awards/idvs/accounts/](/api/v2/awards/idvs/accounts/)|POST| Returns a list of federal accounts for the indicated IDV|
 |[/api/v2/awards/idvs/activity/](/api/v2/awards/idvs/activity/)|POST| Returns information about child awards and grandchild awards for a given IDV (Indefinite Delivery Vehicle).|
 |[/api/v2/awards/idvs/amounts/<AWARD_ID\>/](/api/v2/awards/idvs/amounts/69309317/)|GET| Returns the direct children of an IDV|
