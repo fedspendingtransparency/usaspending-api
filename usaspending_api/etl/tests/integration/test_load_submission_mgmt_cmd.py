@@ -2,6 +2,7 @@
 
 # Core Django imports
 from django.core.management import call_command
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Q
 
 # Third-party app imports
@@ -15,7 +16,7 @@ from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Tran
 
 
 DB_CURSOR_PARAMS = {
-    "default": MagicMock(),
+    DEFAULT_DB_ALIAS: MagicMock(),
     "data_broker": MagicMock(),
     "data_broker_data_file": "usaspending_api/etl/tests/data/submission_data.json",
 }
@@ -54,7 +55,7 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-    call_command("load_submission", "--noclean", "-9999")
+    call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": []}
 
@@ -100,7 +101,7 @@ def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-    call_command("load_submission", "--noclean", "-9999")
+    call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-1001]}
 
@@ -146,7 +147,7 @@ def test_load_submission_file_c_piid_with_no_parent_piid(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-        call_command("load_submission", "--noclean", "-9999")
+        call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-998]}
 
@@ -192,7 +193,7 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-        call_command("load_submission", "--noclean", "-9999")
+        call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-997, -997]}
 
@@ -232,7 +233,7 @@ def test_load_submission_file_c_fain(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-        call_command("load_submission", "--noclean", "-9999")
+        call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-997]}
 
@@ -272,7 +273,7 @@ def test_load_submission_file_c_uri(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-        call_command("load_submission", "--noclean", "-9999")
+        call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-997]}
 
@@ -326,7 +327,7 @@ def test_load_submission_file_c_fain_and_uri(mock_db_cursor):
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
 
-        call_command("load_submission", "--noclean", "-9999")
+        call_command("load_submission", "-9999")
 
     expected_results = {"award_ids": [-1999, -999]}
 
@@ -357,7 +358,7 @@ def test_load_submission_transaction_obligated_amount(mock_db_cursor):
             "tas_rendering_label": "999-999-000-0000-0000",
         },
     )
-    call_command("load_submission", "--noclean", "-9999")
+    call_command("load_submission", "-9999")
 
     expected_results = 0
     actual_results = FinancialAccountsByAwards.objects.filter(

@@ -20,7 +20,7 @@ class GlossaryViewSet(APIView):
     """
     This view returns paginated glossary terms in a list
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/references/Glossary.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/glossary.md"
 
     @cache_response()
     def get(self, request: Request) -> Response:

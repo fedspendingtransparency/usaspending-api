@@ -1,5 +1,6 @@
 import copy
 import logging
+from decimal import Decimal
 
 from collections import OrderedDict
 from django.db.models import Sum
@@ -20,6 +21,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
+from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
 
@@ -45,10 +47,7 @@ def construct_assistance_response(requested_award_dict):
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
-    cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
-    response["cfda_number"] = transaction["cfda_number"]
-    response["cfda_title"] = transaction["cfda_title"]
-    response["cfda_objectives"] = cfda_info.get("objectives")
+    response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
 
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
@@ -225,7 +224,10 @@ def create_place_of_performance_object(db_row_dict):
             ("country_name", db_row_dict["_pop_country_name"]),
             ("county_name", db_row_dict["_pop_county_name"]),
             ("city_name", db_row_dict["_pop_city_name"]),
-            ("state_code", db_row_dict["_pop_state_code"]),
+            ("state_code", db_row_dict["_pop_state_code"] if db_row_dict["_pop_state_code"]
+                else state_code_from_name(db_row_dict["_pop_state_name"])),
+            ("state_name", db_row_dict["_pop_state_name"] if db_row_dict["_pop_state_name"]
+                else state_name_from_code(db_row_dict["_pop_state_code"])),
             ("congressional_code", db_row_dict["_pop_congressional_code"]),
             ("zip4", db_row_dict["_pop_zip4"]),
             ("zip5", db_row_dict["_pop_zip5"]),
@@ -335,7 +337,7 @@ def fetch_latest_ec_details(award_id, mapper, transaction_type):
 
 def fetch_agency_details(agency_id):
     values = [
-        "toptier_agency__fpds_code",
+        "toptier_agency__cgac_code",
         "toptier_agency__name",
         "toptier_agency__abbreviation",
         "subtier_agency__subtier_code",
@@ -350,7 +352,7 @@ def fetch_agency_details(agency_id):
             "id": agency_id,
             "toptier_agency": {
                 "name": agency["toptier_agency__name"],
-                "code": agency["toptier_agency__fpds_code"],
+                "code": agency["toptier_agency__cgac_code"],
                 "abbreviation": agency["toptier_agency__abbreviation"],
             },
             "subtier_agency": {
@@ -370,8 +372,72 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
     return []
 
 
+def fetch_all_cfda_details(award):
+    queryset = TransactionFABS.objects.filter(transaction__award_id=award["id"]).values(
+        "cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount"
+    )
+    cfdas = {}
+    for item in queryset:
+        # sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back
+        cfda_number = item.get("cfda_number")
+        if cfda_number and len(cfda_number) < 6:
+            cfda_number += "0" * (6 - len(cfda_number))
+        if cfdas.get(cfda_number):
+            cfdas.update(
+                {
+                    cfda_number: {
+                        "federal_action_obligation": cfdas[cfda_number]["federal_action_obligation"]
+                        + Decimal(item["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": cfdas[cfda_number]["non_federal_funding_amount"]
+                        + Decimal(item["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": cfdas[cfda_number]["total_funding_amount"]
+                        + Decimal(item["total_funding_amount"] or 0),
+                    }
+                }
+            )
+        else:
+            cfdas.update(
+                {
+                    cfda_number: {
+                        "federal_action_obligation": Decimal(item["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": Decimal(item["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": Decimal(item["total_funding_amount"] or 0),
+                    }
+                }
+            )
+
+    c = []
+    for cfda_number in cfdas.keys():
+        details = fetch_cfda_details_using_cfda_number(cfda_number)
+        if details.get("url") == "None;":
+            details.update({"url": None})
+        c.append(
+            {
+                "cfda_number": cfda_number,
+                "federal_action_obligation_amount": cfdas[cfda_number]["federal_action_obligation"],
+                "non_federal_funding_amount": cfdas[cfda_number]["non_federal_funding_amount"],
+                "total_funding_amount": cfdas[cfda_number]["total_funding_amount"],
+                "cfda_title": details.get("program_title"),
+                "cfda_popular_name": details.get("popular_name"),
+                "cfda_objectives": details.get("objectives"),
+                "cfda_federal_agency": details.get("federal_agency"),
+                "cfda_website": details.get("website_address"),
+                "sam_website": details.get("url"),
+                "cfda_obligations": details.get("obligations"),
+            }
+        )
+    c.sort(key=lambda x: x["total_funding_amount"], reverse=True)
+    return c
+
+
 def fetch_cfda_details_using_cfda_number(cfda):
-    c = Cfda.objects.filter(program_number=cfda).values("program_title", "objectives").first()
+    c = (
+        Cfda.objects.filter(program_number=cfda)
+        .values(
+            "program_title", "objectives", "federal_agency", "website_address", "url", "obligations", "popular_name"
+        )
+        .first()
+    )
     if not c:
         return {}
     return c

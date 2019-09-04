@@ -10,7 +10,6 @@ class Agency(models.Model):
 
     toptier_agency = models.ForeignKey("references.ToptierAgency", models.DO_NOTHING, null=True, db_index=True)
     subtier_agency = models.ForeignKey("references.SubtierAgency", models.DO_NOTHING, null=True, db_index=True)
-    office_agency = models.ForeignKey("references.OfficeAgency", models.DO_NOTHING, null=True, db_index=True)
 
     # 1182 This flag is true if toptier agency name and subtier agency name are equal.
     # This means the award is at the department level.
@@ -19,7 +18,7 @@ class Agency(models.Model):
     class Meta:
         managed = True
         db_table = "agency"
-        unique_together = ("toptier_agency", "subtier_agency", "office_agency")
+        unique_together = ("toptier_agency", "subtier_agency")
 
     @staticmethod
     def get_by_toptier(toptier_cgac_code):
@@ -102,7 +101,7 @@ class Agency(models.Model):
 
     def __str__(self):
         stringrep = ""
-        for agency in [self.toptier_agency, self.subtier_agency, self.office_agency]:
+        for agency in [self.toptier_agency, self.subtier_agency]:
             if agency:
                 stringrep = stringrep + agency.name + " :: "
         return stringrep

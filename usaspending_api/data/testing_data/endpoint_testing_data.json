@@ -55,7 +55,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -63,14 +62,12 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -78,8 +75,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "recipient": {
             "legal_entity_id": 799999094,
@@ -150,7 +146,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -158,8 +153,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]
@@ -234,7 +228,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -242,8 +235,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -253,7 +245,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -261,8 +252,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -272,7 +262,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -280,8 +269,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -291,7 +279,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -299,8 +286,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -310,7 +296,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -318,8 +303,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]
