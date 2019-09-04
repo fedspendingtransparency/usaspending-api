@@ -298,11 +298,11 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "high_comp_officer4_amount": "officer_4_amount",
                             "high_comp_officer4_full_na": "officer_5_name",
                             "high_comp_officer5_amount": "officer_5_amount",
-                            "high_comp_officer5_full_na": "officer_5_name"}
+                            "high_comp_officer5_full_na": "officer_5_name",
+                            "created_at": "created_at",
+                            "updated_at": "updated_at"}
 
 transaction_fpds_functions = {
-                             "created_at": now,  # Data loader won't add this value if it's an update
-                             "updated_at": now
                              }
 
 # broker column name -> usaspending column name
