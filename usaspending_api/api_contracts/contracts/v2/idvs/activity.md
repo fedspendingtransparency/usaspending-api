@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Activity [/api/v2/awards/idvs/activity/]
+# IDV Activity [/api/v2/idvs/activity/]
 
 This endpoint is used to power the IDV (Indefinite Delivery Vehicle) Activity visualization on IDV Summary Pages.
 

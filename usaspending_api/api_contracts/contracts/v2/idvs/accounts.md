@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Funding Accounts [/api/v2/awards/idvs/accounts/]
+# Funding Accounts [/api/v2/idvs/accounts/]
 
 These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
 

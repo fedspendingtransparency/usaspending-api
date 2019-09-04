@@ -153,7 +153,7 @@ TINY_SHIELD_MODELS = _prepare_tiny_shield_models()
 
 class IDVFundingViewSet(APIView):
     """Returns File C funding records associated with an IDV."""
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/idvs/funding.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/funding.md"
 
     @staticmethod
     def _parse_and_validate_request(request_data: dict) -> dict:

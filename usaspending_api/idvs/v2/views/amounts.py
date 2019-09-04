@@ -20,7 +20,7 @@ class IDVAmountsViewSet(APIView):
     """
     Returns counts and dollar figures for a specific IDV.
     """
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/idvs/amounts.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/amounts/award_id.md"
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str) -> dict:
