@@ -7,7 +7,11 @@ services:
   - postgresql
 
 addons:
-  postgresql: '9.6'
+  postgresql: '10.7'
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
 
 env:
   global:
