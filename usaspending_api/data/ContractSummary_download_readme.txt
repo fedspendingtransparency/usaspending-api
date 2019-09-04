@@ -1,6 +1,6 @@
 ========ABOUT THESE FILES========
 
-This ZIP file was generated from a specific Contract Award Summary Page on USAspending.gov, located at [CAN WE FILL THIS IN???]
+This ZIP file was generated from a specific Contract Award Summary Page on USAspending.gov, located at https://www.usaspending.gov/#/award_v2/
 
 Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/#/download_center/data_dictionary. We have also included a copy in this download for convenience. Note that the dictionary is updated periodically.
 

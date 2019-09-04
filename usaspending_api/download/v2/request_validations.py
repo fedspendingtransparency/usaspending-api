@@ -106,7 +106,7 @@ def validate_contract_request(request_data):
         "file_format": request_data.get("file_format", "csv"),
         "include_file_description": {
             "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
-            "destination": "readme.txt",
+            "destination": "ContractAwardSummary_download_readme.txt",
         },
         "piid": piid,
         "is_for_idv": False,
@@ -130,7 +130,7 @@ def validate_assistance_request(request_data):
         "file_format": request_data.get("file_format", "csv"),
         "include_file_description": {
             "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
-            "destination": "readme.txt",
+            "destination": "AssistanceAwardSummary_download_readme.txt",
         },
         "id_type": award,
         "is_for_idv": False,
