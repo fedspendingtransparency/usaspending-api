@@ -2,6 +2,7 @@ language: python
 
 python:
   - '3.5'
+  - '3.7'
 
 services:
   - postgresql
@@ -21,6 +22,7 @@ before_install:
 install:
   - pip install -r requirements/requirements.txt
   - pip install coveralls
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install black; fi
 
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
@@ -31,6 +33,7 @@ before_script:
 
 script:
   - flake8
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
   - pytest --cov=usaspending_api
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
