@@ -1,5 +1,5 @@
 from usaspending_api.data_load.derived_field_functions_fpds import calculate_fiscal_year, calculate_awarding_agency, \
- calculate_funding_agency, unique_transaction_id
+ calculate_funding_agency, unique_transaction_id, now
 
 # broker column name -> usaspending column name
 transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_procurement_id",
@@ -300,6 +300,11 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "high_comp_officer5_amount": "officer_5_amount",
                             "high_comp_officer5_full_na": "officer_5_name"}
 
+transaction_fpds_functions = {
+                             "created_at": now,  # Data loader won't add this value if it's an update
+                             "updated_at": now
+                             }
+
 # broker column name -> usaspending column name
 transaction_normalized_columns = {
                                   "federal_action_obligation": "federal_action_obligation",
@@ -328,7 +333,9 @@ transaction_normalized_functions = {"is_fpds": lambda broker: True,
                                     "awarding_agency_id": calculate_awarding_agency,
                                     "funding_agency_id": calculate_funding_agency,
                                     "funding_amount": lambda broker: None,
-                                    "non_federal_funding_amount": lambda broker: None  # FABS only
+                                    "non_federal_funding_amount": lambda broker: None,  # FABS only
+                                    "create_date": now,  # Data loader won't add this value if it's an update
+                                    "update_date": now
                                     }
 
 # usaspending column name -> broker column name
@@ -443,6 +450,8 @@ legal_entity_functions = {"is_fpds": lambda broker: True,
                           "small_business_description": lambda broker: None,  # ?
                           "individual": lambda broker: None,  # ?
                           "parent_recipient_name": lambda broker: None,  # ?
+                          "create_date": now,  # Data loader won't add this value if it's an update
+                          "update_date": now
                           }
 
 # broker column name -> usaspending column name
@@ -454,7 +463,9 @@ recipient_location_columns = {
 recipient_location_functions = {"is_fpds": lambda broker: True,
                                 "place_of_performance_flag": lambda broker: False,
                                 "recipient_flag": lambda broker: True,
-                                "transaction_unique_id": unique_transaction_id
+                                "transaction_unique_id": unique_transaction_id,
+                                "create_date": now,  # Data loader won't add this value if it's an update
+                                "update_date": now
                                 }
 
 # usaspending column name -> broker column name
@@ -479,7 +490,9 @@ place_of_performance_functions = {"is_fpds": lambda broker: True,
                                   "foreign_city_name": lambda broker: None,
                                   "place_of_performance_flag": lambda broker: True,
                                   "recipient_flag": lambda broker: False,
-                                  "transaction_unique_id": unique_transaction_id
+                                  "transaction_unique_id": unique_transaction_id,
+                                  "create_date": now,  # Data loader won't add this value if it's an update
+                                  "update_date": now
                                   }
 
 # usaspending column name -> derivation function
@@ -490,5 +503,7 @@ award_functions = {
                    "subaward_count": lambda broker: 0,
                    "awarding_agency_id": calculate_awarding_agency,
                    "funding_agency_id": calculate_funding_agency,
-                   "data_source": lambda broker: "DBR"
+                   "data_source": lambda broker: "DBR",
+                   "create_date": now,  # Data loader won't add this value if it's an update
+                   "update_date": now
                    }

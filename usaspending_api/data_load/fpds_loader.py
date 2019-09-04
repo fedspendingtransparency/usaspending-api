@@ -7,12 +7,15 @@ import math
 
 from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_columns, transaction_normalized_columns, \
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
-    recipient_location_functions, place_of_performance_columns, place_of_performance_functions, award_functions
+    recipient_location_functions, place_of_performance_columns, place_of_performance_functions, award_functions, \
+    transaction_fpds_functions
 from usaspending_api.data_load.data_load_helpers import subtier_agency_list, format_value_for_sql
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
 BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+
+CHUNK_SIZE = 5000  # Completely arbitrary and not backed by any testing, this can likely go higher
 
 
 class Timer:
@@ -42,8 +45,7 @@ def run_fpds_load(id_list):
         load_objects = generate_load_objects(broker_transactions)
 
         load_transactions(load_objects)
-        chunk_timer.__exit__()
-        print(chunk_timer.elapsed_as_string)
+    print(chunk_timer.elapsed_as_string)
 
 
 def load_reference_data():
@@ -136,6 +138,10 @@ def generate_load_objects(broker_objects):
         transaction_fpds = {}
         for key in transaction_fpds_columns:
             transaction_fpds[transaction_fpds_columns[key]] = broker_object[key]
+
+        for key in transaction_fpds_functions:
+            transaction_fpds[key] = transaction_fpds_functions[key](broker_object)
+
         connected_objects["transaction_fpds"] = transaction_fpds
 
         retval.append(connected_objects)
@@ -203,7 +209,6 @@ def load_transactions(load_objects):
                 results = cursor.fetchall()
 
                 if len(results) > 0:
-                    print("trying to update {}".format(load_object["transaction_fpds"]["detached_award_procurement_id"]))
                     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
                     transaction_fpds_sql = "UPDATE transaction_fpds SET {} " \
                                            "where detached_award_procurement_id = {}" \
@@ -252,7 +257,8 @@ def setup_load_lists(load_object, table):
         columns.append("\"{}\"".format(key))
         val = format_value_for_sql(load_object[table][key])
         values.append(val)
-        update_pairs.append(" {}={}".format(key, val))
+        if key not in ["create_date", "created_at"]:
+            update_pairs.append(" {}={}".format(key, val))
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = "({})".format(",".join(map(str, values)))
