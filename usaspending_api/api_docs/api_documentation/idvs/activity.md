@@ -1,5 +1,5 @@
 ## IDV Related Activity
-**Route:** `/api/v2/awards/idvs/activity/`
+**Route:** `/api/v2/idvs/activity/`
 
 **Method:** `POST`
 

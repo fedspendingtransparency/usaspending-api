@@ -1,5 +1,5 @@
 ## IDV Award Amounts
-**Route:** `/api/v2/awards/idvs/amounts/<requested_award>/`
+**Route:** `/api/v2/idvs/amounts/<requested_award>/`
 
 **Method:** `GET`
 
