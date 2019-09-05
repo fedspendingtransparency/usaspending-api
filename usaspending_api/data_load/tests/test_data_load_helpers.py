@@ -1,8 +1,4 @@
-from usaspending_api.data_load.data_load_helpers import (
-    capitalize_if_string,
-    false_if_null,
-    format_value_for_sql,
-)
+from usaspending_api.data_load.data_load_helpers import capitalize_if_string, false_if_null, format_value_for_sql
 
 
 def test_capitalize_if_string():
@@ -20,8 +16,8 @@ def test_false_if_null():
 
 def test_sql_formatter():
     assert format_value_for_sql(None) == "null"
-    assert format_value_for_sql("null") == "\'null\'"
+    assert format_value_for_sql("null") == "'null'"
     assert format_value_for_sql(599) == "599"
-    assert format_value_for_sql("599") == "\'599\'"
-    assert format_value_for_sql([1, 2, "steve"]) == "\'{1,2,\'steve\'}\'"
-    assert format_value_for_sql([None, "bob", [9, 8, 7]]) == "\'{null,\'bob\',\'{9,8,7}\'}\'"
+    assert format_value_for_sql("599") == "'599'"
+    assert format_value_for_sql([1, 2, "steve"]) == "'{1,2,'steve'}'"
+    assert format_value_for_sql([None, "bob", [9, 8, 7]]) == "'{null,'bob','{9,8,7}'}'"
