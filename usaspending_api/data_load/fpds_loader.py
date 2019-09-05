@@ -9,7 +9,7 @@ from usaspending_api.data_load.field_mappings_fpds import transaction_fpds_colum
     transaction_normalized_functions, legal_entity_columns, legal_entity_functions, recipient_location_columns, \
     recipient_location_functions, place_of_performance_columns, place_of_performance_functions, award_functions, \
     transaction_fpds_functions
-from usaspending_api.data_load.data_load_helpers import subtier_agency_list, format_value_for_sql
+from usaspending_api.data_load.data_load_helpers import subtier_agency_list, capitalize_if_string, format_value_for_sql
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
@@ -88,7 +88,7 @@ def generate_load_objects(broker_objects):
         # recipient_location
         recipient_location = {}
         for key in recipient_location_columns:
-            recipient_location[recipient_location_columns[key]] = broker_object[key]
+            recipient_location[recipient_location_columns[key]] = capitalize_if_string(broker_object[key])
 
         for key in recipient_location_functions:
             recipient_location[key] = recipient_location_functions[key](broker_object)
@@ -98,7 +98,7 @@ def generate_load_objects(broker_objects):
         # legal entity
         legal_entity = {}
         for key in legal_entity_columns:
-            legal_entity[key] = broker_object[legal_entity_columns[key]]
+            legal_entity[key] = capitalize_if_string(broker_object[legal_entity_columns[key]])
 
         for key in legal_entity_functions:
             legal_entity[key] = legal_entity_functions[key](broker_object)
@@ -108,7 +108,7 @@ def generate_load_objects(broker_objects):
         # place_of_performance_location
         place_of_performance_location = {}
         for key in place_of_performance_columns:
-            place_of_performance_location[key] = broker_object[place_of_performance_columns[key]]
+            place_of_performance_location[key] = capitalize_if_string(broker_object[place_of_performance_columns[key]])
 
         for key in place_of_performance_functions:
             place_of_performance_location[key] = place_of_performance_functions[key](broker_object)
@@ -127,7 +127,7 @@ def generate_load_objects(broker_objects):
         # transaction_normalized
         transaction_normalized = {}
         for key in transaction_normalized_columns:
-            transaction_normalized[transaction_normalized_columns[key]] = broker_object[key]
+            transaction_normalized[transaction_normalized_columns[key]] = capitalize_if_string(broker_object[key])
 
         for key in transaction_normalized_functions:
             transaction_normalized[key] = transaction_normalized_functions[key](broker_object)
@@ -137,7 +137,7 @@ def generate_load_objects(broker_objects):
         # transaction_fpds
         transaction_fpds = {}
         for key in transaction_fpds_columns:
-            transaction_fpds[transaction_fpds_columns[key]] = broker_object[key]
+            transaction_fpds[transaction_fpds_columns[key]] = capitalize_if_string(broker_object[key])
 
         for key in transaction_fpds_functions:
             transaction_fpds[key] = transaction_fpds_functions[key](broker_object)

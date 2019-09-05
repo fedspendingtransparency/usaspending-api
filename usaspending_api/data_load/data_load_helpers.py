@@ -3,6 +3,12 @@ import datetime
 subtier_agency_list = {}  # global variable, populated by fpds_loader
 
 
+def capitalize_if_string(val):
+    if isinstance(val, str):
+        return val.upper()
+    return val
+
+
 # TODO: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
 def format_value_for_sql(val):
     if isinstance(val, str):
