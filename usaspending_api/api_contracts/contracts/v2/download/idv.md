@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-Returns a link to a zipped file containing IDV data
+Creates a new download job for the requested award and returns a link to a zipped file containing IDV data
 
 + Request (application/json)
     + Attributes
