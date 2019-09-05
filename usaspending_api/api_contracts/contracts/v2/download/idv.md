@@ -11,8 +11,18 @@ Returns a link to a zipped file containing IDV data
     + Attributes
         + `award_id`: `CONT_IDV_BBGBPA08452513_9568` (required, string)
 + Response 200 (application/json)
-    + Attributes
-        + `results` (IDVDownloadResponse)
+    + Attributes (IDVDownloadResponse)
+    + Body
+        {
+            "status": "finished",
+            "file_name": "IDV_DTNH2216C00007_20190905145159064212.zip",
+            "seconds_elapsed": "6.799396",
+            "total_columns": 276,
+            "total_rows": 3,
+            "total_size": 62.094,
+            "url": "/Users/emilybrents/Documents/data_act/usaspending-api/csv_downloads/IDV_DTNH2216C00007_20190905145159064212.zip",
+            "message": null
+        }
 
 # Data Structures
 

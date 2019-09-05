@@ -11,8 +11,18 @@ Returns a link to a zipped file containing contract award data
     + Attributes
         + `award_id`: `ASST_NON_12FA00PY52375933_12D2` (required, string)
 + Response 200 (application/json)
-    + Attributes
-        + `results` (AssistanceDownloadResponse)
+    + Attributes (AssistanceDownloadResponse)
+    + Body
+        {
+            "status": "finished",
+            "file_name": "ASST_12FA00PY52375933_20190905135023230073.zip",
+            "total_rows": 2,
+            "total_columns": 86,
+            "seconds_elapsed": "6.871675",
+            "message": null,
+            "url": "/Users/emilybrents/Documents/data_act/usaspending-api/csv_downloads/ASST_12FA00PY52375933_20190905135023230073.zip",
+            "total_size": 58.983
+        }
 
 # Data Structures
 
