@@ -59,12 +59,12 @@ ACCOUNTS_SQL = SQL(
             t.per_toptier_row_number = 1
     )
     select
-        sum(gfaba.transaction_obligated_amount)         total_transaction_obligated_amount,
-        taa.agency_id || '-' || taa.main_account_code   federal_account,
+        coalesce(sum(gfaba.transaction_obligated_amount), 0.0)         total_transaction_obligated_amount,
+        taa.agency_id || '-' || taa.main_account_code                  federal_account,
         fa.account_title,
-        afmap.toptier_agency_abbreviation               funding_agency_abbreviation,
-        afmap.toptier_agency_name                       funding_agency_name,
-        afmap.agency_id_for_toptier                     funding_agency_id
+        afmap.toptier_agency_abbreviation                              funding_agency_abbreviation,
+        afmap.toptier_agency_name                                      funding_agency_name,
+        afmap.agency_id_for_toptier                                    funding_agency_id
     from
         gather_financial_accounts_by_awards gfaba
         left outer join treasury_appropriation_account taa on
