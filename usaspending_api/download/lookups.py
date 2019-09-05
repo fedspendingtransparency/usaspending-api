@@ -156,7 +156,7 @@ VALUE_MAPPINGS = {
         "filter_function": awards_treasury_account_funding_filter,
         "is_for_assistance": True,
     },
-    "contract_sub_awards": {
+    "sub_contracts": {
         "source_type": "award",
         "table": SubawardView,
         "table_name": "subaward",
@@ -166,7 +166,7 @@ VALUE_MAPPINGS = {
         "is_for_contract": True,
         "annotations_function": subaward_annotations,
     },
-    "assistance_sub_awards": {
+    "sub_grants": {
         "source_type": "award",
         "table": SubawardView,
         "table_name": "subaward",

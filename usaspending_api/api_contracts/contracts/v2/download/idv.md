@@ -27,11 +27,12 @@ Returns a link to a zipped file containing IDV data
 # Data Structures
 
 ## IDVDownloadResponse (object)
-+ `total_size` (number, nullable)
+## ContractDownloadResponse (object)
++ `total_size` (required, number)
     The total size of the file being returned
 + `file_name` (required, string)
-+ `total_rows` (number, nullable)
-+ `total_columns` (number, nullable)
++ `total_rows` (required, number)
++ `total_columns` (required, number)
 + `url` (required, string)
     Where the file lives in S3
 + `message` (optional, string, nullable)

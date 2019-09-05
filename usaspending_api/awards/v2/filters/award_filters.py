@@ -8,17 +8,24 @@ from usaspending_api.accounts.v2.filters.account_download import generate_treasu
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.exceptions import InvalidParameterException
-
+from usaspending_api.common.validator.tinyshield import TinyShield
+from copy import deepcopy
 
 logger = logging.getLogger("console")
+TINYSHIELD_MODELS = [
+    {
+        "name": "award_id",
+        "key": "award_id",
+        "type": "any",
+        "optional": False,
+        "models": [{"type": "integer"}, {"type": "text", "text_type": "search"}],
+    }
+]
 
 
 def _get_award_id(filters):
-    if "award_id" not in filters:
-        raise InvalidParameterException("Invalid filter: award_id is required.")
+    TinyShield(deepcopy(TINYSHIELD_MODELS)).block(filters)
     award_id = filters["award_id"]
-    if award_id is None:
-        raise InvalidParameterException("Invalid filter: award_id has null as its value.")
     return award_id
 
 

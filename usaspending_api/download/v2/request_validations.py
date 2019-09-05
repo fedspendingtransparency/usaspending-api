@@ -102,7 +102,7 @@ def validate_contract_request(request_data):
 
     return {
         "account_level": "treasury_account",
-        "download_types": ["contract_sub_awards", "contract_transactions", "contract_federal_account_funding"],
+        "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
         "file_format": request_data.get("file_format", "csv"),
         "include_file_description": {
             "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
@@ -127,7 +127,7 @@ def validate_assistance_request(request_data):
         award = uri
     return {
         "account_level": "treasury_account",
-        "download_types": ["assistance_transactions", "assistance_sub_awards", "assistance_federal_account_funding"],
+        "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
         "file_format": request_data.get("file_format", "csv"),
         "include_file_description": {
             "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,

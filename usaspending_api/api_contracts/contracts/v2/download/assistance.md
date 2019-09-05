@@ -27,11 +27,11 @@ Returns a link to a zipped file containing contract award data
 # Data Structures
 
 ## AssistanceDownloadResponse (object)
-+ `total_size` (number, nullable)
++ `total_size` (required, number)
     The total size of the file being returned
 + `file_name` (required, string)
-+ `total_rows` (number, nullable)
-+ `total_columns` (number, nullable)
++ `total_rows` (required, number)
++ `total_columns` (required, number)
 + `url` (required, string)
     Where the file lives in S3
 + `message` (optional, string, nullable)
