@@ -12,7 +12,7 @@ def create_unique_filename(json_request, request_agency=None):
     elif json_request.get("is_for_contract"):
         download_name = "CONT_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
     elif json_request.get("is_for_assistance"):
-        download_name = "ASST_" + slugify_text_for_file_names(json_request.get("id_type"), "UNKNOWN", 50)
+        download_name = "ASST_" + slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
     else:
         download_types = json_request["download_types"]
         prefix = obtain_filename_prefix_from_agency_id(request_agency)

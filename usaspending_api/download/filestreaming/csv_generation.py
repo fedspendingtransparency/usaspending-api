@@ -43,7 +43,8 @@ def generate_csvs(download_job):
     columns = json_request.get("columns", None)
     limit = json_request.get("limit", None)
     piid = json_request.get("piid", None)
-    id_type = json_request.get("id_type")
+    award_id = json_request.get("award_id")
+    assistance_id = json_request.get("assistance_id")
 
     file_name = start_download(download_job)
     try:
@@ -60,7 +61,7 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, piid, id_type, zip_file_path, limit)
+            parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit)
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -68,6 +69,7 @@ def generate_csvs(download_job):
         if include_file_description:
             write_to_log(message="Adding file description to zip file")
             file_description = build_file_description(include_file_description["source"], sources)
+            file_description = file_description.replace("[AWARD_ID]", str(award_id))
             file_description_path = save_file_description(
                 working_dir, include_file_description["destination"], file_description
             )
@@ -157,7 +159,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, id_type, zip_file_path, limit):
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {
         "d1": "contracts",
@@ -174,7 +176,7 @@ def parse_source(source, columns, download_job, working_dir, piid, id_type, zip_
         source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
     elif source.is_for_assistance:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        source_name = file_name_pattern.format(id_type=slugify_text_for_file_names(id_type, "UNKNOWN", 50))
+        source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
         source_name = "{}_{}_{}".format(
             source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]["download_name"]

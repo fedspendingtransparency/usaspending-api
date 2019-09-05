@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-Returns a zipped file containing contract award data
+Returns a link to a zipped file containing contract award data
 
 + Request (application/json)
     + Attributes
@@ -17,12 +17,12 @@ Returns a zipped file containing contract award data
 # Data Structures
 
 ## ContractDownloadResponse (object)
-+ `total_size`: 35.055 (number, nullable)
++ `total_size` (number, nullable)
     The total size of the file being returned
-+ `file_name`: `CONT_AWD_UZ02_9700_SPM2DV11D9200_9700.zip` (required, string)
-+ `total_rows`: 652 (number, nullable)
-+ `total_columns`: 27 (number, nullable)
-+ `url`: `xyz/path_to/bucket/CONT_AWD_UZ02_9700_SPM2DV11D9200_9700.zip` (required, string)
++ `file_name` (required, string)
++ `total_rows` (number, nullable)
++ `total_columns` (number, nullable)
++ `url` (required, string)
     Where the file lives in S3
 + `message` (optional, string, nullable)
 + `status` (required, enum[string])
@@ -31,4 +31,4 @@ Returns a zipped file containing contract award data
         + `running`
         + `finished`
         + `failed`
-+ `seconds_elapsed`: `10.061132` (required, string)
++ `seconds_elapsed` (required, string)

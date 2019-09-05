@@ -30,7 +30,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
     This route sends a request to the backend to begin generating a zipfile of Contract data in CSV form for download.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/contract_download.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/contract.md"
 
     def post(self, request):
         return BaseDownloadViewSet.post(self, request, "contract")
@@ -41,7 +41,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
     This route sends a request to the backend to begin generating a zipfile of Assistance data in CSV form for download.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/assistance_download.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/assistance.md"
 
     def post(self, request):
         return BaseDownloadViewSet.post(self, request, "assistance")
