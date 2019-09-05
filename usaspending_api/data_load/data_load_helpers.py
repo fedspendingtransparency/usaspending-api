@@ -17,13 +17,14 @@ def false_if_null(val):
 
 # TODO: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
 def format_value_for_sql(val):
+    retval = val
     if isinstance(val, str):
-        return "'{}'".format(val.replace("'", "''").replace('"', '""'))
+        retval = "'{}'".format(val.replace("'", "''").replace('"', '""'))
     elif val is None:
-        return "null"
+        retval = "null"
     elif isinstance(val, list):
-        return "'{" + (",".join(val)) + "}'"  # noqa
+        retval = "'{" + (",".join(val)) + "}'"  # noqa
     elif isinstance(val, datetime.datetime):
-        return "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
-    else:
-        return val
+        retval = "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
+
+    return retval
