@@ -16,7 +16,9 @@ from usaspending_api.data_load.data_load_helpers import subtier_agency_list, cap
 USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
 BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
 
-CHUNK_SIZE = 5000  # Completely arbitrary and not backed by any testing, this can likely go higher
+CHUNK_SIZE = 1000
+
+logger = logging.getLogger("console")
 
 
 class Timer:
@@ -38,15 +40,20 @@ class Timer:
 
 
 def run_fpds_load(id_list):
-    with Timer() as chunk_timer:
+    if not subtier_agency_list:
         load_reference_data()
 
-        broker_transactions = fetch_broker_objects(id_list)
+    chunks = [id_list[x:x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
-        load_objects = generate_load_objects(broker_transactions)
+    for chunk in chunks:
+        with Timer() as timer:
+            logger.info("loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
+            broker_transactions = fetch_broker_objects(chunk)
 
-        load_transactions(load_objects)
-    print(chunk_timer.elapsed_as_string)
+            load_objects = generate_load_objects(broker_transactions)
+
+            load_transactions(load_objects)
+        logger.info("ran load in {}".format(timer.elapsed_as_string))
 
 
 def load_reference_data():
@@ -160,6 +167,7 @@ def load_transactions(load_objects):
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             for load_object in load_objects:
 
+                # Create recipient location so we can link it later
                 columns, values, pairs = setup_load_lists(load_object, "recipient_location")
                 recipient_location_sql = "INSERT INTO references_location {} VALUES {} " \
                                          "RETURNING location_id"\
@@ -168,6 +176,7 @@ def load_transactions(load_objects):
                 results = cursor.fetchall()
                 load_object["legal_entity"]["location_id"] = results[0][0]
 
+                # Create recipient so we can link it later
                 columns, values, pairs = setup_load_lists(load_object, "legal_entity")
                 recipient_sql = "INSERT INTO legal_entity {} VALUES {} " \
                                 "RETURNING legal_entity_id" \
@@ -177,6 +186,7 @@ def load_transactions(load_objects):
                 load_object["transaction_normalized"]["recipient_id"] = results[0][0]
                 load_object["award"]["recipient_id"] = results[0][0]
 
+                # Create place of performance so we can link it later
                 columns, values, pairs = setup_load_lists(load_object, "place_of_performance_location")
                 pop_location_sql = "INSERT INTO references_location {} VALUES {} "\
                                    "RETURNING location_id"\
@@ -210,12 +220,14 @@ def load_transactions(load_objects):
 
                 # Determine if we are making a new transaction, or updating an old one
                 find_matching_transaction_sql = "select transaction_id from transaction_fpds " \
-                                                "where detached_award_procurement_id = \'{}\'"\
-                    .format(load_object["transaction_fpds"]["detached_award_procurement_id"])
+                                                "where detached_award_proc_unique = \'{}\'"\
+                    .format(load_object["transaction_fpds"]["detached_award_proc_unique"])
                 cursor.execute(find_matching_transaction_sql)
                 results = cursor.fetchall()
 
                 if len(results) > 0:
+                    # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
+                    # we update all values
                     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
                     transaction_fpds_sql = "UPDATE transaction_fpds SET {} " \
                                            "where detached_award_procurement_id = {}" \
@@ -230,8 +242,10 @@ def load_transactions(load_objects):
                         .format(pairs, load_object["transaction_fpds"]["transaction_id"])
                     cursor.execute(transaction_normalized_sql)
 
-                    print("updated fpds transaction {} with recipient {}".format(results[0][0], load_object["award"]["recipient_id"]))
+                    logger.debug("updated fpds transaction {}".format(results[0][0]))
                 else:
+                    # If there is no transaction we create a new one.
+                    # transaction_normalized and transaction_fpds should be one-to-one
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
                                                  "RETURNING id"\
@@ -248,7 +262,7 @@ def load_transactions(load_objects):
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
 
-                    print("created fpds transaction {}".format(results[0][0]))
+                    logger.debug("created fpds transaction {}".format(results[0][0]))
 
                 # No matter what, we need to go back and update the award's latest transaction to the award we just made
                 update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}"\
