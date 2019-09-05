@@ -2,8 +2,8 @@ import pytest
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from usaspending_api.agencies.models import CGAC
 from usaspending_api.references.management.commands.load_cgacs import Command, MAX_DIFF
-from usaspending_api.references.models import CGAC
 
 
 AGENCY_FILE = "https://files.usaspending.gov/reference_data/agency_codes.csv"

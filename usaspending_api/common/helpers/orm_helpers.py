@@ -1,6 +1,6 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Func, IntegerField
+from django.db.models import Aggregate, Func, IntegerField
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.awards.models_matviews import (
     ContractAwardSearchMatview,
@@ -56,6 +56,12 @@ class FiscalYear(Func):
     function = "EXTRACT"
     template = "%(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months')"
     output_field = IntegerField()
+
+
+class BoolOr(Aggregate):
+    """true if at least one input value is true, otherwise false"""
+    function = "BOOL_OR"
+    name = "BoolOr"
 
 
 def generate_raw_quoted_query(queryset):

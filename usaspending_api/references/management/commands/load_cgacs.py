@@ -3,17 +3,12 @@ import pandas
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from functools import partial
 from psycopg2.sql import Literal, SQL
 from usaspending_api.common.helpers.sql_helpers import execute_fetchall, execute_update_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
 
 
 logger = logging.getLogger("console")
-
-
-# All of our timers log to logger.info and logger.error.
-Timer = partial(Timer, success_logger=logger.info, failure_logger=logger.error)
 
 
 MAX_DIFF = 20
