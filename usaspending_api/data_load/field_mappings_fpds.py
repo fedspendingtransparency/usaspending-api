@@ -157,7 +157,6 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "sea_transportation_desc": "sea_transportation_desc",
                             "labor_standards": "labor_standards",
                             "labor_standards_descrip": "labor_standards_descrip",
-                            "small_business_competitive": "small_business_competitive",
                             "solicitation_identifier": "solicitation_identifier",
                             "solicitation_procedures": "solicitation_procedures",
                             "solicitation_procedur_desc": "solicitation_procedur_desc",
@@ -217,6 +216,7 @@ transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_pro
                             "updated_at": "updated_at"}
 
 transaction_fpds_boolean_columns = {
+    "small_business_competitive": "small_business_competitive",
     "city_local_government": "city_local_government",
     "county_local_government": "county_local_government",
     "inter_municipal_local_gove": "inter_municipal_local_gove",
