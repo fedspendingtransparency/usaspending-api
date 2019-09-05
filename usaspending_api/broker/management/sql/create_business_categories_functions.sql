@@ -555,6 +555,20 @@ begin
 end;
 $$  language plpgsql;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 create or replace function compile_fabs_business_categories(business_types text)
 returns text[]
 immutable parallel safe

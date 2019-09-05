@@ -1,5 +1,5 @@
 from usaspending_api.data_load.derived_field_functions_fpds import calculate_fiscal_year, calculate_awarding_agency, \
- calculate_funding_agency, unique_transaction_id, now
+ calculate_funding_agency, unique_transaction_id, now, business_categories
 
 # broker column name -> usaspending column name
 transaction_fpds_columns = {"detached_award_procurement_id": "detached_award_procurement_id",
@@ -411,7 +411,7 @@ legal_entity_boolean_columns = {
                         "hospital_flag": "hospital_flag",
                         "veterinary_hospital": "veterinary_hospital",
                         "hispanic_servicing_institution": "hispanic_servicing_institu",
-"woman_owned_business": "veteran_owned_business",
+                        "woman_owned_business": "veteran_owned_business",
                         "minority_owned_business": "minority_owned_business",
                         "women_owned_small_business": "women_owned_small_business",
                         "economically_disadvantaged_women_owned_small_business": "economically_disadvantaged",
@@ -429,7 +429,7 @@ legal_entity_boolean_columns = {
                         "planning_commission": "planning_commission",
                         "port_authority": "port_authority",
                         "transit_authority": "transit_authority",
-"foreign_owned_and_located": "foreign_owned_and_located",
+                        "foreign_owned_and_located": "foreign_owned_and_located",
                         "american_indian_owned_business": "american_indian_owned_busi",
                         "alaskan_native_owned_corporation_or_firm": "alaskan_native_owned_corpo",
                         "indian_tribe_federally_recognized": "indian_tribe_federally_rec",
@@ -441,7 +441,7 @@ legal_entity_boolean_columns = {
                         "native_american_owned_business": "native_american_owned_busi",
                         "subcontinent_asian_asian_indian_american_owned_business": "subcontinent_asian_asian_i",
                         "other_minority_owned_business": "other_minority_owned_busin",
-"us_local_government": "us_local_government"
+                        "us_local_government": "us_local_government"
 }
 
 # usaspending column name -> derivation function
@@ -449,7 +449,9 @@ legal_entity_functions = {"is_fpds": lambda broker: True,
                           "transaction_unique_id": unique_transaction_id,
                           "data_source": lambda broker: "DBR",
                           "parent_recipient_unique_id": lambda broker: None,  # FABS only
-                          "business_categories": lambda broker: ["filler 1", "filler 2"],
+                          "business_types": lambda broker: None,  # FABS only
+                          "business_types_description": lambda broker: None,  # FABS only
+                          "business_categories": business_categories,
                           "city_township_government": lambda broker: None,  # ?
                           "special_district_government": lambda broker: None,  # ?
                           "small_business": lambda broker: None,  # ?

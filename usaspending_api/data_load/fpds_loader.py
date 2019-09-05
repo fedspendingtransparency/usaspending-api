@@ -230,7 +230,7 @@ def load_transactions(load_objects):
                         .format(pairs, load_object["transaction_fpds"]["transaction_id"])
                     cursor.execute(transaction_normalized_sql)
 
-                    print("updated fpds transaction {}".format(results[0][0]))
+                    print("updated fpds transaction {} with recipient {}".format(results[0][0], load_object["award"]["recipient_id"]))
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} " \
