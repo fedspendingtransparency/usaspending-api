@@ -10,7 +10,7 @@ from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("console")
 
 
 def _get_award_id(filters):
