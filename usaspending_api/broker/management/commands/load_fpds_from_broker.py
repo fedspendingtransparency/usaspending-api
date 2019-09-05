@@ -35,8 +35,9 @@ class Command(BaseCommand):
         # Not doing any batching here, since if the array of ids is blowing you up I don't know how to chunk that on
         # the cursor execute
         id_list = self.get_fpds_transaction_ids_from_date(date)
-        logger.info("Loading batch from date query (size: {}, ids {}-{})...".format(len(id_list), id_list[0],
-                                                                                            id_list[-1]))
+        logger.info(
+            "Loading batch from date query (size: {}, ids {}-{})...".format(len(id_list), id_list[0], id_list[-1])
+        )
         run_fpds_load(id_list)
 
     @staticmethod
@@ -53,8 +54,12 @@ class Command(BaseCommand):
             return
         with RetrieveFileFromUri(file_path).get_file_object() as file:
             for next_batch in self.next_batch_generator(file):
-                id_list = [int(re.search(r'\d+', x).group()) for x in next_batch]
-                logger.info("Loading next batch from provided file (size: {}, ids {}-{})...".format(len(id_list), id_list[0], id_list[-1]))
+                id_list = [int(re.search(r"\d+", x).group()) for x in next_batch]
+                logger.info(
+                    "Loading next batch from provided file (size: {}, ids {}-{})...".format(
+                        len(id_list), id_list[0], id_list[-1]
+                    )
+                )
                 run_fpds_load(id_list)
 
     def add_arguments(self, parser):

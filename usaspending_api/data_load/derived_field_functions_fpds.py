@@ -35,14 +35,16 @@ def now(broker_input):
 def business_categories(broker_input):
     retval = []
 
-    if broker_input["contracting_officers_deter"] == "S" or\
-    broker_input["women_owned_small_business"] or\
-    broker_input["economically_disadvantaged"] or\
-    broker_input["joint_venture_women_owned"] or\
-    broker_input["emerging_small_business"] or\
-    broker_input["self_certified_small_disad"] or\
-    broker_input["small_agricultural_coopera"] or\
-    broker_input["small_disadvantaged_busine"]:
+    if (
+        broker_input["contracting_officers_deter"] == "S"
+        or broker_input["women_owned_small_business"]
+        or broker_input["economically_disadvantaged"]
+        or broker_input["joint_venture_women_owned"]
+        or broker_input["emerging_small_business"]
+        or broker_input["self_certified_small_disad"]
+        or broker_input["small_agricultural_coopera"]
+        or broker_input["small_disadvantaged_busine"]
+    ):
         retval.append("small_business")
 
     if broker_input["contracting_officers_deter"] == "O":
@@ -69,16 +71,20 @@ def business_categories(broker_input):
     if broker_input["limited_liability_corporat"] == "Y":
         retval.append("limited_liability_corporation")
 
-    if broker_input["for_profit_organization"] == "Y" or\
-        any(x in retval for x in ["small_business",
-        "other_than_small_business",
-        "corporate_entity_tax_exempt",
-        "corporate_entity_not_tax_exempt",
-        "partnership_or_limited_liability_partnership",
-        "sole_proprietorship",
-        "manufacturer_of_goods",
-        "subchapter_s_corporation",
-        "limited_liability_corporation"]):
+    if broker_input["for_profit_organization"] == "Y" or any(
+        x in retval
+        for x in [
+            "small_business",
+            "other_than_small_business",
+            "corporate_entity_tax_exempt",
+            "corporate_entity_not_tax_exempt",
+            "partnership_or_limited_liability_partnership",
+            "sole_proprietorship",
+            "manufacturer_of_goods",
+            "subchapter_s_corporation",
+            "limited_liability_corporation",
+        ]
+    ):
         retval.append("category_business")
 
     if broker_input["alaskan_native_owned_corpo"] == "Y":
@@ -111,17 +117,21 @@ def business_categories(broker_input):
     if broker_input["other_minority_owned_busin"] == "Y":
         retval.append("other_minority_owned_business")
 
-    if broker_input["minority_owned_business"] == "Y" or\
-        any(x in retval for x in ["alaskan_native_owned_business",
-        "american_indian_owned_business",
-        "asian_pacific_american_owned_business",
-        "black_american_owned_business",
-        "hispanic_american_owned_business",
-        "native_american_owned_business",
-        "native_hawaiian_owned_business",
-        "subcontinent_asian_indian_american_owned_business",
-        "tribally_owned_business",
-        "other_minority_owned_business"]):
+    if broker_input["minority_owned_business"] == "Y" or any(
+        x in retval
+        for x in [
+            "alaskan_native_owned_business",
+            "american_indian_owned_business",
+            "asian_pacific_american_owned_business",
+            "black_american_owned_business",
+            "hispanic_american_owned_business",
+            "native_american_owned_business",
+            "native_hawaiian_owned_business",
+            "subcontinent_asian_indian_american_owned_business",
+            "tribally_owned_business",
+            "other_minority_owned_business",
+        ]
+    ):
         retval.append("minority_owned_business")
 
     if broker_input["women_owned_small_business"] == "Y":
@@ -136,11 +146,15 @@ def business_categories(broker_input):
     if broker_input["joint_venture_economically"] == "Y":
         retval.append("joint_venture_economically_disadvantaged_women_owned_small_business")
 
-    if broker_input["woman_owned_business"] == "Y" or\
-        any(x in retval for x in ["women_owned_small_business",
-        "economically_disadvantaged_women_owned_small_business",
-        "joint_venture_women_owned_small_business",
-        "joint_venture_economically_disadvantaged_women_owned_small_business"]):
+    if broker_input["woman_owned_business"] == "Y" or any(
+        x in retval
+        for x in [
+            "women_owned_small_business",
+            "economically_disadvantaged_women_owned_small_business",
+            "joint_venture_women_owned_small_business",
+            "joint_venture_economically_disadvantaged_women_owned_small_business",
+        ]
+    ):
         retval.append("woman_owned_business")
 
     if broker_input["service_disabled_veteran_o"] == "Y":
@@ -188,8 +202,7 @@ def business_categories(broker_input):
     if broker_input["domestic_or_foreign_entity"] == "C":
         retval.append("foreign_owned_and_us_located_business")
 
-    if broker_input["domestic_or_foreign_entity"] == "D" or\
-            broker_input["foreign_owned_and_located"] == "Y":
+    if broker_input["domestic_or_foreign_entity"] == "D" or broker_input["foreign_owned_and_located"] == "Y":
         retval.append("foreign_owned_and_located_business")
 
     if broker_input["foreign_government"] == "Y":
@@ -207,26 +220,31 @@ def business_categories(broker_input):
     if broker_input["veterinary_hospital"] == "Y":
         retval.append("veterinary_hospital")
 
-    if any(x in retval for x in ["8a_program_participant",
-        "ability_one_program",
-        "dot_certified_disadvantaged_business_enterprise",
-        "emerging_small_business",
-        "federally_funded_research_and_development_corp",
-        "historically_underutilized_business_firm",
-        "labor_surplus_area_firm",
-        "sba_certified_8a_joint_venture",
-        "self_certified_small_disadvanted_business",
-        "small_agricultural_cooperative",
-        "small_disadvantaged_business",
-        "community_developed_corporation_owned_firm",
-        "us_owned_business",
-        "foreign_owned_and_us_located_business",
-        "foreign_owned_and_located_business",
-        "foreign_government",
-        "international_organization",
-        "domestic_shelter",
-        "hospital",
-        "veterinary_hospital"]):
+    if any(
+        x in retval
+        for x in [
+            "8a_program_participant",
+            "ability_one_program",
+            "dot_certified_disadvantaged_business_enterprise",
+            "emerging_small_business",
+            "federally_funded_research_and_development_corp",
+            "historically_underutilized_business_firm",
+            "labor_surplus_area_firm",
+            "sba_certified_8a_joint_venture",
+            "self_certified_small_disadvanted_business",
+            "small_agricultural_cooperative",
+            "small_disadvantaged_business",
+            "community_developed_corporation_owned_firm",
+            "us_owned_business",
+            "foreign_owned_and_us_located_business",
+            "foreign_owned_and_located_business",
+            "foreign_government",
+            "international_organization",
+            "domestic_shelter",
+            "hospital",
+            "veterinary_hospital",
+        ]
+    ):
         retval.append("special_designations")
 
     if broker_input["foundation"] == "Y":
@@ -235,25 +253,35 @@ def business_categories(broker_input):
     if broker_input["community_development_corp"] == "Y":
         retval.append("community_development_corporations")
 
-    if broker_input["nonprofit_organization"] == "Y" or \
-            broker_input["other_not_for_profit_organ"] == "Y" or \
-            any(x in retval for x in ["foundation",
-            "community_development_corporations"]):
+    if (
+        broker_input["nonprofit_organization"] == "Y"
+        or broker_input["other_not_for_profit_organ"] == "Y"
+        or any(x in retval for x in ["foundation", "community_development_corporations"])
+    ):
         retval.append("nonprofit")
 
     if broker_input["educational_institution"] == "Y":
         retval.append("educational_institution")
 
-    if broker_input["state_controlled_instituti"] == "Y" or broker_input["c1862_land_grant_college"] == "Y" \
-            or broker_input["c1890_land_grant_college"] == "Y" or broker_input["c1994_land_grant_college"] == "Y":
+    if (
+        broker_input["state_controlled_instituti"] == "Y"
+        or broker_input["c1862_land_grant_college"] == "Y"
+        or broker_input["c1890_land_grant_college"] == "Y"
+        or broker_input["c1994_land_grant_college"] == "Y"
+    ):
         retval.append("public_institution_of_higher_education")
 
     if broker_input["private_university_or_coll"] == "Y":
         retval.append("private_institution_of_higher_education")
 
-    if broker_input["minority_institution"] == "Y" or broker_input["historically_black_college"] == "Y" \
-            or broker_input["tribal_college"] == "Y" or broker_input["alaskan_native_servicing_i"] == "Y"\
-            or broker_input["native_hawaiian_servicing"] == "Y" or broker_input["hispanic_servicing_institu"] == "Y":
+    if (
+        broker_input["minority_institution"] == "Y"
+        or broker_input["historically_black_college"] == "Y"
+        or broker_input["tribal_college"] == "Y"
+        or broker_input["alaskan_native_servicing_i"] == "Y"
+        or broker_input["native_hawaiian_servicing"] == "Y"
+        or broker_input["hispanic_servicing_institu"] == "Y"
+    ):
         retval.append("minority_serving_institution_of_higher_education")
 
     if broker_input["school_of_forestry"] == "Y":
@@ -261,18 +289,26 @@ def business_categories(broker_input):
 
     if broker_input["veterinary_college"] == "Y":
         retval.append("veterinary_college")
-            
-    if any(x in retval for x in ["8a_program_participant",
-        "educational_institution",
-        "public_institution_of_higher_education",
-        "private_institution_of_higher_education",
-        "minority_serving_institution_of_higher_education",
-        "school_of_forestry",
-        "veterinary_college"]):
+
+    if any(
+        x in retval
+        for x in [
+            "8a_program_participant",
+            "educational_institution",
+            "public_institution_of_higher_education",
+            "private_institution_of_higher_education",
+            "minority_serving_institution_of_higher_education",
+            "school_of_forestry",
+            "veterinary_college",
+        ]
+    ):
         retval.append("higher_education")
 
-    if broker_input["us_federal_government"] == "Y" or broker_input["federal_agency"] == "Y" \
-            or broker_input["us_government_entity"] == "Y":
+    if (
+        broker_input["us_federal_government"] == "Y"
+        or broker_input["federal_agency"] == "Y"
+        or broker_input["us_government_entity"] == "Y"
+    ):
         retval.append("national_government")
 
     if broker_input["interstate_entity"] == "Y":
@@ -284,27 +320,42 @@ def business_categories(broker_input):
     if broker_input["council_of_governments"] == "Y":
         retval.append("council_of_governments")
 
-    if broker_input["city_local_government"] == "Y" or broker_input["county_local_government"] == "Y" \
-            or broker_input["inter_municipal_local_gove"] == "Y" or broker_input["municipality_local_governm"] == "Y"\
-            or broker_input["township_local_government"] == "Y" or broker_input["us_local_government"] == "Y"\
-            or broker_input["local_government_owned"] == "Y" or broker_input["school_district_local_gove"] == "Y":
+    if (
+        broker_input["city_local_government"] == "Y"
+        or broker_input["county_local_government"] == "Y"
+        or broker_input["inter_municipal_local_gove"] == "Y"
+        or broker_input["municipality_local_governm"] == "Y"
+        or broker_input["township_local_government"] == "Y"
+        or broker_input["us_local_government"] == "Y"
+        or broker_input["local_government_owned"] == "Y"
+        or broker_input["school_district_local_gove"] == "Y"
+    ):
         retval.append("local_government")
 
     if broker_input["us_tribal_government"] == "Y" or broker_input["indian_tribe_federally_rec"] == "Y":
         retval.append("indian_native_american_tribal_government")
-        
-    if broker_input["housing_authorities_public"] == "Y" or broker_input["airport_authority"] == "Y" \
-            or broker_input["port_authority"] == "Y"\
-            or broker_input["transit_authority"] == "Y" or broker_input["planning_commission"] == "Y":
+
+    if (
+        broker_input["housing_authorities_public"] == "Y"
+        or broker_input["airport_authority"] == "Y"
+        or broker_input["port_authority"] == "Y"
+        or broker_input["transit_authority"] == "Y"
+        or broker_input["planning_commission"] == "Y"
+    ):
         retval.append("authorities_and_commissions")
 
-    if any(x in retval for x in ["national_government",
-        "regional_and_state_government",
-        "local_government",
-        "indian_native_american_tribal_government",
-        "authorities_and_commissions",
-        "interstate_entity",
-        "council_of_governments"]):
+    if any(
+        x in retval
+        for x in [
+            "national_government",
+            "regional_and_state_government",
+            "local_government",
+            "indian_native_american_tribal_government",
+            "authorities_and_commissions",
+            "interstate_entity",
+            "council_of_governments",
+        ]
+    ):
         retval.append("government")
 
     return retval
