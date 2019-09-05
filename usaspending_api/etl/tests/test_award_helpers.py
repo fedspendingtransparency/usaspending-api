@@ -3,7 +3,7 @@ import datetime
 from model_mommy import mommy
 import pytest
 
-from usaspending_api.etl.award_helpers import get_award_financial_transaction, update_awards, update_contract_awards
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 
 
 @pytest.mark.django_db
@@ -208,89 +208,3 @@ def test_award_update_contract_txn_with_list():
     assert awards[1].base_exercised_options_val == 400
     assert awards[2].base_and_all_options_value == 5000
     assert awards[2].base_exercised_options_val == 500
-
-
-@pytest.mark.skip(reason="deletion feature not yet implemented")
-@pytest.mark.django_db
-def test_deleted_transactions():
-    """Test that award values are updated correctly when a txn is deleted."""
-    # writing these tests revealed that we're not updating awards fields when transactions are deleted. since the
-    # TransactionNormalized model's delete() method may not fire during a bulk deletion, we may want to use a signal
-    # rather than override delete()
-
-
-class FakeRow:
-    "Simulated row of financial transaction data"
-
-    def __init__(self, **kwargs):
-        self.fain = None
-        self.piid = None
-        self.uri = None
-        self.parent_award_id = None
-        self.__dict__.update(**kwargs)
-
-
-@pytest.mark.django_db
-def test_get_award_financial_transaction():
-    """Test looking up txn records ("D File") for an award financial ("C File") record"""
-
-    cgac = "1111"
-    toptier = mommy.make("references.ToptierAgency", cgac_code=cgac)
-    agency = mommy.make("references.Agency", toptier_agency=toptier)
-
-    txn1 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=1)
-    mommy.make("awards.TransactionFPDS", transaction=txn1, piid="abc")
-
-    txn2 = mommy.make(
-        "awards.TransactionNormalized", awarding_agency=agency, action_date=datetime.date(2017, 5, 1), id=2
-    )
-    mommy.make("awards.TransactionFPDS", transaction=txn2, piid="abc", parent_award_id="def")
-
-    txn3 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=3)
-    mommy.make("awards.TransactionFABS", transaction=txn3, fain="123")
-
-    txn4 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=4)
-    mommy.make("awards.TransactionFABS", transaction=txn4, uri="456")
-
-    txn5 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=5)
-    mommy.make("awards.TransactionFABS", transaction=txn5, fain="789", uri="nah")
-
-    # match on piid
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc"))
-    assert txn == str(agency.id)
-
-    # match on piid + parent award id
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc", parent_award_id="def"))
-    assert txn == str(agency.id)
-
-    # match on fain
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="123"))
-    assert txn == str(agency.id)
-
-    # fain/uri combo should be unique
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="123", uri="fakeuri"))
-    assert txn is None
-
-    # match on uri alone
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri="456"))
-    assert txn == str(agency.id)
-
-    # if there's an unmatched fain, we should not find a txn match, even if there's a match on the URI
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="fakefain", uri="456"))
-    assert txn is None
-
-    # match on fain alone, even when there's no uri = Null record in the txn table
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="789"))
-    assert txn == str(agency.id)
-
-    # should not match on award id fields for a different cgac
-    txn = get_award_financial_transaction(FakeRow(agency_identifier="999", piid="abc"))
-    assert txn is None
-
-    # if there is more than one txn match, we should get the one with the most recent action date
-    txn6 = mommy.make(
-        "awards.TransactionNormalized", awarding_agency=agency, action_date=datetime.date(2017, 5, 8), id=6
-    )
-    mommy.make("awards.TransactionFPDS", transaction=txn6, piid="abc", parent_award_id="def")
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc", parent_award_id="def"))
-    assert txn == str(agency.id)

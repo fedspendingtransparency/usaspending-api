@@ -12,27 +12,27 @@ class Command(BaseCommand):
     help = "Update Agency codes from broker that are 999 in the website or that are associated with a certain sub tier"
 
     @staticmethod
-    def get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range=None):
+    def get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range=None, sub_tiers=None):
         # Base WHERE clauses
         broker_where = """action_date::date >= ''{fy_start}''::date
-            AND action_date::date <= ''{fy_end}''::date;""".format(
+            AND action_date::date <= ''{fy_end}''::date""".format(
             fy_start=fy_start, fy_end=fy_end
         )
         usaspending_where = """action_date::date >= '{fy_start}'::date
-        AND action_date::date <= '{fy_end}'::date;""".format(
+        AND action_date::date <= '{fy_end}'::date""".format(
             fy_start=fy_start, fy_end=fy_end
         )
 
         # If we're doing everything before a certain fiscal year
         if year_range == "pre":
-            broker_where = "action_date::date < ''{fy_start}''::date;".format(fy_start=fy_start)
-            usaspending_where = "action_date::date < '{fy_start}'::date;".format(fy_start=fy_start)
+            broker_where = "action_date::date < ''{fy_start}''::date".format(fy_start=fy_start)
+            usaspending_where = "action_date::date < '{fy_start}'::date".format(fy_start=fy_start)
             fiscal_year = "pre_" + str(fiscal_year)
 
         # If we're doing everything after a certain fiscal year
         if year_range == "post":
-            broker_where = "action_date::date > ''{fy_end}''::date;".format(fy_end=fy_end)
-            usaspending_where = "action_date::date > '{fy_end}'::date;".format(fy_end=fy_end)
+            broker_where = "action_date::date > ''{fy_end}''::date".format(fy_end=fy_end)
+            usaspending_where = "action_date::date > '{fy_end}'::date".format(fy_end=fy_end)
             fiscal_year = "post_" + str(fiscal_year)
 
         table = "detached_award_procurement"
@@ -42,8 +42,18 @@ class Command(BaseCommand):
             table = "published_award_financial_assistance"
             unique = "afa_generated_unique"
 
+        if sub_tiers and len(sub_tiers) == 1:
+            subtier_cond = "(awarding_sub_tier_agency_c = {sub_tier} OR funding_sub_tier_agency_co = {sub_tier})"
+            broker_where += " AND " + subtier_cond.format(sub_tier=sub_tiers[0])
+        elif sub_tiers and len(sub_tiers) > 1:
+            sub_tiers_str = '({})'.format(','.join(['\'\'{}\'\''.format(sub_tier) for sub_tier in sub_tiers]))
+            subtier_cond = "(awarding_sub_tier_agency_c IN {sub_tiers} OR funding_sub_tier_agency_co IN {sub_tiers})"
+            broker_where += " AND " + subtier_cond.format(sub_tiers=sub_tiers_str)
+        broker_where += ';'
+        usaspending_where += ';'
+
         sql_statment = """
-        CREATE TEMPORARY TABlE {table_type}_agencies_to_update_{fy} AS
+        CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
         SELECT * FROM dblink('broker_server',
         '
         SELECT
@@ -85,16 +95,19 @@ class Command(BaseCommand):
             broker_where=broker_where,
             usaspending_where=usaspending_where,
         )
-
         return sql_statment
 
     @staticmethod
-    def update_website(fiscal_year, table_type, sub_tier=None, year_range=None):
+    def update_website(fiscal_year, table_type, sub_tiers=None, year_range=None):
         award_where = "awarding_agency_code = '999'"
         fund_where = "funding_agency_code = '999'"
-        if sub_tier:
-            award_where = "awarding_sub_tier_agency_c = '{}'".format(sub_tier)
-            fund_where = "funding_sub_tier_agency_co = '{}'".format(sub_tier)
+        if sub_tiers and len(sub_tiers) == 1:
+            award_where = "awarding_sub_tier_agency_c = '{}'".format(sub_tiers)
+            fund_where = "funding_sub_tier_agency_co = '{}'".format(sub_tiers)
+        elif sub_tiers and len(sub_tiers) > 1:
+            sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
+            award_where = "awarding_sub_tier_agency_c IN {}".format(sub_tiers_str)
+            fund_where = "funding_sub_tier_agency_co IN {}".format(sub_tiers_str)
 
         # if there's a range we add it to the name of the table
         if year_range:
@@ -138,7 +151,7 @@ class Command(BaseCommand):
 
         return sql_statement
 
-    def run_updates(self, fiscal_year, table_type, sub_tier, year_range=None):
+    def run_updates(self, fiscal_year, table_type, sub_tiers, year_range=None):
         """
         Run the actual updates
         """
@@ -156,12 +169,13 @@ class Command(BaseCommand):
         start = time.perf_counter()
 
         # Comparing broker rows with website for a specific fiscal year
-        db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range))
+        db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range, sub_tiers))
 
         end = time.perf_counter()
+        condition_str = ' with sub_tiers {}'.format(sub_tiers) if sub_tiers else ''
         logger.info(
-            "Finished retrieving {}FY{} data from broker {} to update in website in {}s".format(
-                year_range or "", fiscal_year, table_type.upper(), end - start
+            "Finished retrieving {}FY{} data from broker {}{} to update in website in {}s".format(
+                year_range or "", fiscal_year, table_type.upper(), condition_str, end - start
             )
         )
 
@@ -169,7 +183,7 @@ class Command(BaseCommand):
         start = time.perf_counter()
 
         # Updates website rows with agency code 999
-        db_cursor.execute(self.update_website(fiscal_year, table_type, sub_tier, year_range))
+        db_cursor.execute(self.update_website(fiscal_year, table_type, sub_tiers, year_range))
 
         end = time.perf_counter()
         logger.info(
@@ -178,25 +192,25 @@ class Command(BaseCommand):
             )
         )
 
-    def process_single_year(self, year, table_types, sub_tier):
+    def process_single_year(self, year, table_types, sub_tiers):
         """ Process single year """
         for table_type in table_types:
-            self.run_updates(year, table_type, sub_tier)
+            self.run_updates(year, table_type, sub_tiers)
 
-    def process_multiple_years(self, table_types, sub_tier):
+    def process_multiple_years(self, table_types, sub_tiers):
         """ Process all years option """
         curr_year = datetime.datetime.now().year
         year_list = [i for i in range(2000, curr_year + 1)]
 
         for table_type in table_types:
-            self.run_updates(year_list[0], table_type, sub_tier, year_range="pre")
+            self.run_updates(year_list[0], table_type, sub_tiers, year_range="pre")
 
         for fy in year_list:
             for table_type in table_types:
-                self.run_updates(fy, table_type, sub_tier)
+                self.run_updates(fy, table_type, sub_tiers)
 
         for table_type in table_types:
-            self.run_updates(year_list[-1], table_type, sub_tier, year_range="post")
+            self.run_updates(year_list[-1], table_type, sub_tiers, year_range="post")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -209,10 +223,11 @@ class Command(BaseCommand):
             "--type", choices=["fabs", "fpds", "both"], default="both", help="Which table to make corrections for"
         )
         parser.add_argument(
-            "--sub-tier",
+            "--sub-tiers",
             type=str,
-            dest="sub-tier",
-            help="Sub tier to update agencies related to if this is to be used for sub tier changes",
+            nargs='+',
+            dest="sub-tiers",
+            help="Sub tiers to update agencies related to if this is to be used for sub tier changes",
         )
 
     def handle(self, *args, **options):
@@ -221,10 +236,12 @@ class Command(BaseCommand):
         """
         fiscal_year = options.get("fiscal-year")
         table_option = options.get("type")
-        sub_tier = options.get("sub-tier")
+        sub_tiers = options.get("sub-tiers")
 
-        if sub_tier and not len(sub_tier) == 4:
-            raise CommandError("When provided, sub tier code must be 4 characters long.")
+        if sub_tiers:
+            for sub_tier in sub_tiers:
+                if len(sub_tier) != 4:
+                    raise CommandError("When provided, sub tier code must be 4 characters long.")
 
         logger.info("Starting script to update agency codes from broker")
 
@@ -235,6 +252,6 @@ class Command(BaseCommand):
             table_types.append("fabs")
 
         if fiscal_year:
-            self.process_single_year(fiscal_year, table_types, sub_tier)
+            self.process_single_year(fiscal_year, table_types, sub_tiers)
         else:
-            self.process_multiple_years(table_types, sub_tier)
+            self.process_multiple_years(table_types, sub_tiers)

@@ -94,7 +94,7 @@ class TASAutocompleteATA(TASAutocomplete):
     narrowed by other components supplied in the Treasury Account filter.
     """
     component = "ata"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/ata.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/ata.md"
 
 
 class TASAutocompleteAID(TASAutocomplete):
@@ -103,7 +103,7 @@ class TASAutocompleteAID(TASAutocomplete):
     components supplied in the Treasury Account or Federal Account filter.
     """
     component = "aid"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/aid.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/aid.md"
 
 
 class TASAutocompleteBPOA(TASAutocomplete):
@@ -112,7 +112,7 @@ class TASAutocompleteBPOA(TASAutocomplete):
     narrowed by other components supplied in the Treasury Account filter.
     """
     component = "bpoa"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/bpoa.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/bpoa.md"
 
 
 class TASAutocompleteEPOA(TASAutocomplete):
@@ -121,7 +121,7 @@ class TASAutocompleteEPOA(TASAutocomplete):
     narrowed by other components supplied in the Treasury Account filter.
     """
     component = "epoa"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/epoa.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/epoa.md"
 
 
 class TASAutocompleteA(TASAutocomplete):
@@ -130,7 +130,7 @@ class TASAutocompleteA(TASAutocomplete):
     narrowed by other components supplied in the Treasury Account filter.
     """
     component = "a"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/a.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/a.md"
 
 
 class TASAutocompleteMAIN(TASAutocomplete):
@@ -139,7 +139,7 @@ class TASAutocompleteMAIN(TASAutocomplete):
     components supplied in the Treasury Account or Federal Account filter.
     """
     component = "main"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/main.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/main.md"
 
 
 class TASAutocompleteSUB(TASAutocomplete):
@@ -148,4 +148,4 @@ class TASAutocompleteSUB(TASAutocomplete):
     narrowed by other components supplied in the Treasury Account filter.
     """
     component = "sub"
-    endpoint_doc = "usaspending_api/api_contracts/contracts/autocomplete/accounts/sub.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/sub.md"
