@@ -447,17 +447,3 @@ class TASAutocompleteMatview(models.Model):
 
         db_table = "tas_autocomplete_matview"
         managed = False
-
-
-class TASSearchMatview(models.Model):
-    """
-    Supports TAS search.  Links TASes to anything with an award id.  Is
-    filtered in the materialized view to only include TAS with File D data.
-    """
-    award_id = models.BigIntegerField(primary_key=True)
-    tas_ts_vector = SearchVectorField()
-
-    class Meta:
-
-        db_table = "tas_search_matview"
-        managed = False
