@@ -22,6 +22,8 @@ class CsvSource:
         self.queryset = None
         self.file_name = None
         self.is_for_idv = VALUE_MAPPINGS[source_type].get("is_for_idv", False)
+        self.is_for_contract = VALUE_MAPPINGS[source_type].get("is_for_contract", False)
+        self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
 
     def __repr__(self):
         return "CsvSource('{}', '{}', '{}', '{}')".format(
