@@ -67,7 +67,6 @@ STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get("STATE_DATA_BUCKET")
 
-ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/Data_Dictionary_Crosswalk.xlsx"
 DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
