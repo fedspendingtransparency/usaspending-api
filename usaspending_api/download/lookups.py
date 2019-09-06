@@ -19,6 +19,11 @@ from usaspending_api.awards.v2.filters.idv_filters import (
     idv_transaction_filter,
     idv_treasury_account_funding_filter,
 )
+from usaspending_api.awards.v2.filters.award_filters import (
+    awards_transaction_filter,
+    awards_subaward_filter,
+    awards_treasury_account_funding_filter,
+)
 from usaspending_api.awards.v2.filters.matview_filters import (
     universal_award_matview_filter,
     universal_transaction_matview_filter,
@@ -60,7 +65,6 @@ VALUE_MAPPINGS = {
         "contract_data": "award__latest_transaction__contract_data",
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": universal_award_matview_filter,
-        "is_for_idv": False,
         "annotations_function": universal_award_matview_annotations,
     },
     # Transaction Level
@@ -72,7 +76,6 @@ VALUE_MAPPINGS = {
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": universal_transaction_matview_filter,
-        "is_for_idv": False,
         "annotations_function": universal_transaction_matview_annotations,
     },
     # SubAward Level
@@ -84,7 +87,6 @@ VALUE_MAPPINGS = {
         "contract_data": "award__latest_transaction__contract_data",
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": subaward_download,
-        "is_for_idv": False,
         "annotations_function": subaward_annotations,
     },
     # Appropriations Account Data
@@ -94,7 +96,6 @@ VALUE_MAPPINGS = {
         "table_name": "account_balances",
         "download_name": "account_balances",
         "filter_function": account_download_filter,
-        "is_for_idv": False,
     },
     # Object Class Program Activity Account Data
     "object_class_program_activity": {
@@ -103,7 +104,6 @@ VALUE_MAPPINGS = {
         "table_name": "object_class_program_activity",
         "download_name": "account_breakdown_by_program_activity_object_class",
         "filter_function": account_download_filter,
-        "is_for_idv": False,
     },
     "award_financial": {
         "source_type": "account",
@@ -111,7 +111,6 @@ VALUE_MAPPINGS = {
         "table_name": "award_financial",
         "download_name": "account_breakdown_by_award",
         "filter_function": account_download_filter,
-        "is_for_idv": False,
     },
     "idv_orders": {
         "source_type": "award",
@@ -139,6 +138,62 @@ VALUE_MAPPINGS = {
         "contract_data": "contract_data",
         "filter_function": idv_transaction_filter,
         "is_for_idv": True,
+        "annotations_function": idv_transaction_annotations,
+    },
+    "contract_federal_account_funding": {
+        "source_type": "account",
+        "table": FinancialAccountsByAwards,
+        "table_name": "award_financial",
+        "download_name": "Contract_{piid}_FederalAccountFunding",
+        "filter_function": awards_treasury_account_funding_filter,
+        "is_for_contract": True,
+    },
+    "assistance_federal_account_funding": {
+        "source_type": "account",
+        "table": FinancialAccountsByAwards,
+        "table_name": "award_financial",
+        "download_name": "Assistance_{assistance_id}_FederalAccountFunding",
+        "filter_function": awards_treasury_account_funding_filter,
+        "is_for_assistance": True,
+    },
+    "sub_contracts": {
+        "source_type": "award",
+        "table": SubawardView,
+        "table_name": "subaward",
+        "download_name": "Contract_{piid}_Sub-Awards",
+        "contract_data": "award__latest_transaction__contract_data",
+        "filter_function": awards_subaward_filter,
+        "is_for_contract": True,
+        "annotations_function": subaward_annotations,
+    },
+    "sub_grants": {
+        "source_type": "award",
+        "table": SubawardView,
+        "table_name": "subaward",
+        "download_name": "Assistance_{assistance_id}_Sub-Awards",
+        "assistance_data": "award__latest_transaction__assistance_data",
+        "filter_function": awards_subaward_filter,
+        "is_for_assistance": True,
+        "annotations_function": subaward_annotations,
+    },
+    "contract_transactions": {
+        "source_type": "award",
+        "table": TransactionNormalized,
+        "table_name": "idv_transaction_history",
+        "download_name": "Contract_{piid}_TransactionHistory",
+        "contract_data": "contract_data",
+        "filter_function": awards_transaction_filter,
+        "is_for_contract": True,
+        "annotations_function": idv_transaction_annotations,
+    },
+    "assistance_transactions": {
+        "source_type": "award",
+        "table": TransactionNormalized,
+        "table_name": "assistance_transaction_history",
+        "download_name": "Assistance_{assistance_id}_TransactionHistory",
+        "assistance_data": "assistance_data",
+        "filter_function": awards_transaction_filter,
+        "is_for_assistance": True,
         "annotations_function": idv_transaction_annotations,
     },
 }
