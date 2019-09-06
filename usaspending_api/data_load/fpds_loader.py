@@ -1,4 +1,3 @@
-from os import environ
 import psycopg2
 import logging
 import time

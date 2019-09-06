@@ -421,7 +421,7 @@ legal_entity_boolean_columns = {
     "hospital_flag": "hospital_flag",
     "veterinary_hospital": "veterinary_hospital",
     "hispanic_servicing_institu": "hispanic_servicing_institution",
-    "veteran_owned_business": "woman_owned_business",
+    "woman_owned_business": "woman_owned_business",
     "minority_owned_business": "minority_owned_business",
     "women_owned_small_business": "women_owned_small_business",
     "economically_disadvantaged": "economically_disadvantaged_women_owned_small_business",
@@ -511,7 +511,7 @@ place_of_performance_columns = {
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
     "place_of_perform_city_name": "city_name",
-    "place_of_perform_zip_last4": "zip4",
+    "place_of_perform_zip4a": "zip4",
     "place_of_performance_zip5": "zip5",
     "place_of_perform_zip_last4": "zip_last4",
 }
