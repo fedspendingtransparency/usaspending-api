@@ -151,18 +151,9 @@ def load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             load_recipient_locations(cursor, load_objects)
+            load_recipients(cursor, load_objects)
 
             for load_object in load_objects:
-
-                # Create recipient so we can link it later
-                columns, values, pairs = setup_load_lists(load_object, "legal_entity")
-                recipient_sql = "INSERT INTO legal_entity {} VALUES {} " "RETURNING legal_entity_id".format(
-                    columns, values, pairs
-                )
-                cursor.execute(recipient_sql)
-                results = cursor.fetchall()
-                load_object["transaction_normalized"]["recipient_id"] = results[0][0]
-                load_object["award"]["recipient_id"] = results[0][0]
 
                 # Create place of performance so we can link it later
                 columns, values, pairs = setup_load_lists(load_object, "place_of_performance_location")
@@ -233,7 +224,7 @@ def load_transactions(load_objects):
                     # transaction_normalized and transaction_fpds should be one-to-one
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
                     transaction_normalized_sql = (
-                        "INSERT INTO transaction_normalized {} VALUES {} " "RETURNING id".format(columns, values)
+                        "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(columns, values)
                     )
                     cursor.execute(transaction_normalized_sql)
                     results = cursor.fetchall()
@@ -242,7 +233,7 @@ def load_transactions(load_objects):
 
                     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
                     transaction_fpds_sql = (
-                        "INSERT INTO transaction_fpds {} VALUES {} " "RETURNING transaction_id".format(columns, values)
+                        "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(columns, values)
                     )
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
@@ -258,18 +249,54 @@ def load_transactions(load_objects):
 
 def load_recipient_locations(cursor, load_objects):
     sql_to_execute = ""
-    for load_object in load_objects:
-        columns, values, pairs = setup_load_lists(load_object, "recipient_location")
-        recipient_location_sql = "INSERT INTO references_location {} VALUES {} " "RETURNING location_id;".format(
-            columns, values, pairs
-        )
-        sql_to_execute += recipient_location_sql
+    columns, values = setup_mass_load_lists(load_objects, "recipient_location")
+    recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
+        columns, values
+    )
+    sql_to_execute += recipient_location_sql
+
+
+    cursor.execute(sql_to_execute)
+    results = cursor.fetchall()
+
+    print(len(results))
+    for index in range(0, len(results)):
+        load_objects[index]["legal_entity"]["location_id"] = results[index][0]
+
+
+def load_recipients(cursor, load_objects):
+    sql_to_execute = ""
+    columns, values = setup_mass_load_lists(load_objects, "legal_entity")
+    recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(
+        columns, values
+    )
+    sql_to_execute += recipient_sql
 
     cursor.execute(sql_to_execute)
     results = cursor.fetchall()
 
     for index in range(0, len(results)):
-        load_objects[index]["legal_entity"]["location_id"] = results[index][0]
+        load_objects[index]["transaction_normalized"]["recipient_id"] = results[index][0]
+        load_objects[index]["award"]["recipient_id"] = results[index][0]
+
+
+def setup_mass_load_lists(load_objects, table):
+    columns = []
+    values = []
+
+    for index in range(0, len(load_objects)):
+        values.append([])
+
+    for key in load_objects[0][table].keys():
+        columns.append('"{}"'.format(key))
+        for index in range(0, len(load_objects)):
+            val = format_value_for_sql(load_objects[index][table][key])
+            values[index].append(val)
+
+    col_string = "({})".format(",".join(map(str, columns)))
+    val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
+
+    return col_string, val_string
 
 
 def setup_load_lists(load_object, table):
