@@ -330,9 +330,6 @@ def fy(raw_date):
         return None
 
     if isinstance(raw_date, str):
-        #  This format is seen when performing data load, but django doesn't know what to do with it
-        if re.search("^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", raw_date):  # noqa
-            raw_date = raw_date[:10]
         raw_date = parse_date(raw_date)
 
     try:

@@ -25,10 +25,11 @@ from usaspending_api.data_load.data_load_helpers import (
     false_if_null,
     format_value_for_sql,
 )
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 # DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
-USASPENDING_CONNECTION_STRING = environ["DATABASE_URL"]
-BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+USASPENDING_CONNECTION_STRING = get_database_dsn_string()
+BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
 CHUNK_SIZE = 1000
 

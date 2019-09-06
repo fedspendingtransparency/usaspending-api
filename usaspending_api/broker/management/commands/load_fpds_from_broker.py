@@ -7,10 +7,11 @@ import psycopg2
 from usaspending_api.data_load.fpds_loader import run_fpds_load
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.sql_helpers import  get_broker_dsn_string
 
 logger = logging.getLogger("console")
 
-BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
 CHUNK_SIZE = 50000  # Completely arbitrary and not backed by any testing, this can likely go higher
 
