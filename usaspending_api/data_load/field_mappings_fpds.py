@@ -474,21 +474,22 @@ legal_entity_functions = {
 }
 
 # broker column name -> usaspending column name
-recipient_location_columns = {"legal_entity_country_code": "location_country_code",
-                              "legal_entity_country_name": "country_name",
-                              "legal_entity_state_code": "state_code",
-                              "legal_entity_state_descrip": "state_description",
-                              "legal_entity_county_code": "county_code",
-                              "legal_entity_county_name": "county_name",
-                              "legal_entity_congressional": "congressional_code",
-                              "legal_entity_city_name": "city_name",
-                              "legal_entity_address_line1": "address_line1",
-                              "legal_entity_address_line2": "address_line2",
-                              "legal_entity_address_line3": "address_line3",
-                              "legal_entity_zip4": "zip4",
-                              "legal_entity_zip5": "zip5",
-                              "legal_entity_zip_last4": "zip_last4"
-                              }
+recipient_location_columns = {
+    "legal_entity_country_code": "location_country_code",
+    "legal_entity_country_name": "country_name",
+    "legal_entity_state_code": "state_code",
+    "legal_entity_state_descrip": "state_description",
+    "legal_entity_county_code": "county_code",
+    "legal_entity_county_name": "county_name",
+    "legal_entity_congressional": "congressional_code",
+    "legal_entity_city_name": "city_name",
+    "legal_entity_address_line1": "address_line1",
+    "legal_entity_address_line2": "address_line2",
+    "legal_entity_address_line3": "address_line3",
+    "legal_entity_zip4": "zip4",
+    "legal_entity_zip5": "zip5",
+    "legal_entity_zip_last4": "zip_last4",
+}
 
 # usaspending column name -> derivation function
 recipient_location_functions = {
@@ -505,14 +506,14 @@ place_of_performance_columns = {
     "place_of_perform_country_c": "location_country_code",
     "place_of_perform_country_n": "country_name",
     "place_of_performance_state": "state_code",
-                              "place_of_perfor_state_desc": "state_description",
-                              "place_of_perform_county_co": "county_code",
-                              "place_of_perform_county_na": "county_name",
-                              "place_of_performance_congr": "congressional_code",
-                              "place_of_perform_city_name": "city_name",
-                              "place_of_perform_zip_last4": "zip4",
-                              "place_of_performance_zip5": "zip5",
-                              "place_of_perform_zip_last4": "zip_last4"
+    "place_of_perfor_state_desc": "state_description",
+    "place_of_perform_county_co": "county_code",
+    "place_of_perform_county_na": "county_name",
+    "place_of_performance_congr": "congressional_code",
+    "place_of_perform_city_name": "city_name",
+    "place_of_perform_zip_last4": "zip4",
+    "place_of_performance_zip5": "zip5",
+    "place_of_perform_zip_last4": "zip_last4",
 }
 
 # usaspending column name -> derivation function

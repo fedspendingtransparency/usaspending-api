@@ -4,6 +4,7 @@ from usaspending_api.common.helpers.generic_helper import fy
 from usaspending_api.data_load.data_load_helpers import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
+
 def calculate_fiscal_year(broker_input):
     return fy(broker_input["action_date"][:10])
 
@@ -34,4 +35,3 @@ def now(broker_input):
 
 def business_categories(broker_input):
     return get_business_categories(broker_input, "fpds")
-

@@ -58,7 +58,7 @@ def run_fpds_load(id_list):
     if not subtier_agency_list:
         load_reference_data()
 
-    chunks = [id_list[x: x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
+    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     for chunk in chunks:
         with Timer() as timer:
@@ -128,11 +128,17 @@ def generate_load_objects(broker_objects):
     for broker_object in broker_objects:
         connected_objects = {}
 
-        connected_objects["recipient_location"] = create_load_object(broker_object, recipient_location_columns, None, recipient_location_functions)
+        connected_objects["recipient_location"] = create_load_object(
+            broker_object, recipient_location_columns, None, recipient_location_functions
+        )
 
-        connected_objects["legal_entity"] = create_load_object(broker_object, legal_entity_columns, legal_entity_boolean_columns, legal_entity_functions)
+        connected_objects["legal_entity"] = create_load_object(
+            broker_object, legal_entity_columns, legal_entity_boolean_columns, legal_entity_functions
+        )
 
-        connected_objects["place_of_performance_location"] = create_load_object(broker_object, place_of_performance_columns, None, place_of_performance_functions)
+        connected_objects["place_of_performance_location"] = create_load_object(
+            broker_object, place_of_performance_columns, None, place_of_performance_functions
+        )
 
         # matching award. NOT a real db object, but needs to be stored when making the link in load_transactions
         connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
@@ -140,9 +146,13 @@ def generate_load_objects(broker_objects):
         # award. NOT used if a matching award is found later
         connected_objects["award"] = create_load_object(broker_object, None, None, award_functions)
 
-        connected_objects["transaction_normalized"] = create_load_object(broker_object, transaction_normalized_columns, None, transaction_normalized_functions)
+        connected_objects["transaction_normalized"] = create_load_object(
+            broker_object, transaction_normalized_columns, None, transaction_normalized_functions
+        )
 
-        connected_objects["transaction_fpds"] = create_load_object(broker_object, transaction_fpds_columns, transaction_fpds_boolean_columns, transaction_fpds_functions)
+        connected_objects["transaction_fpds"] = create_load_object(
+            broker_object, transaction_fpds_columns, transaction_fpds_boolean_columns, transaction_fpds_functions
+        )
 
         retval.append(connected_objects)
     return retval
@@ -224,8 +234,8 @@ def load_transactions(load_objects):
                     # If there is no transaction we create a new one.
                     # transaction_normalized and transaction_fpds should be one-to-one
                     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-                    transaction_normalized_sql = (
-                        "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(columns, values)
+                    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(
+                        columns, values
                     )
                     cursor.execute(transaction_normalized_sql)
                     results = cursor.fetchall()
@@ -233,8 +243,8 @@ def load_transactions(load_objects):
                     load_object["award"]["latest_tranaction_id"] = results[0][0]
 
                     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-                    transaction_fpds_sql = (
-                        "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(columns, values)
+                    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(
+                        columns, values
                     )
                     cursor.execute(transaction_fpds_sql)
                     results = cursor.fetchall()
@@ -256,7 +266,6 @@ def load_recipient_locations(cursor, load_objects):
     )
     sql_to_execute += recipient_location_sql
 
-
     cursor.execute(sql_to_execute)
     results = cursor.fetchall()
 
@@ -268,9 +277,7 @@ def load_recipient_locations(cursor, load_objects):
 def load_recipients(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "legal_entity")
-    recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(
-        columns, values
-    )
+    recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
     sql_to_execute += recipient_sql
 
     cursor.execute(sql_to_execute)
