@@ -104,76 +104,44 @@ def fetch_broker_objects(id_list):
     return detached_award_procurements
 
 
+def create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
+    retval = {}
+    if non_boolean_column_map:
+        for key in non_boolean_column_map:
+            retval[non_boolean_column_map[key]] = capitalize_if_string(broker_object[key])
+
+    if boolean_column_map:
+        for key in boolean_column_map:
+            retval[boolean_column_map[key]] = false_if_null(broker_object[key])
+
+    if function_map:
+        for key in function_map:
+            retval[key] = function_map[key](broker_object)
+
+    return retval
+
+
 def generate_load_objects(broker_objects):
     retval = []
 
     for broker_object in broker_objects:
         connected_objects = {}
 
-        # recipient_location
-        recipient_location = {}
-        for key in recipient_location_columns:
-            recipient_location[recipient_location_columns[key]] = capitalize_if_string(broker_object[key])
+        connected_objects["recipient_location"] = create_load_object(broker_object, recipient_location_columns, None, recipient_location_functions)
 
-        for key in recipient_location_functions:
-            recipient_location[key] = recipient_location_functions[key](broker_object)
+        connected_objects["legal_entity"] = create_load_object(broker_object, legal_entity_columns, legal_entity_boolean_columns, legal_entity_functions)
 
-        connected_objects["recipient_location"] = recipient_location
-
-        # legal entity
-        legal_entity = {}
-        for key in legal_entity_columns:
-            legal_entity[key] = capitalize_if_string(broker_object[legal_entity_columns[key]])
-
-        for key in legal_entity_boolean_columns:
-            legal_entity[key] = false_if_null(broker_object[legal_entity_boolean_columns[key]])
-
-        for key in legal_entity_functions:
-            legal_entity[key] = legal_entity_functions[key](broker_object)
-
-        connected_objects["legal_entity"] = legal_entity
-
-        # place_of_performance_location
-        place_of_performance_location = {}
-        for key in place_of_performance_columns:
-            place_of_performance_location[key] = capitalize_if_string(broker_object[place_of_performance_columns[key]])
-
-        for key in place_of_performance_functions:
-            place_of_performance_location[key] = place_of_performance_functions[key](broker_object)
-
-        connected_objects["place_of_performance_location"] = place_of_performance_location
+        connected_objects["place_of_performance_location"] = create_load_object(broker_object, place_of_performance_columns, None, place_of_performance_functions)
 
         # matching award. NOT a real db object, but needs to be stored when making the link in load_transactions
         connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
 
         # award. NOT used if a matching award is found later
-        award = {}
-        for key in award_functions:
-            award[key] = award_functions[key](broker_object)
-        connected_objects["award"] = award
+        connected_objects["award"] = create_load_object(broker_object, None, None, award_functions)
 
-        # transaction_normalized
-        transaction_normalized = {}
-        for key in transaction_normalized_columns:
-            transaction_normalized[transaction_normalized_columns[key]] = capitalize_if_string(broker_object[key])
+        connected_objects["transaction_normalized"] = create_load_object(broker_object, transaction_normalized_columns, None, transaction_normalized_functions)
 
-        for key in transaction_normalized_functions:
-            transaction_normalized[key] = transaction_normalized_functions[key](broker_object)
-
-        connected_objects["transaction_normalized"] = transaction_normalized
-
-        # transaction_fpds
-        transaction_fpds = {}
-        for key in transaction_fpds_columns:
-            transaction_fpds[transaction_fpds_columns[key]] = capitalize_if_string(broker_object[key])
-
-        for key in transaction_fpds_boolean_columns:
-            transaction_fpds[transaction_fpds_boolean_columns[key]] = false_if_null(broker_object[key])
-
-        for key in transaction_fpds_functions:
-            transaction_fpds[key] = transaction_fpds_functions[key](broker_object)
-
-        connected_objects["transaction_fpds"] = transaction_fpds
+        connected_objects["transaction_fpds"] = create_load_object(broker_object, transaction_fpds_columns, transaction_fpds_boolean_columns, transaction_fpds_functions)
 
         retval.append(connected_objects)
     return retval

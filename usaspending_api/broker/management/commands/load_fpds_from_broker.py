@@ -46,8 +46,10 @@ class Command(BaseCommand):
         # Not doing any batching here, since if the array of ids is blowing you up I don't know how to chunk that on
         # the cursor execute
         if date is None:
+            logger.info("fetching all fpds transactions...")
             id_list = self.get_all_fpds_transaction_ids()
         else:
+            logger.info("fetching fpds transactions since {}".format(date))
             id_list = self.get_fpds_transaction_ids_from_date(date)
         logger.info(
             "Loading batch from date query (size: {})...".format(len(id_list))
