@@ -30,5 +30,5 @@ hooks-worker-term-retry: 500
 hooks-worker-handler-host: 127.0.0.1
 hooks-worker-handler-port: 61321
 config: ./dredd.yml
-blueprint: usaspending_api/api_contracts/contracts/v2/download/idv.md #usaspending_api/api_contracts/contracts/**/*.md
+blueprint: usaspending_api/api_contracts/contracts/**/*.md
 endpoint: '127.0.0.1:8000'
