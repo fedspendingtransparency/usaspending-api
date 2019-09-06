@@ -1,5 +1,8 @@
 from django.db.models import CharField, Expression
+from psycopg2.sql import Identifier, Literal, SQL
+from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
@@ -113,19 +116,25 @@ def annotate_recipient_id(field_name, queryset):
 
         def as_sql(self, compiler, connection):
             return (
-                """(
-                    select
-                        rp.recipient_hash || '-' ||  rp.recipient_level
-                    from
-                        recipient_profile rp
-                        inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
-                    where
-                        rl.duns = "{outer_table}".recipient_unique_id and
-                        rp.recipient_level = case
-                            when "{outer_table}".parent_recipient_unique_id is null then 'R'
-                            else 'C'
-                        end
-                )""".format(outer_table=compiler.query.model._meta.db_table),
+                convert_composable_query_to_string(
+                    SQL("""(
+                        select
+                            rp.recipient_hash || '-' ||  rp.recipient_level
+                        from
+                            recipient_profile rp
+                            inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+                        where
+                            rl.duns = {outer_table}.recipient_unique_id and
+                            rp.recipient_level = case
+                                when {outer_table}.parent_recipient_unique_id is null then 'R'
+                                else 'C'
+                            end and
+                            rp.recipient_name not in {special_cases}
+                    )""").format(
+                        outer_table=Identifier(compiler.query.model._meta.db_table),
+                        special_cases=Literal(tuple(sc for sc in SPECIAL_CASES)),
+                    )
+                ),
                 list()
             )
 

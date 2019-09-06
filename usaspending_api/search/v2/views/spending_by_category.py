@@ -71,6 +71,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     This route takes award filters, and returns spending by the defined category/scope.
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_category.md"
 
     @cache_response()
@@ -241,21 +242,22 @@ class BusinessLogic:
         profile = (
             RecipientProfile.objects.filter(**profile_filter)
             .exclude(recipient_name__in=SPECIAL_CASES)
-            .annotate(sort_order=Case(
-                When(recipient_level="C", then=Value(0)),
-                When(recipient_level="R", then=Value(1)),
-                default=Value(2),
-                output_field=IntegerField()
-            ))
+            .annotate(
+                sort_order=Case(
+                    When(recipient_level="C", then=Value(0)),
+                    When(recipient_level="R", then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            )
             .values("recipient_hash", "recipient_level")
             .order_by("sort_order")
             .first()
         )
 
-        return combine_recipient_hash_and_level(
-            profile["recipient_hash"],
-            profile["recipient_level"]
-        ) if profile else None
+        return (
+            combine_recipient_hash_and_level(profile["recipient_hash"], profile["recipient_level"]) if profile else None
+        )
 
     def recipient(self) -> list:
         if self.category == "recipient_duns":
@@ -275,7 +277,7 @@ class BusinessLogic:
 
         self.queryset = self.common_db_query(filters, values)
         # DB hit here
-        query_results = list(self.queryset[self.lower_limit: self.upper_limit])
+        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         for row in query_results:
 
             row["recipient_id"] = self._get_recipient_id(row)
