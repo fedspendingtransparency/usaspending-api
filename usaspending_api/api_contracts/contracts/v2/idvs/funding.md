@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Funding [/api/v2/awards/idvs/funding/]
+# IDV Funding [/api/v2/idvs/funding/]
 
 Used to populate the Federal Account Funding tab on the IDV summary page.
 

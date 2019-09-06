@@ -2,10 +2,10 @@ import json
 
 from django.test import TestCase
 from rest_framework import status
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, PARENTS, RECIPIENT_HASH_PREFIX
+from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, PARENTS, RECIPIENT_HASH_PREFIX
 
 
-ENDPOINT = "/api/v2/awards/idvs/activity/"
+ENDPOINT = "/api/v2/idvs/activity/"
 
 
 class IDVAwardsTestCase(TestCase):

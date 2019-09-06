@@ -3,11 +3,11 @@ import json
 from django.test import TestCase
 from model_mommy import mommy
 from rest_framework import status
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, IDVS, PARENTS
-from usaspending_api.awards.v2.views.idvs.awards import SORTABLE_COLUMNS
+from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, IDVS, PARENTS
+from usaspending_api.idvs.v2.views.awards import SORTABLE_COLUMNS
 
 
-ENDPOINT = "/api/v2/awards/idvs/awards/"
+ENDPOINT = "/api/v2/idvs/awards/"
 
 
 class IDVAwardsTestCase(TestCase):

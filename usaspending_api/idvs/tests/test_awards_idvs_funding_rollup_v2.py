@@ -3,10 +3,10 @@ import json
 from django.test import TestCase
 from rest_framework import status
 from usaspending_api.awards.models import Award
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, PARENTS, IDVS, AWARD_COUNT
+from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, PARENTS, IDVS, AWARD_COUNT
 
 
-AGGREGATE_ENDPOINT = "/api/v2/awards/idvs/funding_rollup/"
+AGGREGATE_ENDPOINT = "/api/v2/idvs/funding_rollup/"
 
 
 class IDVFundingRollupTestCase(TestCase):
