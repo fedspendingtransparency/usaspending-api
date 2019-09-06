@@ -117,8 +117,14 @@ query_paths = {
                     "award__latest_transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "award__latest_transaction__contract_data__pulled_from"),
-                ("award_type_code", "award__latest_transaction__contract_data__contract_award_type"),  # Column is appended to in account_download.py
-                ("award_type", "award__latest_transaction__contract_data__contract_award_type_desc"),  # Column is appended to in account_download.py
+                (
+                    "award_type_code",
+                    "award__latest_transaction__contract_data__contract_award_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "award_type",
+                    "award__latest_transaction__contract_data__contract_award_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 (
@@ -284,8 +290,14 @@ query_paths = {
                 ),
                 ("other_statutory_authority", "award__latest_transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "award__latest_transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "award__latest_transaction__contract_data__referenced_idv_type"),  # Column is appended to in account_download.py
-                ("parent_award_type", "award__latest_transaction__contract_data__referenced_idv_type_desc"),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type_code",
+                    "award__latest_transaction__contract_data__referenced_idv_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type",
+                    "award__latest_transaction__contract_data__referenced_idv_type_desc",
+                ),  # Column is appended to in account_download.py
                 (
                     "parent_award_single_or_multiple_code",
                     "award__latest_transaction__contract_data__referenced_mult_or_single",
@@ -763,8 +775,14 @@ query_paths = {
                     "transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "transaction__contract_data__pulled_from"),
-                ("award_type_code", "transaction__contract_data__contract_award_type"),  # Column is appended to in account_download.py
-                ("award_type", "transaction__contract_data__contract_award_type_desc"),  # Column is appended to in account_download.py
+                (
+                    "award_type_code",
+                    "transaction__contract_data__contract_award_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "award_type",
+                    "transaction__contract_data__contract_award_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("idv_type_code", "transaction__contract_data__idv_type"),
                 ("idv_type", "transaction__contract_data__idv_type_description"),
                 ("multiple_or_single_award_idv_code", "transaction__contract_data__multiple_or_single_award_i"),
@@ -864,8 +882,14 @@ query_paths = {
                 ("interagency_contracting_authority", "transaction__contract_data__interagency_contract_desc"),
                 ("other_statutory_authority", "transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "transaction__contract_data__referenced_idv_type"),  # Column is appended to in account_download.py
-                ("parent_award_type", "transaction__contract_data__referenced_idv_type_desc"),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type_code",
+                    "transaction__contract_data__referenced_idv_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type",
+                    "transaction__contract_data__referenced_idv_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("parent_award_single_or_multiple_code", "transaction__contract_data__referenced_mult_or_single"),
                 ("parent_award_single_or_multiple", "transaction__contract_data__referenced_mult_or_si_desc"),
                 ("major_program", "transaction__contract_data__major_program"),
@@ -1402,7 +1426,10 @@ query_paths = {
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
@@ -1481,7 +1508,10 @@ query_paths = {
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
@@ -1534,7 +1564,10 @@ query_paths = {
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
@@ -1649,6 +1682,14 @@ query_paths["idv_transaction_history"] = {
         [
             (k, v[13:] if v is not None and v.startswith("transaction__") else v)
             for k, v in query_paths["transaction"]["d1"].items()
+        ]
+    )
+}
+query_paths["assistance_transaction_history"] = {
+    "d2": OrderedDict(
+        [
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction"]["d2"].items()
         ]
     )
 }
