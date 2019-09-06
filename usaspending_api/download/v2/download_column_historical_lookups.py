@@ -22,6 +22,7 @@ query_paths = {
     "award": {
         "d1": OrderedDict(
             [
+                ("contract_award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "award__piid"),
                 ("parent_award_agency_id", "award__latest_transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "award__latest_transaction__contract_data__referenced_idv_agency_desc"),
@@ -573,6 +574,7 @@ query_paths = {
         ),
         "d2": OrderedDict(
             [
+                ("assistance_award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_fain", "award__fain"),
                 ("award_id_uri", "award__uri"),
                 ("sai_number", "award__latest_transaction__assistance_data__sai_number"),
@@ -706,6 +708,7 @@ query_paths = {
         "d1": OrderedDict(
             [
                 ("contract_transaction_unique_key", "transaction__contract_data__detached_award_proc_unique"),
+                ("contract_award_unique_key", "transaction__award__generated_unique_award_id"),
                 ("award_id_piid", "transaction__contract_data__piid"),
                 ("modification_number", "transaction__contract_data__award_modification_amendme"),
                 ("transaction_number", "transaction__contract_data__transaction_number"),
@@ -1061,6 +1064,7 @@ query_paths = {
         "d2": OrderedDict(
             [
                 ("assistance_transaction_unique_key", "transaction__assistance_data__afa_generated_unique"),
+                ("assistance_award_unique_key", "transaction__award__generated_unique_award_id"),
                 ("award_id_fain", "transaction__assistance_data__fain"),
                 ("modification_number", "transaction__modification_number"),
                 ("award_id_uri", "transaction__assistance_data__uri"),
