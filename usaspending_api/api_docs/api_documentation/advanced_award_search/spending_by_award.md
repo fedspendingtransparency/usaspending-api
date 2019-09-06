@@ -73,6 +73,7 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
 ```
     'Recipient Name': 'recipient_name',
     'Recipient DUNS Number': 'recipient_unique_id',
+    'recipient_id': 'recipient_id',
     'Awarding Agency': 'awarding_toptier_agency_name',
     'Awarding Agency Code': 'awarding_toptier_agency_code',
     'Awarding Sub Agency': 'awarding_subtier_agency_name',
