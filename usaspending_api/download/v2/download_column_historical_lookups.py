@@ -1397,6 +1397,7 @@ query_paths = {
                 ("main_account_code", "treasury_account_identifier__main_account_code"),
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account_identifier__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
@@ -1476,6 +1477,7 @@ query_paths = {
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
@@ -1529,6 +1531,7 @@ query_paths = {
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
