@@ -5,7 +5,7 @@ from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictiona
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 
 
-class RawAgencyCodesCSVManager(Manager):
+class RawAgencyManager(Manager):
 
     def perform_import(self, file_path, force=False):
         """
@@ -50,18 +50,18 @@ class RawAgencyCodesCSVManager(Manager):
         ]
 
         if force is not True:
-            existing_agencies = list(RawAgencyCodesCSV.objects.all().order_by("row_number").values())
+            existing_agencies = list(RawAgency.objects.all().order_by("row_number").values())
             if agencies == existing_agencies:
                 return 0
 
         with transaction.atomic():
             self.get_queryset().all().delete()
-            self.bulk_create([RawAgencyCodesCSV(**agency) for agency in agencies])
+            self.bulk_create([RawAgency(**agency) for agency in agencies])
 
         return len(agencies)
 
 
-class RawAgencyCodesCSV(Model):
+class RawAgency(Model):
     """
     A copy of the raw agency_codes.csv file as maintained by the product owner.
 
@@ -93,10 +93,10 @@ class RawAgencyCodesCSV(Model):
     icon_filename = TextField(blank=True, null=True)
     comment = TextField(blank=True, null=True)
 
-    objects = RawAgencyCodesCSVManager()
+    objects = RawAgencyManager()
 
     class Meta:
-        db_table = "raw_agency_codes_csv"
+        db_table = "raw_agency"
 
     def __repr__(self):
         return "[{}] []/[{}] {}/[{}] {}/[{}] {}".format(

@@ -1,15 +1,13 @@
 from django.db import transaction
 from django.db.models import Manager, Max, Model, TextField
-from usaspending_api.agencies.models.raw_agency_codes_csv import RawAgencyCodesCSV
+from usaspending_api.agencies.models.raw_agency import RawAgency
 
 
 class CGACManager(Manager):
 
     def perform_import(self):
-        """
-        Imports CGACs from the raw agency codes table.
-        """
-        cgacs = RawAgencyCodesCSV.objects.filter(
+        """Imports CGACs from the raw agency codes table."""
+        cgacs = RawAgency.objects.filter(
             cgac_agency_code__isnull=False,
             agency_name__isnull=False,
         ).values(

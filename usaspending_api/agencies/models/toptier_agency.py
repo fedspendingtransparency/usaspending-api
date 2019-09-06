@@ -11,16 +11,14 @@ in the Pacific and can't be bothered with such nonsense.
 """
 from django.db import transaction
 from django.db.models import F, Manager, Max, Model, TextField, URLField
-from usaspending_api.agencies.models.raw_agency_codes_csv import RawAgencyCodesCSV
+from usaspending_api.agencies.models.raw_agency import RawAgency
 
 
 class ToptierAgencyManager(Manager):
 
     def perform_import(self):
-        """
-        Imports Toptier agencies from the raw agency codes table.
-        """
-        toptiers = RawAgencyCodesCSV.objects.filter(
+        """Imports Toptier agencies from the raw agency codes table."""
+        toptiers = RawAgency.objects.filter(
             cgac_agency_code__isnull=False,
             agency_name__isnull=False,
             is_frec=False,
@@ -36,7 +34,7 @@ class ToptierAgencyManager(Manager):
             congressional_justification=Max("congressional_justification"),
             icon_filename=Max("icon_filename"),
         ).union(
-            RawAgencyCodesCSV.objects.filter(
+            RawAgency.objects.filter(
                 frec__isnull=False,
                 frec_entity_description__isnull=False,
                 is_frec=True,

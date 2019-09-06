@@ -11,7 +11,7 @@ in the Pacific and can't be bothered with such nonsense.
 """
 from django.db import transaction
 from django.db.models import BooleanField, Case, F, ForeignKey, Manager, Max, Model, TextField, When
-from usaspending_api.agencies.models.raw_agency_codes_csv import RawAgencyCodesCSV
+from usaspending_api.agencies.models.raw_agency import RawAgency
 from usaspending_api.common.helpers.orm_helpers import BoolOr
 
 
@@ -23,7 +23,7 @@ class SubtierAgencyManager(Manager):
         intrinsically tied to subtiers.  If you re-import subtiers, you will likely also
         need to re-import toptiers.
         """
-        subtiers = RawAgencyCodesCSV.objects.annotate(
+        subtiers = RawAgency.objects.annotate(
             toptier_code=Case(When(is_frec=True, then=F("frec")), default=F("cgac_agency_code")),
             toptier_agency_name=Case(When(is_frec=True, then=F("frec_entity_description")), default=F("agency_name")),
         ).filter(

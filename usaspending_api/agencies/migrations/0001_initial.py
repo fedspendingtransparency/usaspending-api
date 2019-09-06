@@ -11,20 +11,25 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('references', '0031_delete_cgac'),
+        ('references', '0030_auto_20190823_2139'),
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='CGAC',
-            fields=[
-                ('cgac_code', models.TextField(primary_key=True, serialize=False)),
-                ('agency_name', models.TextField()),
-                ('agency_abbreviation', models.TextField(blank=True, null=True)),
+        migrations.SeparateDatabaseAndState(
+            database_operations=None,
+            state_operations=[
+                migrations.CreateModel(
+                    name='CGAC',
+                    fields=[
+                        ('cgac_code', models.TextField(primary_key=True, serialize=False)),
+                        ('agency_name', models.TextField()),
+                        ('agency_abbreviation', models.TextField(blank=True, null=True)),
+                    ],
+                    options={
+                        'db_table': 'cgac',
+                    },
+                ),
             ],
-            options={
-                'db_table': 'cgac',
-            },
         ),
         migrations.CreateModel(
             name='FREC',
@@ -38,7 +43,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='RawAgencyCodesCSV',
+            name='RawAgency',
             fields=[
                 ('row_number', models.IntegerField(primary_key=True, serialize=False)),
                 ('cgac_agency_code', models.TextField(blank=True, null=True)),
@@ -63,7 +68,7 @@ class Migration(migrations.Migration):
                 ('comment', models.TextField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'raw_agency_codes_csv',
+                'db_table': 'raw_agency',
             },
         ),
         migrations.CreateModel(

@@ -1,15 +1,13 @@
 from django.db import transaction
 from django.db.models import Manager, Max, Model, TextField
-from usaspending_api.agencies.models.raw_agency_codes_csv import RawAgencyCodesCSV
+from usaspending_api.agencies.models.raw_agency import RawAgency
 
 
 class FRECManager(Manager):
 
     def perform_import(self):
-        """
-        Imports FRECs from the raw agency codes table.
-        """
-        frecs = RawAgencyCodesCSV.objects.filter(
+        """Imports FRECs from the raw agency codes table."""
+        frecs = RawAgency.objects.filter(
             frec__isnull=False,
             frec_entity_description__isnull=False,
         ).values(

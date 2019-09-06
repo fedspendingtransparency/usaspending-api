@@ -9,10 +9,16 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('references', '0030_auto_20190823_2139'),
+        ('agencies', '0001_initial'),
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='CGAC',
+        migrations.SeparateDatabaseAndState(
+            database_operations=None,
+            state_operations=[
+                migrations.DeleteModel(
+                    name='CGAC',
+                ),
+            ],
         ),
     ]

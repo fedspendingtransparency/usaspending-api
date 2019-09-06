@@ -13,7 +13,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from usaspending_api.agencies.models import CGAC, FREC, RawAgencyCodesCSV, SubtierAgency, ToptierAgency
+from usaspending_api.agencies.models import CGAC, FREC, RawAgency, SubtierAgency, ToptierAgency
 from usaspending_api.common.helpers.timing_helpers import Timer
 
 
@@ -70,7 +70,7 @@ class Command(BaseCommand):
     def _perform_imports(agency_file, force):
 
         with Timer("Import {}".format(agency_file)):
-            raw_record_count = RawAgencyCodesCSV.objects.perform_import(agency_file, force)
+            raw_record_count = RawAgency.objects.perform_import(agency_file, force)
             logger.info("{:,} raw agency records imported".format(raw_record_count))
 
         if force is True or raw_record_count > 0:
