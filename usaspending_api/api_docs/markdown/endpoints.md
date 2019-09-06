@@ -45,12 +45,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/recipient/](/api/v2/autocomplete/recipient/)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
-|[/api/v2/awards/idvs/accounts/](/api/v2/awards/idvs/accounts/)|POST| Returns a list of federal accounts for the indicated IDV|
-|[/api/v2/awards/idvs/activity/](/api/v2/awards/idvs/activity/)|POST| Returns information about child awards and grandchild awards for a given IDV (Indefinite Delivery Vehicle).|
-|[/api/v2/awards/idvs/amounts/<AWARD_ID\>/](/api/v2/awards/idvs/amounts/69309317/)|GET| Returns the direct children of an IDV|
-|[/api/v2/awards/idvs/awards/](/api/v2/awards/idvs/awards/)|POST| Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle award (IDV)|
-|[/api/v2/awards/idvs/funding/](/api/v2/awards/idvs/funding/)|POST| Returns File C funding records associated with an IDV|
-|[/api/v2/awards/idvs/funding_rollup/](/api/v2/awards/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV|
+|[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
+|[/api/v2/awards/funding_rollup](/api/v2/awards/funding_rollup)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for an award|
 |[/api/v2/awards/last_updated/](/api/v2/awards/last_updated/)|GET| Returns date of last update|
 |[/api/v2/budget_functions/list_budget_functions/](/api/v2/budget_functions/list_budget_functions/)|GET| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
 |[/api/v2/budget_functions/list_budget_subfunctions/](/api/v2/budget_functions/list_budget_subfunctions/)|POST| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
@@ -62,6 +58,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count/](/api/v2/download/count/)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
 |[/api/v2/download/idv/](/api/v2/download/idv/)|POST| Returns a zipped file containing IDV data|
+|[/api/v2/download/contract/](/api/v2/download/contract/)|POST| Returns a zipped file containing Contract data|
+|[/api/v2/download/assistance/](/api/v2/download/assistance/)|POST| Returns a zipped file containing Assistance data|
 |[/api/v2/download/status/](/api/v2/download/status/)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day|
 |[/api/v2/download/transactions/](/api/v2/download/transactions/)|POST|Generates zip file for download of award data in CSV format|
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/available_object_classes/](/api/v2/federal_accounts/4324/available_object_classes/)|GET| Returns financial spending data by object class based on account's internal ID|
@@ -73,6 +71,12 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/financial_balances/agencies/](/api/v2/financial_balances/agencies/?fiscal_year=2017&funding_agency_id=4324)|GET| Returns financial balances by agency and the latest quarter for the given fiscal year|
 |[/api/v2/financial_spending/major_object_class/](/api/v2/financial_spending/major_object_class/?fiscal_year=2017&funding_agency_id=4324)|GET| Returns financial spending data by object class for the latest quarter based on the given fiscal year |
 |[/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=4324&major_object_class_code=20)|GET| Returns financial spending data by object class for the latest quarter based on the given fiscal year|
+|[/api/v2/idvs/accounts/](/api/v2/idvs/accounts/)|POST| Returns a list of federal accounts for the indicated IDV|
+|[/api/v2/idvs/activity/](/api/v2/idvs/activity/)|POST| Returns information about child awards and grandchild awards for a given IDV (Indefinite Delivery Vehicle).|
+|[/api/v2/idvs/amounts/<AWARD_ID\>/](/api/v2/idvs/amounts/69309317/)|GET| Returns the direct children of an IDV|
+|[/api/v2/idvs/awards/](/api/v2/idvs/awards/)|POST| Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle award (IDV)|
+|[/api/v2/idvs/funding/](/api/v2/idvs/funding/)|POST| Returns File C funding records associated with an IDV|
+|[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV|
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number|
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/42c19cbe-ced7-5d41-2f80-cd27a22b1575-P/)|GET| Returns a high-level overview of a specific recipient, given its id|
 |[/api/v2/recipient/duns/](/api/v2/recipient/duns/)|POST| Returns a list of recipients in USAspending DB|
