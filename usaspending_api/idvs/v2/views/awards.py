@@ -175,7 +175,7 @@ class IDVAwardsViewSet(APIView):
     """
     Returns the direct children of an IDV.
     """
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/idvs/awards.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/awards.md"
 
     @staticmethod
     def _parse_and_validate_request(request: dict) -> dict:

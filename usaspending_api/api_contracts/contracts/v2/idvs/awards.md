@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Related Awards [/api/v2/awards/idvs/awards/]
+# IDV Related Awards [/api/v2/idvs/awards/]
 
 ## POST
 

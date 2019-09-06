@@ -14,6 +14,7 @@ state_to_code_dict = {
     "hawaii": "HI",
     "idaho": "ID",
     "illinois": "IL",
+    "indiana": "IN",
     "iowa": "IA",
     "kansas": "KS",
     "kentucky": "KY",

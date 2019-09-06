@@ -2,7 +2,7 @@ import pytest
 from django.core.management import call_command
 from model_mommy import mommy
 
-from usaspending_api.awards.tests.data.idv_data import set_up_related_award_objects, create_tree
+from usaspending_api.idvs.tests.data.idv_data import set_up_related_award_objects, create_tree
 from usaspending_api.awards.models import ParentAward
 
 c1 = {

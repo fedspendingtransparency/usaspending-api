@@ -5,7 +5,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 
-ENDPOINT = "/api/v2/awards/idvs/amounts/"
+ENDPOINT = "/api/v2/idvs/amounts/"
 
 
 EXPECTED_GOOD_OUTPUT = {

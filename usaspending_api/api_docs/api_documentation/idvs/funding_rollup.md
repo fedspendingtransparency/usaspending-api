@@ -1,5 +1,5 @@
 ## IDV Funding Rollup (Aggregation)
-**Route:** `/api/v2/awards/idvs/funding_rollup/`
+**Route:** `/api/v2/idvs/funding_rollup/`
 
 **Method:** `POST`
 
