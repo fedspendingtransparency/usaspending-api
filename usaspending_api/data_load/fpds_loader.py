@@ -163,18 +163,9 @@ def load_transactions(load_objects):
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             load_recipient_locations(cursor, load_objects)
             load_recipients(cursor, load_objects)
+            load_place_of_performance(cursor, load_objects)
 
             for load_object in load_objects:
-
-                # Create place of performance so we can link it later
-                columns, values, pairs = setup_load_lists(load_object, "place_of_performance_location")
-                pop_location_sql = "INSERT INTO references_location {} VALUES {} " "RETURNING location_id".format(
-                    columns, values, pairs
-                )
-                cursor.execute(pop_location_sql)
-                results = cursor.fetchall()
-                load_object["transaction_normalized"]["place_of_performance_id"] = results[0][0]
-                load_object["award"]["place_of_performance_id"] = results[0][0]
 
                 # Try to find an award for this transaction to belong to
                 find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
@@ -269,7 +260,6 @@ def load_recipient_locations(cursor, load_objects):
     cursor.execute(sql_to_execute)
     results = cursor.fetchall()
 
-    print(len(results))
     for index in range(0, len(results)):
         load_objects[index]["legal_entity"]["location_id"] = results[index][0]
 
@@ -286,6 +276,20 @@ def load_recipients(cursor, load_objects):
     for index in range(0, len(results)):
         load_objects[index]["transaction_normalized"]["recipient_id"] = results[index][0]
         load_objects[index]["award"]["recipient_id"] = results[index][0]
+
+
+def load_place_of_performance(cursor, load_objects):
+    sql_to_execute = ""
+    columns, values = setup_mass_load_lists(load_objects, "place_of_performance_location")
+    recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
+    sql_to_execute += recipient_sql
+
+    cursor.execute(sql_to_execute)
+    results = cursor.fetchall()
+
+    for index in range(0, len(results)):
+        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = results[index][0]
+        load_objects[index]["award"]["place_of_performance_id"] = results[index][0]
 
 
 def setup_mass_load_lists(load_objects, table):
