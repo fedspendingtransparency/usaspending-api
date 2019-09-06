@@ -1,6 +1,5 @@
 from os import environ
 import psycopg2
-from collections import OrderedDict
 import logging
 import time
 import math

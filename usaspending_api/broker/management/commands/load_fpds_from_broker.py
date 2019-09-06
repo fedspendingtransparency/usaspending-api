@@ -4,7 +4,6 @@ import logging
 import re
 import psycopg2
 
-from django.db import connections
 from usaspending_api.data_load.fpds_loader import run_fpds_load
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
@@ -106,5 +105,3 @@ class Command(BaseCommand):
 
         if options["date"]:
             self.load_fpds_from_date(options["date"])
-
-
