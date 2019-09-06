@@ -58,6 +58,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count/](/api/v2/download/count/)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
 |[/api/v2/download/idv/](/api/v2/download/idv/)|POST| Returns a zipped file containing IDV data|
+|[/api/v2/download/contract/](/api/v2/download/contract/)|POST| Returns a zipped file containing Contract data|
+|[/api/v2/download/assistance/](/api/v2/download/assistance/)|POST| Returns a zipped file containing Assistance data|
 |[/api/v2/download/status/](/api/v2/download/status/)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day|
 |[/api/v2/download/transactions/](/api/v2/download/transactions/)|POST|Generates zip file for download of award data in CSV format|
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/available_object_classes/](/api/v2/federal_accounts/4324/available_object_classes/)|GET| Returns financial spending data by object class based on account's internal ID|
