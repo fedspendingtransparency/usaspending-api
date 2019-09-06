@@ -511,7 +511,7 @@ place_of_performance_columns = {
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
     "place_of_perform_city_name": "city_name",
-    "place_of_perform_zip4a": "zip4",
+    "place_of_performance_zip4a": "zip4",
     "place_of_performance_zip5": "zip5",
     "place_of_perform_zip_last4": "zip_last4",
 }
