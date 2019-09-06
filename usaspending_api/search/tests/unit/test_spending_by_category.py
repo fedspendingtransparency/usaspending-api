@@ -283,7 +283,6 @@ def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
 
 @pytest.mark.django_db
 def test_category_recipient_duns_awards(mock_matviews_qs):
-    # recipient_hash = SELECT MD5(UPPER(CONCAT('<duns>','<recipient_name>')))::uuid;
     mock_model_1 = MockModel(recipient_hash="59f9a646-cd1c-cbdc-63dd-1020fac59336", generated_pragmatic_obligation=1)
     mock_model_2 = MockModel(recipient_hash="59f9a646-cd1c-cbdc-63dd-1020fac59336", generated_pragmatic_obligation=1)
     mock_model_3 = MockModel(recipient_hash="3725ba78-a607-7ab4-1cf6-2a08207bac3c", generated_pragmatic_obligation=1)
@@ -319,9 +318,9 @@ def test_category_recipient_duns_awards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "id": None},
-            {"amount": 11, "name": "John Doe", "code": "1234JD4321", "id": None},
-            {"amount": 2, "name": "University of Pawnee", "code": "00UOP00", "id": None},
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None},
+            {"amount": 11, "name": "John Doe", "code": "1234JD4321", "recipient_id": None},
+            {"amount": 2, "name": "University of Pawnee", "code": "00UOP00", "recipient_id": None},
         ],
     }
 
@@ -379,19 +378,19 @@ def test_category_recipient_duns_subawards():
                 "amount": Decimal(15),
                 "name": "MULTIPLE RECIPIENTS",
                 "code": None,
-                "id": None,
+                "recipient_id": None,
             },
             {
                 "amount": Decimal(11),
                 "name": "JOHN DOE",
                 "code": "1234JD4321",
-                "id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
+                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
             },
             {
                 "amount": Decimal(2),
                 "name": "UNIVERSITY OF PAWNEE",
                 "code": "00UOP00",
-                "id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
+                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
             },
         ],
     }

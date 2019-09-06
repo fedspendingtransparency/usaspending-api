@@ -41,8 +41,6 @@ def test_no_intersection(client):
 
     with connection.cursor() as cursor:
         cursor.execute("refresh materialized view concurrently mv_contract_award_search")
-        cursor.execute("select * from mv_contract_award_search")
-        print(cursor.fetchall())
 
     request = {
         "subawards": False,

@@ -40,7 +40,7 @@ ALIAS_DICT = {
         "funding_subtier_agency_abbreviation": "code",
     },
     "recipient_duns": {
-        "recipient_id": "id",
+        "recipient_id": "recipient_id",
         "recipient_name": "name",
         "recipient_unique_id": "code",
         "parent_recipient_unique_id": "code",
