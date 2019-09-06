@@ -196,17 +196,12 @@ def _validate_award_id(request_data):
     if award_id_type not in (str, int):
         raise InvalidParameterException("Award id must be either a string or an integer")
     if award_id_type is int or award_id.isdigit():
-        award = (
-            Award.objects.filter(id=int(award_id))
-            .values_list("id", "piid", "fain", "uri", "generated_unique_award_id")
-            .first()
-        )
+        filters = {"id": int(award_id)}
     else:
-        award = (
-            Award.objects.filter(generated_unique_award_id=award_id)
-            .values_list("id", "piid", "fain", "uri", "generated_unique_award_id")
-            .first()
-        )
+        filters = {"generated_unique_award_id": award_id}
+
+    award = Award.objects.filter(**filters).values_list("id", "piid", "fain", "uri",
+                                                            "generated_unique_award_id").first()
     if not award:
         raise InvalidParameterException("Unable to find award matching the provided award id")
     return award
