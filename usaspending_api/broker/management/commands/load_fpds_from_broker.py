@@ -1,10 +1,9 @@
-from os import environ
 from django.core.management.base import BaseCommand
 import logging
 import re
 import psycopg2
 
-from usaspending_api.data_load.fpds_loader import run_fpds_load
+from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -108,3 +107,6 @@ class Command(BaseCommand):
 
         if options["date"]:
             self.load_fpds_from_date(options["date"])
+
+        logger.info("cleaning orphaned rows")
+        destory_orphans()

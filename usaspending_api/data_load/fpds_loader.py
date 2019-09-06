@@ -31,27 +31,32 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, 
 USASPENDING_CONNECTION_STRING = get_database_dsn_string()
 BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
+DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
+    "DELETE FROM legal_entity legal WHERE legal.legal_entity_id in "
+    "(SELECT l.legal_entity_id FROM legal_entity l "
+    "LEFT JOIN transaction_normalized t ON t.recipient_id = l.legal_entity_id "
+    "LEFT JOIN awards a ON a.recipient_id = l.legal_entity_id "
+    "WHERE t is null and a.id is null); "
+)
+DESTROY_ORPHANS_REFERENCES_LOCATION_SQL = (
+    "DELETE FROM references_location location WHERE location.location_id in "
+    "(SELECT l.location_id FROM references_location l "
+    "LEFT JOIN transaction_normalized t ON t.place_of_performance_id = l.location_id "
+    "LEFT JOIN legal_entity e ON e.location_id = l.location_id "
+    "LEFT JOIN awards a ON a.place_of_performance_id = l.location_id "
+    "WHERE t.id is null and a.id is null and e.legal_entity_id is null)"
+)
+
 CHUNK_SIZE = 1000
 
 logger = logging.getLogger("console")
 
 
-class Timer:
-    def __enter__(self):
-        self.start = time.perf_counter()
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.end = time.perf_counter()
-        self.elapsed = self.end - self.start
-        self.elapsed_as_string = self.pretty_print_duration(self.elapsed)
-
-    @staticmethod
-    def pretty_print_duration(elapsed):
-        f, s = math.modf(elapsed)
-        m, s = divmod(s, 60)
-        h, m = divmod(m, 60)
-        return "%d:%02d:%02d.%04d" % (h, m, s, f * 10000)
+def destory_orphans():
+    with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(DESTROY_ORPHANS_LEGAL_ENTITY_SQL)
+            cursor.execute(DESTROY_ORPHANS_REFERENCES_LOCATION_SQL)
 
 
 def run_fpds_load(id_list):
@@ -327,3 +332,21 @@ def setup_load_lists(load_object, table):
     pairs_string = ",".join(update_pairs)
 
     return col_string, val_string, pairs_string
+
+
+class Timer:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.end = time.perf_counter()
+        self.elapsed = self.end - self.start
+        self.elapsed_as_string = self.pretty_print_duration(self.elapsed)
+
+    @staticmethod
+    def pretty_print_duration(elapsed):
+        f, s = math.modf(elapsed)
+        m, s = divmod(s, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d.%04d" % (h, m, s, f * 10000)
