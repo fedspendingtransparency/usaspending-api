@@ -1,5 +1,5 @@
 ## IDV Related Awards
-**Route:** `/api/v2/awards/idvs/awards/`
+**Route:** `/api/v2/idvs/awards/`
 
 **Method:** `POST`
 

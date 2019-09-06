@@ -3,11 +3,11 @@ import json
 from django.test import TestCase
 from rest_framework import status
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.v2.views.idvs.funding import SORTABLE_COLUMNS
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data
+from usaspending_api.idvs.v2.views.funding import SORTABLE_COLUMNS
+from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data
 
 
-DETAIL_ENDPOINT = "/api/v2/awards/idvs/funding/"
+DETAIL_ENDPOINT = "/api/v2/idvs/funding/"
 
 
 class IDVFundingTestCase(TestCase):

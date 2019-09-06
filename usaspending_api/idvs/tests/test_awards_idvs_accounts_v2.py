@@ -1,11 +1,11 @@
 from django.test import TestCase
 from rest_framework import status
 
-from usaspending_api.awards.tests.data.idv_test_data import create_idv_test_data, AWARD_COUNT
-from usaspending_api.awards.v2.views.idvs.accounts import SORTABLE_COLUMNS
+from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, AWARD_COUNT
+from usaspending_api.idvs.v2.views.accounts import SORTABLE_COLUMNS
 
 
-FEDERAL_ACCOUNT_ENDPOINT = "/api/v2/awards/idvs/accounts/"
+FEDERAL_ACCOUNT_ENDPOINT = "/api/v2/idvs/accounts/"
 
 
 class IDVAccountsTestCase(TestCase):
