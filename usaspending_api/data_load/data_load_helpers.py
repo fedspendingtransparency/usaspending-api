@@ -10,9 +10,7 @@ def capitalize_if_string(val):
 
 
 def false_if_null(val):
-    if val is None:
-        return False
-    return val
+    True if val else False
 
 
 # TODO: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
