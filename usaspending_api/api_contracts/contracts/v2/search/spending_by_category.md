@@ -54,7 +54,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 ## CategoryResult (object)
 + `id` (required, number)
     The id is the database key.
-+ `recipient_id`  (optional, string, nullable)
++ `recipient_id` (optional, string, nullable)
     A unique identifier for the recipient which includes the recipient hash and level.
 + `name` (required, string, nullable)
 + `code` (required, string, nullable)
