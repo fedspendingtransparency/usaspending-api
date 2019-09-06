@@ -58,7 +58,7 @@ def run_fpds_load(id_list):
     if not subtier_agency_list:
         load_reference_data()
 
-    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
+    chunks = [id_list[x: x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     for chunk in chunks:
         with Timer() as timer:
@@ -300,7 +300,7 @@ def setup_load_lists(load_object, table):
     columns = []
     values = []
     update_pairs = []
-    for key in OrderedDict(load_object[table]).keys():
+    for key in load_object[table].keys():
         columns.append('"{}"'.format(key))
         val = format_value_for_sql(load_object[table][key])
         values.append(val)

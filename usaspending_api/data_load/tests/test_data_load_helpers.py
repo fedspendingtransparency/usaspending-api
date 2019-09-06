@@ -19,5 +19,4 @@ def test_sql_formatter():
     assert format_value_for_sql("null") == "'null'"
     assert format_value_for_sql(599) == "599"
     assert format_value_for_sql("599") == "'599'"
-    assert format_value_for_sql([1, 2, "steve"]) == "'{1,2,'steve'}'"
-    assert format_value_for_sql([None, "bob", [9, 8, 7]]) == "'{null,'bob','{9,8,7}'}'"
+    assert format_value_for_sql([1, 2, "steve"]) == "ARRAY[1,2,'steve']"
