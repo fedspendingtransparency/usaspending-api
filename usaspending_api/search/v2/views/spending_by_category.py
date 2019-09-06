@@ -220,6 +220,43 @@ class BusinessLogic:
             row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "funding_subagency")
         return results
 
+    @staticmethod
+    def _get_recipient_id(row):
+        """
+        In the recipient_profile table there is a 1 to 1 relationship between hashes and DUNS
+        (recipient_unique_id) and the hashes+duns match exactly between recipient_profile and
+        recipient_lookup where there are matches.  Grab the level from recipient_profile by
+        hash if we have one or by DUNS if we have one of those.
+        """
+        if "recipient_hash" in row:
+            profile_filter = {"recipient_hash": row["recipient_hash"]}
+        elif "recipient_unique_id" in row:
+            profile_filter = {"recipient_unique_id": row["recipient_unique_id"]}
+        else:
+            raise RuntimeError(
+                "Attempted to lookup recipient profile using a queryset that contains neither "
+                "'recipient_hash' nor 'recipient_unique_id'"
+            )
+
+        profile = (
+            RecipientProfile.objects.filter(**profile_filter)
+            .exclude(recipient_name__in=SPECIAL_CASES)
+            .annotate(sort_order=Case(
+                When(recipient_level="C", then=Value(0)),
+                When(recipient_level="R", then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            ))
+            .values("recipient_hash", "recipient_level")
+            .order_by("sort_order")
+            .first()
+        )
+
+        return combine_recipient_hash_and_level(
+            profile["recipient_hash"],
+            profile["recipient_level"]
+        ) if profile else None
+
     def recipient(self) -> list:
         if self.category == "recipient_duns":
             filters = {}
@@ -241,38 +278,7 @@ class BusinessLogic:
         query_results = list(self.queryset[self.lower_limit: self.upper_limit])
         for row in query_results:
 
-            # In the recipient_profile table there is a 1 to 1 relationship between hashes and DUNS
-            # (recipient_unique_id) and the hashes+duns match exactly between recipient_profile and
-            # recipient_lookup where there are matches.  Grab the level from recipient_profile by
-            # hash if we have one or by DUNS if we have one of those.
-            if "recipient_hash" in row:
-                profile_filter = {"recipient_hash": row["recipient_hash"]}
-            elif "recipient_unique_id" in row:
-                profile_filter = {"recipient_unique_id": row["recipient_unique_id"]}
-            else:
-                raise RuntimeError(
-                    "Attempted to lookup recipient profile using a queryset that contains neither "
-                    "'recipient_hash' nor 'recipient_unique_id'"
-                )
-
-            profile = (
-                RecipientProfile.objects.filter(**profile_filter)
-                .exclude(recipient_name__in=SPECIAL_CASES)
-                .annotate(sort_order=Case(
-                    When(recipient_level="C", then=Value(0)),
-                    When(recipient_level="R", then=Value(1)),
-                    default=Value(2),
-                    output_field=IntegerField()
-                ))
-                .values("recipient_hash", "recipient_level")
-                .order_by("sort_order")
-                .first()
-            )
-
-            row["recipient_id"] = combine_recipient_hash_and_level(
-                profile["recipient_hash"],
-                profile["recipient_level"]
-            ) if profile else None
+            row["recipient_id"] = self._get_recipient_id(row)
 
             if not self.subawards:
 
