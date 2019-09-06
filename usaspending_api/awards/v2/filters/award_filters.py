@@ -9,22 +9,15 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.models_matviews import SubawardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
-from copy import deepcopy
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+
 
 logger = logging.getLogger("console")
-TINYSHIELD_MODELS = [
-    {
-        "name": "award_id",
-        "key": "award_id",
-        "type": "any",
-        "optional": False,
-        "models": [{"type": "integer"}, {"type": "text", "text_type": "search"}],
-    }
-]
 
 
 def _get_award_id(filters):
-    TinyShield(deepcopy(TINYSHIELD_MODELS)).block(filters)
+    models = get_internal_or_generated_award_id_model()
+    TinyShield([models]).block(filters)
     award_id = filters["award_id"]
     return award_id
 
