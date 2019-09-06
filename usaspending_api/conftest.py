@@ -80,18 +80,6 @@ def mock_recipients(monkeypatch):
 
 
 @pytest.fixture()
-def mock_recipient_profile(monkeypatch):
-    """Mocks all recipient profile querysets into a single mock"""
-    mock_recipient_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.recipient.models.RecipientProfile.objects", mock_recipient_qs)
-
-    yield mock_recipient_qs
-
-    mock_recipient_qs.delete()
-
-
-@pytest.fixture()
 def mock_federal_account(monkeypatch):
     """Mocks all agency querysets into a single mock"""
     mock_federal_accounts_qs = MockSet()
