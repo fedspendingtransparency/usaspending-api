@@ -1,3 +1,4 @@
+from django.db.models import CharField, Expression
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 
 
@@ -81,3 +82,51 @@ def recipient_is_child(recipient_record: dict) -> bool:
 
 def combine_recipient_hash_and_level(recipient_hash, recipient_level):
     return "{}-{}".format(recipient_hash, recipient_level.upper())
+
+
+def annotate_recipient_id(field_name, queryset):
+    """
+    Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
+    the queryset is based on a data source that contains recipient_unique_id and
+    parent_recipient_unique_id which, currently, all of our advanced search materialized views do.
+    """
+    class RecipientId(Expression):
+        """
+        Used to graft a subquery into a queryset that can build recipient ids.
+
+        This is a bit less than ideal, but I just couldn't construct an ORM query to mimic this
+        logic.  There are several issues including but not limited to:
+
+            - There are currently no relations between these tables in the Django ORM which makes
+              joining them... challenging.
+            - Adding relations to the ORM changes how the fields behave making this a much bigger
+              enhancement than originally planned.
+            - When I did add relations to the ORM, I couldn't figure out how to make the Django
+              OuterRef expression check for nulls since the subquery needs to check to see if the
+              parent_recipient_unique_id in the outer query is null.
+
+        Anyhow, this works and is encapsulated so if someone smart figures out how to use pure ORM,
+        it should be easy to patch in.
+        """
+        def __init__(self):
+            super(RecipientId, self).__init__(CharField())
+
+        def as_sql(self, compiler, connection):
+            return (
+                """(
+                    select
+                        rp.recipient_hash || '-' ||  rp.recipient_level
+                    from
+                        recipient_profile rp
+                        inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+                    where
+                        rl.duns = "{outer_table}".recipient_unique_id and
+                        rp.recipient_level = case
+                            when "{outer_table}".parent_recipient_unique_id is null then 'R'
+                            else 'C'
+                        end
+                )""".format(outer_table=compiler.query.model._meta.db_table),
+                list()
+            )
+
+    return queryset.annotate(**{field_name: RecipientId()})

@@ -71,6 +71,8 @@ List of table columns
 ## SpendingByAwardResponse (object)
 + `Recipient Name` (optional, string, nullable)
 + `Recipient DUNS Number` (optional, string, nullable)
++ `recipient_id`  (optional, string, nullable)
+    A unique identifier for the recipient which includes the recipient hash and level.
 + `Awarding Agency` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
 + `Awarding Sub Agency` (optional, string, nullable)

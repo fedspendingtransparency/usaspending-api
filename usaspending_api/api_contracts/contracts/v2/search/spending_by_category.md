@@ -75,7 +75,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
-    A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
+    A unique identifier for the recipient which includes the recipient hash and level.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
