@@ -150,16 +150,9 @@ def generate_load_objects(broker_objects):
 def load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            for load_object in load_objects:
+            load_recipient_locations(cursor, load_objects)
 
-                # Create recipient location so we can link it later
-                columns, values, pairs = setup_load_lists(load_object, "recipient_location")
-                recipient_location_sql = "INSERT INTO references_location {} VALUES {} " "RETURNING location_id".format(
-                    columns, values, pairs
-                )
-                cursor.execute(recipient_location_sql)
-                results = cursor.fetchall()
-                load_object["legal_entity"]["location_id"] = results[0][0]
+            for load_object in load_objects:
 
                 # Create recipient so we can link it later
                 columns, values, pairs = setup_load_lists(load_object, "legal_entity")
@@ -261,6 +254,22 @@ def load_transactions(load_objects):
                     results[0][0], load_object["award"]["latest_tranaction_id"]
                 )
                 cursor.execute(update_award_lastest_transaction_sql)
+
+
+def load_recipient_locations(cursor, load_objects):
+    sql_to_execute = ""
+    for load_object in load_objects:
+        columns, values, pairs = setup_load_lists(load_object, "recipient_location")
+        recipient_location_sql = "INSERT INTO references_location {} VALUES {} " "RETURNING location_id;".format(
+            columns, values, pairs
+        )
+        sql_to_execute += recipient_location_sql
+
+    cursor.execute(sql_to_execute)
+    results = cursor.fetchall()
+
+    for index in range(0, len(results)):
+        load_objects[index]["legal_entity"]["location_id"] = results[index][0]
 
 
 def setup_load_lists(load_object, table):
