@@ -201,7 +201,7 @@ def _validate_award_id(request_data):
         filters = {"generated_unique_award_id": award_id}
 
     award = Award.objects.filter(**filters).values_list("id", "piid", "fain", "uri",
-                                                            "generated_unique_award_id").first()
+                                                        "generated_unique_award_id").first()
     if not award:
         raise InvalidParameterException("Unable to find award matching the provided award id")
     return award
