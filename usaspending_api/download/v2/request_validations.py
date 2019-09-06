@@ -78,7 +78,7 @@ def validate_award_request(request_data):
 
 def validate_idv_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award_id, piid, _, _, _ = _validate_award_id(request_data)
 
     return {
         "account_level": "treasury_account",
