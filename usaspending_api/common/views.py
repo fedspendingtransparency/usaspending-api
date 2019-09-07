@@ -13,7 +13,6 @@ exception_logger = logging.getLogger("exceptions")
 
 
 class AutocompleteView(AutocompleteResponseMixin, APIView):
-
     def get_serializer_context(self):
         context = super(AutocompleteView, self).get_serializer_context()
         return {**context}

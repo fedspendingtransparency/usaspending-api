@@ -7,6 +7,7 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
     This route gets the current status of a download job that that has been requested with the
     `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/download_status.md"
 
     def get(self, request):

@@ -46,11 +46,11 @@ class Command(BaseCommand):
             subtier_cond = "(awarding_sub_tier_agency_c = {sub_tier} OR funding_sub_tier_agency_co = {sub_tier})"
             broker_where += " AND " + subtier_cond.format(sub_tier=sub_tiers[0])
         elif sub_tiers and len(sub_tiers) > 1:
-            sub_tiers_str = '({})'.format(','.join(['\'\'{}\'\''.format(sub_tier) for sub_tier in sub_tiers]))
+            sub_tiers_str = "({})".format(",".join(["''{}''".format(sub_tier) for sub_tier in sub_tiers]))
             subtier_cond = "(awarding_sub_tier_agency_c IN {sub_tiers} OR funding_sub_tier_agency_co IN {sub_tiers})"
             broker_where += " AND " + subtier_cond.format(sub_tiers=sub_tiers_str)
-        broker_where += ';'
-        usaspending_where += ';'
+        broker_where += ";"
+        usaspending_where += ";"
 
         sql_statment = """
         CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
@@ -105,7 +105,7 @@ class Command(BaseCommand):
             award_where = "awarding_sub_tier_agency_c = '{}'".format(sub_tiers)
             fund_where = "funding_sub_tier_agency_co = '{}'".format(sub_tiers)
         elif sub_tiers and len(sub_tiers) > 1:
-            sub_tiers_str = '({})'.format(','.join(['\'{}\''.format(sub_tier) for sub_tier in sub_tiers]))
+            sub_tiers_str = "({})".format(",".join(["'{}'".format(sub_tier) for sub_tier in sub_tiers]))
             award_where = "awarding_sub_tier_agency_c IN {}".format(sub_tiers_str)
             fund_where = "funding_sub_tier_agency_co IN {}".format(sub_tiers_str)
 
@@ -172,7 +172,7 @@ class Command(BaseCommand):
         db_cursor.execute(self.get_broker_data(table_type, fiscal_year, fy_start, fy_end, year_range, sub_tiers))
 
         end = time.perf_counter()
-        condition_str = ' with sub_tiers {}'.format(sub_tiers) if sub_tiers else ''
+        condition_str = " with sub_tiers {}".format(sub_tiers) if sub_tiers else ""
         logger.info(
             "Finished retrieving {}FY{} data from broker {}{} to update in website in {}s".format(
                 year_range or "", fiscal_year, table_type.upper(), condition_str, end - start
@@ -225,7 +225,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--sub-tiers",
             type=str,
-            nargs='+',
+            nargs="+",
             dest="sub-tiers",
             help="Sub tiers to update agencies related to if this is to be used for sub tier changes",
         )

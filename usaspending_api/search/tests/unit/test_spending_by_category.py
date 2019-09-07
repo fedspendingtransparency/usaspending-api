@@ -374,12 +374,7 @@ def test_category_recipient_duns_subawards():
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": Decimal(15),
-                "name": "MULTIPLE RECIPIENTS",
-                "code": None,
-                "recipient_id": None,
-            },
+            {"amount": Decimal(15), "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None},
             {
                 "amount": Decimal(11),
                 "name": "JOHN DOE",

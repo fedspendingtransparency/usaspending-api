@@ -93,6 +93,7 @@ def annotate_recipient_id(field_name, queryset):
     the queryset is based on a data source that contains recipient_unique_id and
     parent_recipient_unique_id which, currently, all of our advanced search materialized views do.
     """
+
     class RecipientId(Expression):
         """
         Used to graft a subquery into a queryset that can build recipient ids.
@@ -111,13 +112,15 @@ def annotate_recipient_id(field_name, queryset):
         Anyhow, this works and is encapsulated so if someone smart figures out how to use pure ORM,
         it should be easy to patch in.
         """
+
         def __init__(self):
             super(RecipientId, self).__init__(CharField())
 
         def as_sql(self, compiler, connection):
             return (
                 convert_composable_query_to_string(
-                    SQL("""(
+                    SQL(
+                        """(
                         select
                             rp.recipient_hash || '-' ||  rp.recipient_level
                         from
@@ -130,12 +133,13 @@ def annotate_recipient_id(field_name, queryset):
                                 else 'C'
                             end and
                             rp.recipient_name not in {special_cases}
-                    )""").format(
+                    )"""
+                    ).format(
                         outer_table=Identifier(compiler.query.model._meta.db_table),
                         special_cases=Literal(tuple(sc for sc in SPECIAL_CASES)),
                     )
                 ),
-                list()
+                list(),
             )
 
     return queryset.annotate(**{field_name: RecipientId()})

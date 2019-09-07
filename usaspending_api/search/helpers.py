@@ -22,9 +22,6 @@ def build_tas_codes_filter(queryset, tas_filters):
 
     return queryset.filter(
         treasury_account_identifiers__overlap=list(
-            TreasuryAppropriationAccount
-            .objects
-            .filter(tas_qs)
-            .values_list("treasury_account_identifier", flat=True)
+            TreasuryAppropriationAccount.objects.filter(tas_qs).values_list("treasury_account_identifier", flat=True)
         )
     )

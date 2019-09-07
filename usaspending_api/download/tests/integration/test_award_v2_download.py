@@ -23,12 +23,7 @@ def award_download_data(db):
     )
 
     mommy.make(
-        "awards.Award",
-        id=2,
-        category="grants",
-        fain="fain",
-        type="04",
-        generated_unique_award_id="ASST_NON_FAIN_12D2",
+        "awards.Award", id=2, category="grants", fain="fain", type="04", generated_unique_award_id="ASST_NON_FAIN_12D2"
     )
 
 

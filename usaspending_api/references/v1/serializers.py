@@ -28,7 +28,6 @@ class SubtierAgencySerializer(LimitableSerializer):
 
 
 class AgencySerializer(LimitableSerializer):
-
     class Meta:
         model = Agency
         fields = "__all__"
