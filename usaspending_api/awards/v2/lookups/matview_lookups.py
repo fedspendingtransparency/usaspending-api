@@ -1,6 +1,7 @@
 default_mapping = {
     "Recipient Name": "recipient_name",
     "Recipient DUNS Number": "recipient_unique_id",
+    "recipient_id": "_recipient_id",  # recipient_id conflicts with another column in the model
     "Awarding Agency": "awarding_toptier_agency_name",
     "Awarding Agency Code": "awarding_toptier_agency_code",
     "Awarding Sub Agency": "awarding_subtier_agency_name",
