@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 from xlrd import open_workbook
 
 from usaspending_api.accounts.models import BudgetAuthority
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.references.models import OverallTotals, FrecMap
 
 logger = logging.getLogger("console")

@@ -8,6 +8,7 @@ from django.db import DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_transaction_delta_view_exists
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
@@ -179,26 +180,9 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.AwardSummaryMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.ContractAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.DirectPaymentAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.GrantAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.IDVAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.LoanAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.OtherAwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.Pre2008AwardSearchMatview.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SubawardView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryPscCodesView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryStateView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionFedAcctView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionRecipientView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", mock_qs)
+    for k, v in MATERIALIZED_VIEWS.items():
+        if k not in ["tas_autocomplete_matview"]:
+            monkeypatch.setattr("usaspending_api.awards.models_matviews.{}.objects".format(v["model"].__name__), mock_qs)
 
     yield mock_qs
 

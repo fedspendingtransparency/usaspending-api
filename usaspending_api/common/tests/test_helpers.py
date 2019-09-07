@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from usaspending_api.common.helpers.generic_helper import fy, get_pagination
+from usaspending_api.common.helpers.date_helper import fy, get_pagination
 from usaspending_api.common.helpers.timing_helpers import timer
 
 legal_dates = {

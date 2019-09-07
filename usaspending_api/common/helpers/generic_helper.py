@@ -6,39 +6,15 @@ from calendar import monthrange, isleap
 from datetime import datetime as dt
 from django.conf import settings
 from django.db import connection
-from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.matview_manager import DEPENDENCY_FILES, MATERIALIZED_VIEWS, MATVIEW_GENERATOR_FILE
 from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
-TEMP_SQL_FILES = [
-    "../matviews/mv_award_summary.sql",
-    "../matviews/mv_contract_award_search.sql",
-    "../matviews/mv_directpayment_award_search.sql",
-    "../matviews/mv_grant_award_search.sql",
-    "../matviews/mv_idv_award_search.sql",
-    "../matviews/mv_loan_award_search.sql",
-    "../matviews/mv_other_award_search.sql",
-    "../matviews/mv_pre2008_award_search.sql",
-    "../matviews/subaward_view.sql",
-    "../matviews/summary_state_view.sql",
-    "../matviews/summary_transaction_fed_acct_view.sql",
-    "../matviews/summary_transaction_geo_view.sql",
-    "../matviews/summary_transaction_month_view.sql",
-    "../matviews/summary_transaction_recipient_view.sql",
-    "../matviews/summary_transaction_view.sql",
-    "../matviews/summary_view.sql",
-    "../matviews/summary_view_cfda_number.sql",
-    "../matviews/summary_view_naics_codes.sql",
-    "../matviews/summary_view_psc_codes.sql",
-    "../matviews/tas_autocomplete_matview.sql",
-    "../matviews/universal_transaction_matview.sql",
-]
-MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
-ENUM_FILE = ["usaspending_api/database_scripts/matviews/functions_and_enums.sql"]
+TEMP_SQL_FILES = [val["default_location"] for val in MATERIALIZED_VIEWS.values()]
 
 
 def read_text_file(filepath):
@@ -198,7 +174,7 @@ def within_one_year(d1, d2):
 def generate_matviews():
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
-        cursor.execute(get_sql(ENUM_FILE)[0])
+        cursor.execute(get_sql(DEPENDENCY_FILES)[0])
         subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             cursor.execute(file)
@@ -320,25 +296,6 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
         "hasPrevious": has_previous,
     }
     return page_metadata
-
-
-def fy(raw_date):
-    """Federal fiscal year corresponding to date"""
-
-    if raw_date is None:
-        return None
-
-    if isinstance(raw_date, str):
-        raw_date = parse_date(raw_date)
-
-    try:
-        result = raw_date.year
-        if raw_date.month > 9:
-            result += 1
-    except AttributeError:
-        raise TypeError("{} needs year and month attributes".format(raw_date))
-
-    return result
 
 
 # Raw SQL run during a migration
