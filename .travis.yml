@@ -20,7 +20,7 @@ before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - pip install -r requirements/requirements.txt
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3.7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install black; fi
 
