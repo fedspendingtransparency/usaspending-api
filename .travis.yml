@@ -22,7 +22,6 @@ before_install:
 install:
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3.7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install black; fi
 
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
