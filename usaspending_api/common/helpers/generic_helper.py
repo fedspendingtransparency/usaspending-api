@@ -9,12 +9,17 @@ from django.db import connection
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.matview_manager import DEPENDENCY_FILES, MATERIALIZED_VIEWS, MATVIEW_GENERATOR_FILE
+from usaspending_api.common.matview_manager import (
+    DEPENDENCY_FILES,
+    MATERIALIZED_VIEWS,
+    MATVIEW_GENERATOR_FILE,
+    DEFAULT_MATIVEW_DIR,
+)
 from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
-TEMP_SQL_FILES = [val["default_location"] for val in MATERIALIZED_VIEWS.values()]
+TEMP_SQL_FILES = [str(DEFAULT_MATIVEW_DIR / val["sql_filename"]) for val in MATERIALIZED_VIEWS.values()]
 
 
 def read_text_file(filepath):
