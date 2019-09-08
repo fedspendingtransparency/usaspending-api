@@ -10,7 +10,7 @@ from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.matview_manager import (
-    DEPENDENCY_FILES,
+    DEPENDENCY_FILEPATH,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
     DEFAULT_MATIVEW_DIR,
@@ -179,8 +179,8 @@ def within_one_year(d1, d2):
 def generate_matviews():
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
-        cursor.execute(get_sql(DEPENDENCY_FILES)[0])
-        subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
+        cursor.execute(get_sql([str(DEPENDENCY_FILEPATH)])[0])
+        subprocess.call("python {} --quiet".format(MATVIEW_GENERATOR_FILE), shell=True)
         for file in get_sql(TEMP_SQL_FILES):
             cursor.execute(file)
 
