@@ -60,7 +60,7 @@ MATERIALIZED_VIEWS = OrderedDict(
             {
                 "model": mv.LoanAwardSearchMatview,
                 "json_filepath": str(JSON_DIR / "mv_loan_award_search.json"),
-                "sql_filename": str(DEFAULT_MATIVEW_DIR / "mv_loan_award_search.sql"),
+                "sql_filename": "mv_loan_award_search.sql",
             },
         ),
         (
