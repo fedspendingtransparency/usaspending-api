@@ -12,8 +12,6 @@ def capitalize_if_string(val):
 def false_if_null(val):
     if val is None:
         return False
-    if not isinstance(val, bool):
-        raise TypeError("Value must be bool")
     return val
 
 

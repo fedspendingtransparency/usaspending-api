@@ -66,7 +66,7 @@ def run_fpds_load(id_list):
 
     for chunk in chunks:
         with Timer() as timer:
-            logger.info("loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
+            logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
             broker_transactions = fetch_broker_objects(chunk)
 
             load_objects = generate_load_objects(broker_transactions)

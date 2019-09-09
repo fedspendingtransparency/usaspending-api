@@ -12,7 +12,7 @@ logger = logging.getLogger("console")
 
 BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
-CHUNK_SIZE = 50000  # Completely arbitrary and not backed by any testing, this can likely go higher
+CHUNK_SIZE = 10000  # Completely arbitrary and not backed by any testing, this can likely go higher
 
 FPDS_FROM_DATE_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement WHERE updated_at >= %s;"
 ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement;"
@@ -28,7 +28,7 @@ class Command(BaseCommand):
             db_query = FPDS_FROM_DATE_QUERY
             db_args = [date]
             db_cursor.execute(db_query, db_args)
-            db_rows = [id[0] for id in db_cursor.fetchall()]
+            db_rows = [id[0] for id in db_cursor.fetchmany(CHUNK_SIZE)]
 
         return db_rows
 
@@ -38,7 +38,7 @@ class Command(BaseCommand):
             db_cursor = connection.cursor()
             db_query = ALL_FPDS_QUERY
             db_cursor.execute(db_query)
-            db_rows = [id[0] for id in db_cursor.fetchall()]
+            db_rows = [id[0] for id in db_cursor.fetchmany(CHUNK_SIZE)]
 
         return db_rows
 
@@ -47,17 +47,29 @@ class Command(BaseCommand):
         # the cursor execute
         if date is None:
             logger.info("fetching all fpds transactions...")
-            id_list = self.get_all_fpds_transaction_ids()
+            while True:
+                id_list = self.get_all_fpds_transaction_ids()
+                if len(id_list) == 0:
+                    break
+                logger.info(
+                    "Loading batch from date query (size: {})...".format(len(id_list))
+                )
+                run_fpds_load(id_list)
+
         else:
             logger.info("fetching fpds transactions since {}".format(date))
-            id_list = self.get_fpds_transaction_ids_from_date(date)
-        logger.info(
-            "Loading batch from date query (size: {})...".format(len(id_list))
-        )
-        run_fpds_load(id_list)
+            while True:
+                id_list = self.get_fpds_transaction_ids_from_date(date)
+                if len(id_list) == 0:
+                    break
+                logger.info(
+                    "Loading batch from date query (size: {})...".format(len(id_list))
+                )
+                run_fpds_load(id_list)
+
 
     @staticmethod
-    def next_batch_generator(file):
+    def next_file_batch_generator(file):
         while True:
             lines = file.readlines(CHUNK_SIZE)
             lines = [line.decode("utf-8") for line in lines]
@@ -67,7 +79,7 @@ class Command(BaseCommand):
 
     def load_fpds_from_file(self, file_path):
         with RetrieveFileFromUri(file_path).get_file_object() as file:
-            for next_batch in self.next_batch_generator(file):
+            for next_batch in self.next_file_batch_generator(file):
                 id_list = [int(re.search(r"\d+", x).group()) for x in next_batch]
                 logger.info(
                     "Loading next batch from provided file (size: {}, ids {}-{})...".format(

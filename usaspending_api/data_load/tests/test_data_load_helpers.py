@@ -8,11 +8,9 @@ def test_capitalize_if_string():
 
 
 def test_false_if_null():
-    try:
-        false_if_null("bob")
-        assert False
-    except TypeError:
-        pass
+    assert false_if_null("true") == "true"
+    assert false_if_null("false") == "false"
+    assert false_if_null("n") == "n"
     assert false_if_null(True)
     assert not false_if_null(False)
     assert not false_if_null(None)
