@@ -25,9 +25,12 @@ from usaspending_api.data_load.data_load_helpers import (
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
-# DEFINE THESE ENVIRONMENT VARIABLES BEFORE RUNNING!
-USASPENDING_CONNECTION_STRING = get_database_dsn_string()
-BROKER_CONNECTION_STRING = get_broker_dsn_string()
+try:
+    USASPENDING_CONNECTION_STRING = get_database_dsn_string()
+    BROKER_CONNECTION_STRING = get_broker_dsn_string()
+except Exception:
+    USASPENDING_CONNECTION_STRING = "Failure"
+    BROKER_CONNECTION_STRING = "Failure"
 
 DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
     "DELETE FROM legal_entity legal WHERE legal.legal_entity_id in "
