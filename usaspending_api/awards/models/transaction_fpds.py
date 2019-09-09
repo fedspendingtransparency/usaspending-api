@@ -298,6 +298,7 @@ class TransactionFPDS(models.Model):
     place_of_perform_country_n = models.TextField(blank=True, null=True)
     place_of_perform_state_nam = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(null=True, db_index=True)  # From broker.
+    solicitation_date = models.DateTimeField(null=True, blank=True)
     officer_1_name = models.TextField(null=True, blank=True)
     officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_2_name = models.TextField(null=True, blank=True)

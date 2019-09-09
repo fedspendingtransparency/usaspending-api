@@ -16,19 +16,6 @@ def agency_data():
 
 
 @pytest.mark.django_db
-def test_department(agency_data):
-    """
-    Make sure an instance of a department is properly created
-    Uses African Development Foundation as test
-    """
-
-    # In this department, the FREC is being used as the cgac_code
-    Agency.objects.get(
-        toptier_agency__cgac_code="1136", toptier_agency__fpds_code="1100", subtier_agency__subtier_code="1141"
-    )
-
-
-@pytest.mark.django_db
 def test_subtier(agency_data):
     """
     Make sure a subtier is properly mapped to its parent department
@@ -37,11 +24,11 @@ def test_subtier(agency_data):
 
     # Make sure the subtier's top agency = the expected toptier agency
     subtier = Agency.objects.get(
-        toptier_agency__cgac_code="013", toptier_agency__fpds_code="1300", subtier_agency__subtier_code="1341"
+        toptier_agency__cgac_code="013", subtier_agency__subtier_code="1341"
     )
 
     department = Agency.objects.get(
-        toptier_agency__cgac_code="013", toptier_agency__fpds_code="1300", toptier_flag=True
+        toptier_agency__cgac_code="013", toptier_flag=True
     )
 
     print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))

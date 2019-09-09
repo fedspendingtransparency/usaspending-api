@@ -46,10 +46,7 @@ ACTIVITY_SQL = SQL(
         ca.period_of_performance_start_date,
         ca.piid,
         rl.legal_business_name                          recipient_name,
-        rl.recipient_hash || case
-            when tf.ultimate_parent_unique_ide is null then '-R'
-            else '-C'
-        end                                             recipient_id,
+        rp.recipient_hash || '-' || rp.recipient_level  recipient_id,
         gaids.grandchild
     from
         gather_award_ids gaids
@@ -61,6 +58,9 @@ ACTIVITY_SQL = SQL(
             {hide_edges_awarded_amount}
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
         left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
+        left outer join recipient_profile rp on
+            rp.recipient_hash = rl.recipient_hash and
+            rp.recipient_level = case when tf.ultimate_parent_unique_ide is null then 'R' else 'C' end
         left outer join agency a on a.id = ca.awarding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     {hide_edges_end_date}
@@ -133,7 +133,7 @@ class IDVActivityViewSet(APIView):
     Returns award funding info for children and grandchildren of an IDV.  Used
     to power the Activity visualization on IDV Summary page.
     """
-    endpoint_doc = "usaspending_api/api_contracts/contracts/awards/idvs/Activity.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/idvs/activity.md"
 
     @staticmethod
     def _parse_and_validate_request(request: dict) -> dict:
