@@ -7,6 +7,12 @@ from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
+from usaspending_api.etl.award_helpers import (
+    update_awards,
+    update_contract_awards,
+    update_award_categories,
+    award_types,
+)
 
 logger = logging.getLogger("console")
 
@@ -114,6 +120,12 @@ class Command(BaseCommand):
             help="Script will reload all FPDS records in broker database",
         )
 
+        parser.add_argument(
+            "--no-award-updates",
+            action="store_true",
+            help="Skip any steps involving calculating derived award values. C to D linkages will still occur."
+        )
+
     def handle(self, *args, **options):
         if options["reload_all"]:
             self.load_fpds_from_date(None)
@@ -129,3 +141,9 @@ class Command(BaseCommand):
 
         logger.info("cleaning orphaned rows")
         destory_orphans()
+
+        logger.info("updating award values")
+        if not options["no_award_updates"]:
+            update_awards()
+            update_contract_awards()
+            update_award_categories()
