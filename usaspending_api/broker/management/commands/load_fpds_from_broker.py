@@ -7,11 +7,7 @@ from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
-from usaspending_api.etl.award_helpers import (
-    update_awards,
-    update_contract_awards,
-    update_award_categories
-)
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 logger = logging.getLogger("console")
 
@@ -54,9 +50,7 @@ class Command(BaseCommand):
                 id_list = self.get_all_fpds_transaction_ids()
                 if len(id_list) == 0:
                     break
-                logger.info(
-                    "Loading batch from date query (size: {})...".format(len(id_list))
-                )
+                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
                 run_fpds_load(id_list)
 
         else:
@@ -65,9 +59,7 @@ class Command(BaseCommand):
                 id_list = self.get_fpds_transaction_ids_from_date(date)
                 if len(id_list) == 0:
                     break
-                logger.info(
-                    "Loading batch from date query (size: {})...".format(len(id_list))
-                )
+                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
                 run_fpds_load(id_list)
 
     @staticmethod
@@ -113,15 +105,13 @@ class Command(BaseCommand):
             "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
         mutually_exclusive_group.add_argument(
-            "--reload-all",
-            action="store_true",
-            help="Script will reload all FPDS records in broker database",
+            "--reload-all", action="store_true", help="Script will reload all FPDS records in broker database"
         )
 
         parser.add_argument(
             "--no-award-updates",
             action="store_true",
-            help="Skip any steps involving calculating derived award values. C to D linkages will still occur."
+            help="Skip any steps involving calculating derived award values. C to D linkages will still occur.",
         )
 
     def handle(self, *args, **options):
