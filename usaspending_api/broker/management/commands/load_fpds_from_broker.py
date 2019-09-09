@@ -142,8 +142,8 @@ class Command(BaseCommand):
         logger.info("cleaning orphaned rows")
         destory_orphans()
 
-        logger.info("updating award values")
         if not options["no_award_updates"]:
+            logger.info("updating award values")
             update_awards()
             update_contract_awards()
             update_award_categories()
