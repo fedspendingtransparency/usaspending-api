@@ -71,7 +71,6 @@ class Command(BaseCommand):
                 )
                 run_fpds_load(id_list)
 
-
     @staticmethod
     def next_file_batch_generator(file):
         while True:
