@@ -10,8 +10,7 @@ from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.etl.award_helpers import (
     update_awards,
     update_contract_awards,
-    update_award_categories,
-    award_types,
+    update_award_categories
 )
 
 logger = logging.getLogger("console")
