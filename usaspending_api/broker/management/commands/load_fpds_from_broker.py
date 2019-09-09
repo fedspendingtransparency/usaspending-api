@@ -43,8 +43,6 @@ class Command(BaseCommand):
         return db_rows
 
     def load_fpds_from_date(self, date):
-        # Not doing any batching here, since if the array of ids is blowing you up I don't know how to chunk that on
-        # the cursor execute
         if date is None:
             logger.info("fetching all fpds transactions...")
             while True:
