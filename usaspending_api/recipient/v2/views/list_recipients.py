@@ -74,6 +74,7 @@ class ListRecipients(APIView):
     """
     This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/recipient/list_recipients.md"
 
     @cache_response()

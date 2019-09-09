@@ -55,4 +55,4 @@ class IDVAmountsTestCase(TestCase):
         self._test_get("CONT_AW_2", EXPECTED_GOOD_OUTPUT)
         self._test_get(3, {"detail": "No IDV award found with this id"}, status.HTTP_404_NOT_FOUND)
         self._test_get("BOGUS_ID", {"detail": "No IDV award found with this id"}, status.HTTP_404_NOT_FOUND)
-        self._test_get("INVALID_ID_&&&", expected_status_code=status.HTTP_404_NOT_FOUND)
+        self._test_get("INVALID_ID_12345", expected_status_code=status.HTTP_404_NOT_FOUND)

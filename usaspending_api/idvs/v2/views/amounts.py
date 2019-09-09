@@ -20,6 +20,7 @@ class IDVAmountsViewSet(APIView):
     """
     Returns counts and dollar figures for a specific IDV.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/amounts/award_id.md"
 
     @staticmethod

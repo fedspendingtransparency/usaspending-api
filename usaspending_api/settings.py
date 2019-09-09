@@ -71,7 +71,9 @@ DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictio
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
 IDV_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/idv_download_readme.txt")
-ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt")
+ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(
+    BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt"
+)
 CONTRACT_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/ContractSummary_download_readme.txt")
 
 # Elasticsearch
@@ -167,10 +169,7 @@ def _configure_database_connection(environment_variable, **additional_options):
     the operating system environment variable that contains the database connection string or DSN
     additional_options are any additional options you want to provide to the connection.
     """
-    config = dj_database_url.parse(
-        os.environ.get(environment_variable),
-        conn_max_age=CONNECTION_MAX_SECONDS
-    )
+    config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     if additional_options:
         config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **additional_options}
     return config
@@ -194,8 +193,7 @@ if os.environ.get("DB_SOURCE"):
 else:
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection(
-            dj_database_url.DEFAULT_ENV,
-            options="-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
+            dj_database_url.DEFAULT_ENV, options="-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
         )
     }
 

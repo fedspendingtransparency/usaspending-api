@@ -41,11 +41,7 @@ def set_up_related_award_objects():
         "location": Location.objects.get(pk=1),
     }
 
-    ag = {
-        "pk": 1,
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-    }
+    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
