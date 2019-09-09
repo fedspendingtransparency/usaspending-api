@@ -90,6 +90,12 @@ class Command(BaseCommand):
         mutually_exclusive_group = parser.add_mutually_exclusive_group()
 
         mutually_exclusive_group.add_argument(
+            "--ids",
+            nargs="+",
+            type=int,
+            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+        )
+        mutually_exclusive_group.add_argument(
             "--date",
             dest="date",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
@@ -111,6 +117,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options["reload_all"]:
             self.load_fpds_from_date(None)
+
+        if options["ids"]:
+            run_fpds_load(options["ids"])
 
         if options["file"]:
             self.load_fpds_from_file(options["file"])
