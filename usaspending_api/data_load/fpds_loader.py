@@ -1,7 +1,5 @@
 import psycopg2
 import logging
-import time
-import math
 
 from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_columns,
@@ -23,6 +21,7 @@ from usaspending_api.data_load.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
     format_value_for_sql,
+    Timer
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
@@ -331,21 +330,3 @@ def setup_load_lists(load_object, table):
     pairs_string = ",".join(update_pairs)
 
     return col_string, val_string, pairs_string
-
-
-class Timer:
-    def __enter__(self):
-        self.start = time.perf_counter()
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.end = time.perf_counter()
-        self.elapsed = self.end - self.start
-        self.elapsed_as_string = self.pretty_print_duration(self.elapsed)
-
-    @staticmethod
-    def pretty_print_duration(elapsed):
-        f, s = math.modf(elapsed)
-        m, s = divmod(s, 60)
-        h, m = divmod(m, 60)
-        return "%d:%02d:%02d.%04d" % (h, m, s, f * 10000)
