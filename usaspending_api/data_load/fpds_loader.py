@@ -21,7 +21,7 @@ from usaspending_api.data_load.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
     format_value_for_sql,
-    Timer
+    Timer,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
