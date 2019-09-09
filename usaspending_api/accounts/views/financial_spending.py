@@ -15,6 +15,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
     """
     Returns financial spending data by object class for the latest quarter based on the given fiscal year.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/financial_spending/major_object_class.md"
 
     serializer_class = ObjectClassFinancialSpendingSerializer
@@ -94,6 +95,7 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
     """
     Returns financial spending data by object class for the latest quarter in the given fiscal year.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/financial_spending/object_class.md"
 
     serializer_class = MinorObjectClassFinancialSpendingSerializer

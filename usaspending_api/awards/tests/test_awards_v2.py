@@ -98,11 +98,7 @@ def awards_and_transactions(db):
 
     le = {"pk": 1, "business_categories": ["small_business"]}
 
-    ag = {
-        "pk": 1,
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-    }
+    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_asst2)

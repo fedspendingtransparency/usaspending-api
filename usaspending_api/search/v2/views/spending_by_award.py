@@ -122,7 +122,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         base_queryset = self.constants["filter_queryset_func"](self.filters)
         queryset = self.annotate_queryset(base_queryset)
         queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
-        return queryset.values(*list(database_fields))[self.pagination["lower_bound"]: self.pagination["upper_bound"]]
+        return queryset.values(*list(database_fields))[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
 
     def create_response(self, queryset):
         results = []

@@ -54,10 +54,8 @@ class Command(BaseCommand):
             "availability_type_code": lambda row: row["A"].strip(),
             "main_account_code": lambda row: row["MAIN"].strip(),
             "sub_account_code": lambda row: row["SUB"].strip(),
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip())
-            .first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip())
-            .first(),
+            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip()).first(),
+            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip()).first(),
         }
 
         loader = ThreadedDataLoader(

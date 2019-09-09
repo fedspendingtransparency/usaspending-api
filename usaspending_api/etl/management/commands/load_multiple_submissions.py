@@ -120,7 +120,9 @@ class Command(BaseCommand):
                 failed_submissions.append(str(submission_id))
 
         if failed_submissions:
-            logger.error("Script completed with the following submissions failures: {}".format(", ".join(failed_submissions)))
+            logger.error(
+                "Script completed with the following submissions failures: {}".format(", ".join(failed_submissions))
+            )
             raise SystemExit(3)
         else:
             logger.info("Script completed with no failures")

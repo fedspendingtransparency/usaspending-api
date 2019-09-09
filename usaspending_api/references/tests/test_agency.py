@@ -23,13 +23,9 @@ def test_subtier(agency_data):
     """
 
     # Make sure the subtier's top agency = the expected toptier agency
-    subtier = Agency.objects.get(
-        toptier_agency__cgac_code="013", subtier_agency__subtier_code="1341"
-    )
+    subtier = Agency.objects.get(toptier_agency__cgac_code="013", subtier_agency__subtier_code="1341")
 
-    department = Agency.objects.get(
-        toptier_agency__cgac_code="013", toptier_flag=True
-    )
+    department = Agency.objects.get(toptier_agency__cgac_code="013", toptier_flag=True)
 
     print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))
 
