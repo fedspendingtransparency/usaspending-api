@@ -64,6 +64,7 @@ class IDVFundingRollupViewSet(APIView):
     """
     Returns File C funding totals associated with an IDV's children.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/funding_rollup.md"
 
     @staticmethod

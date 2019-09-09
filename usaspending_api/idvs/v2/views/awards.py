@@ -175,6 +175,7 @@ class IDVAwardsViewSet(APIView):
     """
     Returns the direct children of an IDV.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/awards.md"
 
     @staticmethod

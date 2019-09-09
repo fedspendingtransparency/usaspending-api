@@ -45,6 +45,7 @@ class CityAutocompleteViewSet(APIView):
     """
     This end point returns a list of cities for a given limit, country, search string, and optional state code.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/city.md"
 
     @cache_response()

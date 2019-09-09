@@ -346,7 +346,7 @@ def create_componentized_files(sql_json):
     if GLOBAL_ARGS.batch_indexes > 1:
         if not os.path.exists(index_dir_path):
             os.makedirs(index_dir_path)
-        for i, index_block in enumerate(split_indexes_chunks(create_indexes, GLOBAL_ARGS.batch_indexes)):
+        for i, index_block in enumerate(split_indexes_chunks(indexes_and_stats, GLOBAL_ARGS.batch_indexes)):
             write_sql_file(index_block, index_dir_path + "group_{}".format(i))
 
     sql_strings = make_modification_sql(matview_name)

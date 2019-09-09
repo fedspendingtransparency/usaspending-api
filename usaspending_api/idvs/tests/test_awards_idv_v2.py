@@ -78,11 +78,7 @@ def awards_and_transactions(db):
         "location": Location.objects.get(pk=1),
     }
 
-    ag = {
-        "pk": 1,
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-    }
+    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
     mommy.make("references.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)

@@ -118,6 +118,7 @@ class IDVAccountsViewSet(APIView):
     """
     These endpoints are used to power USAspending.gov's IDV Summary Funding Accounts component.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/accounts.md"
 
     @staticmethod
