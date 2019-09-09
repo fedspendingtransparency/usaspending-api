@@ -67,11 +67,12 @@ STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get("STATE_DATA_BUCKET")
 
-ROSETTA_DICT_S3_PATH = "da-public-files/user_reference_docs/DATA Transparency Crosswalk.xlsx"
-DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/DATA+Transparency+Crosswalk.xlsx".format(
+DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
 IDV_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/idv_download_readme.txt")
+ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt")
+CONTRACT_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/ContractSummary_download_readme.txt")
 
 # Elasticsearch
 ES_HOSTNAME = ""
