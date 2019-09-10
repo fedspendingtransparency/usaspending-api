@@ -108,12 +108,6 @@ class Command(BaseCommand):
             "--reload-all", action="store_true", help="Script will reload all FPDS records in broker database"
         )
 
-        parser.add_argument(
-            "--no-award-updates",
-            action="store_true",
-            help="Skip any steps involving calculating derived award values. C to D linkages will still occur.",
-        )
-
     def handle(self, *args, **options):
         if options["reload_all"]:
             self.load_fpds_from_date(None)
@@ -130,8 +124,7 @@ class Command(BaseCommand):
         logger.info("cleaning orphaned rows")
         destory_orphans()
 
-        if not options["no_award_updates"]:
-            logger.info("updating award values")
-            update_awards()
-            update_contract_awards()
-            update_award_categories()
+        logger.info("updating award values")
+        update_awards()
+        update_contract_awards()
+        update_award_categories()

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from usaspending_api.common.helpers.generic_helper import fy
 from usaspending_api.data_load.data_load_helpers import subtier_agency_list
@@ -30,7 +30,7 @@ def unique_transaction_id(broker_input):
 
 
 def now(broker_input):
-    return datetime.now()
+    return datetime.now(timezone.utc)
 
 
 def business_categories(broker_input):
