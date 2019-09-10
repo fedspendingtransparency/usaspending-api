@@ -53,15 +53,18 @@ class RetrieveFileFromUri:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
     def _handle_s3(self, text):
-        if text is True:
-            raise NotImplementedError("Text mode is not currently supported for S3 files.")
-
         file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
         boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_bucket = boto3_s3.Bucket(self.parsed_url_obj.netloc)
 
         f = tempfile.SpooledTemporaryFile()  # Must be in binary mode (default)
         s3_bucket.download_fileobj(file_path, f)
+
+        if text:
+            byte_str = f._file.getvalue()
+            f = tempfile.SpooledTemporaryFile(mode="r")
+            f.write(byte_str.decode())
+
         f.seek(0)  # go to beginning of file for reading
         return f
 
