@@ -182,7 +182,9 @@ def mock_matviews_qs(monkeypatch):
     mock_qs = MockSet()  # mock queryset
     for k, v in MATERIALIZED_VIEWS.items():
         if k not in ["tas_autocomplete_matview"]:
-            monkeypatch.setattr("usaspending_api.awards.models_matviews.{}.objects".format(v["model"].__name__), mock_qs)
+            monkeypatch.setattr(
+                "usaspending_api.awards.models_matviews.{}.objects".format(v["model"].__name__), mock_qs
+            )
 
     yield mock_qs
 
