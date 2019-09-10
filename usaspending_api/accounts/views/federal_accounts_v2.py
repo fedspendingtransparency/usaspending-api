@@ -21,6 +21,7 @@ class ObjectClassFederalAccountsViewSet(APIView):
     """
     Returns financial spending data by object class.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/available_object_classes.md"
 
     @cache_response()
@@ -77,6 +78,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     This route sends a request to the backend to retrieve budget information for a federal account.
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/fiscal_year_snapshot.md"
 
     @cache_response()
@@ -426,6 +428,7 @@ class FederalAccountViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a federal account based on its federal_account_code.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     @cache_response()
@@ -444,6 +447,7 @@ class FederalAccountsViewSet(APIView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
 
     def _parse_and_validate_request(self, request_dict):

@@ -16,6 +16,7 @@ class DownloadTransactionCountViewSet(APIView):
     """
     Returns the number of transactions that would be included in a download request for the given filter set.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/download_count.md"
 
     @cache_response()

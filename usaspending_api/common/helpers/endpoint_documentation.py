@@ -66,7 +66,7 @@ def get_fully_qualified_name(obj):
     "usaspending_api.common.helpers.endpoint_documentation.get_fully_qualified_name"
     for this function.
     """
-    return '{}.{}'.format(obj.__module__, obj.__qualname__)
+    return "{}.{}".format(obj.__module__, obj.__qualname__)
 
 
 def validate_docs(url, url_object, master_endpoint_list):

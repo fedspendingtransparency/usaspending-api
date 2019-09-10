@@ -133,6 +133,7 @@ class IDVActivityViewSet(APIView):
     Returns award funding info for children and grandchildren of an IDV.  Used
     to power the Activity visualization on IDV Summary page.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/activity.md"
 
     @staticmethod

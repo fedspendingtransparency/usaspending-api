@@ -14,6 +14,7 @@ class ListMonthlyDownloadsViewSet(APIView):
     """
     Returns a list of the current versions of generated archive files for a given fiscal year and agency.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_downloads.md"
 
     s3_handler = S3Handler(
