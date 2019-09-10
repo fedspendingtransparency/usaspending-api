@@ -233,6 +233,6 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(or_queryset)
 
         elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, SubawardView, value)
+            queryset = build_tas_codes_filter(queryset, value)
 
     return queryset

@@ -1,19 +1,23 @@
 language: python
 
 python:
-  - '3.5'
+  - "3.5"
 
 services:
   - postgresql
 
 addons:
-  postgresql: '9.6'
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
 
 env:
   global:
-    - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
-    - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
-    - ES_HOSTNAME='http://localhost:9200'
+  - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+  - ES_HOSTNAME='http://localhost:9200'
 
 before_install:
   - npm install dredd@5.4.1 --global

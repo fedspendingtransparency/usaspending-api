@@ -11,6 +11,7 @@ class SubawardView(models.Model):
     keyword_ts_vector = SearchVectorField()
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
+    treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
     latest_transaction_id = models.BigIntegerField()
     last_modified_date = models.DateField()
     subaward_number = models.TextField()
