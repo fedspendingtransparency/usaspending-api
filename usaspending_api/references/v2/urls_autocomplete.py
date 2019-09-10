@@ -16,7 +16,7 @@ from usaspending_api.references.v2.views.tas_autocomplete import (
     TASAutocompleteEPOA,
     TASAutocompleteA,
     TASAutocompleteMAIN,
-    TASAutocompleteSUB
+    TASAutocompleteSUB,
 )
 
 

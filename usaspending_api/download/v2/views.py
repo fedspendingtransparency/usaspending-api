@@ -5,6 +5,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/advanced_search_award_download.md"
 
     def post(self, request):
@@ -17,10 +18,33 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of IDV data in CSV form for download.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/idv_download.md"
 
     def post(self, request):
         return BaseDownloadViewSet.post(self, request, "idv")
+
+
+class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of Contract data in CSV form for download.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/contract.md"
+
+    def post(self, request):
+        return BaseDownloadViewSet.post(self, request, "contract")
+
+
+class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of Assistance data in CSV form for download.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/assistance.md"
+
+    def post(self, request):
+        return BaseDownloadViewSet.post(self, request, "assistance")
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -28,6 +52,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for
     download.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/advanced_search_transaction_download.md"
 
     def post(self, request):
@@ -40,6 +65,7 @@ class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of subaward data in CSV form for download.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/advanced_search_subaward_download.md"
 
     def post(self, request):
@@ -52,6 +78,7 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to begin generating a zipfile of account data in CSV form for download.
     """
+
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/custom_account_data_download.md"
 
     def post(self, request):

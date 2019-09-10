@@ -62,8 +62,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "funding_agency": {
             "id": 1234567,
@@ -76,8 +75,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "recipient": {
             "legal_entity_id": 799999094,
@@ -155,8 +153,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]
@@ -238,8 +235,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -256,8 +252,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -274,8 +269,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -292,8 +286,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -310,8 +303,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]

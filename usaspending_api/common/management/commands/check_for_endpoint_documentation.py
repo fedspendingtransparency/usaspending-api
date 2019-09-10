@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.endpoint_documentation import (
-    CURRENT_ENDPOINT_PREFIXES, get_endpoint_urls_doc_paths_and_docstrings, get_endpoints_from_endpoints_markdown,
-    validate_docs
+    CURRENT_ENDPOINT_PREFIXES,
+    get_endpoint_urls_doc_paths_and_docstrings,
+    get_endpoints_from_endpoints_markdown,
+    validate_docs,
 )
 
 

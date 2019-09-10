@@ -73,6 +73,7 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
     """
     Add link to the documentation to the endpoint description.
     """
+
     def get_context(self, data, accepted_media_type, renderer_context):
         """
         Override get_context to insert the documentation link in the description.
@@ -109,7 +110,7 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
         Convert a file path to a GitHub URL.
         """
         if doc_path.startswith(BASE_DIR):
-            doc_path = doc_path[len(BASE_DIR):].lstrip("/")
+            doc_path = doc_path[len(BASE_DIR) :].lstrip("/")
             return urljoin(BASE_GITHUB_URL, quote(doc_path)).format(git_branch=git_branch)
         return ""
 

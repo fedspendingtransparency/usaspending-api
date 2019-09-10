@@ -40,7 +40,7 @@ def test_endpoints(endpoint_data, client):
     json_data.close()
     logger = logging.getLogger("console")
 
-    # TESTING TODO: fix this hand-rolled parameterization?
+    # TESTING TODO: fix this hand-rolled parametrization?
 
     for endpoint in endpoints:
         url = endpoint.get("url", None)
