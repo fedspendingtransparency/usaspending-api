@@ -22,7 +22,7 @@ class Command(BaseCommand):
     help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
 
     @staticmethod
-    def get_fpds_transaction_ids_from_date(date):
+    def get_cursor_for_date_query(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
             db_cursor = connection.cursor()
             db_query = ALL_FPDS_QUERY
@@ -32,17 +32,16 @@ class Command(BaseCommand):
                 db_cursor.execute(db_query, db_args)
             else:
                 db_cursor.execute(db_query)
-            db_rows = [id[0] for id in db_cursor.fetchmany(CHUNK_SIZE)]
-
-        return db_rows
+        return db_cursor
 
     def load_fpds_from_date(self, date):
         if date is None:
             logger.info("fetching all fpds transactions...")
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
+        cursor = self.get_cursor_for_date_query(date)
         while True:
-            id_list = self.get_fpds_transaction_ids_from_date(date)
+            id_list = [id[0] for id in cursor.fetchmany(CHUNK_SIZE)]
             if len(id_list) == 0:
                 break
             logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
