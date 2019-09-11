@@ -178,14 +178,8 @@ def load_transactions(load_objects):
                 cursor.execute(find_matching_award_sql)
                 results = cursor.fetchall()
 
-                # If there is an award, we still need to update it with values from its new latest transaction
                 if len(results) > 0:
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
-                    update_award_str = "place_of_performance_id = {}, recipient_id = {}".format(
-                        load_object["award"]["place_of_performance_id"], load_object["award"]["recipient_id"]
-                    )
-                    update_award_sql = "UPDATE awards SET {} where id = {}".format(update_award_str, results[0][0])
-                    cursor.execute(update_award_sql)
                 # If there is no award, we need to create one
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "award")
