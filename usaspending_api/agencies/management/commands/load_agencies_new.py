@@ -59,10 +59,7 @@ class Command(BaseCommand):
                     self._execute_sql_file("create_temp_table.sql")
                     self._import_agency_file()
                     self._execute_sql_file("populate_dependent_tables.sql")
-                self._execute_sql("vacuum analyze cgac")
-                self._execute_sql("vacuum analyze frec")
-                self._execute_sql("vacuum analyze subtier_agency_new")
-                self._execute_sql("vacuum analyze toptier_agency_new")
+                self._vacuum_tables()
         except Exception:
             logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
             raise
@@ -129,3 +126,9 @@ class Command(BaseCommand):
                 """,
                 agencies,
             )
+
+    def _vacuum_tables(self):
+        self._execute_sql("vacuum analyze cgac")
+        self._execute_sql("vacuum analyze frec")
+        self._execute_sql("vacuum analyze subtier_agency_new")
+        self._execute_sql("vacuum analyze toptier_agency_new")

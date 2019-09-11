@@ -11,7 +11,14 @@ BOGUS_ABBREVIATION = "THIS IS MY TEST ABBREVIATION"
 
 
 @pytest.mark.django_db
-def test_load_agencies():
+def test_load_agencies(monkeypatch):
+
+    # Can't run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
+    # function that performs the vacuuming.
+    monkeypatch.setattr(
+        "usaspending_api.agencies.management.commands.load_agencies_new.Command._vacuum_tables",
+        lambda a: None
+    )
 
     # Confirm everything is empty.
     assert CGAC.objects.all().count() == 0
