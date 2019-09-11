@@ -178,7 +178,7 @@ def load_transactions(load_objects):
                 cursor.execute(find_matching_award_sql)
                 results = cursor.fetchall()
 
-                if len(results) > 0:
+                if results:
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
                 # If there is no award, we need to create one
                 else:
@@ -198,7 +198,7 @@ def load_transactions(load_objects):
                 cursor.execute(find_matching_transaction_sql)
                 results = cursor.fetchall()
 
-                if len(results) > 0:
+                if results:
                     # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
                     # we update all values
                     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
@@ -298,7 +298,7 @@ def setup_mass_load_lists(load_objects, table):
         values.append([])
 
     for key in load_objects[0][table].keys():
-        columns.append('"{}"'.format(key))
+        columns.append("\"{}\"".format(key))
         for index in range(0, len(load_objects)):
             val = format_value_for_sql(load_objects[index][table][key])
             values[index].append(val)
