@@ -6,9 +6,10 @@ subtier_agency_list = {}  # global variable, populated by fpds_loader
 
 
 def capitalize_if_string(val):
-    if isinstance(val, str):
+    try:
         return val.upper()
-    return val
+    except AttributeError:
+        return val
 
 
 def false_if_null(val):
@@ -27,7 +28,7 @@ def format_value_for_sql(val):
     elif isinstance(val, int) or isinstance(val, float):
         retval = str(val)
     elif isinstance(val, list):
-        retval = "ARRAY[" + ",".join([format_value_for_sql(element) for element in val]) + "]"  # noqa
+        retval = "ARRAY[{}]".format(",".join([format_value_for_sql(element) for element in val]))
     elif isinstance(val, datetime.datetime):
         retval = "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
 

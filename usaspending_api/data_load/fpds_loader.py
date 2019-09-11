@@ -114,12 +114,10 @@ def fetch_broker_objects(id_list):
 def create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
     retval = {}
     if non_boolean_column_map:
-        for key in non_boolean_column_map:
-            retval[non_boolean_column_map[key]] = capitalize_if_string(broker_object[key])
+        retval.update({non_boolean_column_map[key]: capitalize_if_string(broker_object[key]) for key in non_boolean_column_map})
 
     if boolean_column_map:
-        for key in boolean_column_map:
-            retval[boolean_column_map[key]] = false_if_null(broker_object[key])
+        retval.update({boolean_column_map[key]: false_if_null(broker_object[key]) for key in boolean_column_map})
 
     if function_map:
         for key in function_map:

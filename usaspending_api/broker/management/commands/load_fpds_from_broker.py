@@ -15,7 +15,6 @@ BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
 CHUNK_SIZE = 10000  # Completely arbitrary and not backed by any testing, this can likely go higher
 
-FPDS_FROM_DATE_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement WHERE updated_at >= %s;"
 ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement;"
 
 
@@ -26,19 +25,13 @@ class Command(BaseCommand):
     def get_fpds_transaction_ids_from_date(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
             db_cursor = connection.cursor()
-            db_query = FPDS_FROM_DATE_QUERY
-            db_args = [date]
-            db_cursor.execute(db_query, db_args)
-            db_rows = [id[0] for id in db_cursor.fetchmany(CHUNK_SIZE)]
-
-        return db_rows
-
-    @staticmethod
-    def get_all_fpds_transaction_ids():
-        with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            db_cursor = connection.cursor()
             db_query = ALL_FPDS_QUERY
-            db_cursor.execute(db_query)
+            if date:
+                db_query.format(" WHERE updated_at >= %s;")
+                db_args = [date]
+                db_cursor.execute(db_query, db_args)
+            else:
+                db_cursor.execute(db_query)
             db_rows = [id[0] for id in db_cursor.fetchmany(CHUNK_SIZE)]
 
         return db_rows
@@ -46,21 +39,14 @@ class Command(BaseCommand):
     def load_fpds_from_date(self, date):
         if date is None:
             logger.info("fetching all fpds transactions...")
-            while True:
-                id_list = self.get_all_fpds_transaction_ids()
-                if len(id_list) == 0:
-                    break
-                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-                run_fpds_load(id_list)
-
         else:
-            logger.info("fetching fpds transactions since {}".format(date))
-            while True:
-                id_list = self.get_fpds_transaction_ids_from_date(date)
-                if len(id_list) == 0:
-                    break
-                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-                run_fpds_load(id_list)
+            logger.info("fetching fpds transactions since {}...".format(str(date)))
+        while True:
+            id_list = self.get_fpds_transaction_ids_from_date(date)
+            if len(id_list) == 0:
+                break
+            logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
+            run_fpds_load(id_list)
 
     @staticmethod
     def next_file_batch_generator(file):
