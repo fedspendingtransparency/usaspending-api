@@ -21,6 +21,8 @@ ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procu
 class Command(BaseCommand):
     help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
 
+    modified_award_ids = []
+
     @staticmethod
     def get_cursor_for_date_query(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
@@ -45,7 +47,7 @@ class Command(BaseCommand):
             if len(id_list) == 0:
                 break
             logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-            run_fpds_load(id_list)
+            self.modified_award_ids.extend(run_fpds_load(id_list))
 
     @staticmethod
     def next_file_batch_generator(file):
@@ -65,7 +67,7 @@ class Command(BaseCommand):
                         len(id_list), id_list[0], id_list[-1]
                     )
                 )
-                run_fpds_load(id_list)
+                self.modified_award_ids.extend(run_fpds_load(id_list))
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group()
@@ -110,6 +112,6 @@ class Command(BaseCommand):
         destory_orphans()
 
         logger.info("updating award values")
-        update_awards()
-        update_contract_awards()
-        update_award_categories()
+        update_awards(tuple(self.modified_award_ids))
+        update_contract_awards(tuple(self.modified_award_ids))
+        update_award_categories(tuple(self.modified_award_ids))

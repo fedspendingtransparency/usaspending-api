@@ -54,6 +54,7 @@ logger = logging.getLogger("console")
 
 
 def destory_orphans():
+    """cleans up tables after run_fpds_load is called"""
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor() as cursor:
             cursor.execute(DESTROY_ORPHANS_LEGAL_ENTITY_SQL)
@@ -61,11 +62,19 @@ def destory_orphans():
 
 
 def run_fpds_load(id_list):
+    """
+    Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
+    data, but does NOT update "secondary" award values like total obligations or C -> D linkages. If transactions are
+    being reloaded, this will also leave behind rows in supporting tables that won't be removed unless destory_orphans
+    is called.
+    returns ids for each award touched
+    """
     if not subtier_agency_list:
         load_reference_data()
 
     chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
+    modified_awards = []
     for chunk in chunks:
         with Timer() as timer:
             logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
@@ -73,8 +82,9 @@ def run_fpds_load(id_list):
 
             load_objects = generate_load_objects(broker_transactions)
 
-            load_transactions(load_objects)
+            modified_awards.extend(load_transactions(load_objects))
         logger.info("ran load in {}".format(str(timer.elapsed)))
+    return modified_awards
 
 
 def load_reference_data():
@@ -163,6 +173,8 @@ def generate_load_objects(broker_objects):
 
 
 def load_transactions(load_objects):
+    """returns ids for each award touched"""
+    retval = []
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             load_recipient_locations(cursor, load_objects)
@@ -180,6 +192,7 @@ def load_transactions(load_objects):
 
                 if results:
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
+                    retval.append(results[0][0])
                 # If there is no award, we need to create one
                 else:
                     columns, values, pairs = setup_load_lists(load_object, "award")
@@ -187,6 +200,7 @@ def load_transactions(load_objects):
                     cursor.execute(generate_matching_award_sql)
                     results = cursor.fetchall()
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
+                    retval.append(results[0][0])
 
                 # Determine if we are making a new transaction, or updating an old one
                 find_matching_transaction_sql = (
@@ -245,6 +259,8 @@ def load_transactions(load_objects):
                     results[0][0], load_object["award"]["latest_tranaction_id"]
                 )
                 cursor.execute(update_award_lastest_transaction_sql)
+
+    return retval
 
 
 def load_recipient_locations(cursor, load_objects):
