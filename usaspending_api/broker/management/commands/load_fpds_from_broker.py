@@ -8,6 +8,7 @@ from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
+from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 
@@ -131,3 +132,4 @@ class Command(BaseCommand):
         update_awards(tuple(self.modified_award_ids))
         update_contract_awards(tuple(self.modified_award_ids))
         update_award_categories(tuple(self.modified_award_ids))
+        update_c_to_d_linkages("contract")
