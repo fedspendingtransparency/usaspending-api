@@ -5,6 +5,7 @@ class FREC(Model):
     """
     Financial Reporting Entity Code (a.k.a. FR Entity Code)
     """
+
     frec_code = TextField(primary_key=True)
     agency_name = TextField()
     agency_abbreviation = TextField(blank=True, null=True)

@@ -60,6 +60,7 @@ class FiscalYear(Func):
 
 class BoolOr(Aggregate):
     """true if at least one input value is true, otherwise false"""
+
     function = "BOOL_OR"
     name = "BoolOr"
 

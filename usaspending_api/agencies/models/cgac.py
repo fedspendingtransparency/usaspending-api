@@ -5,6 +5,7 @@ class CGAC(Model):
     """
     Common Government-Wide Accounting Classification
     """
+
     cgac_code = TextField(primary_key=True)
     agency_name = TextField()
     agency_abbreviation = TextField(blank=True, null=True)

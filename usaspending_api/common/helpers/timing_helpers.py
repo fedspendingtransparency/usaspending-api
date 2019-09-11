@@ -62,6 +62,7 @@ class Timer:
             raise
 
     """
+
     _formats = "{:,} d", "{} h", "{} m", "{} s", "{} ms"
 
     def __init__(self, message=None, success_logger=logger.info, failure_logger=logger.error):

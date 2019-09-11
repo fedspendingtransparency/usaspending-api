@@ -42,8 +42,7 @@ class Command(BaseCommand):
             "agency_file",
             metavar="AGENCY_FILE",
             help=(
-                "Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV "
-                "file to be loaded."
+                "Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV " "file to be loaded."
             ),
         )
 
