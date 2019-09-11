@@ -174,8 +174,8 @@ def load_transactions(load_objects):
             for load_object in load_objects:
 
                 # Try to find an award for this transaction to belong to
-                find_matching_award_sql = "select id from awards where piid = '{}' and parent_award_piid = '{}'".format(
-                    load_object["transaction_fpds"]["piid"], load_object["transaction_fpds"]["parent_award_id"]
+                find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
+                    load_object["generated_unique_award_id"]
                 )
                 cursor.execute(find_matching_award_sql)
                 results = cursor.fetchall()
