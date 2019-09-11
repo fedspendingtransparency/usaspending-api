@@ -291,17 +291,15 @@ def load_place_of_performance(cursor, load_objects):
 
 
 def setup_mass_load_lists(load_objects, table):
-    columns = []
     values = []
 
-    for index in range(0, len(load_objects)):
-        values.append([])
+    keys = load_objects[0][table].keys()
 
-    for key in load_objects[0][table].keys():
-        columns.append("\"{}\"".format(key))
-        for index in range(0, len(load_objects)):
-            val = format_value_for_sql(load_objects[index][table][key])
-            values[index].append(val)
+    columns = ["\"{}\"".format(key) for key in load_objects[0][table].keys()]
+
+    for load_object in load_objects:
+        val = [format_value_for_sql(load_object[table][key]) for key in keys]
+        values.append(val)
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
