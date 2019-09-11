@@ -2,12 +2,14 @@ from django.core.management.base import BaseCommand
 import logging
 import re
 import psycopg2
+from datetime import datetime
 
 from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 
 logger = logging.getLogger("console")
 
@@ -82,7 +84,12 @@ class Command(BaseCommand):
             "--date",
             dest="date",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
+            help="Load or Reload all FPDS records from the provided date to the current time. YYYY-MM-DD format",
+        )
+        mutually_exclusive_group.add_argument(
+            "--since-last-load",
+            action="store_true",
+            help="Equivalent to loading from date, but date is drawn from last update date recorded in DB",
         )
         mutually_exclusive_group.add_argument(
             "--file",
@@ -92,15 +99,20 @@ class Command(BaseCommand):
             "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
         mutually_exclusive_group.add_argument(
-            "--reload-all", action="store_true", help="Script will reload all FPDS records in broker database"
+            "--reload-all",
+            action="store_true",
+            help="Script will load or reload all FPDS records in broker database, from all time",
         )
 
     def handle(self, *args, **options):
+        # loads can take a while, so we record last updated date from the start of all transactions
+        last_update_time = datetime.now()
+
         if options["reload_all"]:
             self.load_fpds_from_date(None)
 
         if options["ids"]:
-            run_fpds_load(options["ids"])
+            self.modified_award_ids.extend(run_fpds_load(options["ids"]))
 
         if options["file"]:
             self.load_fpds_from_file(options["file"])
@@ -108,10 +120,14 @@ class Command(BaseCommand):
         if options["date"]:
             self.load_fpds_from_date(options["date"])
 
+        if options["since_last_load"]:
+            self.load_fpds_from_date(get_last_load_date("fpds"))
+
+        update_last_load_date("fpds", last_update_time)  # only update if we don't crash
         logger.info("cleaning orphaned rows")
         destory_orphans()
 
-        logger.info("updating award values")
+        logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
         update_awards(tuple(self.modified_award_ids))
         update_contract_awards(tuple(self.modified_award_ids))
         update_award_categories(tuple(self.modified_award_ids))

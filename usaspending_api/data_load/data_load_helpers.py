@@ -28,7 +28,10 @@ def format_value_for_sql(val):
     elif isinstance(val, int) or isinstance(val, float):
         retval = str(val)
     elif isinstance(val, list):
-        retval = "ARRAY[{}]".format(",".join([format_value_for_sql(element) for element in val]))
+        if val:
+            retval = "ARRAY[{}]".format(",".join([format_value_for_sql(element) for element in val]))
+        else:
+            retval = "'{}'"
     elif isinstance(val, datetime.datetime):
         retval = "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
 
