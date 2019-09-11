@@ -21,8 +21,8 @@ from usaspending_api.data_load.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
     format_value_for_sql,
-    Timer,
 )
+from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 try:
@@ -74,7 +74,7 @@ def run_fpds_load(id_list):
             load_objects = generate_load_objects(broker_transactions)
 
             load_transactions(load_objects)
-        logger.info("ran load in {}".format(timer.elapsed_as_string))
+        logger.info("ran load in {}".format(str(timer.elapsed)))
 
 
 def load_reference_data():
