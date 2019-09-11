@@ -74,8 +74,9 @@ class Command(BaseCommand):
         connection = get_connection(read_only=False)
         with connection.cursor() as cursor:
             cursor.execute(sql)
-            if cursor.rowcount > -1:
-                logger.info("{:,} rows affected".format(cursor.rowcount))
+            rowcount = cursor.rowcount
+            if rowcount > -1:
+                logger.info("{:,} rows affected".format(rowcount))
 
     def _execute_sql_file(self, filename, where=None):
         """
