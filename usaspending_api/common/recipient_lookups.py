@@ -87,7 +87,7 @@ def combine_recipient_hash_and_level(recipient_hash, recipient_level):
     return "{}-{}".format(recipient_hash, recipient_level.upper())
 
 
-def annotate_recipient_id(field_name, queryset):
+def _annotate_recipient_id(field_name, queryset, annotation_sql):
     """
     Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
     the queryset is based on a data source that contains recipient_unique_id and
@@ -119,27 +119,55 @@ def annotate_recipient_id(field_name, queryset):
         def as_sql(self, compiler, connection):
             return (
                 convert_composable_query_to_string(
-                    SQL(
-                        """(
-                        select
-                            rp.recipient_hash || '-' ||  rp.recipient_level
-                        from
-                            recipient_profile rp
-                            inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
-                        where
-                            rl.duns = {outer_table}.recipient_unique_id and
-                            rp.recipient_level = case
-                                when {outer_table}.parent_recipient_unique_id is null then 'R'
-                                else 'C'
-                            end and
-                            rp.recipient_name not in {special_cases}
-                    )"""
-                    ).format(
+                    SQL(annotation_sql).format(
                         outer_table=Identifier(compiler.query.model._meta.db_table),
                         special_cases=Literal(tuple(sc for sc in SPECIAL_CASES)),
                     )
                 ),
-                list(),
+                [],
             )
 
     return queryset.annotate(**{field_name: RecipientId()})
+
+
+def annotate_recipient_id(field_name, queryset):
+    return _annotate_recipient_id(
+        field_name,
+        queryset,
+        """(
+            select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                recipient_profile rp
+                inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+            where
+                rl.duns = {outer_table}.recipient_unique_id and
+                rp.recipient_level = case
+                    when {outer_table}.parent_recipient_unique_id is null then 'R'
+                    else 'C'
+                end and
+                rp.recipient_name not in {special_cases}
+        )""",
+    )
+
+
+def annotate_prime_award_recipient_id(field_name, queryset):
+    return _annotate_recipient_id(
+        field_name,
+        queryset,
+        """(
+            select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                broker_subaward bs
+                inner join recipient_lookup rl on rl.duns = bs.awardee_or_recipient_uniqu
+                inner join recipient_profile rp on rp.recipient_hash = rl.recipient_hash
+            where
+                bs.id = {outer_table}.subaward_id and
+                rp.recipient_level = case
+                    when bs.ultimate_parent_unique_ide is null or bs.ultimate_parent_unique_ide = '' then 'R'
+                    else 'C'
+                end and
+                rp.recipient_name not in {special_cases}
+        )""",
+    )
