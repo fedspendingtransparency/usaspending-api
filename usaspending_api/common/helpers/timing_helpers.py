@@ -1,8 +1,12 @@
 import contextlib
+import logging
 import math
 import time
 
 from datetime import timedelta
+
+
+logger = logging.getLogger("console")
 
 
 @contextlib.contextmanager
@@ -61,16 +65,18 @@ class Timer:
 
     _formats = "{:,} d", "{} h", "{} m", "{} s", "{} ms"
 
-    def __init__(self, message=None, success_logger=print, failure_logger=print):
+    def __init__(self, message=None, success_logger=logger.info, failure_logger=logger.error):
         """
-        For automatic logging, include a message.  To change from print to, say,
-        an actual logger, provide the success and failure log functions you want
-        to use.
+        For automatic logging, include a message.  By default, non-error messages
+        are logged to the console info logger and errors are logged to the console
+        error logger.  To change to simple prints, call with print as the
+        success_logger and/or failure_logger.
 
-            t = Timer("my thing", success_logger=logger.info, failure_logger=logger.error)
+            t = Timer("my thing", success_logger=print, failure_logger=print)
 
-        I would probably not pass an exception logger in here.  Exceptions
-        should be handled in your code.
+        Technically, success_logger and failure_logger can be any function you want
+        so feel free to go crazy with callbacks.  I would probably not pass an
+        exception logger in here, though.  Exceptions should be handled in your code.
         """
         self.message = message
         self.success_logger = success_logger
