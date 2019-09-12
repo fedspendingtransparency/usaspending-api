@@ -22,3 +22,4 @@ def test_sql_formatter():
     assert format_value_for_sql(599) == "599"
     assert format_value_for_sql("599") == "'599'"
     assert format_value_for_sql([1, 2, "steve"]) == "ARRAY[1,2,'steve']"
+    assert format_value_for_sql([]) == "'{}'"
