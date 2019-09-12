@@ -1,5 +1,6 @@
 drop table if exists temp_raw_agency_csv;
 create table temp_raw_agency_csv (
+    row_number int,
     cgac_agency_code text,
     agency_name text,
     agency_abbreviation text,

@@ -11,6 +11,7 @@ in the Pacific and can't be bothered with such nonsense.
 """
 import logging
 
+from collections import namedtuple
 from distutils.util import strtobool
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -23,6 +24,29 @@ from usaspending_api.common.helpers.timing_helpers import Timer
 
 
 logger = logging.getLogger("console")
+
+
+Agency = namedtuple(
+    "Agency",
+    [
+        "row_number",
+        "cgac_agency_code",
+        "agency_name",
+        "agency_abbreviation",
+        "frec",
+        "frec_entity_description",
+        "frec_abbreviation",
+        "subtier_code",
+        "subtier_name",
+        "subtier_abbreviation",
+        "toptier_flag",
+        "is_frec",
+        "mission",
+        "website",
+        "congressional_justification",
+        "icon_filename",
+    ],
+)
 
 
 class Command(BaseCommand):
@@ -41,7 +65,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "agency_file",
             metavar="AGENCY_FILE",
-            help=("Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV file to be loaded."),
+            help="Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV file to be loaded.",
         )
 
     def handle(self, *args, **options):
@@ -51,10 +75,12 @@ class Command(BaseCommand):
         self.connection = get_connection(read_only=False)
 
         try:
-            with Timer("Overall import"):
+            with Timer("Import agencies"):
+                self._read_agencies()
+                self._validate_agencies()
                 with transaction.atomic():
                     self._execute_sql_file("create_temp_table.sql")
-                    self._import_agency_file()
+                    self._import_agencies()
                     self._execute_sql_file("populate_dependent_tables.sql")
                 self._vacuum_tables()
         except Exception:
@@ -72,37 +98,58 @@ class Command(BaseCommand):
         sql = file.read_text()
         self._execute_sql(sql)
 
-    def _import_agency_file(self):
+    def _read_agencies(self):
         agencies = read_csv_file_as_list_of_dictionaries(self.agency_file)
         if len(agencies) < 1:
             raise RuntimeError("Agency file '{}' appears to be empty".format(self.agency_file))
 
-        agencies = [
-            (
-                prep(agency["CGAC AGENCY CODE"]),
-                prep(agency["AGENCY NAME"]),
-                prep(agency["AGENCY ABBREVIATION"]),
-                prep(agency["FREC"]),
-                prep(agency["FREC Entity Description"]),
-                prep(agency["FREC ABBREVIATION"]),
-                prep(agency["SUBTIER CODE"]),
-                prep(agency["SUBTIER NAME"]),
-                prep(agency["SUBTIER ABBREVIATION"]),
-                bool(strtobool(prep(agency["TOPTIER_FLAG"]))),
-                bool(strtobool(prep(agency["IS_FREC"]))),
-                prep(agency["MISSION"]),
-                prep(agency["WEBSITE"]),
-                prep(agency["CONGRESSIONAL JUSTIFICATION"]),
-                prep(agency["ICON FILENAME"]),
+        self.agencies = [
+            Agency(
+                row_number=row_number + 1,
+                cgac_agency_code=prep(agency["CGAC AGENCY CODE"]),
+                agency_name=prep(agency["AGENCY NAME"]),
+                agency_abbreviation=prep(agency["AGENCY ABBREVIATION"]),
+                frec=prep(agency["FREC"]),
+                frec_entity_description=prep(agency["FREC Entity Description"]),
+                frec_abbreviation=prep(agency["FREC ABBREVIATION"]),
+                subtier_code=prep(agency["SUBTIER CODE"]),
+                subtier_name=prep(agency["SUBTIER NAME"]),
+                subtier_abbreviation=prep(agency["SUBTIER ABBREVIATION"]),
+                toptier_flag=bool(strtobool(prep(agency["TOPTIER_FLAG"]))),
+                is_frec=bool(strtobool(prep(agency["IS_FREC"]))),
+                mission=prep(agency["MISSION"]),
+                website=prep(agency["WEBSITE"]),
+                congressional_justification=prep(agency["CONGRESSIONAL JUSTIFICATION"]),
+                icon_filename=prep(agency["ICON FILENAME"]),
             )
-            for agency in agencies
+            for row_number, agency in enumerate(agencies)
         ]
+
+    def _validate_agencies(self):
+        for agency in self.agencies:
+            if agency.cgac_agency_code is not None and agency.agency_name is None:
+                raise RuntimeError("Row number {:,} has a CGAC but no AGENCY NAME".format(agency.row_number))
+            if agency.frec is not None and agency.frec_entity_description is None:
+                raise RuntimeError(
+                    "Row number {:,} has a FREC but no FREC Entity Description".format(agency.row_number)
+                )
+            if agency.subtier_code is not None and agency.subtier_name is None:
+                raise RuntimeError("Row number {:,} has a SUBTIER CODE but no SUBTIER NAME".format(agency.row_number))
+            if agency.is_frec is True and agency.frec is None:
+                raise RuntimeError("Row number {:,} is marked as IS_FREC but has no FREC".format(agency.row_number))
+            if agency.is_frec is not True and agency.cgac_agency_code is None:
+                raise RuntimeError(
+                    "Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number)
+                )
+
+    def _import_agencies(self):
 
         with self.connection.cursor() as cursor:
             execute_values(
                 cursor.cursor,
                 """
                     insert into temp_raw_agency_csv (
+                        row_number,
                         cgac_agency_code,
                         agency_name,
                         agency_abbreviation,
@@ -120,7 +167,7 @@ class Command(BaseCommand):
                         icon_filename
                     ) values %s
                 """,
-                agencies,
+                self.agencies,
             )
 
     def _vacuum_tables(self):
