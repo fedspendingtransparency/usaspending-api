@@ -42,7 +42,7 @@ class Command(BaseCommand):
             "agency_file",
             metavar="AGENCY_FILE",
             help=(
-                "Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV " "file to be loaded."
+                "Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV file to be loaded."
             ),
         )
 
@@ -126,7 +126,7 @@ class Command(BaseCommand):
             )
 
     def _vacuum_tables(self):
-        self._execute_sql("vacuum analyze cgac")
-        self._execute_sql("vacuum analyze frec")
-        self._execute_sql("vacuum analyze subtier_agency_new")
-        self._execute_sql("vacuum analyze toptier_agency_new")
+        self._execute_sql("vacuum (full, analyze) cgac")
+        self._execute_sql("vacuum (full, analyze) frec")
+        self._execute_sql("vacuum (full, analyze) subtier_agency_new")
+        self._execute_sql("vacuum (full, analyze) toptier_agency_new")
