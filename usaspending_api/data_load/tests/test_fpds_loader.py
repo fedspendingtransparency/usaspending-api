@@ -1,5 +1,5 @@
-from usaspending_api.data_load.fpds_loader import setup_load_lists, fetch_broker_objects
-import pytest
+from usaspending_api.data_load.fpds_loader import setup_load_lists, fetch_broker_objects, create_load_object
+from usaspending_api.data_load.field_mappings_fpds import recipient_location_columns, recipient_location_functions
 
 from unittest.mock import MagicMock
 
@@ -11,6 +11,7 @@ def mock_cursor(monkeypatch, result_value):
     implementation.  If you use any other connection or cursor features you may need to tweak
     this accordingly (or you may not... MagicMock is, um, "magic").
     """
+
     class Result:
         pass
 
@@ -54,3 +55,51 @@ def test_load_from_broker(monkeypatch):
     # There isn't much to test here since this is just a basic DB query
     mock_cursor(monkeypatch, ["mock thing 1", "mock thing 2"])
     assert fetch_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
+
+
+# This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
+# NOT that the map is accurate
+def test_create_load_object(monkeypatch):
+    data = {
+        "legal_entity_country_code": "countrycode",
+        "legal_entity_country_name": "countryname",
+        "legal_entity_state_code": "statecode",
+        "legal_entity_state_descrip": "statedescription",
+        "legal_entity_county_code": "countycode",
+        "legal_entity_county_name": "countyname",
+        "legal_entity_congressional": "congressionalcode",
+        "legal_entity_city_name": "cityname",
+        "legal_entity_address_line1": "addressline1",
+        "legal_entity_address_line2": "addressline2",
+        "legal_entity_address_line3": "addressline3",
+        "legal_entity_zip4": "zipfour",
+        "legal_entity_zip5": "zipfive",
+        "legal_entity_zip_last4": "zip last 4",
+        "detached_award_proc_unique": 5,
+    }
+    result = {
+        "location_country_code": "COUNTRYCODE",
+        "country_name": "COUNTRYNAME",
+        "state_code": "STATECODE",
+        "state_description": "STATEDESCRIPTION",
+        "county_code": "COUNTYCODE",
+        "county_name": "COUNTYNAME",
+        "congressional_code": "CONGRESSIONALCODE",
+        "city_name": "CITYNAME",
+        "address_line1": "ADDRESSLINE1",
+        "address_line2": "ADDRESSLINE2",
+        "address_line3": "ADDRESSLINE3",
+        "zip4": "ZIPFOUR",
+        "zip5": "ZIPFIVE",
+        "zip_last4": "ZIP LAST 4",
+        "is_fpds": True,
+        "place_of_performance_flag": False,
+        "recipient_flag": True,
+        "transaction_unique_id": 5,
+    }
+    mock_cursor(monkeypatch, data)
+
+    actual_result = create_load_object(data, recipient_location_columns, None, recipient_location_functions)
+    actual_result.pop("create_date", None)
+    actual_result.pop("update_date", None)
+    assert actual_result == result
