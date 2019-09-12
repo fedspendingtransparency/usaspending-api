@@ -48,9 +48,9 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
 |[/api/v2/awards/funding_rollup](/api/v2/awards/funding_rollup)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for an award|
 |[/api/v2/awards/last_updated/](/api/v2/awards/last_updated/)|GET| Returns date of last update|
-|[/api/v2/awards/transaction_count/<AWARD_ID\>/](/api/v2/awards/transaction_count/)|GET| Returns the number of transactions associated with the award|
-|[/api/v2/awards/subaward_count/<AWARD_ID\>/](/api/v2/awards/subaward_count/)|GET| Returns the number of subawards associated with the award|
-|[/api/v2/awards/federal_account_count/<AWARD_ID\>/](/api/v2/awards/federal_account_count/)|GET| Returns the number of federal accounts associated with the award|
+|[/api/v2/awards/transaction_count/<AWARD_ID\>/](/api/v2/awards/transaction_count/66945037/)|GET| Returns the number of transactions associated with the award|
+|[/api/v2/awards/subaward_count/<AWARD_ID\>/](/api/v2/awards/subaward_count/66945037/)|GET| Returns the number of subawards associated with the award|
+|[/api/v2/awards/federal_account_count/<AWARD_ID\>/](/api/v2/awards/federal_account_count/66945037/)|GET| Returns the number of federal accounts associated with the award|
 |[/api/v2/budget_functions/list_budget_functions/](/api/v2/budget_functions/list_budget_functions/)|GET| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
 |[/api/v2/budget_functions/list_budget_subfunctions/](/api/v2/budget_functions/list_budget_subfunctions/)|POST| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
 |[/api/v2/bulk_download/awards/](/api/v2/bulk_download/awards/)|POST| Generates zip file for download of award data in CSV format|
