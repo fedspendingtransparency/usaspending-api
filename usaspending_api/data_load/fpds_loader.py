@@ -21,7 +21,8 @@ from usaspending_api.data_load.data_load_helpers import (
     subtier_agency_list,
     capitalize_if_string,
     false_if_null,
-    format_value_for_sql,
+    setup_load_lists,
+    setup_mass_load_lists
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -304,38 +305,3 @@ def load_place_of_performance(cursor, load_objects):
     for index in range(0, len(results)):
         load_objects[index]["transaction_normalized"]["place_of_performance_id"] = results[index][0]
         load_objects[index]["award"]["place_of_performance_id"] = results[index][0]
-
-
-def setup_mass_load_lists(load_objects, table):
-    values = []
-
-    keys = load_objects[0][table].keys()
-
-    columns = ['"{}"'.format(key) for key in load_objects[0][table].keys()]
-
-    for load_object in load_objects:
-        val = [format_value_for_sql(load_object[table][key]) for key in keys]
-        values.append(val)
-
-    col_string = "({})".format(",".join(map(str, columns)))
-    val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
-
-    return col_string, val_string
-
-
-def setup_load_lists(load_object, table):
-    columns = []
-    values = []
-    update_pairs = []
-    for key in load_object[table].keys():
-        columns.append('"{}"'.format(key))
-        val = format_value_for_sql(load_object[table][key])
-        values.append(val)
-        if key not in ["create_date", "created_at"]:
-            update_pairs.append(" {}={}".format(key, val))
-
-    col_string = "({})".format(",".join(map(str, columns)))
-    val_string = "({})".format(",".join(map(str, values)))
-    pairs_string = ",".join(update_pairs)
-
-    return col_string, val_string, pairs_string

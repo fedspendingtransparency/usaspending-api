@@ -34,3 +34,38 @@ def format_value_for_sql(val):
         retval = "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
 
     return retval
+
+
+def setup_mass_load_lists(load_objects, table):
+    values = []
+
+    keys = load_objects[0][table].keys()
+
+    columns = ['"{}"'.format(key) for key in load_objects[0][table].keys()]
+
+    for load_object in load_objects:
+        val = [format_value_for_sql(load_object[table][key]) for key in keys]
+        values.append(val)
+
+    col_string = "({})".format(",".join(map(str, columns)))
+    val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
+
+    return col_string, val_string
+
+
+def setup_load_lists(load_object, table):
+    columns = []
+    values = []
+    update_pairs = []
+    for key in load_object[table].keys():
+        columns.append('"{}"'.format(key))
+        val = format_value_for_sql(load_object[table][key])
+        values.append(val)
+        if key not in ["create_date", "created_at"]:
+            update_pairs.append(" {}={}".format(key, val))
+
+    col_string = "({})".format(",".join(map(str, columns)))
+    val_string = "({})".format(",".join(map(str, values)))
+    pairs_string = ",".join(update_pairs)
+
+    return col_string, val_string, pairs_string
