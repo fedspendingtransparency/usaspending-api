@@ -1,5 +1,6 @@
 import psycopg2
 import logging
+from os import environ
 
 from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_columns,
@@ -23,14 +24,11 @@ from usaspending_api.data_load.data_load_helpers import (
     format_value_for_sql,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
-try:
-    USASPENDING_CONNECTION_STRING = get_database_dsn_string()
-    BROKER_CONNECTION_STRING = get_broker_dsn_string()
-except Exception:
-    USASPENDING_CONNECTION_STRING = "Failure"
-    BROKER_CONNECTION_STRING = "Failure"
+
+USASPENDING_CONNECTION_STRING = get_database_dsn_string()
+BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
 
 DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
     "DELETE FROM legal_entity legal WHERE legal.legal_entity_id in "
@@ -70,7 +68,7 @@ def run_fpds_load(id_list):
     returns ids for each award touched
     """
     if not subtier_agency_list:
-        load_reference_data()
+        fetch_reference_data()
 
     chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
@@ -87,7 +85,7 @@ def run_fpds_load(id_list):
     return modified_awards
 
 
-def load_reference_data():
+def fetch_reference_data():
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             sql = (
