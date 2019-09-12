@@ -154,7 +154,7 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
         {
             "internal_id": 1018950,
             "Award ID": null,
-            "Recipient Name": "MULTIPLE RECIPIENTS",
+            "Recipient Name": "The Example Company",
             "recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R",
             "Start Date": null,
             "End Date": null,
@@ -190,7 +190,7 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
             "Awarding Agency": "Social Security Administration",
             "Awarding Sub Agency": "Social Security Administration",
             "Prime Award ID": null,
-            "Prime Recipient Name": "MULTIPLE RECIPIENTS",
+            "Prime Recipient Name": "The Example Company",
             "prime_award_recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R"
         }
     ],
