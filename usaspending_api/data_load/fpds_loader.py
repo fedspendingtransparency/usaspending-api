@@ -29,7 +29,7 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 
 USASPENDING_CONNECTION_STRING = get_database_dsn_string()
-BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
+BROKER_CONNECTION_STRING = environ.get("DATA_BROKER_DATABASE_URL", None)
 
 DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
     "DELETE FROM legal_entity legal WHERE legal.legal_entity_id in "
