@@ -1,5 +1,21 @@
-from usaspending_api.data_load.fpds_loader import setup_load_lists, fetch_broker_objects, create_load_object
-from usaspending_api.data_load.field_mappings_fpds import recipient_location_columns, recipient_location_functions
+from usaspending_api.data_load.fpds_loader import (
+    setup_load_lists,
+    fetch_broker_objects,
+    create_load_object,
+    generate_load_objects,
+    load_transactions,
+)
+from usaspending_api.data_load.field_mappings_fpds import (
+    transaction_fpds_columns,
+    transaction_normalized_columns,
+    legal_entity_columns,
+    legal_entity_boolean_columns,
+    recipient_location_columns,
+    recipient_location_functions,
+    place_of_performance_columns,
+    place_of_performance_functions,
+    transaction_fpds_boolean_columns,
+)
 
 from unittest.mock import MagicMock
 
@@ -60,6 +76,8 @@ def test_load_from_broker(monkeypatch):
 # This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
 # NOT that the map is accurate
 def test_create_load_object(monkeypatch):
+    custom_bools = {"is_awesome": "awesome", "is_not_awesome": "nawesome", "reasons_to_not_be_awesome": "noawersn"}
+
     data = {
         "legal_entity_country_code": "countrycode",
         "legal_entity_country_name": "countryname",
@@ -76,6 +94,9 @@ def test_create_load_object(monkeypatch):
         "legal_entity_zip5": "zipfive",
         "legal_entity_zip_last4": "zip last 4",
         "detached_award_proc_unique": 5,
+        "is_awesome": "true",
+        "is_not_awesome": "false",
+        "reasons_to_not_be_awesome": None,
     }
     result = {
         "location_country_code": "COUNTRYCODE",
@@ -96,10 +117,45 @@ def test_create_load_object(monkeypatch):
         "place_of_performance_flag": False,
         "recipient_flag": True,
         "transaction_unique_id": 5,
+        "awesome": "true",
+        "nawesome": "false",
+        "noawersn": False,
     }
     mock_cursor(monkeypatch, data)
 
-    actual_result = create_load_object(data, recipient_location_columns, None, recipient_location_functions)
+    actual_result = create_load_object(data, recipient_location_columns, custom_bools, recipient_location_functions)
     actual_result.pop("create_date", None)
     actual_result.pop("update_date", None)
     assert actual_result == result
+
+
+# Mostly testing that everything gets the primary keys it was looking for
+def test_load_transactions(monkeypatch):
+    mega_key_list = {}
+    mega_key_list.update(transaction_fpds_columns)
+    mega_key_list.update(transaction_normalized_columns)
+    mega_key_list.update(legal_entity_columns)
+    mega_key_list.update(recipient_location_columns)
+    mega_key_list.update(recipient_location_functions)
+    mega_key_list.update(place_of_performance_columns)
+    mega_key_list.update(place_of_performance_functions)
+
+    unique_val = 1
+    for key in mega_key_list.keys():
+        mega_key_list[key] = "value{}".format(unique_val)
+
+    mega_boolean_key_list = {}
+    mega_boolean_key_list.update(transaction_fpds_boolean_columns)
+    mega_boolean_key_list.update(legal_entity_boolean_columns)
+
+    for key in mega_boolean_key_list:
+        mega_boolean_key_list[key] = "false"
+
+    mega_key_list.update(mega_boolean_key_list)
+
+    mega_key_list["action_date"] = "2007-10-01 00:00:00"
+
+    load_objects = generate_load_objects([mega_key_list])
+
+    mock_cursor(monkeypatch, [[10]])  # ids for linked objects. No real DB so can't check that they really link
+    load_transactions(load_objects)

@@ -22,7 +22,7 @@ from usaspending_api.data_load.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
     setup_load_lists,
-    setup_mass_load_lists
+    setup_mass_load_lists,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -77,13 +77,17 @@ def run_fpds_load(id_list):
     for chunk in chunks:
         with Timer() as timer:
             logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
-            broker_transactions = fetch_broker_objects(chunk)
-
-            load_objects = generate_load_objects(broker_transactions)
-
-            modified_awards.extend(load_transactions(load_objects))
+            modified_awards.extend(load_chunk(chunk))
         logger.info("ran load in {}".format(str(timer.elapsed)))
     return modified_awards
+
+
+def load_chunk(chunk):
+    broker_transactions = fetch_broker_objects(chunk)
+
+    load_objects = generate_load_objects(broker_transactions)
+
+    return load_transactions(load_objects)
 
 
 def fetch_reference_data():
@@ -184,6 +188,7 @@ def load_transactions(load_objects):
 
             for load_object in load_objects:
 
+                # AWARD
                 # Try to find an award for this transaction to belong to
                 find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
                     load_object["generated_unique_award_id"]
@@ -203,6 +208,7 @@ def load_transactions(load_objects):
                     load_object["transaction_normalized"]["award_id"] = results[0][0]
                     retval.append(results[0][0])
 
+                # TRANSACTION
                 # Determine if we are making a new transaction, or updating an old one
                 find_matching_transaction_sql = (
                     "select transaction_id from transaction_fpds "
