@@ -47,7 +47,7 @@ DESTROY_ORPHANS_REFERENCES_LOCATION_SQL = (
     "WHERE t.id is null and a.id is null and e.legal_entity_id is null)"
 )
 
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 5000
 
 logger = logging.getLogger("console")
 
