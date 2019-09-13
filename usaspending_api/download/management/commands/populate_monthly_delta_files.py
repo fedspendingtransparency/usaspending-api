@@ -179,7 +179,8 @@ class Command(BaseCommand):
             raise e
 
         # Append deleted rows to the end of the file
-        self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
+        if not self.debugging_skip_deleted:
+            self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
         if count_rows_in_csv_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
@@ -318,26 +319,57 @@ class Command(BaseCommand):
 
         return "{}-{}-{}".format(year, month, day)
 
-    def apply_annotations_to_sql(self, raw_query, aliases):
-        """ The csv_generation version of this function would incorrectly annotate the D1 correction_delete_ind.
-        Reusing the code but including the correction_delete_ind col for both file types """
-        select_string = re.findall("SELECT (.*?) FROM", raw_query)[0]
+    @staticmethod
+    def apply_annotations_to_sql(raw_query, aliases):
+        """
+        This function stolen from csv_generation.apply_annotations_to_sql and tweaked for this module.  This is
+        a hack to get the Delta scripts working.  It is possible this flavor of the function might work in
+        csv_generation as well, but this is a rush job.
 
-        selects, cases = [], []
-        for select in select_string.split(","):
-            if "CASE" not in select:
-                selects.append(select.strip())
-            else:
-                case = select.strip()
-                cases.append(case)
-                aliases.remove(re.findall('AS "(.*?)"', case)[0].strip())
-        if len(selects) != len(aliases):
+        TODO: See if this can be reconciled with csv_generation.apply_annotations_to_sql
+
+        This function serves two purposes:
+            - apply aliases to all the return values in raw_query
+            - reorder annotated columns
+        """
+        aliases_copy = list(aliases)
+
+        # Extract everything between the first SELECT and the last FROM
+        query_before_group_by = raw_query.split("GROUP BY ")[0]
+        query_before_from = re.sub(r"\(?SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
+
+        # Create a list from the non-derived values between SELECT and FROM
+        selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|FROM)", raw_query)[0]
+        just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
+        selects_list = [select.strip() for select in just_selects.strip().split(",")]
+
+        # Create a list from the derived values between SELECT and FROM
+        remove_selects = query_before_from.replace(selects_str[0], "")
+        deriv_str_lookup = re.findall(
+            r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
+        )
+        deriv_dict = {}
+        for str_match in deriv_str_lookup:
+            # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
+            alias = str_match[2][:-1].strip() if str_match[2][-1:] == "," else str_match[2].strip()
+            if (alias[-1:] == '"' and alias[:1] == '"') or (alias[-1:] == "'" and alias[:1] == "'"):
+                alias = alias[1:-1]
+            deriv_dict[alias] = "{}{}".format(str_match[0], str_match[1]).strip()
+            # Provides some safety if a field isn't provided in this historical_lookup
+            if alias in aliases_copy:
+                aliases_copy.remove(alias)
+
+        # Validate we have an alias for each value in the SELECT string
+        if len(selects_list) != len(aliases_copy):
             raise Exception("Length of alises doesn't match the columns in selects")
 
-        ordered_map = OrderedDict(zip(aliases, selects))
-        selects_str = ", ".join(cases + ['{} AS "{}"'.format(select, alias) for alias, select in ordered_map.items()])
+        # Match aliases with their values
+        values_list = [
+            '{} AS "{}"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
+            for alias in aliases
+        ]
 
-        return raw_query.replace(select_string, selects_str)
+        return raw_query.replace(query_before_from, ", ".join(values_list))
 
     def parse_filters(self, award_types, agency):
         """ Convert readable filters to a filter object usable for the matview filter """
@@ -385,6 +417,12 @@ class Command(BaseCommand):
             help="This was added to help with debugging and should not be used for production runs "
             "as the cutoff logic is imprecise. YYYY-MM-DD",
         )
+        parser.add_argument(
+            "--debugging_skip_deleted",
+            action="store_true",
+            help="This was added to help with debugging.  If provided, will not attempt to append "
+            "deleted records from S3.",
+        )
 
     def handle(self, *args, **options):
         """ Run the application. """
@@ -392,6 +430,7 @@ class Command(BaseCommand):
         award_types = options["award_types"]
         last_date = options["last_date"]
         self.debugging_end_date = options["debugging_end_date"]
+        self.debugging_skip_deleted = options["debugging_skip_deleted"]
 
         toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
