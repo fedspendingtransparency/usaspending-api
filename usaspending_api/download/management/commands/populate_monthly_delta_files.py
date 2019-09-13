@@ -263,7 +263,9 @@ class Command(BaseCommand):
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
         """ Ensure that the dataframe has all necessary columns in the correct order """
-        ordered_columns = ["correction_delete_ind"] + source.columns(None)
+        ordered_columns = source.columns(None)
+        if "correction_delete_ind" not in ordered_columns:
+            ordered_columns = ["correction_delete_ind"] + ordered_columns
 
         # Loop through columns and populate rows for each
         unique_values_map = {"correction_delete_ind": "D", "last_modified_date": match_date}
