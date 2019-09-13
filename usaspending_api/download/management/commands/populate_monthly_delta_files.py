@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import tempfile
 
-from collections import OrderedDict
 from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
