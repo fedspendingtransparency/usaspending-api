@@ -1,7 +1,5 @@
 import datetime
 
-subtier_agency_list = {}  # global variable, populated by fpds_loader
-
 
 def capitalize_if_string(val):
     try:

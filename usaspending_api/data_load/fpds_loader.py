@@ -18,7 +18,6 @@ from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_functions,
 )
 from usaspending_api.data_load.data_load_helpers import (
-    subtier_agency_list,
     capitalize_if_string,
     false_if_null,
     setup_load_lists,
@@ -52,7 +51,7 @@ CHUNK_SIZE = 5000
 logger = logging.getLogger("console")
 
 
-def destory_orphans():
+def destroy_orphans():
     """cleans up tables after run_fpds_load is called"""
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor() as cursor:
@@ -68,9 +67,6 @@ def run_fpds_load(id_list):
     is called.
     returns ids for each award touched
     """
-    if not subtier_agency_list:
-        fetch_reference_data()
-
     chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     modified_awards = []
@@ -88,21 +84,6 @@ def load_chunk(chunk):
     load_objects = generate_load_objects(broker_transactions)
 
     return load_transactions(load_objects)
-
-
-def fetch_reference_data():
-    with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
-        with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            sql = (
-                "SELECT * FROM subtier_agency "
-                "JOIN agency "
-                "ON subtier_agency.subtier_agency_id = agency.subtier_agency_id"
-            )
-
-            cursor.execute(sql)
-            results = cursor.fetchall()
-            for result in results:
-                subtier_agency_list[result["subtier_code"]] = result
 
 
 def fetch_broker_objects(id_list):
@@ -182,6 +163,7 @@ def load_transactions(load_objects):
     retval = []
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            # First cr
             load_recipient_locations(cursor, load_objects)
             load_recipients(cursor, load_objects)
             load_place_of_performance(cursor, load_objects)

@@ -2,9 +2,9 @@ from django.core.management.base import BaseCommand
 import logging
 import re
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timezone
 
-from usaspending_api.data_load.fpds_loader import run_fpds_load, destory_orphans
+from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -29,10 +29,10 @@ class Command(BaseCommand):
     @staticmethod
     def get_cursor_for_date_query(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            db_cursor = connection.cursor()
+            db_cursor = connection.cursor("fpds_load")
             db_query = ALL_FPDS_QUERY
             if date:
-                db_query.format(" WHERE updated_at >= %s;")
+                db_query += " WHERE updated_at >= %s;"
                 db_args = [date]
                 db_cursor.execute(db_query, db_args)
             else:
@@ -107,7 +107,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # loads can take a while, so we record last updated date from the start of all transactions
-        last_update_time = datetime.now()
+        last_update_time = datetime.now(timezone.utc)
 
         if options["reload_all"]:
             self.load_fpds_from_date(None)
@@ -126,7 +126,7 @@ class Command(BaseCommand):
 
         update_last_load_date("fpds", last_update_time)  # only update if we don't crash
         logger.info("cleaning orphaned rows")
-        destory_orphans()
+        destroy_orphans()
 
         logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
         update_awards(tuple(self.modified_award_ids))

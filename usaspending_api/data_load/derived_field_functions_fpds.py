@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.data_load.data_load_helpers import subtier_agency_list
+from usaspending_api.data_load.reference_data import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
 
@@ -10,7 +10,7 @@ def calculate_fiscal_year(broker_input):
 
 
 def calculate_awarding_agency(broker_input):
-    awarding_agency = subtier_agency_list.get(broker_input["awarding_sub_tier_agency_c"], None)
+    awarding_agency = subtier_agency_list().get(broker_input["awarding_sub_tier_agency_c"], None)
     if awarding_agency is not None:
         return awarding_agency["id"]
     else:
@@ -18,7 +18,7 @@ def calculate_awarding_agency(broker_input):
 
 
 def calculate_funding_agency(broker_input):
-    funding_agency = subtier_agency_list.get(broker_input["funding_sub_tier_agency_co"], None)
+    funding_agency = subtier_agency_list().get(broker_input["funding_sub_tier_agency_co"], None)
     if funding_agency is not None:
         return funding_agency["id"]
     else:
