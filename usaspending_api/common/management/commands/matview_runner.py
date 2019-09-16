@@ -61,9 +61,8 @@ class Command(BaseCommand):
             recursive_delete(self.matview_dir)
         self.matview_dir.mkdir()
 
-        # NOTE TO SELF!!!!!!!
-        # DO NOT LEAVE hardcoded `python` in the command!!!!!!!
-        exec_str = "python {} --quiet --dest={}/ --batch_indexes=3".format(MATVIEW_GENERATOR_FILE, self.matview_dir)
+        # IF using this for operations, DO NOT LEAVE hardcoded `python3` in the command
+        exec_str = "python3 {} --quiet --dest={}/ --batch_indexes=3".format(MATVIEW_GENERATOR_FILE, self.matview_dir)
         subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
