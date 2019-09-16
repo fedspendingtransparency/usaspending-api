@@ -32,26 +32,43 @@ class Command(BaseCommand):
 
 def populate_naics_fields(ws, naics_year, path):
     for current_row, row in enumerate(ws.rows):
-        if current_row == 0:
-            continue
-
         if not row[0].value:
             break  # Reads file only until a blank line
 
-        try:
-            naics_code = int(row[0].value)
-        except ValueError:
-            raise CommandError("Invalid NAICS code: {0}. Please review file {1}".format(naics_code, path))
-
         naics_desc = row[1].value.strip()
 
-        obj, created = NAICS.objects.get_or_create(
-            pk=naics_code, defaults={"description": naics_desc, "year": naics_year}
-        )
+        try:
+            naics_code = int(row[0].value)
+            load_single_naics(naics_code, naics_year, naics_desc)
+        except ValueError:
+            if "," in row[0].value:
+                for potential_naics in row[0].value.split(","):
+                    if "-" in potential_naics:
+                        try:
+                            print("range found: {}")
+                            minmax = potential_naics.split("-")
+                            for naics_code in range(int(minmax[0]), int(minmax[1]+1)):
+                                load_single_naics(naics_code, naics_year, naics_desc)
+                        except ValueError:
+                            raise CommandError(
+                                "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path))
+                    else:
+                        try:
+                            naics_code = int(row[0].value)
+                            load_single_naics(naics_code, naics_year, naics_desc)
+                        except ValueError:
+                            raise CommandError(
+                                "Unparsable NAICS list value: {0}. Please review file {1}".format(row[0].value, path))
 
-        if not created:
-            if int(naics_year) > int(obj.year):
-                NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
+
+def load_single_naics(naics_code, naics_year, naics_desc):
+    obj, created = NAICS.objects.get_or_create(
+        pk=naics_code, defaults={"description": naics_desc, "year": naics_year}
+    )
+
+    if not created:
+        if int(naics_year) > int(obj.year):
+            NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
 
 
 @transaction.atomic
@@ -73,5 +90,5 @@ def load_naics(path, append):
         wb = load_workbook(filename=path)
         ws = wb.active
 
-        naics_year = p_year.search(ws["A1"].value).group()
+        naics_year = p_year.search(path).group()
         populate_naics_fields(ws, naics_year, path)
