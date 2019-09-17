@@ -18,7 +18,7 @@ BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
 CHUNK_SIZE = 10000  # Completely arbitrary and not backed by any testing, this can likely go higher
 
-ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement;"
+ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement"
 
 
 class Command(BaseCommand):
@@ -29,7 +29,7 @@ class Command(BaseCommand):
     @staticmethod
     def get_cursor_for_date_query(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            db_cursor = connection.cursor("fpds_load")
+            db_cursor = connection.cursor()
             db_query = ALL_FPDS_QUERY
             if date:
                 db_query += " WHERE updated_at >= %s;"
@@ -128,8 +128,9 @@ class Command(BaseCommand):
         logger.info("cleaning orphaned rows")
         destroy_orphans()
 
-        logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
-        update_awards(tuple(self.modified_award_ids))
-        update_contract_awards(tuple(self.modified_award_ids))
-        update_award_categories(tuple(self.modified_award_ids))
-        update_c_to_d_linkages("contract")
+        if self.modified_award_ids:
+            logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
+            update_awards(tuple(self.modified_award_ids))
+            update_contract_awards(tuple(self.modified_award_ids))
+            update_award_categories(tuple(self.modified_award_ids))
+            update_c_to_d_linkages("contract")
