@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Transaction Count [/api/v2/awards/transaction_count/{award_id}/]
+# Transaction Count [/api/v2/awards/count/transaction/{award_id}/]
 
 This endpoint is used for the transaction history tab on the awards page.
 

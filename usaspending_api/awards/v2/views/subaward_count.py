@@ -16,7 +16,7 @@ logger = logging.getLogger("console")
 
 class SubawardCountRetrieveViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve data about a specific award
+    This route sends a request to the backend to retrieve the number of subawards associated with the requested award
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/subaward_count.md"

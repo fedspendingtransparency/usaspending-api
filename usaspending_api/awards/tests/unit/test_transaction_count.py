@@ -43,19 +43,19 @@ def awards_transaction_data(db):
 def test_award_success(client, awards_transaction_data):
     """Test transaction count endpoint"""
 
-    resp = client.get("/api/v2/awards/transaction_count/CONT_AWD_zzz_whatever/")
+    resp = client.get("/api/v2/awards/count/transaction/CONT_AWD_zzz_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 1
 
-    resp = client.get("/api/v2/awards/transaction_count/1/")
+    resp = client.get("/api/v2/awards/count/transaction/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 1
 
-    resp = client.get("/api/v2/awards/transaction_count/CONT_AWD_aaa_whatever/")
+    resp = client.get("/api/v2/awards/count/transaction/CONT_AWD_aaa_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 3
 
-    resp = client.get("/api/v2/awards/transaction_count/2/")
+    resp = client.get("/api/v2/awards/count/transaction/2/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 3
 
@@ -63,11 +63,11 @@ def test_award_success(client, awards_transaction_data):
 def test_award_no_transactions(client, awards_transaction_data):
     """Test transaction count endpoint for award with no transactions"""
 
-    resp = client.get("/api/v2/awards/transaction_count/ASST_bbb_abc123/")
+    resp = client.get("/api/v2/awards/count/transaction/ASST_bbb_abc123/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 0
 
-    resp = client.get("/api/v2/awards/transaction_count/3/")
+    resp = client.get("/api/v2/awards/count/transaction/3/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 0
 
@@ -75,6 +75,6 @@ def test_award_no_transactions(client, awards_transaction_data):
 def test_missing_award(client, awards_transaction_data):
     """Test transaction count endpoint for award that does not exist"""
 
-    resp = client.get("/api/v2/awards/transaction_count/4/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["transactions"] == 0
+    resp = client.get("/api/v2/awards/count/transaction/4/")
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.data["detail"] == "No Award found with: '4'"

@@ -30,19 +30,19 @@ def award_subaward_count_data(db):
 def test_subaward_success(client, award_subaward_count_data):
     """Test subaward count endpoint"""
 
-    resp = client.get("/api/v2/awards/subaward_count/CONT_AWD_zzz_whatever/")
+    resp = client.get("/api/v2/awards/count/subaward/CONT_AWD_zzz_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["subawards"] == 10
 
-    resp = client.get("/api/v2/awards/subaward_count/1/")
+    resp = client.get("/api/v2/awards/count/subaward/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["subawards"] == 10
 
-    resp = client.get("/api/v2/awards/subaward_count/CONT_AWD_aaa_whatever/")
+    resp = client.get("/api/v2/awards/count/subaward/CONT_AWD_aaa_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["subawards"] == 0
 
-    resp = client.get("/api/v2/awards/subaward_count/2/")
+    resp = client.get("/api/v2/awards/count/subaward/2/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["subawards"] == 0
 
@@ -50,6 +50,6 @@ def test_subaward_success(client, award_subaward_count_data):
 def test_missing_award(client, award_subaward_count_data):
     """Test subaward count endpoint for award that does not exist"""
 
-    resp = client.get("/api/v2/awards/subaward_count/4/")
+    resp = client.get("/api/v2/awards/count/subaward/4/")
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert resp.data["detail"] == "No Award found with: '4'"

@@ -44,19 +44,19 @@ def awards_federal_account_data(db):
 def test_award_success(client, awards_federal_account_data):
     """Test federal_account count endpoint"""
 
-    resp = client.get("/api/v2/awards/federal_account_count/CONT_AWD_zzz_whatever/")
+    resp = client.get("/api/v2/awards/count/federal_account/CONT_AWD_zzz_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 2
 
-    resp = client.get("/api/v2/awards/federal_account_count/1/")
+    resp = client.get("/api/v2/awards/count/federal_account/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 2
 
-    resp = client.get("/api/v2/awards/federal_account_count/CONT_AWD_aaa_whatever/")
+    resp = client.get("/api/v2/awards/count/federal_account/CONT_AWD_aaa_whatever/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 1
 
-    resp = client.get("/api/v2/awards/federal_account_count/2/")
+    resp = client.get("/api/v2/awards/count/federal_account/2/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 1
 
@@ -64,11 +64,11 @@ def test_award_success(client, awards_federal_account_data):
 def test_award_no_federal_accounts(client, awards_federal_account_data):
     """Test federal_account count endpoint for award with no federal_accounts"""
 
-    resp = client.get("/api/v2/awards/federal_account_count/ASST_bbb_abc123/")
+    resp = client.get("/api/v2/awards/count/federal_account/ASST_bbb_abc123/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 0
 
-    resp = client.get("/api/v2/awards/federal_account_count/3/")
+    resp = client.get("/api/v2/awards/count/federal_account/3/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 0
 
@@ -76,6 +76,6 @@ def test_award_no_federal_accounts(client, awards_federal_account_data):
 def test_missing_award(client, awards_federal_account_data):
     """Test federal_account count endpoint for award that does not exist"""
 
-    resp = client.get("/api/v2/awards/federal_account_count/4/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["federal_accounts"] == 0
+    resp = client.get("/api/v2/awards/count/federal_account/4/")
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.data["detail"] == "No Award found with: '4'"

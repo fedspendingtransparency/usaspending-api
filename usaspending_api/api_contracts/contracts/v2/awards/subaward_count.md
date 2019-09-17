@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Subaward Count [/api/v2/awards/subaward_count/{award_id}/]
+# Subaward Count [/api/v2/awards/count/subaward_count/{award_id}/]
 
 This endpoint is used for the subawards tab on the awards page.
 

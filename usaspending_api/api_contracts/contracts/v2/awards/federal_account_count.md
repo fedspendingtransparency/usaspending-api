@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Federal Accounts Count [/api/v2/awards/federal_account_count/{award_id}/]
+# Federal Accounts Count [/api/v2/awards/count/federal_account/{award_id}/]
 
 This endpoint is used for the federal accounts tab on the awards page.
 
