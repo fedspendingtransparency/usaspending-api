@@ -173,7 +173,13 @@ class Award(DataSourceTrackedModel):
         "awards.TransactionNormalized",
         related_name="latest_for_award",
         null=True,
-        help_text="The latest transaction by action_date associated with this award",
+        help_text="The latest transaction by action_date and mod associated with this award",
+    )
+    earliest_transaction = models.ForeignKey(
+        "awards.TransactionNormalized",
+        related_name="earliest_for_award",
+        null=True,
+        help_text="The earliest transaction by action_date and mod associated with this award",
     )
     parent_award_piid = models.TextField(
         db_index=True, null=True, verbose_name="Parent Award Piid", help_text="The piid of the Award's parent Award"

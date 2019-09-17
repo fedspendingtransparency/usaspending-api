@@ -38,13 +38,13 @@ def update_awards(award_tuple=None):
     )
     if award_tuple:
         sql_txn_latest += "WHERE award_id IN %s "
-    sql_txn_latest += "ORDER BY award_id, action_date DESC) "
+    sql_txn_latest += "ORDER BY award_id, action_date DESC, modification_number DESC) "
 
     # common table expression for each award's earliest transaction
     sql_txn_earliest = "txn_earliest AS (SELECT DISTINCT ON (award_id) * FROM transaction_normalized "
     if award_tuple:
         sql_txn_earliest += "WHERE award_id IN %s "
-    sql_txn_earliest += "ORDER BY award_id, action_date) "
+    sql_txn_earliest += "ORDER BY award_id, action_date ASC, modification_number ASC) "
 
     # common table expression for each award's summarized data (currently the only we summarize is
     # federal_actio_obligation, but we can add more as necessary)
@@ -83,6 +83,7 @@ def update_awards(award_tuple=None):
         "total_loan_value = t.total_loan_value, "
         "non_federal_funding_amount = t.non_federal_funding_amount, "
         "latest_transaction_id = l.id, "
+        "earliest_transaction_id = e.id, "
         "type = l.type, "
         "category = l.category, "
         "type_description = l.type_description "
