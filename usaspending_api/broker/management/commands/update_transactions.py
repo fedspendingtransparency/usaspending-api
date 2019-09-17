@@ -2,7 +2,7 @@ import logging
 
 from copy import copy
 from datetime import datetime
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
