@@ -82,10 +82,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         self.filters = add_date_range_comparison_types(
-            json_request.get("filters"),
-            self.is_subaward,
-            gte_date_type="action_date",
-            lte_date_type="earliest_action_date",
+            json_request.get("filters"), self.is_subaward, gte_date_type="action_date", lte_date_type="date_signed"
         )
         self.fields = json_request["fields"]
         self.pagination = {

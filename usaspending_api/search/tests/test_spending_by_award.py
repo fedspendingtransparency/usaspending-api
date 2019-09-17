@@ -5,10 +5,9 @@ from datetime import datetime
 from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
-from django_mock_queries.query import MockModel
+
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 
 
 @pytest.mark.django_db
@@ -64,7 +63,7 @@ def test_no_intersection(client):
 
 
 @pytest.fixture
-def awards_over_different_date_ranges(mock_matviews_qs):
+def awards_over_different_date_ranges():
     award_category_list = ["contracts", "direct_payments", "grants", "idvs", "loans", "other_financial_assistance"]
 
     # The date ranges for the different awards are setup to cover possible intersection points by the
@@ -74,65 +73,52 @@ def awards_over_different_date_ranges(mock_matviews_qs):
     #    - {"start_date": "2017-02-01", "end_date": "2017-11-30"}
     date_range_list = [
         # Intersect only one of the date ranges searched for
-        {"earliest_action_date": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
-        {"earliest_action_date": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
-        {"earliest_action_date": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
-        {"earliest_action_date": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
-        {"earliest_action_date": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
-        {"earliest_action_date": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
-        {"earliest_action_date": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
-        {"earliest_action_date": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
-        {"earliest_action_date": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
-        {"earliest_action_date": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
-        {"earliest_action_date": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
-        {"earliest_action_date": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
+        {"date_signed": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
+        {"date_signed": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
+        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
+        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
+        {"date_signed": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
+        {"date_signed": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
+        {"date_signed": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
+        {"date_signed": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
+        {"date_signed": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
+        {"date_signed": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
+        {"date_signed": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
         # Intersect both date ranges searched for
-        {"earliest_action_date": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
-        {"earliest_action_date": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
-        {
-            "earliest_action_date": datetime(2014, 10, 3),  # All first; partial second
-            "action_date": datetime(2017, 4, 8),
-        },
-        {
-            "earliest_action_date": datetime(2015, 8, 1),  # Partial first; all second
-            "action_date": datetime(2018, 1, 2),
-        },
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
+        {"date_signed": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
+        {"date_signed": datetime(2014, 10, 3), "action_date": datetime(2017, 4, 8)},  # All first; partial second
+        {"date_signed": datetime(2015, 8, 1), "action_date": datetime(2018, 1, 2)},  # Partial first; all second
     ]
 
     award_id = 0
-    mock_model_list = []
 
     for award_category in award_category_list:
         for date_range in date_range_list:
             award_id += 1
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
-            mock_model_list.append(
-                MockModel(
-                    award_ts_vector="",
-                    type=award_type,
-                    category=award_category,
-                    type_of_contract_pricing="",
-                    naics_code=str(9000 + award_id),
-                    cfda_number=str(900 + award_id),
-                    pulled_from=None,
-                    uri=None,
-                    piid="abcdefg{}".format(award_id),
-                    fain=None,
-                    award_id=award_id,
-                    awarding_toptier_agency_name="Department of {}".format(award_id),
-                    awarding_toptier_agency_abbreviation="DOP",
-                    generated_pragmatic_obligation=10,
-                    earliest_action_date=date_range["earliest_action_date"],
-                    action_date=date_range["action_date"],
-                )
+            recipient = mommy.make("references.LegalEntity", legal_entity_id=2000 + award_id)
+            award = mommy.make(
+                "awards.Award",
+                id=award_id,
+                type=award_type,
+                category=award_category,
+                latest_transaction_id=1000 + award_id,
+                date_signed=date_range["date_signed"],
+                recipient=recipient,
+                piid="abcdefg{}".format(award_id),
+                fain="xyz{}".format(award_id),
+                uri="abcxyx{}".format(award_id),
             )
-
-    add_to_mock_objects(mock_matviews_qs, mock_model_list)
+            mommy.make(
+                "awards.TransactionNormalized", id=1000 + award_id, award=award, action_date=date_range["action_date"]
+            )
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_one_range(client, awards_over_different_date_ranges):
+def test_date_range_search_with_one_range(client, awards_over_different_date_ranges, refresh_matviews):
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
@@ -215,7 +201,7 @@ def test_date_range_search_with_one_range(client, awards_over_different_date_ran
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_two_ranges(client, awards_over_different_date_ranges):
+def test_date_range_search_with_two_ranges(client, awards_over_different_date_ranges, refresh_matviews):
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
@@ -284,10 +270,7 @@ def test_date_range_search_with_two_ranges(client, awards_over_different_date_ra
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert resp.data["results"] == [
-        {"Award ID": "abcdefg44", "internal_id": 44},
-        {"Award ID": "abcdefg33", "internal_id": 33},
-    ]
+    assert resp.data["results"] == [{"Award ID": "xyz44", "internal_id": 44}, {"Award ID": "xyz33", "internal_id": 33}]
 
     # Test with no award showing
     request_for_no_awards = {

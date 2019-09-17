@@ -55,7 +55,7 @@ def date_list_to_queryset(date_list, table):
 
         date_type_dict = v.get("date_type_dict", {"gte": "action_date", "lte": "action_date"})
         for date_type in date_type_dict.values():
-            if date_type not in ["action_date", "last_modified_date", "earliest_action_date"]:
+            if date_type not in ["action_date", "last_modified_date", "date_signed"]:
                 raise InvalidParameterException("Invalid date_type: {}".format(date_type))
 
         # (StartA <= EndB)  and  (EndA >= StartB)

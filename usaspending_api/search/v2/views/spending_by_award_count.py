@@ -36,10 +36,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         json_request = TinyShield(models).block(request.data)
         subawards = json_request["subawards"]
         filters = add_date_range_comparison_types(
-            json_request.get("filters", None),
-            subawards,
-            gte_date_type="action_date",
-            lte_date_type="earliest_action_date",
+            json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
         )
 
         if filters is None:

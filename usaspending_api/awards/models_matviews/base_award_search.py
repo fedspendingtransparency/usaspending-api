@@ -38,7 +38,6 @@ class BaseAwardSearchModel(models.Model):
     parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
 
-    earliest_action_date = models.DateField()
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     last_modified_date = models.TextField()

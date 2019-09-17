@@ -182,29 +182,23 @@ def awards_over_different_date_ranges_with_different_counts(mock_matviews_qs):
     #    - {"start_date": "2017-02-01", "end_date": "2017-11-30"}
     date_range_list = [
         # Intersect only one of the date ranges searched for
-        {"earliest_action_date": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
-        {"earliest_action_date": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
-        {"earliest_action_date": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
-        {"earliest_action_date": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
-        {"earliest_action_date": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
-        {"earliest_action_date": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
-        {"earliest_action_date": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
-        {"earliest_action_date": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
-        {"earliest_action_date": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
-        {"earliest_action_date": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
-        {"earliest_action_date": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
-        {"earliest_action_date": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
+        {"date_signed": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
+        {"date_signed": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
+        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
+        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
+        {"date_signed": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
+        {"date_signed": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
+        {"date_signed": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
+        {"date_signed": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
+        {"date_signed": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
+        {"date_signed": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
+        {"date_signed": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
         # Intersect both date ranges searched for
-        {"earliest_action_date": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
-        {"earliest_action_date": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
-        {
-            "earliest_action_date": datetime(2014, 10, 3),  # All first; partial second
-            "action_date": datetime(2017, 4, 8),
-        },
-        {
-            "earliest_action_date": datetime(2015, 8, 1),  # Partial first; all second
-            "action_date": datetime(2018, 1, 2),
-        },
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
+        {"date_signed": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
+        {"date_signed": datetime(2014, 10, 3), "action_date": datetime(2017, 4, 8)},  # All first; partial second
+        {"date_signed": datetime(2015, 8, 1), "action_date": datetime(2018, 1, 2)},  # Partial first; all second
     ]
 
     award_id = 0
@@ -232,7 +226,7 @@ def awards_over_different_date_ranges_with_different_counts(mock_matviews_qs):
                     awarding_toptier_agency_name="Department of {}".format(award_id),
                     awarding_toptier_agency_abbreviation="DOP",
                     generated_pragmatic_obligation=10,
-                    earliest_action_date=date_range["earliest_action_date"],
+                    date_signed=date_range["date_signed"],
                     action_date=date_range["action_date"],
                     counts=1,
                 )

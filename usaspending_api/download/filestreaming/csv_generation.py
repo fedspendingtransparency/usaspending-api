@@ -133,7 +133,7 @@ def get_csv_sources(json_request):
                 json_request["filters"],
                 is_subaward=download_type != "awards",
                 gte_date_type="action_date",
-                lte_date_type="earliest_action_date",
+                lte_date_type="date_signed",
             )
 
             queryset = filter_function(filters)
