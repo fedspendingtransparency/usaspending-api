@@ -3,6 +3,7 @@ from django.db import models
 
 class AwardSummaryMatview(models.Model):
     duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
+    earliest_action_date = models.DateField(blank=True, null=True)
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)

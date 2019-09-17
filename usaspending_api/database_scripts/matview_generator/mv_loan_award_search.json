@@ -29,6 +29,7 @@
     "  transaction_fabs.ultimate_parent_unique_ide AS parent_recipient_unique_id,",
     "  legal_entity.business_categories,",
     "",
+    "  awards.date_signed AS earliest_action_date,",
     "  latest_transaction.action_date,",
     "  latest_transaction.fiscal_year,",
     "  latest_transaction.last_modified_date,",

@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
+from copy import deepcopy
 import logging
 
 from django.db.models import Sum, F, Q, Case, When
@@ -52,11 +53,17 @@ def date_list_to_queryset(date_list, table):
     for v in date_list:
         # Modified May 2018 so that there will always be a start and end value from combine_date_range_queryset()
 
-        date_type = v.get("date_type", "action_date")
-        if date_type not in ["action_date", "last_modified_date", "date_signed"]:
-            raise InvalidParameterException("Invalid date_type: {}".format(date_type))
+        date_type_dict = v.get("date_type_dict", {"gte": "action_date", "lte": "action_date"})
+        for date_type in date_type_dict.values():
+            if date_type not in ["action_date", "last_modified_date", "earliest_action_date"]:
+                raise InvalidParameterException("Invalid date_type: {}".format(date_type))
 
-        kwargs = {"{}__gte".format(date_type): v["start_date"], "{}__lte".format(date_type): v["end_date"]}
+        # (StartA <= EndB)  and  (EndA >= StartB)
+        # where "A" is an Award and "B" is the date range being searched
+        kwargs = {
+            "{}__gte".format(date_type_dict["gte"]): v["start_date"],
+            "{}__lte".format(date_type_dict["lte"]): v["end_date"],
+        }
         or_queryset |= Q(**kwargs)
 
     return table.objects.filter(or_queryset)
@@ -64,7 +71,17 @@ def date_list_to_queryset(date_list, table):
 
 def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format="%Y-%m-%d"):
     final_ranges = []
-    for date_type in set([v.get("date_type", "action_date") for v in date_dicts]):
+    date_type_list = []
+
+    for time_period in date_dicts:
+        dt_type = time_period.get("date_type", "action_date")
+        gte_dt_type = time_period.get("gte_date_type")
+        lte_dt_type = time_period.get("lte_date_type")
+        date_type_list.append(
+            (gte_dt_type, lte_dt_type) if gte_dt_type is not None and lte_dt_type is not None else (dt_type, dt_type)
+        )
+
+    for date_type_tuple in set(date_type_list):
         list_of_ranges = [
             (
                 datetime.strptime(v.get("start_date", None) or min_start, dt_format),
@@ -75,7 +92,11 @@ def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format
 
         final_ranges.extend(
             [
-                {"start_date": r[0], "end_date": r[1], "date_type": date_type}
+                {
+                    "start_date": r[0],
+                    "end_date": r[1],
+                    "date_type_dict": {"gte": date_type_tuple[0], "lte": date_type_tuple[1]},
+                }
                 for r in list(merge_date_ranges(list_of_ranges))
             ]
         )
@@ -275,3 +296,17 @@ def get_descendant_award_ids(root_idv_award_id, include_child_idvs):
     with connection.cursor() as cursor:
         cursor.execute(sql, {"root_idv_award_id": root_idv_award_id})
         return [row[0] for row in cursor.fetchall()]
+
+
+def add_date_range_comparison_types(filters, is_subaward, gte_date_type, lte_date_type):
+    if filters is None:
+        return None
+
+    # Use deepcopy to make changes to avoid conflicts when filters are looped over.
+    filters_deepcopy = deepcopy(filters)
+    if not is_subaward and filters_deepcopy.get("time_period") is not None:
+        for time_period in filters_deepcopy["time_period"]:
+            time_period["gte_date_type"] = gte_date_type
+            time_period["lte_date_type"] = lte_date_type
+
+    return filters_deepcopy
