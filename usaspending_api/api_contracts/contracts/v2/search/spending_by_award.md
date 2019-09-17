@@ -71,6 +71,8 @@ List of table columns
 ## SpendingByAwardResponse (object)
 + `Recipient Name` (optional, string, nullable)
 + `Recipient DUNS Number` (optional, string, nullable)
++ `recipient_id` (optional, string, nullable)
+    A unique identifier for the recipient which includes the recipient hash and level.
 + `Awarding Agency` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
 + `Awarding Sub Agency` (optional, string, nullable)
@@ -100,7 +102,7 @@ List of table columns
 + `Issued Date` (optional, string, nullable)
 + `Loan Value` (optional, number, nullable)
 + `Subsidy Cost` (optional, number, nullable)
-+ `internal_id`  (optional, string)
++ `internal_id` (optional, string)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

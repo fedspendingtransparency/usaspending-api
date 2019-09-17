@@ -281,7 +281,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset = queryset.filter(or_queryset)
 
         elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, model, value)
+            queryset = build_tas_codes_filter(queryset, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":

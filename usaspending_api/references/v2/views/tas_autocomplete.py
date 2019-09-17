@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import TASAutocompleteMatview
+from usaspending_api.agencies.models import CGAC
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.references.models import CGAC
 
 
 TINY_SHIELD_MODELS = [
@@ -33,6 +33,7 @@ class TASAutocomplete(APIView):
     and since documentation is tied to the view class, we need a class per
     endpoint.
     """
+
     @staticmethod
     def _parse_and_validate_request(request_data):
         return TinyShield(deepcopy(TINY_SHIELD_MODELS)).block(request_data)
@@ -93,6 +94,7 @@ class TASAutocompleteATA(TASAutocomplete):
     Returns the list of potential Allocation Transfer Agency Identifiers
     narrowed by other components supplied in the Treasury Account filter.
     """
+
     component = "ata"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/ata.md"
 
@@ -102,6 +104,7 @@ class TASAutocompleteAID(TASAutocomplete):
     Returns the list of potential Agency Identifiers narrowed by other
     components supplied in the Treasury Account or Federal Account filter.
     """
+
     component = "aid"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/aid.md"
 
@@ -111,6 +114,7 @@ class TASAutocompleteBPOA(TASAutocomplete):
     Returns the list of potential Beginning Period of Availabilities
     narrowed by other components supplied in the Treasury Account filter.
     """
+
     component = "bpoa"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/bpoa.md"
 
@@ -120,6 +124,7 @@ class TASAutocompleteEPOA(TASAutocomplete):
     Returns the list of potential Ending Period of Availabilities
     narrowed by other components supplied in the Treasury Account filter.
     """
+
     component = "epoa"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/epoa.md"
 
@@ -129,6 +134,7 @@ class TASAutocompleteA(TASAutocomplete):
     Returns the list of potential Availability Type Codes
     narrowed by other components supplied in the Treasury Account filter.
     """
+
     component = "a"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/a.md"
 
@@ -138,6 +144,7 @@ class TASAutocompleteMAIN(TASAutocomplete):
     Returns the list of potential Main Account Codes narrowed by other
     components supplied in the Treasury Account or Federal Account filter.
     """
+
     component = "main"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/main.md"
 
@@ -147,5 +154,6 @@ class TASAutocompleteSUB(TASAutocomplete):
     Returns the list of potential Sub Account Codes
     narrowed by other components supplied in the Treasury Account filter.
     """
+
     component = "sub"
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/accounts/sub.md"

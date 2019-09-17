@@ -2,24 +2,29 @@ language: python
 
 python:
   - '3.5'
+  - '3.7'
 
 services:
   - postgresql
 
 addons:
-  postgresql: '9.6'
+  postgresql: '10'
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
 
 env:
   global:
-    - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
-    - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
-    - ES_HOSTNAME='http://localhost:9200'
+  - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+  - ES_HOSTNAME='http://localhost:9200'
 
 before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - pip install -r requirements/requirements.txt
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
 
 before_script:
@@ -31,6 +36,7 @@ before_script:
 
 script:
   - flake8
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
   - pytest --cov=usaspending_api
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)

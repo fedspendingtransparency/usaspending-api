@@ -1,42 +1,27 @@
 from django.db.models import Q
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.accounts.models import TASAutocompleteMatview, TASSearchMatview
-from usaspending_api.common.helpers.orm_helpers import generate_where_clause
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
-def build_tas_codes_filter(queryset, model, tas_filters):
+def build_tas_codes_filter(queryset, tas_filters):
     """
-    We're using full text indexes to find TAS.  To query these, we will need
-    to grab all of the valid TAS for the provided filter, construct a full text
-    query string, then perform a full text search.
+    Filter the queryset to take advantage of the GIN indexed integer array of
+    treasury_appropriation_account treasury_account_identifiers by:
+
+        - Grabbing the list of all treasury_account_identifiers that match the filters provided.
+        - Assembling an integer array overlap (&&) query to search for those integers.
     """
 
-    # Build a queryset filter that contains all of the TAS request filters.
-    where = Q()
+    tas_qs = Q()
     for tas_filter in tas_filters:
-        where |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
+        tas_qs |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
 
-    if where:
+    # No sense continuing if this resulted in an empty Q statement for whatever reason.
+    if not tas_qs:
+        return queryset
 
-        # Build a full text OR query (any one of the TASes can match).  This is
-        # done by concatenating the TASes together using pipes.
-        tas_query = "|".join(TASAutocompleteMatview.objects.filter(where).values_list("tas_rendering_label", flat=True))
-        tas_queryset = TASSearchMatview.objects.extra(
-            where=['"{}"."tas_ts_vector" @@ %s::tsquery'.format(TASSearchMatview._meta.db_table)],
-            params=[tas_query]
+    return queryset.filter(
+        treasury_account_identifiers__overlap=list(
+            TreasuryAppropriationAccount.objects.filter(tas_qs).values_list("treasury_account_identifier", flat=True)
         )
-
-        # Now that we've built the actual queryset filter, let's turn it into SQL
-        # that we can provide to the queryset.extra method.  We do this by converting
-        # the queryset to raw SQL and nabbing the where clause.
-        where_sql, where_params = generate_where_clause(tas_queryset)
-        return queryset.extra(
-            tables=[TASSearchMatview._meta.db_table],
-            where=[
-                '"{}".award_id = "{}".award_id'.format(TASSearchMatview._meta.db_table, model._meta.db_table),
-                where_sql,
-            ],
-            params=where_params
-        )
-
-    return queryset
+    )

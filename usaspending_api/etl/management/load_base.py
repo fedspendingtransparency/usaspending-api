@@ -24,7 +24,6 @@ logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
 
         parser.add_argument(
