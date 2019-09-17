@@ -46,3 +46,4 @@ jsonpickle==0.9.6
 filechunkio==1.8
 pip==19.2.2
 asyncpg==0.18.3
+sqlparse==0.3.0
