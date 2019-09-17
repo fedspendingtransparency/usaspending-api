@@ -56,7 +56,6 @@ def populate_naics_fields(ws, naics_year, path):
                     "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path))
 
 
-
 def load_single_naics(naics_code, naics_year, naics_desc):
 
     # crude way of ignoring naics of length 3 and 5
