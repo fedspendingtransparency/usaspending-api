@@ -140,7 +140,7 @@ query_paths = {
                 ("type_of_idc", "award__latest_transaction__contract_data__type_of_idc_description"),
                 ("type_of_contract_pricing_code", "award__latest_transaction__contract_data__type_of_contract_pricing"),
                 ("type_of_contract_pricing", "award__latest_transaction__contract_data__type_of_contract_pric_desc"),
-                ("award_description", "award__award_description"),
+                ("award_description", "award__description"),
                 ("solicitation_identifier", "award__latest_transaction__contract_data__solicitation_identifier"),
                 ("number_of_actions", "award__latest_transaction__contract_data__number_of_actions"),
                 (
@@ -677,7 +677,7 @@ query_paths = {
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("assistance_type_code", "award__latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "award__latest_transaction__assistance_data__assistance_type_desc"),
-                ("award_description", "award__award_description"),
+                ("award_description", "award__description"),
                 (
                     "business_funds_indicator_code",
                     "award__latest_transaction__assistance_data__business_funds_indicator",
