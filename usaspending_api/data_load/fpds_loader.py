@@ -73,20 +73,20 @@ def run_fpds_load(id_list):
     for chunk in chunks:
         with Timer() as timer:
             logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
-            modified_awards.extend(load_chunk(chunk))
+            modified_awards.extend(_load_chunk(chunk))
         logger.info("ran load in {}".format(str(timer.elapsed)))
     return modified_awards
 
 
-def load_chunk(chunk):
-    broker_transactions = fetch_broker_objects(chunk)
+def _load_chunk(chunk):
+    broker_transactions = _extract_broker_objects(chunk)
 
-    load_objects = generate_load_objects(broker_transactions)
+    load_objects = _transform_objects(broker_transactions)
 
-    return load_transactions(load_objects)
+    return _load_transactions(load_objects)
 
 
-def fetch_broker_objects(id_list):
+def _extract_broker_objects(id_list):
     detached_award_procurements = []
 
     formatted_id_list = "({})".format(",".join(map(str, id_list)))
@@ -105,7 +105,7 @@ def fetch_broker_objects(id_list):
     return detached_award_procurements
 
 
-def create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
+def _create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
     retval = {}
     if non_boolean_column_map:
         retval.update(
@@ -122,21 +122,21 @@ def create_load_object(broker_object, non_boolean_column_map, boolean_column_map
     return retval
 
 
-def generate_load_objects(broker_objects):
+def _transform_objects(broker_objects):
     retval = []
 
     for broker_object in broker_objects:
         connected_objects = {}
 
-        connected_objects["recipient_location"] = create_load_object(
+        connected_objects["recipient_location"] = _create_load_object(
             broker_object, recipient_location_columns, None, recipient_location_functions
         )
 
-        connected_objects["legal_entity"] = create_load_object(
+        connected_objects["legal_entity"] = _create_load_object(
             broker_object, legal_entity_columns, legal_entity_boolean_columns, legal_entity_functions
         )
 
-        connected_objects["place_of_performance_location"] = create_load_object(
+        connected_objects["place_of_performance_location"] = _create_load_object(
             broker_object, place_of_performance_columns, None, place_of_performance_functions
         )
 
@@ -144,13 +144,13 @@ def generate_load_objects(broker_objects):
         connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
 
         # award. NOT used if a matching award is found later
-        connected_objects["award"] = create_load_object(broker_object, None, None, award_functions)
+        connected_objects["award"] = _create_load_object(broker_object, None, None, award_functions)
 
-        connected_objects["transaction_normalized"] = create_load_object(
+        connected_objects["transaction_normalized"] = _create_load_object(
             broker_object, transaction_normalized_columns, None, transaction_normalized_functions
         )
 
-        connected_objects["transaction_fpds"] = create_load_object(
+        connected_objects["transaction_fpds"] = _create_load_object(
             broker_object, transaction_fpds_columns, transaction_fpds_boolean_columns, transaction_fpds_functions
         )
 
@@ -158,15 +158,15 @@ def generate_load_objects(broker_objects):
     return retval
 
 
-def load_transactions(load_objects):
+def _load_transactions(load_objects):
     """returns ids for each award touched"""
     retval = []
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             # First cr
-            load_recipient_locations(cursor, load_objects)
-            load_recipients(cursor, load_objects)
-            load_place_of_performance(cursor, load_objects)
+            _load_recipient_locations(cursor, load_objects)
+            _load_recipients(cursor, load_objects)
+            _load_place_of_performance(cursor, load_objects)
 
             for load_object in load_objects:
 
@@ -252,7 +252,7 @@ def load_transactions(load_objects):
     return retval
 
 
-def load_recipient_locations(cursor, load_objects):
+def _load_recipient_locations(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "recipient_location")
     recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
@@ -267,7 +267,7 @@ def load_recipient_locations(cursor, load_objects):
         load_objects[index]["legal_entity"]["location_id"] = results[index][0]
 
 
-def load_recipients(cursor, load_objects):
+def _load_recipients(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "legal_entity")
     recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
@@ -281,7 +281,7 @@ def load_recipients(cursor, load_objects):
         load_objects[index]["award"]["recipient_id"] = results[index][0]
 
 
-def load_place_of_performance(cursor, load_objects):
+def _load_place_of_performance(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "place_of_performance_location")
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)

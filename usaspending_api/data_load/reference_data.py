@@ -6,7 +6,7 @@ USASPENDING_CONNECTION_STRING = get_database_dsn_string()
 SUBTIER_AGENCY_LIST_CACHE = {}
 
 
-def fetch_reference_data():
+def _fetch_reference_data():
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             sql = (
@@ -25,6 +25,6 @@ def subtier_agency_list():
     """Returns all rows from subtier_agency table. Does NOT refresh if called twice,
     and does NOT make a copy that you can modify"""
     if not SUBTIER_AGENCY_LIST_CACHE:
-        fetch_reference_data()
+        _fetch_reference_data()
 
     return SUBTIER_AGENCY_LIST_CACHE

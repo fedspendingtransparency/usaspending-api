@@ -1,9 +1,9 @@
 from usaspending_api.data_load.fpds_loader import (
     setup_load_lists,
-    fetch_broker_objects,
-    create_load_object,
-    generate_load_objects,
-    load_transactions,
+    _extract_broker_objects,
+    _create_load_object,
+    _transform_objects,
+    _load_transactions,
 )
 from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_columns,
@@ -70,7 +70,7 @@ def test_setup_load_lists():
 def test_load_from_broker(monkeypatch):
     # There isn't much to test here since this is just a basic DB query
     mock_cursor(monkeypatch, ["mock thing 1", "mock thing 2"])
-    assert fetch_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
+    assert _extract_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
 
 
 # This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
@@ -123,7 +123,7 @@ def test_create_load_object(monkeypatch):
     }
     mock_cursor(monkeypatch, data)
 
-    actual_result = create_load_object(data, recipient_location_columns, custom_bools, recipient_location_functions)
+    actual_result = _create_load_object(data, recipient_location_columns, custom_bools, recipient_location_functions)
     actual_result.pop("create_date", None)
     actual_result.pop("update_date", None)
     assert actual_result == result
@@ -155,7 +155,7 @@ def test_load_transactions(monkeypatch):
 
     mega_key_list["action_date"] = "2007-10-01 00:00:00"
 
-    load_objects = generate_load_objects([mega_key_list])
+    load_objects = _transform_objects([mega_key_list])
 
     mock_cursor(monkeypatch, [[10]])  # ids for linked objects. No real DB so can't check that they really link
-    load_transactions(load_objects)
+    _load_transactions(load_objects)

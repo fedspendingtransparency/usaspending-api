@@ -112,16 +112,16 @@ class Command(BaseCommand):
         if options["reload_all"]:
             self.load_fpds_from_date(None)
 
-        if options["ids"]:
-            self.modified_award_ids.extend(run_fpds_load(options["ids"]))
-
-        if options["file"]:
-            self.load_fpds_from_file(options["file"])
-
-        if options["date"]:
+        elif options["date"]:
             self.load_fpds_from_date(options["date"])
 
-        if options["since_last_load"]:
+        elif options["ids"]:
+            self.modified_award_ids.extend(run_fpds_load(options["ids"]))
+
+        elif options["file"]:
+            self.load_fpds_from_file(options["file"])
+
+        elif options["since_last_load"]:
             self.load_fpds_from_date(get_last_load_date("fpds"))
 
         update_last_load_date("fpds", last_update_time)  # only update if we don't crash
