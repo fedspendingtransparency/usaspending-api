@@ -106,9 +106,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
         # loads can take a while, so we record last updated date from the start of all transactions
-        # one day is subtracted to account for any submissions that are still entering the system when the loader is run
-        last_update_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        last_update_time = datetime.now(timezone.utc)
 
         if options["reload_all"]:
             self.load_fpds_from_date(None)
@@ -123,14 +123,15 @@ class Command(BaseCommand):
             self.load_fpds_from_file(options["file"])
 
         elif options["since_last_load"]:
-            self.load_fpds_from_date(get_last_load_date("fpds"))
+            # minus one day to account for any submissions that are still entering the system when the loader is run
+            self.load_fpds_from_date(get_last_load_date("fpds") - timedelta(days=1))
 
         if options["reload_all"] or options["since_last_load"]:
             update_last_load_date("fpds", last_update_time)  # only update if we don't crash
-        logger.info("cleaning orphaned rows")
-        destroy_orphans()
 
         if self.modified_award_ids:
+            logger.info("cleaning orphaned rows")
+            destroy_orphans()
             logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
             update_awards(tuple(self.modified_award_ids))
             update_contract_awards(tuple(self.modified_award_ids))
