@@ -19,20 +19,12 @@ import re
 import math
 import psycopg2
 import time
-# import sys
+# import argparse
 
 from os import environ
-# from pathlib import Path
-
-# Obtuse logic to import this helper module no matter where this script is run
-# import_path = Path(__file__).resolve().parent.parent.parent.parent
-# sys.path.append(str(import_path))
-
-# from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, award_types
 
 
 # DEFINE THIS ENVIRONMENT VARIABLE BEFORE RUNNING!
-# Obvs, this is the connection string to the database.
 CONNECTION_STRING = environ["DATABASE_URL"]
 CHUNK_SIZE = 10000
 DEBUG = False
@@ -195,24 +187,19 @@ GET_FABS_AWARDS = "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {m
 
 
 class Timer:
+    def __init__(self, msg, pipe_output=print):
+        self.print_func = pipe_output
+        self.msg = msg
+
     def __enter__(self):
         self.start = time.perf_counter()
+        self.print_func("{} starting...".format(self.msg))
         return self
 
     def __exit__(self, *args, **kwargs):
         self.end = time.perf_counter()
         self.elapsed = self.end - self.start
-        self.elapsed_as_string = self.pretty_print(self.elapsed)
-
-    def snapshot(self):
-        end = time.perf_counter()
-        return self.pretty_print(end - self.start)
-
-    def estimated_remaining_runtime(self, ratio):
-        end = time.perf_counter()
-        elapsed = end - self.start
-        est = max((elapsed / ratio) - elapsed, 0.0)
-        return self.pretty_print(est)
+        self.print_func("{} completed in {}".format(self.msg, self.pretty_print(self.elapsed)))
 
     @staticmethod
     def pretty_print(elapsed):
@@ -270,29 +257,22 @@ def main():
         print("Max ID: {:,}".format(max_id))
         print("Total in range: {:,}".format(max_id - min_id + 1), flush=True)
 
-        _min = min_id
-        while _min <= max_id:
-            with Timer() as chunk_timer:
-                _max = min(_min + CHUNK_SIZE - 1, max_id)
+        batch_min = min_id
+        while batch_min <= max_id:
+            batch_max = min(batch_min + CHUNK_SIZE - 1, max_id)
+            with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max)):
                 with connection.cursor() as cursor:
-                    cursor.execute(GET_FABS_AWARDS.format(minid=_min, maxid=_max))
+                    cursor.execute(GET_FABS_AWARDS.format(minid=batch_min, maxid=batch_max))
                     fabs = [str(row[0]) for row in cursor.fetchall()]
-                    cursor.execute(GET_FPDS_AWARDS.format(minid=_min, maxid=_max))
+                    cursor.execute(GET_FPDS_AWARDS.format(minid=batch_min, maxid=batch_max))
                     fpds = [str(row[0]) for row in cursor.fetchall()]
 
                 if fabs or fpds:
                     row_count = run_update_query(fabs_awards=fabs, fpds_awards=fpds)
+                    print("UPDATED {:,} records".format(row_count), flush=True)
                 else:
-                    print("#### No awards to update in range ({}-{}) ###".format(_min, _max), flush=True)
-                    row_count = 0
-
-            print(
-                "{:,} => {:,}: {:,} updated in {}".format(
-                    _min, _max, row_count, chunk_timer.elapsed_as_string
-                ),
-                flush=True,
-            )
-            _min = _max + 1
+                    print("#### No awards to update in range ###", flush=True)
+            batch_min = batch_max + 1
 
 
 def setup():
@@ -308,26 +288,27 @@ def teardown(successful_run=False):
     with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
-            if successful_run:
-                with Timer():
+            with Timer("teardown"):
+                if successful_run:
                     print("### running full vacuum ###")
                     cursor.execute("VACUUM (FULL, ANALYZE, VERBOSE) awards")
                     print(cursor.statusmessage)
-            print("### Resetting autovacuum ###")
-            cursor.execute("ALTER TABLE awards SET (autovacuum_enabled = true, toast.autovacuum_enabled = true)")
-            print(cursor.statusmessage)
+                print("### Resetting autovacuum ###")
+                cursor.execute("ALTER TABLE awards SET (autovacuum_enabled = true, toast.autovacuum_enabled = true)")
+                print(cursor.statusmessage)
 
 
 if __name__ == "__main__":
-    with Timer() as overall_timer:
+    successful_run = False
+    with Timer("recompute_all_awards"):
         setup()
         try:
             main()
             successful_run = True
-        except Exception:
-            successful_run = False
+        except (Exception, KeyboardInterrupt):
+            pass
         finally:
             print("Cleaning up table and restoring autovacuum")
             teardown(successful_run)
 
-    print("Finished.  Overall run time: %s" % overall_timer.elapsed_as_string)
+    print("Finished.")
