@@ -46,35 +46,30 @@ ProcessingStep = namedtuple("ProcessingStep", ["description", "file", "function"
 
 PROCESSING_STEPS = [
     ProcessingStep("Create raw agency temp table", "raw_agency_create_temp_table", None, False, False),
-
     ProcessingStep("Read raw agencies csv", None, "_read_raw_agencies_csv", False, False),
     ProcessingStep("Validate raw agencies", None, "_validate_raw_agencies", False, False),
     ProcessingStep("Import raw agencies", None, "_import_raw_agencies", False, False),
-
     ProcessingStep("Recreate CGACs", "cgac_recreate", None, False, False),
     ProcessingStep("Recreate FRECs", "frec_recreate", None, False, False),
-
     ProcessingStep("Create toptier agency temp table", "toptier_agency_create_temp_table", None, False, False),
     ProcessingStep("Delete obsolete toptier agencies", "toptier_agency_delete", None, True, False),
     ProcessingStep("Update existing toptier agencies", "toptier_agency_update", None, True, False),
     ProcessingStep("Create new toptier agencies", "toptier_agency_create", None, True, False),
-
     ProcessingStep("Create subtier agency temp table", "subtier_agency_create_temp_table", None, False, False),
     ProcessingStep("Delete obsolete subtier agencies", "subtier_agency_delete", None, True, False),
     ProcessingStep("Update existing subtier agencies", "subtier_agency_update", None, True, False),
     ProcessingStep("Create new subtier agencies", "subtier_agency_create", None, True, False),
-
     ProcessingStep("Create agency temp table", "agency_create_temp_table", None, False, False),
     ProcessingStep("Delete obsolete agencies", "agency_delete", None, True, False),
     ProcessingStep("Update existing agencies", "agency_update", None, True, False),
     ProcessingStep("Create new agencies", "agency_create", None, True, False),
     ProcessingStep("Set preferred agencies", "toptier_agency_set_preferred_agency", None, False, False),
-
-    ProcessingStep("Update treasury appropriation accounts", "treasury_appropriation_account_update", None, False, True),
+    ProcessingStep(
+        "Update treasury appropriation accounts", "treasury_appropriation_account_update", None, False, True
+    ),
     ProcessingStep("Update transactions", "transaction_normalized_update", None, False, True),
     ProcessingStep("Update awards", "award_update", None, False, True),
     ProcessingStep("Update subawards", "subaward_update", None, False, True),
-
     ProcessingStep("Clean up", "clean_up", None, False, False),
 ]
 
@@ -179,18 +174,32 @@ class Command(BaseCommand):
             if agency.is_frec is True and agency.frec is None:
                 messages.append("Row number {:,} is marked as IS_FREC but has no FREC".format(agency.row_number))
             if agency.is_frec is not True and agency.cgac_agency_code is None:
-                messages.append("Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number))
+                messages.append(
+                    "Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number)
+                )
             if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
-                messages.append("Row number {:,} has CGAC AGENCY CODE that is not 3 characters long ({})".format(agency.row_number, agency.cgac_agency_code))
+                messages.append(
+                    "Row number {:,} has CGAC AGENCY CODE that is not 3 characters long ({})".format(
+                        agency.row_number, agency.cgac_agency_code
+                    )
+                )
             if agency.frec and len(agency.frec) != 4:
-                messages.append("Row number {:,} has FREC that is not 4 characters long ({})".format(agency.row_number, agency.frec))
+                messages.append(
+                    "Row number {:,} has FREC that is not 4 characters long ({})".format(agency.row_number, agency.frec)
+                )
             if agency.subtier_code and len(agency.subtier_code) != 4:
-                messages.append("Row number {:,} has SUBTIER CODE that is not 4 characters long ({})".format(agency.row_number, agency.subtier_code))
+                messages.append(
+                    "Row number {:,} has SUBTIER CODE that is not 4 characters long ({})".format(
+                        agency.row_number, agency.subtier_code
+                    )
+                )
 
         if messages:
             for message in messages:
                 logger.error(message)
-            raise RuntimeError("{:,} problem(s) have been found with the agency file.  See log for details.".format(len(messages)))
+            raise RuntimeError(
+                "{:,} problem(s) have been found with the agency file.  See log for details.".format(len(messages))
+            )
 
     def _import_raw_agencies(self):
         with self.connection.cursor() as cursor:
