@@ -29,7 +29,7 @@ def unique_transaction_id(broker_input):
     return broker_input["detached_award_proc_unique"]
 
 
-def now(broker_input):
+def current_datetime(broker_input):
     return datetime.now(timezone.utc)
 
 

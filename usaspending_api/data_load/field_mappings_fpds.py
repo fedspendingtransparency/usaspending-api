@@ -3,7 +3,7 @@ from usaspending_api.data_load.derived_field_functions_fpds import (
     calculate_awarding_agency,
     calculate_funding_agency,
     unique_transaction_id,
-    now,
+    current_datetime,
     business_categories,
 )
 
@@ -346,8 +346,8 @@ transaction_normalized_functions = {
     "funding_agency_id": calculate_funding_agency,
     "funding_amount": lambda broker: None,
     "non_federal_funding_amount": lambda broker: None,  # FABS only
-    "create_date": now,  # Data loader won't add this value if it's an update
-    "update_date": now,
+    "create_date": current_datetime,  # Data loader won't add this value if it's an update
+    "update_date": current_datetime,
 }
 
 # broker column name -> usaspending column name
@@ -469,8 +469,8 @@ legal_entity_functions = {
     "small_business": lambda broker: None,  # ?
     "small_business_description": lambda broker: None,  # ?
     "individual": lambda broker: None,  # ?
-    "create_date": now,  # Data loader won't add this value if it's an update
-    "update_date": now,
+    "create_date": current_datetime,  # Data loader won't add this value if it's an update
+    "update_date": current_datetime,
 }
 
 # broker column name -> usaspending column name
@@ -497,8 +497,8 @@ recipient_location_functions = {
     "place_of_performance_flag": lambda broker: False,
     "recipient_flag": lambda broker: True,
     "transaction_unique_id": unique_transaction_id,
-    "create_date": now,  # Data loader won't add this value if it's an update
-    "update_date": now,
+    "create_date": current_datetime,  # Data loader won't add this value if it's an update
+    "update_date": current_datetime,
 }
 
 # broker column name -> usaspending column name
@@ -525,8 +525,8 @@ place_of_performance_functions = {
     "address_line1": lambda broker: None,
     "address_line2": lambda broker: None,
     "address_line3": lambda broker: None,
-    "create_date": now,  # Data loader won't add this value if it's an update
-    "update_date": now,
+    "create_date": current_datetime,  # Data loader won't add this value if it's an update
+    "update_date": current_datetime,
 }
 
 # usaspending column name -> derivation function
@@ -538,6 +538,6 @@ award_functions = {
     "awarding_agency_id": calculate_awarding_agency,
     "funding_agency_id": calculate_funding_agency,
     "data_source": lambda broker: "DBR",
-    "create_date": now,  # Data loader won't add this value if it's an update
-    "update_date": now,
+    "create_date": current_datetime,  # Data loader won't add this value if it's an update
+    "update_date": current_datetime,
 }

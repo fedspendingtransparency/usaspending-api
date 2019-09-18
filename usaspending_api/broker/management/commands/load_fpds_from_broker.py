@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans
+from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, load_chunk
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -16,9 +16,9 @@ logger = logging.getLogger("console")
 
 BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
-CHUNK_SIZE = 10000  # Completely arbitrary and not backed by any testing, this can likely go higher
+CHUNK_SIZE = 5000
 
-ALL_FPDS_QUERY = "SELECT detached_award_procurement_id FROM detached_award_procurement"
+ALL_FPDS_QUERY = "SELECT * FROM detached_award_procurement"
 
 
 class Command(BaseCommand):
@@ -29,7 +29,7 @@ class Command(BaseCommand):
     @staticmethod
     def get_cursor_for_date_query(date):
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            db_cursor = connection.cursor()
+            db_cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             db_query = ALL_FPDS_QUERY
             if date:
                 db_query += " WHERE updated_at >= %s;"
@@ -46,11 +46,11 @@ class Command(BaseCommand):
             logger.info("fetching fpds transactions since {}...".format(str(date)))
         cursor = self.get_cursor_for_date_query(date)
         while True:
-            id_list = [id[0] for id in cursor.fetchmany(CHUNK_SIZE)]
+            id_list = [id for id in cursor.fetchmany(CHUNK_SIZE)]
             if len(id_list) == 0:
                 break
             logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-            self.modified_award_ids.extend(run_fpds_load(id_list))
+            self.modified_award_ids.extend(load_chunk(id_list))
 
     @staticmethod
     def next_file_batch_generator(file):
