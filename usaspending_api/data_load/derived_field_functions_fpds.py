@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.data_load.reference_data import subtier_agency_list
+from usaspending_api.data_load.cached_reference_data import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
 

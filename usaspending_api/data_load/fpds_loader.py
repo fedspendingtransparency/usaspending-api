@@ -87,8 +87,6 @@ def _load_chunk(chunk):
 
 
 def _extract_broker_objects(id_list):
-    detached_award_procurements = []
-
     formatted_id_list = "({})".format(",".join(map(str, id_list)))
 
     with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
@@ -99,10 +97,8 @@ def _extract_broker_objects(id_list):
 
             cursor.execute(sql)
             results = cursor.fetchall()
-            for result in results:
-                detached_award_procurements.append(result)
 
-    return detached_award_procurements
+    return results
 
 
 def _create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
@@ -116,8 +112,7 @@ def _create_load_object(broker_object, non_boolean_column_map, boolean_column_ma
         retval.update({boolean_column_map[key]: false_if_null(broker_object[key]) for key in boolean_column_map})
 
     if function_map:
-        for key in function_map:
-            retval[key] = function_map[key](broker_object)
+        retval.update({key: func(broker_object) for key, func in function_map.items()})
 
     return retval
 

@@ -357,6 +357,8 @@ legal_entity_columns = {
     "vendor_phone_number": "vendor_phone_number",
     "vendor_fax_number": "vendor_fax_number",
     "awardee_or_recipient_uniqu": "recipient_unique_id",
+    "ultimate_parent_legal_enti": "parent_recipient_name",
+    "ultimate_parent_unique_ide": "parent_recipient_unique_id",
     "limited_liability_corporat": "limited_liability_corporation",
     "sole_proprietorship": "sole_proprietorship",
     "partnership_or_limited_lia": "partnership_or_limited_liability_partnership",
@@ -459,7 +461,6 @@ legal_entity_functions = {
     "is_fpds": lambda broker: True,
     "transaction_unique_id": unique_transaction_id,
     "data_source": lambda broker: "DBR",
-    "parent_recipient_unique_id": lambda broker: None,  # FABS only
     "business_types": lambda broker: None,  # FABS only
     "business_types_description": lambda broker: None,  # FABS only
     "business_categories": business_categories,
@@ -468,7 +469,6 @@ legal_entity_functions = {
     "small_business": lambda broker: None,  # ?
     "small_business_description": lambda broker: None,  # ?
     "individual": lambda broker: None,  # ?
-    "parent_recipient_name": lambda broker: None,  # ?
     "create_date": now,  # Data loader won't add this value if it's an update
     "update_date": now,
 }
