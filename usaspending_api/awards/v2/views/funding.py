@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
@@ -18,10 +18,11 @@ SORTABLE_COLUMNS = {
     "transaction_obligated_amount": "transaction_obligated_amount",
     "agency": "funding_agency_name",
     "account_title": "fa.account_title",
-    "object_class": ["oc.object_class_name", "oc.object_class"],
-    "program_activity": ["rpa.program_activity_code", "rpa.program_activity_name"],
+    "object_class": ["oc.object_class", "oc.object_class_name"],
+    "program_activity": ["pa.program_activity_code", "pa.program_activity_name"],
     "reporting_fiscal_date": ["sa.reporting_fiscal_year", "sa.reporting_fiscal_quarter"],
-    "transaction_obligated_amount": ["gfaba.transaction_obligated_amount"],
+    "funding_agency_name": "funding_agency_name",
+    "awarding_agency_name": "funding_agency_name",
 }
 
 
@@ -60,7 +61,7 @@ FUNDING_SQL = SQL(
         where t.per_toptier_row_number = 1
     )
     select
-        coalesce(gfaba.transaction_obligated_amount, 0.0)              total_transaction_obligated_amount,
+        coalesce(gfaba.transaction_obligated_amount, 0.0)              transaction_obligated_amount,
         taa.agency_id || '-' || taa.main_account_code                  federal_account,
         fa.account_title,
         afmap.toptier_agency_name                                      funding_agency_name,
@@ -94,8 +95,8 @@ FUNDING_SQL = SQL(
          federal_account, fa.account_title, funding_agency_name, awarding_agency_name, afmap.agency_id, aamap.agency_id,
          oc.object_class_name, pa.program_activity_name, oc.object_class, pa.program_activity_code,
          sa.reporting_fiscal_year, sa.reporting_fiscal_quarter, gfaba.transaction_obligated_amount
-    order by
-        {order_by} {order_direction};
+    {order_by}
+    limit {limit} offset {offset};
 """
 )
 
@@ -123,8 +124,9 @@ class AwardFundingViewSet(APIView):
         sql = FUNDING_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
-            order_by=SQL(SORTABLE_COLUMNS[request_data["sort"]]),
-            order_direction=SQL(request_data["order"]),
+            order_by=build_composable_order_by(SORTABLE_COLUMNS[request_data["sort"]], request_data["order"]),
+            limit=Literal(request_data["limit"] + 1),
+            offset=Literal((request_data["page"] - 1) * request_data["limit"]),
         )
 
         return execute_sql_to_ordered_dictionary(sql)
