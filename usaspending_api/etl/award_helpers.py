@@ -1,6 +1,8 @@
 from typing import Optional
 from django.db import connection
 
+from django.conf import settings
+
 
 def execute_database_insert_statement(sql: str, values: Optional[list] = None) -> int:
     """Execute the SQL and return the affected rowcount"""
@@ -9,6 +11,8 @@ def execute_database_insert_statement(sql: str, values: Optional[list] = None) -
             cursor.execute(sql, values)
         else:
             cursor.execute(sql)
+        if settings.DEBUG:
+            print("\n==========================\n{}".format(str(cursor.query)))
         rowcount = cursor.rowcount
     return rowcount
 
@@ -229,14 +233,14 @@ def update_contract_awards(award_tuple: Optional[tuple]=None) -> int:
 
     if award_tuple:
         values = [award_tuple, award_tuple, award_tuple]
-        aggregate_transaction_cte = str(aggregate_transaction_cte).format("WHERE tx.award_id IN %s ")
-        extra_fpds_fields = str(extra_fpds_fields).format("WHERE tx.award_id IN %s ")
-        executive_comp_cte = str(executive_comp_cte).format("AND tn.award_id IN %s ")
+        aggregate_transaction_cte = str(aggregate_transaction_cte).format(" WHERE tx.award_id IN %s ")
+        extra_fpds_fields = str(extra_fpds_fields).format(" WHERE tx.award_id IN %s ")
+        executive_comp_cte = str(executive_comp_cte).format(" AND tn.award_id IN %s ")
     else:
         values = None
-        aggregate_transaction_cte = str(executive_comp_cte).format("")
-        extra_fpds_fields = str(aggregate_transaction_cte).format("")
-        executive_comp_cte = str(extra_fpds_fields).format("")
+        aggregate_transaction_cte = str(aggregate_transaction_cte).format("")
+        extra_fpds_fields = str(extra_fpds_fields).format("")
+        executive_comp_cte = str(executive_comp_cte).format("")
     # construct a sql query that uses the latest txn contract common table expression above and joins it to the
     # corresponding award. that joined data is used to update awards fields as appropriate (currently, there's only one
     # trasnaction_contract field that trickles up and updates an award record: base_and_all_options_value)
@@ -264,7 +268,7 @@ def update_contract_awards(award_tuple: Optional[tuple]=None) -> int:
         " officer_5_name = ec.officer_5_name "
         "FROM txn_totals AS t "
         "INNER JOIN extra_fpds_fields AS eff ON t.award_id = eff.award_id "
-        "INNER JOIN executive_comp AS ec ON t.award_id = ec.award_id "
+        "LEFT JOIN executive_comp AS ec ON t.award_id = ec.award_id "
         "WHERE t.award_id = a.id "
     )
 
