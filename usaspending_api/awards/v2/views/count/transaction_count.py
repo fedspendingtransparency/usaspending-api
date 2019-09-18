@@ -31,14 +31,14 @@ class TransactionCountRetrieveViewSet(APIView):
         award_id = request_data["award_id"]
         try:
             award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
-            filter = {award_id_column: award_id}
-            award = Award.objects.get(**filter)
+            award_filter = {award_id_column: award_id}
+            award = Award.objects.get(**award_filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
 
-        transaction_queryset = TransactionNormalized.objects.filter(award_id=award.id).count()
-        response_content = {"transactions": transaction_queryset}
+        transaction_count = TransactionNormalized.objects.filter(award_id=award.id).count()
+        response_content = {"transactions": transaction_count}
         return response_content
 
     @cache_response()

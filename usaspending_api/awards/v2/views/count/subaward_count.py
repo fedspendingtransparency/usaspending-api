@@ -30,14 +30,14 @@ class SubawardCountRetrieveViewSet(APIView):
 
         award_id = request_data["award_id"]
         award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
-        filter = {award_id_column: award_id}
+        award_filter = {award_id_column: award_id}
 
         try:
-            subaward_queryset = Award.objects.get(**filter)
+            subaward = Award.objects.get(**award_filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
-        response_content = {"subawards": subaward_queryset.subaward_count}
+        response_content = {"subawards": subaward.subaward_count}
         return response_content
 
     @cache_response()
