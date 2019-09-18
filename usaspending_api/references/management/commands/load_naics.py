@@ -57,9 +57,7 @@ def load_naics_range(naics_range_string, naics_year, naics_desc, path):
                 "Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path)
             )
     else:
-        raise CommandError(
-            "Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path)
-        )
+        raise CommandError("Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path))
 
 
 def load_single_naics(naics_code, naics_year, naics_desc):
