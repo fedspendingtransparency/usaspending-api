@@ -3,9 +3,9 @@ from django.conf.urls import url
 from usaspending_api.awards.v2.views.accounts import AwardAccountsViewSet
 from usaspending_api.awards.v2.views.awards import AwardLastUpdatedViewSet, AwardRetrieveViewSet
 from usaspending_api.awards.v2.views.funding_rollup import AwardFundingRollupViewSet
-from usaspending_api.awards.v2.views.transaction_count import TransactionCountRetrieveViewSet
-from usaspending_api.awards.v2.views.subaward_count import SubawardCountRetrieveViewSet
-from usaspending_api.awards.v2.views.federal_accounts_count import FederalAccountCountRetrieveViewSet
+from usaspending_api.awards.v2.views.count.transaction_count import TransactionCountRetrieveViewSet
+from usaspending_api.awards.v2.views.count.subaward_count import SubawardCountRetrieveViewSet
+from usaspending_api.awards.v2.views.count.federal_accounts_count import FederalAccountCountRetrieveViewSet
 
 urlpatterns = [
     url(r"^accounts/$", AwardAccountsViewSet.as_view()),

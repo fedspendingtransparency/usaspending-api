@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import FinancialAccountsByAwards, Award
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
@@ -14,12 +14,12 @@ from usaspending_api.common.validator.award import get_internal_or_generated_awa
 logger = logging.getLogger("console")
 
 
-class SubawardCountRetrieveViewSet(APIView):
+class FederalAccountCountRetrieveViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve the number of subawards associated with the requested award
+    This route sends a request to the backend to retrieve the number of federal accounts associated with the requested award
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/subaward_count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/count/federal_account.md"
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
         request_dict = {"award_id": provided_award_id}
@@ -29,15 +29,17 @@ class SubawardCountRetrieveViewSet(APIView):
     def _business_logic(self, request_data: dict) -> list:
 
         award_id = request_data["award_id"]
-        award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
-        filter = {award_id_column: award_id}
 
         try:
-            subaward_queryset = Award.objects.get(**filter)
+            award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
+            filter = {award_id_column: award_id}
+            award = Award.objects.get(**filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
-        response_content = {"subawards": subaward_queryset.subaward_count}
+
+        federal_account_queryset = FinancialAccountsByAwards.objects.filter(award_id=award.id).count()
+        response_content = {"federal_accounts": federal_account_queryset}
         return response_content
 
     @cache_response()

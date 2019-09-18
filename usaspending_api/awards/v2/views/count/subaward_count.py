@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.awards.models import Award
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
@@ -14,12 +14,12 @@ from usaspending_api.common.validator.award import get_internal_or_generated_awa
 logger = logging.getLogger("console")
 
 
-class TransactionCountRetrieveViewSet(APIView):
+class SubawardCountRetrieveViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve the number of transactions associated with the requested award
+    This route sends a request to the backend to retrieve the number of subawards associated with the requested award
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/transaction_count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/count/subaward.md"
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
         request_dict = {"award_id": provided_award_id}
@@ -29,19 +29,15 @@ class TransactionCountRetrieveViewSet(APIView):
     def _business_logic(self, request_data: dict) -> list:
 
         award_id = request_data["award_id"]
-        award_id_column = "award_id" if type(award_id) is int else "award__generated_unique_award_id"
+        award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
         filter = {award_id_column: award_id}
 
         try:
-            award_id_column_2 = "id" if type(award_id) is int else "generated_unique_award_id"
-            award_filter = {award_id_column_2: award_id}
-            Award.objects.get(**award_filter)
+            subaward_queryset = Award.objects.get(**filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
-
-        transaction_queryset = TransactionNormalized.objects.filter(**filter).count()
-        response_content = {"transactions": transaction_queryset}
+        response_content = {"subawards": subaward_queryset.subaward_count}
         return response_content
 
     @cache_response()
