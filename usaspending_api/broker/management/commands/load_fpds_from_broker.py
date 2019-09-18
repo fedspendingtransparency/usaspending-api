@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import logging
 import re
 import psycopg2
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, load_chunk
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
@@ -107,7 +107,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # loads can take a while, so we record last updated date from the start of all transactions
-        last_update_time = datetime.now(timezone.utc)
+        # one day is subtracted to account for any submissions that are still entering the system when the loader is run
+        last_update_time = datetime.now(timezone.utc) - timedelta(hours=1)
 
         if options["reload_all"]:
             self.load_fpds_from_date(None)
@@ -124,7 +125,8 @@ class Command(BaseCommand):
         elif options["since_last_load"]:
             self.load_fpds_from_date(get_last_load_date("fpds"))
 
-        update_last_load_date("fpds", last_update_time)  # only update if we don't crash
+        if options["reload_all"] or options["since_last_load"]:
+            update_last_load_date("fpds", last_update_time)  # only update if we don't crash
         logger.info("cleaning orphaned rows")
         destroy_orphans()
 
