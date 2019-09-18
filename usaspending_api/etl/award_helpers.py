@@ -1,26 +1,19 @@
-import logging
 from typing import Optional
 from django.db import connection
-from django.db.models import Case, Value, When, TextField
-from usaspending_api.awards.models import Award
-
-
-logger = logging.getLogger("console")
 
 
 def execute_database_insert_statement(sql: str, values: Optional[list] = None) -> int:
+    """Execute the SQL and return the affected rowcount"""
     with connection.cursor() as cursor:
         if values:
             cursor.execute(sql, values)
         else:
             cursor.execute(sql)
-
-        print("==========================\n{}".format(str(cursor.query)))
         rowcount = cursor.rowcount
     return rowcount
 
 
-def update_awards(award_tuple=None):
+def update_awards(award_tuple: Optional[tuple]=None) -> int:
     """Update Award records in `awards` using transaction data
 
     Awards can have one or more transactions. We maintain some information on the award model that needs to be updated
@@ -33,7 +26,6 @@ def update_awards(award_tuple=None):
     transactions was problematic to do in a set-based way via the ORM. These updates do need to be set-based, as
     looping through and updating individual award records would be an ETL bottleneck.
     """
-    logger.info("Running update_awards() in usaspending/et/award_helpers.py")
 
     earliest_transaction_cte = (
         "txn_earliest AS ( "
@@ -116,12 +108,13 @@ def update_awards(award_tuple=None):
         "FROM txn_earliest e "
         "JOIN txn_latest l ON e.award_id = l.award_id "
         "JOIN txn_totals t ON e.award_id = t.award_id "
+        "WHERE e.award_id = a.id "
     )
 
     return execute_database_insert_statement(sql_update, values)
 
 
-def update_assistance_awards(award_tuple=None):
+def update_assistance_awards(award_tuple: Optional[tuple]=None) -> int:
     sql_update = (
         "WITH executive_comp AS ( "
         "SELECT DISTINCT ON (tn.award_id) "
@@ -168,7 +161,7 @@ def update_assistance_awards(award_tuple=None):
     return execute_database_insert_statement(sql_update, values)
 
 
-def update_contract_awards(award_tuple=None):
+def update_contract_awards(award_tuple: Optional[tuple]=None) -> int:
     """Update contract-specific award data based on the info in child transactions."""
 
     # sum the base_and_all_options_value from contract_data for an award
@@ -278,25 +271,8 @@ def update_contract_awards(award_tuple=None):
     return execute_database_insert_statement(sql_update, values)
 
 
-def update_award_subawards(award_tuple=None):
-    """
-    Updates awards' subaward counts and totals
-    """
-    # Alternative Django implementation for possible speedup/simplicity
-    # Sum and count subaward_amounts
-    # for a_id in award_tuple:
-    #     a = Award.objects.filter(id=a_id).first()
-    #     rows = 0
-    #     sas = Subaward.objects.filter(award=a)
-    #     count = sas.count()
-    #     if a.subaward_count != count:
-    #         a.subaward_count = count
-    #         rows += 1
-    #     a.total_subaward_amount = 0
-    #     for sa in sas:
-    #         a.total_subaward_amount += sa.amount
-    #     a.save()
-    # return rows
+def update_award_subawards(award_tuple: Optional[tuple]=None) -> int:
+    """Updates awards' subaward counts and totals"""
 
     sql_sub_totals = (
         "subaward_totals AS ( "
@@ -323,26 +299,31 @@ def update_award_subawards(award_tuple=None):
     return execute_database_insert_statement(sql_update, values)
 
 
-def update_award_categories(award_tuple=None):
-    """
-    This sets the category variable for an award.
-    """
-    awards = Award.objects.all()
-    if award_tuple:
-        awards = awards.filter(id__in=list(award_tuple))
-    awards.update(
-        category=Case(
-            When(type__in=["A", "B", "C", "D"], then=Value("contract")),
-            When(type__in=["02", "03", "04", "05"], then=Value("grant")),
-            When(type__in=["06", "10"], then=Value("direct payment")),
-            When(type__in=["07", "08"], then=Value("loans")),
-            When(type__in=["09"], then=Value("insurance")),
-            When(type__in=["11"], then=Value("other")),
-            When(type__startswith="IDV", then=Value("idv")),
-            default=None,
-            output_field=TextField(),
-        )
+def update_award_categories(award_tuple: Optional[tuple]=None) -> int:
+    """This sets the category variable for an award."""
+
+    sql_update = (
+        "UPDATE awards SET "
+        "category = CASE WHEN type IN ('A', 'B', 'C', 'D') THEN 'contract' "
+        "  WHEN type IN ('02', '03', '04', '05') THEN 'grant' "
+        "  WHEN type in ('06', '10') THEN 'direct payment' "
+        "  WHEN type in ('07', '08') THEN 'loans' "
+        "  WHEN type = '09' THEN 'insurance' "
+        "  WHEN type = '11' THEN 'other' "
+        "  WHEN type LIKE 'IDV%%' THEN 'idv' "
+        "  ELSE NULL END "
+        "FROM awards "
+        "{} "
     )
+
+    if award_tuple:
+        values = [award_tuple]
+        sql_update = str(sql_update).format("WHERE id IN %s ")
+    else:
+        values = None
+        sql_update = str(sql_update).format("")
+
+    return execute_database_insert_statement(sql_update, values)
 
 
 def award_types(row):
