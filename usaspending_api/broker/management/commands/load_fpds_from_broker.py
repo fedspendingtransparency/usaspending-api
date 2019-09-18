@@ -27,16 +27,15 @@ class Command(BaseCommand):
     modified_award_ids = []
 
     @staticmethod
-    def get_cursor_for_date_query(date):
-        with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            db_cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            db_query = ALL_FPDS_QUERY
-            if date:
-                db_query += " WHERE updated_at >= %s;"
-                db_args = [date]
-                db_cursor.execute(db_query, db_args)
-            else:
-                db_cursor.execute(db_query)
+    def get_cursor_for_date_query(connection, date):
+        db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
+        db_query = ALL_FPDS_QUERY
+        if date:
+            db_query += " WHERE updated_at >= %s;"
+            db_args = [date]
+            db_cursor.execute(db_query, db_args)
+        else:
+            db_cursor.execute(db_query)
         return db_cursor
 
     def load_fpds_from_date(self, date):
@@ -44,13 +43,14 @@ class Command(BaseCommand):
             logger.info("fetching all fpds transactions...")
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
-        cursor = self.get_cursor_for_date_query(date)
-        while True:
-            id_list = [id for id in cursor.fetchmany(CHUNK_SIZE)]
-            if len(id_list) == 0:
-                break
-            logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-            self.modified_award_ids.extend(load_chunk(id_list))
+        with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
+            cursor = self.get_cursor_for_date_query(connection, date)
+            while True:
+                id_list = cursor.fetchmany(CHUNK_SIZE)
+                if len(id_list) == 0:
+                    break
+                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
+                self.modified_award_ids.extend(load_chunk(id_list))
 
     @staticmethod
     def next_file_batch_generator(file):
