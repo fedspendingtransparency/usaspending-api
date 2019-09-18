@@ -84,13 +84,6 @@ class Award(DataSourceTrackedModel):
         verbose_name="Total Obligated",
         help_text="The amount of money the government is obligated to pay for the award",
     )
-    total_outlay = models.DecimalField(
-        max_digits=23,
-        db_index=True,
-        decimal_places=2,
-        null=True,
-        help_text="The total amount of money paid out for this award",
-    )
     total_subsidy_cost = models.DecimalField(
         max_digits=23,
         decimal_places=2,
@@ -134,15 +127,6 @@ class Award(DataSourceTrackedModel):
         "work is performed. For example, in a manufacturing contract, "
         "this would be the main plant where items are produced.",
         db_index=True,
-    )
-    potential_total_value_of_award = models.DecimalField(
-        max_digits=23,
-        db_index=False,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        verbose_name="Potential Total Value of Award",
-        help_text="The sum of the potential_value_of_award from associated transactions",
     )
     base_and_all_options_value = models.DecimalField(
         max_digits=23,
@@ -215,6 +199,27 @@ class Award(DataSourceTrackedModel):
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, null=True)
     subaward_count = models.IntegerField(default=0)
+
+    officer_1_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 1 Name")
+    officer_1_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 1 Amount"
+    )
+    officer_2_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 2 Name")
+    officer_2_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 2 Amount"
+    )
+    officer_3_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 3 Name")
+    officer_3_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 3 Amount"
+    )
+    officer_4_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 4 Name")
+    officer_4_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 4 Amount"
+    )
+    officer_5_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 5 Name")
+    officer_5_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 5 Amount"
+    )
 
     objects = models.Manager()
     nonempty = AwardManager()
