@@ -33,38 +33,14 @@ ACCOUNTS_SQL = SQL(
         from    awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
         where   {award_id_column} = {award_id}
-    ), agency_id_to_agency_id_for_toptier_mapping as (
-        select
-            a.id                            agency_id,
-            t.agency_id                     agency_id_for_toptier,
-            t.toptier_agency_name,
-            t.toptier_agency_abbreviation
-        from (
-                select
-                    a.id                    agency_id,
-                    ta.toptier_agency_id,
-                    ta.name                 toptier_agency_name,
-                    ta.abbreviation         toptier_agency_abbreviation,
-                    row_number() over(
-                        partition by ta.toptier_agency_id
-                        order by sa.name is not distinct from ta.name desc, a.update_date asc, a.id desc
-                    ) as per_toptier_row_number
-                from
-                    agency a
-                    inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
-                    left outer join subtier_agency sa on sa.subtier_agency_id = a.subtier_agency_id
-            ) t
-            inner join agency a on a.toptier_agency_id = t.toptier_agency_id
-        where
-            t.per_toptier_row_number = 1
     )
     select
         coalesce(sum(gfaba.transaction_obligated_amount), 0.0)         total_transaction_obligated_amount,
         taa.agency_id || '-' || taa.main_account_code                  federal_account,
         fa.account_title,
-        afmap.toptier_agency_abbreviation                              funding_agency_abbreviation,
-        afmap.toptier_agency_name                                      funding_agency_name,
-        afmap.agency_id_for_toptier                                    funding_agency_id
+        ta.abbreviation                                                funding_agency_abbreviation,
+        ta.name                                                        funding_agency_name,
+        a.id                                                           funding_agency_id
     from
         gather_financial_accounts_by_awards gfaba
         left outer join treasury_appropriation_account taa on
@@ -72,11 +48,11 @@ ACCOUNTS_SQL = SQL(
         left outer join federal_account fa on
             fa.agency_identifier = taa.agency_id and
             fa.main_account_code = taa.main_account_code
-        left outer join agency_id_to_agency_id_for_toptier_mapping afmap on
-            afmap.agency_id = gfaba.funding_agency_id
+        left outer join agency a on a.id = gfaba.funding_agency_id
+        left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     group by
         federal_account, fa.account_title, funding_agency_abbreviation, funding_agency_name,
-        afmap.agency_id_for_toptier
+        a.id
     order by
         {order_by} {order_direction};
 """

@@ -1,5 +1,7 @@
-drop table if exists temp_raw_agency_csv;
-create table temp_raw_agency_csv (
+drop table if exists temp_load_agencies_raw_agency;
+
+
+create table temp_load_agencies_raw_agency (
     row_number int,
     cgac_agency_code text,
     agency_name text,
@@ -12,6 +14,7 @@ create table temp_raw_agency_csv (
     subtier_abbreviation text,
     toptier_flag boolean,
     is_frec boolean,
+    user_selectable boolean,
     mission text,
     website text,
     congressional_justification text,
