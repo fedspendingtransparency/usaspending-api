@@ -102,6 +102,12 @@ List of table columns
 + `Issued Date` (optional, string, nullable)
 + `Loan Value` (optional, number, nullable)
 + `Subsidy Cost` (optional, number, nullable)
++ `Prime Award ID` (optional, string, nullable)
+    For subawards, returns the ID (piid/fain/uri) of the prime award.
++ `Prime Recipient Name` (optional, string, nullable)
+    For subawards, returns the name of the prime award's recipient.
++ `prime_award_recipient_id` (optional, string, nullable)
+    For subawards, return the recipient id of the prime award's recipient.
 + `internal_id` (optional, string)
 
 ## PageMetadataObject (object)

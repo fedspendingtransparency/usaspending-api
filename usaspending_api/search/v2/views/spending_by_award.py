@@ -30,7 +30,7 @@ from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_v
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.recipient_lookups import annotate_recipient_id
+from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
 
 GLOBAL_MAP = {
@@ -61,7 +61,7 @@ GLOBAL_MAP = {
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_field": "subaward_number",
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
-        "annotations": {"_recipient_id": annotate_recipient_id},
+        "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
     },
 }
