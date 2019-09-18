@@ -46,14 +46,16 @@ def populate_naics_fields(ws, naics_year, path):
             if "-" in row[0].value:
                 try:
                     minmax = row[0].value.split("-")
-                    for naics_code in range(int(minmax[0].strip()), int(minmax[1].strip())+1):
+                    for naics_code in range(int(minmax[0].strip()), int(minmax[1].strip()) + 1):
                         load_single_naics(naics_code, naics_year, naics_desc)
                 except ValueError:
                     raise CommandError(
-                        "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path))
+                        "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path)
+                    )
             else:
                 raise CommandError(
-                    "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path))
+                    "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path)
+                )
 
 
 def load_single_naics(naics_code, naics_year, naics_desc):
@@ -62,9 +64,7 @@ def load_single_naics(naics_code, naics_year, naics_desc):
     if len(str(naics_code)) not in {2, 4, 6}:
         return
 
-    obj, created = NAICS.objects.get_or_create(
-        pk=naics_code, defaults={"description": naics_desc, "year": naics_year}
-    )
+    obj, created = NAICS.objects.get_or_create(pk=naics_code, defaults={"description": naics_desc, "year": naics_year})
 
     if not created:
         if int(naics_year) > int(obj.year):
