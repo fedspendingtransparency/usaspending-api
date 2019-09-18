@@ -140,7 +140,8 @@ List financial data for the requested award
 + `funding_agency_id` (required, number, nullable)
     Internal surrogate identifier of the funding agency.
 + `funding_agency_name` (required, string, nullable)
-+ `main_account_code`  (required, string, nullable)
++ `federal_account` (required, string, nullable)
+    Identifier of the federal account
 + `account_title`  (required, string, nullable)
     Federal Account Title
 + `program_activity_code` (required, string, nullable)
