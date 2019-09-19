@@ -67,13 +67,13 @@ def run_fpds_load(id_list):
     is called.
     returns ids for each award touched
     """
-    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
+    chunks = [id_list[x: x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     modified_awards = []
     for chunk in chunks:
-            logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
-            broker_transactions = _extract_broker_objects(chunk)
-            modified_awards.extend(load_chunk(broker_transactions))
+        logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
+        broker_transactions = _extract_broker_objects(chunk)
+        modified_awards.extend(load_chunk(broker_transactions))
     return modified_awards
 
 
