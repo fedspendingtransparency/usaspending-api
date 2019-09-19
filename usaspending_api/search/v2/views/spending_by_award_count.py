@@ -5,6 +5,7 @@ from django.db.models import Count, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
@@ -33,8 +34,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
-        filters = json_request.get("filters", None)
         subawards = json_request["subawards"]
+        filters = add_date_range_comparison_types(
+            json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
+        )
 
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
