@@ -305,8 +305,10 @@ if __name__ == "__main__":
         try:
             main()
             successful_run = True
-        except (Exception, KeyboardInterrupt):
+        except KeyboardInterrupt:
             pass
+        except Exception:
+            print("ERROR ENCOUNTERED!!!!!")
         finally:
             print("Cleaning up table and restoring autovacuum")
             teardown(successful_run)
