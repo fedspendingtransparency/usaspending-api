@@ -63,7 +63,7 @@ def load_naics_range(naics_range_string, naics_year, naics_desc, path):
 def load_single_naics(naics_code, naics_year, naics_desc):
 
     # crude way of ignoring naics of length 3 and 5
-    if len(str(naics_code)) not in {2, 4, 6}:
+    if len(str(naics_code)) not in (2, 4, 6):
         return
 
     obj, created = NAICS.objects.get_or_create(pk=naics_code, defaults={"description": naics_desc, "year": naics_year})
