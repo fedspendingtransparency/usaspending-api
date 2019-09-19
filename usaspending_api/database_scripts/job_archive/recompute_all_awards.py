@@ -309,6 +309,7 @@ if __name__ == "__main__":
             pass
         except Exception:
             print("ERROR ENCOUNTERED!!!!!")
+            raise SystemExit(1)
         finally:
             print("Cleaning up table and restoring autovacuum")
             teardown(successful_run)
