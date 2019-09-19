@@ -107,6 +107,9 @@ def construct_contract_response(requested_award_dict):
     response["recipient"] = create_recipient_object(transaction)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
 
+    parent_award = fetch_parent_award_from_piid(award["parent_award_piid"])
+    response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
+
     return delete_keys_from_dict(response)
 
 
@@ -270,6 +273,9 @@ def fetch_award_details(filter_q, mapper_fields):
     vals, ann = split_mapper_into_qs(mapper_fields)
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
+def fetch_parent_award_from_piid(piid):
+    parent_award_id = ParentAward.objects.filter(generated_unique_award_id__icontains=piid).values("generated_unique_award_id").first()
+    return parent_award_id
 
 def fetch_parent_award_details(guai):
     parent_award_ids = (
