@@ -5,6 +5,7 @@
     "SELECT",
     "  -- Deterministic Unique Hash (DUH) created for view concurrent refresh",
     "  MD5(array_to_string(sort(array_agg(awards.id::int)), ' '))::uuid AS duh,",
+    "  awards.date_signed,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
@@ -47,6 +48,7 @@
     "WHERE",
     "  transaction_normalized.action_date >= '2007-10-01'",
     "GROUP BY",
+    "  awards.date_signed,",
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
@@ -68,6 +70,9 @@
       "name": "deterministic_unique_hash",
       "unique": true,
       "columns": [{"name": "duh"}]
+    }, {
+      "name": "date_signed",
+      "columns": [{"name": "date_signed", "order": "DESC NULLS LAST"}]
     }, {
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
