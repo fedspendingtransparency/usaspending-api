@@ -5,6 +5,7 @@ from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -80,7 +81,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
-        self.filters = json_request["filters"]
+        self.filters = add_date_range_comparison_types(
+            json_request.get("filters"), self.is_subaward, gte_date_type="action_date", lte_date_type="date_signed"
+        )
         self.fields = json_request["fields"]
         self.pagination = {
             "limit": json_request["limit"],

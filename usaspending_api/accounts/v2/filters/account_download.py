@@ -113,12 +113,34 @@ def account_download_filter(account_type, download_table, filters, account_level
     return queryset.filter(**query_filters)
 
 
+def get_account_aid_toptier_agency_name_annotation(tas_id):
+    """
+    Accepts the Django foreign key relation name for the outer queryset to TreasuryAppropriationAccount
+    and returns an annotation ready queryset object.
+
+    This works for either TreasuryAppropriationAccounts or FederalAccounts.  Remember that the agency_id
+    (AID) for FederalAccounts is the same as the agency_id (AID) for all related TreasuryAppropriationAccounts
+    which means the fr_entity_code is also the same.  This allows us to shortcut joining to the FederalAccount
+    altogether and gives us the ability to drop back to looking up ToptierAgencies by fr_entity_code for cases
+    where the agency_id (AID) is not represented in our ToptierAgency table.
+
+    ToptierAgencies for TreasuryAppropriationAccounts (TASes) need to fall back to fr_entity_code (FREC)
+    if they can't be found by agency_id (AID which is a CGAC).  This ONLY works for agency_id.
+    allocation_transfer_agency_id (ATA) does not currently have a fr_entity_code representation in
+    TreasuryAppropriationAccounts.
+    """
+    ta = ToptierAgency.objects
+    return Coalesce(
+        Subquery(ta.filter(cgac_code=OuterRef("{}__agency_id".format(tas_id))).values("name")[:1]),
+        Subquery(ta.filter(cgac_code=OuterRef("{}__fr_entity_code".format(tas_id))).values("name")[:1]),
+    )
+
+
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
     # for all account types
     ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef("{}__allocation_transfer_agency_id".format(tas_id)))
-    agency_name_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef("{}__agency_id".format(tas_id)))
     derived_fields = {
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         "treasury_account_symbol": Concat(
@@ -151,8 +173,8 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
         ),
         # allocation_transfer_agency_name: name of the ToptierAgency with CGAC matching allocation_transfer_agency_id
         "allocation_transfer_agency_name": Subquery(ata_subquery.values("name")[:1]),
-        # agency_name: name of the ToptierAgency with CGAC matching agency_id
-        "agency_name": Subquery(agency_name_subquery.values("name")[:1]),
+        # agency_name: name of the ToptierAgency associated with this treasury account
+        "agency_name": get_account_aid_toptier_agency_name_annotation(tas_id),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
             "{}__federal_account__agency_identifier".format(tas_id),
@@ -170,10 +192,6 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 
 def generate_federal_account_query(queryset, account_type, tas_id):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
-    # Derive the federal_account_symbol and agency_name
-    agency_name_subquery = ToptierAgency.objects.filter(
-        cgac_code=OuterRef("{}__federal_account__agency_identifier".format(tas_id))
-    )
     derived_fields = {
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
@@ -181,8 +199,8 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             Value("-"),
             "{}__federal_account__main_account_code".format(tas_id),
         ),
-        # agency_name: name of the ToptierAgency with CGAC matching federal_account__agency_identifier
-        "agency_name": Subquery(agency_name_subquery.values("name")[:1]),
+        # agency_name: name of the ToptierAgency associated with this federal account
+        "agency_name": get_account_aid_toptier_agency_name_annotation(tas_id),
     }
 
     # Derive recipient_parent_name for award_financial downloads
