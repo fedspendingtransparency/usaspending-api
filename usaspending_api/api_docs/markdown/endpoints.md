@@ -47,6 +47,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
 |[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
 |[/api/v2/awards/funding_rollup](/api/v2/awards/funding_rollup)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for an award|
+|[/api/v2/awards/funding](/api/v2/awards/funding)|POST| Returns federal account, awarding agencies, funding agencies, and transaction obligated amount information for a requested award|
 |[/api/v2/awards/last_updated/](/api/v2/awards/last_updated/)|GET| Returns date of last update|
 |[/api/v2/awards/count/transaction/<AWARD_ID\>/](/api/v2/awards/count/transaction/66945037/)|GET| Returns the number of transactions associated with the award|
 |[/api/v2/awards/count/subaward/<AWARD_ID\>/](/api/v2/awards/count/subaward/66945037/)|GET| Returns the number of subawards associated with the award|
