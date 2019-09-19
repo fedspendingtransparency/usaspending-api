@@ -369,6 +369,10 @@ def awards_and_transactions(db):
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "date_signed": "2005-04-03",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
     }
 
     award_2_model = {
@@ -392,6 +396,10 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "date_signed": "2004-03-02",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
     }
 
     award_3_model = {
@@ -560,7 +568,13 @@ expected_response_asst = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {
-        "officers": [{"name": "John Apple", "amount": 50000.00}, {"name": "Wally World", "amount": 4623.00}]
+        "officers": [
+            {"name": "John Apple", "amount": 50000.00},
+            {"name": "Wally World", "amount": 4623.00},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+        ]
     },
     "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
@@ -725,7 +739,13 @@ expected_response_cont = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {
-        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+        "officers": [
+            {"name": "Tom", "amount": 10000.00},
+            {"name": "Stan Burger", "amount": 1234.00},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+        ]
     },
     "date_signed": "2004-03-02",
 }
