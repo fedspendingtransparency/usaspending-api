@@ -1,9 +1,9 @@
 import datetime
-
-from model_mommy import mommy
 import pytest
 
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from model_mommy import mommy
+
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
 
 
 @pytest.mark.django_db
@@ -208,3 +208,178 @@ def test_award_update_contract_txn_with_list():
     assert awards[1].base_exercised_options_val == 400
     assert awards[2].base_and_all_options_value == 5000
     assert awards[2].base_exercised_options_val == 500
+
+
+@pytest.mark.django_db
+def test_award_update_contract_executive_comp():
+    """Test executive comp is loaded correctly awards from txn contract."""
+
+    award = mommy.make("awards.Award")
+    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
+    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=txn,
+        officer_1_name="Professor Plum",
+        officer_1_amount=1,
+        officer_2_name="Mrs. White",
+        officer_2_amount=2,
+        officer_3_name="Mrs. Peacock",
+        officer_3_amount=3,
+        officer_4_name="Mr. Green",
+        officer_4_amount=4,
+        officer_5_name="Colonel Mustard",
+        officer_5_amount=5,
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=txn2,
+        officer_1_name="Jack Mustard",
+        officer_1_amount=100,
+        officer_2_name="Jacob Green",
+        officer_2_amount=200,
+        officer_3_name="Diane White",
+        officer_3_amount=300,
+        officer_4_name="Kasandra Scarlet",
+        officer_4_amount=400,
+        officer_5_name="Victor Plum",
+        officer_5_amount=500,
+    )
+
+    update_contract_awards()
+    award.refresh_from_db()
+
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
+
+    # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
+
+    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionFPDS", transaction=txn3)
+
+    update_contract_awards()
+    award.refresh_from_db()
+
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
+
+
+@pytest.mark.django_db
+def test_award_update_assistance_executive_comp():
+    """Test executive comp is loaded correctly awards from txn contract."""
+
+    award = mommy.make("awards.Award")
+    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
+    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction=txn,
+        officer_1_name="Professor Plum",
+        officer_1_amount=1,
+        officer_2_name="Mrs. White",
+        officer_2_amount=2,
+        officer_3_name="Mrs. Peacock",
+        officer_3_amount=3,
+        officer_4_name="Mr. Green",
+        officer_4_amount=4,
+        officer_5_name="Colonel Mustard",
+        officer_5_amount=5,
+    )
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction=txn2,
+        officer_1_name="Jack Mustard",
+        officer_1_amount=100,
+        officer_2_name="Jacob Green",
+        officer_2_amount=200,
+        officer_3_name="Diane White",
+        officer_3_amount=300,
+        officer_4_name="Kasandra Scarlet",
+        officer_4_amount=400,
+        officer_5_name="Victor Plum",
+        officer_5_amount=500,
+    )
+
+    update_assistance_awards()
+    award.refresh_from_db()
+
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
+
+    # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
+
+    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionFABS", transaction=txn3)
+
+    update_assistance_awards()
+    award.refresh_from_db()
+
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
+
+
+@pytest.mark.django_db
+def test_award_update_transaction_fk():
+    """Test executive comp is loaded correctly awards from txn contract."""
+
+    award = mommy.make("awards.Award")
+    txn1 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2011-10-01",
+        description="Original Desc",
+        modification_number="P0001",
+    )
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2014-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2015-10-01")
+    txn6 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2016-10-01",
+        description="Last Desc",
+        modification_number="P0011",
+        period_of_performance_current_end_date="2020-10-01",
+    )
+
+    update_awards()
+    award.refresh_from_db()
+
+    assert award.description == txn1.description
+    assert award.earliest_transaction == txn1
+    assert award.latest_transaction == txn6
+    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
+    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
+    assert (
+        award.period_of_performance_current_end_date.strftime("%Y-%m-%d") == txn6.period_of_performance_current_end_date
+    )
+
+    txn0 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=txn1.action_date,
+        description="Updated Original Desc",
+        modification_number="P0000",
+    )
+
+    txn10 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=txn6.action_date,
+        modification_number="P1000",
+        period_of_performance_current_end_date="2019-10-01",
+    )
+
+    update_awards()
+    award.refresh_from_db()
+
+    assert award.description == txn0.description
+    assert award.earliest_transaction == txn0
+    assert award.latest_transaction == txn10
+    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
+    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
+    assert (
+        award.period_of_performance_current_end_date.strftime("%Y-%m-%d")
+        == txn10.period_of_performance_current_end_date
+    )
