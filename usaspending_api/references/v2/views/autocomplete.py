@@ -127,6 +127,9 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         else:
             queryset = queryset.filter(description__icontains=search_text)
 
+        # Only include 6 digit codes
+        queryset = queryset.extra(where=["CHAR_LENGTH(code) = 6"])
+
         # rename columns...
         queryset = queryset.annotate(naics=F("code"), naics_description=F("description"))
 
