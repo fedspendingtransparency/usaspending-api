@@ -1,8 +1,6 @@
+#!/usr/bin/env python3
 """
 Jira Ticket Number(s): DEV-3318, DEV-3442, DEV-3443
-
-    Adding new earliest_transaction to awards
-    Improved logic for determining earliest and latest transactions for awards which requires a reload
 
 Expected CLI:
 
@@ -10,7 +8,12 @@ Expected CLI:
 
 Purpose:
 
-    Updates award records which need to be updated using the new award_helper logic
+    Adding new earliest_transaction to awards
+    Improved logic for determining the initial transaction of an award which is
+    used as the "earliest transaction" FK. Also make a mirror alteration to
+    the logic determining "latest transaction" for an award.
+
+    All of these changes requires updating 100% of award records
 
 """
 import argparse
@@ -203,7 +206,7 @@ class Timer:
 
     def __enter__(self):
         self.start = time.perf_counter()
-        self.print_func("Running {} ...".format(self.msg))
+        self.print_func("Running   {} ...".format(self.msg))
         return self
 
     def __exit__(self, *args, **kwargs):

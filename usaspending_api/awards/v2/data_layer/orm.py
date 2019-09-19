@@ -66,7 +66,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
 
 
 def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
-    """Build an Procurement Award summary object to send as an API response"""
+    """Build a Procurement Award summary object to send as an API response"""
 
     response = OrderedDict()
     award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
@@ -101,7 +101,7 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
 
 
 def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
-    """Build an Procurement IDV summary object to send as an API response"""
+    """Build a Procurement IDV summary object to send as an API response"""
 
     idv_specific_award_fields = OrderedDict(
         [

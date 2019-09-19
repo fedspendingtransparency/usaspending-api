@@ -4,7 +4,7 @@ from django.db import connection
 
 
 def execute_database_insert_statement(sql: str, values: Optional[list] = None) -> int:
-    """Execute the SQL and return the affected rowcount"""
+    """Execute the SQL and return the UPDATE count"""
     with connection.cursor() as cursor:
         if values:
             cursor.execute(sql, values)
@@ -18,15 +18,19 @@ def execute_database_insert_statement(sql: str, values: Optional[list] = None) -
 def update_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update Award records in `awards` using transaction data
 
-    Awards can have one or more transactions. We maintain some information on the award model that needs to be updated
-    as its child transactions change. For example, an award's total obligated amount represents the summary of its
-    transaction's obligated amounts. Another example is a series of fields (award type, awarding agency, etc.) that
-    will always be set to the value of the Award's most recent transaction.
+    Awards can have one or more transactions. We maintain some information on
+    the award model that needs to be updated as its transactions change.
+    For example, an award's total obligated amount represents the summary of its
+    transaction's obligated amounts. Another example is a series of fields
+    (award type, awarding agency, etc.) that will always be set to the value of
+    the Award's most recent transaction.
 
-    This function keeps those awards fields synced with child transactions. Obviously the raw SQL is not ideal.
-    That said, the complex update of award fields based on the earliest, latest, and aggregate values of the child
-    transactions was problematic to do in a set-based way via the ORM. These updates do need to be set-based, as
-    looping through and updating individual award records would be an ETL bottleneck.
+    This function keeps those awards fields synced with transactions.
+    Obviously the raw SQL is not ideal. That said, the complex update of award
+    fields based on the earliest, latest, and aggregate values of the
+    transactions was problematic to do in a set-based way via the ORM. These
+    updates do need to be set-based, as looping through and updating individual
+    award records would be an ETL bottleneck.
     """
 
     _earliest_transaction_cte = str(
@@ -325,75 +329,3 @@ def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
 
     sql_update = _sql_update.format(sql_sub_totals)
     return execute_database_insert_statement(sql_update, values)
-
-
-def update_award_categories(award_tuple: Optional[tuple] = None) -> int:
-    """This sets the category variable for an award."""
-
-    _sql_update = str(
-        "UPDATE awards SET "
-        "  category = CASE "
-        "    WHEN type IN ('A', 'B', 'C', 'D') THEN 'contract' "
-        "    WHEN type IN ('02', '03', '04', '05') THEN 'grant' "
-        "    WHEN type in ('06', '10') THEN 'direct payment' "
-        "    WHEN type in ('07', '08') THEN 'loans' "
-        "    WHEN type = '09' THEN 'insurance' "
-        "    WHEN type = '11' THEN 'other' "
-        "    WHEN type LIKE 'IDV%%' THEN 'idv' "
-        "    ELSE NULL END "
-        "  FROM awards "
-        "  {} "
-    )
-
-    if award_tuple:
-        values = [award_tuple]
-        sql_update = _sql_update.format("WHERE id IN %s ")
-    else:
-        values = None
-        sql_update = _sql_update.format("")
-
-    return execute_database_insert_statement(sql_update, values)
-
-
-def award_types(row):
-    """
-        "Award Type" for FPDS transactions
-            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type`
-            elif `idv_type` == B &`type_of_idc` is present: use "IDV_B_" + `type_of_idc`
-            elif `idv_type` == B & ("case" for type_of_idc_description for specific IDC type): use IDV_B_*
-            else use "IDV_" + `idv_type`
-
-        "Award Type Description" for FPDS transactions
-            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type_desc`
-            elif `idv_type` == B & `type_of_idc_description` <> null/NAN: use `type_of_idc_description`
-            elif `idv_type` == B: use "INDEFINITE DELIVERY CONTRACT"
-            else: use `idv_type_description`
-    """
-    pulled_from = row.get("pulled_from", None)
-    idv_type = row.get("idv_type", None)
-    type_of_idc = row.get("type_of_idc", None)
-    type_of_idc_description = row.get("type_of_idc_description", None)
-
-    if pulled_from != "IDV":
-        award_type = row.get("contract_award_type")
-    elif idv_type == "B" and type_of_idc is not None:
-        award_type = "IDV_B_{}".format(type_of_idc)
-    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / REQUIREMENTS":
-        award_type = "IDV_B_A"
-    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / INDEFINITE QUANTITY":
-        award_type = "IDV_B_B"
-    elif idv_type == "B" and type_of_idc_description == "INDEFINITE DELIVERY / DEFINITE QUANTITY":
-        award_type = "IDV_B_C"
-    else:
-        award_type = "IDV_{}".format(idv_type)
-
-    if pulled_from != "IDV":
-        award_type_desc = row.get("contract_award_type_desc")
-    elif idv_type == "B" and type_of_idc_description not in (None, "NAN"):
-        award_type_desc = type_of_idc_description
-    elif idv_type == "B":
-        award_type_desc = "INDEFINITE DELIVERY CONTRACT"
-    else:
-        award_type_desc = row.get("idv_type_description")
-
-    return award_type, award_type_desc
