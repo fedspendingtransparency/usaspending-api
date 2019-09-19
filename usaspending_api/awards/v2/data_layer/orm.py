@@ -254,14 +254,15 @@ def fetch_award_details(filter_q: dict, mapper_fields: OrderedDict) -> dict:
 
 
 def fetch_parent_award_from_piid_agency(piid, fpds_agency):
-    if piid:
+    if piid and fpds_agency:
         parent_unique_key = "CONT_IDV_{}_{}".format(piid, fpds_agency)
         parent = (
             ParentAward.objects.filter(generated_unique_award_id=parent_unique_key)
             .values("generated_unique_award_id")
-            .first()["generated_unique_award_id"]
+            .first()
         )
-        return parent
+        if parent:
+            return parent["generated_unique_award_id"]
     return None
 
 
