@@ -213,6 +213,9 @@
       "where": "parent_recipient_unique_id IS NOT NULL",
       "columns": [{"name": "parent_recipient_unique_id"}]
     }, {
+      "name": "date_signed",
+      "columns": [{"name": "date_signed", "order":  "DESC NULLS LAST"}]
+    },{
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
