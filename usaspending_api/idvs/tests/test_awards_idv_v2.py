@@ -127,6 +127,10 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "date_signed": "2004-03-02",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
     }
     award_3_model = {
         "pk": 3,
@@ -540,7 +544,13 @@ expected_response_idv = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {
-        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+        "officers": [
+            {"name": "Tom", "amount": 10000.00},
+            {"name": "Stan Burger", "amount": 1234.00},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+        ]
     },
     "date_signed": "2004-03-02",
 }
