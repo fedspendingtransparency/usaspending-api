@@ -7,11 +7,11 @@ Used to populate the Federal Account Funding tab on the Award V2 summary pages
 
 ## POST
 
-List financial data for the requested award
+Lists federal account financial data for the requested award
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `CONT_AWD_W31P4Q19F0034_9700_W31P4Q18D0002_9700` (required, string)
+        + `award_id`: `CONT_AWD_0002_2800_SS001740003_2800` (required, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `limit`: 5 (optional, number)
             The number of results to include per page.
@@ -51,72 +51,43 @@ List financial data for the requested award
             {
                 "results": [
                     {
-                        "transaction_obligated_amount": 251000.0,
-                        "federal_account": "057-3600",
-                        "account_title": "Research, Development, Test, and Evaluation, Air Force",
-                        "funding_agency_name": "Department of the Air Force",
-                        "funding_agency_id": 1173,
+                        "transaction_obligated_amount": 6960.0,
+                        "federal_account": "028-0400",
+                        "account_title": "Office of the Inspector General, Social Security Administration",
+                        "funding_agency_name": "Social Security Administration",
+                        "funding_agency_id": 539,
                         "awarding_agency_name": null,
                         "awarding_agency_id": null,
-                        "object_class": "255",
-                        "object_class_name": "Research and development contracts",
-                        "program_activity_code": null,
-                        "program_activity_name": null,
-                        "reporting_fiscal_year": 2019,
-                        "reporting_fiscal_quarter": 2
+                        "object_class": "254",
+                        "object_class_name": "Operation and maintenance of facilities",
+                        "program_activity_code": "0001",
+                        "program_activity_name": "OFFICE OF INSPECTOR GENERAL (DIRECT)",
+                        "reporting_fiscal_year": 2017,
+                        "reporting_fiscal_quarter": 4
                     },
                     {
-                        "transaction_obligated_amount": 0.0,
-                        "federal_account": "097-0400",
-                        "account_title": "Research, Development, Test, and Evaluation, Defense-Wide",
-                        "funding_agency_name": "Department of Defense",
-                        "funding_agency_id": 1173,
+                        "transaction_obligated_amount": 70296.0,
+                        "federal_account": "028-8704",
+                        "account_title": "Salaries and Expenses, Social Security Administration",
+                        "funding_agency_name": "Social Security Administration",
+                        "funding_agency_id": 539,
                         "awarding_agency_name": null,
                         "awarding_agency_id": null,
-                        "object_class": "251",
-                        "object_class_name": "Advisory and assistance services",
-                        "program_activity_code": null,
-                        "program_activity_name": null,
-                        "reporting_fiscal_year": 2019,
-                        "reporting_fiscal_quarter": 2
-                    },
-                    {
-                        "transaction_obligated_amount": 250000.0,
-                        "federal_account": "097-0400",
-                        "account_title": "Research, Development, Test, and Evaluation, Defense-Wide",
-                        "funding_agency_name": "Department of Defense",
-                        "funding_agency_id": 1173,
-                        "awarding_agency_name": null,
-                        "awarding_agency_id": null,
-                        "object_class": "251",
-                        "object_class_name": "Advisory and assistance services",
-                        "program_activity_code": null,
-                        "program_activity_name": null,
-                        "reporting_fiscal_year": 2019,
-                        "reporting_fiscal_quarter": 2
-                    },
-                    {
-                        "transaction_obligated_amount": 1000000.0,
-                        "federal_account": "097-0400",
-                        "account_title": "Research, Development, Test, and Evaluation, Defense-Wide",
-                        "funding_agency_name": "Department of Defense",
-                        "funding_agency_id": 1173,
-                        "awarding_agency_name": null,
-                        "awarding_agency_id": null,
-                        "object_class": "255",
-                        "object_class_name": "Research and development contracts",
-                        "program_activity_code": null,
-                        "program_activity_name": null,
-                        "reporting_fiscal_year": 2019,
-                        "reporting_fiscal_quarter": 2
+                        "object_class": "254",
+                        "object_class_name": "Operation and maintenance of facilities",
+                        "program_activity_code": "0001",
+                        "program_activity_name": "LAE PROGRAM DIRECT",
+                        "reporting_fiscal_year": 2017,
+                        "reporting_fiscal_quarter": 4
                     }
                 ],
                 "page_metadata": {
-                    "hasNext": false,
-                    "hasPrevious": false,
-                    "next": null,
                     "page": 1,
-                    "previous": null
+                    "count": 2,
+                    "next": null,
+                    "previous": null,
+                    "hasPrevious": false,
+                    "hasNext": false
                 }
             }
 
@@ -128,6 +99,7 @@ List financial data for the requested award
 + `hasPrevious` (required, boolean)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
++ `count` (required, number)
 
 ## AwardFundingResponse (object)
 + `reporting_fiscal_year` (required, number, nullable)
