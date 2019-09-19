@@ -360,7 +360,7 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id: int) -> list:
 
 
 def normalize_cfda_number_format(fabs_transaction: dict) -> str:
-    """sometimes the transactions data has the trailing 0 in the CFDA number truncated, this adds it back"""
+    """Normalize a CFDA number to 6 digits by left-padding 0 in case the value was truncated"""
     cfda_number = fabs_transaction.get("cfda_number")
     if cfda_number and len(cfda_number) < 6:
         cfda_number += "0" * (6 - len(cfda_number))

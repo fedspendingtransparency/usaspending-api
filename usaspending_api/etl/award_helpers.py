@@ -35,64 +35,64 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
 
     _earliest_transaction_cte = str(
         "txn_earliest AS ( "
-        "  SELECT DISTINCT ON (award_id) "
-        "    award_id, "
-        "    id, "
-        "    action_date, "
-        "    description, "
-        "    period_of_performance_start_date "
-        "  FROM transaction_normalized "
+        "  SELECT DISTINCT ON (tn.award_id) "
+        "    tn.award_id, "
+        "    tn.id, "
+        "    tn.action_date, "
+        "    tn.description, "
+        "    tn.period_of_performance_start_date "
+        "  FROM transaction_normalized tn"
         "  {} "
-        "  ORDER BY award_id, action_date ASC, modification_number ASC "
+        "  ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.id ASC "
         ")"
     )
     _latest_transaction_cte = str(
         "txn_latest AS ( "
-        "  SELECT DISTINCT ON (award_id) "
-        "    award_id, "
-        "    id, "
-        "    awarding_agency_id, "
-        "    action_date, "
-        "    funding_agency_id, "
-        "    last_modified_date, "
-        "    period_of_performance_current_end_date, "
-        "    place_of_performance_id, "
-        "    recipient_id, "
-        "    type, "
-        "    type_description, "
-        "    CASE WHEN type IN ('A', 'B', 'C', 'D') THEN 'contract' "
-        "      WHEN type IN ('02', '03', '04', '05') THEN 'grant' "
-        "      WHEN type in ('06', '10') THEN 'direct payment' "
-        "      WHEN type in ('07', '08') THEN 'loans' "
-        "      WHEN type = '09' THEN 'insurance' "
-        "      WHEN type = '11' THEN 'other' "
-        "      WHEN type LIKE 'IDV%%' THEN 'idv' "
+        "  SELECT DISTINCT ON (tn.award_id) "
+        "    tn.award_id, "
+        "    tn.id, "
+        "    tn.awarding_agency_id, "
+        "    tn.action_date, "
+        "    tn.funding_agency_id, "
+        "    tn.last_modified_date, "
+        "    tn.period_of_performance_current_end_date, "
+        "    tn.place_of_performance_id, "
+        "    tn.recipient_id, "
+        "    tn.type, "
+        "    tn.type_description, "
+        "    CASE WHEN tn.type IN ('A', 'B', 'C', 'D') THEN 'contract' "
+        "      WHEN tn.type IN ('02', '03', '04', '05') THEN 'grant' "
+        "      WHEN tn.type in ('06', '10') THEN 'direct payment' "
+        "      WHEN tn.type in ('07', '08') THEN 'loans' "
+        "      WHEN tn.type = '09' THEN 'insurance' "
+        "      WHEN tn.type = '11' THEN 'other' "
+        "      WHEN tn.type LIKE 'IDV%%' THEN 'idv' "
         "      ELSE NULL END AS category "
-        "  FROM transaction_normalized "
+        "  FROM transaction_normalized tn"
         "  {} "
-        "  ORDER BY award_id, action_date DESC, modification_number DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
         ")"
     )
     _aggregate_transaction_cte = str(
         "txn_totals AS ( "
         "  SELECT "
-        "    award_id, "
-        "    SUM(federal_action_obligation) AS total_obligation, "
-        "    SUM(original_loan_subsidy_cost) AS total_subsidy_cost, "
-        "    SUM(funding_amount) AS total_funding_amount, "
-        "    SUM(face_value_loan_guarantee) AS total_loan_value, "
-        "    SUM(non_federal_funding_amount) AS non_federal_funding_amount "
-        "  FROM transaction_normalized "
+        "    tn.award_id, "
+        "    SUM(tn.federal_action_obligation) AS total_obligation, "
+        "    SUM(tn.original_loan_subsidy_cost) AS total_subsidy_cost, "
+        "    SUM(tn.funding_amount) AS total_funding_amount, "
+        "    SUM(tn.face_value_loan_guarantee) AS total_loan_value, "
+        "    SUM(tn.non_federal_funding_amount) AS non_federal_funding_amount "
+        "  FROM transaction_normalized tn"
         "  {} "
-        "  GROUP BY award_id "
+        "  GROUP BY tn.award_id "
         ")"
     )
 
     if award_tuple:
         values = [award_tuple, award_tuple, award_tuple]
-        earliest_transaction_cte = _earliest_transaction_cte.format(" WHERE award_id IN %s ")
-        latest_transaction_cte = _latest_transaction_cte.format(" WHERE award_id IN %s ")
-        aggregate_transaction_cte = _aggregate_transaction_cte.format(" WHERE award_id IN %s ")
+        earliest_transaction_cte = _earliest_transaction_cte.format(" WHERE tn.award_id IN %s ")
+        latest_transaction_cte = _latest_transaction_cte.format(" WHERE tn.award_id IN %s ")
+        aggregate_transaction_cte = _aggregate_transaction_cte.format(" WHERE tn.award_id IN %s ")
     else:
         values = None
         earliest_transaction_cte = _earliest_transaction_cte.format("")
@@ -157,7 +157,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
         "  FROM transaction_normalized tn "
         "  INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id "
         "  WHERE fabs.officer_1_name IS NOT NULL {} "
-        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
         ") "
         "UPDATE awards a "
         "  SET "
@@ -177,7 +177,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
 
     if award_tuple:
         values = [award_tuple]
-        sql_update = _sql_update.format("AND award_id IN %s ")
+        sql_update = _sql_update.format("AND tn.award_id IN %s ")
     else:
         values = None
         sql_update = _sql_update.format("")
@@ -191,13 +191,13 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
     _aggregate_transaction_cte = str(
         "txn_totals AS ( "
         "  SELECT "
-        "    tx.award_id, "
-        "    SUM(CAST(f.base_and_all_options_value AS double precision)) AS total_base_and_options_value, "
-        "    SUM(CAST(f.base_exercised_options_val AS double precision)) AS base_exercised_options_val "
-        "  FROM transaction_normalized AS tx "
-        "  INNER JOIN transaction_fpds AS f ON tx.id = f.transaction_id "
+        "    tn.award_id, "
+        "    SUM(CAST(tf.base_and_all_options_value AS double precision)) AS total_base_and_options_value, "
+        "    SUM(CAST(tf.base_exercised_options_val AS double precision)) AS base_exercised_options_val "
+        "  FROM transaction_normalized AS tn "
+        "  INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id "
         "  {} "
-        "  GROUP BY tx.award_id "
+        "  GROUP BY tn.award_id "
         ") "
     )
 
@@ -205,27 +205,27 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
     _extra_fpds_fields = str(
         "extra_fpds_fields AS ( "
         "  SELECT "
-        "    tx.award_id, "
+        "    tn.award_id, "
         "    CASE "
-        "      WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', type_of_idc::text) "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
-        "        type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
-        "        type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
-        "      WHEN idv_type = 'B' AND type_of_idc IS NULL and "
-        "        type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
-        "      ELSE CONCAT('IDV_', idv_type::text) END AS type, "
-        "    CASE WHEN pulled_from IS DISTINCT FROM 'IDV' THEN contract_award_type_desc "
-        "      WHEN idv_type = 'B' AND "
-        "        (type_of_idc_description IS DISTINCT FROM NULL AND type_of_idc_description <> 'NAN') "
-        "        THEN type_of_idc_description "
-        "      WHEN idv_type = 'B' THEN 'INDEFINITE DELIVERY CONTRACT' "
-        "      ELSE idv_type_description END AS type_description, "
-        "    agency_id, "
-        "    referenced_idv_agency_iden "
-        "  FROM transaction_normalized AS tx "
-        "  INNER JOIN transaction_fpds AS f ON tx.id = f.transaction_id "
+        "      WHEN tf.pulled_from IS DISTINCT FROM 'IDV' THEN tf.contract_award_type "
+        "      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', tf.type_of_idc::text) "
+        "      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL and "
+        "        tf.type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A' "
+        "      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL and "
+        "        tf.type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B' "
+        "      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL and "
+        "        tf.type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C' "
+        "      ELSE CONCAT('IDV_', tf.idv_type::text) END AS type, "
+        "    CASE WHEN tf.pulled_from IS DISTINCT FROM 'IDV' THEN tf.contract_award_type_desc "
+        "      WHEN tf.idv_type = 'B' AND "
+        "        (tf.type_of_idc_description IS DISTINCT FROM NULL AND tf.type_of_idc_description <> 'NAN') "
+        "        THEN tf.type_of_idc_description "
+        "      WHEN tf.idv_type = 'B' THEN 'INDEFINITE DELIVERY CONTRACT' "
+        "      ELSE tf.idv_type_description END AS type_description, "
+        "    tf.agency_id, "
+        "    tf.referenced_idv_agency_iden "
+        "  FROM transaction_normalized AS tn "
+        "  INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id "
         "  {}"
         ")"
     )
@@ -247,14 +247,14 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
         "  FROM transaction_normalized tn "
         "  INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id "
         "  WHERE fpds.officer_1_name IS NOT NULL {} "
-        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
         ") "
     )
 
     if award_tuple:
         values = [award_tuple, award_tuple, award_tuple]
-        aggregate_transaction_cte = _aggregate_transaction_cte.format(" WHERE tx.award_id IN %s ")
-        extra_fpds_fields = _extra_fpds_fields.format(" WHERE tx.award_id IN %s ")
+        aggregate_transaction_cte = _aggregate_transaction_cte.format(" WHERE tn.award_id IN %s ")
+        extra_fpds_fields = _extra_fpds_fields.format(" WHERE tn.award_id IN %s ")
         executive_comp_cte = _executive_comp_cte.format(" AND tn.award_id IN %s ")
     else:
         values = None
