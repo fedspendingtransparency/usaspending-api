@@ -8,27 +8,23 @@ from django.core.management import call_command
 from usaspending_api.references.models import Agency
 
 
-@pytest.fixture()
-def agency_data():
-    call_command("flush", "--noinput")
-    call_command("loaddata", "endpoint_fixture_db")
-    call_command("load_agencies")
-
-
 @pytest.mark.django_db
-def test_subtier(agency_data):
+def test_subtier(monkeypatch):
     """
     Make sure a subtier is properly mapped to its parent department
-    Uses NIST and DOC (NIST is a subtier of DOC)
     """
 
+    # Can't run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
+    # function that performs the vacuuming.
+    monkeypatch.setattr(
+        "usaspending_api.agencies.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
+    )
+    call_command("load_agencies", "usaspending_api/agencies/tests/test_load_agencies.csv")
+
     # Make sure the subtier's top agency = the expected toptier agency
-    subtier = Agency.objects.get(toptier_agency__cgac_code="013", subtier_agency__subtier_code="1341")
-
-    department = Agency.objects.get(toptier_agency__cgac_code="013", toptier_flag=True)
-
+    subtier = Agency.objects.get(toptier_agency__cgac_code="009", subtier_agency__subtier_code="0900")
+    department = Agency.objects.get(toptier_agency__cgac_code="009", toptier_flag=True)
     print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))
-
     assert subtier.toptier_agency == department.toptier_agency
 
 
@@ -41,7 +37,7 @@ def test_get_by_toptier():
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=mommy.make("references.SubtierAgency", subtier_code="abc", name="no"),
+        subtier_agency=mommy.make("references.SubtierAgency", subtier_code="bbb", name="no"),
         update_date=datetime.date(2017, 10, 10),
     )
     agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)

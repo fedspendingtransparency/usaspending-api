@@ -46,8 +46,8 @@ def awards_and_transactions(db):
     mommy.make("references.Location", **loc)
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    mommy.make("references.SubtierAgency", **subag)
-    mommy.make("references.ToptierAgency", **subag)
+    mommy.make("references.SubtierAgency", subtier_code="def", **subag)
+    mommy.make("references.ToptierAgency", cgac_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
@@ -415,14 +415,14 @@ expected_response_idv = {
     },
     "awarding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "funding_office",
     },
     "recipient": {

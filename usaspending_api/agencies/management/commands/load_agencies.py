@@ -39,9 +39,9 @@ Agency = namedtuple(
 )
 
 
-# Set count to True to update the overall affected row count.  Set skip_if_no_changes to True to not run
+# Set keep_count to True to update the overall affected row count.  Set skip_if_no_changes to True to not run
 # this step if the overall affected row count is zero.  Useful for not running expensive steps if nothing changed.
-ProcessingStep = namedtuple("ProcessingStep", ["description", "file", "function", "count", "skip_if_no_changes"])
+ProcessingStep = namedtuple("ProcessingStep", ["description", "file", "function", "keep_count", "skip_if_no_changes"])
 
 
 PROCESSING_STEPS = [
@@ -104,21 +104,16 @@ class Command(BaseCommand):
         try:
             with Timer("Import agencies"):
                 with transaction.atomic():
-                    for step in PROCESSING_STEPS:
-                        with Timer(step.description):
-                            if step.skip_if_no_changes and self.rows_affected_count == 0:
-                                logger.info("Skipping due to no agency changes")
-                                continue
-                            if step.file:
-                                count = self._execute_sql_file(step.file)
-                                if step.count:
-                                    self.rows_affected_count += count
-                            if step.function:
-                                getattr(self, step.function)()
-                with Timer("Vacuum tables"):
-                    self._vacuum_tables()
+                    self._run_steps()
         except Exception:
             logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
+            raise
+
+        try:
+            with Timer("Vacuum tables"):
+                self._vacuum_tables()
+        except Exception:
+            logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
             raise
 
     def _execute_sql(self, sql):
@@ -231,6 +226,19 @@ class Command(BaseCommand):
             )
             if cursor.rowcount > -1:
                 logger.info("{:,} rows affected".format(cursor.rowcount))
+
+    def _run_steps(self):
+        for step in PROCESSING_STEPS:
+            with Timer(step.description):
+                if step.skip_if_no_changes and self.rows_affected_count == 0:
+                    logger.info("Skipping due to no agency changes")
+                    continue
+                if step.file:
+                    count = self._execute_sql_file(step.file)
+                    if step.keep_count:
+                        self.rows_affected_count += count
+                if step.function:
+                    getattr(self, step.function)()
 
     def _vacuum_tables(self):
         self._execute_sql("vacuum (full, analyze) agency")

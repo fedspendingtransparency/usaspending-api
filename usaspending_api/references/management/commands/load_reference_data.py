@@ -19,7 +19,7 @@ class Command(BaseCommand):
         call_command("loaddata", "reference_fixture")
 
         self.logger.info("Loading agency list")
-        call_command("load_agencies")
+        call_command("load_agencies", "https://files.usaspending.gov/reference_data/agency_codes.csv")
 
         self.logger.info("Loading state data")
         call_command("load_state_data")

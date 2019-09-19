@@ -85,8 +85,8 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
-    mommy.make("references.SubtierAgency", **sub_agency)
-    mommy.make("references.ToptierAgency", **sub_agency)
+    mommy.make("references.SubtierAgency", subtier_code="def", **sub_agency)
+    mommy.make("references.ToptierAgency", cgac_code="abc", **sub_agency)
 
     parent_le = {
         "pk": 2,
@@ -523,14 +523,14 @@ expected_response_asst = {
     "transaction_obligated_amount": None,
     "awarding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -594,14 +594,14 @@ expected_response_cont = {
     "description": "lorem ipsum",
     "awarding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": None},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "funding_office",
     },
     "recipient": {

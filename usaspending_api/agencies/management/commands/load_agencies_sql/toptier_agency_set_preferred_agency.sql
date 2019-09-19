@@ -21,6 +21,7 @@ with cte as (
                 from    agency
                 where   toptier_agency_id = ta.toptier_agency_id and
                         toptier_flag is true
+                order   by id desc
                 limit   1
             ),
             (
@@ -29,6 +30,7 @@ with cte as (
                 from    agency
                 where   toptier_agency_id = ta.toptier_agency_id and
                         subtier_agency_id is null
+                order   by id desc
                 limit   1
             )
         ) as preferred_agency_id
