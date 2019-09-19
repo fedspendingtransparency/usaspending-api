@@ -23,6 +23,7 @@ import logging
 import math
 import psycopg2
 import re
+import signal
 import time
 
 from os import environ
@@ -33,6 +34,24 @@ try:
 except Exception:
     print("SET env var DATABASE_URL!!!\nTerminating script")
     raise SystemExit(1)
+
+# Not a complete list of signals
+# NOTE: 1-15 are relatively standard on unix platforms; > 15 can change from platform to platform
+BSD_SIGNALS = {
+    1: "SIGHUP [1] (Hangup detected on controlling terminal or death of controlling process)",
+    2: "SIGINT [2] (Interrupt from keyboard)",
+    3: "SIGQUIT [3] (Quit from keyboard)",
+    4: "SIGILL [4] (Illegal Instruction)",
+    6: "SIGABRT [6] (Abort signal from abort(3))",
+    8: "SIGFPE [8] (Floating point exception)",
+    9: "SIGKILL [9] (Non-catchable, non-ignorable kill)",
+    11: "SIGSEGV [11] (Invalid memory reference)",
+    14: "SIGALRM [14] (Timer signal from alarm(2))",
+    15: "SIGTERM [15] (Software termination signal)",
+    19: "SIGSTOP [19] (Suspend process execution)",  # NOTE: 17 on Mac OSX, 19 on RHEL
+    20: "SIGTSTP [20] (Interrupt from keyboard to suspend (CTRL-Z)",  # NOTE: 18 on Mac OSX, 20 on RHEL
+}
+
 
 _earliest_transaction_cte = str(
     "txn_earliest AS ( "
@@ -189,12 +208,21 @@ UPDATE_AWARDS_SQL = UPDATE_AWARDS_SQL.format(
     _earliest_transaction_cte, _latest_transaction_cte, _aggregate_transaction_cte, _executive_comp_cte
 )
 
-DEBUG = False
+DEBUG, CLEANUP = False, False
 GET_FABS_AWARDS = "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
 GET_FPDS_AWARDS = "SELECT id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
 GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
 MAX_ID, MIN_ID = None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
+EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
+
+
+def _handle_exit_signal(signum, frame):
+    """ Attempt to gracefully handle the exiting of the job as a result of receiving an exit signal."""
+    signal_or_human = BSD_SIGNALS.get(signum, signum)
+    logging.warn("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
+    teardown(successful_run=False)
+    raise SystemExit()
 
 
 class Timer:
@@ -311,6 +339,10 @@ def setup():
 
 
 def teardown(successful_run=False):
+    global CLEANUP
+    if CLEANUP:
+        return
+    logging.info("Cleaning up table and restoring autovacuum")
     with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
@@ -322,6 +354,8 @@ def teardown(successful_run=False):
                 logging.info("### Resetting autovacuum ###")
                 cursor.execute("ALTER TABLE awards SET (autovacuum_enabled = true, toast.autovacuum_enabled = true)")
                 logging.info(cursor.statusmessage)
+
+    CLEANUP = True
 
 
 if __name__ == "__main__":
@@ -341,19 +375,19 @@ if __name__ == "__main__":
     MIN_ID = args.min_id
     DEBUG = args.debug
 
+    for sig in EXIT_SIGNALS:
+        signal.signal(sig, _handle_exit_signal)
+
     successful_run = False
     with Timer("recompute_all_awards", pipe_output=logging.info):
         setup()
         try:
             main()
             successful_run = True
-        except KeyboardInterrupt:
-            pass
         except Exception:
             logging.exception("ERROR ENCOUNTERED!!!")
             raise SystemExit(1)
         finally:
-            logging.info("Cleaning up table and restoring autovacuum")
             teardown(successful_run)
 
     logging.info("Finished. Updated {:,} total award records".format(TOTAL_UPDATES))
