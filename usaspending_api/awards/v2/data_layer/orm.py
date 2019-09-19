@@ -97,6 +97,9 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
 
+    response["parent_generated_unique_award_id"] = fetch_parent_award_from_piid_agency(
+        award["parent_award_piid"], award["_fpds_parent_agency_id"]
+    )
     return delete_keys_from_dict(response)
 
 
@@ -248,6 +251,19 @@ def create_officers_object(award: dict) -> dict:
 def fetch_award_details(filter_q: dict, mapper_fields: OrderedDict) -> dict:
     vals, ann = split_mapper_into_qs(mapper_fields)
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
+
+
+def fetch_parent_award_from_piid_agency(piid, fpds_agency):
+    if piid and fpds_agency:
+        parent_unique_key = "CONT_IDV_{}_{}".format(piid, fpds_agency)
+        parent = (
+            ParentAward.objects.filter(generated_unique_award_id=parent_unique_key)
+            .values("generated_unique_award_id")
+            .first()
+        )
+        if parent:
+            return parent["generated_unique_award_id"]
+    return None
 
 
 def fetch_parent_award_details(guai: str) -> Optional[OrderedDict]:
