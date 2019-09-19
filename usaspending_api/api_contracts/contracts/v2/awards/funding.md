@@ -106,7 +106,7 @@ Lists federal account financial data for the requested award
     Fiscal year of the submission date.
 + `reporting_fiscal_quarter` (required, number, nullable)
     Fiscal quarter of the submission date.
-+ `awarding_agency_id`: 252 (required, number, nullable)
++ `awarding_agency_id` (required, number, nullable)
     Internal surrogate identifier of the awarding agency.
 + `awarding_agency_name` (required, string, nullable)
 + `funding_agency_id` (required, number, nullable)
