@@ -105,7 +105,7 @@ TINYSHIELD_MODELS = customize_pagination_with_sort_columns(list(SORTABLE_COLUMNS
 TINYSHIELD_MODELS.append(get_internal_or_generated_award_id_model())
 
 
-@validate_post_request(TINYSHIELD_MODELS)
+@validate_post_request(deepcopy(TINYSHIELD_MODELS))
 class AwardFundingViewSet(APIView):
     """
     These endpoints are used to power USAspending.gov's Award V2 pages federal account funding table
