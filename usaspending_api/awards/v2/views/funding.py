@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
