@@ -273,9 +273,15 @@ def fetch_award_details(filter_q, mapper_fields):
     vals, ann = split_mapper_into_qs(mapper_fields)
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
+
 def fetch_parent_award_from_piid(piid):
-    parent_award_id = ParentAward.objects.filter(generated_unique_award_id__icontains=piid).values("generated_unique_award_id").first()
+    parent_award_id = (
+        ParentAward.objects.filter(generated_unique_award_id__icontains=piid)
+        .values("generated_unique_award_id")
+        .first()
+    )
     return parent_award_id
+
 
 def fetch_parent_award_details(guai):
     parent_award_ids = (
