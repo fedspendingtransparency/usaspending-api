@@ -77,6 +77,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("period_of_performance_start_date", "_start_date"),
         ("period_of_performance_current_end_date", "_end_date"),
         ("date_signed", "date_signed"),
+        ("fpds_parent_agency_id", "_fpds_parent_agency_id"),
     ]
 )
 

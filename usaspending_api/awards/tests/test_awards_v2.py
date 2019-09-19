@@ -392,6 +392,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "date_signed": "2004-03-02",
+        "fpds_parent_agency_id": "9700",
     }
 
     award_3_model = {
