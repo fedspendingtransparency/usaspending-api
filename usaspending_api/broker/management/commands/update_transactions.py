@@ -1,4 +1,6 @@
 import logging
+
+from copy import copy
 from datetime import datetime
 from usaspending_api.common.helpers.generic_helper import fy
 from django.core.management.base import BaseCommand
@@ -9,7 +11,7 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
-from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
+from usaspending_api.etl.management.load_base import get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 

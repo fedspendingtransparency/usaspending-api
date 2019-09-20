@@ -1,4 +1,8 @@
+from django.db.models import CharField, Expression
+from psycopg2.sql import Identifier, Literal, SQL
+from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
@@ -81,3 +85,89 @@ def recipient_is_child(recipient_record: dict) -> bool:
 
 def combine_recipient_hash_and_level(recipient_hash, recipient_level):
     return "{}-{}".format(recipient_hash, recipient_level.upper())
+
+
+def _annotate_recipient_id(field_name, queryset, annotation_sql):
+    """
+    Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
+    the queryset is based on a data source that contains recipient_unique_id and
+    parent_recipient_unique_id which, currently, all of our advanced search materialized views do.
+    """
+
+    class RecipientId(Expression):
+        """
+        Used to graft a subquery into a queryset that can build recipient ids.
+
+        This is a bit less than ideal, but I just couldn't construct an ORM query to mimic this
+        logic.  There are several issues including but not limited to:
+
+            - There are currently no relations between these tables in the Django ORM which makes
+              joining them... challenging.
+            - Adding relations to the ORM changes how the fields behave making this a much bigger
+              enhancement than originally planned.
+            - When I did add relations to the ORM, I couldn't figure out how to make the Django
+              OuterRef expression check for nulls since the subquery needs to check to see if the
+              parent_recipient_unique_id in the outer query is null.
+
+        Anyhow, this works and is encapsulated so if someone smart figures out how to use pure ORM,
+        it should be easy to patch in.
+        """
+
+        def __init__(self):
+            super(RecipientId, self).__init__(CharField())
+
+        def as_sql(self, compiler, connection):
+            return (
+                convert_composable_query_to_string(
+                    SQL(annotation_sql).format(
+                        outer_table=Identifier(compiler.query.model._meta.db_table),
+                        special_cases=Literal(tuple(sc for sc in SPECIAL_CASES)),
+                    )
+                ),
+                [],
+            )
+
+    return queryset.annotate(**{field_name: RecipientId()})
+
+
+def annotate_recipient_id(field_name, queryset):
+    return _annotate_recipient_id(
+        field_name,
+        queryset,
+        """(
+            select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                recipient_profile rp
+                inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+            where
+                rl.duns = {outer_table}.recipient_unique_id and
+                rp.recipient_level = case
+                    when {outer_table}.parent_recipient_unique_id is null then 'R'
+                    else 'C'
+                end and
+                rp.recipient_name not in {special_cases}
+        )""",
+    )
+
+
+def annotate_prime_award_recipient_id(field_name, queryset):
+    return _annotate_recipient_id(
+        field_name,
+        queryset,
+        """(
+            select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                broker_subaward bs
+                inner join recipient_lookup rl on rl.duns = bs.awardee_or_recipient_uniqu
+                inner join recipient_profile rp on rp.recipient_hash = rl.recipient_hash
+            where
+                bs.id = {outer_table}.subaward_id and
+                rp.recipient_level = case
+                    when bs.ultimate_parent_unique_ide is null or bs.ultimate_parent_unique_ide = '' then 'R'
+                    else 'C'
+                end and
+                rp.recipient_name not in {special_cases}
+        )""",
+    )

@@ -1,4 +1,3 @@
-
 state_to_code_dict = {
     "alabama": "AL",
     "alaska": "AK",
@@ -59,7 +58,7 @@ state_to_code_dict = {
     "u.s. minor outlying islands": "UM",
     "micronesia": "FM",
     "marshall islands": "MH",
-    "palau": "PW"
+    "palau": "PW",
 }
 
 code_to_state_dict = {v: k for k, v in state_to_code_dict.items()}

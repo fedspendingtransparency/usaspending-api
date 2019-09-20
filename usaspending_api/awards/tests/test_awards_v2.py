@@ -6,7 +6,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, OfficeAgency, LegalEntity
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
 
 
 @pytest.fixture
@@ -87,7 +87,6 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **recipient_profile)
     mommy.make("references.SubtierAgency", **sub_agency)
     mommy.make("references.ToptierAgency", **sub_agency)
-    mommy.make("references.OfficeAgency", name="office_agency", office_agency_id=1)
 
     parent_le = {
         "pk": 2,
@@ -99,12 +98,7 @@ def awards_and_transactions(db):
 
     le = {"pk": 1, "business_categories": ["small_business"]}
 
-    ag = {
-        "pk": 1,
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-        "office_agency": OfficeAgency.objects.get(pk=1),
-    }
+    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_asst2)

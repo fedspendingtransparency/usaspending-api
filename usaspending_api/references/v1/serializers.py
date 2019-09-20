@@ -5,7 +5,6 @@ from usaspending_api.references.models import (
     LegalEntity,
     Location,
     ObjectClass,
-    OfficeAgency,
     RefProgramActivity,
     SubtierAgency,
     ToptierAgency,
@@ -28,22 +27,14 @@ class SubtierAgencySerializer(LimitableSerializer):
         default_fields = ["subtier_code", "name", "abbreviation"]
 
 
-class OfficeAgencySerializer(LimitableSerializer):
-    class Meta:
-        model = OfficeAgency
-        fields = "__all__"
-        default_fields = ["aac_code", "name"]
-
-
 class AgencySerializer(LimitableSerializer):
     class Meta:
         model = Agency
         fields = "__all__"
-        default_fields = ["id", "toptier_agency", "subtier_agency", "office_agency", "toptier_flag"]
+        default_fields = ["id", "toptier_agency", "subtier_agency", "toptier_flag"]
         nested_serializers = {
             "toptier_agency": {"class": ToptierAgencySerializer, "kwargs": {"read_only": True}},
             "subtier_agency": {"class": SubtierAgencySerializer, "kwargs": {"read_only": True}},
-            "office_agency": {"class": OfficeAgencySerializer, "kwargs": {"read_only": True}},
         }
 
 

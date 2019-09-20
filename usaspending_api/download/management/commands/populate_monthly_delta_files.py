@@ -337,10 +337,14 @@ class Command(BaseCommand):
 
         # Extract everything between the first SELECT and the last FROM
         query_before_group_by = raw_query.split("GROUP BY ")[0]
-        query_before_from = re.sub(r"\(?SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
+        query_before_from = re.sub(
+            r"\(?SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1
+        )
 
         # Create a list from the non-derived values between SELECT and FROM
-        selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|FROM)", raw_query)[0]
+        selects_str = re.findall(
+            r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|FROM)", raw_query
+        )[0]
         just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
         selects_list = [select.strip() for select in just_selects.strip().split(",")]
 
