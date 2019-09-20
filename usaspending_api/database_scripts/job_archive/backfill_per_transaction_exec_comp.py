@@ -21,6 +21,7 @@ import math
 import psycopg2
 import time
 
+from datetime import datetime, timezone
 from os import environ
 
 
@@ -108,6 +109,7 @@ WHERE
         OR officer_5_name IS DISTINCT FROM broker.high_comp_officer5_full_na
         OR officer_5_amount IS DISTINCT FROM broker.high_comp_officer5_amount::NUMERIC(23,2)
     )
+RETURNING fabs.transaction_id
 """
 
 SPENDING_FPDS_UPDATE_SQL = """
@@ -151,6 +153,12 @@ WHERE
         OR officer_5_name IS DISTINCT FROM broker.high_comp_officer5_full_na
         OR officer_5_amount IS DISTINCT FROM broker.high_comp_officer5_amount::NUMERIC(23,2)
     )
+RETURNING fpds.transaction_id
+"""
+
+ADD_TRANSACTIONS_TO_DELTA = """
+INSERT INTO transaction_delta
+VALUES {}
 """
 
 GET_FABS_IDS_WITH_EC_SQL = """
@@ -220,6 +228,12 @@ def run_spending_update_query(transaction_sql, transaction_type, broker_data):
             update_cursor.execute(update_query, [col for row in broker_data for col in row])
         row_count = update_cursor.rowcount
         logging.info("[{}] {:,} rows updated in {}".format(transaction_type, row_count, t.elapsed_as_string))
+        if row_count > 0:
+            now = datetime.now(timezone.utc)
+            insert_values = ",".join(["({},'{}')".format(id[0], now) for id in update_cursor.fetchall()])
+            update_cursor.execute(ADD_TRANSACTIONS_TO_DELTA.format(insert_values))
+            logging.info("[{}] {:,} rows added to transaction_delta".format(transaction_type, update_cursor.rowcount))
+
         return row_count
 
 
@@ -228,6 +242,8 @@ if __name__ == "__main__":
     logging.getLogger()
     logging.basicConfig(level=logging.INFO, format=log_format, datefmt="%Y/%m/%d %H:%M:%S (%Z)")
 
+    fabs_row_count, fpds_row_count = 0, 0
+
     with Timer() as overall_timer:
         with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, psycopg2.connect(
             dsn=BROKER_CONNECTION_STRING
@@ -235,11 +251,8 @@ if __name__ == "__main__":
             spending_connection.autocommit = True
 
             logging.info("Running FABS backfill from Broker to USAspending")
-
-            fabs_row_count = 0
-
+            logging.info("Finding Published_Award_Financial_Assistance_IDs for FABS...")
             with broker_connection.cursor() as cursor:
-                logging.info("Finding Published_Award_Financial_Assistance_IDs for FABS...")
                 cursor.execute(GET_FABS_IDS_WITH_EC_SQL)
                 fabs_ids = tuple(id[0] for id in cursor.fetchall())
                 fabs_total = len(fabs_ids)
@@ -268,9 +281,6 @@ if __name__ == "__main__":
             )
 
             logging.info("Running FPDS backfill from Broker to USAspending")
-
-            fpds_row_count = 0
-
             logging.info("Finding Detached_Award_Procurement_IDs for FPDS...")
             with broker_connection.cursor() as cursor:
                 cursor.execute(GET_FPDS_IDS_WITH_EC_SQL)
