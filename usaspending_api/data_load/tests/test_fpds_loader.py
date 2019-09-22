@@ -1,3 +1,5 @@
+import usaspending_api.data_load.fpds_loader as fpds_loader
+import random
 from usaspending_api.data_load.fpds_loader import (
     setup_load_lists,
     _extract_broker_objects,
@@ -17,7 +19,7 @@ from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_boolean_columns,
 )
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 
 def mock_cursor(monkeypatch, result_value):
@@ -55,6 +57,109 @@ def mock_cursor(monkeypatch, result_value):
     monkeypatch.setattr("psycopg2.connect", mock_connect)
 
     return result
+
+
+def _assemble_dummy_broker_data():
+    return {
+            **transaction_fpds_columns,
+            **transaction_normalized_columns,
+            **legal_entity_columns,
+            **{key: str(random.choice([True, False])) for key in legal_entity_boolean_columns},
+            **recipient_location_columns,
+            **place_of_performance_columns,
+            **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns}
+    }
+
+
+def _stub___extract_broker_objects(id_list):
+    """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg2.extras.DictCursor"""
+    for i in range(len(id_list)):
+        dummy_row = _assemble_dummy_broker_data()
+        dummy_row['detached_award_procurement_id'] = id_list[i]
+        dummy_row['detached_award_proc_unique'] = str(id_list[i])
+        yield dummy_row
+
+
+def test_run_fpds_load_empty():
+    fpds_loader.run_fpds_load([])
+
+
+@patch('usaspending_api.data_load.fpds_loader._extract_broker_objects')
+@patch('usaspending_api.data_load.derived_field_functions_fpds.fy', return_value=random.randint(2001, 2019))
+@patch('usaspending_api.data_load.fpds_loader._insert_recipient_locations')
+@patch('usaspending_api.data_load.fpds_loader._insert_recipients')
+@patch('usaspending_api.data_load.fpds_loader._insert_place_of_performance')
+@patch('usaspending_api.data_load.fpds_loader._lookup_award_by_transaction')
+@patch('usaspending_api.data_load.fpds_loader._insert_award_by_transaction')
+@patch('usaspending_api.data_load.fpds_loader._lookup_existing_transaction')
+@patch('usaspending_api.data_load.fpds_loader._update_transaction_normalized_transaction')
+@patch('usaspending_api.data_load.fpds_loader._update_transaction_fpds_transaction')
+@patch('usaspending_api.data_load.fpds_loader._insert_transaction_normalized_transaction')
+@patch('usaspending_api.data_load.fpds_loader._insert_transaction_fpds_transaction')
+@patch('usaspending_api.data_load.fpds_loader._update_award_latest_transaction')
+def test_run_fpds_load_dummy_id(
+        mock__update_award_latest_transaction,
+        mock__insert_transaction_fpds_transaction,
+        mock__insert_transaction_normalized_transaction,
+        mock__update_transaction_fpds_transaction,
+        mock__update_transaction_normalized_transaction,
+        mock__lookup_existing_transaction,
+        mock__insert_award_by_transaction,
+        mock__lookup_award_by_transaction,
+        mock__insert_place_of_performance,
+        mock__insert_recipients,
+        mock__insert_recipient_locations,
+        mock_calculate_fiscal_year,
+        mock__extract_broker_objects):
+
+    # Mock output data of key participant functions in this test scenario
+    # This is the baseline unconstrained scenario, where all patched functions' MagicMocks will behave as
+    # required by the code
+    mock__extract_broker_objects.side_effect = _stub___extract_broker_objects
+
+    # Test run of the loader
+    dummy_broker_ids = [101, 201, 301]
+    fpds_loader.run_fpds_load(dummy_broker_ids)
+
+    # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
+    # run_fpds_load like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
+    # always "find" a *mock* award and transaction.
+    # So, assert this baseline run followed that logic. That is:
+    # - for each broker transaction extracted,
+    # - an existing award that it belongs to was found in usaspending
+    # - and an existing transaction that it belongs to was found in usaspending
+
+    # One call per batch of transactions to load from broker into usaspending
+    assert mock__insert_recipient_locations.call_count == 1
+    assert mock__insert_recipients.call_count == 1
+    assert mock__insert_place_of_performance.call_count == 1
+
+    # One call per transactions to load from broker into usaspending
+    assert mock__lookup_award_by_transaction.call_count == 3
+    assert mock__lookup_existing_transaction.call_count == 3
+    assert mock__update_transaction_normalized_transaction.call_count == 3
+    assert mock__update_transaction_fpds_transaction.call_count == 3
+    assert mock__update_award_latest_transaction.call_count == 3
+
+    # With all broker data being found in usaspending (so no inserts, only updates)
+    mock__insert_award_by_transaction.assert_not_called()
+    mock__insert_transaction_normalized_transaction.assert_not_called()
+    mock__insert_transaction_fpds_transaction.assert_not_called()
+
+    # Check that the correct data (e.g. IDs) are being propagated via the load_objects dictionary from call to call
+    # Check only first transaction iteration
+    load_objects_pre_award = mock__lookup_award_by_transaction.call_args_list[0][0][1]
+    load_objects_pre_transaction = mock__lookup_existing_transaction.call_args_list[0][0][1]
+    final_award_id = mock__update_award_latest_transaction.call_args_list[0][0][1]
+    final_transaction_id = mock__update_award_latest_transaction.call_args_list[0][0][2]
+
+    # Compare data is as expected
+    assert load_objects_pre_transaction["award"]["transaction_unique_id"] == str(dummy_broker_ids[0])
+    assert load_objects_pre_transaction["transaction_normalized"]["transaction_unique_id"] == str(dummy_broker_ids[0])
+    assert load_objects_pre_transaction["transaction_fpds"]["transaction_id"] == final_transaction_id
+    assert load_objects_pre_transaction["award"]["latest_transaction_id"] == final_transaction_id
+    assert load_objects_pre_transaction["transaction_normalized"]["award_id"] == final_award_id
+    assert (2001 <= load_objects_pre_transaction["transaction_normalized"]["fiscal_year"] <= 2019)
 
 
 def test_setup_load_lists():
