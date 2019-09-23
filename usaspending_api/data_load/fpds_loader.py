@@ -29,7 +29,7 @@ from usaspending_api.data_load.generic_loaders import (
     insert_recipient_locations,
     insert_recipients,
     insert_place_of_performance,
-    insert_award_by_transaction
+    insert_award
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -201,7 +201,7 @@ def _load_transactions(load_objects):
                 award_id = _lookup_award_by_transaction(cursor, load_object)
                 if not award_id:
                     # If there is no award, we need to create one
-                    award_id = insert_award_by_transaction(cursor, load_object)
+                    award_id = insert_award(cursor, load_object)
 
                 load_object["transaction_normalized"]["award_id"] = award_id
                 ids_of_awards_created_or_updated.add(award_id)

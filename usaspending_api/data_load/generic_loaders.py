@@ -30,7 +30,7 @@ def insert_place_of_performance(cursor, load_objects):
     return [tup[0] for tup in cursor.fetchall()]
 
 
-def insert_award_by_transaction(cursor, load_object):
+def insert_award(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "award")
     generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id".format(columns, values)
     cursor.execute(generate_matching_award_sql)

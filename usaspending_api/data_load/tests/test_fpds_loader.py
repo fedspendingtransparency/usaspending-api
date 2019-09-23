@@ -1,7 +1,6 @@
 import usaspending_api.data_load.fpds_loader as fpds_loader
 import random
 from usaspending_api.data_load.fpds_loader import (
-    setup_load_lists,
     _extract_broker_objects,
     _create_load_object,
     _transform_objects,
@@ -17,6 +16,9 @@ from usaspending_api.data_load.field_mappings_fpds import (
     place_of_performance_columns,
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
+)
+from usaspending_api.data_load.data_load_helpers import (
+    setup_load_lists,
 )
 
 from unittest.mock import MagicMock, patch
@@ -86,30 +88,28 @@ def test_run_fpds_load_empty():
 
 @patch("usaspending_api.data_load.fpds_loader._extract_broker_objects")
 @patch("usaspending_api.data_load.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019))
-@patch("usaspending_api.data_load.fpds_loader._insert_recipient_locations")
-@patch("usaspending_api.data_load.fpds_loader._insert_recipients")
-@patch("usaspending_api.data_load.fpds_loader._insert_place_of_performance")
+@patch("usaspending_api.data_load.fpds_loader.insert_recipient_locations")
+@patch("usaspending_api.data_load.fpds_loader.insert_recipients")
+@patch("usaspending_api.data_load.fpds_loader.insert_place_of_performance")
 @patch("usaspending_api.data_load.fpds_loader._lookup_award_by_transaction")
-@patch("usaspending_api.data_load.fpds_loader._insert_award_by_transaction")
+@patch("usaspending_api.data_load.fpds_loader.insert_award")
 @patch("usaspending_api.data_load.fpds_loader._lookup_existing_transaction")
-@patch("usaspending_api.data_load.fpds_loader._update_transaction_normalized_transaction")
-@patch("usaspending_api.data_load.fpds_loader._update_transaction_fpds_transaction")
-@patch("usaspending_api.data_load.fpds_loader._insert_transaction_normalized_transaction")
-@patch("usaspending_api.data_load.fpds_loader._insert_transaction_fpds_transaction")
-@patch("usaspending_api.data_load.fpds_loader._update_award_latest_transaction")
+@patch("usaspending_api.data_load.fpds_loader.update_transaction_normalized")
+@patch("usaspending_api.data_load.fpds_loader.update_transaction_fpds")
+@patch("usaspending_api.data_load.fpds_loader.insert_transaction_normalized")
+@patch("usaspending_api.data_load.fpds_loader.insert_transaction_fpds")
 def test_run_fpds_load_dummy_id(
-    mock__update_award_latest_transaction,
     mock__insert_transaction_fpds_transaction,
     mock__insert_transaction_normalized_transaction,
     mock__update_transaction_fpds_transaction,
     mock__update_transaction_normalized_transaction,
     mock__lookup_existing_transaction,
-    mock__insert_award_by_transaction,
+    mock__insert_award,
     mock__lookup_award_by_transaction,
     mock__insert_place_of_performance,
     mock__insert_recipients,
     mock__insert_recipient_locations,
-    mock_calculate_fiscal_year,
+    mock__fy,
     mock__extract_broker_objects,
 ):
 
@@ -140,24 +140,20 @@ def test_run_fpds_load_dummy_id(
     assert mock__lookup_existing_transaction.call_count == 3
     assert mock__update_transaction_normalized_transaction.call_count == 3
     assert mock__update_transaction_fpds_transaction.call_count == 3
-    assert mock__update_award_latest_transaction.call_count == 3
 
     # With all broker data being found in usaspending (so no inserts, only updates)
-    mock__insert_award_by_transaction.assert_not_called()
+    mock__insert_award.assert_not_called()
     mock__insert_transaction_normalized_transaction.assert_not_called()
     mock__insert_transaction_fpds_transaction.assert_not_called()
 
     # Check that the correct data (e.g. IDs) are being propagated via the load_objects dictionary from call to call
     # Check only first transaction iteration
     load_objects_pre_transaction = mock__lookup_existing_transaction.call_args_list[0][0][1]
-    final_award_id = mock__update_award_latest_transaction.call_args_list[0][0][1]
-    final_transaction_id = mock__update_award_latest_transaction.call_args_list[0][0][2]
+    final_award_id = mock__lookup_award_by_transaction()
 
     # Compare data is as expected
     assert load_objects_pre_transaction["award"]["transaction_unique_id"] == str(dummy_broker_ids[0])
     assert load_objects_pre_transaction["transaction_normalized"]["transaction_unique_id"] == str(dummy_broker_ids[0])
-    assert load_objects_pre_transaction["transaction_fpds"]["transaction_id"] == final_transaction_id
-    assert load_objects_pre_transaction["award"]["latest_transaction_id"] == final_transaction_id
     assert load_objects_pre_transaction["transaction_normalized"]["award_id"] == final_award_id
     assert 2001 <= load_objects_pre_transaction["transaction_normalized"]["fiscal_year"] <= 2019
 
