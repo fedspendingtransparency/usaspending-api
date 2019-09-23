@@ -67,7 +67,7 @@ def run_fpds_load(id_list):
     is called.
     returns ids for each award touched
     """
-    chunks = [id_list[x: x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
+    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     modified_awards = []
     for chunk in chunks:
@@ -181,8 +181,9 @@ def _load_transactions(load_objects):
 
             inserted_place_of_performance = _insert_place_of_performance(cursor, load_objects)
             for index in range(0, len(inserted_place_of_performance)):
-                load_objects[index]["transaction_normalized"]["place_of_performance_id"] = \
-                    inserted_place_of_performance[index][0]
+                load_objects[index]["transaction_normalized"][
+                    "place_of_performance_id"
+                ] = inserted_place_of_performance[index][0]
                 load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index][0]
 
             # Handle transaction-to-award relationship for each transaction to be loaded
@@ -269,9 +270,7 @@ def _lookup_existing_transaction(cursor, load_object):
     # Determine if we are making a new transaction, or updating an old one
     find_matching_transaction_sql = (
         "select transaction_id from transaction_fpds "
-        "where detached_award_proc_unique = '{}'".format(
-            load_object["transaction_fpds"]["detached_award_proc_unique"]
-        )
+        "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
     )
     cursor.execute(find_matching_transaction_sql)
     results = cursor.fetchall()
@@ -288,11 +287,8 @@ def _update_fpds_transaction(cursor, load_object, transaction_id):
 
 def _update_transaction_fpds_transaction(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-    transaction_fpds_sql = (
-        "UPDATE transaction_fpds SET {} "
-        "where detached_award_procurement_id = {}".format(
-            pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
-        )
+    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " "where detached_award_procurement_id = {}".format(
+        pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
     )
     cursor.execute(transaction_fpds_sql)
 
@@ -319,9 +315,7 @@ def _insert_fpds_transaction(cursor, load_object):
 
 def _insert_transaction_normalized_transaction(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(
-        columns, values
-    )
+    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(columns, values)
     cursor.execute(transaction_normalized_sql)
     created_transaction_normalized = cursor.fetchall()
     transaction_normalized_id = created_transaction_normalized[0][0]
@@ -330,9 +324,7 @@ def _insert_transaction_normalized_transaction(cursor, load_object):
 
 def _insert_transaction_fpds_transaction(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(
-        columns, values
-    )
+    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(columns, values)
     cursor.execute(transaction_fpds_sql)
     created_transaction_fpds = cursor.fetchall()
     return created_transaction_fpds
@@ -343,7 +335,6 @@ def _update_award_latest_transaction(cursor, award_id, transaction_id):
         UPDATE awards SET latest_transaction_id = {transaction_id}
         where id = {award_id}
         """.format(
-            transaction_id=transaction_id,
-            award_id=award_id
+        transaction_id=transaction_id, award_id=award_id
     )
     cursor.execute(update_award_lastest_transaction_sql)
