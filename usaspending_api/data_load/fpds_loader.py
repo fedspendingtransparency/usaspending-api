@@ -20,8 +20,16 @@ from usaspending_api.data_load.field_mappings_fpds import (
 from usaspending_api.data_load.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
-    setup_load_lists,
-    setup_mass_load_lists,
+)
+from usaspending_api.data_load.generic_loaders import (
+    update_transaction_fpds,
+    update_transaction_normalized,
+    insert_transaction_normalized,
+    insert_transaction_fpds,
+    insert_recipient_locations,
+    insert_recipients,
+    insert_place_of_performance,
+    insert_award_by_transaction
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -170,16 +178,16 @@ def _load_transactions(load_objects):
 
             # BLIND INSERTS
             # First create the records that don't have a foreign key out to anything else in one transaction per type
-            inserted_recipient_locations = _insert_recipient_locations(cursor, load_objects)
+            inserted_recipient_locations = insert_recipient_locations(cursor, load_objects)
             for index, elem in enumerate(inserted_recipient_locations):
                 load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index][0]
 
-            inserted_recipients = _insert_recipients(cursor, load_objects)
+            inserted_recipients = insert_recipients(cursor, load_objects)
             for index, elem in enumerate(inserted_recipients):
                 load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index][0]
                 load_objects[index]["award"]["recipient_id"] = inserted_recipients[index][0]
 
-            inserted_place_of_performance = _insert_place_of_performance(cursor, load_objects)
+            inserted_place_of_performance = insert_place_of_performance(cursor, load_objects)
             for index, elem in enumerate(inserted_place_of_performance):
                 load_objects[index]["transaction_normalized"][
                     "place_of_performance_id"
@@ -193,7 +201,7 @@ def _load_transactions(load_objects):
                 award_id = _lookup_award_by_transaction(cursor, load_object)
                 if not award_id:
                     # If there is no award, we need to create one
-                    award_id = _insert_award_by_transaction(cursor, load_object)
+                    award_id = insert_award_by_transaction(cursor, load_object)
 
                 load_object["transaction_normalized"]["award_id"] = award_id
                 ids_of_awards_created_or_updated.add(award_id)
@@ -215,32 +223,6 @@ def _load_transactions(load_objects):
     return list(ids_of_awards_created_or_updated)
 
 
-def _insert_recipient_locations(cursor, load_objects):
-    columns, values = setup_mass_load_lists(load_objects, "recipient_location")
-    recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
-        columns, values
-    )
-
-    cursor.execute(recipient_location_sql)
-    return cursor.fetchall()
-
-
-def _insert_recipients(cursor, load_objects):
-    columns, values = setup_mass_load_lists(load_objects, "legal_entity")
-    recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
-
-    cursor.execute(recipient_sql)
-    return cursor.fetchall()
-
-
-def _insert_place_of_performance(cursor, load_objects):
-    columns, values = setup_mass_load_lists(load_objects, "place_of_performance_location")
-    recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
-
-    cursor.execute(recipient_sql)
-    return cursor.fetchall()
-
-
 def _lookup_award_by_transaction(cursor, load_object):
     # Try to find an award for this transaction to belong to
     find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
@@ -248,13 +230,6 @@ def _lookup_award_by_transaction(cursor, load_object):
     )
     results = cursor.execute(find_matching_award_sql)
     return results[0][0] if results else None
-
-
-def _insert_award_by_transaction(cursor, load_object):
-    columns, values, pairs = setup_load_lists(load_object, "award")
-    generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id".format(columns, values)
-    cursor.execute(generate_matching_award_sql)
-    return cursor.fetchall()[0][0]
 
 
 def _lookup_existing_transaction(cursor, load_object):
@@ -271,51 +246,18 @@ def _lookup_existing_transaction(cursor, load_object):
 def _update_fpds_transaction(cursor, load_object, transaction_id):
     # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
     # we update all values
-    _update_transaction_fpds_transaction(cursor, load_object)
-    _update_transaction_normalized_transaction(cursor, load_object)
+    update_transaction_fpds(cursor, load_object)
+    update_transaction_normalized(cursor, load_object)
     logger.debug("updated fpds transaction {}".format(transaction_id))
-
-
-def _update_transaction_fpds_transaction(cursor, load_object):
-    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " "where detached_award_procurement_id = {}".format(
-        pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
-    )
-    cursor.execute(transaction_fpds_sql)
-
-
-def _update_transaction_normalized_transaction(cursor, load_object):
-    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " "where id  = '{}'".format(
-        pairs, load_object["transaction_fpds"]["transaction_id"]
-    )
-    cursor.execute(transaction_normalized_sql)
 
 
 def _insert_fpds_transaction(cursor, load_object):
     # transaction_normalized and transaction_fpds should be one-to-one
-    transaction_normalized_id = _insert_transaction_normalized_transaction(cursor, load_object)
+    transaction_normalized_id = insert_transaction_normalized(cursor, load_object)
 
     # Inject the Primary Key of transaction_normalized row that this record is mapped to in the one-to-one relationship
     load_object["transaction_fpds"]["transaction_id"] = transaction_normalized_id
 
-    transaction_fpds_id = _insert_transaction_fpds_transaction(cursor, load_object)
+    transaction_fpds_id = insert_transaction_fpds(cursor, load_object)
     logger.debug("created fpds transaction {}".format(transaction_fpds_id))
     return transaction_fpds_id
-
-
-def _insert_transaction_normalized_transaction(cursor, load_object):
-    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(columns, values)
-    cursor.execute(transaction_normalized_sql)
-    created_transaction_normalized = cursor.fetchall()
-    transaction_normalized_id = created_transaction_normalized[0][0]
-    return transaction_normalized_id
-
-
-def _insert_transaction_fpds_transaction(cursor, load_object):
-    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(columns, values)
-    cursor.execute(transaction_fpds_sql)
-    created_transaction_fpds = cursor.fetchall()
-    return created_transaction_fpds
