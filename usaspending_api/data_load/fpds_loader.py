@@ -169,18 +169,18 @@ def _load_transactions(load_objects):
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
 
             # BLIND INSERTS
-            # First create the various records that are shotgunned out on a per-loaded-transaction basis
+            # First create the records that don't have a foreign key out to anything else in one transaction per type
             inserted_recipient_locations = _insert_recipient_locations(cursor, load_objects)
-            for index in range(0, len(inserted_recipient_locations)):
+            for index, elem in enumerate(inserted_recipient_locations):
                 load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index][0]
 
             inserted_recipients = _insert_recipients(cursor, load_objects)
-            for index in range(0, len(inserted_recipients)):
+            for index, elem in enumerate(inserted_recipients):
                 load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index][0]
                 load_objects[index]["award"]["recipient_id"] = inserted_recipients[index][0]
 
             inserted_place_of_performance = _insert_place_of_performance(cursor, load_objects)
-            for index in range(0, len(inserted_place_of_performance)):
+            for index, elem in enumerate(inserted_place_of_performance):
                 load_objects[index]["transaction_normalized"][
                     "place_of_performance_id"
                 ] = inserted_place_of_performance[index][0]
@@ -219,34 +219,28 @@ def _load_transactions(load_objects):
 
 
 def _insert_recipient_locations(cursor, load_objects):
-    sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "recipient_location")
     recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
         columns, values
     )
-    sql_to_execute += recipient_location_sql
 
-    cursor.execute(sql_to_execute)
+    cursor.execute(recipient_location_sql)
     return cursor.fetchall()
 
 
 def _insert_recipients(cursor, load_objects):
-    sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "legal_entity")
     recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
-    sql_to_execute += recipient_sql
 
-    cursor.execute(sql_to_execute)
+    cursor.execute(recipient_sql)
     return cursor.fetchall()
 
 
 def _insert_place_of_performance(cursor, load_objects):
-    sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "place_of_performance_location")
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
-    sql_to_execute += recipient_sql
 
-    cursor.execute(sql_to_execute)
+    cursor.execute(recipient_sql)
     return cursor.fetchall()
 
 
