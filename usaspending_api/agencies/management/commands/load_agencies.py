@@ -40,9 +40,7 @@ Agency = namedtuple(
 
 # Set keep_count to True to update the overall affected row count.  Set skip_if_no_changes to True
 # to not run this step if the overall affected row count is zero.  Useful for not running expensive
-# steps if nothing changed.  Set max_changes to the maximum number of allowed changes before
-# throwing an exception.  This is a safety feature to prevent accidentally updating every award,
-# transaction, and subaward in the system as part of the nightly pipeline.
+# steps if nothing changed.
 ProcessingStep = namedtuple("ProcessingStep", ["description", "file", "function", "keep_count", "skip_if_no_changes"])
 
 MAX_CHANGES = 50
@@ -80,7 +78,10 @@ SQL_PATH = Path(__file__).resolve().parent / "load_agencies_sql"
 
 class Command(BaseCommand):
 
-    help = "Loads CGACs, FRECs, Subtier Agencies, Toptier Agencies, and Agencies.  Load is all or nothing.  If anything fails, nothing gets saved."
+    help = (
+        "Loads CGACs, FRECs, Subtier Agencies, Toptier Agencies, and Agencies.  Load is all or nothing.  "
+        "If anything fails, nothing gets saved."
+    )
 
     agency_file = None
     connection = get_connection(read_only=False)
