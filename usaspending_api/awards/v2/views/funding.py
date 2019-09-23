@@ -33,7 +33,7 @@ DEFAULT_SORT_COLUMN = "federal_account"
 FUNDING_SQL = SQL(
     """
     with gather_financial_accounts_by_awards as (
-        select  a.funding_agency_id, faba.submission_id,
+        select  faba.financial_accounts_by_awards_id, a.funding_agency_id, faba.submission_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id, faba.object_class_id, faba.program_activity_id
         from    awards a
@@ -93,7 +93,7 @@ FUNDING_SQL = SQL(
         left outer join submission_attributes sa on
             gfaba.submission_id = sa.submission_id
     group by
-         federal_account, fa.account_title, funding_agency_name, awarding_agency_name, afmap.agency_id, aamap.agency_id,
+         gfaba.financial_accounts_by_awards_id, federal_account, fa.account_title, funding_agency_name, awarding_agency_name, afmap.agency_id, aamap.agency_id,
          oc.object_class_name, pa.program_activity_name, oc.object_class, pa.program_activity_code,
          sa.reporting_fiscal_year, sa.reporting_fiscal_quarter, gfaba.transaction_obligated_amount
     {order_by}
