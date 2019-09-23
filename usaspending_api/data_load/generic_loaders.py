@@ -11,7 +11,7 @@ def insert_recipient_locations(cursor, load_objects):
     )
 
     cursor.execute(recipient_location_sql)
-    return cursor.fetchall()
+    return [tup[0] for tup in cursor.fetchall()]
 
 
 def insert_recipients(cursor, load_objects):
@@ -19,7 +19,7 @@ def insert_recipients(cursor, load_objects):
     recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
 
     cursor.execute(recipient_sql)
-    return cursor.fetchall()
+    return [tup[0] for tup in cursor.fetchall()]
 
 
 def insert_place_of_performance(cursor, load_objects):
@@ -27,7 +27,7 @@ def insert_place_of_performance(cursor, load_objects):
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
 
     cursor.execute(recipient_sql)
-    return cursor.fetchall()
+    return [tup[0] for tup in cursor.fetchall()]
 
 
 def insert_award_by_transaction(cursor, load_object):

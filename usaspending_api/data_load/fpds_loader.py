@@ -180,19 +180,19 @@ def _load_transactions(load_objects):
             # First create the records that don't have a foreign key out to anything else in one transaction per type
             inserted_recipient_locations = insert_recipient_locations(cursor, load_objects)
             for index, elem in enumerate(inserted_recipient_locations):
-                load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index][0]
+                load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index]
 
             inserted_recipients = insert_recipients(cursor, load_objects)
             for index, elem in enumerate(inserted_recipients):
-                load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index][0]
-                load_objects[index]["award"]["recipient_id"] = inserted_recipients[index][0]
+                load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index]
+                load_objects[index]["award"]["recipient_id"] = inserted_recipients[index]
 
             inserted_place_of_performance = insert_place_of_performance(cursor, load_objects)
             for index, elem in enumerate(inserted_place_of_performance):
                 load_objects[index]["transaction_normalized"][
                     "place_of_performance_id"
-                ] = inserted_place_of_performance[index][0]
-                load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index][0]
+                ] = inserted_place_of_performance[index]
+                load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
 
             # Handle transaction-to-award relationship for each transaction to be loaded
             for load_object in load_objects:
