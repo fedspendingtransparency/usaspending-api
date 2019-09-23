@@ -17,11 +17,6 @@ class Migration(migrations.Migration):
             name='agency',
             options={},
         ),
-        migrations.AddField(
-            model_name='agency',
-            name='user_selectable',
-            field=models.BooleanField(default=False),
-        ),
         migrations.AlterModelOptions(
             name='subtieragency',
             options={},
@@ -29,11 +24,6 @@ class Migration(migrations.Migration):
         migrations.AlterModelOptions(
             name='toptieragency',
             options={},
-        ),
-        migrations.AddField(
-            model_name='toptieragency',
-            name='preferred_agency',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.Agency'),
         ),
         migrations.AlterField(
             model_name='subtieragency',
@@ -59,6 +49,30 @@ class Migration(migrations.Migration):
             model_name='subtieragency',
             name='update_date',
             field=models.DateTimeField(auto_now=True),
+        ),
+        migrations.AlterField(
+            model_name='agency',
+            name='subtier_agency',
+            field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.SubtierAgency'),
+        ),
+        migrations.AlterField(
+            model_name='agency',
+            name='create_date',
+            field=models.DateTimeField(auto_now_add=True),
+        ),
+        migrations.AlterField(
+            model_name='agency',
+            name='toptier_agency',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='references.ToptierAgency'),
+        ),
+        migrations.AlterField(
+            model_name='agency',
+            name='update_date',
+            field=models.DateTimeField(auto_now=True),
+        ),
+        migrations.AlterUniqueTogether(
+            name='agency',
+            unique_together=set([]),
         ),
         migrations.AlterField(
             model_name='toptieragency',

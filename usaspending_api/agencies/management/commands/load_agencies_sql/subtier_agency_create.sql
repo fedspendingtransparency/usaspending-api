@@ -15,7 +15,6 @@ select
     t.name
 from
     temp_load_agencies_subtier_agency as t
-    left outer join subtier_agency as sa on
-        sa.subtier_code is not distinct from t.subtier_code
+    left outer join subtier_agency as sa on sa.subtier_code = t.subtier_code
 where
     sa.subtier_code is null;

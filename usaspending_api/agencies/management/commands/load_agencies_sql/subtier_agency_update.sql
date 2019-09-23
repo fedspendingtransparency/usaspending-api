@@ -8,7 +8,7 @@ set
 from
     temp_load_agencies_subtier_agency as t
 where
-    t.subtier_code is not distinct from sa.subtier_code and (
+    t.subtier_code = sa.subtier_code and (
         t.abbreviation is distinct from sa.abbreviation or
         t.name is distinct from sa.name
     );

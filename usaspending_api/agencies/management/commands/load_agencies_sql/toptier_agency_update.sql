@@ -12,7 +12,7 @@ set
 from
     temp_load_agencies_toptier_agency as t
 where
-    t.cgac_code is not distinct from ta.cgac_code and (
+    t.cgac_code = ta.cgac_code and (
         t.abbreviation is distinct from ta.abbreviation or
         t.name is distinct from ta.name or
         t.mission is distinct from ta.mission or

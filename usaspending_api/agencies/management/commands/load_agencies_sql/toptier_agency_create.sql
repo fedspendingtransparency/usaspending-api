@@ -23,7 +23,6 @@ select
     t.icon_filename
 from
     temp_load_agencies_toptier_agency as t
-    left outer join toptier_agency as ta on
-        ta.cgac_code is not distinct from t.cgac_code
+    left outer join toptier_agency as ta on ta.cgac_code = t.cgac_code
 where
     ta.cgac_code is null;
