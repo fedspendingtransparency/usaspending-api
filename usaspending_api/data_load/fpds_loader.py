@@ -67,7 +67,7 @@ def run_fpds_load(id_list):
     is called.
     returns ids for each award touched
     """
-    chunks = [id_list[x: x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
+    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
 
     modified_awards = []
     for chunk in chunks:
@@ -164,99 +164,61 @@ def _transform_objects(broker_objects):
 
 def _load_transactions(load_objects):
     """returns ids for each award touched"""
-    retval = []
+    ids_of_awards_created_or_updated = set()
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            # First cr
-            _load_recipient_locations(cursor, load_objects)
-            _load_recipients(cursor, load_objects)
-            _load_place_of_performance(cursor, load_objects)
 
+            # BLIND INSERTS
+            # First create the various records that are shotgunned out on a per-loaded-transaction basis
+            inserted_recipient_locations = _insert_recipient_locations(cursor, load_objects)
+            for index in range(0, len(inserted_recipient_locations)):
+                load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index][0]
+
+            inserted_recipients = _insert_recipients(cursor, load_objects)
+            for index in range(0, len(inserted_recipients)):
+                load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index][0]
+                load_objects[index]["award"]["recipient_id"] = inserted_recipients[index][0]
+
+            inserted_place_of_performance = _insert_place_of_performance(cursor, load_objects)
+            for index in range(0, len(inserted_place_of_performance)):
+                load_objects[index]["transaction_normalized"][
+                    "place_of_performance_id"
+                ] = inserted_place_of_performance[index][0]
+                load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index][0]
+
+            # Handle transaction-to-award relationship for each transaction to be loaded
             for load_object in load_objects:
 
-                # AWARD
-                # Try to find an award for this transaction to belong to
-                find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
-                    load_object["generated_unique_award_id"]
-                )
-                cursor.execute(find_matching_award_sql)
-                results = cursor.fetchall()
+                # AWARD GET OR CREATE
+                award_id = _lookup_award_by_transaction(cursor, load_object)
+                if not award_id:
+                    # If there is no award, we need to create one
+                    award_id = _insert_award_by_transaction(cursor, load_object)
 
-                if results:
-                    load_object["transaction_normalized"]["award_id"] = results[0][0]
-                    retval.append(results[0][0])
-                # If there is no award, we need to create one
-                else:
-                    columns, values, pairs = setup_load_lists(load_object, "award")
-                    generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id".format(columns, values)
-                    cursor.execute(generate_matching_award_sql)
-                    results = cursor.fetchall()
-                    load_object["transaction_normalized"]["award_id"] = results[0][0]
-                    retval.append(results[0][0])
+                load_object["transaction_normalized"]["award_id"] = award_id
+                ids_of_awards_created_or_updated.add(award_id)
 
-                # TRANSACTION
-                # Determine if we are making a new transaction, or updating an old one
-                find_matching_transaction_sql = (
-                    "select transaction_id from transaction_fpds "
-                    "where detached_award_proc_unique = '{}'".format(
-                        load_object["transaction_fpds"]["detached_award_proc_unique"]
-                    )
-                )
-                cursor.execute(find_matching_transaction_sql)
-                results = cursor.fetchall()
-
-                if results:
-                    # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
-                    # we update all values
-                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-                    transaction_fpds_sql = (
-                        "UPDATE transaction_fpds SET {} "
-                        "where detached_award_procurement_id = {}".format(
-                            pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
-                        )
-                    )
-                    cursor.execute(transaction_fpds_sql)
-
-                    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-                    load_object["transaction_fpds"]["transaction_id"] = results[0][0]
-                    load_object["award"]["latest_tranaction_id"] = results[0][0]
-                    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " "where id  = '{}'".format(
-                        pairs, load_object["transaction_fpds"]["transaction_id"]
-                    )
-                    cursor.execute(transaction_normalized_sql)
-
-                    logger.debug("updated fpds transaction {}".format(results[0][0]))
+                # TRANSACTION UPSERT
+                transaction_id = _lookup_existing_transaction(cursor, load_object)
+                if transaction_id:
+                    # Inject the Primary Key of transaction_normalized+transaction_fpds that was found, so that the
+                    # following updates can find it to update
+                    load_object["transaction_fpds"]["transaction_id"] = transaction_id
+                    _update_fpds_transaction(cursor, load_object, transaction_id)
                 else:
                     # If there is no transaction we create a new one.
-                    # transaction_normalized and transaction_fpds should be one-to-one
-                    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-                    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(
-                        columns, values
-                    )
-                    cursor.execute(transaction_normalized_sql)
-                    results = cursor.fetchall()
-                    load_object["transaction_fpds"]["transaction_id"] = results[0][0]
-                    load_object["award"]["latest_tranaction_id"] = results[0][0]
+                    transaction_id = _insert_fpds_transaction(cursor, load_object)
 
-                    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-                    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(
-                        columns, values
-                    )
-                    cursor.execute(transaction_fpds_sql)
-                    results = cursor.fetchall()
-
-                    logger.debug("created fpds transaction {}".format(results[0][0]))
+                load_object["transaction_fpds"]["transaction_id"] = transaction_id
+                load_object["award"]["latest_transaction_id"] = transaction_id
 
                 # No matter what, we need to go back and update the award's latest transaction to the award we just made
-                update_award_lastest_transaction_sql = "UPDATE awards SET latest_transaction_id = {} where id = {}".format(
-                    results[0][0], load_object["award"]["latest_tranaction_id"]
-                )
-                cursor.execute(update_award_lastest_transaction_sql)
+                _update_award_latest_transaction(cursor, award_id, transaction_id)
 
-    return retval
+    return list(ids_of_awards_created_or_updated)
 
 
-def _load_recipient_locations(cursor, load_objects):
+def _insert_recipient_locations(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "recipient_location")
     recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
@@ -265,35 +227,114 @@ def _load_recipient_locations(cursor, load_objects):
     sql_to_execute += recipient_location_sql
 
     cursor.execute(sql_to_execute)
-    results = cursor.fetchall()
-
-    for index in range(0, len(results)):
-        load_objects[index]["legal_entity"]["location_id"] = results[index][0]
+    return cursor.fetchall()
 
 
-def _load_recipients(cursor, load_objects):
+def _insert_recipients(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "legal_entity")
     recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
     sql_to_execute += recipient_sql
 
     cursor.execute(sql_to_execute)
-    results = cursor.fetchall()
-
-    for index in range(0, len(results)):
-        load_objects[index]["transaction_normalized"]["recipient_id"] = results[index][0]
-        load_objects[index]["award"]["recipient_id"] = results[index][0]
+    return cursor.fetchall()
 
 
-def _load_place_of_performance(cursor, load_objects):
+def _insert_place_of_performance(cursor, load_objects):
     sql_to_execute = ""
     columns, values = setup_mass_load_lists(load_objects, "place_of_performance_location")
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
     sql_to_execute += recipient_sql
 
     cursor.execute(sql_to_execute)
-    results = cursor.fetchall()
+    return cursor.fetchall()
 
-    for index in range(0, len(results)):
-        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = results[index][0]
-        load_objects[index]["award"]["place_of_performance_id"] = results[index][0]
+
+def _lookup_award_by_transaction(cursor, load_object):
+    # Try to find an award for this transaction to belong to
+    find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
+        load_object["generated_unique_award_id"]
+    )
+    results = cursor.execute(find_matching_award_sql)
+    return results[0][0] if results else None
+
+
+def _insert_award_by_transaction(cursor, load_object):
+    columns, values, pairs = setup_load_lists(load_object, "award")
+    generate_matching_award_sql = "INSERT INTO awards {} VALUES {} RETURNING id".format(columns, values)
+    cursor.execute(generate_matching_award_sql)
+    return cursor.fetchall()[0][0]
+
+
+def _lookup_existing_transaction(cursor, load_object):
+    # Determine if we are making a new transaction, or updating an old one
+    find_matching_transaction_sql = (
+        "select transaction_id from transaction_fpds "
+        "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
+    )
+    cursor.execute(find_matching_transaction_sql)
+    results = cursor.fetchall()
+    return results[0][0] if results else None
+
+
+def _update_fpds_transaction(cursor, load_object, transaction_id):
+    # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
+    # we update all values
+    _update_transaction_fpds_transaction(cursor, load_object)
+    _update_transaction_normalized_transaction(cursor, load_object)
+    logger.debug("updated fpds transaction {}".format(transaction_id))
+
+
+def _update_transaction_fpds_transaction(cursor, load_object):
+    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
+    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " "where detached_award_procurement_id = {}".format(
+        pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
+    )
+    cursor.execute(transaction_fpds_sql)
+
+
+def _update_transaction_normalized_transaction(cursor, load_object):
+    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
+    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " "where id  = '{}'".format(
+        pairs, load_object["transaction_fpds"]["transaction_id"]
+    )
+    cursor.execute(transaction_normalized_sql)
+
+
+def _insert_fpds_transaction(cursor, load_object):
+    # transaction_normalized and transaction_fpds should be one-to-one
+    transaction_normalized_id = _insert_transaction_normalized_transaction(cursor, load_object)
+
+    # Inject the Primary Key of transaction_normalized row that this record is mapped to in the one-to-one relationship
+    load_object["transaction_fpds"]["transaction_id"] = transaction_normalized_id
+
+    transaction_fpds_id = _insert_transaction_fpds_transaction(cursor, load_object)
+    logger.debug("created fpds transaction {}".format(transaction_fpds_id))
+    return transaction_fpds_id
+
+
+def _insert_transaction_normalized_transaction(cursor, load_object):
+    columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
+    transaction_normalized_sql = "INSERT INTO transaction_normalized {} VALUES {} RETURNING id".format(columns, values)
+    cursor.execute(transaction_normalized_sql)
+    created_transaction_normalized = cursor.fetchall()
+    transaction_normalized_id = created_transaction_normalized[0][0]
+    return transaction_normalized_id
+
+
+def _insert_transaction_fpds_transaction(cursor, load_object):
+    columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
+    transaction_fpds_sql = "INSERT INTO transaction_fpds {} VALUES {} RETURNING transaction_id".format(columns, values)
+    cursor.execute(transaction_fpds_sql)
+    created_transaction_fpds = cursor.fetchall()
+    return created_transaction_fpds
+
+
+def _update_award_latest_transaction(cursor, award_id, transaction_id):
+    update_award_lastest_transaction_sql = """
+        UPDATE awards SET latest_transaction_id = {transaction_id}
+        where id = {award_id}
+        """.format(
+        transaction_id=transaction_id, award_id=award_id
+    )
+    cursor.execute(update_award_lastest_transaction_sql)
