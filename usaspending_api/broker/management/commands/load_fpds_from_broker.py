@@ -31,9 +31,7 @@ class Command(BaseCommand):
         db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
         db_query = ALL_FPDS_QUERY
         if date:
-            db_query += " WHERE updated_at >= %s;"
-            db_args = [date]
-            db_cursor.execute(db_query, db_args)
+            db_cursor.execute(ALL_FPDS_QUERY + " WHERE updated_at >= %s;", [date])
         else:
             db_cursor.execute(db_query)
         return db_cursor

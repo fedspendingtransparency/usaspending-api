@@ -212,9 +212,6 @@ def _load_transactions(load_objects):
                 load_object["transaction_fpds"]["transaction_id"] = transaction_id
                 load_object["award"]["latest_transaction_id"] = transaction_id
 
-                # No matter what, we need to go back and update the award's latest transaction to the award we just made
-                _update_award_latest_transaction(cursor, award_id, transaction_id)
-
     return list(ids_of_awards_created_or_updated)
 
 
@@ -322,13 +319,3 @@ def _insert_transaction_fpds_transaction(cursor, load_object):
     cursor.execute(transaction_fpds_sql)
     created_transaction_fpds = cursor.fetchall()
     return created_transaction_fpds
-
-
-def _update_award_latest_transaction(cursor, award_id, transaction_id):
-    update_award_lastest_transaction_sql = """
-        UPDATE awards SET latest_transaction_id = {transaction_id}
-        where id = {award_id}
-        """.format(
-        transaction_id=transaction_id, award_id=award_id
-    )
-    cursor.execute(update_award_lastest_transaction_sql)
