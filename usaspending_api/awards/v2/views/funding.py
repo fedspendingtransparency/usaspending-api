@@ -68,7 +68,7 @@ FUNDING_SQL = SQL(
         taa.agency_id || '-' || taa.main_account_code                   federal_account,
         fa.account_title,
         fta.name                                                        funding_agency_name,
-        fa.id                                                           funding_agency_id,
+        faa.id                                                          funding_agency_id,
         ata.name                                                        awarding_agency_name,
         aa.id                                                           awarding_agency_id,
         oc.object_class                                                 object_class,
