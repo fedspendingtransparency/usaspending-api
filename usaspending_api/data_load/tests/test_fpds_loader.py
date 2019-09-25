@@ -17,9 +17,7 @@ from usaspending_api.data_load.field_mappings_fpds import (
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
 )
-from usaspending_api.data_load.data_load_helpers import (
-    setup_load_lists,
-)
+from usaspending_api.data_load.data_load_helpers import setup_load_lists
 
 from unittest.mock import MagicMock, patch
 

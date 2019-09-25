@@ -6,9 +6,7 @@ from usaspending_api.data_load.derived_field_functions_fpds import (
     current_datetime,
     business_categories,
 )
-from usaspending_api.data_load.data_load_helpers import (
-    capitalize_if_string,
-)
+from usaspending_api.data_load.data_load_helpers import capitalize_if_string
 
 # broker column name -> usaspending column name
 transaction_fpds_columns = {

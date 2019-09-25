@@ -121,8 +121,7 @@ class Command(BaseCommand):
             self.load_fpds_from_file(options["file"])
 
         elif options["since_last_load"]:
-            # minus one day to account for any submissions that are still entering the system when the loader is run
-            self.load_fpds_from_date(get_last_load_date("fpds") - timedelta(days=1))
+            self.load_fpds_from_date(get_last_load_date("fpds"))
 
         if options["reload_all"] or options["since_last_load"]:
             update_last_load_date("fpds", last_update_time)  # only update if we don't crash

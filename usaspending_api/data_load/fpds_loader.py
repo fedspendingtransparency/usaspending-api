@@ -17,10 +17,7 @@ from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
 )
-from usaspending_api.data_load.data_load_helpers import (
-    capitalize_if_string,
-    false_if_null,
-)
+from usaspending_api.data_load.data_load_helpers import capitalize_if_string, false_if_null
 from usaspending_api.data_load.generic_loaders import (
     update_transaction_fpds,
     update_transaction_normalized,
@@ -29,7 +26,7 @@ from usaspending_api.data_load.generic_loaders import (
     insert_recipient_locations,
     insert_recipients,
     insert_place_of_performance,
-    insert_award
+    insert_award,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
