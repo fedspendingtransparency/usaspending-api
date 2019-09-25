@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import logging
 import re
 import psycopg2
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, load_chunk
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
@@ -18,7 +18,7 @@ BROKER_CONNECTION_STRING = get_broker_dsn_string()
 
 CHUNK_SIZE = 5000
 
-ALL_FPDS_QUERY = "SELECT * FROM detached_award_procurement"
+ALL_FPDS_QUERY = "SELECT {} FROM detached_award_procurement"
 
 
 class Command(BaseCommand):
@@ -27,11 +27,21 @@ class Command(BaseCommand):
     modified_award_ids = []
 
     @staticmethod
+    def get_count_for_date_query(connection, date):
+        db_cursor = connection.cursor()
+        db_query = ALL_FPDS_QUERY.format("COUNT(*)")
+        if date:
+            db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
+        else:
+            db_cursor.execute(db_query)
+        return db_cursor.fetchall()[0][0]
+
+    @staticmethod
     def get_cursor_for_date_query(connection, date):
         db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
-        db_query = ALL_FPDS_QUERY
+        db_query = ALL_FPDS_QUERY.format("*")
         if date:
-            db_cursor.execute(ALL_FPDS_QUERY + " WHERE updated_at >= %s;", [date])
+            db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
         else:
             db_cursor.execute(db_query)
         return db_cursor
@@ -42,6 +52,9 @@ class Command(BaseCommand):
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
+            total_records = self.get_count_for_date_query(connection, date)
+            records_processed = 0
+            logger.info("{} total records".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
             while True:
                 id_list = cursor.fetchmany(CHUNK_SIZE)
@@ -49,6 +62,8 @@ class Command(BaseCommand):
                     break
                 logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
                 self.modified_award_ids.extend(load_chunk(id_list))
+                records_processed = records_processed + len(id_list)
+                logger.info("{} out of {} processed".format(records_processed, total_records))
 
     @staticmethod
     def next_file_batch_generator(file):
@@ -124,7 +139,8 @@ class Command(BaseCommand):
             self.load_fpds_from_date(get_last_load_date("fpds"))
 
         if options["reload_all"] or options["since_last_load"]:
-            update_last_load_date("fpds", last_update_time)  # only update if we don't crash
+            # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
+            update_last_load_date("fpds", last_update_time)
 
         if self.modified_award_ids:
             logger.info("cleaning orphaned rows")
