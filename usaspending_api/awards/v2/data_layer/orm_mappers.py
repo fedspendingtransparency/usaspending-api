@@ -42,6 +42,7 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("base_exercised_options_val", "base_exercised_options"),
         ("non_federal_funding_amount", "non_federal_funding"),
         ("total_funding_amount", "total_funding"),
+        *OFFICER_FIELDS.items(),
         # extra fields
         ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
@@ -69,6 +70,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("base_and_all_options_value", "base_and_all_options"),
         ("subaward_count", "subaward_count"),
         ("total_subaward_amount", "total_subaward_amount"),
+        *OFFICER_FIELDS.items(),
         # extra fields
         ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
@@ -77,6 +79,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("period_of_performance_start_date", "_start_date"),
         ("period_of_performance_current_end_date", "_end_date"),
         ("date_signed", "date_signed"),
+        ("fpds_parent_agency_id", "_fpds_parent_agency_id"),
     ]
 )
 
@@ -117,7 +120,6 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("place_of_performance_forei", "_pop_foreign_province"),
         ("awarding_office_name", "_awarding_office_name"),
         ("funding_office_name", "_funding_office_name"),
-        *OFFICER_FIELDS.items(),
     ]
 )
 
@@ -221,6 +223,5 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_performance_zip5", "_pop_zip5"),
         ("awarding_office_name", "_awarding_office_name"),
         ("funding_office_name", "_funding_office_name"),
-        *OFFICER_FIELDS.items(),
     ]
 )

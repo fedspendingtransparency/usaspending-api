@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import build_composable_order_by
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.references.constants import DOD_CGAC, DOD_SUBSUMED_CGAC
 
 
 SORTABLE_COLUMNS = {
@@ -32,47 +33,48 @@ DEFAULT_SORT_COLUMN = "federal_account"
 
 FUNDING_SQL = SQL(
     """
-    with gather_financial_accounts_by_awards as (
-        select  a.funding_agency_id, faba.submission_id,
+    with
+    get_dod as (
+        select  a.id
+        from    agency as a
+                inner join toptier_agency as ta on ta.toptier_agency_id = a.toptier_agency_id
+        where   cgac_code = {dod_cgac}
+        order
+        by      a.toptier_flag desc, a.id asc
+        limit 1
+    ), get_subsumed_agency_ids as (
+        select  a.id
+        from    agency as a
+                inner join toptier_agency as ta on ta.toptier_agency_id = a.toptier_agency_id
+        where   cgac_code in {subsumed_cgacs}
+    ), gather_financial_accounts_by_awards as (
+        select  case
+                    when a.awarding_agency_id in (select id from get_subsumed_agency_ids) then (select id from get_dod)
+                    else a.awarding_agency_id
+                end awarding_agency_id,
+                case
+                    when a.funding_agency_id in (select id from get_subsumed_agency_ids) then (select id from get_dod)
+                    else a.funding_agency_id
+                end funding_agency_id,
+                faba.submission_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id, faba.object_class_id, faba.program_activity_id
-        from    awards a
-                inner join financial_accounts_by_awards faba on faba.award_id = a.id
-        where   {award_id_column} = {award_id}
-    ),
-    agency_id_to_agency_id_for_toptier_mapping as (
-    select
-        t.agency_id,
-        t.toptier_agency_id,
-        t.toptier_agency_name
-        from (
-            select
-                case when sa.subtier_agency_id is null then 1173 else a.id end                   agency_id,
-                ta.toptier_agency_id,
-                ta.name                 toptier_agency_name,
-                row_number() over (
-                    partition by ta.toptier_agency_id
-                    order by sa.name is not distinct from ta.name desc, a.update_date asc, a.id desc
-                ) as per_toptier_row_number
-            from
-                agency a
-                inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
-                left outer join subtier_agency sa on sa.subtier_agency_id = a.subtier_agency_id
-        ) t
-        where t.per_toptier_row_number = 1
+        from    awards as a
+                inner join financial_accounts_by_awards as faba on faba.award_id = a.id
+        where   a.{award_id_column} = {award_id}
     )
     select
-        coalesce(gfaba.transaction_obligated_amount, 0.0)              transaction_obligated_amount,
-        taa.agency_id || '-' || taa.main_account_code                  federal_account,
+        coalesce(gfaba.transaction_obligated_amount, 0.0)               transaction_obligated_amount,
+        taa.agency_id || '-' || taa.main_account_code                   federal_account,
         fa.account_title,
-        afmap.toptier_agency_name                                      funding_agency_name,
-        afmap.agency_id                                                funding_agency_id,
-        aamap.toptier_agency_name                                      awarding_agency_name,
-        aamap.agency_id                                                awarding_agency_id,
-        oc.object_class                                                object_class,
-        oc.object_class_name                                           object_class_name,
-        pa.program_activity_code                                       program_activity_code,
-        pa.program_activity_name                                       program_activity_name,
+        fta.name                                                        funding_agency_name,
+        faa.id                                                          funding_agency_id,
+        ata.name                                                        awarding_agency_name,
+        aa.id                                                           awarding_agency_id,
+        oc.object_class                                                 object_class,
+        oc.object_class_name                                            object_class_name,
+        pa.program_activity_code                                        program_activity_code,
+        pa.program_activity_name                                        program_activity_name,
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter
     from
@@ -82,20 +84,20 @@ FUNDING_SQL = SQL(
         left outer join federal_account fa on
             fa.agency_identifier = taa.agency_id and
             fa.main_account_code = taa.main_account_code
-        left outer join agency_id_to_agency_id_for_toptier_mapping afmap on
-            afmap.toptier_agency_id = taa.funding_toptier_agency_id
-        left outer join agency_id_to_agency_id_for_toptier_mapping aamap on
-            aamap.toptier_agency_id = taa.awarding_toptier_agency_id
+        left outer join agency aa on
+            aa.id = gfaba.awarding_agency_id
+        left outer join toptier_agency ata on
+            ata.toptier_agency_id = aa.toptier_agency_id
+        left outer join agency faa on faa.id =
+            gfaba.funding_agency_id
+        left outer join toptier_agency fta on
+            fta.toptier_agency_id = faa.toptier_agency_id
         left outer join object_class oc on
             gfaba.object_class_id = oc.id
         left outer join ref_program_activity pa on
             gfaba.program_activity_id = pa.id
         left outer join submission_attributes sa on
             gfaba.submission_id = sa.submission_id
-    group by
-         federal_account, fa.account_title, funding_agency_name, awarding_agency_name, afmap.agency_id, aamap.agency_id,
-         oc.object_class_name, pa.program_activity_name, oc.object_class, pa.program_activity_code,
-         sa.reporting_fiscal_year, sa.reporting_fiscal_quarter, gfaba.transaction_obligated_amount
     {order_by}
     limit {limit} offset {offset};
 """
@@ -120,9 +122,11 @@ class AwardFundingViewSet(APIView):
         # TinyShield.  We will either have an internal award id that is an
         # integer or a generated award id that is a string.
         award_id = request_data["award_id"]
-        award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+        award_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = FUNDING_SQL.format(
+            dod_cgac=Literal(DOD_CGAC),
+            subsumed_cgacs=Literal(tuple(DOD_SUBSUMED_CGAC)),
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
             order_by=build_composable_order_by(SORTABLE_COLUMNS[request_data["sort"]], request_data["order"]),

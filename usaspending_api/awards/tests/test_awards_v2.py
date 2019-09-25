@@ -369,6 +369,10 @@ def awards_and_transactions(db):
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "date_signed": "2005-04-03",
+        "officer_1_name": "John Apple",
+        "officer_1_amount": 50000.00,
+        "officer_2_name": "Wally World",
+        "officer_2_amount": 4623.00,
     }
 
     award_2_model = {
@@ -392,6 +396,11 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "date_signed": "2004-03-02",
+        "fpds_parent_agency_id": "9700",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
     }
 
     award_3_model = {
@@ -416,10 +425,49 @@ def awards_and_transactions(db):
         "subaward_count": 0,
         "date_signed": "2004-03-02",
     }
+    award_4_model = {
+        "pk": 4,
+        "type": "IDV_B",
+        "type_description": "INDEFINITE DELIVERY CONTRACT",
+        "category": "idv",
+        "piid": "1234",
+        "parent_award_piid": None,
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 600,
+        "base_and_all_options_value": 600,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "",
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "total_subaward_amount": 0,
+        "subaward_count": 0,
+        "date_signed": "2004-03-02",
+    }
+    parent_award_model = {
+        "award_id": 4,
+        "generated_unique_award_id": "CONT_IDV_1234_9700",
+        "direct_idv_count": 0,
+        "direct_contract_count": 1,
+        "direct_total_obligation": 4500,
+        "direct_base_and_all_options_value": 12,
+        "direct_base_exercised_options_val": 0,
+        "rollup_idv_count": 0,
+        "rollup_contract_count": 1,
+        "rollup_total_obligation": 4500,
+        "rollup_base_and_all_options_value": 12,
+        "rollup_base_exercised_options_val": 0,
+        "parent_award_id": None,
+    }
 
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
+    mommy.make("awards.Award", **award_4_model)
+    mommy.make("awards.ParentAward", **parent_award_model)
 
 
 @pytest.fixture
@@ -457,7 +505,6 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 def test_award_mulitple_cfdas(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/3/")
-    print(json.loads(resp.content.decode("utf-8"))["cfda_info"])
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["cfda_info"] == [
         {
@@ -560,7 +607,13 @@ expected_response_asst = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {
-        "officers": [{"name": "John Apple", "amount": 50000.00}, {"name": "Wally World", "amount": 4623.00}]
+        "officers": [
+            {"name": "John Apple", "amount": 50000.00},
+            {"name": "Wally World", "amount": 4623.00},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+        ]
     },
     "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
@@ -591,6 +644,7 @@ expected_response_cont = {
     "type_description": "DEFINITIVE CONTRACT",
     "piid": "5678",
     "parent_award_piid": "1234",
+    "parent_generated_unique_award_id": "CONT_IDV_1234_9700",
     "description": "lorem ipsum",
     "awarding_agency": {
         "id": 1,
@@ -725,7 +779,13 @@ expected_response_cont = {
     "subaward_count": 10,
     "total_subaward_amount": 12345.0,
     "executive_details": {
-        "officers": [{"name": "Tom", "amount": 10000.00}, {"name": "Stan Burger", "amount": 1234.00}]
+        "officers": [
+            {"name": "Tom", "amount": 10000.00},
+            {"name": "Stan Burger", "amount": 1234.00},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+            {"name": None, "amount": None},
+        ]
     },
     "date_signed": "2004-03-02",
 }
