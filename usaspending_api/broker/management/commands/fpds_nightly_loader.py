@@ -123,7 +123,8 @@ class Command(BaseCommand):
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
-    def delete_stale_fpds(self, ids_to_delete):
+    @staticmethod
+    def delete_stale_fpds(ids_to_delete):
         logger.info("Starting deletion of stale FPDS data")
 
         transactions = TransactionNormalized.objects.filter(
@@ -141,9 +142,9 @@ class Command(BaseCommand):
 
         if delete_transaction_ids:
             fpds = "DELETE FROM transaction_fpds tf WHERE tf.transaction_id IN ({});".format(delete_transaction_str_ids)
-            # Transaction Normalized
             tn = "DELETE FROM transaction_normalized tn WHERE tn.id IN ({});".format(delete_transaction_str_ids)
-            queries.extend([fpds, tn])
+            td = "DELETE FROM transaction_delta td WHERE td.transaction_id in ({});".format(delete_transaction_str_ids)
+            queries.extend([fpds, tn, td])
         # Update Awards
         if update_award_ids:
             # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
