@@ -84,13 +84,12 @@ transaction_fpds_columns = {
     "idv_type_description": "idv_type_description",
     "referenced_idv_type": "referenced_idv_type",
     "referenced_idv_type_desc": "referenced_idv_type_desc",
-    "referenced_mult_or_single": "referenced_multi_or_single",
     "vendor_doing_as_business_n": "vendor_doing_as_business_n",
     "vendor_phone_number": "vendor_phone_number",
     "vendor_fax_number": "vendor_fax_number",
     "multiple_or_single_award_i": "multiple_or_single_award_i",
     "multiple_or_single_aw_desc": "multiple_or_single_aw_desc",
-    "referenced_mult_or_single": "referenced_mult_or_single",
+    "referenced_mult_or_single": "referenced_multi_or_single",
     "referenced_mult_or_si_desc": "referenced_mult_or_si_desc",
     "type_of_idc": "type_of_idc",
     "type_of_idc_description": "type_of_idc_description",
@@ -320,7 +319,6 @@ transaction_fpds_functions = {}
 
 # broker column name -> usaspending column name
 transaction_normalized_columns = {
-    "federal_action_obligation": "federal_action_obligation",
     "period_of_performance_star": "period_of_performance_start_date",
     "period_of_performance_curr": "period_of_performance_current_end_date",
     "action_date": "action_date",
