@@ -84,6 +84,7 @@ transaction_fpds_columns = {
     "idv_type_description": "idv_type_description",
     "referenced_idv_type": "referenced_idv_type",
     "referenced_idv_type_desc": "referenced_idv_type_desc",
+    "referenced_mult_or_single": "referenced_multi_or_single",
     "vendor_doing_as_business_n": "vendor_doing_as_business_n",
     "vendor_phone_number": "vendor_phone_number",
     "vendor_fax_number": "vendor_fax_number",
@@ -220,6 +221,7 @@ transaction_fpds_columns = {
     "high_comp_officer4_full_na": "officer_5_name",
     "high_comp_officer5_amount": "officer_5_amount",
     "high_comp_officer5_full_na": "officer_5_name",
+    "solicitation_date": "solicitation_date",
     "created_at": "created_at",
     "updated_at": "updated_at",
 }
