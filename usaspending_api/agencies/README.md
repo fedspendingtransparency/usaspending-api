@@ -7,7 +7,8 @@ including, but not limited to:
 * Funding Agency - The agency that provided the bulk of the funding for the award.
 * Reporting Agency - The agency that reported the award to the system of record (FSRS, DABS, etc).
 
-These agencies may overlap or be missing entirely from the system of record.
+These agencies may overlap, be missing entirely or, in the case of some legacy data, be invalid
+or inaccurate.
 
 Agencies fall into two tiers.
 
@@ -17,7 +18,7 @@ Toptier Agencies are likely what most people think of when they think of governm
 Examples include Department of Defense (DoD), Department of the Treasury (TREAS), Department
 of Health and Human Services (HHS), etc.  There are about 195 of these.
 
-Toptier Agencies are identified by their `cgac_code`.  Unfortunately, that name is a bit of
+Toptier Agencies are identified by their `cgac_code` which is, unfortunately, a bit of
 a misnomer.  While MOST agencies are identified by their three digit Common Government-Wide
 Accounting Classification (CGAC), there are several identified by their Financial Reporting
 Entity Code (FREC).  This is a point of confusion for many new developers and is on a very
@@ -35,7 +36,7 @@ of Inspector General within the Department of the Treasury (TREAS) or National I
 Subtier agencies are identified by a four digit Subtier code.  The Subtier code list is maintained
 by the product owners of USAspending.
 
-An agency can have many subtiers.  Oftentimes (but not always), one of those subtiers
+An agency can have many subtiers.  Often, but not always, one of those subtiers
 represents the agency as a whole.  For example, 020 is Department of the Treasury.  As of
 this writing, Treasury has 45 subtiers.  One of those subtiers, 2000, represents the entirety
 of Treasury.  It is roughly equivalent to 020 but at the subtier level.  2004, on the other
@@ -67,7 +68,7 @@ toptier agency, however, the Homeland Security Act of 2002 saw the creation of 0
 of Homeland Security (DHS) and the absorption of FEMA into DHS as a subtier agency (7022).
 Because we have some historical data attached to FEMA as a toptier agency we keep it around.  It
 occasionally receives special handling in some endpoints, but receives no special attention in
-the database.  It is recorded as both a toptier agency and a subtier agency.
+the database where it is recorded as both a toptier agency and a subtier agency.
 
 ## CFO Agencies
 

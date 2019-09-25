@@ -96,6 +96,7 @@ def test_create_agency(disable_vacuuming, monkeypatch):
                 subtier_abbreviation="BOGUS SUBTIER ABBREVIATION",
                 toptier_flag=True,
                 is_frec=False,
+                user_selectable=True,
                 mission="BOGUS MISSION",
                 website="BOGUS WEBSITE",
                 congressional_justification="BOGUS CONGRESSIONAL JUSTIFICATION",
