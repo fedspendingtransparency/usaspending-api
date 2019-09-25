@@ -9,6 +9,7 @@ class Agency(models.Model):
     toptier_agency = models.ForeignKey("references.ToptierAgency", models.DO_NOTHING, db_index=True)
     subtier_agency = models.OneToOneField("references.SubtierAgency", models.DO_NOTHING, null=True, db_index=True)
     toptier_flag = models.BooleanField(default=False)
+    user_selectable = models.BooleanField(default=False)
 
     # Not shown here is an index idx_agency_toptier_agency_id_null_subtier_agency_id_uniq that
     # is used to enforce uniquity on toptier_agency_id when subtier_agency_id is null.

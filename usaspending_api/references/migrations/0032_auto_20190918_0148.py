@@ -50,6 +50,11 @@ class Migration(migrations.Migration):
             name='update_date',
             field=models.DateTimeField(auto_now=True),
         ),
+        migrations.AddField(
+            model_name='agency',
+            name='user_selectable',
+            field=models.BooleanField(default=False),
+        ),
         migrations.AlterField(
             model_name='agency',
             name='subtier_agency',

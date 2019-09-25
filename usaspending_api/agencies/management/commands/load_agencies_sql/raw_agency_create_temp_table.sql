@@ -14,6 +14,7 @@ create table temp_load_agencies_raw_agency (
     subtier_abbreviation text,
     toptier_flag boolean,
     is_frec boolean,
+    user_selectable boolean,
     mission text,
     website text,
     congressional_justification text,
