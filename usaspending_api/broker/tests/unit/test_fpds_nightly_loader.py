@@ -117,4 +117,4 @@ def test_delete_stale_fpds():
     assert TransactionDelta.objects.all().count() == 12
     assert TransactionFPDS.objects.all().count() == 12
     assert TransactionNormalized.objects.all().count() == 12
-    assert AWARD_UPDATE_ID_LIST == [1, 2]
+    assert AWARD_UPDATE_ID_LIST == [1]
