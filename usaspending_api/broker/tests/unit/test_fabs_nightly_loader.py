@@ -55,7 +55,7 @@ def test_delete_stale_fabs():
     assert TransactionFABS.objects.all().count() == 8
     assert TransactionNormalized.objects.all().count() == 8
 
-    # We're deleting a single transaction, so one transaction should be deleted and one award added to update list.
+    # We're deleting a single transaction, so one transaction should be deleted.
     delete_stale_fabs(["AFA_8100"])
     assert Award.objects.all().count() == 4
     assert Award.objects.filter(latest_transaction__isnull=False).count() == 4
