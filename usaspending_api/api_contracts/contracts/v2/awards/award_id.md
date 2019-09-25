@@ -52,6 +52,8 @@ This endpoint returns a list of data that is associated with the award profile p
     Award id
 + `parent_award_piid`: `1301` (required, string, nullable)
     null if the contract has no parent
++ `parent_generated_unique_award_id`: `CONT_IDV_W56HZV10AA913_9700` (required, string, nullable)
+    null if the contract has no parent
 + `description`: `ewraijwrw` (required, string, nullable)
     Description of the first transaction for this award
 + `total_obligation`: 30400 (required, number)

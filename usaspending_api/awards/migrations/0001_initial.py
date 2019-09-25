@@ -549,7 +549,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='award',
             name='latest_transaction',
-            field=models.ForeignKey(help_text='The latest transaction by action_date associated with this award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_for_award', to='awards.TransactionNormalized'),
+            field=models.ForeignKey(help_text='The latest transaction by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_for_award', to='awards.TransactionNormalized'),
         ),
         migrations.AddField(
             model_name='award',
