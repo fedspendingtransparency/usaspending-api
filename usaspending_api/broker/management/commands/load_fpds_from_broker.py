@@ -27,19 +27,14 @@ class Command(BaseCommand):
     modified_award_ids = []
 
     @staticmethod
-    def get_count_for_date_query(connection, date):
-        db_cursor = connection.cursor()
-        db_query = ALL_FPDS_QUERY.format("COUNT(*)")
-        if date:
-            db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
+    def get_cursor_for_date_query(connection, date, count=False):
+        if count:
+            db_cursor = connection.cursor()
+            db_query = ALL_FPDS_QUERY.format("COUNT(*)")
         else:
-            db_cursor.execute(db_query)
-        return db_cursor.fetchall()[0][0]
-
-    @staticmethod
-    def get_cursor_for_date_query(connection, date):
-        db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
-        db_query = ALL_FPDS_QUERY.format("*")
+            db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
+            db_query = ALL_FPDS_QUERY.format("*")
+            
         if date:
             db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
         else:
@@ -52,7 +47,7 @@ class Command(BaseCommand):
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
-            total_records = self.get_count_for_date_query(connection, date)
+            total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
             logger.info("{} total records".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
