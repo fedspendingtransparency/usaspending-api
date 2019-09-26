@@ -93,7 +93,7 @@ class Command(BaseCommand):
             "--date",
             dest="date",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
-            help="Load or Reload all FPDS records from the provided date to the current time. YYYY-MM-DD format",
+            help="Load/Reload all FPDS records from the provided datetime to the script execution start time.",
         )
         mutually_exclusive_group.add_argument(
             "--since-last-load",
