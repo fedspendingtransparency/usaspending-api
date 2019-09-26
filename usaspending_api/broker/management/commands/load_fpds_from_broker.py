@@ -81,7 +81,7 @@ class Command(BaseCommand):
                 self.modified_award_ids.extend(run_fpds_load(id_list))
 
     def add_arguments(self, parser):
-        mutually_exclusive_group = parser.add_mutually_exclusive_group()
+        mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
             "--ids",
