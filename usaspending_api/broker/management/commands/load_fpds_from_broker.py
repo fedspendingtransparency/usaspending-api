@@ -104,7 +104,7 @@ class Command(BaseCommand):
             "--file",
             metavar="FILEPATH",
             type=str,
-            help="A file containing only transaction IDs (detached_award_procurement_id) "
+            help="Load/Reload transactions using the detached_award_procurement_id list stored at this file path (one ID per line)"
             "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
         mutually_exclusive_group.add_argument(
