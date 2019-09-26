@@ -2,7 +2,7 @@ drop table if exists temp_load_agencies_toptier_agency;
 
 
 -- Create a temp table containing toptier agencies as we expect them to look in the final table.
-create table
+create temporary table
     temp_load_agencies_toptier_agency
 as (
 

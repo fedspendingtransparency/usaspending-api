@@ -71,7 +71,6 @@ PROCESSING_STEPS = [
     ProcessingStep("Update transactions", "transaction_normalized_update", None, False, True),
     ProcessingStep("Update awards", "award_update", None, False, True),
     ProcessingStep("Update subawards", "subaward_update", None, False, True),
-    ProcessingStep("Clean up", "clean_up", None, False, False),
 ]
 
 SQL_PATH = Path(__file__).resolve().parent / "load_agencies_sql"
@@ -112,7 +111,8 @@ class Command(BaseCommand):
         logger.info("AGENCY FILE: {}".format(self.agency_file))
 
         self.force = options["force"]
-        logger.info("FORCE: {}".format(self.force))
+        logger.info("FORCE SWITCH PROVIDED: {}".format(self.force))
+        logger.info("MAX CHANGE LIMIT: {}".format("{:,}".format(MAX_CHANGES) if self.force else "unlimited"))
 
         self.rows_affected_count = 0
 

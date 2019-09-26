@@ -1,7 +1,7 @@
 drop table if exists temp_load_agencies_raw_agency;
 
 
-create table temp_load_agencies_raw_agency (
+create temporary table temp_load_agencies_raw_agency (
     row_number int,
     cgac_agency_code text,
     agency_name text,

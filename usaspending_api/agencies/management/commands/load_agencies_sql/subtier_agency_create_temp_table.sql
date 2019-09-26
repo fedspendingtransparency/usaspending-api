@@ -2,7 +2,7 @@ drop table if exists temp_load_agencies_subtier_agency;
 
 
 -- Create a temp table containing subtier agencies as we expect them to look in the final table.
-create table
+create temporary table
     temp_load_agencies_subtier_agency
 as select
     now() as create_date,
