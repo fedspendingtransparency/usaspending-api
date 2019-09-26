@@ -87,7 +87,7 @@ class Command(BaseCommand):
             "--ids",
             nargs="+",
             type=int,
-            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+            help="Load/Reload transactions using this detached_award_procurement_id list (space-separated)",
         )
         mutually_exclusive_group.add_argument(
             "--date",
