@@ -96,7 +96,7 @@ def load_chunk(chunk):
         load_objects = _transform_objects(chunk)
 
         retval = _load_transactions(load_objects)
-    logger.info("ran load in {}".format(str(timer.elapsed)))
+    logger.info("batch completed in {}".format(timer.as_string(timer.elapsed)))
     return retval
 
 
