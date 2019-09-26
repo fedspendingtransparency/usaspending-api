@@ -44,7 +44,7 @@ def update_transaction_fpds(cursor, load_object):
 
 def update_transaction_normalized(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " "where id  = '{}'".format(
+    transaction_normalized_sql = "UPDATE transaction_normalized SET {} where id  = '{}'".format(
         pairs, load_object["transaction_fpds"]["transaction_id"]
     )
     cursor.execute(transaction_normalized_sql)
