@@ -8,8 +8,7 @@ drop table if exists temp_load_subawards_subaward;
 
 
 
--- This will be dropped in the cleanup.sql file.
-create unlogged table temp_load_subawards_subaward as
+create temporary table temp_load_subawards_subaward as
     select * from subaward where 0 = 1;
 
 
