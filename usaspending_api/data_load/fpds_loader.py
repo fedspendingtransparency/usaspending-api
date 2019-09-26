@@ -173,7 +173,7 @@ def _load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
 
-            # BLIND INSERTS
+            # Insert always, even if duplicative
             # First create the records that don't have a foreign key out to anything else in one transaction per type
             inserted_recipient_locations = insert_recipient_locations(cursor, load_objects)
             for index, elem in enumerate(inserted_recipient_locations):
