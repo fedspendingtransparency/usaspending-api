@@ -8,31 +8,33 @@ import time
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
-from django.db.models import Count
+from django.db import connections, transaction, DEFAULT_DB_ALIAS
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
-from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
-from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.broker.helpers.award_category_helper import award_types
+from usaspending_api.broker.helpers.find_related_awards import find_related_awards
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.broker.helpers.set_legal_entity_boolean_fields import set_legal_entity_boolean_fields
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer
-from usaspending_api.etl.award_helpers import (
-    update_awards,
-    update_contract_awards,
-    update_award_categories,
-    award_types,
-)
+from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.common.helpers.timing_helpers import timer
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("console")
 
 AWARD_UPDATE_ID_LIST = []
 BATCH_FETCH_SIZE = 25000
+
+
+def read_afa_ids_from_file(afa_id_file_path):
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return set(tuple(l.decode("utf-8").rstrip() for l in f if l))
 
 
 class Command(BaseCommand):
@@ -121,55 +123,28 @@ class Command(BaseCommand):
             db_cursor.execute(db_query.format(",".join(str(id) for id in fpds_ids_batch)))
             yield dictfetchall(db_cursor)  # this returns an OrderedDict
 
-    def find_related_awards(self, transactions):
-        related_award_ids = [result[0] for result in transactions.values_list("award_id")]
-        tn_count = (
-            TransactionNormalized.objects.filter(award_id__in=related_award_ids)
-            .values("award_id")
-            .annotate(transaction_count=Count("id"))
-            .values_list("award_id", "transaction_count")
-        )
-        tn_count_filtered = (
-            transactions.values("award_id")
-            .annotate(transaction_count=Count("id"))
-            .values_list("award_id", "transaction_count")
-        )
-        tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
-        tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
-        # only delete awards if and only if all their transactions are deleted, otherwise update the award
-        update_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] != transaction_count
-        ]
-        delete_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] == transaction_count
-        ]
-        return update_awards, delete_awards
-
-    def delete_stale_fpds(self, ids_to_delete):
+    @staticmethod
+    def delete_stale_fpds(ids_to_delete):
         logger.info("Starting deletion of stale FPDS data")
 
         transactions = TransactionNormalized.objects.filter(
             contract_data__detached_award_procurement_id__in=ids_to_delete
         )
-        update_award_ids, delete_award_ids = self.find_related_awards(transactions)
+        update_award_ids, delete_award_ids = find_related_awards(transactions)
 
         delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list("id")]
         delete_transaction_str_ids = ",".join([str(deleted_result) for deleted_result in delete_transaction_ids])
         update_award_str_ids = ",".join([str(update_result) for update_result in update_award_ids])
         delete_award_str_ids = ",".join([str(deleted_result) for deleted_result in delete_award_ids])
 
-        db_cursor = connections["default"].cursor()
+        db_cursor = connections[DEFAULT_DB_ALIAS].cursor()
         queries = []
 
         if delete_transaction_ids:
             fpds = "DELETE FROM transaction_fpds tf WHERE tf.transaction_id IN ({});".format(delete_transaction_str_ids)
-            # Transaction Normalized
             tn = "DELETE FROM transaction_normalized tn WHERE tn.id IN ({});".format(delete_transaction_str_ids)
-            queries.extend([fpds, tn])
+            td = "DELETE FROM transaction_delta td WHERE td.transaction_id in ({});".format(delete_transaction_str_ids)
+            queries.extend([fpds, tn, td])
         # Update Awards
         if update_award_ids:
             # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
@@ -233,6 +208,21 @@ class Command(BaseCommand):
             "zip5": "legal_entity_zip5",
         }
 
+        fpds_normalized_field_map = {"type": "contract_award_type", "description": "award_description"}
+
+        fpds_field_map = {
+            "officer_1_name": "high_comp_officer1_full_na",
+            "officer_1_amount": "high_comp_officer1_amount",
+            "officer_2_name": "high_comp_officer2_full_na",
+            "officer_2_amount": "high_comp_officer2_amount",
+            "officer_3_name": "high_comp_officer3_full_na",
+            "officer_3_amount": "high_comp_officer3_amount",
+            "officer_4_name": "high_comp_officer4_full_na",
+            "officer_4_amount": "high_comp_officer4_amount",
+            "officer_5_name": "high_comp_officer5_full_na",
+            "officer_5_amount": "high_comp_officer5_amount",
+        }
+
         for index, row in enumerate(to_insert, 1):
             upper_case_dict_values(row)
 
@@ -260,22 +250,9 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-            # Generate the unique Award ID
-            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            generated_unique_id = (
-                "CONT_AW_"
-                + (row["agency_id"] if row["agency_id"] else "-NONE-")
-                + "_"
-                + (row["referenced_idv_agency_iden"] if row["referenced_idv_agency_iden"] else "-NONE-")
-                + "_"
-                + (row["piid"] if row["piid"] else "-NONE-")
-                + "_"
-                + (row["parent_award_id"] if row["parent_award_id"] else "-NONE-")
-            )
-
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(
-                generated_unique_award_id=generated_unique_id, piid=row["piid"]
+                generated_unique_award_id=row["unique_award_key"], piid=row["piid"]
             )
             award.parent_award_piid = row.get("parent_award_id")
             award.save()
@@ -308,23 +285,26 @@ class Command(BaseCommand):
                 "action_date": format_date(row["action_date"]),
                 "last_modified_date": last_mod_date,
                 "transaction_unique_id": row["detached_award_proc_unique"],
-                "generated_unique_award_id": generated_unique_id,
                 "is_fpds": True,
                 "type": award_type,
                 "type_description": award_type_desc,
             }
 
-            contract_field_map = {"description": "award_description"}
-
             transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
-                field_map=contract_field_map,
+                field_map=fpds_normalized_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True,
             )
 
-            contract_instance = load_data_into_model(TransactionFPDS(), row, as_dict=True)  # thrown away
+            contract_instance = load_data_into_model(
+                # TransactionFPDS() is "thrown" away
+                TransactionFPDS(),
+                row,
+                field_map=fpds_field_map,
+                as_dict=True,
+            )
 
             detached_award_proc_unique = contract_instance["detached_award_proc_unique"]
             unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
@@ -353,36 +333,7 @@ class Command(BaseCommand):
             legal_entity.transaction_unique_id = detached_award_proc_unique
             legal_entity.save()
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--date",
-            dest="date",
-            nargs="+",
-            type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
-        )
-
-    @transaction.atomic
-    def handle(self, *args, **options):
-        logger.info("==== Starting FPDS nightly data load ====")
-
-        if options.get("date"):
-            date = options.get("date")[0]
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-        else:
-            data_load_date_obj = ExternalDataLoadDate.objects.filter(
-                external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-            ).first()
-            if not data_load_date_obj:
-                date = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
-            else:
-                date = data_load_date_obj.last_load_date
-        start_date = datetime.utcnow().strftime("%Y-%m-%d")
-
-        logger.info("Processing data for FPDS starting from %s" % date)
-
-        with timer("retrieval of deleted FPDS IDs", logger.info):
-            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+    def perform_load(self, ids_to_delete, ids_to_insert):
 
         if len(ids_to_delete) > 0:
             with timer("deletion of all stale FPDS data", logger.info):
@@ -390,25 +341,20 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to delete at this juncture")
 
-        with timer("retrieval of new/modified FPDS data ID list", logger.info):
-            total_insert = self.get_fpds_transaction_ids(date=date)
-
-        if len(total_insert) > 0:
+        if len(ids_to_insert) > 0:
             # Add FPDS records
             with timer("insertion of new FPDS data in batches", logger.info):
-                self.insert_all_new_fpds(total_insert)
+                self.insert_all_new_fpds(ids_to_insert)
 
             # Update Awards based on changed FPDS records
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
-                update_awards(tuple(AWARD_UPDATE_ID_LIST))
+                award_record_count = update_awards(tuple(AWARD_UPDATE_ID_LIST))
+                logger.info("{} awards updated from their transactional data".format(award_record_count))
 
             # Update FPDS-specific Awards based on the info in child transactions
             with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
-                update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
-
-            # Update AwardCategories based on changed FPDS records
-            with timer("updating award category variables", logger.info):
-                update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+                award_record_count = update_contract_awards(tuple(AWARD_UPDATE_ID_LIST))
+                logger.info("{} awards updated FPDS-specific and exec comp data".format(award_record_count))
 
             # Check the linkages from file C to FPDS records and update any that are missing
             with timer("updating C->D linkages", logger.info):
@@ -416,10 +362,74 @@ class Command(BaseCommand):
         else:
             logger.info("No FPDS records to insert or modify at this juncture")
 
+    def nightly_loader(self, start_date):
+
+        logger.info("==== Starting FPDS nightly data load ====")
+
+        if start_date:
+            date = start_date
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        else:
+            default_last_load_date = datetime.now(timezone.utc) - timedelta(days=1)
+            date = get_last_load_date("fpds", default=default_last_load_date).date()
+        processing_start_datetime = datetime.now(timezone.utc)
+
+        logger.info("Processing data for FPDS starting from %s" % date)
+
+        with timer("retrieval of new/modified FPDS data ID list", logger.info):
+            ids_to_insert = self.get_fpds_transaction_ids(date=date)
+
+        with timer("retrieval of deleted FPDS IDs", logger.info):
+            ids_to_delete = self.get_deleted_fpds_data_from_s3(date=date)
+
+        self.perform_load(ids_to_delete, ids_to_insert)
+
         # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]).delete()
-        ExternalDataLoadDate(
-            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT["fpds"]
-        ).save()
+        update_last_load_date("fpds", processing_start_datetime)
 
         logger.info("FPDS NIGHTLY UPDATE COMPLETE")
+
+    def load_specific_transactions(self, detached_award_procurement_ids):
+        logger.info("==== Starting FPDS (re)load of specific transactions ====")
+
+        self.perform_load(detached_award_procurement_ids, detached_award_procurement_ids)
+
+        logger.info("FPDS SPECIFIC (RE)LOAD COMPLETE")
+
+    def add_arguments(self, parser):
+        mutually_exclusive_group = parser.add_mutually_exclusive_group()
+
+        mutually_exclusive_group.add_argument(
+            "--date",
+            dest="date",
+            type=str,
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD",
+        )
+
+        mutually_exclusive_group.add_argument(
+            "--detached-award-procurement-ids",
+            nargs="+",
+            type=int,
+            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+        )
+
+        parser.add_argument(
+            "--id-file",
+            metavar="FILEPATH",
+            type=str,
+            help="A file containing only transaction IDs (detached_award_procurement_id) "
+            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+        )
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        if any([options["detached_award_procurement_ids"], options["id_file"]]):
+            ids_from_file = read_afa_ids_from_file(options["id_file"]) if options["id_file"] else set()
+            explicit_ids = (
+                set(options["detached_award_procurement_ids"]) if options["detached_award_procurement_ids"] else set()
+            )
+            detached_award_procurement_ids = list(explicit_ids | ids_from_file)
+
+            self.load_specific_transactions(detached_award_procurement_ids)
+        else:
+            self.nightly_loader(options["date"])

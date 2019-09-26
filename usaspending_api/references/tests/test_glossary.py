@@ -5,7 +5,7 @@ from django.core.management import call_command
 
 @pytest.fixture()
 def glossary_data(db):
-    call_command('load_glossary')
+    call_command("load_glossary")
 
 
 def test_glossary_endpoint(client, glossary_data):
@@ -13,27 +13,30 @@ def test_glossary_endpoint(client, glossary_data):
     # Sorry to squash these together, but I don't want to load the guide data
     # multiple times
 
-    resp = client.get('/api/v1/references/glossary/?limit=9999')  # get all glossary terms
+    resp = client.get("/api/v1/references/glossary/?limit=9999")  # get all glossary terms
     assert resp.status_code == 200
-    assert len(resp.data["results"]) == 128
+    assert len(resp.data["results"]) == 129
 
-    resp = client.get(
-        '/api/v1/references/glossary/agency-identifier/')
+    resp = client.get("/api/v1/references/glossary/agency-identifier/")
     assert resp.status_code == 200
-    assert resp.data['term'] == 'Agency Identifier'
+    assert resp.data["term"] == "Agency Identifier"
 
-    resp = client.get('/api/v1/references/glossary/frumious-bandersnatch/')
+    resp = client.get("/api/v1/references/glossary/frumious-bandersnatch/")
     assert resp.status_code == 404
 
-    resp = client.get(
-        '/api/v1/references/glossary/?data_act_term=Budget Authority Appropriated')
+    resp = client.get("/api/v1/references/glossary/?data_act_term=Budget Authority Appropriated")
     assert resp.status_code == 200
-    assert len(resp.data['results']) > 0
-    for itm in resp.data['results']:
-        assert itm['data_act_term'] == 'Budget Authority Appropriated'
+    assert len(resp.data["results"]) > 0
+    for itm in resp.data["results"]:
+        assert itm["data_act_term"] == "Budget Authority Appropriated"
 
-    resp = client.get('/api/v1/references/glossary/?plain__contains=Congress')
+    resp = client.get("/api/v1/references/glossary/?plain__contains=Congress")
     assert resp.status_code == 200
-    assert len(resp.data['results']) > 0
-    for itm in resp.data['results']:
-        assert 'congress' in itm['plain'].lower()
+    assert len(resp.data["results"]) > 0
+    for itm in resp.data["results"]:
+        assert "congress" in itm["plain"].lower()
+
+    # This should probably be broken out into a new file once we sunset v1
+    resp = client.get("/api/v2/references/glossary/?limit=500")
+    assert resp.status_code == 200
+    assert len(resp.data["results"]) == 129

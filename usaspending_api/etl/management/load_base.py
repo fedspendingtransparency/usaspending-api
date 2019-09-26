@@ -2,71 +2,47 @@
 Code for loaders in management/commands to inherit from or share.
 """
 
+import dateutil
 import logging
-import time
-from datetime import datetime
+
 from decimal import Decimal
 
-import dateutil
-from copy import copy
-from django import db
 from django.core.management.base import BaseCommand
 from django.db import connections
-from django.core.cache import caches
 
-from usaspending_api.awards.models import Award
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
-from usaspending_api.etl.helpers import update_model_description_fields
-from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import (Agency, LegalEntity, Cfda, Location, )
+from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.abbreviations import territory_country_codes
+from usaspending_api.references.helpers import canonicalize_location_dict
+from usaspending_api.references.models import Location
 
 # Lists to store for update_awards and update_contract_awards
 award_update_id_list = []
 award_contract_update_id_list = []
 
-awards_cache = caches['awards']
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
-    """
-    This command will load a single submission from the DATA Act broker. If
-    we've already loaded the specified broker submission, this command
-    will remove the existing records before loading them again.
-    """
-    help = "Loads a single submission from the DATA Act broker." \
-           "The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
-
     def add_arguments(self, parser):
 
         parser.add_argument(
-            '--test',
-            action='store_true',
-            dest='test',
+            "--test",
+            action="store_true",
+            dest="test",
             default=False,
-            help='Runs the submission loader in test mode and uses stored data rather than pulling from a database'
-        )
-        parser.add_argument(
-            '--noclean',
-            action='store_true',
-            dest='noclean',
-            default=False,
-            help='Skips the cleanup step to update model description fields'
+            help="Runs the submission loader in test mode and uses stored data rather than pulling from a database",
         )
 
     def handle(self, *args, **options):
-        awards_cache.clear()
 
         # Grab the data broker database connections
-        if not options['test']:
+        if not options["test"]:
             try:
-                db_conn = connections['data_broker']
+                db_conn = connections["data_broker"]
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")
                 logger.critical(print(err))
                 return
         else:
@@ -74,365 +50,8 @@ class Command(BaseCommand):
 
         self.handle_loading(db_cursor=db_cursor, *args, **options)
 
-        if not options['noclean']:
-            # TODO: If this is slow, add ID limiting as below
-            logger.info('Updating model description fields...')
-            update_model_description_fields()
-
-        # TODO: Find out where this is being used
-        # logger.info('Updating awards to reflect their latest associated transaction info...')
-        # update_awards(tuple(award_update_id_list))
-        #
-        # logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        # update_contract_awards(tuple(award_contract_update_id_list))
-        #
-        # logger.info('Updating award category variables...')
-        # update_award_categories(tuple(award_update_id_list))
-
         # Done!
-        logger.info('FINISHED')
-
-
-def run_sql_file(file_path, parameters):
-    with db.connection.cursor() as cursor:
-        with open(file_path) as infile:
-            for raw_sql in infile.read().split('\n\n\n'):
-                if raw_sql.strip():
-                    sql_start_time = time.time()
-                    cursor.execute(raw_sql, parameters)
-                    some_sql = "\n".join(raw_sql.splitlines()[:3])
-                    logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
-
-
-# TODO: Remove this function. Keeping it for now to refer to in case we have questions about past submissions.
-def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
-    """
-    Process and load file D1 broker data (contract award txns).
-    """
-
-    legal_entity_location_field_map = {
-        "address_line1": "legal_entity_address_line1",
-        "address_line2": "legal_entity_address_line2",
-        "address_line3": "legal_entity_address_line3",
-        "location_country_code": "legal_entity_country_code",
-        "city_name": "legal_entity_city_name",
-        "congressional_code": "legal_entity_congressional",
-        "state_code": "legal_entity_state_code",
-        "zip4": "legal_entity_zip4"
-    }
-
-    place_of_performance_field_map = {
-        # not sure place_of_performance_locat maps exactly to city name
-        "city_name": "place_of_performance_locat",
-        "congressional_code": "place_of_performance_congr",
-        "state_code": "place_of_performance_state",
-        "zip4": "place_of_performance_zip4a",
-        "location_country_code": "place_of_perform_country_c"
-    }
-
-    place_of_performance_value_map = {
-        "place_of_performance_flag": True
-    }
-
-    legal_entity_location_value_map = {
-        "recipient_flag": True
-    }
-
-    contract_field_map = {
-        "type": "contract_award_type",
-        "description": "award_description"
-    }
-
-    d_start_time = time.time()
-
-    if quick:
-        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
-        run_sql_file('usaspending_api/etl/management/load_file_d1.sql', parameters)
-        logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
-        return
-
-    total_rows = len(procurement_data)
-
-    start_time = datetime.now()
-    for index, row in enumerate(procurement_data, 1):
-        if not (index % 100):
-            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                         str(total_rows),
-                                                                         datetime.now() - start_time))
-
-        legal_entity_location, created = get_or_create_location(
-            legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
-        )
-
-        recipient_name = row['awardee_or_recipient_legal']
-        if recipient_name is None:
-            recipient_name = ""
-
-        # Create the legal entity if it doesn't exist
-        legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=recipient_name
-        )
-
-        if created:
-            legal_entity_value_map = {
-                "location": legal_entity_location,
-            }
-            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
-
-        # Create the place of performance location
-        pop_location, created = get_or_create_location(
-            place_of_performance_field_map, row, copy(place_of_performance_value_map))
-
-        # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
-        # use the sub tier code to look it up. This code assumes that all incoming
-        # records will supply an awarding subtier agency code
-        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-            row['awarding_agency_code'] = Agency.get_by_subtier(
-                row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        # If funding toptier agency code (aka CGAC) is empty, try using the sub
-        # tier funding code to look it up. Unlike the awarding agency, we can't
-        # assume that the funding agency subtier code will always be present.
-        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-            row['funding_agency_code'] = (
-                funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                else None)
-
-        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        awarding_agency = Agency.get_by_toptier_subtier(
-            row['awarding_agency_code'],
-            row["awarding_sub_tier_agency_c"]
-        )
-        created, award = Award.get_or_create_summary_award(
-            awarding_agency=awarding_agency,
-            piid=row.get('piid'),
-            fain=row.get('fain'),
-            uri=row.get('uri'),
-            parent_award_piid=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
-        award.save()
-
-        award_update_id_list.append(award.id)
-        award_contract_update_id_list.append(award.id)
-
-        parent_txn_value_map = {
-            "award": award,
-            "awarding_agency": awarding_agency,
-            "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                            row["funding_sub_tier_agency_co"]),
-            "recipient": legal_entity,
-            "place_of_performance": pop_location,
-            'submission': submission_attributes,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            "action_date": format_date(row['action_date']),
-        }
-
-        transaction_dict = load_data_into_model(
-            TransactionNormalized(),  # thrown away
-            row,
-            field_map=contract_field_map,
-            value_map=parent_txn_value_map,
-            as_dict=True)
-
-        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-        transaction.save()
-
-        contract_value_map = {
-            'submission': submission_attributes,
-            'reporting_period_start': submission_attributes.reporting_period_start,
-            'reporting_period_end': submission_attributes.reporting_period_end,
-            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
-        }
-
-        contract_instance = load_data_into_model(
-            TransactionFPDS(),  # thrown away
-            row,
-            field_map=contract_field_map,
-            value_map=contract_value_map,
-            as_dict=True)
-
-        transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
-        transaction_contract.save()
-    logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
-
-
-def no_preprocessing(row):
-    """For data whose rows require no preprocessing."""
-
-    return row
-
-
-# TODO: Remove this function. Keeping it for now to refer to in case we have questions about past submissions.
-def load_file_d2(
-        submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing
-):
-    """
-    Process and load file D2 broker data (financial assistance award txns).
-    """
-
-    d_start_time = time.time()
-
-    if quick:
-        setup_broker_fdw()
-
-        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
-        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
-        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
-        return
-
-    legal_entity_location_field_map = {
-        "address_line1": "legal_entity_address_line1",
-        "address_line2": "legal_entity_address_line2",
-        "address_line3": "legal_entity_address_line3",
-        "city_code": "legal_entity_city_code",
-        "city_name": "legal_entity_city_name",
-        "congressional_code": "legal_entity_congressional",
-        "county_code": "legal_entity_county_code",
-        "county_name": "legal_entity_county_name",
-        "foreign_city_name": "legal_entity_foreign_city",
-        "foreign_postal_code": "legal_entity_foreign_posta",
-        "foreign_province": "legal_entity_foreign_provi",
-        "state_code": "legal_entity_state_code",
-        "state_name": "legal_entity_state_name",
-        "zip5": "legal_entity_zip5",
-        "zip_last4": "legal_entity_zip_last4",
-        "location_country_code": "legal_entity_country_code"
-    }
-
-    place_of_performance_field_map = {
-        "city_name": "place_of_performance_city",
-        "performance_code": "place_of_performance_code",
-        "congressional_code": "place_of_performance_congr",
-        "county_name": "place_of_perform_county_na",
-        "foreign_location_description": "place_of_performance_forei",
-        "state_name": "place_of_perform_state_nam",
-        "zip4": "place_of_performance_zip4a",
-        "location_country_code": "place_of_perform_country_c"
-
-    }
-
-    legal_entity_location_value_map = {
-        "recipient_flag": True
-    }
-
-    place_of_performance_value_map = {
-        "place_of_performance_flag": True
-    }
-
-    fad_field_map = {
-        "type": "assistance_type",
-        "description": "award_description",
-    }
-
-    total_rows = len(award_financial_assistance_data)
-
-    start_time = datetime.now()
-    for index, row in enumerate(award_financial_assistance_data, 1):
-        if not (index % 100):
-            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                         str(total_rows),
-                                                                         datetime.now() - start_time))
-
-        row = row_preprocessor(row)
-
-        legal_entity_location, created = get_or_create_location(
-            legal_entity_location_field_map, row, legal_entity_location_value_map
-        )
-
-        recipient_name = row['awardee_or_recipient_legal']
-        if recipient_name is None:
-            recipient_name = ""
-
-        # Create the legal entity if it doesn't exist
-        legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=recipient_name
-        )
-
-        if created:
-            legal_entity_value_map = {
-                "location": legal_entity_location,
-            }
-            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
-
-        # Create the place of performance location
-        pop_location, created = get_or_create_location(
-            place_of_performance_field_map, row, place_of_performance_value_map
-        )
-
-        # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
-        # use the sub tier code to look it up. This code assumes that all incoming
-        # records will supply an awarding subtier agency code
-        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-            row['awarding_agency_code'] = Agency.get_by_subtier(
-                row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        # If funding toptier agency code (aka CGAC) is empty, try using the sub
-        # tier funding code to look it up. Unlike the awarding agency, we can't
-        # assume that the funding agency subtier code will always be present.
-        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-            row['funding_agency_code'] = (
-                funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                else None)
-
-        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        awarding_agency = Agency.get_by_toptier_subtier(
-            row['awarding_agency_code'],
-            row["awarding_sub_tier_agency_c"]
-        )
-        created, award = Award.get_or_create_summary_award(
-            awarding_agency=awarding_agency,
-            piid=row.get('piid'),
-            fain=row.get('fain'),
-            uri=row.get('uri'))
-        award.save()
-
-        award_update_id_list.append(award.id)
-
-        parent_txn_value_map = {
-            "award": award,
-            "awarding_agency": awarding_agency,
-            "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                            row["funding_sub_tier_agency_co"]),
-            "recipient": legal_entity,
-            "place_of_performance": pop_location,
-            'submission': submission_attributes,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            "action_date": format_date(row['action_date']),
-        }
-
-        transaction_dict = load_data_into_model(
-            TransactionNormalized(),  # thrown away
-            row,
-            field_map=fad_field_map,
-            value_map=parent_txn_value_map,
-            as_dict=True)
-
-        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-        transaction.save()
-
-        fad_value_map = {
-            "submission": submission_attributes,
-            "cfda": Cfda.objects.filter(program_number=row['cfda_number']).first(),
-            'reporting_period_start': submission_attributes.reporting_period_start,
-            'reporting_period_end': submission_attributes.reporting_period_end,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-        }
-
-        financial_assistance_data = load_data_into_model(
-            TransactionFABS(),  # thrown away
-            row,
-            field_map=fad_field_map,
-            value_map=fad_value_map,
-            as_dict=True)
-
-        transaction_assistance = TransactionFABS.get_or_create_2(transaction=transaction, **financial_assistance_data)
-        transaction_assistance.save()
-
-    logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        logger.info("FINISHED")
 
 
 def format_date(date_string):
@@ -465,11 +84,11 @@ def load_data_into_model(model_instance, data, **kwargs):
                     (multiplied by -1) before saving.
         as_dict - If true, returns the model as a dict instead of saving or altering
     """
-    field_map = kwargs.get('field_map')
-    value_map = kwargs.get('value_map')
-    save = kwargs.get('save', False)
-    as_dict = kwargs.get('as_dict', False)
-    reverse = kwargs.get('reverse')
+    field_map = kwargs.get("field_map")
+    value_map = kwargs.get("value_map")
+    save = kwargs.get("save", False)
+    as_dict = kwargs.get("as_dict", False)
+    reverse = kwargs.get("reverse")
 
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
@@ -480,8 +99,8 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     for field in fields:
         # Let's handle the data source field here for all objects
-        if field == 'data_source':
-            store_value(mod, field, 'DBR', reverse)
+        if field == "data_source":
+            store_value(mod, field, "DBR", reverse)
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
@@ -501,7 +120,7 @@ def load_data_into_model(model_instance, data, **kwargs):
                     store_value(mod, field, data[field_map[broker_field]], reverse)
                     sts = True
                 except KeyError:
-                    print('column {} missing from data'.format(field_map[broker_field]))
+                    print("column {} missing from data".format(field_map[broker_field]))
             elif field in field_map:
                 store_value(mod, field, data[field_map[field]], reverse)
                 sts = True
@@ -532,7 +151,8 @@ def create_location(location_map, row, location_value_map=None):
 
     row = canonicalize_location_dict(row)
     location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False)
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False
+    )
 
     return Location.objects.create(**location_data)
 
@@ -558,49 +178,69 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
         # OR the place of performance location country code is empty and there isn't a performance code
         # OR the country code is a US territory
         # THEN we can assume that the location country code is 'USA'
-        if ('recipient_flag' in location_value_map and location_value_map['recipient_flag'] and
-                (row[location_map.get('location_country_code')] is None or
-                    row[location_map.get('location_country_code')] == 'UNITED STATES')) or \
-                ('place_of_performance_flag' in location_value_map and
-                    location_value_map['place_of_performance_flag'] and
-                    row[location_map.get('location_country_code')] is None and
-                    "performance_code" in location_map and row[location_map["performance_code"]] != '00FORGN') or \
-                ('place_of_performance_flag' in location_value_map and
-                    location_value_map['place_of_performance_flag'] and
-                    row[location_map.get('location_country_code')] is None and
-                    "performance_code" not in location_map) or \
-                (row[location_map.get('location_country_code')] in territory_country_codes):
-            row[location_map["location_country_code"]] = 'USA'
+        if (
+            (
+                "recipient_flag" in location_value_map
+                and location_value_map["recipient_flag"]
+                and (
+                    row[location_map.get("location_country_code")] is None
+                    or row[location_map.get("location_country_code")] == "UNITED STATES"
+                )
+            )
+            or (
+                "place_of_performance_flag" in location_value_map
+                and location_value_map["place_of_performance_flag"]
+                and row[location_map.get("location_country_code")] is None
+                and "performance_code" in location_map
+                and row[location_map["performance_code"]] != "00FORGN"
+            )
+            or (
+                "place_of_performance_flag" in location_value_map
+                and location_value_map["place_of_performance_flag"]
+                and row[location_map.get("location_country_code")] is None
+                and "performance_code" not in location_map
+            )
+            or (row[location_map.get("location_country_code")] in territory_country_codes)
+        ):
+            row[location_map["location_country_code"]] = "USA"
 
-    state_code = row.get(location_map.get('state_code'))
+    state_code = row.get(location_map.get("state_code"))
     if state_code is not None:
         # Remove . in state names (i.e. D.C.)
-        location_value_map.update({'state_code': state_code.replace('.', '')})
+        location_value_map.update({"state_code": state_code.replace(".", "")})
 
-    location_value_map.update({
-        'location_country_code': location_map.get('location_country_code'),
-        'country_name': location_map.get('location_country_name'),
-        'state_code': None,  # expired
-        'state_name': None,
-    })
+    location_value_map.update(
+        {
+            "location_country_code": location_map.get("location_country_code"),
+            "country_name": location_map.get("location_country_name"),
+            "state_code": None,  # expired
+            "state_name": None,
+        }
+    )
 
     location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True
+    )
 
-    del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
+    del location_data["data_source"]  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
 
-        if len(location_data) == 1 and "place_of_performance_flag" in location_data and\
-                location_data["place_of_performance_flag"]:
+        if (
+            len(location_data) == 1
+            and "place_of_performance_flag" in location_data
+            and location_data["place_of_performance_flag"]
+        ):
             location_object = None
             created = False
         elif save:
-            location_object = load_data_into_model(Location(), row, value_map=location_value_map,
-                                                   field_map=location_map, as_dict=False, save=True)
+            location_object = load_data_into_model(
+                Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True
+            )
             created = False
         else:
-            location_object = load_data_into_model(Location(), row, value_map=location_value_map,
-                                                   field_map=location_map, as_dict=False)
+            location_object = load_data_into_model(
+                Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False
+            )
             # location_object = Location.objects.create(**location_data)
             created = True
 
@@ -611,16 +251,19 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
-    if value is None:
-        return
-    if field.endswith('date'):  # turn datetimes into dates
-        if isinstance(value, str):
-            try:
-                value = dateutil.parser.parse(value).date()
-            except (TypeError, ValueError):
-                pass
+    # turn datetimes into dates
+    if field.endswith("date") and isinstance(value, str):
+        try:
+            value = dateutil.parser.parse(value).date()
+        except (TypeError, ValueError):
+            pass
+
     if reverse and reverse.search(field):
-        value = -1 * Decimal(value)
+        try:
+            value = -1 * Decimal(value)
+        except TypeError:
+            pass
+
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:

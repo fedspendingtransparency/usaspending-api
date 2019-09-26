@@ -53,7 +53,7 @@ This will load data into your USAspending database in the following order:
 
 ## Historic USAspending Data
 
-*This section needs to be updated. The commands listed below may be different than those in the current version of the USAspending API.*
+**This section desperately needs to be updated. The commands listed below are most definitely obsolete.**
 
 Award data from the [current USAspending site](https://www.usaspending.gov/) comes in two different formats:
 - Contracts
@@ -86,5 +86,4 @@ Award data from the [current USAspending site](https://www.usaspending.gov/) com
 
 - `python manage.py update_location_usage_flags` - Updates all locations to have proper usage flags. This should be run after any set of submission loads to ensure the flags are properly set.
 
-- `python manage.py load_executive_compensation --all` - Loads executive compensation data for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
-
+- `psql -v ON_ERROR_STOP=1 -c '\timing' -f usaspending_api/broker/management/sql/restock_exec_comp.sql $DATABASE_URL` - Loads executive compensation data for any currently loaded submissions. 

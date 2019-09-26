@@ -118,6 +118,10 @@
           "format": "yyyy-MM-dd",
           "index": false
         },
+        "ordering_period_end_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
         "transaction_fiscal_year": {
           "type": "integer",
           "index": false
@@ -210,19 +214,16 @@
           "index": false
         },
         "pop_country_code": {
-          "type": "text",
-          "index": false
+          "type": "keyword"
         },
         "pop_country_name": {
           "type": "text"
         },
         "pop_state_code": {
-          "type": "text",
-          "index": false
+          "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_county_name": {
           "type": "text"
@@ -231,24 +232,28 @@
           "type": "text"
         },
         "pop_congressional_code": {
+          "type": "text"
+        },
+        "pop_city_name": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
 
         "recipient_location_country_code": {
-          "type": "text",
-          "index": false
+          "type": "keyword"
         },
         "recipient_location_country_name": {
           "type": "text"
         },
         "recipient_location_state_code": {
-          "type": "text",
-          "index": false
+          "type": "keyword"
         },
         "recipient_location_county_code": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_county_name": {
           "type": "text"
@@ -257,8 +262,15 @@
           "type": "text"
         },
         "recipient_location_congressional_code": {
+          "type": "text"
+        },
+        "recipient_location_city_name": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type": {
           "type": "keyword",

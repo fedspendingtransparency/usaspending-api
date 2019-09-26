@@ -8,8 +8,12 @@ from django.test import TestCase
 from model_mommy import mommy
 from psycopg2.sql import SQL
 
-from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary, \
-    fetchall_to_ordered_dictionary, get_connection
+from usaspending_api.common.helpers.sql_helpers import (
+    build_composable_order_by,
+    execute_sql_to_ordered_dictionary,
+    fetchall_to_ordered_dictionary,
+    get_connection,
+)
 
 
 AWARD_COUNT = 5
@@ -28,14 +32,14 @@ RAW_SQL = """
 """
 
 EXPECTED_RESPONSE_ORDERED_DICTIONARY = [
-    OrderedDict((('award_id', 1), ('transaction_normalized_id', 1), ('transaction_fpds_id', 1))),
-    OrderedDict((('award_id', 2), ('transaction_normalized_id', 2), ('transaction_fpds_id', 2))),
-    OrderedDict((('award_id', 3), ('transaction_normalized_id', 3), ('transaction_fpds_id', 3))),
-    OrderedDict((('award_id', 4), ('transaction_normalized_id', 4), ('transaction_fpds_id', 4))),
-    OrderedDict((('award_id', 5), ('transaction_normalized_id', 5), ('transaction_fpds_id', 5))),
+    OrderedDict((("award_id", 1), ("transaction_normalized_id", 1), ("transaction_fpds_id", 1))),
+    OrderedDict((("award_id", 2), ("transaction_normalized_id", 2), ("transaction_fpds_id", 2))),
+    OrderedDict((("award_id", 3), ("transaction_normalized_id", 3), ("transaction_fpds_id", 3))),
+    OrderedDict((("award_id", 4), ("transaction_normalized_id", 4), ("transaction_fpds_id", 4))),
+    OrderedDict((("award_id", 5), ("transaction_normalized_id", 5), ("transaction_fpds_id", 5))),
 ]
 
-Result = namedtuple('Result', ['award_id', 'transaction_normalized_id', 'transaction_fpds_id'])
+Result = namedtuple("Result", ["award_id", "transaction_normalized_id", "transaction_fpds_id"])
 EXPECTED_RESPONSE_NAMED_TUPLE = [
     Result(award_id=1, transaction_normalized_id=1, transaction_fpds_id=1),
     Result(award_id=2, transaction_normalized_id=2, transaction_fpds_id=2),
@@ -46,27 +50,15 @@ EXPECTED_RESPONSE_NAMED_TUPLE = [
 
 
 class CursorExecuteTestCase(TestCase):
-
     @classmethod
     def setUpTestData(cls):
         """
         Set up some awards and transactions that we can query.
         """
         for _id in range(1, AWARD_COUNT + 1):
-            mommy.make(
-                'awards.TransactionNormalized',
-                id=_id,
-                award_id=_id
-            )
-            mommy.make(
-                'awards.TransactionFPDS',
-                transaction_id=_id
-            )
-            mommy.make(
-                'awards.Award',
-                id=_id,
-                latest_transaction_id=_id
-            )
+            mommy.make("awards.TransactionNormalized", id=_id, award_id=_id)
+            mommy.make("awards.TransactionFPDS", transaction_id=_id)
+            mommy.make("awards.Award", id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_build_composable_order_by():
@@ -77,76 +69,71 @@ class CursorExecuteTestCase(TestCase):
                 result = build_composable_order_by(*args, **kwargs)
                 return result.as_string(cursor.connection)
 
-            assert _build_composable_order_by('column') == 'order by "column"'
-            assert _build_composable_order_by('this.column') == 'order by "this"."column"'
-            assert _build_composable_order_by('column', 'asc') == 'order by "column" asc'
-            assert _build_composable_order_by('column', nulls='first') == 'order by "column" nulls first'
-            assert _build_composable_order_by('column', 'asc', 'first') == 'order by "column" asc nulls first'
+            assert _build_composable_order_by("column") == 'order by "column"'
+            assert _build_composable_order_by("this.column") == 'order by "this"."column"'
+            assert _build_composable_order_by("column", "asc") == 'order by "column" asc'
+            assert _build_composable_order_by("column", sort_nulls="first") == 'order by "column" nulls first'
+            assert _build_composable_order_by("column", "asc", "first") == 'order by "column" asc nulls first'
 
+            assert _build_composable_order_by(["column1", "column2"]) == 'order by "column1", "column2"'
             assert (
-                _build_composable_order_by(['column1', 'column2']) ==
-                'order by "column1", "column2"'
+                _build_composable_order_by(["column1", "column2"], "desc") == 'order by "column1" desc, "column2" desc'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], 'desc') ==
-                'order by "column1" desc, "column2" desc'
+                _build_composable_order_by(["column1", "column2"], sort_nulls="last")
+                == 'order by "column1" nulls last, "column2" nulls last'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], nulls='last') ==
-                'order by "column1" nulls last, "column2" nulls last'
+                _build_composable_order_by(["column1", "column2"], "desc", "last")
+                == 'order by "column1" desc nulls last, "column2" desc nulls last'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], 'desc', 'last') ==
-                'order by "column1" desc nulls last, "column2" desc nulls last'
+                _build_composable_order_by(["column1", "column2"], ["asc", "desc"])
+                == 'order by "column1" asc, "column2" desc'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], ['asc', 'desc']) ==
-                'order by "column1" asc, "column2" desc'
+                _build_composable_order_by(["column1", "column2"], sort_nulls=["first", "last"])
+                == 'order by "column1" nulls first, "column2" nulls last'
             )
             assert (
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'last']) ==
-                'order by "column1" nulls first, "column2" nulls last'
-            )
-            assert (
-                _build_composable_order_by(['column1', 'column2'], ['asc', 'desc'], ['first', 'last']) ==
-                'order by "column1" asc nulls first, "column2" desc nulls last'
+                _build_composable_order_by(["column1", "column2"], ["asc", "desc"], ["first", "last"])
+                == 'order by "column1" asc nulls first, "column2" desc nulls last'
             )
 
-            assert _build_composable_order_by(None) == ''
-            assert _build_composable_order_by('') == ''
-            assert _build_composable_order_by([]) == ''
+            assert _build_composable_order_by(None) == ""
+            assert _build_composable_order_by("") == ""
+            assert _build_composable_order_by([]) == ""
 
             with pytest.raises(ValueError):
                 _build_composable_order_by([1, 2, 3])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], 'NOPE')
+                _build_composable_order_by(["column1", "column2"], "NOPE")
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls='NOPE')
+                _build_composable_order_by(["column1", "column2"], sort_nulls="NOPE")
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], ['asc', 'NOPE'])
+                _build_composable_order_by(["column1", "column2"], ["asc", "NOPE"])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'NOPE'])
+                _build_composable_order_by(["column1", "column2"], sort_nulls=["first", "NOPE"])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], ['asc', 'asc', 'asc'])
+                _build_composable_order_by(["column1", "column2"], ["asc", "asc", "asc"])
 
             with pytest.raises(ValueError):
-                _build_composable_order_by(['column1', 'column2'], nulls=['first', 'first', 'first'])
+                _build_composable_order_by(["column1", "column2"], sort_nulls=["first", "first", "first"])
 
-        _sql = (
-            SQL('select id, latest_transaction_id from awards a ') +
-            SQL(_build_composable_order_by(['a.id', 'a.latest_transaction_id'], ['desc', 'asc'], ['first', 'last']))
+        _sql = SQL("select id, latest_transaction_id from awards a ") + SQL(
+            _build_composable_order_by(["a.id", "a.latest_transaction_id"], ["desc", "asc"], ["first", "last"])
         )
         assert execute_sql_to_ordered_dictionary(_sql) == [
-            OrderedDict((('id', 5), ('latest_transaction_id', 5))),
-            OrderedDict((('id', 4), ('latest_transaction_id', 4))),
-            OrderedDict((('id', 3), ('latest_transaction_id', 3))),
-            OrderedDict((('id', 2), ('latest_transaction_id', 2))),
-            OrderedDict((('id', 1), ('latest_transaction_id', 1))),
+            OrderedDict((("id", 5), ("latest_transaction_id", 5))),
+            OrderedDict((("id", 4), ("latest_transaction_id", 4))),
+            OrderedDict((("id", 3), ("latest_transaction_id", 3))),
+            OrderedDict((("id", 2), ("latest_transaction_id", 2))),
+            OrderedDict((("id", 1), ("latest_transaction_id", 1))),
         ]
 
     @staticmethod

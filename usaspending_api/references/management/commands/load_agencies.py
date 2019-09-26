@@ -36,11 +36,11 @@ class Command(BaseCommand):
     help = "Loads agencies and sub-tier agencies from authoritative OMB list in \
             the folder of this management command."
 
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
     def handle(self, *args, **options):
 
-        '''
+        """
             The toptier table is expected to contain unique CGACs or FRECs, based on the
             name specified in the CSV. The names must match for this to consider it a toptier agency.
 
@@ -59,32 +59,33 @@ class Command(BaseCommand):
 
                 "U.S. Congress" (000) and "Other (Listed Under Department of State)" (000) are also skipped.
 
-        '''
+        """
 
         try:
-            with open(os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api', 'data', 'authoritative_agency_list.csv'), encoding="Latin-1") \
-                    as csvfile:
+            with open(
+                os.path.join(django.conf.settings.BASE_DIR, "usaspending_api", "data", "authoritative_agency_list.csv"),
+                encoding="Latin-1",
+            ) as csvfile:
 
                 reader = csv.DictReader(csvfile)
 
                 for row in reader:
-                    fpds_code = row.get('FPDS DEPARTMENT ID', '')
-                    cgac_code = row.get('CGAC AGENCY CODE', '')
-                    frec_code = row.get('FREC', '')
-                    department_name = row.get('AGENCY NAME', '')
-                    department_abbr = row.get('AGENCY ABBREVIATION', '')
-                    subtier_name = row.get('SUBTIER NAME', '')
-                    subtier_code = row.get('SUBTIER CODE', '')
-                    subtier_abbr = row.get('SUBTIER ABBREVIATION', '')
-                    frec_entity_description = row.get('FREC Entity Description', '')
-                    mission = row.get('MISSION', '')
-                    website = row.get('WEBSITE', '')
-                    icon_filename = row.get('ICON FILENAME', '')
-                    is_frec = row.get('IS_FREC', 'FALSE')
+                    cgac_code = row.get("CGAC AGENCY CODE", "")
+                    frec_code = row.get("FREC", "")
+                    department_name = row.get("AGENCY NAME", "")
+                    department_abbr = row.get("AGENCY ABBREVIATION", "")
+                    subtier_name = row.get("SUBTIER NAME", "")
+                    subtier_code = row.get("SUBTIER CODE", "")
+                    subtier_abbr = row.get("SUBTIER ABBREVIATION", "")
+                    frec_entity_description = row.get("FREC Entity Description", "")
+                    mission = row.get("MISSION", "")
+                    website = row.get("WEBSITE", "")
+                    justification = row.get("CONGRESSIONAL JUSTIFICATION", "")
+                    icon_filename = row.get("ICON FILENAME", "")
+                    is_frec = row.get("IS_FREC", "FALSE")
 
                     # Skip these agencies altogether
-                    if 'unknown' in subtier_code.lower() or cgac_code in ['000', '067']:
+                    if "unknown" in subtier_code.lower() or cgac_code in ["000", "067"]:
                         continue
 
                     toptier_agency = None
@@ -92,28 +93,28 @@ class Command(BaseCommand):
                     toptier_flag = False
 
                     # This comparison determines what we consider a toptier
-                    if is_frec == 'TRUE':
-                        toptier_flag = (subtier_name == frec_entity_description)
+                    if is_frec == "TRUE":
+                        toptier_flag = subtier_name == frec_entity_description
                     else:
-                        toptier_flag = (subtier_name == department_name)
+                        toptier_flag = subtier_name == department_name
 
                     if toptier_flag:  # create or update the toptier agency
                         toptier_name = subtier_name  # based on matching above
                         toptier_agency, created = ToptierAgency.objects.get_or_create(name=toptier_name)
 
-                        if is_frec == 'TRUE':
+                        if is_frec == "TRUE":
                             toptier_agency.cgac_code = frec_code
                             toptier_agency.abbreviation = subtier_abbr
                         else:
                             toptier_agency.cgac_code = cgac_code
                             toptier_agency.abbreviation = department_abbr
 
-                        toptier_agency.fpds_code = fpds_code
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename
+                        toptier_agency.justification = justification
 
-                        if is_frec == 'TRUE':
+                        if is_frec == "TRUE":
                             toptier_agency.cgac_code = frec_code
                             toptier_agency.abbreviation = subtier_abbr
                         else:
@@ -123,36 +124,36 @@ class Command(BaseCommand):
                         toptier_agency.save()
 
                     # Navy / Army / Air Force will just be a toptier, skip subtier
-                    if 'subsumed under dod' in subtier_code.lower():
+                    if "subsumed under dod" in subtier_code.lower():
                         toptier_agency, created = ToptierAgency.objects.get_or_create(name=department_name)
                         toptier_agency.cgac_code = cgac_code
                         toptier_agency.abbreviation = department_abbr
                         toptier_agency.save()
 
-                        agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
-                                                                       subtier_agency=None,
-                                                                       toptier_flag=True)
+                        agency, created = Agency.objects.get_or_create(
+                            toptier_agency=toptier_agency, subtier_agency=None, toptier_flag=True
+                        )
                         agency.save()
 
                         continue
 
                     # Still need to grab the toptier for mapping
-                    if is_frec == 'TRUE':
+                    if is_frec == "TRUE":
                         toptier_agency = ToptierAgency.objects.get(cgac_code=frec_code)
                     else:
                         toptier_agency = ToptierAgency.objects.get(cgac_code=cgac_code)
 
                     # Sanity check
-                    assert(subtier_code.isalnum() and len(subtier_code) == 4)
+                    assert subtier_code.isalnum() and len(subtier_code) == 4
 
                     subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code)
                     subtier_agency.name = subtier_name
                     subtier_agency.abbreviation = subtier_abbr
                     subtier_agency.save()
 
-                    agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
-                                                                   subtier_agency=subtier_agency,
-                                                                   toptier_flag=toptier_flag)
+                    agency, created = Agency.objects.get_or_create(
+                        toptier_agency=toptier_agency, subtier_agency=subtier_agency, toptier_flag=toptier_flag
+                    )
                     agency.save()
 
                 with connection.cursor() as cursor:

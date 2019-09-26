@@ -94,7 +94,7 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name. For example, to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 * `verbose` - _Optional_ - Endpoints that return lists of items `/awards/` and `/accounts/`, for example return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_.
-  * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
+  * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__cgac_code` will filter on the field `cgac_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
     * `equals` - Evaluates the equality of the value with that stored in the field.
       ```
@@ -254,12 +254,12 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
     "combine_method": "OR",
     "filters": [
       {
-        "field": "funding_agency__fpds_code",
+        "field": "funding_agency__cgac_code",
         "operation": "equals",
         "value": "0300"
       },
       {
-        "field": "awarding_agency__fpds_code",
+        "field": "awarding_agency__cgac_code",
         "operation": "in",
         "value": ["0300", "0500"]
       }
@@ -283,7 +283,6 @@ The response object structure is the same whether you are making a GET or a POST
         "subtier_code": "7300",
         "name": "SMALL BUSINESS ADMINISTRATION"
       },
-      "office_agency": null
     },
     "recipient": {
       "legal_entity_id": 799999094,
@@ -366,13 +365,13 @@ The endpoints described in this section generate files that reflect the site's u
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://www.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
 
 #### Generating Download Files
 
 **Reminder**: Before using these endpoints, check the  [Award Data Archive](https://usaspending.gov/#/download_center/award_data_archive) for pre-generated files
 
-There are several downloadable endpoints, all with different features/constraints. 
+There are several downloadable endpoints, all with different features/constraints.
 
 ##### Row Constraint Downloads
 
@@ -416,7 +415,7 @@ To check to see whether that request is complete, use the [Status Endpoint](http
   * `date_part`: Applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
   * `show_nulls`: Whether to display results where the `group` data or the aggregate field data is null. In effect, this sets `show_null_aggregates` and `show_null_groups` to true. Defaults to false.
   * `show_null_groups`: Whether to display aggregates where all the `group` data is null. Defaults to false.
-  * `show_null_aggregates`: Whether to display entries where the aggregate is null. 
+  * `show_null_aggregates`: Whether to display entries where the aggregate is null.
 
   Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
@@ -581,14 +580,12 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
       {
         "toptier_agency": {
           "cgac_code": "097",
-          "fpds_code": "9700",
           "name": "DEPT OF DEFENSE"
         },
         "subtier_agency": {
           "subtier_code": "97JC",
           "name": "MISSILE DEFENSE AGENCY (MDA)"
         },
-        "office_agency": null
       },
 
        . . .
@@ -596,28 +593,24 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
       {
         "toptier_agency": {
           "cgac_code": "097",
-          "fpds_code": "9700",
           "name": "DEPT OF DEFENSE"
         },
         "subtier_agency": {
           "subtier_code": "97F7",
           "name": "JOINT IMPROVISED EXPLOSIVE DEVICE DEFEAT ORGANIZATION (JIEDDO)"
         },
-        "office_agency": null
       }
     ],
     "subtier_agency__name": [
       {
         "toptier_agency": {
           "cgac_code": "089",
-          "fpds_code": "8900",
           "name": "ENERGY, DEPARTMENT OF"
         },
         "subtier_agency": {
           "subtier_code": "8925",
           "name": "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
         },
-        "office_agency": null
       },
 
       . . .
@@ -625,14 +618,12 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
       {
         "toptier_agency": {
           "cgac_code": "097",
-          "fpds_code": "9700",
           "name": "DEPT OF DEFENSE"
         },
         "subtier_agency": {
           "subtier_code": "9700",
           "name": "DEPT OF DEFENSE"
         },
-        "office_agency": null
       }
     ]
   }

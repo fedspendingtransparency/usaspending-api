@@ -73,6 +73,7 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
 ```
     'Recipient Name': 'recipient_name',
     'Recipient DUNS Number': 'recipient_unique_id',
+    'recipient_id': 'recipient_id',
     'Awarding Agency': 'awarding_toptier_agency_name',
     'Awarding Agency Code': 'awarding_toptier_agency_code',
     'Awarding Sub Agency': 'awarding_subtier_agency_name',
@@ -153,7 +154,8 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
         {
             "internal_id": 1018950,
             "Award ID": null,
-            "Recipient Name": "MULTIPLE RECIPIENTS",
+            "Recipient Name": "The Example Company",
+            "recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R",
             "Start Date": null,
             "End Date": null,
             "Award Amount": 1573663,
@@ -188,7 +190,8 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
             "Awarding Agency": "Social Security Administration",
             "Awarding Sub Agency": "Social Security Administration",
             "Prime Award ID": null,
-            "Prime Recipient Name": "MULTIPLE RECIPIENTS"
+            "Prime Recipient Name": "The Example Company",
+            "prime_award_recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R"
         }
     ],
     "page_metadata": {
@@ -209,6 +212,12 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
 ### Errors
 Possible HTTP Status Codes:
 * 400 : Missing parameters or limit is not a valid, positive integer
+* 422 : Award Type code for subawards is not a code for contracts, IDVs, or grants
+```
+{
+    "detail": "Award Type codes limited for Subawards. Only contracts ['A', 'C', 'D', 'B'], IDVs ['IDV_A', 'IDV_B_A', 'IDV_D', 'IDV_B', 'IDV_B_C', 'IDV_B_B', 'IDV_C', 'IDV_E'], or grants ['05', '03', '04', '02'] are available"
+}
+```
 * 500 : All other errors
 
 ```
@@ -216,3 +225,4 @@ Possible HTTP Status Codes:
     "detail": "Sample error message"
 }
 ```
+

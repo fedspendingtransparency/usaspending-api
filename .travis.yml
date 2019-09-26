@@ -2,53 +2,42 @@ language: python
 
 python:
   - '3.5'
+  - '3.7'
 
 services:
   - postgresql
-  - elasticsearch
 
 addons:
-  postgresql: '9.6'
+  postgresql: '10'
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
 
 env:
   global:
-    - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
-    - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
-    - ES_HOSTNAME='http://localhost:9200'
-    - FUNCS_AND_ENUMS='usaspending_api/database_scripts/matviews/functions_and_enums.sql'
-    - MATVIEW_GEN='usaspending_api/database_scripts/matview_generator/matview_sql_generator.py'
+  - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+  - ES_HOSTNAME='http://localhost:9200'
 
 before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - pip install -r requirements/requirements.txt
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
 
 before_script:
+  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - psql -c "CREATE DATABASE usaspending_api;" -U postgres
   - psql -c "CREATE USER readonly;"
-  - sed -i 's/ES_HOSTNAME = ""/ES_HOSTNAME = os.environ.get("ES_HOSTNAME")/' usaspending_api/settings.py
-  - python $MATVIEW_GEN --dest='temp_sql/' --quiet
   - python manage.py migrate
-  - psql $DATABASE_URL -f $FUNCS_AND_ENUMS -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/subaward_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_award_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_state_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_fed_acct_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_geo_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_month_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_recipient_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_transaction_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_cfda_number.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_naics_codes.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/summary_view_psc_codes.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/universal_award_matview.sql -v ON_ERROR_STOP=1 --quiet
-  - psql $DATABASE_URL -f temp_sql/universal_transaction_matview.sql -v ON_ERROR_STOP=1 --quiet
+  - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
 
 script:
   - flake8
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
+  - python manage.py check_for_endpoint_documentation
   - pytest --cov=usaspending_api
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 

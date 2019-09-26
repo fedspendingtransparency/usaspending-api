@@ -45,17 +45,14 @@
           "type": "05",
           "type_description": "Cooperative Agreement",
           "total_obligation": "15000.00",
-          "total_outlay": null,
           "date_signed": "2016-09-20",
           "description": "FY 15 7J",
           "period_of_performance_start_date": "2016-09-20",
           "period_of_performance_current_end_date": "2016-12-28",
-          "potential_total_value_of_award": null,
           "awarding_agency": {
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -63,14 +60,12 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -78,8 +73,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           },
           "recipient": {
             "legal_entity_id": 799999094,
@@ -150,7 +144,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -158,8 +151,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]
@@ -234,7 +226,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -242,8 +233,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -253,7 +243,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -261,8 +250,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -272,7 +260,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -280,8 +267,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -291,7 +277,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -299,8 +284,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         },
         {
@@ -310,7 +294,6 @@
             "id": 1234567,
             "toptier_agency": {
               "cgac_code": "019",
-              "fpds_code": "HEYA",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -318,8 +301,7 @@
               "subtier_code": "19BE",
               "abbreviation": null,
               "name": "Department of State"
-            },
-            "office_agency": null
+            }
           }
         }
       ]
@@ -601,12 +583,10 @@
       "fain": null,
       "uri": null,
       "total_obligation": "54400.00",
-      "total_outlay": null,
       "date_signed": "2016-09-01",
       "description": null,
       "period_of_performance_start_date": "2016-09-01",
       "period_of_performance_current_end_date": null,
-      "potential_total_value_of_award": null,
       "last_modified_date": null,
       "certified_date": null,
       "create_date": "2016-12-20T22:50:53.882000Z",

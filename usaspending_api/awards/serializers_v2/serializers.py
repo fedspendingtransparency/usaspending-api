@@ -14,4 +14,4 @@ class RecipientSerializer(serializers.Serializer):
 class RecipientAwardSpendingSerializer(serializers.Serializer):
     award_category = serializers.CharField()
     obligated_amount = serializers.DecimalField(None, 2)
-    recipient = RecipientSerializer(source='*')
+    recipient = RecipientSerializer(source="*")

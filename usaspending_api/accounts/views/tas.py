@@ -46,6 +46,7 @@ class TASBalancesQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas)..
     """
+
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
@@ -60,6 +61,7 @@ class TASCategoryAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDe
     """
     Return aggregated award information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -74,6 +76,7 @@ class TASCategoryList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account balance information.
     """
+
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
@@ -89,6 +92,7 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -104,6 +108,7 @@ class TASCategoryQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
+
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
@@ -118,6 +123,7 @@ class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin, Autocomplete
     """
     Handle autocomplete requests for appropriation account (i.e., TAS) information.
     """
+
     serializer_class = TasSerializer
 
     def get_queryset(self):
@@ -135,6 +141,7 @@ class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin, CachedDet
     """
     Handle requests for appropriation account balance information.
     """
+
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
@@ -149,6 +156,7 @@ class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin, CachedDetailViewS
     """
     Handle requests for appropriation account (i.e., TAS) information.
     """
+
     serializer_class = TasSerializer
 
     def get_queryset(self):

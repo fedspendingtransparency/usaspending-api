@@ -12,7 +12,7 @@ from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.sql_helpers import FiscalMonth, FiscalQuarter, FiscalYear
+from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, generate_fiscal_year
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -28,8 +28,9 @@ API_VERSION = settings.API_VERSION
 class SpendingOverTimeVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
-    endpoint_doc: /advanced_award_search/spending_over_time.md
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_over_time.md"
 
     def validate_request_data(self, json_data):
         self.groupings = {

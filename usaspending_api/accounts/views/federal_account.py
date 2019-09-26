@@ -8,6 +8,7 @@ class FederalAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     Handle autocomplete requests for federal account information.
     """
+
     serializer_class = FederalAccountSerializer
 
     def get_queryset(self):
@@ -25,6 +26,7 @@ class FederalAccountViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for federal account information.
     """
+
     serializer_class = FederalAccountSerializer
 
     def get_queryset(self):

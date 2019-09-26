@@ -1,28 +1,36 @@
-import logging
 import itertools
+import logging
 
 from django.db.models import Q
 
+from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
+from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models_matviews import AwardSearchView, UniversalTransactionView
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
-from .filter_helpers import combine_date_range_queryset, total_obligation_queryset
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
+from usaspending_api.search.helpers import build_tas_codes_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
-from usaspending_api.recipient.models import RecipientProfile
+
 
 logger = logging.getLogger(__name__)
 
 
 def universal_award_matview_filter(filters):
-    return matview_search_filter(filters, UniversalAwardView, for_downloads=True)
+    return matview_search_filter(filters, AwardSearchView, for_downloads=True)
 
 
 def universal_transaction_matview_filter(filters):
     return matview_search_filter(filters, UniversalTransactionView, for_downloads=True)
+
+
+def matview_search_filter_determine_award_matview_model(filters):
+    model = obtain_view_from_award_group(filters.get("award_type_codes"))
+    return matview_search_filter(filters, model)
 
 
 def matview_search_filter(filters, model, for_downloads=False):
@@ -36,47 +44,48 @@ def matview_search_filter(filters, model, for_downloads=False):
 
     for key, value in filters.items():
         if value is None:
-            raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
+            raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 
         key_list = [
-            'keywords',
-            'elasticsearch_keyword',
-            'time_period',
-            'award_type_codes',
-            'agencies',
-            'legal_entities',
-            'recipient_id',
-            'recipient_search_text',
-            'recipient_scope',
-            'recipient_locations',
-            'recipient_type_names',
-            'place_of_performance_scope',
-            'place_of_performance_locations',
-            'award_amounts',
-            'award_ids',
-            'program_numbers',
-            'naics_codes',
-            'psc_codes',
-            'contract_pricing_type_codes',
-            'set_aside_type_codes',
-            'extent_competed_type_codes',
+            "keywords",
+            "elasticsearch_keyword",
+            "time_period",
+            "award_type_codes",
+            "agencies",
+            "legal_entities",
+            "recipient_id",
+            "recipient_search_text",
+            "recipient_scope",
+            "recipient_locations",
+            "recipient_type_names",
+            "place_of_performance_scope",
+            "place_of_performance_locations",
+            "award_amounts",
+            "award_ids",
+            "program_numbers",
+            "naics_codes",
+            "psc_codes",
+            "contract_pricing_type_codes",
+            "set_aside_type_codes",
+            "extent_competed_type_codes",
+            "tas_codes",
             # next 3 keys used by federal account page
-            'federal_account_ids',
-            'object_class',
-            'program_activity'
+            "federal_account_ids",
+            "object_class",
+            "program_activity",
         ]
 
         if key not in key_list:
-            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
+            raise InvalidParameterException("Invalid filter: " + key + " does not exist.")
 
         if key == "keywords":
+
             def keyword_parse(keyword):
                 # keyword_ts_vector & award_ts_vector are Postgres TS_vectors.
                 # keyword_ts_vector = recipient_name + naics_code + naics_description
                 #     + psc_description + awards_description
                 # award_ts_vector = piid + fain + uri
-                filter_obj = Q(keyword_ts_vector=keyword) | \
-                    Q(award_ts_vector=keyword)
+                filter_obj = Q(keyword_ts_vector=keyword) | Q(award_ts_vector=keyword)
                 if keyword.isnumeric():
                     filter_obj |= Q(naics_code__contains=keyword)
                 if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
@@ -89,20 +98,22 @@ def matview_search_filter(filters, model, for_downloads=False):
                 filter_obj |= keyword_parse(keyword)
             potential_duns = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
             if len(potential_duns) > 0:
-                filter_obj |= Q(recipient_unique_id__in=potential_duns) | \
-                    Q(parent_recipient_unique_id__in=potential_duns)
+                filter_obj |= Q(recipient_unique_id__in=potential_duns) | Q(
+                    parent_recipient_unique_id__in=potential_duns
+                )
 
             queryset = queryset.filter(filter_obj)
 
         elif key == "elasticsearch_keyword":
             keyword = " ".join(value) if isinstance(value, list) else value
-            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field="transaction_id")
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
+            logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset &= queryset.extra(
-                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+            queryset = queryset.extra(
+                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(",".join(transaction_ids))]
+            )
 
         elif key == "time_period":
             min_date = API_SEARCH_MIN_DATE
@@ -111,7 +122,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= combine_date_range_queryset(value, model, min_date, API_MAX_DATE)
 
         elif key == "award_type_codes":
-            queryset &= queryset.filter(Q(type__in=value))
+            queryset = queryset.filter(type__in=value)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -127,9 +138,10 @@ def matview_search_filter(filters, model, for_downloads=False):
                     if tier == "toptier":
                         funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        if 'toptier_name' in v:
-                            funding_subtier |= (Q(funding_subtier_agency_name=name) &
-                                                Q(funding_toptier_agency_name=v['toptier_name']))
+                        if "toptier_name" in v:
+                            funding_subtier |= Q(funding_subtier_agency_name=name) & Q(
+                                funding_toptier_agency_name=v["toptier_name"]
+                            )
                         else:
                             funding_subtier |= Q(funding_subtier_agency_name=name)
 
@@ -137,9 +149,10 @@ def matview_search_filter(filters, model, for_downloads=False):
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        if 'toptier_name' in v:
-                            awarding_subtier |= (Q(awarding_subtier_agency_name=name) &
-                                                 Q(awarding_toptier_agency_name=v['toptier_name']))
+                        if "toptier_name" in v:
+                            awarding_subtier |= Q(awarding_subtier_agency_name=name) & Q(
+                                awarding_toptier_agency_name=v["toptier_name"]
+                            )
                         else:
                             awarding_subtier |= Q(awarding_subtier_agency_name=name)
 
@@ -175,29 +188,28 @@ def matview_search_filter(filters, model, for_downloads=False):
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
                 all_filters_obj |= filter_obj
-            queryset &= queryset.filter(all_filters_obj)
+            queryset = queryset.filter(all_filters_obj)
 
         elif key == "recipient_id":
             filter_obj = Q()
             recipient_hash = value[:-2]
 
-            if value.endswith('P'):  # For parent types, gather all of the children's transactions
-                parent_duns_rows = (
-                    RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level='P')
-                    .values('recipient_unique_id')
-                )
+            if value.endswith("P"):  # For parent types, gather all of the children's transactions
+                parent_duns_rows = RecipientProfile.objects.filter(
+                    recipient_hash=recipient_hash, recipient_level="P"
+                ).values("recipient_unique_id")
                 if len(parent_duns_rows) == 1:
-                    parent_duns = parent_duns_rows[0]['recipient_unique_id']
+                    parent_duns = parent_duns_rows[0]["recipient_unique_id"]
                     filter_obj = Q(parent_recipient_unique_id=parent_duns)
                 elif len(parent_duns_rows) > 2:
                     # shouldn't occur
-                    raise InvalidParameterException('Non-unique parent record found in RecipientProfile')
-            elif value.endswith('C'):
+                    raise InvalidParameterException("Non-unique parent record found in RecipientProfile")
+            elif value.endswith("C"):
                 filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
             else:
                 # "R" recipient level
                 filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
-            queryset &= queryset.filter(filter_obj)
+            queryset = queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -205,14 +217,14 @@ def matview_search_filter(filters, model, for_downloads=False):
             elif value == "foreign":
                 queryset = queryset.exclude(recipient_scope_q)
             else:
-                raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
+                raise InvalidParameterException("Invalid filter: recipient_scope type is invalid.")
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations('recipient_location', value, True))
+            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= queryset.filter(Q(business_categories__overlap=value))
+                queryset = queryset.filter(business_categories__overlap=value)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -220,10 +232,10 @@ def matview_search_filter(filters, model, for_downloads=False):
             elif value == "foreign":
                 queryset = queryset.exclude(pop_scope_q)
             else:
-                raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
+                raise InvalidParameterException("Invalid filter: place_of_performance_scope is invalid.")
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations('pop', value, True))
+            queryset = queryset.filter(geocode_filter_locations("pop", value, True))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, model, filters)
@@ -234,39 +246,42 @@ def matview_search_filter(filters, model, for_downloads=False):
                 # award_id_string is a Postgres TS_vector
                 # award_id_string = piid + fain + uri
                 filter_obj |= Q(award_ts_vector=val)
-            queryset &= queryset.filter(filter_obj)
+            queryset = queryset.filter(filter_obj)
 
         elif key == "program_numbers":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(Q(cfda_number__in=in_query))
+                queryset = queryset.filter(cfda_number__in=in_query)
 
         elif key == "naics_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(Q(naics_code__in=in_query))
+                queryset = queryset.filter(naics_code__in=in_query)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(Q(product_or_service_code__in=in_query))
+                queryset = queryset.filter(product_or_service_code__in=in_query)
 
         elif key == "contract_pricing_type_codes":
             in_query = [v for v in value]
             if len(in_query) != 0:
-                queryset &= queryset.filter(Q(type_of_contract_pricing__in=in_query))
+                queryset = queryset.filter(type_of_contract_pricing__in=in_query)
 
         elif key == "set_aside_type_codes":
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(type_set_aside__exact=v)
-            queryset &= queryset.filter(or_queryset)
+            queryset = queryset.filter(or_queryset)
 
         elif key == "extent_competed_type_codes":
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(extent_competed__exact=v)
-            queryset &= queryset.filter(or_queryset)
+            queryset = queryset.filter(or_queryset)
+
+        elif key == "tas_codes":
+            queryset = build_tas_codes_filter(queryset, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":
@@ -296,7 +311,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             faba_queryset = faba_queryset.filter(or_queryset)
 
     if faba_flag:
-        award_ids = faba_queryset.values('award_id')
-        queryset &= queryset.filter(Q(award_id__in=award_ids))
+        award_ids = faba_queryset.values("award_id")
+        queryset = queryset.filter(award_id__in=award_ids)
 
     return queryset

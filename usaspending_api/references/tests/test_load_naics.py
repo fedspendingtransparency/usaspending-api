@@ -12,7 +12,7 @@ def test_naics_existing_and_new_files():
 
     """
 
-    call_command('load_naics')
+    call_command("load_naics")
 
     naics = NAICS.objects.all()
     naics_count_2017 = naics.filter(year=2017).count()
@@ -22,6 +22,6 @@ def test_naics_existing_and_new_files():
     naics_2012_named_entry = NAICS.objects.get(pk=541712)
 
     assert naics_2012_named_entry is not None
-    assert naics_count_2002 == 12
-    assert naics_count_2017 == 1057
-    assert naics_count_all == 1283
+    assert naics_count_2002 == 15
+    assert naics_count_2017 == 1392
+    assert naics_count_all == 1627

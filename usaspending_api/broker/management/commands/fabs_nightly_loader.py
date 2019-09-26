@@ -1,412 +1,220 @@
-import boto3
 import logging
-import time
 
-from datetime import datetime, timedelta, timezone
-from django.conf import settings
+from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
-from django.db.models import Count
+from django.db import connections
 
-from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories
+from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
+from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
-from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy, timer
-from usaspending_api.etl.award_helpers import update_awards, update_award_categories
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
-from usaspending_api.references.models import LegalEntity, Agency
+from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
+from usaspending_api.common.helpers.timing_helpers import timer
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 
 logger = logging.getLogger("console")
 
-AWARD_UPDATE_ID_LIST = []
-BATCH_FETCH_SIZE = 25000
+
+SUBMISSION_LOOKBACK_MINUTES = 15
+
+
+def get_last_load_date():
+    """
+    Wraps the get_load_load_date helper which is responsible for grabbing the
+    last load date from the database.
+
+    Without getting into too much detail, SUBMISSION_LOOKBACK_MINUTES is used
+    to counter a very rare race condition where database commits are saved ever
+    so slightly out of order with the updated_at timestamp.  It will be
+    subtracted from the last_run_date to ensure submissions with similar
+    updated_at times do not fall through the cracks.  An unfortunate side
+    effect is that some submissions may be processed more than once which
+    SHOULDN'T cause any problems but will add to the run time.  To minimize
+    this, keep the value as small as possible while still preventing skips.  To
+    be clear, the original fabs loader did this as well, just in a way that did
+    not always prevent skips.
+    """
+    from usaspending_api.broker.helpers.last_load_date import get_last_load_date
+
+    last_load_date = get_last_load_date("fabs", SUBMISSION_LOOKBACK_MINUTES)
+    if last_load_date is None:
+        external_data_type_id = lookups.EXTERNAL_DATA_TYPE_DICT["fabs"]
+        raise RuntimeError(
+            "Unable to find last_load_date in table {} for external_data_type_id={}. "
+            "If this is expected and the goal is to reload all submissions, supply the "
+            "--reload-all switch on the command line.".format(
+                ExternalDataLoadDate.objects.model._meta.db_table, external_data_type_id
+            )
+        )
+    return last_load_date
+
+
+def get_new_submission_ids(last_load_date):
+    """
+    Grab all the submission ids updated since last_load_date.
+    """
+    sql = """
+        select  submission_id
+        from    submission
+        where   d2_submission is true and
+                publish_status_id in (2, 3) and
+                updated_at >= %s
+    """
+    with connections["data_broker"].cursor() as cursor:
+        cursor.execute(sql, [cast_datetime_to_naive(last_load_date)])
+        return tuple(row[0] for row in cursor.fetchall())
+
+
+def _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime):
+    params = []
+    if submission_ids is not None:
+        sql += " and submission_id in %s"
+        params.append(tuple(submission_ids))
+    if afa_ids:
+        sql += " and afa_generated_unique in %s"
+        params.append(tuple(afa_ids))
+    if start_datetime:
+        sql += " and updated_at >= %s"
+        params.append(cast_datetime_to_naive(start_datetime))
+    if end_datetime:
+        sql += " and updated_at < %s"
+        params.append(cast_datetime_to_naive(end_datetime))
+    with connections["data_broker"].cursor() as cursor:
+        cursor.execute(sql, params)
+        return tuple(row[0] for row in cursor.fetchall())
+
+
+def get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime):
+    sql = """
+        select  published_award_financial_assistance_id
+        from    published_award_financial_assistance
+        where   is_active is true
+    """
+    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
+    logger.info("Number of records to insert/update: {:,}".format(len(ids)))
+    return ids
+
+
+def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime):
+    sql = """
+        select  distinct upper(afa_generated_unique)
+        from    published_award_financial_assistance p
+        where   correction_delete_indicatr = 'D' and
+                not exists (
+                    select  *
+                    from    published_award_financial_assistance
+                    where   afa_generated_unique = p.afa_generated_unique and is_active is true
+                )
+    """
+    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
+    logger.info("Number of records to delete: {:,}".format(len(ids)))
+    return ids
+
+
+def read_afa_ids_from_file(afa_id_file_path):
+    with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
+        return tuple(l.decode("utf-8").rstrip() for l in f if l)
 
 
 class Command(BaseCommand):
-    help = "Update FABS data in USAspending from a Broker DB"
-
-    @staticmethod
-    def get_fabs_records_to_delete(date):
-        db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join(
-            [
-                "SELECT UPPER(afa_generated_unique) as afa_generated_unique",
-                "FROM published_award_financial_assistance",
-                "WHERE created_at >= %s",
-                "AND UPPER(correction_delete_indicatr) = 'D'",
-            ]
-        )
-
-        db_cursor.execute(db_query, [date])
-        db_rows = [id[0] for id in db_cursor.fetchall()]
-        logger.info("Number of records to delete: %s" % str(len(db_rows)))
-        return db_rows
-
-    @staticmethod
-    def get_fabs_transaction_ids(date):
-        db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join(
-            [
-                "SELECT published_award_financial_assistance_id",
-                "FROM published_award_financial_assistance",
-                "WHERE created_at >= %s",
-                "AND is_active IS True",  # add UPPER(correction_delete_indicatr) IS DISTINCT FROM 'D' ?
-            ]
-        )
-
-        db_cursor.execute(db_query, [date])
-        db_rows = [id[0] for id in db_cursor.fetchall()]
-        logger.info("Number of records to insert/update: %s" % str(len(db_rows)))
-        return db_rows
-
-    @staticmethod
-    def fetch_fabs_data_generator(dap_uid_list):
-        db_cursor = connections["data_broker"].cursor()
-        db_query = " ".join(
-            [
-                "SELECT * FROM published_award_financial_assistance",
-                "WHERE published_award_financial_assistance_id IN ({});"
-            ]
-        )
-
-        total_uid_count = len(dap_uid_list)
-
-        for i in range(0, total_uid_count, BATCH_FETCH_SIZE):
-            start_time = time.perf_counter()
-            max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
-            fabs_ids_batch = dap_uid_list[i:max_index]
-
-            log_msg = "Fetching {}-{} out of {} records from broker"
-            logger.info(log_msg.format(i + 1, max_index, total_uid_count))
-
-            db_cursor.execute(db_query.format(",".join(str(id) for id in fabs_ids_batch)))
-            logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
-            yield dictfetchall(db_cursor)  # this returns an OrderedDict
-
-    def find_related_awards(self, transactions):
-        related_award_ids = [result[0] for result in transactions.values_list('award_id')]
-        tn_count = (
-            TransactionNormalized.objects.filter(award_id__in=related_award_ids)
-            .values('award_id')
-            .annotate(transaction_count=Count('id'))
-            .values_list('award_id', 'transaction_count')
-        )
-        tn_count_filtered = (
-            transactions.values('award_id')
-            .annotate(transaction_count=Count('id'))
-            .values_list('award_id', 'transaction_count')
-        )
-        tn_count_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count}
-        tn_count_filtered_mapping = {award_id: transaction_count for award_id, transaction_count in tn_count_filtered}
-        # only delete awards if and only if all their transactions are deleted, otherwise update the award
-        update_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] != transaction_count
-        ]
-        delete_awards = [
-            award_id
-            for award_id, transaction_count in tn_count_mapping.items()
-            if tn_count_filtered_mapping[award_id] == transaction_count
-        ]
-        return update_awards, delete_awards
-
-    @transaction.atomic
-    def delete_stale_fabs(self, ids_to_delete=None):
-        logger.info('Starting deletion of stale FABS data')
-
-        if not ids_to_delete:
-            return
-
-        transactions = TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete)
-        update_award_ids, delete_award_ids = self.find_related_awards(transactions)
-
-        delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list('id')]
-        delete_transaction_str_ids = ','.join([str(deleted_result) for deleted_result in delete_transaction_ids])
-        update_award_str_ids = ','.join([str(update_result) for update_result in update_award_ids])
-        delete_award_str_ids = ','.join([str(deleted_result) for deleted_result in delete_award_ids])
-
-        db_cursor = connections['default'].cursor()
-
-        queries = []
-        # Transaction FABS
-        if delete_transaction_ids:
-            fabs = 'DELETE FROM "transaction_fabs" tf WHERE tf."transaction_id" IN ({});'
-            tn = 'DELETE FROM "transaction_normalized" tn WHERE tn."id" IN ({});'
-            queries.extend([fabs.format(delete_transaction_str_ids), tn.format(delete_transaction_str_ids)])
-        # Update Awards
-        if update_award_ids:
-            # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
-            AWARD_UPDATE_ID_LIST.extend(update_award_ids)
-            update_awards = 'UPDATE "awards" SET "latest_transaction_id" = null WHERE "id" IN ({});'
-            update_awards_query = update_awards.format(update_award_str_ids)
-            queries.append(update_awards_query)
-        if delete_award_ids:
-            # Financial Accounts by Awards
-            faba = 'UPDATE "financial_accounts_by_awards" SET "award_id" = null WHERE "award_id" IN ({});'
-            # Subawards
-            sub = 'UPDATE "subaward" SET "award_id" = null WHERE "award_id" IN ({});'.format(delete_award_str_ids)
-            # Delete Awards
-            delete_awards_query = 'DELETE FROM "awards" a WHERE a."id" IN ({});'.format(delete_award_str_ids)
-            queries.extend([faba.format(delete_award_str_ids), sub, delete_awards_query])
-        if queries:
-            db_query = ''.join(queries)
-            db_cursor.execute(db_query, [])
-
-    @transaction.atomic
-    def insert_all_new_fabs(self, all_new_to_insert):
-        for to_insert in self.fetch_fabs_data_generator(all_new_to_insert):
-            start = time.perf_counter()
-            self.insert_new_fabs(to_insert=to_insert)
-            logger.info("FABS insertions took {:.2f}s".format(time.perf_counter() - start))
-
-    def insert_new_fabs(self, to_insert):
-        place_of_performance_field_map = {
-            "location_country_code": "place_of_perform_country_c",
-            "country_name": "place_of_perform_country_n",
-            "state_code": "place_of_perfor_state_code",
-            "state_name": "place_of_perform_state_nam",
-            "city_name": "place_of_performance_city",
-            "county_name": "place_of_perform_county_na",
-            "county_code": "place_of_perform_county_co",
-            "foreign_location_description": "place_of_performance_forei",
-            "zip_4a": "place_of_performance_zip4a",
-            "congressional_code": "place_of_performance_congr",
-            "performance_code": "place_of_performance_code",
-            "zip_last4": "place_of_perform_zip_last4",
-            "zip5": "place_of_performance_zip5",
-        }
-
-        legal_entity_location_field_map = {
-            "location_country_code": "legal_entity_country_code",
-            "country_name": "legal_entity_country_name",
-            "state_code": "legal_entity_state_code",
-            "state_name": "legal_entity_state_name",
-            "city_name": "legal_entity_city_name",
-            "city_code": "legal_entity_city_code",
-            "county_name": "legal_entity_county_name",
-            "county_code": "legal_entity_county_code",
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            "foreign_location_description": "legal_entity_foreign_descr",
-            "congressional_code": "legal_entity_congressional",
-            "zip_last4": "legal_entity_zip_last4",
-            "zip5": "legal_entity_zip5",
-            "foreign_postal_code": "legal_entity_foreign_posta",
-            "foreign_province": "legal_entity_foreign_provi",
-            "foreign_city_name": "legal_entity_foreign_city",
-        }
-
-        for row in to_insert:
-            upper_case_dict_values(row)
-
-            # Create new LegalEntityLocation and LegalEntity from the row data
-            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-            recipient_name = row['awardee_or_recipient_legal']
-            legal_entity = LegalEntity.objects.create(
-                recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name if recipient_name is not None else "",
-                parent_recipient_unique_id=row['ultimate_parent_unique_ide'],
-            )
-            legal_entity_value_map = {
-                "location": legal_entity_location,
-                "business_categories": get_business_categories(row=row, data_type='fabs'),
-                "business_types_description": row['business_types_desc'],
-            }
-            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
-
-            # Create the place of performance location
-            pop_location = create_location(place_of_performance_field_map, row, {"place_of_performance_flag": True})
-
-            # Find the toptier awards from the subtier awards
-            awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
-            funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
-
-            # Generate the unique Award ID
-            # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
-
-            # this will raise an exception if the cast to an int fails, that's ok since we don't want to process
-            # non-numeric record type values
-            record_type_int = int(row['record_type'])
-            if record_type_int == 1:
-                uri = row['uri'] if row['uri'] else '-NONE-'
-                fain = '-NONE-'
-            elif record_type_int in (2, 3):
-                uri = '-NONE-'
-                fain = row['fain'] if row['fain'] else '-NONE-'
-            else:
-                msg = "Invalid record type encountered for the following afa_generated_unique record: {}"
-                raise Exception(msg.format(row['afa_generated_unique']))
-
-            astac = row["awarding_sub_tier_agency_c"] if row["awarding_sub_tier_agency_c"] else "-NONE-"
-            generated_unique_id = "ASST_AW_{}_{}_{}".format(astac, fain, uri)
-
-            # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(
-                generated_unique_award_id=generated_unique_id,
-                fain=row['fain'],
-                uri=row['uri'],
-                record_type=row['record_type'],
-            )
-            award.save()
-
-            # Append row to list of Awards updated
-            AWARD_UPDATE_ID_LIST.append(award.id)
-
-            try:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
-            except ValueError:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
-            parent_txn_value_map = {
-                "award": award,
-                "awarding_agency": awarding_agency,
-                "funding_agency": funding_agency,
-                "recipient": legal_entity,
-                "place_of_performance": pop_location,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "action_date": format_date(row['action_date']),
-                "last_modified_date": last_mod_date,
-                "type_description": row['assistance_type_desc'],
-                "transaction_unique_id": row['afa_generated_unique'],
-                "generated_unique_award_id": generated_unique_id,
-            }
-
-            fad_field_map = {
-                "type": "assistance_type",
-                "description": "award_description",
-                "funding_amount": "total_funding_amount",
-            }
-
-            transaction_normalized_dict = load_data_into_model(
-                TransactionNormalized(),  # thrown away
-                row,
-                field_map=fad_field_map,
-                value_map=parent_txn_value_map,
-                as_dict=True,
-            )
-
-            financial_assistance_data = load_data_into_model(TransactionFABS(), row, as_dict=True)  # thrown away
-
-            afa_generated_unique = financial_assistance_data['afa_generated_unique']
-            unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
-
-            if unique_fabs.first():
-                transaction_normalized_dict["update_date"] = datetime.now(timezone.utc)
-                transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
-
-                # Update TransactionNormalized
-                TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).update(
-                    **transaction_normalized_dict
-                )
-
-                # Update TransactionFABS
-                unique_fabs.update(**financial_assistance_data)
-            else:
-                # Create TransactionNormalized
-                transaction = TransactionNormalized(**transaction_normalized_dict)
-                transaction.save()
-
-                # Create TransactionFABS
-                transaction_fabs = TransactionFABS(transaction=transaction, **financial_assistance_data)
-                transaction_fabs.save()
-
-            # Update legal entity to map back to transaction
-            legal_entity.transaction_unique_id = afa_generated_unique
-            legal_entity.save()
-
-    @staticmethod
-    def store_deleted_fabs(ids_to_delete):
-        seconds = int(time.time())  # adds enough uniqueness to filename
-        file_name = datetime.now(timezone.utc).strftime('%Y-%m-%d') + "_FABSdeletions_" + str(seconds) + ".csv"
-        file_with_headers = ['afa_generated_unique'] + ids_to_delete
-
-        if settings.IS_LOCAL:
-            file_path = settings.CSV_LOCAL_PATH + file_name
-            logger.info("storing deleted transaction IDs at: {}".format(file_path))
-            with open(file_path, 'w') as writer:
-                for row in file_with_headers:
-                    writer.write(row + '\n')
-        else:
-            logger.info('Uploading FABS delete data to S3 bucket')
-            aws_region = settings.USASPENDING_AWS_REGION
-            fpds_bucket_name = settings.FPDS_BUCKET_NAME
-            s3client = boto3.client('s3', region_name=aws_region)
-            contents = bytes()
-            for row in file_with_headers:
-                contents += bytes('{}\n'.format(row).encode())
-            s3client.put_object(Bucket=fpds_bucket_name, Key=file_name, Body=contents)
+    help = (
+        "Update FABS data in USAspending from Broker. Command line parameters "
+        "are ANDed together so, for example, providing a transaction id and a "
+        "submission id that do not overlap will result no new FABs records."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--date',
-            dest="date",
-            nargs='+',
+            "--reload-all",
+            action="store_true",
+            help="Reload all FABS transactions. Does not clear out USAspending "
+            "FABS transactions beforehand. If omitted, all submissions from "
+            "the last successful run will be loaded. THIS SETTING SUPERSEDES "
+            "ALL OTHER PROCESSING OPTIONS.",
+        )
+
+        parser.add_argument(
+            "--submission-ids",
+            metavar="ID",
+            nargs="+",
+            type=int,
+            help="Broker submission IDs to reload. Nonexistent IDs will be ignored.",
+        )
+
+        parser.add_argument(
+            "--afa-id-file",
+            metavar="FILEPATH",
             type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY",
+            help="A file containing only broker transaction IDs (afa_generated_unique) "
+            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+        )
+
+        parser.add_argument(
+            "--start-datetime",
+            type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
+            help="Processes transactions updated on or after the UTC date/time "
+            "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
+            "quotes if date/time contains spaces.",
+        )
+
+        parser.add_argument(
+            "--end-datetime",
+            type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
+            help="Processes transactions updated prior to the UTC date/time "
+            "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
+            "quotes if date/time contains spaces.",
+        )
+
+        parser.add_argument(
+            "--do-not-log-deletions",
+            action="store_true",
+            help="Disable the feature that creates a file of deleted FABS transactions for clients to download.",
         )
 
     def handle(self, *args, **options):
+        processing_start_datetime = datetime.now(timezone.utc)
+
         logger.info("Starting FABS data load script...")
-        start_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
-        fabs_load_db_id = lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
-        data_load_date_obj = ExternalDataLoadDate.objects.filter(external_data_type_id=fabs_load_db_id).first()
+        do_not_log_deletions = options["do_not_log_deletions"]
 
-        if options.get("date"):  # if provided, use cli data
-            load_from_date = options.get("date")[0]
-        elif data_load_date_obj:  # else if last run is in DB, use that
-            load_from_date = data_load_date_obj.last_load_date
-        else:  # Default is yesterday at midnight
-            load_from_date = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
-
-        logger.info('Processing data for FABS starting from %s' % load_from_date)
-
-        with timer('retrieving/diff-ing FABS Data', logger.info):
-            upsert_transactions = self.get_fabs_transaction_ids(date=load_from_date)
-
-        with timer("obtaining delete records", logger.info):
-            ids_to_delete = self.get_fabs_records_to_delete(date=load_from_date)
-
-        if ids_to_delete:
-            self.store_deleted_fabs(ids_to_delete)
-
-            # Delete FABS records by ID
-            with timer("deleting stale FABS data", logger.info):
-                self.delete_stale_fabs(ids_to_delete=ids_to_delete)
-                del ids_to_delete
+        # "Reload all" supersedes all other processing options.
+        reload_all = options["reload_all"]
+        if reload_all:
+            submission_ids = None
+            afa_ids = None
+            start_datetime = None
+            end_datetime = None
         else:
-            logger.info("Nothing to delete...")
+            submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
+            afa_ids = read_afa_ids_from_file(options["afa_id_file"]) if options["afa_id_file"] else None
+            start_datetime = options["start_datetime"]
+            end_datetime = options["end_datetime"]
 
-        if upsert_transactions:
-            # Add FABS records
-            with timer('inserting new FABS data', logger.info):
-                self.insert_all_new_fabs(all_new_to_insert=upsert_transactions)
+        # If no other processing options were provided than this is an incremental load.
+        is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
 
-            # Update Awards based on changed FABS records
-            with timer('updating awards to reflect their latest associated transaction info', logger.info):
-                update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        if is_incremental_load:
+            last_load_date = get_last_load_date()
+            submission_ids = get_new_submission_ids(last_load_date)
+            logger.info("Processing data for FABS starting from %s" % last_load_date)
 
-            # Update AwardCategories based on changed FABS records
-            with timer('updating award category variables', logger.info):
-                update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        if is_incremental_load and not submission_ids:
+            logger.info("No new submissions. Exiting.")
 
-            # Check the linkages from file C to FABS records and update any that are missing
-            with timer('updating C->D linkages', logger.info):
-                update_c_to_d_linkages('assistance')
         else:
-            logger.info('Nothing to insert...')
+            with timer("obtaining delete records", logger.info):
+                ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
 
-        # Update the date for the last time the data load was run
-        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).delete()
-        ExternalDataLoadDate(
-            last_load_date=start_date, external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']
-        ).save()
+            with timer("retrieving/diff-ing FABS Data", logger.info):
+                ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
 
-        logger.info('FABS UPDATE FINISHED!')
+            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+            upsert_fabs_transactions(ids_to_upsert, update_award_ids)
+
+        if is_incremental_load:
+            update_last_load_date("fabs", processing_start_datetime)
+
+        logger.info("FABS UPDATE FINISHED!")

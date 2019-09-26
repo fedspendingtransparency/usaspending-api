@@ -7,8 +7,8 @@ import pytest
 
 @pytest.fixture()
 def endpoint_data():
-    call_command('flush', '--noinput')
-    call_command('loaddata', 'endpoint_fixture_db')
+    call_command("flush", "--noinput")
+    call_command("loaddata", "endpoint_fixture_db")
 
 
 """
@@ -35,39 +35,31 @@ The format for entries in this json file are as follows (NB: if you use method "
 
 @pytest.mark.django_db
 def test_endpoints(endpoint_data, client):
-    json_data = open(
-        os.path.join(
-            os.path.dirname(__file__),
-            '../../data/testing_data/endpoint_testing_data.json'))
+    json_data = open(os.path.join(os.path.dirname(__file__), "../../data/testing_data/endpoint_testing_data.json"))
     endpoints = json.load(json_data)
     json_data.close()
-    logger = logging.getLogger('console')
+    logger = logging.getLogger("console")
 
-    # TESTING TODO: fix this hand-rolled parameterization?
+    # TESTING TODO: fix this hand-rolled parametrization?
 
     for endpoint in endpoints:
-        url = endpoint.get('url', None)
+        url = endpoint.get("url", None)
 
         # Skip v1 endpoint that got rewritten
-        if url == '/api/v1/awards/autocomplete/':
+        if url == "/api/v1/awards/autocomplete/":
             continue
 
-        method = endpoint.get('method', None)
-        request_object = endpoint.get('request_object', None)
-        response_object = endpoint.get('response_object', None)
-        status_code = endpoint.get('status_code', None)
-        logger.info("Running endpoint test: \n\t" + method + " " + url +
-                    "\n\t" + endpoint.get('name', "Unnamed"))
+        method = endpoint.get("method", None)
+        request_object = endpoint.get("request_object", None)
+        response_object = endpoint.get("response_object", None)
+        status_code = endpoint.get("status_code", None)
+        logger.info("Running endpoint test: \n\t" + method + " " + url + "\n\t" + endpoint.get("name", "Unnamed"))
 
         response = None
         if method == "POST":
-            response = client.post(
-                url,
-                content_type='application/json',
-                data=json.dumps(request_object),
-                format='json')
+            response = client.post(url, content_type="application/json", data=json.dumps(request_object), format="json")
         elif method == "GET":
-            response = client.get(url, format='json')
+            response = client.get(url, format="json")
 
         # Check if the status code is correct
         assert response.status_code == status_code
@@ -89,9 +81,7 @@ def evaluate_equivalence(item1, item2):
                 matched = False
                 for item in item2:
                     if evaluate_equivalence(item1[i], item):
-                        item2.remove(
-                            item
-                        )  # Remove this item from the list if we hit a match
+                        item2.remove(item)  # Remove this item from the list if we hit a match
                         matched = True
                         break
                 if matched:
@@ -102,11 +92,11 @@ def evaluate_equivalence(item1, item2):
         for key in item1.keys():
             if key not in item2:  # If the other dict doesn't have this key, we don't have a match
                 return False
-            if 'date' in key:  # Date fields don't play nicely with the database, so skip them
+            if "date" in key:  # Date fields don't play nicely with the database, so skip them
                 continue
-            if 'req' in key:  # Ignore checksums for comparisons
+            if "req" in key:  # Ignore checksums for comparisons
                 continue
-            if 'page_metadata' in key:  # Ignore this due to checksum comparison
+            if "page_metadata" in key:  # Ignore this due to checksum comparison
                 continue
             equality = equality and evaluate_equivalence(item1[key], item2[key])
     else:

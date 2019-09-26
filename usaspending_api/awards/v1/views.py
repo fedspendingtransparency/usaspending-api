@@ -6,14 +6,21 @@ from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializ
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
+from usaspending_api.common.api_versioning import deprecated
+from django.utils.decorators import method_decorator
 
-AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
+
+AggregateItem = namedtuple("AggregateItem", ["field", "func"])
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated award information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -24,15 +31,15 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
-    filter_map = {
-        'awarding_fpds': 'awarding_agency__fpds_code',
-        'funding_fpds': 'funding_agency__fpds_code',
-    }
+
     serializer_class = AwardSerializer
 
     def get_queryset(self):
@@ -41,20 +48,20 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         """
         queryset = Award.nonempty.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
-    filter_map = {
-        'awarding_fpds': 'awarding_agency__fpds_code',
-        'funding_fpds': 'funding_agency__fpds_code',
-    }
+
     serializer_class = AwardSerializer
 
     def get_queryset(self):
@@ -63,15 +70,19 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         """
         queryset = Award.nonempty.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated award information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -82,10 +93,13 @@ class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, Cach
         return queryset
 
 
+@method_decorator(deprecated, name="post")
 class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
+    DEPRECATED
     Autocomplete support for subaward objects.
     """
+
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
     serializer_class = SubawardSerializer
 
@@ -100,11 +114,15 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
     """
+
     serializer_class = SubawardSerializer
 
     def get_queryset(self):
@@ -118,11 +136,15 @@ class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
     """
+
     serializer_class = SubawardSerializer
 
     def get_queryset(self):
@@ -136,10 +158,14 @@ class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Return aggregated transaction information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -150,10 +176,14 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
+class TransactionListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
+    DEPRECATED
     Handles requests for award transaction data.
     """
+
     serializer_class = TransactionNormalizedSerializer
 
     def get_queryset(self):
@@ -167,10 +197,14 @@ class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
+class TransactionRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
+    DEPRECATED
     Handles requests for award transaction data.
     """
+
     serializer_class = TransactionNormalizedSerializer
 
     def get_queryset(self):

@@ -28,7 +28,7 @@ filters: how the awards are filtered.  The filter object is defined here: [Filte
     "geo_layer_filters": ["MN", "WA", "DC"],
     "filters": {
         "award_type_codes": ["A", "B", "03"],
-        "award_ids": [1, 2, 3],
+        "award_ids": ["1", "2", "3"],
         "award_amounts": [
             {
                 "lower_bound": 1000000.00,
