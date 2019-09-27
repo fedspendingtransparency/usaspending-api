@@ -44,7 +44,7 @@ DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
     "(SELECT l.legal_entity_id FROM legal_entity l "
     "LEFT JOIN transaction_normalized t ON t.recipient_id = l.legal_entity_id "
     "LEFT JOIN awards a ON a.recipient_id = l.legal_entity_id "
-    "WHERE t is null and a.id is null); "
+    "WHERE t is null and a.id is null) "
 )
 DESTROY_ORPHANS_REFERENCES_LOCATION_SQL = (
     "DELETE FROM references_location location WHERE location.location_id in "

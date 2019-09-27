@@ -36,7 +36,7 @@ class Command(BaseCommand):
             db_query = ALL_FPDS_QUERY.format("detached_award_procurement_id")
 
         if date:
-            db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
+            db_cursor.execute(db_query + " WHERE updated_at >= %s", [date])
         else:
             db_cursor.execute(db_query)
         return db_cursor

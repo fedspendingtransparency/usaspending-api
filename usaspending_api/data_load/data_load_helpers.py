@@ -44,15 +44,10 @@ def format_value_for_sql(val):
 
 
 def setup_mass_load_lists(load_objects, table):
-    values = []
-
     keys = load_objects[0][table].keys()
 
     columns = ['"{}"'.format(key) for key in load_objects[0][table].keys()]
-
-    for load_object in load_objects:
-        val = [format_value_for_sql(load_object[table][key]) for key in keys]
-        values.append(val)
+    values = [[format_value_for_sql(load_object[table][key]) for key in keys] for load_object in load_objects]
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
