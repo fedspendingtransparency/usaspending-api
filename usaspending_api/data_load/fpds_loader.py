@@ -152,7 +152,7 @@ def load_chunk(chunk):
         load_objects = _transform_objects(broker_transactions)
 
         retval = _load_transactions(load_objects)
-    logger.info("ran load in {}".format(str(timer.elapsed)))
+    logger.info("batch completed in {}".format(timer.as_string(timer.elapsed)))
     return retval
 
 
@@ -229,7 +229,7 @@ def _load_transactions(load_objects):
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
 
-            # BLIND INSERTS
+            # Insert always, even if duplicative
             # First create the records that don't have a foreign key out to anything else in one transaction per type
             inserted_recipient_locations = insert_recipient_locations(cursor, load_objects)
             for index, elem in enumerate(inserted_recipient_locations):

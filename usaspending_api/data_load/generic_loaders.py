@@ -36,7 +36,7 @@ def insert_award(cursor, load_object):
 
 def update_transaction_fpds(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_fpds")
-    transaction_fpds_sql = "UPDATE transaction_fpds SET {} " "where detached_award_procurement_id = {}".format(
+    transaction_fpds_sql = "UPDATE transaction_fpds SET {} where detached_award_procurement_id = {}".format(
         pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
     )
     cursor.execute(transaction_fpds_sql)
@@ -44,7 +44,7 @@ def update_transaction_fpds(cursor, load_object):
 
 def update_transaction_normalized(cursor, load_object):
     columns, values, pairs = setup_load_lists(load_object, "transaction_normalized")
-    transaction_normalized_sql = "UPDATE transaction_normalized SET {} " "where id  = '{}'".format(
+    transaction_normalized_sql = "UPDATE transaction_normalized SET {} where id  = '{}'".format(
         pairs, load_object["transaction_fpds"]["transaction_id"]
     )
     cursor.execute(transaction_normalized_sql)

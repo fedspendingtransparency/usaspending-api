@@ -85,19 +85,19 @@ class Command(BaseCommand):
                 self.modified_award_ids.extend(run_fpds_load(id_list))
 
     def add_arguments(self, parser):
-        mutually_exclusive_group = parser.add_mutually_exclusive_group()
+        mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
             "--ids",
             nargs="+",
             type=int,
-            help="(OPTIONAL) detached_award_procurement_ids of FPDS transactions to load/reload from Broker",
+            help="Load/Reload transactions using this detached_award_procurement_id list (space-separated)",
         )
         mutually_exclusive_group.add_argument(
             "--date",
             dest="date",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
-            help="Load or Reload all FPDS records from the provided date to the current time. YYYY-MM-DD format",
+            help="Load/Reload all FPDS records from the provided datetime to the script execution start time.",
         )
         mutually_exclusive_group.add_argument(
             "--since-last-load",
@@ -108,7 +108,7 @@ class Command(BaseCommand):
             "--file",
             metavar="FILEPATH",
             type=str,
-            help="A file containing only transaction IDs (detached_award_procurement_id) "
+            help="Load/Reload transactions using the detached_award_procurement_id list stored at this file path (one ID per line)"
             "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
         mutually_exclusive_group.add_argument(
