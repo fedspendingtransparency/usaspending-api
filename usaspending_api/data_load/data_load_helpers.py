@@ -23,7 +23,7 @@ def false_if_null(val):
     return val
 
 
-# TODO: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
+# TODO Brian 2019-09-XX: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
 def format_value_for_sql(val):
     retval = val
     if isinstance(val, str):
