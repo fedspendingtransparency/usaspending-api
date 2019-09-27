@@ -148,15 +148,12 @@ def _load_chunk(chunk):
 
 
 def _extract_broker_objects(id_list):
-    formatted_id_list = "({})".format(",".join(map(str, id_list)))
 
     with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            sql = "SELECT * from detached_award_procurement where detached_award_procurement_id in {}".format(
-                formatted_id_list
-            )
+            sql = "SELECT * from detached_award_procurement where detached_award_procurement_id in %s"
+            cursor.execute(sql, (tuple(id_list),))
 
-            cursor.execute(sql)
             results = cursor.fetchall()
 
     return results
