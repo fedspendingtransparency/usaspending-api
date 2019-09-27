@@ -80,7 +80,7 @@ def fy(raw_date):
         return None
 
     if isinstance(raw_date, str):
-        raw_date = parse_date(raw_date)
+        raw_date = parser.parse(raw_date)
 
     try:
         result = raw_date.year

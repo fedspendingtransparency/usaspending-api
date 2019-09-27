@@ -27,4 +27,4 @@ def subtier_agency_list():
     if not SUBTIER_AGENCY_LIST_CACHE:
         _fetch_reference_data()
 
-    return SUBTIER_AGENCY_LIST_CACHE
+    return SUBTIER_AGENCY_LIST_CACHE.copy()

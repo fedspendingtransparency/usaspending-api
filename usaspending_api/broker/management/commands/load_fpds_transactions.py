@@ -149,6 +149,10 @@ class Command(BaseCommand):
                     len(self.modified_award_ids)
                 )
             )
-            update_awards(tuple(self.modified_award_ids))
-            update_contract_awards(tuple(self.modified_award_ids))
+            logger.info("{} awards touched by update_awards()".format(update_awards(tuple(self.modified_award_ids))))
+            logger.info(
+                "{} awards touched by update_contract_awards()".format(
+                    update_contract_awards(tuple(self.modified_award_ids))
+                )
+            )
             update_c_to_d_linkages("contract")

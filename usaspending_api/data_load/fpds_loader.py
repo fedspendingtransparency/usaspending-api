@@ -196,9 +196,6 @@ def _transform_objects(broker_objects):
             broker_object, place_of_performance_columns, None, place_of_performance_functions
         )
 
-        # matching award. NOT a real db object, but needs to be stored when making the link in load_transactions
-        connected_objects["generated_unique_award_id"] = broker_object["unique_award_key"]
-
         # award. NOT used if a matching award is found later
         connected_objects["award"] = _create_load_object(broker_object, None, None, award_functions)
 
@@ -242,7 +239,7 @@ def _load_transactions(load_objects):
             for load_object in load_objects:
 
                 # AWARD GET OR CREATE
-                award_id = _lookup_award_by_transaction(cursor, load_object)
+                award_id = _matching_award(cursor, load_object)
                 if not award_id:
                     # If there is no award, we need to create one
                     award_id = insert_award(cursor, load_object)
@@ -267,17 +264,17 @@ def _load_transactions(load_objects):
     return list(ids_of_awards_created_or_updated)
 
 
-def _lookup_award_by_transaction(cursor, load_object):
-    # Try to find an award for this transaction to belong to
+def _matching_award(cursor, load_object):
+    """ Try to find an award for this transaction to belong to by unique_award_key"""
     find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
-        load_object["generated_unique_award_id"]
+        load_object["transaction_fpds"]["unique_award_key"]
     )
     results = cursor.execute(find_matching_award_sql)
     return results[0][0] if results else None
 
 
 def _lookup_existing_transaction(cursor, load_object):
-    # Determine if we are making a new transaction, or updating an old one
+    """find existing fpds transaction, if any"""
     find_matching_transaction_sql = (
         "select transaction_id from transaction_fpds "
         "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
@@ -288,8 +285,6 @@ def _lookup_existing_transaction(cursor, load_object):
 
 
 def _update_fpds_transaction(cursor, load_object, transaction_id):
-    # If there is a transaction (transaction_normalized and transaction_fpds should be one-to-one)
-    # we update all values
     update_transaction_fpds(cursor, load_object)
     update_transaction_normalized(cursor, load_object)
     logger.debug("updated fpds transaction {}".format(transaction_id))

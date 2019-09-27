@@ -6,7 +6,7 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 
 
 def calculate_fiscal_year(broker_input):
-    return fy(broker_input["action_date"][:10])
+    return fy(broker_input["action_date"])
 
 
 def calculate_awarding_agency(broker_input):
