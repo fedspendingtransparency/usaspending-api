@@ -34,7 +34,7 @@ API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
