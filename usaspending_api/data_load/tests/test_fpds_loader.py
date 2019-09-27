@@ -17,7 +17,7 @@ from usaspending_api.data_load.field_mappings_fpds import (
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
 )
-from usaspending_api.data_load.data_load_helpers import setup_load_lists
+from usaspending_api.data_load.data_load_helpers import format_insert_or_update_column_sql
 
 from unittest.mock import MagicMock, patch
 
@@ -159,7 +159,7 @@ def test_run_fpds_load_dummy_id(
 def test_setup_load_lists():
     test_object = {"table": {"val1": 4, "string_val": "bob"}, "wrong_table": {"val": "wrong"}}
 
-    columns, values, pairs = setup_load_lists(test_object, "table")
+    columns, values, pairs = format_insert_or_update_column_sql(test_object, "table")
     # code is non-deterministic in order to be performance
     assert columns == '("val1","string_val")' or columns == '("string_val","val1")'
     assert values == "(4,'bob')" or values == "('bob',4)"

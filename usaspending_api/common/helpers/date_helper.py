@@ -1,7 +1,6 @@
 from argparse import ArgumentTypeError
 from datetime import timezone
 from dateutil import parser
-from django.utils.dateparse import parse_date
 
 
 def cast_datetime_to_naive(datetime):

@@ -43,11 +43,12 @@ def format_value_for_sql(val):
     return retval
 
 
-def setup_mass_load_lists(load_objects, table):
-    keys = load_objects[0][table].keys()
+def format_bulk_insert_list_column_sql(load_objects, type):
+    """creates formatted sql text to put into a bulk insert statement"""
+    keys = load_objects[0][type].keys()
 
-    columns = ['"{}"'.format(key) for key in load_objects[0][table].keys()]
-    values = [[format_value_for_sql(load_object[table][key]) for key in keys] for load_object in load_objects]
+    columns = ['"{}"'.format(key) for key in load_objects[0][type].keys()]
+    values = [[format_value_for_sql(load_object[type][key]) for key in keys] for load_object in load_objects]
 
     col_string = "({})".format(",".join(map(str, columns)))
     val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
@@ -55,13 +56,14 @@ def setup_mass_load_lists(load_objects, table):
     return col_string, val_string
 
 
-def setup_load_lists(load_object, table):
+def format_insert_or_update_column_sql(load_object, type):
+    """creates formatted sql text to put into a single row insert or update statement"""
     columns = []
     values = []
     update_pairs = []
-    for key in load_object[table].keys():
+    for key in load_object[type].keys():
         columns.append('"{}"'.format(key))
-        val = format_value_for_sql(load_object[table][key])
+        val = format_value_for_sql(load_object[type][key])
         values.append(val)
         if key not in ["create_date", "created_at"]:
             update_pairs.append(" {}={}".format(key, val))
