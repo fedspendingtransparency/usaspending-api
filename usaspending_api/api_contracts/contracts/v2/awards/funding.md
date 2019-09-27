@@ -83,7 +83,6 @@ Lists federal account financial data for the requested award
                 ],
                 "page_metadata": {
                     "page": 1,
-                    "count": 2,
                     "next": null,
                     "previous": null,
                     "hasPrevious": false,
