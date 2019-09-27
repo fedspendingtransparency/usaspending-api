@@ -86,10 +86,10 @@ def test_run_fpds_load_empty():
 
 @patch("usaspending_api.data_load.fpds_loader._extract_broker_objects")
 @patch("usaspending_api.data_load.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019))
-@patch("usaspending_api.data_load.fpds_loader.insert_recipient_locations")
-@patch("usaspending_api.data_load.fpds_loader.insert_recipients")
-@patch("usaspending_api.data_load.fpds_loader.insert_place_of_performance")
-@patch("usaspending_api.data_load.fpds_loader._lookup_award_by_transaction")
+@patch("usaspending_api.data_load.fpds_loader.bulk_insert_recipient_location")
+@patch("usaspending_api.data_load.fpds_loader.bulk_insert_recipient")
+@patch("usaspending_api.data_load.fpds_loader.bulk_insert_place_of_performance")
+@patch("usaspending_api.data_load.fpds_loader._matching_award")
 @patch("usaspending_api.data_load.fpds_loader.insert_award")
 @patch("usaspending_api.data_load.fpds_loader._lookup_existing_transaction")
 @patch("usaspending_api.data_load.fpds_loader.update_transaction_normalized")
@@ -103,10 +103,10 @@ def test_run_fpds_load_dummy_id(
     mock__update_transaction_normalized_transaction,
     mock__lookup_existing_transaction,
     mock__insert_award,
-    mock__lookup_award_by_transaction,
-    mock__insert_place_of_performance,
-    mock__insert_recipients,
-    mock__insert_recipient_locations,
+    mock__matching_award,
+    mock__bulk_insert_place_of_performance,
+    mock__bulk_insert_recipient,
+    mock__bulk_insert_recipient_location,
     mock__fy,
     mock__extract_broker_objects,
 ):
@@ -129,12 +129,12 @@ def test_run_fpds_load_dummy_id(
     # - and an existing transaction that it belongs to was found in usaspending
 
     # One call per batch of transactions to load from broker into usaspending
-    assert mock__insert_recipient_locations.call_count == 1
-    assert mock__insert_recipients.call_count == 1
-    assert mock__insert_place_of_performance.call_count == 1
+    assert mock__bulk_insert_recipient_location.call_count == 1
+    assert mock__bulk_insert_recipient.call_count == 1
+    assert mock__bulk_insert_place_of_performance.call_count == 1
 
     # One call per transactions to load from broker into usaspending
-    assert mock__lookup_award_by_transaction.call_count == 3
+    assert mock__matching_award.call_count == 3
     assert mock__lookup_existing_transaction.call_count == 3
     assert mock__update_transaction_normalized_transaction.call_count == 3
     assert mock__update_transaction_fpds_transaction.call_count == 3
@@ -147,7 +147,7 @@ def test_run_fpds_load_dummy_id(
     # Check that the correct data (e.g. IDs) are being propagated via the load_objects dictionary from call to call
     # Check only first transaction iteration
     load_objects_pre_transaction = mock__lookup_existing_transaction.call_args_list[0][0][1]
-    final_award_id = mock__lookup_award_by_transaction()
+    final_award_id = mock__matching_award()
 
     # Compare data is as expected
     assert load_objects_pre_transaction["award"]["transaction_unique_id"] == str(dummy_broker_ids[0])
