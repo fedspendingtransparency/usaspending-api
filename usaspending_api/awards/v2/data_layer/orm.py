@@ -96,8 +96,8 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
-    # if transaction["product_or_service_code"]:
-        # response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
+    if transaction["product_or_service_code"]:
+        response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
@@ -466,7 +466,7 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
     midtier_code = {}
     base_code = {}
     try:
-        psc_top = PSC.objects.get(code=codes[2], end_date__isnull=True)
+        psc_top = PSC.objects.get(code=codes[2])
         toptier_code = {
             "code": psc_top.code,
             "description": psc_top.description,
@@ -474,7 +474,7 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
     except PSC.DoesNotExist:
         pass
     try:
-        psc_mid = PSC.objects.get(code=codes[1], end_date__isnull=True)
+        psc_mid = PSC.objects.get(code=codes[1])
         midtier_code = {
             "code": psc_mid.code,
             "description": psc_mid.description,
@@ -482,7 +482,7 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
     except PSC.DoesNotExist:
         pass
     try:
-        psc = PSC.objects.get(code=codes[0], end_date__isnull=True)
+        psc = PSC.objects.get(code=codes[0])
         base_code = {
             "code": psc.code,
             "description": psc.description,
