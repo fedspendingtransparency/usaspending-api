@@ -3,7 +3,7 @@ from typing import Optional
 from django.db import connection
 
 
-def execute_database_insert_statement(sql: str, values: Optional[list] = None) -> int:
+def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
     """Execute the SQL and return the UPDATE count"""
     with connection.cursor() as cursor:
         if values:
@@ -32,6 +32,14 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     updates do need to be set-based, as looping through and updating individual
     award records would be an ETL bottleneck.
     """
+
+    _prune_empty_awards_cte = str(
+        "DELETE FROM awards "
+        "WHERE id IN "
+        "(SELECT a.id FROM awards a LEFT JOIN transaction_normalized t ON t.award_id = a.id WHERE t is null "
+        "{}"
+        ")"
+    )
 
     _earliest_transaction_cte = str(
         "txn_earliest AS ( "
@@ -93,11 +101,13 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
         earliest_transaction_cte = _earliest_transaction_cte.format(" WHERE tn.award_id IN %s ")
         latest_transaction_cte = _latest_transaction_cte.format(" WHERE tn.award_id IN %s ")
         aggregate_transaction_cte = _aggregate_transaction_cte.format(" WHERE tn.award_id IN %s ")
+        prune_empty_awards_cte = _prune_empty_awards_cte.format(" AND a.id IN %s ")
     else:
         values = None
         earliest_transaction_cte = _earliest_transaction_cte.format("")
         latest_transaction_cte = _latest_transaction_cte.format("")
         aggregate_transaction_cte = _aggregate_transaction_cte.format("")
+        prune_empty_awards_cte = _prune_empty_awards_cte.format("")
 
     # construct a sql query that uses the common table expressions defined above
     # and joins each of them to their corresopnding award.
@@ -135,8 +145,11 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
         "  WHERE e.award_id = a.id "
     )
 
+    sql_prune = prune_empty_awards_cte
+
     sql_update = _sql_update.format(earliest_transaction_cte, latest_transaction_cte, aggregate_transaction_cte)
-    return execute_database_insert_statement(sql_update, values)
+    # We don't need to worry about this double counting awards, because if it's deleted in the first step it can't be updated!
+    return execute_database_statement(sql_prune, [award_tuple]) + execute_database_statement(sql_update, values)
 
 
 def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
@@ -182,7 +195,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
         values = None
         sql_update = _sql_update.format("")
 
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)
 
 
 def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
@@ -293,7 +306,7 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(aggregate_transaction_cte, extra_fpds_fields, executive_comp_cte)
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)
 
 
 def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
@@ -328,4 +341,4 @@ def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(sql_sub_totals)
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)

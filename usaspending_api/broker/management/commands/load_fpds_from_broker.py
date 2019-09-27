@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, load_chunk
+from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, load_chunk, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -46,6 +46,10 @@ class Command(BaseCommand):
             logger.info("fetching all fpds transactions...")
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
+
+        stale_awards = delete_stale_fpds(date)
+        self.modified_award_ids.extend(stale_awards)
+
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
@@ -140,7 +144,11 @@ class Command(BaseCommand):
         if self.modified_award_ids:
             logger.info("cleaning orphaned rows")
             destroy_orphans()
-            logger.info("updating award values ({} awards modified)".format(len(self.modified_award_ids)))
+            logger.info(
+                "updating award values ({} awards touched by transaction modifications)".format(
+                    len(self.modified_award_ids)
+                )
+            )
             update_awards(tuple(self.modified_award_ids))
             update_contract_awards(tuple(self.modified_award_ids))
             update_c_to_d_linkages("contract")

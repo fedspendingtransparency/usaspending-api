@@ -17,7 +17,11 @@ from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
 )
-from usaspending_api.data_load.data_load_helpers import capitalize_if_string, false_if_null
+from usaspending_api.data_load.data_load_helpers import (
+    capitalize_if_string,
+    false_if_null,
+    get_deleted_fpds_data_from_s3,
+)
 from usaspending_api.data_load.generic_loaders import (
     update_transaction_fpds,
     update_transaction_normalized,
@@ -62,6 +66,57 @@ def destroy_orphans():
         with connection.cursor() as cursor:
             cursor.execute(DESTROY_ORPHANS_LEGAL_ENTITY_SQL)
             cursor.execute(DESTROY_ORPHANS_REFERENCES_LOCATION_SQL)
+
+
+def delete_stale_fpds(date):
+    """
+    Removed transaction_fpds and transaction_normalized records matching any of the
+    provided detached_award_procurement_id list
+    Returns list of awards touched
+    """
+    if not date:
+        return []
+
+    detached_award_procurement_ids = get_deleted_fpds_data_from_s3(date)
+
+    if detached_award_procurement_ids:
+        with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "select transaction_id from transaction_fpds where detached_award_procurement_id in ({})".format(
+                        ",".join([str(id) for id in detached_award_procurement_ids])
+                    )
+                )
+                # assumes, possibly dangerously, that this won't be too many for the job to handle
+                transaction_normalized_ids = cursor.fetchall()
+
+                # Set backreferences from Awards to Transaction Normalized to null. These pointers will be correctly updated
+                # in the update awards stage later on
+                cursor.execute(
+                    "update awards set latest_transaction_id = null, earliest_transaction_id = null "
+                    "where latest_transaction_id in ({}) returning id".format(
+                        ",".join([str(row[0]) for row in transaction_normalized_ids])
+                    )
+                )
+                awards_touched = cursor.fetchall()
+
+                # Remove Trasaction FPDS rows
+                cursor.execute(
+                    "delete from transaction_fpds where detached_award_procurement_id in ({})".format(
+                        ",".join([str(id) for id in detached_award_procurement_ids])
+                    )
+                )
+
+                # Remove Transaction Normalized rows
+                cursor.execute(
+                    "delete from transaction_normalized where id in ({})".format(
+                        ",".join([str(row[0]) for row in transaction_normalized_ids])
+                    )
+                )
+
+                return awards_touched
+    else:
+        return []
 
 
 def run_fpds_load(id_list):
