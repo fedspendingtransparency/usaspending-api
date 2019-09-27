@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.generic_helper import get_pagination
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
@@ -133,13 +133,12 @@ class AwardFundingViewSet(APIView):
             limit=Literal(request_data["limit"] + 1),
             offset=Literal((request_data["page"] - 1) * request_data["limit"]),
         )
-
         return execute_sql_to_ordered_dictionary(sql)
 
     @cache_response()
     def post(self, request: Request) -> Response:
         results = self._business_logic(request.data)
-        paginated_results, page_metadata = get_pagination(results, request.data["limit"], request.data["page"])
-        response = OrderedDict((("results", paginated_results), ("page_metadata", page_metadata)))
+        page_metadata = get_simple_pagination_metadata(len(results), request.data["limit"], request.data["page"])
+        response = OrderedDict((("results", results), ("page_metadata", page_metadata)))
 
         return Response(response)
