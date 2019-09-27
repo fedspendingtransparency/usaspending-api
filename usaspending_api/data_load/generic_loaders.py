@@ -1,7 +1,7 @@
 from usaspending_api.data_load.data_load_helpers import format_insert_or_update_column_sql, format_bulk_insert_list_column_sql
 
 
-def insert_recipient_locations(cursor, load_objects):
+def bulk_insert_recipient_location(cursor, load_objects):
     columns, values = format_bulk_insert_list_column_sql(load_objects, "recipient_location")
     recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
         columns, values
@@ -11,7 +11,7 @@ def insert_recipient_locations(cursor, load_objects):
     return [tup[0] for tup in cursor.fetchall()]
 
 
-def insert_recipients(cursor, load_objects):
+def bulk_insert_recipient(cursor, load_objects):
     columns, values = format_bulk_insert_list_column_sql(load_objects, "legal_entity")
     recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
 
@@ -19,7 +19,7 @@ def insert_recipients(cursor, load_objects):
     return [tup[0] for tup in cursor.fetchall()]
 
 
-def insert_place_of_performance(cursor, load_objects):
+def bulk_insert_place_of_performance(cursor, load_objects):
     columns, values = format_bulk_insert_list_column_sql(load_objects, "place_of_performance_location")
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
 

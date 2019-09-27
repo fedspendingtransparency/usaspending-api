@@ -27,9 +27,9 @@ from usaspending_api.data_load.generic_loaders import (
     update_transaction_normalized,
     insert_transaction_normalized,
     insert_transaction_fpds,
-    insert_recipient_locations,
-    insert_recipients,
-    insert_place_of_performance,
+    bulk_insert_recipient_location,
+    bulk_insert_recipient,
+    bulk_insert_place_of_performance,
     insert_award,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
@@ -216,16 +216,16 @@ def _load_transactions(load_objects):
 
             # Insert always, even if duplicative
             # First create the records that don't have a foreign key out to anything else in one transaction per type
-            inserted_recipient_locations = insert_recipient_locations(cursor, load_objects)
+            inserted_recipient_locations = bulk_insert_recipient_location(cursor, load_objects)
             for index, elem in enumerate(inserted_recipient_locations):
                 load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index]
 
-            inserted_recipients = insert_recipients(cursor, load_objects)
+            inserted_recipients = bulk_insert_recipient(cursor, load_objects)
             for index, elem in enumerate(inserted_recipients):
                 load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index]
                 load_objects[index]["award"]["recipient_id"] = inserted_recipients[index]
 
-            inserted_place_of_performance = insert_place_of_performance(cursor, load_objects)
+            inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
             for index, elem in enumerate(inserted_place_of_performance):
                 load_objects[index]["transaction_normalized"][
                     "place_of_performance_id"
