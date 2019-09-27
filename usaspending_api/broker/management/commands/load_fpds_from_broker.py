@@ -33,7 +33,7 @@ class Command(BaseCommand):
             db_query = ALL_FPDS_QUERY.format("COUNT(*)")
         else:
             db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
-            db_query = ALL_FPDS_QUERY.format("*")
+            db_query = ALL_FPDS_QUERY.format("detached_award_procurement_id")
 
         if date:
             db_cursor.execute(db_query + " WHERE updated_at >= %s;", [date])
@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 if len(id_list) == 0:
                     break
                 logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-                self.modified_award_ids.extend(load_chunk(id_list))
+                self.modified_award_ids.extend(run_fpds_load([row[0] for row in id_list]))
                 records_processed = records_processed + len(id_list)
                 logger.info("{} out of {} processed".format(records_processed, total_records))
 

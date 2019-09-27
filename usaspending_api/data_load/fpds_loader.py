@@ -132,8 +132,7 @@ def run_fpds_load(id_list):
     modified_awards = []
     for chunk in chunks:
         logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
-        broker_transactions = _extract_broker_objects(chunk)
-        modified_awards.extend(load_chunk(broker_transactions))
+        modified_awards.extend(load_chunk(chunk))
     return modified_awards
 
 
@@ -148,7 +147,9 @@ def load_chunk(chunk):
     :return: award id for each award touched
     """
     with Timer() as timer:
-        load_objects = _transform_objects(chunk)
+        broker_transactions = _extract_broker_objects(chunk)
+
+        load_objects = _transform_objects(broker_transactions)
 
         retval = _load_transactions(load_objects)
     logger.info("ran load in {}".format(str(timer.elapsed)))
