@@ -139,6 +139,6 @@ class AwardFundingViewSet(APIView):
     def post(self, request: Request) -> Response:
         results = self._business_logic(request.data)
         page_metadata = get_simple_pagination_metadata(len(results), request.data["limit"], request.data["page"])
-        response = OrderedDict((("results", results), ("page_metadata", page_metadata)))
+        response = OrderedDict((("results", results[: request.data["limit"]]), ("page_metadata", page_metadata)))
 
         return Response(response)
