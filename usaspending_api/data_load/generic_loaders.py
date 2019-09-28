@@ -1,4 +1,7 @@
-from usaspending_api.data_load.data_load_helpers import format_insert_or_update_column_sql, format_bulk_insert_list_column_sql
+from usaspending_api.data_load.data_load_helpers import (
+    format_insert_or_update_column_sql,
+    format_bulk_insert_list_column_sql,
+)
 
 
 def bulk_insert_recipient_location(cursor, load_objects):
