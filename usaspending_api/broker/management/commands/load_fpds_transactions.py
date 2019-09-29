@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.data_load.fpds_loader import run_fpds_load, destroy_orphans, delete_stale_fpds
+from usaspending_api.data_load.fpds_loader import load_ids, destroy_orphans, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 if len(id_list) == 0:
                     break
                 logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-                self.modified_award_ids.extend(run_fpds_load([row[0] for row in id_list]))
+                self.modified_award_ids.extend(load_ids([row[0] for row in id_list]))
                 records_processed = records_processed + len(id_list)
                 logger.info("{} out of {} processed".format(records_processed, total_records))
 
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                         len(id_list), id_list[0], id_list[-1]
                     )
                 )
-                self.modified_award_ids.extend(run_fpds_load(id_list))
+                self.modified_award_ids.extend(load_ids(id_list))
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
@@ -129,7 +129,7 @@ class Command(BaseCommand):
             self.load_fpds_from_date(options["date"])
 
         elif options["ids"]:
-            self.modified_award_ids.extend(run_fpds_load(options["ids"]))
+            self.modified_award_ids.extend(load_ids(options["ids"]))
 
         elif options["file"]:
             self.load_fpds_from_file(options["file"])

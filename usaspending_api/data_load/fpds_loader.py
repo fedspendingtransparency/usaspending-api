@@ -55,8 +55,6 @@ DESTROY_ORPHANS_REFERENCES_LOCATION_SQL = (
     "WHERE t.id is null and a.id is null and e.legal_entity_id is null)"
 )
 
-CHUNK_SIZE = 5000
-
 logger = logging.getLogger("console")
 
 
@@ -119,7 +117,7 @@ def delete_stale_fpds(date):
         return []
 
 
-def run_fpds_load(id_list):
+def load_ids(chunk):
     """
     Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
     data, but does NOT update "secondary" award values like total obligations or C -> D linkages. If transactions are
@@ -127,16 +125,6 @@ def run_fpds_load(id_list):
     is called.
     returns ids for each award touched
     """
-    chunks = [id_list[x : x + CHUNK_SIZE] for x in range(0, len(id_list), CHUNK_SIZE)]
-
-    modified_awards = []
-    for chunk in chunks:
-        logger.info("> loading {} ids (ids {}-{})".format(len(chunk), chunk[0], chunk[-1]))
-        modified_awards.extend(_load_chunk(chunk))
-    return modified_awards
-
-
-def _load_chunk(chunk):
     with Timer() as timer:
         broker_transactions = _extract_broker_objects(chunk)
 
