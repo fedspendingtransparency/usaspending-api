@@ -126,11 +126,13 @@ def load_ids(chunk):
     returns ids for each award touched
     """
     with Timer() as timer:
-        broker_transactions = _extract_broker_objects(chunk)
+        retval = []
+        if chunk:
+            broker_transactions = _extract_broker_objects(chunk)
+            if broker_transactions:
+                load_objects = _transform_objects(broker_transactions)
 
-        load_objects = _transform_objects(broker_transactions)
-
-        retval = _load_transactions(load_objects)
+                retval = _load_transactions(load_objects)
     logger.info("batch completed in {}".format(timer.as_string(timer.elapsed)))
     return retval
 

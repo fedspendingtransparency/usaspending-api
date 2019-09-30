@@ -118,10 +118,10 @@ def test_load_ids_dummy_id(
 
     # Test run of the loader
     dummy_broker_ids = [101, 201, 301]
-    fpds_loader.run_fpds_load(dummy_broker_ids)
+    fpds_loader.load_ids(dummy_broker_ids)
 
     # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
-    # run_fpds_load like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
+    # load_ids like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
     # always "find" a *mock* award and transaction.
     # So, assert this baseline run followed that logic. That is:
     # - for each broker transaction extracted,
