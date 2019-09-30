@@ -3,7 +3,7 @@ from django.db import models
 
 class PSC(models.Model):
     """Based on https://www.acquisition.gov/PSC_Manual"""
-    code = models.CharField(max_length=4)
+    code = models.CharField(primary_key=True, max_length=4)
     length = models.IntegerField(null=False, default=0)
     description = models.TextField(null=False)
     start_date = models.DateField(blank=True, null=True)
