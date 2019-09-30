@@ -191,17 +191,6 @@ def mock_matviews_qs(monkeypatch):
     mock_qs.delete()
 
 
-def pytest_configure():
-    # To make sure the test setup process doesn't try
-    # to set up another test db, remove everything but the default
-    # DATABASE_URL from the list of databases in django settings
-    test_db = settings.DATABASES.pop(DEFAULT_DB_ALIAS, None)
-    settings.DATABASES.clear()
-    settings.DATABASES[DEFAULT_DB_ALIAS] = test_db
-    # Also remove any database routers
-    settings.DATABASE_ROUTERS.clear()
-
-
 def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="true")
 
