@@ -33,7 +33,7 @@ from usaspending_api.data_load.generic_loaders import (
     insert_award,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 
 USASPENDING_CONNECTION_STRING = get_database_dsn_string()
