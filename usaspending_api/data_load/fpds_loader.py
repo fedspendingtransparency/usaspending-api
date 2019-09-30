@@ -59,7 +59,7 @@ logger = logging.getLogger("console")
 
 
 def destroy_orphans():
-    """cleans up tables after run_fpds_load is called"""
+    """cleans up tables after load_ids is called"""
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor() as cursor:
             cursor.execute(DESTROY_ORPHANS_LEGAL_ENTITY_SQL)

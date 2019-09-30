@@ -80,8 +80,8 @@ def _stub___extract_broker_objects(id_list):
         yield dummy_row
 
 
-def test_run_fpds_load_empty():
-    fpds_loader.run_fpds_load([])
+def test_load_ids_empty():
+    fpds_loader.load_ids([])
 
 
 @patch("usaspending_api.data_load.fpds_loader._extract_broker_objects")
@@ -96,7 +96,7 @@ def test_run_fpds_load_empty():
 @patch("usaspending_api.data_load.fpds_loader.update_transaction_fpds")
 @patch("usaspending_api.data_load.fpds_loader.insert_transaction_normalized")
 @patch("usaspending_api.data_load.fpds_loader.insert_transaction_fpds")
-def test_run_fpds_load_dummy_id(
+def test_load_ids_dummy_id(
     mock__insert_transaction_fpds_transaction,
     mock__insert_transaction_normalized_transaction,
     mock__update_transaction_fpds_transaction,
