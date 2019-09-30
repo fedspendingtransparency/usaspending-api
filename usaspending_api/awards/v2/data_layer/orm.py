@@ -461,18 +461,25 @@ def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id: i
     return None
 
 def fetch_psc_hierarchy(psc_code: str) -> dict:
-    codes = [psc_code, psc_code[:2], psc_code[:1]]
+    if psc_code[0].isalpha():
+        codes = [psc_code, psc_code[:2], psc_code[:1]]
+        if psc_code[0] == "A":
+            codes = [psc_code, psc_code[:2], psc_code[:1], psc_code[:3]]
+    else:
+        codes = [psc_code, psc_code[:2]]
     toptier_code = {}
     midtier_code = {}
+    subtier_code = {}
     base_code = {}
-    try:
-        psc_top = PSC.objects.get(code=codes[2])
-        toptier_code = {
-            "code": psc_top.code,
-            "description": psc_top.description,
-        }
-    except PSC.DoesNotExist:
-        pass
+    if psc_code[0].isalpha():
+        try:
+            psc_top = PSC.objects.get(code=codes[2])
+            toptier_code = {
+                "code": psc_top.code,
+                "description": psc_top.description,
+            }
+        except PSC.DoesNotExist:
+            pass
     try:
         psc_mid = PSC.objects.get(code=codes[1])
         midtier_code = {
@@ -489,10 +496,20 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
         }
     except PSC.DoesNotExist:
         pass
+    if psc_code[0] == "A":
+        try:
+            psc_rd = PSC.objects.get(code=codes[3])
+            subtier_code = {
+                "code": psc_rd.code,
+                "description": psc_rd.description,
+            }
+        except PSC.DoesNotExist:
+            pass
 
     results = {
         "toptier_code": toptier_code,
         "midtier_code": midtier_code,
+        "subtier_code": subtier_code,
         "base_code": base_code
     }
     return results
