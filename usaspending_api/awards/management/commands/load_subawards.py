@@ -33,6 +33,9 @@ class Command(BaseCommand):
             try:
                 with transaction.atomic():
                     self._perform_load()
+                    t = Timer("Committing transaction")
+                    t.log_starting_message()
+                t.log_success_message()
             except Exception:
                 logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
                 raise
@@ -69,21 +72,55 @@ class Command(BaseCommand):
             self._execute("Empty broker_subaward table", execute_update_sql, sql="delete from broker_subaward")
             self._execute("Empty subaward table", execute_update_sql, sql="delete from subaward")
 
-        self._execute("Copy Broker subaward table", operations.stage_dblink_table, source=remote_subaward, destination=broker_subaward, staging=temp_broker_subaward)
+        self._execute(
+            "Copy Broker subaward table",
+            operations.stage_dblink_table,
+            source=remote_subaward,
+            destination=broker_subaward,
+            staging=temp_broker_subaward,
+        )
 
         # Create a list of new or updated subawards that we can use to filter down
         # subsequent operations.
-        self._execute("Identify new or updated rows", operations.identify_new_or_updated, source=temp_broker_subaward, destination=broker_subaward, staging=temp_new_or_updated)
+        self._execute(
+            "Identify new or updated rows",
+            operations.identify_new_or_updated,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+            staging=temp_new_or_updated,
+        )
 
-        self._execute("Delete obsolete broker_subaward rows", operations.delete_obsolete_rows, source=temp_broker_subaward, destination=broker_subaward)
-        self._execute("Update changed broker_subaward rows", operations.update_changed_rows, source=temp_broker_subaward, destination=broker_subaward)
-        self._execute("Insert missing broker_subaward rows", operations.insert_missing_rows, source=temp_broker_subaward, destination=broker_subaward)
+        self._execute(
+            "Delete obsolete broker_subaward rows",
+            operations.delete_obsolete_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
+        self._execute(
+            "Update changed broker_subaward rows",
+            operations.update_changed_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
+        self._execute(
+            "Insert missing broker_subaward rows",
+            operations.insert_missing_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
 
         # The Broker subaward table takes up a good bit of space so let's explicitly free
         # it up before continuing.
-        self._execute("Drop staging table", execute_update_sql, sql="drop table if exists temp_load_subawards_broker_subaward")
+        self._execute(
+            "Drop staging table", execute_update_sql, sql="drop table if exists temp_load_subawards_broker_subaward"
+        )
 
-        self._execute("Delete obsolete subaward rows", operations.delete_obsolete_rows, source=broker_subaward, destination=subaward)
+        self._execute(
+            "Delete obsolete subaward rows",
+            operations.delete_obsolete_rows,
+            source=broker_subaward,
+            destination=subaward,
+        )
 
         self._execute_sql_file("030_frame_out_subawards")
         self._execute_sql_file("040_enhance_with_awards_data")
@@ -97,8 +134,22 @@ class Command(BaseCommand):
         self._execute_sql_file("120_enhance_with_recipient_location_county_city")
         self._execute_sql_file("130_enhance_with_recipient_location_country")
 
-        self._execute("Update changed subaward rows", operations.update_changed_rows, source=temp_subaward, destination=subaward)
-        self._execute("Insert missing subaward rows", operations.insert_missing_rows, source=temp_subaward, destination=subaward)
+        self._execute(
+            "Update changed subaward rows", operations.update_changed_rows, source=temp_subaward, destination=subaward
+        )
+        self._execute(
+            "Insert missing subaward rows", operations.insert_missing_rows, source=temp_subaward, destination=subaward
+        )
 
         self._execute_sql_file("140_link_awards")
         self._execute_sql_file("150_update_awards")
+
+        # Clean up the remaining temp tables.
+        self._execute(
+            "Drop new or updated temp table",
+            execute_update_sql,
+            sql="drop table if exists temp_load_subawards_new_or_updated",
+        )
+        self._execute(
+            "Drop subaward temp table", execute_update_sql, sql="drop table if exists temp_load_subawards_subaward"
+        )
