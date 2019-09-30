@@ -10,11 +10,15 @@ def calculate_fiscal_year(broker_input):
 
 
 def calculate_awarding_agency(broker_input):
-    return subtier_agency_list().get(broker_input["awarding_sub_tier_agency_c"], {}).get("id")
+    return _fetch_subtier_agency_id(code=broker_input["awarding_sub_tier_agency_c"])
 
 
 def calculate_funding_agency(broker_input):
-    return subtier_agency_list().get(broker_input["awarding_sub_tier_agency_c"], {}).get("id")
+    return _fetch_subtier_agency_id(code=broker_input["funding_sub_tier_agency_co"])
+
+
+def _fetch_subtier_agency_id(code):
+    return subtier_agency_list().get(code, {}).get("id")
 
 
 def unique_transaction_id(broker_input):

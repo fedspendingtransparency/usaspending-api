@@ -50,7 +50,7 @@ def format_bulk_insert_list_column_sql(load_objects, type):
     columns = ['"{}"'.format(key) for key in load_objects[0][type].keys()]
     values = [[format_value_for_sql(load_object[type][key]) for key in keys] for load_object in load_objects]
 
-    col_string = "({})".format(",".join(map(str, columns)))
+    col_string = "({})".format(",".join(columns))
     val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
 
     return col_string, val_string
