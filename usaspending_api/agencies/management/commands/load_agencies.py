@@ -172,38 +172,47 @@ class Command(BaseCommand):
             for row_number, agency in enumerate(agencies)
         ]
 
-    def _validate_raw_agencies(self):
+    @staticmethod
+    def _validate_raw_agency(agency):
         messages = []
 
+        if agency.cgac_agency_code is not None and agency.agency_name is None:
+            message = "Row number {:,} has a CGAC AGENCY CODE but no AGENCY NAME"
+            messages.append(message.format(agency.row_number))
+        if agency.frec is not None and agency.frec_entity_description is None:
+            messages.append("Row number {:,} has a FREC but no FREC Entity Description".format(agency.row_number))
+        if agency.subtier_code is not None and agency.subtier_name is None:
+            messages.append("Row number {:,} has a SUBTIER CODE but no SUBTIER NAME".format(agency.row_number))
+        if agency.is_frec is True and agency.frec is None:
+            messages.append("Row number {:,} is marked as IS_FREC but has no FREC".format(agency.row_number))
+        if agency.is_frec is not True and agency.cgac_agency_code is None:
+            messages.append(
+                "Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number)
+            )
+        if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
+            messages.append(
+                "Row number {:,} has CGAC AGENCY CODE that is not 3 characters long ({})".format(
+                    agency.row_number, agency.cgac_agency_code
+                )
+            )
+        if agency.frec and len(agency.frec) != 4:
+            messages.append(
+                "Row number {:,} has FREC that is not 4 characters long ({})".format(agency.row_number, agency.frec)
+            )
+        if agency.subtier_code and len(agency.subtier_code) != 4:
+            messages.append(
+                "Row number {:,} has SUBTIER CODE that is not 4 characters long ({})".format(
+                    agency.row_number, agency.subtier_code
+                )
+            )
+
+        return messages
+
+    def _validate_raw_agencies(self):
+
+        messages = []
         for agency in self.agencies:
-            if agency.cgac_agency_code is not None and agency.agency_name is None:
-                messages.append("Row number {:,} has a CGAC AGENCY CODE but no AGENCY NAME".format(agency.row_number))
-            if agency.frec is not None and agency.frec_entity_description is None:
-                messages.append("Row number {:,} has a FREC but no FREC Entity Description".format(agency.row_number))
-            if agency.subtier_code is not None and agency.subtier_name is None:
-                messages.append("Row number {:,} has a SUBTIER CODE but no SUBTIER NAME".format(agency.row_number))
-            if agency.is_frec is True and agency.frec is None:
-                messages.append("Row number {:,} is marked as IS_FREC but has no FREC".format(agency.row_number))
-            if agency.is_frec is not True and agency.cgac_agency_code is None:
-                messages.append(
-                    "Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number)
-                )
-            if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
-                messages.append(
-                    "Row number {:,} has CGAC AGENCY CODE that is not 3 characters long ({})".format(
-                        agency.row_number, agency.cgac_agency_code
-                    )
-                )
-            if agency.frec and len(agency.frec) != 4:
-                messages.append(
-                    "Row number {:,} has FREC that is not 4 characters long ({})".format(agency.row_number, agency.frec)
-                )
-            if agency.subtier_code and len(agency.subtier_code) != 4:
-                messages.append(
-                    "Row number {:,} has SUBTIER CODE that is not 4 characters long ({})".format(
-                        agency.row_number, agency.subtier_code
-                    )
-                )
+            messages += self._validate_raw_agency(agency)
 
         if messages:
             for message in messages:

@@ -6,6 +6,7 @@ from rest_framework import status
 # Core Django imports
 
 # Third-party app imports
+from fiscalyear import FiscalDate
 from model_mommy import mommy
 
 # Imports from your apps
@@ -262,7 +263,7 @@ def test_spending_over_time(client, mock_tas_data, refresh_matviews):
     data = {"group": "fiscal_year", "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]}, "subawards": False}
     resp = client.post("/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps(data))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) == 12
+    assert len(resp.data["results"]) == FiscalDate.today().fiscal_year - 2007
 
 
 @pytest.mark.django_db
