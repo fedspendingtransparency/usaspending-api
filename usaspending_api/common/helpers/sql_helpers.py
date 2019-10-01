@@ -171,7 +171,7 @@ def cursor_fetcher(cursor):
     return cursor
 
 
-def default_fetcher(cursor):
+def fetchall_fetcher(cursor):
     """
     Fetcher that returns the default fetchall() if the cursor contains results
     or None if not.  Return value will be roughly equivalent to:
@@ -218,7 +218,7 @@ def ordered_dictionary_fetcher(cursor):
 
 
 def rowcount_fetcher(cursor):
-    """ Return the first value in the first row of the cursor. """
+    """ Return the rowcount returned by the cursor. """
     return cursor.rowcount
 
 
@@ -227,7 +227,7 @@ def single_value_fetcher(cursor):
     return cursor.fetchall()[0][0]
 
 
-def execute_sql(sql, model=Award, fetcher=default_fetcher, read_only=True):
+def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
     """
     Executes a sql query against a database.
 
