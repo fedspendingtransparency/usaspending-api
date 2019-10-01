@@ -185,13 +185,17 @@ def _configure_database_connection(environment_variable, **additional_options):
 # (read replica) must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
-        raise EnvironmentError("DB_SOURCE environment variable provided without DB_R1")
+        raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 else:
+    if not os.environ.get(dj_database_url.DEFAULT_ENV):
+        raise EnvironmentError(
+            "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
+        )
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection(
             dj_database_url.DEFAULT_ENV, options="-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
