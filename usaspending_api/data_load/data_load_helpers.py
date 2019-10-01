@@ -24,31 +24,16 @@ def false_if_null(val):
 
 
 # TODO Brian 2019-09-XX: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
-def format_value_for_sql(val):
-    retval = val
-    if isinstance(val, str):
-        retval = "'{}'".format(val.replace("'", "''").replace('"', '""'))
-    elif val is None:
-        retval = "null"
-    elif isinstance(val, int) or isinstance(val, float):
-        retval = str(val)
-    elif isinstance(val, list):
-        if val:
-            retval = "ARRAY[{}]".format(",".join([format_value_for_sql(element) for element in val]))
-        else:
-            retval = "'{}'"
-    elif isinstance(val, datetime.datetime):
-        retval = "'{}-{}-{} {}:{}:{}'".format(val.year, val.month, val.day, val.hour, val.minute, val.second)
-
-    return retval
+def format_value_for_sql(val, cur):
+    return str(cur.mogrify("%s", (val,)), "utf-8")
 
 
-def format_bulk_insert_list_column_sql(load_objects, type):
+def format_bulk_insert_list_column_sql(cursor, load_objects, type):
     """creates formatted sql text to put into a bulk insert statement"""
     keys = load_objects[0][type].keys()
 
     columns = ['"{}"'.format(key) for key in load_objects[0][type].keys()]
-    values = [[format_value_for_sql(load_object[type][key]) for key in keys] for load_object in load_objects]
+    values = [[format_value_for_sql(load_object[type][key], cursor) for key in keys] for load_object in load_objects]
 
     col_string = "({})".format(",".join(columns))
     val_string = ",".join(["({})".format(",".join(map(str, value))) for value in values])
@@ -56,14 +41,14 @@ def format_bulk_insert_list_column_sql(load_objects, type):
     return col_string, val_string
 
 
-def format_insert_or_update_column_sql(load_object, type):
+def format_insert_or_update_column_sql(cursor, load_object, type):
     """creates formatted sql text to put into a single row insert or update statement"""
     columns = []
     values = []
     update_pairs = []
     for key in load_object[type].keys():
         columns.append('"{}"'.format(key))
-        val = format_value_for_sql(load_object[type][key])
+        val = format_value_for_sql(load_object[type][key], cursor)
         values.append(val)
         if key not in ["create_date", "created_at"]:
             update_pairs.append(" {}={}".format(key, val))
