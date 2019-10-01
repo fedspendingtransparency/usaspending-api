@@ -11,7 +11,7 @@ from psycopg2.sql import SQL
 from usaspending_api.common.helpers.sql_helpers import (
     build_composable_order_by,
     execute_sql_to_ordered_dictionary,
-    fetchall_to_ordered_dictionary,
+    ordered_dictionary_fetcher,
     get_connection,
 )
 
@@ -147,7 +147,7 @@ class CursorExecuteTestCase(TestCase):
         connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(RAW_SQL)
-            result = fetchall_to_ordered_dictionary(cursor)
+            result = ordered_dictionary_fetcher(cursor)
         assert result == EXPECTED_RESPONSE_ORDERED_DICTIONARY
 
     @staticmethod
@@ -155,17 +155,17 @@ class CursorExecuteTestCase(TestCase):
         connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(RAW_SQL)
-            result = fetchall_to_ordered_dictionary(cursor)
+            result = ordered_dictionary_fetcher(cursor)
         assert result == EXPECTED_RESPONSE_ORDERED_DICTIONARY
 
         connection = get_connection(User, True)
         with connection.cursor() as cursor:
             cursor.execute(RAW_SQL)
-            result = fetchall_to_ordered_dictionary(cursor)
+            result = ordered_dictionary_fetcher(cursor)
         assert result == EXPECTED_RESPONSE_ORDERED_DICTIONARY
 
         connection = get_connection(read_only=False)
         with connection.cursor() as cursor:
             cursor.execute(RAW_SQL)
-            result = fetchall_to_ordered_dictionary(cursor)
+            result = ordered_dictionary_fetcher(cursor)
         assert result == EXPECTED_RESPONSE_ORDERED_DICTIONARY
