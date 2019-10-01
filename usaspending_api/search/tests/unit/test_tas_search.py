@@ -262,7 +262,8 @@ def test_spending_over_time(client, mock_tas_data, refresh_matviews):
     data = {"group": "fiscal_year", "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]}, "subawards": False}
     resp = client.post("/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps(data))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) == 12
+    assert len(resp.data["results"]) > 0   # Can't use a fixed number here because this number increases every year.
+
 
 
 @pytest.mark.django_db

@@ -9,7 +9,7 @@ def test_all_fiscal_years():
 
 
 def test_current_fiscal_year():
-    current_fiscal_year = FiscalDate.today().year
+    current_fiscal_year = FiscalDate.today().fiscal_year
     fiscal_year_list = create_fiscal_year_list(start_year=2010)
     assert fiscal_year_list[0] == 2010
     assert fiscal_year_list[-1] == current_fiscal_year
