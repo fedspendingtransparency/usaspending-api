@@ -29,7 +29,14 @@ def delete_stale_fabs(ids_to_delete):
     if delete_transaction_ids:
         fabs = 'DELETE FROM "transaction_fabs" tf WHERE tf."transaction_id" IN ({});'
         tn = 'DELETE FROM "transaction_normalized" tn WHERE tn."id" IN ({});'
-        queries.extend([fabs.format(delete_transaction_str_ids), tn.format(delete_transaction_str_ids)])
+        td = "DELETE FROM transaction_delta td WHERE td.transaction_id in ({});"
+        queries.extend(
+            [
+                fabs.format(delete_transaction_str_ids),
+                tn.format(delete_transaction_str_ids),
+                td.format(delete_transaction_str_ids),
+            ]
+        )
     if delete_award_ids:
         # Financial Accounts by Awards
         faba = 'UPDATE "financial_accounts_by_awards" SET "award_id" = null WHERE "award_id" IN ({});'
