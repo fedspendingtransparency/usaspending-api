@@ -83,7 +83,6 @@ Lists federal account financial data for the requested award
                 ],
                 "page_metadata": {
                     "page": 1,
-                    "count": 2,
                     "next": null,
                     "previous": null,
                     "hasPrevious": false,
@@ -99,7 +98,6 @@ Lists federal account financial data for the requested award
 + `hasPrevious` (required, boolean)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
-+ `count` (required, number)
 
 ## AwardFundingResponse (object)
 + `reporting_fiscal_year` (required, number, nullable)
