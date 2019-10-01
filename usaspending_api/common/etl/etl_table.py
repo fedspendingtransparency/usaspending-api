@@ -48,7 +48,7 @@ class ETLTable:
             order by    attnum
         """
         sql = SQL(sql).format(qualified_table_name=self.qualified_table_name)
-        if self.dblink_name is not None:
+        if self.is_dblink:
             inner_sql = sql_helpers.convert_composable_query_to_string(sql)
             sql = """
                 select      column_name, data_type
@@ -80,7 +80,7 @@ class ETLTable:
             where       c.contype = 'p' and c.conrelid = '{qualified_table_name}'::regclass
         """
         sql = SQL(sql).format(qualified_table_name=self.qualified_table_name)
-        if self.dblink_name is not None:
+        if self.is_dblink:
             inner_sql = sql_helpers.convert_composable_query_to_string(sql)
             sql = """
                 select      column_name
