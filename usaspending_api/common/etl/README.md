@@ -1,4 +1,4 @@
-# ETL Table Helpers
+# ETL Helpers
 
 One of the things we want to do more often is perform in-place creates, updates, and
 deletes for destination tables during ETL processes.  This is a very common practice and
@@ -33,7 +33,7 @@ the number of rows updated.
 Taken from actual code, this snippet will synchronize a local `broker_subaward` table
 with the contents of a remote, dblinked `subaward` table.
 ```
-from usaspending_api.common.helpers.etl_table import ETLTable, operations
+from usaspending_api.common.etl import ETLTable, operations
 
 
 # Establish some ETL tables.

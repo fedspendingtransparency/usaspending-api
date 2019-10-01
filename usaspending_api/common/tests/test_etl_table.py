@@ -1,7 +1,7 @@
 import pytest
 
 from psycopg2.sql import Identifier, SQL
-from usaspending_api.common.helpers.etl_table import ETLTable, operations, primatives
+from usaspending_api.common.etl import ETLTable, operations, primatives
 from usaspending_api.common.helpers.sql_helpers import (
     convert_composable_query_to_string as cc,
     get_connection,

@@ -3,8 +3,8 @@
 
 from psycopg2.sql import Literal, SQL
 from typing import List
+from usaspending_api.common.etl import ETLTable, primatives
 from usaspending_api.common.helpers import sql_helpers
-from usaspending_api.common.helpers.etl_table import ETLTable, primatives
 
 
 def _get_shared_columns(columns: List[str], other_columns: List[str]) -> List[str]:

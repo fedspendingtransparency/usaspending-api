@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from usaspending_api.common.helpers.etl_table import ETLTable, operations
+from usaspending_api.common.etl import ETLTable, operations
 from usaspending_api.common.helpers.sql_helpers import execute_update_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
 
