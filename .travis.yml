@@ -21,7 +21,7 @@ env:
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - DATA_BROKER_DATABASE_URL='postgres://admin:root@localhost:5435/data_broker'
-  - BROKER_REPO_FOLDER=../data-act-broker-backend
+  - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
 
 before_install:
   - npm install dredd@5.4.1 --global
@@ -49,6 +49,7 @@ before_script:
   - docker run --init --rm --name=dataact-broker-init-integrationtest-db -e PYTHONPATH=/data-act/backend -w /data-act/backend --mount type=bind,source="$(pwd)",target=/data-act/backend python:3.5 /bin/sh -c "pip install -r requirements-alembic.txt && cd ./dataactcore; alembic upgrade head"
 
 script:
+  - cd ${TRAVIS_BUILD_DIR}
   - flake8
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
