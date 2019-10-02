@@ -1,4 +1,4 @@
-from usaspending_api.data_load.data_load_helpers import capitalize_if_string, false_if_null, format_value_for_sql
+from usaspending_api.data_load.data_load_helpers import capitalize_if_string, false_if_null
 
 
 def test_capitalize_if_string():
