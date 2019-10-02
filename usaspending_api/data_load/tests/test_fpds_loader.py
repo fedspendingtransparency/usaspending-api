@@ -39,6 +39,7 @@ def mock_cursor(monkeypatch, result_value):
     def mock_cursor():
         mock_context = MagicMock()
         mock_context.execute.return_value = None
+        mock_context.mogrify = mogrify
         mock_context.fetchall.return_value = result.expected_value
         return mock_context
 
@@ -53,6 +54,12 @@ def mock_cursor(monkeypatch, result_value):
         mock_context.__enter__.return_value.cursor = mock_connection
         mock_context.__exit__.return_value = False
         return mock_context
+
+    def mogrify(val1, val2):
+        return str(val2[0]).encode()
+
+    # I don't think it works this way...
+    result.mogrify = mogrify
 
     monkeypatch.setattr("psycopg2.connect", mock_connect)
 
@@ -156,14 +163,14 @@ def test_load_ids_dummy_id(
     assert 2001 <= load_objects_pre_transaction["transaction_normalized"]["fiscal_year"] <= 2019
 
 
-def test_setup_load_lists():
+def test_setup_load_lists(monkeypatch):
     test_object = {"table": {"val1": 4, "string_val": "bob"}, "wrong_table": {"val": "wrong"}}
 
-    columns, values, pairs = format_insert_or_update_column_sql(test_object, "table")
-    # code is non-deterministic in order to be performance
+    columns, values, pairs = format_insert_or_update_column_sql(mock_cursor(monkeypatch, "mogrified"), test_object, "table")
+    # code is non-deterministic in order to be performant
     assert columns == '("val1","string_val")' or columns == '("string_val","val1")'
-    assert values == "(4,'bob')" or values == "('bob',4)"
-    assert pairs == " val1=4, string_val='bob'" or pairs == " string_val='bob', val1=4"
+    assert values == "(4,bob)" or values == "(bob,4)"
+    assert pairs == " val1=4, string_val=bob" or pairs == " string_val=bob, val1=4"
 
 
 def test_load_from_broker(monkeypatch):

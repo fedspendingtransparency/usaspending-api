@@ -14,12 +14,3 @@ def test_false_if_null():
     assert false_if_null(True)
     assert not false_if_null(False)
     assert not false_if_null(None)
-
-
-def test_sql_formatter():
-    assert format_value_for_sql(None) == "null"
-    assert format_value_for_sql("null") == "'null'"
-    assert format_value_for_sql(599) == "599"
-    assert format_value_for_sql("599") == "'599'"
-    assert format_value_for_sql([1, 2, "steve"]) == "ARRAY[1,2,'steve']"
-    assert format_value_for_sql([]) == "'{}'"

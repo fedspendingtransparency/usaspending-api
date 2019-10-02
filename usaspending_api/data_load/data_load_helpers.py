@@ -23,7 +23,6 @@ def false_if_null(val):
     return val
 
 
-# TODO Brian 2019-09-XX: replace this with cursor.morgify() in some way that doesn't need a live connection passed around everywhere
 def format_value_for_sql(val, cur):
     return str(cur.mogrify("%s", (val,)), "utf-8")
 
