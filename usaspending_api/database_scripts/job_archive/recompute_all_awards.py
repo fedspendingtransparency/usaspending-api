@@ -347,8 +347,8 @@ def main():
                     logging.info("=> Expected interation duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
                     logging.info("=> Estimated loop end datetime of: {}".format(dt_str))
                     if next_run_estimated_end_datetime >= CLOSING_TIME:
+                        logging.info("===== Suspending job due to --closing-time flag")
                         logging.info("===== Start next job at ID {} =====".format(batch_min))
-                        logging.info("===== You don't have to go home, but you can't... stay...... heeeeere =====")
                         return
 
             with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info) as t:
