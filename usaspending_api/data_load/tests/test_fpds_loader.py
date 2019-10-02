@@ -166,7 +166,9 @@ def test_load_ids_dummy_id(
 def test_setup_load_lists(monkeypatch):
     test_object = {"table": {"val1": 4, "string_val": "bob"}, "wrong_table": {"val": "wrong"}}
 
-    columns, values, pairs = format_insert_or_update_column_sql(mock_cursor(monkeypatch, "mogrified"), test_object, "table")
+    columns, values, pairs = format_insert_or_update_column_sql(
+        mock_cursor(monkeypatch, "mogrified"), test_object, "table"
+    )
     # code is non-deterministic in order to be performant
     assert columns == '("val1","string_val")' or columns == '("string_val","val1")'
     assert values == "(4,bob)" or values == "(bob,4)"
