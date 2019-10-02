@@ -140,12 +140,6 @@ class BrokerSubaward(models.Model):
     place_of_perform_street = models.TextField(null=True, blank=True)
     sub_place_of_perform_street = models.TextField(null=True, blank=True)
 
-    # Not shown here is an index on imported where imported is True.
-    # Also, this name is a bit of a misnomer.  This will be True if the
-    # subaward was successfully imported or was not eligible for import.
-    # It's really just a way to keep track of what needs to be imported still.
-    imported = models.BooleanField(default=False)
-
     class Meta:
         managed = True
         db_table = "broker_subaward"
