@@ -3,7 +3,6 @@ import os
 import pytest
 import tempfile
 
-from django.conf import settings
 from django.db import DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
