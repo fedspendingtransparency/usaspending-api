@@ -31,4 +31,3 @@ def test_can_connect_to_broker_by_dblink():
             results = cursor.fetchall()
     assert results is not None
     assert len(str(results[0][0])) > 0
-
