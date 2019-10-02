@@ -28,6 +28,10 @@ from usaspending_api.download.helpers import (
 )
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
+
+from django.db import connection
+
+
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
@@ -153,7 +157,6 @@ def get_csv_sources(json_request):
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
 
-            verify_requested_columns_available(tuple(csv_sources), json_request.get("columns", []))
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
             account_source = CsvSource(
@@ -166,6 +169,8 @@ def get_csv_sources(json_request):
                 json_request["account_level"],
             )
             csv_sources.append(account_source)
+
+    verify_requested_columns_available(tuple(csv_sources), json_request.get("columns", []))
 
     return csv_sources
 
