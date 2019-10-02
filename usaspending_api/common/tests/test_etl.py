@@ -1,17 +1,18 @@
 import pytest
 
+from collections import OrderedDict
 from psycopg2.sql import Identifier, SQL
-from usaspending_api.common.etl import ETLTable, operations, primatives
+from usaspending_api.common.etl import ETLTable, introspection, operations, primatives
 from usaspending_api.common.helpers.sql_helpers import (
     convert_composable_query_to_string as cc,
     get_connection,
     execute_sql,
 )
+from usaspending_api.common.helpers.text_helpers import standardize_whitespace
 
 
 @pytest.mark.django_db
 def test_primitives():
-
     assert cc(primatives.make_cast_column_list([], {})) == ""
     assert cc(primatives.make_cast_column_list(["test"], {"test": "int"})) == 'cast("test" as int) as "test"'
     assert cc(primatives.make_cast_column_list(["test"], {"test": "int"}, "t")) == 'cast("t"."test" as int) as "test"'
@@ -37,6 +38,11 @@ def test_primitives():
     assert cc(primatives.make_column_setter_list([], "t")) == ""
     assert cc(primatives.make_column_setter_list(["test"], "t")) == '"test" = "t"."test"'
     assert cc(primatives.make_column_setter_list(["test", "tube"], "t")) == '"test" = "t"."test", "tube" = "t"."tube"'
+
+    assert cc(primatives.make_composed_qualified_table_name("test")) == '"test"'
+    assert cc(primatives.make_composed_qualified_table_name("test", "tube")) == '"tube"."test"'
+    assert cc(primatives.make_composed_qualified_table_name("test", "tube", "t")) == '"tube"."test" as "t"'
+    assert cc(primatives.make_composed_qualified_table_name("test", alias="t")) == '"test" as "t"'
 
     assert cc(primatives.make_join_conditional([], "a", "b")) == ""
     assert cc(primatives.make_join_conditional(["test"], "a", "b")) == '"a"."test" = "b"."test"'
@@ -67,10 +73,17 @@ def test_primitives():
         == '"test" int, "tube" text'
     )
 
+    data_types = {"my_now": "timestamp"}
+    assert (
+        standardize_whitespace(
+            cc(primatives.wrap_dblink_query("testdblink", "select now()", "r", list(data_types), data_types))
+        )
+        == 'select "r"."my_now" from dblink(\'testdblink\', \'select now()\') as "r" ("my_now" timestamp)'
+    )
+
 
 @pytest.mark.django_db
 def test_etl_table():
-
     connection = get_connection(read_only=False)
     with connection.cursor() as cursor:
         cursor.execute(
@@ -165,3 +178,13 @@ def test_update_changed_rows(operations_fixture):
         (4, 5, "six", "seven"),
         (9, 9, "nine", "nine"),
     ]
+
+
+@pytest.mark.django_db
+def test_introspection(operations_fixture):
+    expected = OrderedDict((("id1", "integer"), ("id2", "integer"), ("name", "text"), ("description", "text")))
+    assert introspection.get_columns_and_data_types("t1") == expected
+    assert introspection.get_columns_and_data_types("t1", "public") == expected
+    expected = ["id1", "id2"]
+    assert introspection.get_primary_key_columns("t1") == expected
+    assert introspection.get_primary_key_columns("t1", "public") == expected

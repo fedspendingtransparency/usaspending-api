@@ -4,12 +4,16 @@ of this module.
 """
 
 
-from psycopg2.sql import Composed, Identifier, SQL
-from typing import List, MutableMapping, Optional
+from psycopg2.sql import Composed, Identifier, Literal, SQL
+from typing import List, MutableMapping, Optional, Union
+from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
+
+
+DataTypes = MutableMapping[str, str]
 
 
 def make_cast_column_list(
-    columns: List[str], data_types: MutableMapping[str, str], alias: Optional[str] = None
+    columns: List[str], data_types: DataTypes, alias: Optional[str] = None
 ) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
@@ -80,6 +84,25 @@ def make_column_setter_list(columns: List[str], alias: str) -> Composed:
     return SQL(", ").join(composed_setters)
 
 
+def make_composed_qualified_table_name(table_name: str, schema_name: str = None, alias: str = None) -> Composed:
+    """
+    Turns table name and optional schema name into a Composed, qualified table name
+    with optional alias suitable for insertion in Composable queries.
+
+        "table1"
+        "public"."table1"
+        "public"."table1" as "t"
+
+    """
+    template = "{}"
+    if schema_name is not None:
+        template += ".{}"
+    if alias is not None:
+        template = template + " as {}"
+    objects = [Identifier(o) for o in [schema_name, table_name, alias] if o is not None]
+    return SQL(template).format(*objects)
+
+
 def make_join_conditional(key_columns: List[str], left_alias: str, right_alias: str) -> Composed:
     """
     Turn a pair of aliases and a list of key columns into a SQL safe string containing
@@ -120,7 +143,7 @@ def make_join_to_table_conditional(key_columns: List[str], alias: str, qualified
     return SQL(" and ").join(composed_conditionals)
 
 
-def make_typed_column_list(columns: List[str], data_types: MutableMapping[str, str]) -> Composed:
+def make_typed_column_list(columns: List[str], data_types: DataTypes) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     typed columns.  data_types must be a mapping of column names to data types that are
@@ -133,13 +156,36 @@ def make_typed_column_list(columns: List[str], data_types: MutableMapping[str, s
     return SQL(", ").join(composed_columns)
 
 
+def wrap_dblink_query(
+    dblink_name: str, sql: Union[str, Composed], alias: str, columns: List[str], data_types: DataTypes
+):
+    """ Wraps a query in a dblink compatible query so that it can be run on a remote server. """
+    inner_sql = convert_composable_query_to_string(sql)
+    select_columns = make_column_list(columns, "r")
+    typed_columns = make_typed_column_list(columns, data_types)
+    sql = """
+        select {select_columns}
+        from   dblink({dblink}, {remote_sql}) as {alias} ({typed_columns})
+    """
+    return SQL(sql).format(
+        select_columns=select_columns,
+        dblink=Literal(dblink_name),
+        remote_sql=Literal(inner_sql),
+        alias=Identifier(alias),
+        typed_columns=typed_columns,
+    )
+
+
 __all__ = [
+    "DataTypes",
     "make_cast_column_list",
     "make_change_detector_conditional",
     "make_column_list",
     "make_column_setter_list",
+    "make_composed_qualified_table_name",
     "make_join_conditional",
     "make_join_excluder_conditional",
     "make_join_to_table_conditional",
     "make_typed_column_list",
+    "wrap_dblink_query",
 ]
