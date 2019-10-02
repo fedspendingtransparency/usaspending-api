@@ -121,7 +121,7 @@ def load_ids(chunk):
     """
     Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
     data, but does NOT update "secondary" award values like total obligations or C -> D linkages. If transactions are
-    being reloaded, this will also leave behind rows in supporting tables that won't be removed unless destory_orphans
+    being reloaded, this will also leave behind rows in supporting tables that won't be removed unless destroy_orphans
     is called.
     returns ids for each award touched
     """
