@@ -67,6 +67,7 @@ def test_with_id(client, naics_test_data):
     ]
     assert resp.data["results"] == expected_data
 
+
 @pytest.mark.django_db
 def test_with_filter(client, naics_test_data):
 

@@ -35,37 +35,6 @@ class NAICSViewSet(APIView):
         validated = TinyShield(models).block(data)
         return validated
 
-    def _fetch_parents(self, naics_code) -> dict:
-        parent = (
-            NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=naics_code[:2], text_len=2).first()
-        )
-        results = OrderedDict()
-        results["naics"] = parent.code
-        results["naics_description"] = parent.description
-        results["count"] = (
-            NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=parent.code, text_len=6).count()
-        )
-        results["children"] = []
-
-        if len(naics_code) == 6:
-            parent2 = (
-                NAICS.objects.annotate(text_len=Length("code"))
-                .filter(code__startswith=naics_code[:4], text_len=4)
-                .first()
-            )
-            results2 = OrderedDict()
-            results2["naics"] = parent2.code
-            results2["naics_description"] = parent2.description
-            results2["count"] = (
-                NAICS.objects.annotate(text_len=Length("code"))
-                .filter(code__startswith=parent2.code, text_len=6)
-                .count()
-            )
-            results2["children"] = []
-            results["children"].append(results2)
-
-        return results
-
     def _fetch_children(self, naics_code, naics_filter=None) -> list:
         results = []
         if naics_filter:
@@ -95,59 +64,79 @@ class NAICSViewSet(APIView):
         return results
 
     def _filter_search(self, naics_filter: dict) -> dict:
-        naics = NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter).exclude(text_len=2)
+        tier1_codes = set([])
+        tier2_codes = set([])
+        tier3_codes = set([])
+
+        tier3_naics = NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter, text_len=6)
+        for naic in tier3_naics:
+            tier3_codes.add(naic.code)
+            tier2_codes.add(naic.code[:4])
+            tier1_codes.add(naic.code[:2])
+        tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter, text_len=4)
+
+        for naic in tier2_naics:
+            tier2_codes.add(naic.code)
+            tier1_codes.add(naic.code[:2])
+        extra_tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier2_codes, text_len=4)
+        tier1_naics = NAICS.objects.annotate(text_len=Length("code")).filter(text_len=2, code__in=tier1_codes)
+
+        tier2 = set(list(tier2_naics))
+        ex2 = list(extra_tier2_naics)
+        for naic in ex2:
+            tier2.add(naic)
+        tier2_results = {}
+        for naic in tier2:
+            result = OrderedDict()
+            result["naics"] = naic.code
+            result["naics_description"] = naic.description
+            result["count"] = (
+                NAICS.objects.annotate(text_len=Length("code"))
+                .filter(code__startswith=naic.code, text_len=6)
+                .count()
+            )
+            result["children"] = []
+            tier2_results[naic.code] = result
+        for naic in tier3_naics:
+            result = OrderedDict()
+            result["naics"] = naic.code
+            result["naics_description"] = naic.description
+            result["count"] = 0
+            tier2_results[naic.code[:4]]["children"].append(result)
+        tier1_results = {}
+        for naic in tier1_naics:
+            result = OrderedDict()
+            result["naics"] = naic.code
+            result["naics_description"] = naic.description
+            result["count"] = (
+                NAICS.objects.annotate(text_len=Length("code"))
+                     .filter(code__startswith=naic.code, text_len=6)
+                     .count()
+            )
+            result["children"] = []
+            tier1_results[naic.code] = result
+        for key in tier2_results.keys():
+            tier1_results[key[:2]]["children"].append(tier2_results[key])
+        results = []
+        for key in tier1_results.keys():
+            results.append(tier1_results[key])
+        response_content = OrderedDict({"results": results})
+        return response_content
+
+    def _default_view(self) -> dict:
+        naics = NAICS.objects.annotate(text_len=Length("code")).filter(text_len=2)
         results = []
         for naic in naics:
             result = OrderedDict()
-            if len(naic.code) < 6:
-                result["naics"] = naic.code
-                result["naics_description"] = naic.description
-                result["count"] = (
-                    NAICS.objects.annotate(text_len=Length("code"))
-                    .filter(code__startswith=naic.code, text_len=6)
-                    .count()
-                )
-                children = self._fetch_children(
-                    naic.code, {"description__icontains": naics_filter["description__icontains"]}
-                )
-                if len(children) > 0:
-                    result["children"] = children
-                parent = self._fetch_parents(naic.code)
-                parent["children"].append(result)
-                result = parent
-            else:
-                result["naics"] = naic.code
-                result["naics_description"] = naic.description
-                result["count"] = 0
-                parent = self._fetch_parents(naic.code)
-                parent["children"][0]["children"].append(result)
-                result = parent
+            result["naics"] = naic.code
+            result["naics_description"] = naic.description
+            result["count"] = (
+                NAICS.objects.annotate(text_len=Length("code"))
+                .filter(code__startswith=naic.code, text_len=6)
+                .count()
+            )
             results.append(result)
-
-        response = {}
-        tier1_codes = []
-        for result in results:
-            if len(result["naics"]) == 2:
-                if result["naics"] in tier1_codes:
-                    existing_result = response[result["naics"]]
-                    for child in result["children"]:
-                        exists = False
-                        for kid in existing_result["children"]:
-                            if child["naics"] == kid["naics"]:
-                                exists = True
-                                for c in child["children"]:
-                                    kid["children"].append(c)
-
-                        if not exists:
-                            existing_result["children"].append(child)
-
-                else:
-                    tier1_codes.append(result["naics"])
-                    response.update({result["naics"]: result})
-        ret = []
-        for key in response.keys():
-            ret.append(response[key])
-        response_content = OrderedDict({"results": ret})
+        response_content = OrderedDict({"results": results})
         return response_content
 
     def _business_logic(self, request_data: dict) -> dict:
@@ -155,26 +144,11 @@ class NAICSViewSet(APIView):
         code = request_data.get("code")
         description = request_data.get("description")
 
-        if not code and not description:  # we just want the tier 1 naics codes
-            naics = NAICS.objects.annotate(text_len=Length("code")).filter(text_len=2)
-            results = []
-            for naic in naics:
-                result = OrderedDict()
-                result["naics"] = naic.code
-                result["naics_description"] = naic.description
-                result["count"] = (
-                    NAICS.objects.annotate(text_len=Length("code"))
-                    .filter(code__startswith=naic.code, text_len=6)
-                    .count()
-                )
-                results.append(result)
-            response_content = OrderedDict({"results": results})
-            return response_content
-
-        if code:
+        if not code and not description:
+            return self._default_view()
+        elif code:
             naics_filter.update({"code": request_data.get("code")})
-
-        if description:
+        elif description:
             naics_filter.update({"description__icontains": description})
             return self._filter_search(naics_filter)
 
