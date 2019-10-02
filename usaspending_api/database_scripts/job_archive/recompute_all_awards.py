@@ -26,6 +26,9 @@ import re
 import signal
 import time
 
+from argparse import ArgumentTypeError
+from datetime import datetime, timezone, timedelta
+from dateutil import parser as date_parser
 from os import environ
 
 
@@ -212,7 +215,7 @@ DEBUG, CLEANUP = False, False
 GET_FABS_AWARDS = "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
 GET_FPDS_AWARDS = "SELECT id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
 GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
-MAX_ID, MIN_ID = None, None
+MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
 EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
 
@@ -223,6 +226,26 @@ def _handle_exit_signal(signum, frame):
     logging.warn("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
     teardown(successful_run=False)
     raise SystemExit()
+
+
+def datetime_command_line_argument_type(naive):
+    # Stolen from usaspending-api/usaspending_api/common/helpers/date_helper.py
+    def _datetime_command_line_argument_type(input_string):
+        try:
+            parsed = date_parser.parse(input_string)
+            if naive:
+                if parsed.tzinfo is not None:
+                    parsed = parsed.astimezone(timezone.utc)
+                return parsed.replace(tzinfo=None)
+            else:
+                if parsed.tzinfo is None:
+                    return parsed.replace(tzinfo=timezone.utc)
+                return parsed.astimezone(timezone.utc)
+
+        except (OverflowError, TypeError, ValueError):
+            raise ArgumentTypeError("Unable to convert provided value to date/time")
+
+    return _datetime_command_line_argument_type
 
 
 class Timer:
@@ -285,6 +308,7 @@ def run_update_query(fabs_awards, fpds_awards):
 
 def main():
     global TOTAL_UPDATES
+    global ITERATION_ESTIMATED_SECONDS
     with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         connection.readonly = True
@@ -309,11 +333,27 @@ def main():
         logging.info("Min ID: {:,}".format(min_id))
         logging.info("Max ID: {:,}".format(max_id))
         logging.info("Total in range: {:,}".format(max_id - min_id + 1))
+        logging.info("Closing time: {}".format(CLOSING_TIME))
 
         batch_min = min_id
+        iteration = 1
         while batch_min <= max_id:
             batch_max = min(batch_min + CHUNK_SIZE - 1, max_id)
-            with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info):
+            if CLOSING_TIME:
+                if ITERATION_ESTIMATED_SECONDS:
+                    curr_time = datetime.now(timezone.utc)
+                    next_run_estimated_end_datetime = curr_time + timedelta(seconds=ITERATION_ESTIMATED_SECONDS)
+                    dt_str = next_run_estimated_end_datetime.isoformat()
+                    if next_run_estimated_end_datetime >= CLOSING_TIME:
+                        logging.info("=> Estimated loop end datetime of: {}".format(dt_str))
+                        logging.info("=> Next IDs to process: {} - {}".format(batch_min, batch_max))
+                        logging.info("=> You don't have to go home, but you can't... stay...... heeeeere")
+                        return
+                    else:
+                        logging.info("=> Expected interation duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
+                        logging.info("=> Continuing with an estimated loop end datetime of: {}".format(dt_str))
+
+            with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info) as t:
                 with connection.cursor() as cursor:
                     cursor.execute(GET_FABS_AWARDS.format(minid=batch_min, maxid=batch_max))
                     fabs = [str(row[0]) for row in cursor.fetchall()]
@@ -326,7 +366,25 @@ def main():
                     TOTAL_UPDATES += row_count
                 else:
                     logging.info("#### No awards to update in range ###")
+
+            if ITERATION_ESTIMATED_SECONDS is None:
+                ITERATION_ESTIMATED_SECONDS = t.elapsed  # get seconds from timedelta object
+            else:
+                ITERATION_ESTIMATED_SECONDS = rolling_average(ITERATION_ESTIMATED_SECONDS, t.elapsed, iteration)
+
             batch_min = batch_max + 1
+            iteration += 1
+
+
+def rolling_average(current_avg: float, new_value: float, total_count: int) -> float:
+    """Recalculate a running (or moving) average
+
+    Needs the current average, a new value to include, and the total samples
+    """
+    new_average = float(current_avg)
+    new_average -= new_average / total_count
+    new_average += new_value / total_count
+    return new_average
 
 
 def setup():
@@ -348,8 +406,8 @@ def teardown(successful_run=False):
         with connection.cursor() as cursor:
             with Timer("teardown", pipe_output=logging.info):
                 if successful_run and TOTAL_UPDATES > 0:
-                    logging.info("### running full vacuum ###")
-                    cursor.execute("VACUUM (FULL, ANALYZE, VERBOSE) awards")
+                    logging.info("### running vacuum ###")
+                    cursor.execute("VACUUM (ANALYZE, VERBOSE) awards")
                     logging.info(cursor.statusmessage)
                 logging.info("### Resetting autovacuum ###")
                 cursor.execute("ALTER TABLE awards SET (autovacuum_enabled = true, toast.autovacuum_enabled = true)")
@@ -364,12 +422,14 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format=log_format, datefmt="%Y/%m/%d %H:%M:%S (%Z)")
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--closing-time", type=datetime_command_line_argument_type(naive=False))
     parser.add_argument("--chunk-size", type=int, default=CHUNK_SIZE)
     parser.add_argument("--max-id", type=int)
     parser.add_argument("--min-id", type=int)
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
+    CLOSING_TIME = args.closing_time
     CHUNK_SIZE = args.chunk_size
     MAX_ID = args.max_id
     MIN_ID = args.min_id
