@@ -344,14 +344,12 @@ def main():
                     curr_time = datetime.now(timezone.utc)
                     next_run_estimated_end_datetime = curr_time + timedelta(seconds=ITERATION_ESTIMATED_SECONDS)
                     dt_str = next_run_estimated_end_datetime.isoformat()
+                    logging.info("=> Expected interation duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
+                    logging.info("=> Estimated loop end datetime of: {}".format(dt_str))
                     if next_run_estimated_end_datetime >= CLOSING_TIME:
-                        logging.info("=> Estimated loop end datetime of: {}".format(dt_str))
-                        logging.info("=> Next IDs to process: {} - {}".format(batch_min, batch_max))
-                        logging.info("=> You don't have to go home, but you can't... stay...... heeeeere")
+                        logging.info("===== Start next job at ID {} =====".format(batch_min))
+                        logging.info("===== You don't have to go home, but you can't... stay...... heeeeere =====")
                         return
-                    else:
-                        logging.info("=> Expected interation duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
-                        logging.info("=> Continuing with an estimated loop end datetime of: {}".format(dt_str))
 
             with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info) as t:
                 with connection.cursor() as cursor:
@@ -368,7 +366,7 @@ def main():
                     logging.info("#### No awards to update in range ###")
 
             if ITERATION_ESTIMATED_SECONDS is None:
-                ITERATION_ESTIMATED_SECONDS = t.elapsed  # get seconds from timedelta object
+                ITERATION_ESTIMATED_SECONDS = t.elapsed
             else:
                 ITERATION_ESTIMATED_SECONDS = rolling_average(ITERATION_ESTIMATED_SECONDS, t.elapsed, iteration)
 
