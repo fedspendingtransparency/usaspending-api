@@ -29,9 +29,6 @@ from usaspending_api.download.helpers import (
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 
 
-from django.db import connection
-
-
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000

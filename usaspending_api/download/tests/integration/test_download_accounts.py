@@ -129,6 +129,7 @@ def download_test_data(db):
 
 @pytest.mark.django_db
 def test_tas_a_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -147,6 +148,7 @@ def test_tas_a_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_tas_b_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -165,6 +167,7 @@ def test_tas_b_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_tas_c_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -183,6 +186,7 @@ def test_tas_c_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_federal_account_a_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -201,6 +205,7 @@ def test_federal_account_a_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_federal_account_b_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -219,6 +224,7 @@ def test_federal_account_b_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_federal_account_c_defaults_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -237,6 +243,7 @@ def test_federal_account_c_defaults_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_agency_filter_success(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -254,6 +261,7 @@ def test_agency_filter_success(client, download_test_data):
 
 @pytest.mark.django_db
 def test_agency_filter_failure(client, download_test_data):
+    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
