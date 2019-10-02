@@ -32,7 +32,6 @@ before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - apt-get install -y gettext-base  # for envsubst
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
