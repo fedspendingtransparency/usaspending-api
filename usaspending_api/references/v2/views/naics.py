@@ -41,7 +41,7 @@ class NAICSViewSet(APIView):
         )
         results = OrderedDict()
         results["naics"] = parent.code
-        results["description"] = parent.description
+        results["naics_description"] = parent.description
         results["count"] = (
             NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=parent.code, text_len=6).count()
         )
@@ -55,14 +55,14 @@ class NAICSViewSet(APIView):
             )
             results2 = OrderedDict()
             results2["naics"] = parent2.code
-            results2["description"] = parent2.description
+            results2["naics_description"] = parent2.description
             results2["count"] = (
                 NAICS.objects.annotate(text_len=Length("code"))
                 .filter(code__startswith=parent2.code, text_len=6)
                 .count()
             )
             results2["children"] = []
-            results["children"] = [results2]
+            results["children"].append(results2)
 
         return results
 
@@ -135,6 +135,9 @@ class NAICSViewSet(APIView):
                         for kid in existing_result["children"]:
                             if child["naics"] == kid["naics"]:
                                 exists = True
+                                for c in child["children"]:
+                                    kid["children"].append(c)
+
                         if not exists:
                             existing_result["children"].append(child)
 
