@@ -38,7 +38,7 @@ def delete_obsolete_rows(source: ETLTable, destination: ETLTable) -> int:
         join=primatives.make_join_to_table_conditional(destination.key_columns, "s", destination.qualified_table_name),
     )
 
-    return sql_helpers.execute_update_sql(sql)
+    return sql_helpers.execute_dml_sql(sql)
 
 
 def identify_new_or_updated(source: ETLTable, destination: ETLTable, staging: ETLTable) -> int:
@@ -73,7 +73,7 @@ def identify_new_or_updated(source: ETLTable, destination: ETLTable, staging: ET
         detect_changes=primatives.make_change_detector_conditional(shared_columns, "s", "d"),
     )
 
-    return sql_helpers.execute_update_sql(sql)
+    return sql_helpers.execute_dml_sql(sql)
 
 
 def insert_missing_rows(source: ETLTable, destination: ETLTable) -> int:
@@ -104,7 +104,7 @@ def insert_missing_rows(source: ETLTable, destination: ETLTable) -> int:
         excluder=primatives.make_join_excluder_conditional(destination.key_columns, "d"),
     )
 
-    return sql_helpers.execute_update_sql(sql)
+    return sql_helpers.execute_dml_sql(sql)
 
 
 def stage_dblink_table(source: ETLTable, destination: ETLTable, staging: ETLTable) -> int:
@@ -138,7 +138,7 @@ def stage_dblink_table(source: ETLTable, destination: ETLTable, staging: ETLTabl
         typed_columns=primatives.make_typed_column_list(shared_columns, destination.data_types),
     )
 
-    return sql_helpers.execute_update_sql(sql)
+    return sql_helpers.execute_dml_sql(sql)
 
 
 def update_changed_rows(source: ETLTable, destination: ETLTable) -> int:
@@ -167,7 +167,7 @@ def update_changed_rows(source: ETLTable, destination: ETLTable) -> int:
         detect_changes=primatives.make_change_detector_conditional(shared_columns, "s", "d"),
     )
 
-    return sql_helpers.execute_update_sql(sql)
+    return sql_helpers.execute_dml_sql(sql)
 
 
 __all__ = [

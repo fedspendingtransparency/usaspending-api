@@ -12,9 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import convert_composable_query_
 DataTypes = MutableMapping[str, str]
 
 
-def make_cast_column_list(
-    columns: List[str], data_types: DataTypes, alias: Optional[str] = None
-) -> Composed:
+def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: Optional[str] = None) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     columns cast to their appropriate data type.

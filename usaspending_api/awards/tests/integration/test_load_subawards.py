@@ -39,16 +39,16 @@ def cursor_fixture(db, monkeypatch):
     """
     Don't attempt to make dblink calls to Broker, but allow other SQL executes to occur.
     """
-    original_execute = Command._execute
+    original_execute = Command._execute_function
 
-    def _execute(self, message, function, *args, **kwargs):
+    def _execute(self, function, timer_message, log_message, *args, **kwargs):
         if function is not stage_dblink_table:
             # Allow non-dblink calls to happen "normally".
-            return original_execute(message, function, *args, **kwargs)
+            return original_execute(self, function, timer_message, log_message, *args, **kwargs)
 
-        return original_execute(message, _stage_dblink_table_mock, *args, **kwargs)
+        return original_execute(self, _stage_dblink_table_mock, timer_message, log_message, *args, **kwargs)
 
-    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute", _execute)
+    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute_function", _execute)
 
 
 def _check_data():
