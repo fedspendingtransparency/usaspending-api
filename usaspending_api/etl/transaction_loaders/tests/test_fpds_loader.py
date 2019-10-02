@@ -1,12 +1,12 @@
-import usaspending_api.data_load.fpds_loader as fpds_loader
+import usaspending_api.etl.transaction_loaders.fpds_loader as fpds_loader
 import random
-from usaspending_api.data_load.fpds_loader import (
+from usaspending_api.etl.transaction_loaders.fpds_loader import (
     _extract_broker_objects,
     _create_load_object,
     _transform_objects,
     _load_transactions,
 )
-from usaspending_api.data_load.field_mappings_fpds import (
+from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_columns,
     transaction_normalized_columns,
     legal_entity_columns,
@@ -17,7 +17,7 @@ from usaspending_api.data_load.field_mappings_fpds import (
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
 )
-from usaspending_api.data_load.data_load_helpers import format_insert_or_update_column_sql
+from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 from unittest.mock import MagicMock, patch
 
@@ -91,18 +91,18 @@ def test_load_ids_empty():
     fpds_loader.load_ids([])
 
 
-@patch("usaspending_api.data_load.fpds_loader._extract_broker_objects")
-@patch("usaspending_api.data_load.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019))
-@patch("usaspending_api.data_load.fpds_loader.bulk_insert_recipient_location")
-@patch("usaspending_api.data_load.fpds_loader.bulk_insert_recipient")
-@patch("usaspending_api.data_load.fpds_loader.bulk_insert_place_of_performance")
-@patch("usaspending_api.data_load.fpds_loader._matching_award")
-@patch("usaspending_api.data_load.fpds_loader.insert_award")
-@patch("usaspending_api.data_load.fpds_loader._lookup_existing_transaction")
-@patch("usaspending_api.data_load.fpds_loader.update_transaction_normalized")
-@patch("usaspending_api.data_load.fpds_loader.update_transaction_fpds")
-@patch("usaspending_api.data_load.fpds_loader.insert_transaction_normalized")
-@patch("usaspending_api.data_load.fpds_loader.insert_transaction_fpds")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
+@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019))
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient_location")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_place_of_performance")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader._matching_award")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_award")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader._lookup_existing_transaction")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.update_transaction_normalized")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.update_transaction_fpds")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_transaction_normalized")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_transaction_fpds")
 def test_load_ids_dummy_id(
     mock__insert_transaction_fpds_transaction,
     mock__insert_transaction_normalized_transaction,

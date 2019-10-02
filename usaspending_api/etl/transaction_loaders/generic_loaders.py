@@ -1,4 +1,4 @@
-from usaspending_api.data_load.data_load_helpers import (
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
     format_insert_or_update_column_sql,
     format_bulk_insert_list_column_sql,
 )

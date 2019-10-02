@@ -2,7 +2,7 @@ import psycopg2
 import logging
 from os import environ
 
-from usaspending_api.data_load.field_mappings_fpds import (
+from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_columns,
     transaction_normalized_columns,
     transaction_normalized_functions,
@@ -17,12 +17,12 @@ from usaspending_api.data_load.field_mappings_fpds import (
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
 )
-from usaspending_api.data_load.data_load_helpers import (
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
     capitalize_if_string,
     false_if_null,
     get_deleted_fpds_data_from_s3,
 )
-from usaspending_api.data_load.generic_loaders import (
+from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_fpds,
     update_transaction_normalized,
     insert_transaction_normalized,

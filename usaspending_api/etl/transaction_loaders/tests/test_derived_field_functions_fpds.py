@@ -1,4 +1,4 @@
-from usaspending_api.data_load.derived_field_functions_fpds import calculate_fiscal_year
+from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import calculate_fiscal_year
 
 
 def test_calculate_fiscal_year():
