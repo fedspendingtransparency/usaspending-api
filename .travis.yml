@@ -6,7 +6,6 @@ python:
 
 services:
   - postgresql
-  - docker
 
 addons:
   postgresql: '10'
