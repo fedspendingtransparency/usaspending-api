@@ -91,9 +91,7 @@ class NAICSViewSet(APIView):
             result["naics"] = naic.code
             result["naics_description"] = naic.description
             result["count"] = (
-                NAICS.objects.annotate(text_len=Length("code"))
-                .filter(code__startswith=naic.code, text_len=6)
-                .count()
+                NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=naic.code, text_len=6).count()
             )
             result["children"] = []
             tier2_results[naic.code] = result
@@ -109,9 +107,7 @@ class NAICSViewSet(APIView):
             result["naics"] = naic.code
             result["naics_description"] = naic.description
             result["count"] = (
-                NAICS.objects.annotate(text_len=Length("code"))
-                     .filter(code__startswith=naic.code, text_len=6)
-                     .count()
+                NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=naic.code, text_len=6).count()
             )
             result["children"] = []
             tier1_results[naic.code] = result
@@ -131,9 +127,7 @@ class NAICSViewSet(APIView):
             result["naics"] = naic.code
             result["naics_description"] = naic.description
             result["count"] = (
-                NAICS.objects.annotate(text_len=Length("code"))
-                .filter(code__startswith=naic.code, text_len=6)
-                .count()
+                NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=naic.code, text_len=6).count()
             )
             results.append(result)
         response_content = OrderedDict({"results": results})
