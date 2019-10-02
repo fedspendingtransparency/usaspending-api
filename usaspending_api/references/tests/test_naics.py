@@ -59,7 +59,9 @@ def test_with_filter(client, naics_test_data):
                 "naics": "11",
                 "naics_description": "Agriculture, Forestry, Fishing and Hunting",
                 "count": 3,
-                "children": [{"naics": "1111", "naics_description": "Oilseed and Grain Farming", "count": 2}],
+                "children": [
+                    {"naics": "1111", "naics_description": "Oilseed and Grain Farming", "count": 2, "children": []}
+                ],
             }
         ]
     }

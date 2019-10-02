@@ -14,6 +14,9 @@ logger = logging.getLogger("console")
 
 
 class NAICSViewSet(APIView):
+    """
+    Return a list of NAICS or a filtered list of NAICS
+    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/naics.md"
 

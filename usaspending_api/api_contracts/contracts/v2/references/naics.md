@@ -1,9 +1,10 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# NAICS [/api/v2/references/naics/{id}/{?filter}]
+# NAICS [/api/v2/references/naics/]
 
 These endpoints are used to power USAspending.gov's NAICS search component on the advanced search page.
+
 
 ## GET [/api/v2/references/naics/]
 
