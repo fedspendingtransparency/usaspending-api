@@ -91,6 +91,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|
+|[/api/v2/references/naics/](/api/v2/references/naics/)|GET|  Returns all Tier 1 (2-digit) NAICS and related, relevant data.|
+|[/api/v2/references/naics/<NAICS_CODE>/](/api/v2/references/naics/11/)|GET|  Returns the requested NAICS and immediate children, as well as related, relevant data.|
 |[/api/v2/search/new_awards_over_time/](/api/v2/search/new_awards_over_time/)|POST| Returns a list of time periods with the new awards in the appropriate period within the provided time range|
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards|
 |[/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/)|POST| Returns the number of awards in each award type (Contracts, IDV, Loans, Direct Payments, Grants, and Other)|
