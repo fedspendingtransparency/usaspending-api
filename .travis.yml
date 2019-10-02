@@ -43,7 +43,7 @@ before_script:
   - sleep 10  # wait for Postgres to be up
   - cp dataactcore/config_example.yml dataactcore/config.yml
   - cp dataactcore/local_config_example.yml dataactcore/local_config.yml
-  - cp dataactcore/local_config_secrets.yml dataactcore/local_secrets.yml
+  - cp dataactcore/local_secrets_example.yml dataactcore/local_secrets.yml
   - cat requirements.txt | grep -Ei 'alembic|PyYAML|Flask|psycopg2' > requirements-alembic.txt
   - docker run --init --rm --name=dataact-broker-init-integrationtest-db -e PYTHONPATH=/data-act/backend -w /data-act/backend --mount type=bind,source="$(pwd)",target=/data-act/backend python:3.5 /bin/sh -c "pip install -r requirements-alembic.txt && cd ./dataactcore; alembic upgrade head"
 
