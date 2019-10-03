@@ -1,15 +1,13 @@
-drop table if exists temp_load_agencies_agency;
+select
+    toptier_agency_id,
+    subtier_agency_id,
+    toptier_flag,
+    user_selectable
 
-
--- Create a temp table containing agencies as we expect them to look in the final table.
-create temporary table
-    temp_load_agencies_agency
-as (
+from (
 
     -- Toptiers with subtiers.
     select
-        now() as create_date,
-        now() as update_date,
         ta.toptier_agency_id,
         sa.subtier_agency_id,
         tlara.toptier_flag,
@@ -27,8 +25,6 @@ as (
 
     -- There are some toptiers without subtiers that we want to include in the agency table.
     select
-        now() as create_date,
-        now() as update_date,
         ta.toptier_agency_id,
         null, -- subtier_agency_id
         true, -- toptier_flag
@@ -45,4 +41,4 @@ as (
         sa.subtier_code is null and
         tlara.include_toptier_without_subtier is true
 
-);
+) t

@@ -4,15 +4,19 @@ of this module.
 """
 
 
-from psycopg2.sql import Composed, Identifier, Literal, SQL
-from typing import List, MutableMapping, Optional, Union
+from collections import namedtuple
+from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
+from typing import List, MutableMapping, Union
 from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 
-DataTypes = MutableMapping[str, str]
+ColumnOverrides = MutableMapping[str, Composable]  # e.g. {"updated_at": SQL("now()")}
+ColumnDefinition = namedtuple("DataType", ["name", "data_type", "not_nullable"])
+DataTypes = MutableMapping[str, ColumnDefinition]  # e.g. {"my_column": ("my_column", "numeric(23, 2)", True)}
+KeyColumns = List[ColumnDefinition]  # e.g. [("my_column", "numeric(23, 2)", True)]
 
 
-def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: Optional[str] = None) -> Composed:
+def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: str = None) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     columns cast to their appropriate data type.
@@ -29,7 +33,8 @@ def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: Opti
     composed_alias = SQL("") if alias is None else SQL("{}.").format(Identifier(alias))
     template = "cast({alias}{column} as {data_type}) as {column}"
     composed_columns = [
-        SQL(template).format(alias=composed_alias, column=Identifier(c), data_type=SQL(data_types[c])) for c in columns
+        SQL(template).format(alias=composed_alias, column=Identifier(c), data_type=SQL(data_types[c].data_type))
+        for c in columns
     ]
     return SQL(", ").join(composed_columns)
 
@@ -49,7 +54,7 @@ def make_change_detector_conditional(columns: List[str], left_alias: str, right_
     return SQL(" or ").join(composed_conditionals)
 
 
-def make_column_list(columns: List[str], alias: Optional[str] = None) -> Composed:
+def make_column_list(columns: List[str], alias: str = None, overrides: ColumnOverrides = None) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     columns.
@@ -62,23 +67,41 @@ def make_column_list(columns: List[str], alias: Optional[str] = None) -> Compose
 
         id1, id2, name
 
+    if we have overrides, potentially
+
+        id1, id2, now()
+
     """
     composed_alias = SQL("") if alias is None else SQL("{}.").format(Identifier(alias))
-    composed_columns = [SQL("{}{}").format(composed_alias, Identifier(c)) for c in columns]
+    overrides = overrides or {}
+    composed_columns = [(overrides.get(c) or SQL("{}{}").format(composed_alias, Identifier(c))) for c in columns]
     return SQL(", ").join(composed_columns)
 
 
-def make_column_setter_list(columns: List[str], alias: str) -> Composed:
+def make_column_setter_list(columns: List[str], alias: str, overrides: ColumnOverrides = None) -> Composed:
     """
     Turn a list of columns in a SQL safe string containing a comma separated list of
     column setters for an update statement.
 
         name = s.name, description = s.description
 
+    or if we have overrides, potentially
+
+        name = s.name, updated_at = now()
+
     """
     composed_alias = Identifier(alias)
+    overrides = overrides or {}
     template = "{column} = {alias}.{column}"
-    composed_setters = [SQL(template).format(alias=composed_alias, column=Identifier(c)) for c in columns]
+    override_template = "{column} = {override}"
+    composed_setters = [
+        (
+            SQL(override_template).format(column=Identifier(c), override=overrides[c])
+            if c in overrides
+            else SQL(template).format(alias=composed_alias, column=Identifier(c))
+        )
+        for c in columns
+    ]
     return SQL(", ").join(composed_setters)
 
 
@@ -101,21 +124,28 @@ def make_composed_qualified_table_name(table_name: str, schema_name: str = None,
     return SQL(template).format(*objects)
 
 
-def make_join_conditional(key_columns: List[str], left_alias: str, right_alias: str) -> Composed:
+def make_join_conditional(key_columns: KeyColumns, left_alias: str, right_alias: str) -> Composed:
     """
     Turn a pair of aliases and a list of key columns into a SQL safe string containing
     join conditionals ANDed together.
 
-        s.id1 = d.id1 and s.id2 = d.id2
+        s.id1 is not distinct from d.id1 and s.id2 is not distinct from d.id2
 
     """
     composed_aliases = {"left_alias": Identifier(left_alias), "right_alias": Identifier(right_alias)}
-    template = "{left_alias}.{column} = {right_alias}.{column}"
-    composed_conditionals = [SQL(template).format(column=Identifier(c), **composed_aliases) for c in key_columns]
+    template = "{left_alias}.{column} {equality} {right_alias}.{column}"
+    composed_conditionals = [
+        SQL(template).format(
+            column=Identifier(c.name),
+            equality=SQL("=" if c.not_nullable else "is not distinct from"),
+            **composed_aliases,
+        )
+        for c in key_columns
+    ]
     return SQL(" and ").join(composed_conditionals)
 
 
-def make_join_excluder_conditional(key_columns: List[str], alias: str) -> Composed:
+def make_join_excluder_conditional(key_columns: KeyColumns, alias: str) -> Composed:
     """
     Turn a list of key columns into a SQL safe string containing join excluder
     conditionals ANDed together.
@@ -124,20 +154,27 @@ def make_join_excluder_conditional(key_columns: List[str], alias: str) -> Compos
 
     """
     composed_alias = Identifier(alias)
-    return SQL(" and ").join([SQL("{}.{} is null").format(composed_alias, Identifier(c)) for c in key_columns])
+    return SQL(" and ").join([SQL("{}.{} is null").format(composed_alias, Identifier(c.name)) for c in key_columns])
 
 
-def make_join_to_table_conditional(key_columns: List[str], alias: str, qualified_table_name: Composed) -> Composed:
+def make_join_to_table_conditional(key_columns: KeyColumns, alias: str, object_representation: Composed) -> Composed:
     """
     Turn an alias, table, and a list of key columns into a SQL safe string containing
     join conditionals ANDed together.
 
-        d.id1 = public.table1.id1 and d.id2 = public.table1.id2
+        d.id1 is not distinct from public.table1.id1 and d.id2 is not distinct from public.table1.id2
 
     """
-    composed_aliases = {"left_alias": Identifier(alias), "right_alias": qualified_table_name}
-    template = "{left_alias}.{column} = {right_alias}.{column}"
-    composed_conditionals = [SQL(template).format(column=Identifier(c), **composed_aliases) for c in key_columns]
+    composed_aliases = {"left_alias": Identifier(alias), "right_alias": object_representation}
+    template = "{left_alias}.{column} {equality} {right_alias}.{column}"
+    composed_conditionals = [
+        SQL(template).format(
+            column=Identifier(c.name),
+            equality=SQL("=" if c.not_nullable else "is not distinct from"),
+            **composed_aliases,
+        )
+        for c in key_columns
+    ]
     return SQL(" and ").join(composed_conditionals)
 
 
@@ -150,13 +187,13 @@ def make_typed_column_list(columns: List[str], data_types: DataTypes) -> Compose
         id integer, name text
 
     """
-    composed_columns = [SQL("{} {}").format(Identifier(c), SQL(data_types[c])) for c in columns]
+    composed_columns = [SQL("{} {}").format(Identifier(c), SQL(data_types[c].data_type)) for c in columns]
     return SQL(", ").join(composed_columns)
 
 
 def wrap_dblink_query(
     dblink_name: str, sql: Union[str, Composed], alias: str, columns: List[str], data_types: DataTypes
-):
+) -> Composed:
     """ Wraps a query in a dblink compatible query so that it can be run on a remote server. """
     inner_sql = convert_composable_query_to_string(sql)
     select_columns = make_column_list(columns, "r")
@@ -175,7 +212,10 @@ def wrap_dblink_query(
 
 
 __all__ = [
+    "ColumnOverrides",
+    "ColumnDefinition",
     "DataTypes",
+    "KeyColumns",
     "make_cast_column_list",
     "make_change_detector_conditional",
     "make_column_list",

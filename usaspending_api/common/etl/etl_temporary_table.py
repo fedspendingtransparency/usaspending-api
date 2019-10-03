@@ -5,32 +5,30 @@ from usaspending_api.common.etl.introspection import get_columns, get_data_types
 from usaspending_api.common.etl.primatives import ColumnOverrides, DataTypes
 
 
-class ETLTable(ETLWritableObjectBase):
-    """ Represents a local permanent database table. """
+class ETLTemporaryTable(ETLWritableObjectBase):
+    """ Represents a local temporary database table. """
 
     def __init__(
         self,
         table_name: str,
-        schema_name: str = "public",
         key_overrides: List[str] = None,
         insert_overrides: ColumnOverrides = None,
         update_overrides: ColumnOverrides = None,
     ) -> None:
         self.table_name = table_name
-        self.schema_name = schema_name
-        super(ETLTable, self).__init__(key_overrides, insert_overrides, update_overrides)
+        super(ETLTemporaryTable, self).__init__(key_overrides, insert_overrides, update_overrides)
 
     def _get_columns(self) -> List[str]:
-        return get_columns(self.table_name, self.schema_name)
+        return get_columns(self.table_name)
 
     def _get_primary_key_columns(self) -> List[str]:
-        return get_primary_key_columns(self.table_name, self.schema_name)
+        return get_primary_key_columns(self.table_name)
 
     def _get_data_types(self) -> DataTypes:
-        return get_data_types(self.table_name, self.schema_name)
+        return get_data_types(self.table_name)
 
     def _get_object_representation(self) -> Composed:
-        return SQL("{}.{}").format(Identifier(self.schema_name), Identifier(self.table_name))
+        return SQL("{}").format(Identifier(self.table_name))
 
 
-__all__ = ["ETLTable"]
+__all__ = ["ETLTemporaryTable"]

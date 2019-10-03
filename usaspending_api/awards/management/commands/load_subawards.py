@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from usaspending_api.common.etl import ETLTable, operations, mixins
+from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
 from usaspending_api.common.helpers.timing_helpers import Timer
 
 
@@ -30,45 +30,53 @@ class Command(mixins.ETLMixin, BaseCommand):
     def handle(self, *args, **options):
 
         self.full_reload = options["full_reload"]
+        logger.info("FULL RELOAD SWITCH: {}".format(self.full_reload))
 
-        with Timer("Load subawards"):
-            try:
+        try:
+            with Timer("Load subawards"):
                 with transaction.atomic():
                     self._perform_load()
-                    t = Timer("Committing transaction")
+                    t = Timer("Commit transaction")
                     t.log_starting_message()
                 t.log_success_message()
-            except Exception:
-                logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
-                raise
+        except Exception:
+            logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
+            raise
 
     def _perform_load(self):
         """ Grab the Broker subaward table and use it to update ours. """
 
-        # All of the tables involved in this process.  Yikes.
-        broker_subaward = ETLTable(table_name="broker_subaward", schema_name="public")
-        remote_subaward = ETLTable(table_name="subaward", schema_name="public", dblink_name="broker_server")
-        subaward = ETLTable(table_name="subaward", schema_name="public")
-        temp_broker_subaward = ETLTable(table_name="temp_load_subawards_broker_subaward")
-        temp_new_or_updated = ETLTable(table_name="temp_load_subawards_new_or_updated")
-        temp_subaward = ETLTable(table_name="temp_load_subawards_subaward")
+        broker_subaward = ETLTable("broker_subaward")
+        subaward = ETLTable("subaward")
+
+        remote_subaward = ETLDBLinkTable("subaward", "broker_server", broker_subaward.data_types)
+
+        temp_broker_subaward = ETLTemporaryTable("temp_load_subawards_broker_subaward")
+        temp_new_or_updated = ETLTemporaryTable("temp_load_subawards_new_or_updated")
+        temp_subaward = ETLTemporaryTable("temp_load_subawards_subaward")
 
         if self.full_reload:
             logger.info("--full-reload switch provided.  Emptying subaward tables.")
             self._execute_dml_sql("delete from broker_subaward", "Empty broker_subaward table")
             self._execute_dml_sql("delete from subaward", "Empty subaward table")
 
-        self._execute_function_log_rows_affected(
-            operations.stage_dblink_table,
+        self._execute_function_and_log(
+            operations.stage_table,
             "Copy Broker subaward table",
             source=remote_subaward,
             destination=broker_subaward,
             staging=temp_broker_subaward,
         )
 
+        # To help performance.
+        self._execute_dml_sql(
+            "create index idx_temp_load_subawards_broker_subaward on temp_load_subawards_broker_subaward(id)",
+            "Create temporary index",
+        )
+
         # Create a list of new or updated subawards that we can use to filter down
         # subsequent operations.
-        self._execute_function_log_rows_affected(
+        self._execute_function_and_log(
             operations.identify_new_or_updated,
             "Identify new/updated rows",
             source=temp_broker_subaward,
@@ -76,37 +84,11 @@ class Command(mixins.ETLMixin, BaseCommand):
             staging=temp_new_or_updated,
         )
 
-        self._execute_function_log_rows_affected(
-            operations.delete_obsolete_rows,
-            "Delete obsolete broker_subaward rows",
-            source=temp_broker_subaward,
-            destination=broker_subaward,
-        )
-
-        self._execute_function_log_rows_affected(
-            operations.update_changed_rows,
-            "Update changed broker_subaward rows",
-            source=temp_broker_subaward,
-            destination=broker_subaward,
-        )
-
-        self._execute_function_log_rows_affected(
-            operations.insert_missing_rows,
-            "Insert missing broker_subaward rows",
-            source=temp_broker_subaward,
-            destination=broker_subaward,
-        )
+        self._delete_update_insert_rows("broker_subawards", temp_broker_subaward, broker_subaward)
 
         # The Broker subaward table takes up a good bit of space so let's explicitly free
         # it up before continuing.
         self._execute_dml_sql("drop table if exists temp_load_subawards_broker_subaward", "Drop staging table")
-
-        self._execute_function_log_rows_affected(
-            operations.delete_obsolete_rows,
-            "Delete obsolete subaward rows",
-            source=broker_subaward,
-            destination=subaward,
-        )
 
         self._execute_etl_dml_sql_directory_file("030_frame_out_subawards")
         self._execute_etl_dml_sql_directory_file("040_enhance_with_awards_data")
@@ -120,16 +102,18 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_etl_dml_sql_directory_file("120_enhance_with_recipient_location_county_city")
         self._execute_etl_dml_sql_directory_file("130_enhance_with_recipient_location_country")
 
-        self._execute_function_log_rows_affected(
-            operations.update_changed_rows, "Update changed subaward rows", source=temp_subaward, destination=subaward
+        # Delete from broker_subaward because temp_subaward only has new/updated rows.
+        self._execute_function_and_log(
+            operations.delete_obsolete_rows, "Delete obsolete subawards", broker_subaward, subaward
         )
-        self._execute_function_log_rows_affected(
-            operations.insert_missing_rows, "Insert missing subaward rows", source=temp_subaward, destination=subaward
+
+        # But update and insert from temp_subaward.
+        self._execute_function_and_log(
+            operations.update_changed_rows, "Update changed subawards", temp_subaward, subaward
+        )
+        self._execute_function_and_log(
+            operations.insert_missing_rows, "Insert missing subawards", temp_subaward, subaward
         )
 
         self._execute_etl_dml_sql_directory_file("140_link_awards")
         self._execute_etl_dml_sql_directory_file("150_update_awards")
-
-        # Not strictly necessary for temporary tables, but drop them just to be thorough.
-        self._execute_dml_sql("drop table if exists temp_load_subawards_new_or_updated", "Drop new/updated temp table")
-        self._execute_dml_sql("drop table if exists temp_load_subawards_subaward", "Drop subaward temp table")

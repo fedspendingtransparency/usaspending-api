@@ -6,12 +6,13 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
 from psycopg2.extras import execute_values
+from psycopg2.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
+from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC
-
 
 logger = logging.getLogger("console")
 
@@ -39,54 +40,20 @@ Agency = namedtuple(
     ],
 )
 
-# Set keep_count to True to update the overall affected row count.  Set skip_if_no_changes to True
-# to not run this step if the overall affected row count is zero.  Useful for not running expensive
-# steps if nothing changed.
-ProcessingStep = namedtuple("ProcessingStep", ["description", "file", "function", "keep_count", "skip_if_no_changes"])
-
-MAX_CHANGES = 50
-
-PROCESSING_STEPS = [
-    ProcessingStep("Create raw agency temp table", "raw_agency_create_temp_table", None, False, False),
-    ProcessingStep("Read raw agencies csv", None, "_read_raw_agencies_csv", False, False),
-    ProcessingStep("Validate raw agencies", None, "_validate_raw_agencies", False, False),
-    ProcessingStep("Import raw agencies", None, "_import_raw_agencies", False, False),
-    ProcessingStep("Recreate CGACs", "cgac_recreate", None, False, False),
-    ProcessingStep("Recreate FRECs", "frec_recreate", None, False, False),
-    ProcessingStep("Create toptier agency temp table", "toptier_agency_create_temp_table", None, False, False),
-    ProcessingStep("Delete obsolete toptier agencies", "toptier_agency_delete", None, True, False),
-    ProcessingStep("Update existing toptier agencies", "toptier_agency_update", None, True, False),
-    ProcessingStep("Create new toptier agencies", "toptier_agency_create", None, True, False),
-    ProcessingStep("Create subtier agency temp table", "subtier_agency_create_temp_table", None, False, False),
-    ProcessingStep("Delete obsolete subtier agencies", "subtier_agency_delete", None, True, False),
-    ProcessingStep("Update existing subtier agencies", "subtier_agency_update", None, True, False),
-    ProcessingStep("Create new subtier agencies", "subtier_agency_create", None, True, False),
-    ProcessingStep("Create agency temp table", "agency_create_temp_table", None, False, False),
-    ProcessingStep("Delete obsolete agencies", "agency_delete", None, True, False),
-    ProcessingStep("Update existing agencies", "agency_update", None, True, False),
-    ProcessingStep("Create new agencies", "agency_create", None, True, False),
-    ProcessingStep(
-        "Update treasury appropriation accounts", "treasury_appropriation_account_update", None, False, True
-    ),
-    ProcessingStep("Update transactions", "transaction_normalized_update", None, False, True),
-    ProcessingStep("Update awards", "award_update", None, False, True),
-    ProcessingStep("Update subawards", "subaward_update", None, False, True),
-]
-
-SQL_PATH = Path(__file__).resolve().parent / "load_agencies_sql"
+MAX_CHANGES = 75
 
 
-class Command(BaseCommand):
-
+class Command(mixins.ETLMixin, BaseCommand):
     help = (
         "Loads CGACs, FRECs, Subtier Agencies, Toptier Agencies, and Agencies.  Load is all or nothing.  "
         "If anything fails, nothing gets saved."
     )
 
     agency_file = None
-    connection = get_connection(read_only=False)
     force = False
-    rows_affected_count = 0
+
+    etl_logger_function = logger.info
+    etl_dml_sql_directory = Path(__file__).resolve().parent / "load_agencies_sql"
 
     def add_arguments(self, parser):
 
@@ -101,47 +68,36 @@ class Command(BaseCommand):
             action="store_true",
             help=(
                 "Reloads agencies even if the change max change threshold of {:,} is exceeded.  This is a safety "
-                "feature to prevent accidentally updating every award, transaction, and subaward in the system as "
+                "precaution to prevent accidentally updating every award, transaction, and subaward in the system as "
                 "part of the nightly pipeline.".format(MAX_CHANGES)
             ),
         )
 
     def handle(self, *args, **options):
+
         self.agency_file = options["agency_file"]
-        logger.info("AGENCY FILE: {}".format(self.agency_file))
-
         self.force = options["force"]
-        logger.info("FORCE SWITCH PROVIDED: {}".format(self.force))
-        logger.info("MAX CHANGE LIMIT: {}".format("{:,}".format(MAX_CHANGES) if self.force else "unlimited"))
 
-        self.rows_affected_count = 0
+        logger.info("AGENCY FILE: {}".format(self.agency_file))
+        logger.info("FORCE SWITCH: {}".format(self.force))
+        logger.info("MAX CHANGE LIMIT: {}".format("unlimited" if self.force else "{:,}".format(MAX_CHANGES)))
 
-        try:
-            with Timer("Import agencies"):
+        with Timer("Load agencies"):
+            try:
                 with transaction.atomic():
-                    self._run_steps()
-        except Exception:
-            logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
-            raise
+                    self._perform_load()
+                    t = Timer("Commit transaction")
+                    t.log_starting_message()
+                t.log_success_message()
+            except Exception:
+                logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
+                raise
 
-        try:
-            with Timer("Vacuum tables"):
+            try:
                 self._vacuum_tables()
-        except Exception:
-            logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
-            raise
-
-    def _execute_sql(self, sql):
-        with self.connection.cursor() as cursor:
-            cursor.execute(sql)
-            if cursor.rowcount > -1:
-                logger.info("{:,} rows affected".format(cursor.rowcount))
-        return cursor.rowcount
-
-    def _execute_sql_file(self, filename):
-        file = (SQL_PATH / filename).with_suffix(".sql")
-        sql = file.read_text()
-        return self._execute_sql(sql)
+            except Exception:
+                logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
+                raise
 
     def _read_raw_agencies_csv(self):
         agencies = read_csv_file_as_list_of_dictionaries(self.agency_file)
@@ -171,6 +127,8 @@ class Command(BaseCommand):
             )
             for row_number, agency in enumerate(agencies)
         ]
+
+        return len(self.agencies)
 
     @staticmethod
     def _validate_raw_agency(agency):
@@ -222,7 +180,7 @@ class Command(BaseCommand):
             )
 
     def _import_raw_agencies(self):
-        with self.connection.cursor() as cursor:
+        with get_connection(read_only=False).cursor() as cursor:
             execute_values(
                 cursor.cursor,
                 """
@@ -250,36 +208,63 @@ class Command(BaseCommand):
                 self.agencies,
                 page_size=len(self.agencies),
             )
-            if cursor.rowcount > -1:
-                logger.info("{:,} rows affected".format(cursor.rowcount))
+            return cursor.rowcount
 
-    def _run_steps(self):
-        for step in PROCESSING_STEPS:
+    def _perform_load(self):
 
-            with Timer(step.description):
+        overrides = {
+            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
+            "update_overrides": {"update_date": SQL("now()")},
+        }
 
-                if step.skip_if_no_changes and self.rows_affected_count == 0:
-                    logger.info("Skipping due to no agency changes")
-                    continue
+        agency_table = ETLTable("agency", key_overrides=["toptier_agency_id", "subtier_agency_id"], **overrides)
+        cgac_table = ETLTable("cgac", key_overrides=["cgac_code"])
+        frec_table = ETLTable("frec", key_overrides=["frec_code"])
+        subtier_agency_table = ETLTable("subtier_agency", key_overrides=["subtier_code"], **overrides)
+        toptier_agency_table = ETLTable("toptier_agency", key_overrides=["cgac_code"], **overrides)
 
-                if step.file:
-                    count = self._execute_sql_file(step.file)
-                    # If a table for which we're tracking changes exceeds MAX_CHANGES and the
-                    # --force switch was not supplied, raise an exception.
-                    if step.keep_count and count > MAX_CHANGES and not self.force:
-                        raise RuntimeError(
-                            "Exceed maximum number of allowed changes ({:,}).  Use --force switch if this was "
-                            "intentional.".format(MAX_CHANGES)
-                        )
-                    if step.keep_count:
-                        self.rows_affected_count += count
+        agency_query = ETLQueryFile(self.etl_dml_sql_directory / "agency_query.sql")
+        cgac_query = ETLQueryFile(self.etl_dml_sql_directory / "cgac_query.sql")
+        frec_query = ETLQueryFile(self.etl_dml_sql_directory / "frec_query.sql")
+        subtier_agency_query = ETLQueryFile(self.etl_dml_sql_directory / "subtier_agency_query.sql")
+        toptier_agency_query = ETLQueryFile(self.etl_dml_sql_directory / "toptier_agency_query.sql")
 
-                if step.function:
-                    getattr(self, step.function)()
+        self._execute_etl_dml_sql_directory_file("raw_agency_create_temp_table", "Create raw agency temp table")
+        self._execute_function_and_log(self._read_raw_agencies_csv, "Read raw agencies csv")
+        self._execute_function(self._validate_raw_agencies, "Validate raw agencies")
+        self._execute_function_and_log(self._import_raw_agencies, "Import raw agencies")
+
+        self._delete_update_insert_rows("CGACs", cgac_query, cgac_table)
+        self._delete_update_insert_rows("FRECs", frec_query, frec_table)
+
+        rows_affected = 0
+        rows_affected += self._delete_update_insert_rows("toptier agencies", toptier_agency_query, toptier_agency_table)
+        rows_affected += self._delete_update_insert_rows("subtier agencies", subtier_agency_query, subtier_agency_table)
+        rows_affected += self._delete_update_insert_rows("agencies", agency_query, agency_table)
+
+        if rows_affected > MAX_CHANGES and not self.force:
+            raise RuntimeError(
+                "Exceed maximum number of allowed changes ({:,}).  Use --force switch if this was "
+                "intentional.".format(MAX_CHANGES)
+            )
+
+        elif rows_affected > 0:
+            self._execute_etl_dml_sql_directory_file(
+                "treasury_appropriation_account_update", "Update treasury appropriation accounts"
+            )
+            self._execute_etl_dml_sql_directory_file("transaction_normalized_update", "Update transactions")
+            self._execute_etl_dml_sql_directory_file("award_update", "Update awards")
+            self._execute_etl_dml_sql_directory_file("subaward_update", "Update subawards")
+
+        else:
+            logger.info(
+                "Skipping treasury_appropriation_account, transaction_normalized, "
+                "awards, and subaward updates since there were no agency changes."
+            )
 
     def _vacuum_tables(self):
-        self._execute_sql("vacuum (full, analyze) agency")
-        self._execute_sql("vacuum (full, analyze) cgac")
-        self._execute_sql("vacuum (full, analyze) frec")
-        self._execute_sql("vacuum (full, analyze) subtier_agency")
-        self._execute_sql("vacuum (full, analyze) toptier_agency")
+        self._execute_dml_sql("vacuum (full, analyze) agency", "Vacuum agency table")
+        self._execute_dml_sql("vacuum (full, analyze) cgac", "Vacuum cgac table")
+        self._execute_dml_sql("vacuum (full, analyze) frec", "Vacuum frec table")
+        self._execute_dml_sql("vacuum (full, analyze) subtier_agency", "Vacuum subtier_agency table")
+        self._execute_dml_sql("vacuum (full, analyze) toptier_agency", "Vacuum toptier_agency table")

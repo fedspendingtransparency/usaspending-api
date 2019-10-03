@@ -1,15 +1,16 @@
-drop table if exists temp_load_agencies_toptier_agency;
+select
+    cgac_code,
+    abbreviation,
+    name,
+    mission,
+    website,
+    justification,
+    icon_filename
 
-
--- Create a temp table containing toptier agencies as we expect them to look in the final table.
-create temporary table
-    temp_load_agencies_toptier_agency
-as (
+from (
 
     -- CGAC agencies
     select
-        now() as create_date,
-        now() as update_date,
         cgac_agency_code as cgac_code,
         max(agency_abbreviation) as abbreviation,
         max(agency_name) as name,
@@ -34,8 +35,6 @@ as (
 
     -- FREC agencies
     select
-        now() as create_date,
-        now() as update_date,
         frec as cgac_code,
         max(frec_abbreviation) as abbreviation,
         max(frec_entity_description) as name,
@@ -56,4 +55,4 @@ as (
     group by
         frec
 
-);
+) t

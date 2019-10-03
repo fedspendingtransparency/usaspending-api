@@ -1,55 +1,37 @@
 from pathlib import Path
 from psycopg2.sql import Composed
 from typing import Any, Callable, Union
+from usaspending_api.common.etl import ETLObjectBase
+from usaspending_api.common.etl.operations import delete_obsolete_rows, insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
 
 
 class ETLMixin:
-    """
-    Some common ETL functionality encapsulated in a nice, convenient mixin.
-
-        etl_logger_function
-            If defined, some strategic logging will happen automatically.  To handle all
-            of your own logging, leave None.
-
-        etl_dml_sql_directory
-            Point this at your SQL directory if you intend to take advantage of the
-            _execute_etl_dml_sql_directory_file function.
-
-    """
+    """ Some common ETL functionality encapsulated in a nice, convenient mixin. """
 
     etl_logger_function = None
     etl_dml_sql_directory = None
     etl_rows_affected_template = "{:,} rows affected"
 
-    def _execute_function(
-        self, function: Callable, timer_message: str = None, log_message: str = None, *args: Any, **kwargs: Any
-    ) -> Any:
-        """
-        Execute a function and returns its results.  Times the execution if there's a
-        timer_message.  Logs the result if there's a log_message.
-        """
-
-        with Timer(timer_message):
-            results = function(*args, **kwargs)
-            if self.etl_logger_function is not None and log_message is not None:
-                self.etl_logger_function(log_message.format(results))
-            return results
-
-    def _execute_function_log_rows_affected(
-        self, function: Callable, timer_message: str = None, *args: Any, **kwargs: Any
-    ) -> Any:
-        """ Same as _execute_function but logs rows affected much like a DML SQL statement. """
-
-        return self._execute_function(function, timer_message, self.etl_rows_affected_template, *args, **kwargs)
+    def _delete_update_insert_rows(self, what: str, source: ETLObjectBase, destination: ETLObjectBase):
+        """ Convenience function to run delete, update, and create ETL operations. """
+        rows_affected = 0
+        rows_affected += self._execute_function_and_log(
+            delete_obsolete_rows, "Delete obsolete {}".format(what), source, destination
+        )
+        rows_affected += self._execute_function_and_log(
+            update_changed_rows, "Update changed {}".format(what), source, destination
+        )
+        rows_affected += self._execute_function_and_log(
+            insert_missing_rows, "Insert missing {}".format(what), source, destination
+        )
+        return rows_affected
 
     def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: str = None) -> int:
         """ Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc). """
 
-        return self._execute_function(
-            execute_dml_sql, timer_message, self.etl_rows_affected_template, sql=sql
-        )
+        return self._log_rows_affected(self._execute_function(execute_dml_sql, timer_message, sql=sql))
 
     def _execute_dml_sql_file(self, file_path: str, timer_message: str = None) -> int:
         """
@@ -72,6 +54,35 @@ class ETLMixin:
 
         file_path = (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
         return self._execute_dml_sql_file(Path(file_path), timer_message)
+
+    @staticmethod
+    def _execute_function(function: Callable, timer_message: str = None, *args: Any, **kwargs: Any) -> Any:
+        """
+        Execute a function and returns its results.  Times the execution if there's a
+        timer_message.  Logs the result if there's a log_message.
+        """
+
+        with Timer(timer_message):
+            return function(*args, **kwargs)
+
+    def _execute_function_and_log(
+        self, function: Callable, timer_message: str = None, *args: Any, **kwargs: Any
+    ) -> Any:
+        """ Same as _execute_function but logs rows affected much like a DML SQL statement. """
+
+        return self._log_rows_affected(self._execute_function(function, timer_message, *args, **kwargs))
+
+    def _log_rows_affected(self, row_count: int) -> int:
+        """ If we have something we can log and a way to log it, log it. """
+
+        if (
+            self.etl_logger_function is not None
+            and self.etl_rows_affected_template is not None
+            and type(row_count) is int
+            and row_count > -1
+        ):
+            self.etl_logger_function(self.etl_rows_affected_template.format(row_count))
+        return row_count
 
 
 __all__ = ["ETLMixin"]
