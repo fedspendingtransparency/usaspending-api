@@ -92,7 +92,9 @@ def test_load_ids_empty():
 
 
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
-@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019))
+@patch(
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
+)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient_location")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_place_of_performance")
