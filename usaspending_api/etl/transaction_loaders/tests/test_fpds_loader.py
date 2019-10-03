@@ -80,10 +80,10 @@ def _assemble_dummy_broker_data():
 
 def _stub___extract_broker_objects(id_list):
     """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg2.extras.DictCursor"""
-    for i in range(len(id_list)):
+    for id in id_list:
         dummy_row = _assemble_dummy_broker_data()
-        dummy_row["detached_award_procurement_id"] = id_list[i]
-        dummy_row["detached_award_proc_unique"] = str(id_list[i])
+        dummy_row["detached_award_procurement_id"] = id
+        dummy_row["detached_award_proc_unique"] = str(id)
         yield dummy_row
 
 
