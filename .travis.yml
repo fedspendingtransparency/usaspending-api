@@ -43,10 +43,10 @@ before_script:
   - psql -c "CREATE DATABASE usaspending_api;" -U ${USASPENDING_DB_USER}
   - psql -c "CREATE USER readonly;"
   # Establish foreign server for dblink to Broker
-  - psql --file usaspending_api/database_scripts/extensions/extensions.sql
+  - psql --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
   - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
   - cat usaspending_api/database_scripts/servers/broker_server.sql
-  - psql --file usaspending_api/database_scripts/broker_server.sql
+  - psql --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/broker_server.sql
   - python manage.py migrate
   # Spin up Broker database in a container for ETL integration tests
   - cd ${BROKER_REPO_FOLDER}
