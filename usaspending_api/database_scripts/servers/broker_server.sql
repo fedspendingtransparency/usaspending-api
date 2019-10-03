@@ -4,11 +4,7 @@
 
 -- RUNNING:
 -- 1) Export environment variables
--- 2) Substitute in-place using Bash eval:
--- eval "cat <<EOF
--- $(<broker_server.sql)
--- EOF
--- " > broker_server.sql
+-- 2) Substitute in-place using Bash eval (example: https://stackoverflow.com/a/12422379)
 
 -- DROPS
 DROP USER MAPPING IF EXISTS FOR ${USASPENDING_DB_USER} SERVER broker_server;
