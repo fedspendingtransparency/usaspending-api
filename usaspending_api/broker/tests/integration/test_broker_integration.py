@@ -29,7 +29,7 @@ def test_can_connect_to_broker_by_dblink():
             if not results or not results[0][0] == 'broker_server':
                 raise SkipTest("No foreign server named 'broker_server' has been setup on this USAspending database. "
                                "Skipping the test of integration with that server via dblink")
-            cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now datetime)")
+            cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)")
             results = cursor.fetchall()
     assert results is not None
     assert len(str(results[0][0])) > 0
