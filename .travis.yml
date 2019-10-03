@@ -17,7 +17,7 @@ addons:
 env:
   global:
   - USASPENDING_DB_USER=postgres
-  - DATABASE_URL=postgres://${USASPENDING_DB_USER}@localhost/usaspending_api
+  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:@localhost:5432/usaspending_api
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
