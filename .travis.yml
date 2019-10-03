@@ -58,6 +58,7 @@ before_script:
   - date
   - sleep 10  # wait for Postgres to be up
   - cd ${TRAVIS_BUILD_DIR}
+  - pip list
 
 script:
   - psql --username ${USASPENDING_DB_USER} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose -c "SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)"
