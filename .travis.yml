@@ -41,7 +41,7 @@ install:
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
-  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD ${USASPENDING_DB_PASSWORD}"
+  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}'"
   - psql -c "CREATE DATABASE usaspending_api;" --username ${USASPENDING_DB_USER}
   - psql -c "CREATE USER readonly;"
   # Establish foreign server for dblink to Broker
