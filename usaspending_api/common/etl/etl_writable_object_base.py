@@ -29,7 +29,8 @@ class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):
         if self._insert_overrides:
             if not all(c in self.columns for c in self._insert_overrides):
                 raise RuntimeError("All columns listed in insert_overrides must exist in database object.")
-            if any(c in self.key_columns for c in self._insert_overrides):
+            key_columns = [k.name for k in self.key_columns]
+            if any(c in key_columns for c in self._insert_overrides):
                 raise RuntimeError("Overriding key columns is not currently supported.")
         return self._insert_overrides
 
@@ -45,7 +46,8 @@ class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):
         if self._update_overrides:
             if not all(c in self.columns for c in self._update_overrides):
                 raise RuntimeError("All columns listed in update_overrides must exist in database object.")
-            if any(c in self.key_columns for c in self._update_overrides):
+            key_columns = [k.name for k in self.key_columns]
+            if any(c in key_columns for c in self._update_overrides):
                 raise RuntimeError("Overriding key columns is not currently supported.")
         return self._update_overrides
 

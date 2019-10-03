@@ -117,3 +117,9 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         self._execute_etl_dml_sql_directory_file("140_link_awards")
         self._execute_etl_dml_sql_directory_file("150_update_awards")
+
+        # This is for unit tests.  Temporary tables go away on their own once the transaction/session
+        # drops, but because unit tests run in a transaction, our temporary tables do not go away
+        # between loads... which is problematic.
+        self._execute_dml_sql("drop table if exists temp_load_subawards_new_or_updated", "Drop new/updated temp table")
+        self._execute_dml_sql("drop table if exists temp_load_subawards_subaward", "Drop subaward temp table")
