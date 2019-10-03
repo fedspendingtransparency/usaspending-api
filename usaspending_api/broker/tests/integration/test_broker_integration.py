@@ -24,6 +24,8 @@ def test_can_connect_to_broker_by_dblink():
         with connection.cursor() as cursor:
             cursor.execute("select srvname from pg_foreign_server where srvname = 'broker_server'")
             results = cursor.fetchall()
+            if results:
+                print(str(results))
             if not results or not results[0][0] == 'broker_server':
                 raise SkipTest("No foreign server named 'broker_server' has been setup on this USAspending database. "
                                "Skipping the test of integration with that server via dblink")
