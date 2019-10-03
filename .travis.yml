@@ -45,19 +45,22 @@ before_script:
   # Establish foreign server for dblink to Broker
   - psql --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
   - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
-  - cat usaspending_api/database_scripts/servers/broker_server.sql
   - psql --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
   - python manage.py migrate
+  - psql -c "select srvname from pg_foreign_server where srvname = 'broker_server'"
   # Spin up Broker database in a container for ETL integration tests
   - cd ${BROKER_REPO_FOLDER}
   - cp dataactcore/config_example.yml dataactcore/config.yml
   - cp dataactcore/local_config_example.yml dataactcore/local_config.yml
   - cp dataactcore/local_secrets_example.yml dataactcore/local_secrets.yml
+  - date
   - docker-compose up -d dataact-broker-db dataact-broker-init-db
+  - date
   - sleep 10  # wait for Postgres to be up
   - cd ${TRAVIS_BUILD_DIR}
 
 script:
+  - psql --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose -c "SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now datetime)"
   - flake8
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
