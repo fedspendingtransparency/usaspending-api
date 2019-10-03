@@ -5,6 +5,7 @@ from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -29,7 +30,7 @@ from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_v
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.recipient_lookups import annotate_recipient_id
+from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
 
 GLOBAL_MAP = {
@@ -60,7 +61,7 @@ GLOBAL_MAP = {
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_field": "subaward_number",
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
-        "annotations": {"_recipient_id": annotate_recipient_id},
+        "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
     },
 }
@@ -80,7 +81,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
-        self.filters = json_request["filters"]
+        self.filters = add_date_range_comparison_types(
+            json_request.get("filters"), self.is_subaward, gte_date_type="action_date", lte_date_type="date_signed"
+        )
         self.fields = json_request["fields"]
         self.pagination = {
             "limit": json_request["limit"],

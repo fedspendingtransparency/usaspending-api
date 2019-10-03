@@ -1,16 +1,12 @@
-import logging
 import os
 
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 from django.conf import settings
 from django.db import connections, router, DEFAULT_DB_ALIAS
 from psycopg2.sql import Composable, Identifier, SQL
 
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
-
-
-logger = logging.getLogger("console")
 
 
 def build_dsn_string(db_settings):
@@ -170,68 +166,43 @@ def convert_composable_query_to_string(sql, model=Award, cursor=None):
     return sql
 
 
-def execute_update_sql(sql, model=Award):
+def cursor_fetcher(cursor):
+    """ Fetcher that simply returns the cursor. """
+    return cursor
+
+
+def fetchall_fetcher(cursor):
     """
-    Executes a sql query against a database that perform some sort of update
-    (INSERT, UPDATE, etc).
+    Fetcher that returns the default fetchall() if the cursor contains results
+    or None if not.  Return value will be roughly equivalent to:
 
-    sql     - Can be either a sql string statement or a psycopg2 Composable
-              object (Identifier, Literal, SQL, etc).
-    model   - A Django model that represents a database table germaine to your
-              query.  If one is not supplied, Award will be used since it is
-              fairly central to the database as a whole.
+        [
+            (54360982, None),
+            (54360880, 54360982)
+        ]
 
-    Returns a CLOSED cursor.  Can be used for row counts and what not, but is
-    no longer operational.
     """
-    connection = get_connection(model, False)
-    with connection.cursor() as cursor:
-        # Because django-debug-toolbar does not understand Composable queries,
-        # we need to convert the query to a string before executing it.
-        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
-        return cursor
-
-
-def execute_fetchall(sql, model=Award, fetcher=None):
-    """
-    Executes a read only sql query against a database.
-
-    sql     - Can be either a sql string statement or a psycopg2 Composable
-              object (Identifier, Literal, SQL, etc).
-    model   - A Django model that represents a database table germaine to your
-              query.  If one is not supplied, Award will be used since it is
-              fairly central to the database as a whole.
-    fetcher - A function to format fetchall results in a specific way.
-
-    Returns query results in the format dictated by the fetcher or a list of
-    tuples if no fetcher is supplied.
-    """
-    connection = get_connection(model)
-    with connection.cursor() as cursor:
-        # Because django-debug-toolbar does not understand Composable queries,
-        # we need to convert the query to a string before executing it.
-        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
-        if fetcher is not None:
-            return fetcher(cursor)
+    if cursor.rowcount > -1:
         return cursor.fetchall()
+    return None
 
 
-def execute_sql_to_ordered_dictionary(sql, model=Award):
+def named_tuple_fetcher(cursor):
     """
-    Executes a read only sql query against a database.
+    Return all rows from a cursor as a list of named tuples.  Return
+    value will be roughly equivalent to:
 
-    sql   - Can be either a sql string statement or a psycopg2 Composable
-            object (Identifier, Literal, SQL, etc).
-    model - A Django model that represents a database table germaine to your
-            query.  If one is not supplied, Award will be used since it is
-            fairly central to the database as a whole.
+        [
+            Result(id=54360982, parent_id=None),
+            Result(id=54360880, parent_id=54360982)
+        ]
 
-    Returns query results as a list of ordered dictionaries.
     """
-    return execute_fetchall(sql, model, fetchall_to_ordered_dictionary)
+    columns = namedtuple("Result", [col[0] for col in cursor.description])
+    return [columns(*row) for row in cursor.fetchall()]
 
 
-def fetchall_to_ordered_dictionary(cursor):
+def ordered_dictionary_fetcher(cursor):
     """
     Return all rows from a cursor as a list of ordered dictionaries.  Return
     value will be roughly equivalent to:
@@ -244,6 +215,60 @@ def fetchall_to_ordered_dictionary(cursor):
     """
     columns = [col[0] for col in cursor.description]
     return [OrderedDict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def rowcount_fetcher(cursor):
+    """ Return the rowcount returned by the cursor. """
+    return cursor.rowcount
+
+
+def single_value_fetcher(cursor):
+    """ Return the first value in the first row of the cursor. """
+    return cursor.fetchall()[0][0]
+
+
+def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
+    """
+    Executes a sql query against a database.
+
+    sql         - Can be either a sql string statement or a psycopg2 Composable
+                  object (Identifier, Literal, SQL, etc).
+    model       - A Django model that represents a database table germaine to your
+                  query.  If one is not supplied, Award will be used since it is
+                  fairly central to the database as a whole.
+    fetcher     - A function that accepts a live, post-execute cursor and returns
+                  whatever it wants.  This determines the return results of the
+                  function as a whole.
+    read_only   - Supply false here if you intend to perform updates against the
+                  database.
+
+    Returns query results in the format dictated by the fetcher.
+    """
+    connection = get_connection(model, read_only=read_only)
+    with connection.cursor() as cursor:
+        # Because django-debug-toolbar does not understand Composable queries,
+        # we need to convert the query to a string before executing it.
+        cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
+        return fetcher(cursor)
+
+
+def execute_update_sql(sql, model=Award):
+    """
+    Convenience function to execute a sql query against a database that performs
+    some sort of update (INSERT, UPDATE, DELETE, etc).  Returns the number of
+    rows affected.
+    """
+    return execute_sql(sql=sql, model=model, fetcher=rowcount_fetcher, read_only=False)
+
+
+def execute_sql_to_ordered_dictionary(sql, model=Award, read_only=True):
+    """ Convenience function to return execute_sql results as a list of ordered dictionaries. """
+    return execute_sql(sql, model=model, fetcher=ordered_dictionary_fetcher, read_only=read_only)
+
+
+def execute_sql_to_named_tuple(sql, model=Award, read_only=True):
+    """ Convenience function to return execute_sql results as a list of named tuples. """
+    return execute_sql(sql, model=model, fetcher=named_tuple_fetcher, read_only=read_only)
 
 
 def get_connection(model=Award, read_only=True):

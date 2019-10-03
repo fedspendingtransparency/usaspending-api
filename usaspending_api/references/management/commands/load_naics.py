@@ -40,31 +40,33 @@ def populate_naics_fields(ws, naics_year, path):
         try:
             naics_code = int(row[0].value)
             load_single_naics(naics_code, naics_year, naics_desc)
+        # Occasionally you will see more "creative" ways of listing naics. The following tries to account for common
+        # patterns
         except ValueError:
-            if "," in row[0].value:
-                for potential_naics in row[0].value.split(","):
-                    if "-" in potential_naics:
-                        try:
-                            print("range found: {}")
-                            minmax = potential_naics.split("-")
-                            for naics_code in range(int(minmax[0]), int(minmax[1]+1)):
-                                load_single_naics(naics_code, naics_year, naics_desc)
-                        except ValueError:
-                            raise CommandError(
-                                "Unparsable NAICS range value: {0}. Please review file {1}".format(row[0].value, path))
-                    else:
-                        try:
-                            naics_code = int(row[0].value)
-                            load_single_naics(naics_code, naics_year, naics_desc)
-                        except ValueError:
-                            raise CommandError(
-                                "Unparsable NAICS list value: {0}. Please review file {1}".format(row[0].value, path))
+            load_naics_range(row[0].value, naics_year, naics_desc, path)
+
+
+def load_naics_range(naics_range_string, naics_year, naics_desc, path):
+    if "-" in naics_range_string:
+        try:
+            minmax = naics_range_string.split("-")
+            for naics_code in range(int(minmax[0].strip()), int(minmax[1].strip()) + 1):
+                load_single_naics(naics_code, naics_year, naics_desc)
+        except ValueError:
+            raise CommandError(
+                "Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path)
+            )
+    else:
+        raise CommandError("Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path))
 
 
 def load_single_naics(naics_code, naics_year, naics_desc):
-    obj, created = NAICS.objects.get_or_create(
-        pk=naics_code, defaults={"description": naics_desc, "year": naics_year}
-    )
+
+    # crude way of ignoring naics of length 3 and 5
+    if len(str(naics_code)) not in (2, 4, 6):
+        return
+
+    obj, created = NAICS.objects.get_or_create(pk=naics_code, defaults={"description": naics_desc, "year": naics_year})
 
     if not created:
         if int(naics_year) > int(obj.year):

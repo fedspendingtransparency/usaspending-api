@@ -42,7 +42,6 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
             "sub_account_code": "0000",
             "tas_rendering_label": "999-999-000-0000-0000",
         },
-        {"model": TransactionNormalized, "id": -999},
         {
             "model": Award,
             "id": -999,
@@ -50,6 +49,7 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
             "parent_award_piid": "PARENT_LOAD_SUB_PIID_DNE",
             "latest_transaction_id": -999,
         },
+        {"model": TransactionNormalized, "id": -999, "award_id": -999},
     ]
 
     for entry in models_to_mock:
