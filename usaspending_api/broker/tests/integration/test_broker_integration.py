@@ -18,7 +18,7 @@ def test_can_connect_to_broker():
 def test_can_connect_to_broker_by_dblink():
     """Simple 'integration test' that checks the USAspending to Broker dblink works
 
-    It will be skipped if the `broker_server` server is not installed in the USAspending database under test
+    It will be skipped if the `broker_server` server is not created in the USAspending database-under-test
     """
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:

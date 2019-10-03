@@ -45,6 +45,7 @@ before_script:
   # Establish foreign server for dblink to Broker
   - psql --file usaspending_api/database_scripts/extensions/extensions.sql
   - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
+  - cat usaspending_api/database_scripts/servers/broker_server.sql
   - psql --file usaspending_api/database_scripts/broker_server.sql
   - python manage.py migrate
   # Spin up Broker database in a container for ETL integration tests
