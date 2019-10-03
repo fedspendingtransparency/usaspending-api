@@ -16,8 +16,9 @@ addons:
 
 env:
   global:
-  - USASPENDING_DB_USER=postgres
-  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:@localhost:5432/usaspending_api
+  - USASPENDING_DB_USER=usaspending
+  - USASPENDING_DB_PASSWORD=usaspender
+  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@localhost:5432/usaspending_api
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
@@ -40,7 +41,8 @@ install:
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
-  - psql -c "CREATE DATABASE usaspending_api;" -U ${USASPENDING_DB_USER}
+  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD ${USASPENDING_DB_PASSWORD}"
+  - psql -c "CREATE DATABASE usaspending_api;" --username ${USASPENDING_DB_USER}
   - psql -c "CREATE USER readonly;"
   # Establish foreign server for dblink to Broker
   - psql --username ${USASPENDING_DB_USER} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
