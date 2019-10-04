@@ -3,6 +3,7 @@ from django.core.management import call_command
 from datetime import datetime
 from usaspending_api.references.models import PSC
 
+
 @pytest.mark.django_db
 def test_load_psc():
     """
@@ -26,5 +27,5 @@ def test_load_psc():
     assert psc.includes == "Machine guns; Brushes, Machine Gun and Pistol."
     assert psc.excludes == "Turrets, Aircraft."
     assert psc.notes is None
-    assert psc.start_date == datetime.strptime("2011-10-01", '%Y-%m-%d').date()
+    assert psc.start_date == datetime.strptime("2011-10-01", "%Y-%m-%d").date()
     assert psc.end_date is None
