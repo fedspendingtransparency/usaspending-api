@@ -32,16 +32,16 @@ class Command(mixins.ETLMixin, BaseCommand):
         self.full_reload = options["full_reload"]
         logger.info("FULL RELOAD SWITCH: {}".format(self.full_reload))
 
-        try:
-            with Timer("Load subawards"):
+        with Timer("Load subawards"):
+            try:
                 with transaction.atomic():
                     self._perform_load()
-                    t = Timer("Commit transaction")
+                    t = Timer("Commit subaward transaction")
                     t.log_starting_message()
                 t.log_success_message()
-        except Exception:
-            logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
-            raise
+            except Exception:
+                logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
+                raise
 
     def _perform_load(self):
         """ Grab the Broker subaward table and use it to update ours. """

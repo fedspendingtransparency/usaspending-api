@@ -86,7 +86,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             try:
                 with transaction.atomic():
                     self._perform_load()
-                    t = Timer("Commit transaction")
+                    t = Timer("Commit agency transaction")
                     t.log_starting_message()
                 t.log_success_message()
             except Exception:
