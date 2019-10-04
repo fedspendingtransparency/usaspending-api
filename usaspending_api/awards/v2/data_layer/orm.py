@@ -462,12 +462,7 @@ def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id: i
 
 
 def fetch_psc_hierarchy(psc_code: str) -> dict:
-    if psc_code[0].isalpha():
-        codes = [psc_code, psc_code[:2], psc_code[:1]]
-        if psc_code[0] == "A":
-            codes = [psc_code, psc_code[:2], psc_code[:1], psc_code[:3]]
-    else:
-        codes = [psc_code, psc_code[:2]]
+    codes = [psc_code, psc_code[:2], psc_code[:1], psc_code[:3] if psc_code[0] == "A" else None]
     toptier_code = {}
     midtier_code = {}
     subtier_code = {}  # only used for R&D codes which start with "A"
@@ -488,7 +483,7 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
         base_code = {"code": psc.code, "description": psc.description}
     except PSC.DoesNotExist:
         pass
-    if psc_code[0] == "A":  # don't bother looking for 3 digit codes unless they start with "A"
+    if codes[3] is not None:  # don't bother looking for 3 digit codes unless they start with "A"
         try:
             psc_rd = PSC.objects.get(code=codes[3])
             subtier_code = {"code": psc_rd.code, "description": psc_rd.description}
