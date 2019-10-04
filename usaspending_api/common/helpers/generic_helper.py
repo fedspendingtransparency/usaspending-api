@@ -10,6 +10,7 @@ from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.matview_manager import (
+    OVERLAY_VIEWS,
     DEPENDENCY_FILEPATH,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
@@ -20,6 +21,8 @@ from usaspending_api.references.models import Agency
 logger = logging.getLogger(__name__)
 
 TEMP_SQL_FILES = [str(DEFAULT_MATIVEW_DIR / val["sql_filename"]) for val in MATERIALIZED_VIEWS.values()]
+
+VIEW_SQL_FILES = [str(val) for val in OVERLAY_VIEWS]
 
 
 def read_text_file(filepath):
@@ -181,8 +184,10 @@ def generate_matviews():
         cursor.execute(CREATE_READONLY_SQL)
         cursor.execute(get_sql([str(DEPENDENCY_FILEPATH)])[0])
         subprocess.call("python {} --quiet".format(MATVIEW_GENERATOR_FILE), shell=True)
-        for file in get_sql(TEMP_SQL_FILES):
-            cursor.execute(file)
+        for matview_sql_file in get_sql(TEMP_SQL_FILES):
+            cursor.execute(matview_sql_file)
+        for view_sql_file in get_sql(VIEW_SQL_FILES):
+            cursor.execute(view_sql_file)
 
 
 def get_sql(sql_files):
@@ -399,3 +404,8 @@ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
 CREATE ROLE readonly;
 END IF;
 END$$;"""
+
+
+def generate_test_db_connection_string():
+    db = connection.cursor().db.settings_dict
+    return "postgres://{}:{}@{}:5432/{}".format(db["USER"], db["PASSWORD"], db["HOST"], db["NAME"])
