@@ -54,6 +54,8 @@ before_script:
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
   - python manage.py migrate
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname from pg_foreign_server where srvname = 'broker_server'"
+  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname as name, srvowner::regrole as owner, fdwname as wrapper, srvoptions as options from pg_foreign_server join pg_foreign_data_wrapper w on w.oid = srvfdw"
+  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select * from pg_user_mapping"
   # Spin up Broker database in a container for ETL integration tests
   - cd ${BROKER_REPO_FOLDER}
   - cp dataactcore/config_example.yml dataactcore/config.yml
