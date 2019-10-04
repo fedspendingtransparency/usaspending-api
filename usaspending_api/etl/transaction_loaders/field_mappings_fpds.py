@@ -89,7 +89,7 @@ transaction_fpds_columns = {
     "vendor_fax_number": "vendor_fax_number",
     "multiple_or_single_award_i": "multiple_or_single_award_i",
     "multiple_or_single_aw_desc": "multiple_or_single_aw_desc",
-    "referenced_mult_or_single": "referenced_multi_or_single",
+    "referenced_mult_or_single": "referenced_mult_or_single",
     "referenced_mult_or_si_desc": "referenced_mult_or_si_desc",
     "type_of_idc": "type_of_idc",
     "type_of_idc_description": "type_of_idc_description",
