@@ -37,7 +37,7 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
-  - git clone --branch ftr/dev-1526-broker-integ-test-db --single-branch --depth 1 https://github.com/fedspendingtransparency/data-act-broker-backend.git ${BROKER_REPO_FOLDER}
+  - git clone --branch development --single-branch --depth 1 https://github.com/fedspendingtransparency/data-act-broker-backend.git ${BROKER_REPO_FOLDER}
 
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
