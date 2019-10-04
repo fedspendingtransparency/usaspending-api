@@ -62,7 +62,7 @@ class NAICSViewSet(APIView):
                 result = OrderedDict()
                 result["naics"] = naic.code
                 result["naics_description"] = naic.description
-                result["count"] = 0
+                result["count"] = 1
             results.append(result)
         return results
 
@@ -106,7 +106,7 @@ class NAICSViewSet(APIView):
             result = OrderedDict()
             result["naics"] = naic.code
             result["naics_description"] = naic.description
-            result["count"] = 0
+            result["count"] = 1
             tier2_results[naic.code[:4]]["children"].append(result)
 
         tier1_results = {}
@@ -171,7 +171,7 @@ class NAICSViewSet(APIView):
             else:
                 result["naics"] = naic.code
                 result["naics_description"] = naic.description
-                result["count"] = 0
+                result["count"] = 1
             results.append(result)
 
         response_content = OrderedDict({"results": results})
