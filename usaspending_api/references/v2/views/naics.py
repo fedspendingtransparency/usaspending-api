@@ -133,6 +133,7 @@ class NAICSViewSet(APIView):
                 NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=naic.code, text_len=6).count()
             )
             results.append(result)
+        results.sort(key=lambda x: x["naics"])
         response_content = OrderedDict({"results": results})
         return response_content
 
@@ -143,9 +144,9 @@ class NAICSViewSet(APIView):
 
         if not code and not description:
             return self._default_view()
-        elif code:
+        if code:
             naics_filter.update({"code": request_data.get("code")})
-        elif description:
+        if description:
             naics_filter.update({"description__icontains": description})
             return self._filter_search(naics_filter)
 

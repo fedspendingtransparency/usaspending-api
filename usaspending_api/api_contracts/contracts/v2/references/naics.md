@@ -15,18 +15,18 @@ This endpoint returns a list of Tier 1 NAICS codes, their descriptions, and thei
 
 ## GET [/api/v2/references/naics/{id}/]
 
-This endpoint returns a list of Tier 1 NAICS codes, their descriptions, and their children
+This endpoint returns the NAICS specified by "id" and it's immediate children.
 + Request A request with a naics id (application/json)
     + Parameters
-        + `id`: `11` (optional, number) This will return the requested NAICS and it's immediate children. 
+        + `id`: `11` (optional, number) This will return the required NAICS and its immediate children. 
 
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[NAICSObject], fixed-type)
 
-## GET [/api/v2/references/naics/?{filter}]
+## GET [/api/v2/references/naics/{?filter}]
 
-This endpoint returns a list of Tier 1 NAICS codes, their descriptions, and their children
+This endpoint returns a list of NAICS and their parents/grandparents that match the provided filter.
 + Request A request with a contract id (application/json)
     + Parameters
         + `filter`: `filter=forest` (optional, string) This will filter the NAICS by their descriptions to those matching the text.
