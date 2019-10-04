@@ -136,12 +136,11 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
 
 def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
     _find_empty_awards_sql = str(
-        "(SELECT a.id "
+        "SELECT a.id "
         "FROM awards a "
         "LEFT JOIN transaction_normalized t "
         "ON t.award_id = a.id "
         "WHERE t is null {}"
-        ")"
     ).format(" AND a.id IN %s " if award_tuple else "")
 
     _modify_subawards_sql = (
@@ -154,11 +153,16 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
         "WHERE award_id IN ({});".format(_find_empty_awards_sql)
     )
 
-    _prune_empty_awards_sql = str("DELETE FROM awards " "WHERE id IN {} " "CASCADE").format(_find_empty_awards_sql)
+    _delete_parent_award_sql = str(
+        "DELETE FROM parent_award "
+        "WHERE award_id in ({});".format(_find_empty_awards_sql)
+    )
+
+    _prune_empty_awards_sql = str("DELETE FROM awards " "WHERE id IN ({}) ").format(_find_empty_awards_sql)
 
     return execute_database_statement(
-        _modify_subawards_sql + _modify_financial_accounts_sql + _prune_empty_awards_sql,
-        [award_tuple, award_tuple, award_tuple],
+        _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,
+        [award_tuple, award_tuple, award_tuple, award_tuple],
     )
 
 
