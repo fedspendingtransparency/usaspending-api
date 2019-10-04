@@ -460,6 +460,7 @@ def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id: i
 
     return None
 
+
 def fetch_psc_hierarchy(psc_code: str) -> dict:
     if psc_code[0].isalpha():
         codes = [psc_code, psc_code[:2], psc_code[:1]]
@@ -474,35 +475,23 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
     if psc_code[0].isalpha():
         try:
             psc_top = PSC.objects.get(code=codes[2])
-            toptier_code = {
-                "code": psc_top.code,
-                "description": psc_top.description,
-            }
+            toptier_code = {"code": psc_top.code, "description": psc_top.description}
         except PSC.DoesNotExist:
             pass
     try:
         psc_mid = PSC.objects.get(code=codes[1])
-        midtier_code = {
-            "code": psc_mid.code,
-            "description": psc_mid.description,
-        }
+        midtier_code = {"code": psc_mid.code, "description": psc_mid.description}
     except PSC.DoesNotExist:
         pass
     try:
         psc = PSC.objects.get(code=codes[0])
-        base_code = {
-            "code": psc.code,
-            "description": psc.description,
-        }
+        base_code = {"code": psc.code, "description": psc.description}
     except PSC.DoesNotExist:
         pass
     if psc_code[0] == "A":
         try:
             psc_rd = PSC.objects.get(code=codes[3])
-            subtier_code = {
-                "code": psc_rd.code,
-                "description": psc_rd.description,
-            }
+            subtier_code = {"code": psc_rd.code, "description": psc_rd.description}
         except PSC.DoesNotExist:
             pass
 
@@ -510,9 +499,10 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
         "toptier_code": toptier_code,
         "midtier_code": midtier_code,
         "subtier_code": subtier_code,
-        "base_code": base_code
+        "base_code": base_code,
     }
     return results
+
 
 def fetch_naics_hierarchy(naics: str) -> dict:
     codes = [naics, naics[:4], naics[:2]]
@@ -521,31 +511,18 @@ def fetch_naics_hierarchy(naics: str) -> dict:
     base_code = {}
     try:
         toptier = NAICS.objects.get(code=codes[2])
-        toptier_code = {
-            "code": toptier.code,
-            "description": toptier.description
-        }
+        toptier_code = {"code": toptier.code, "description": toptier.description}
     except NAICS.DoesNotExist:
         pass
     try:
         midtier = NAICS.objects.get(code=codes[1])
-        midtier_code = {
-            "code": midtier.code,
-            "description": midtier.description
-        }
+        midtier_code = {"code": midtier.code, "description": midtier.description}
     except NAICS.DoesNotExist:
         pass
     try:
         base = NAICS.objects.get(code=codes[0])
-        base_code = {
-            "code": base.code,
-            "description": base.description
-        }
+        base_code = {"code": base.code, "description": base.description}
     except NAICS.DoesNotExist:
         pass
-    results = {
-        "toptier_code": toptier_code,
-        "midtier_code": midtier_code,
-        "base_code": base_code
-    }
+    results = {"toptier_code": toptier_code, "midtier_code": midtier_code, "base_code": base_code}
     return results
