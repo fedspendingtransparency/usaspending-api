@@ -47,15 +47,6 @@ def test_with_id(client, naics_test_data):
     ]
     assert resp.data["results"] == expected_data
 
-    # mommy.make("references.NAICS", code="11", description="Agriculture, Forestry, Fishing and Hunting")
-    # mommy.make("references.NAICS", code="1111", description="Oilseed and Grain Farming")
-    # mommy.make("references.NAICS", code="111110", description="Soybean Farming")
-    # mommy.make("references.NAICS", code="111120", description="Oilseed (except Soybean) Farming")
-    # mommy.make("references.NAICS", code="1112", description="Vegetable and Melon Farming")
-    # mommy.make("references.NAICS", code="111211", description="Potato Farming")
-    # mommy.make("references.NAICS", code="21", description="Mining, Quarrying, and Oil and Gas Extraction")
-    # mommy.make("references.NAICS", code="22", description="Utilities")
-
     resp = client.get("/api/v2/references/naics/1111/")
     assert resp.status_code == 200
     expected_data = [
@@ -188,6 +179,32 @@ def test_with_filter(client, naics_test_data):
                         ],
                     },
                     {"naics": "1112", "naics_description": "Vegetable and Melon Farming", "count": 1, "children": []},
+                ],
+            }
+        ]
+    }
+    assert json.loads(resp.content.decode("utf-8")) == expected_data
+
+
+@pytest.mark.django_db
+def test_filter_with_code(client, naics_test_data):
+    resp = client.get("/api/v2/references/naics/11/?filter=Oilseed")
+    assert resp.status_code == 200
+    expected_data = {
+        "results": [
+            {
+                "naics": "11",
+                "naics_description": "Agriculture, Forestry, Fishing and Hunting",
+                "count": 3,
+                "children": [
+                    {
+                        "naics": "1111",
+                        "naics_description": "Oilseed and Grain Farming",
+                        "count": 2,
+                        "children": [
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
+                        ],
+                    }
                 ],
             }
         ]
