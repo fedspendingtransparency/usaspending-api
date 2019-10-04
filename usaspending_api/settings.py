@@ -75,6 +75,9 @@ ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(
     BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt"
 )
 CONTRACT_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/ContractSummary_download_readme.txt")
+AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
+    "-nonprod" if DOWNLOAD_ENV != "production" else ""
+)
 
 # Elasticsearch
 ES_HOSTNAME = ""
