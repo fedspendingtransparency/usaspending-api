@@ -8,7 +8,7 @@ WEBSITE_AWARD_BINS = {
     ">500M": {"lower": 500000000, "upper": None},
 }
 
-# Air Force, Army, and Navy are to be reported under DoD.  096 has a ticket to be removed.
+# Air Force, Army, and Navy are to be reported under DoD.
 DOD_CGAC = "097"  # DoD's toptier identifier.
-DOD_SUBSUMED_CGAC = ["017", "021", "057", "096"]  # Toptier identifiers for Air Force, Army, and Navy (ignoring 096).
+DOD_SUBSUMED_CGAC = ["017", "021", "057"]  # Toptier identifiers for Air Force, Army, and Navy.
 DOD_ARMED_FORCES_CGAC = [DOD_CGAC] + DOD_SUBSUMED_CGAC  # The list of ALL agencies reported under DoD.

@@ -11,7 +11,7 @@ federal_account = views.FederalAccountViewSet.as_view()
 federal_accounts = views.FederalAccountsViewSet.as_view()
 
 urlpatterns = [
-    url(r"(?P<pk>[0-9]+)/available_object_classes$", object_class_federal_accounts),
+    url(r"(?P<pk>[0-9]+)/available_object_classes/?$", object_class_federal_accounts),
     url(r"(?P<pk>[0-9]+)/fiscal_year_snapshot/(?P<fy>[0-9]+)/?$", fiscal_year_snapshot_federal_accounts),
     url(r"(?P<pk>[0-9]+)/fiscal_year_snapshot/?$", fiscal_year_snapshot_federal_accounts),
     # url(r'(?P<pk>[0-9]+)/spending_over_time$', spending_over_time_federal_accounts),
