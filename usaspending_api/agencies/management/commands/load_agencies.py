@@ -106,7 +106,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         self.agencies = [
             Agency(
-                row_number=row_number + 1,
+                row_number=row_number,
                 cgac_agency_code=prep(agency["CGAC AGENCY CODE"]),
                 agency_name=prep(agency["AGENCY NAME"]),
                 agency_abbreviation=prep(agency["AGENCY ABBREVIATION"]),
@@ -125,7 +125,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 icon_filename=prep(agency["ICON FILENAME"]),
                 include_toptier_without_subtier=prep(agency["CGAC AGENCY CODE"]) in DOD_ARMED_FORCES_CGAC,
             )
-            for row_number, agency in enumerate(agencies)
+            for row_number, agency in enumerate(agencies, start=1)
         ]
 
         return len(self.agencies)

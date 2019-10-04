@@ -47,7 +47,7 @@ but False for 2004.
 
 ## Armed Forces
 
-There are currently four toptier agencies that get rolled up into 097 Department of Defense for
+There are currently three toptier agencies that get rolled up into 097 Department of Defense for
 reporting purposes:
 
 * 017 Department of the Navy

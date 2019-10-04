@@ -1,5 +1,5 @@
 from psycopg2.sql import Composed, Identifier, SQL
-from typing import List
+from typing import List, Optional
 from usaspending_api.common.etl.etl_writable_object_base import ETLWritableObjectBase
 from usaspending_api.common.etl.introspection import get_columns, get_data_types, get_primary_key_columns
 from usaspending_api.common.etl.primatives import ColumnOverrides, DataTypes
@@ -12,9 +12,9 @@ class ETLTable(ETLWritableObjectBase):
         self,
         table_name: str,
         schema_name: str = "public",
-        key_overrides: List[str] = None,
-        insert_overrides: ColumnOverrides = None,
-        update_overrides: ColumnOverrides = None,
+        key_overrides: Optional[List[str]] = None,
+        insert_overrides: Optional[ColumnOverrides] = None,
+        update_overrides: Optional[ColumnOverrides] = None,
     ) -> None:
         self.table_name = table_name
         self.schema_name = schema_name

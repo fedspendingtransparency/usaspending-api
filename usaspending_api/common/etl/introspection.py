@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from psycopg2.sql import SQL
-from typing import List
+from typing import List, Optional
 from usaspending_api.common.etl.primatives import (
     ColumnDefinition,
     DataTypes,
@@ -30,7 +30,7 @@ def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str,
     return sql_helpers.execute_sql_to_ordered_dictionary(sql)
 
 
-def get_columns(table_name: str, schema_name: str = None, dblink_name: str = None) -> List[str]:
+def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> List[str]:
     """ Grab column names from the table. """
     sql = """
         select    attname as column_name
@@ -42,7 +42,7 @@ def get_columns(table_name: str, schema_name: str = None, dblink_name: str = Non
     return [r["column_name"] for r in rows]
 
 
-def get_data_types(table_name: str, schema_name: str = None, dblink_name: str = None) -> DataTypes:
+def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> DataTypes:
     """ Grab column names and database data types. """
     sql = """
         select    attname as column_name,
@@ -64,7 +64,9 @@ def get_data_types(table_name: str, schema_name: str = None, dblink_name: str = 
     )
 
 
-def get_primary_key_columns(table_name: str, schema_name: str = None, dblink_name: str = None) -> List[str]:
+def get_primary_key_columns(
+    table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None
+) -> List[str]:
     """ Grab column names comprising the primary key. """
     sql = """
         select  a.attname as column_name

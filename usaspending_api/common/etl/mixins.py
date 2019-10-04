@@ -1,6 +1,6 @@
 from pathlib import Path
 from psycopg2.sql import Composed
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 from usaspending_api.common.etl import ETLObjectBase
 from usaspending_api.common.etl.operations import delete_obsolete_rows, insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
@@ -28,12 +28,12 @@ class ETLMixin:
         )
         return rows_affected
 
-    def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: str = None) -> int:
+    def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: Optional[str] = None) -> int:
         """ Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc). """
 
         return self._log_rows_affected(self._execute_function(execute_dml_sql, timer_message, sql=sql))
 
-    def _execute_dml_sql_file(self, file_path: str, timer_message: str = None) -> int:
+    def _execute_dml_sql_file(self, file_path: str, timer_message: Optional[str] = None) -> int:
         """
         Read in a SQL file and execute it.  Assumes the file's path has already been
         determined.  If no message is provided, the file named will be logged (if logging
@@ -42,7 +42,9 @@ class ETLMixin:
         file_path = Path(file_path)
         return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem)
 
-    def _execute_etl_dml_sql_directory_file(self, file_name_no_extension: str, timer_message: str = None) -> int:
+    def _execute_etl_dml_sql_directory_file(
+        self, file_name_no_extension: str, timer_message: Optional[str] = None
+    ) -> int:
         """
         Read in a SQL file from the directory pointed to by etl_dml_sql_directory and
         execute it.  If no message is provided, the file named will be logged (if logging
@@ -56,7 +58,7 @@ class ETLMixin:
         return self._execute_dml_sql_file(Path(file_path), timer_message)
 
     @staticmethod
-    def _execute_function(function: Callable, timer_message: str = None, *args: Any, **kwargs: Any) -> Any:
+    def _execute_function(function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any) -> Any:
         """
         Execute a function and returns its results.  Times the execution if there's a
         timer_message.  Logs the result if there's a log_message.
@@ -66,7 +68,7 @@ class ETLMixin:
             return function(*args, **kwargs)
 
     def _execute_function_and_log(
-        self, function: Callable, timer_message: str = None, *args: Any, **kwargs: Any
+        self, function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> Any:
         """ Same as _execute_function but logs rows affected much like a DML SQL statement. """
 

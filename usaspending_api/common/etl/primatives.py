@@ -6,7 +6,7 @@ of this module.
 
 from collections import namedtuple
 from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
-from typing import List, MutableMapping, Union
+from typing import List, MutableMapping, Optional, Union
 from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 
@@ -16,7 +16,7 @@ DataTypes = MutableMapping[str, ColumnDefinition]  # e.g. {"my_column": ("my_col
 KeyColumns = List[ColumnDefinition]  # e.g. [("my_column", "numeric(23, 2)", True)]
 
 
-def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: str = None) -> Composed:
+def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: Optional[str] = None) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     columns cast to their appropriate data type.
@@ -54,7 +54,9 @@ def make_change_detector_conditional(columns: List[str], left_alias: str, right_
     return SQL(" or ").join(composed_conditionals)
 
 
-def make_column_list(columns: List[str], alias: str = None, overrides: ColumnOverrides = None) -> Composed:
+def make_column_list(
+    columns: List[str], alias: Optional[str] = None, overrides: Optional[ColumnOverrides] = None
+) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
     columns.
@@ -78,7 +80,7 @@ def make_column_list(columns: List[str], alias: str = None, overrides: ColumnOve
     return SQL(", ").join(composed_columns)
 
 
-def make_column_setter_list(columns: List[str], alias: str, overrides: ColumnOverrides = None) -> Composed:
+def make_column_setter_list(columns: List[str], alias: str, overrides: Optional[ColumnOverrides] = None) -> Composed:
     """
     Turn a list of columns in a SQL safe string containing a comma separated list of
     column setters for an update statement.
@@ -105,7 +107,9 @@ def make_column_setter_list(columns: List[str], alias: str, overrides: ColumnOve
     return SQL(", ").join(composed_setters)
 
 
-def make_composed_qualified_table_name(table_name: str, schema_name: str = None, alias: str = None) -> Composed:
+def make_composed_qualified_table_name(
+    table_name: str, schema_name: Optional[str] = None, alias: Optional[str] = None
+) -> Composed:
     """
     Turns table name and optional schema name into a Composed, qualified table name
     with optional alias suitable for insertion in Composable queries.

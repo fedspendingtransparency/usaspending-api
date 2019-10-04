@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABCMeta
 from django.utils.functional import cached_property
-from typing import List
+from typing import List, Optional
 from usaspending_api.common.etl.etl_object_base import ETLObjectBase
 from usaspending_api.common.etl.primatives import ColumnOverrides, DataTypes, KeyColumns
 
@@ -8,9 +8,9 @@ from usaspending_api.common.etl.primatives import ColumnOverrides, DataTypes, Ke
 class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):
     def __init__(
         self,
-        key_overrides: List[str] = None,
-        insert_overrides: ColumnOverrides = None,
-        update_overrides: ColumnOverrides = None,
+        key_overrides: Optional[List[str]] = None,
+        insert_overrides: Optional[ColumnOverrides] = None,
+        update_overrides: Optional[ColumnOverrides] = None,
     ):
         self._key_overrides = key_overrides or []
         self._insert_overrides = insert_overrides or {}
