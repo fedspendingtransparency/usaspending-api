@@ -470,9 +470,9 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
         codes = [psc_code, psc_code[:2]]
     toptier_code = {}
     midtier_code = {}
-    subtier_code = {}
+    subtier_code = {}  # only used for R&D codes which start with "A"
     base_code = {}
-    if psc_code[0].isalpha():
+    if psc_code[0].isalpha():  # we only want to look for the toptier code for services, which start with letters
         try:
             psc_top = PSC.objects.get(code=codes[2])
             toptier_code = {"code": psc_top.code, "description": psc_top.description}
@@ -488,7 +488,7 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
         base_code = {"code": psc.code, "description": psc.description}
     except PSC.DoesNotExist:
         pass
-    if psc_code[0] == "A":
+    if psc_code[0] == "A":  # don't bother looking for 3 digit codes unless they start with "A"
         try:
             psc_rd = PSC.objects.get(code=codes[3])
             subtier_code = {"code": psc_rd.code, "description": psc_rd.description}
