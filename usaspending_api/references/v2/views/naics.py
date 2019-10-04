@@ -98,12 +98,14 @@ class NAICSViewSet(APIView):
             )
             result["children"] = []
             tier2_results[naic.code] = result
+
         for naic in tier3_naics:
             result = OrderedDict()
             result["naics"] = naic.code
             result["naics_description"] = naic.description
             result["count"] = 0
             tier2_results[naic.code[:4]]["children"].append(result)
+
         tier1_results = {}
         for naic in tier1_naics:
             result = OrderedDict()
