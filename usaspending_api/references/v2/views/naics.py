@@ -67,28 +67,31 @@ class NAICSViewSet(APIView):
         return results
 
     def _filter_search(self, naics_filter: dict) -> dict:
-        tier1_codes = set([])
-        tier2_codes = set([])
-        tier3_codes = set([])
-
-        tier3_naics = NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter, text_len=6)
+        if naics_filter.get("code"):
+            naics_filter["code__startswith"] = naics_filter["code"]
+            naics_filter.pop("code")
+        tier1_codes = set()
+        tier2_codes = set()
+        tier3_codes = set()
+        naics = list(NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter))
+        tier3_naics = [naic for naic in naics if len(naic.code) == 6]
+        tier2_naics = [naic for naic in naics if len(naic.code) == 4]
+        tier1_naics = [naic for naic in naics if len(naic.code) == 2]
         for naic in tier3_naics:
             tier3_codes.add(naic.code)
             tier2_codes.add(naic.code[:4])
             tier1_codes.add(naic.code[:2])
-        tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter, text_len=4)
 
         for naic in tier2_naics:
             tier2_codes.add(naic.code)
             tier1_codes.add(naic.code[:2])
-        extra_tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier2_codes, text_len=4)
-        tier1_naics = NAICS.objects.annotate(text_len=Length("code")).filter(text_len=2, code__in=tier1_codes)
 
-        tier2 = set(list(tier2_naics))
-        ex2 = list(extra_tier2_naics)
-        for naic in ex2:
-            tier2.add(naic)
+        extra_tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier2_codes, text_len=4)
+        extra_tier1_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier1_codes, text_len=2)
+        tier2 = set(list(tier2_naics)) | set(list(extra_tier2_naics))
+        tier1 = set(list(tier1_naics)) | set(list(extra_tier1_naics))
         tier2_results = {}
+
         for naic in tier2:
             result = OrderedDict()
             result["naics"] = naic.code
@@ -107,7 +110,7 @@ class NAICSViewSet(APIView):
             tier2_results[naic.code[:4]]["children"].append(result)
 
         tier1_results = {}
-        for naic in tier1_naics:
+        for naic in tier1:
             result = OrderedDict()
             result["naics"] = naic.code
             result["naics_description"] = naic.description
