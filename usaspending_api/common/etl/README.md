@@ -14,6 +14,11 @@ generation.
 - ETLTable - Represents a table in the database.  Can be a local permanent table, a local
 temporary table, or a dblinked table.  Really just abstracts away much of the database
 introspection bits and encapsulates table properties to reduce function call interfaces.
+- ETLTemporaryTable - Same as ETLTable, but designed to work with temporary tables.
+- ETLDBLinkTable - An ETLTable that lives on another server accessible via a dblink
+connection.  Read only.
+- ETLQuery - Treats a query like a table.  Read only.
+- ETLQueryFile - Exactly the same as ETLQuery except reads the query from a file.
 
 ## Operations
 
@@ -64,10 +69,6 @@ The current implementation is a bit simplistic.  It handles only columns that ex
 both tables and requires a primary key in the destination table.  Future implementations
 will want to handle:
 
-- user defined keys for when we want to deal with natural/business keys instead of
-  just primary keys
 - column mappings for situations where source and destination have differing columns
-- user supplied column values/functions for manually updated columns (for example,
-  updated_date or updated_by)
-- updating from a query instead of requiring a table
-- better generalization - operations are too specific - I had grand plans but ran out of time
+- ETLColumn... need one instead of the current ColumnDefinition named tuple
+- and so much more... there's so much we can do with this

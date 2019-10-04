@@ -44,21 +44,21 @@ def test_happy_path(transactional_db):
     """
 
     # Confirm everything is empty.
-    assert CGAC.objects.all().count() == 0
-    assert FREC.objects.all().count() == 0
-    assert SubtierAgency.objects.all().count() == 0
-    assert ToptierAgency.objects.all().count() == 0
-    assert Agency.objects.all().count() == 0
+    assert CGAC.objects.count() == 0
+    assert FREC.objects.count() == 0
+    assert SubtierAgency.objects.count() == 0
+    assert ToptierAgency.objects.count() == 0
+    assert Agency.objects.count() == 0
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
 
     # Confirm nothing is empty.
-    assert CGAC.objects.all().count() > 0
-    assert FREC.objects.all().count() > 0
-    assert SubtierAgency.objects.all().count() > 0
-    assert ToptierAgency.objects.all().count() > 0
-    assert Agency.objects.all().count() > 0
+    assert CGAC.objects.count() > 0
+    assert FREC.objects.count() > 0
+    assert SubtierAgency.objects.count() > 0
+    assert ToptierAgency.objects.count() > 0
+    assert Agency.objects.count() > 0
 
 
 @pytest.mark.django_db
@@ -279,18 +279,18 @@ def test_exceeding_max_changes(disable_vacuuming, monkeypatch):
         call_command("load_agencies", AGENCY_FILE)
 
     # Confirm everything is still empty.
-    assert CGAC.objects.all().count() == 0
-    assert FREC.objects.all().count() == 0
-    assert SubtierAgency.objects.all().count() == 0
-    assert ToptierAgency.objects.all().count() == 0
-    assert Agency.objects.all().count() == 0
+    assert CGAC.objects.count() == 0
+    assert FREC.objects.count() == 0
+    assert SubtierAgency.objects.count() == 0
+    assert ToptierAgency.objects.count() == 0
+    assert Agency.objects.count() == 0
 
     # Running with force flag should succeed.
     call_command("load_agencies", "--force", AGENCY_FILE)
 
     # Confirm nothing is empty.
-    assert CGAC.objects.all().count() > 0
-    assert FREC.objects.all().count() > 0
-    assert SubtierAgency.objects.all().count() > 0
-    assert ToptierAgency.objects.all().count() > 0
-    assert Agency.objects.all().count() > 0
+    assert CGAC.objects.count() > 0
+    assert FREC.objects.count() > 0
+    assert SubtierAgency.objects.count() > 0
+    assert ToptierAgency.objects.count() > 0
+    assert Agency.objects.count() > 0
