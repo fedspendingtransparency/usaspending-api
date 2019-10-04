@@ -170,9 +170,10 @@ def _configure_database_connection(environment_variable, **additional_options):
     the operating system environment variable that contains the database connection string or DSN
     additional_options are any additional options you want to provide to the connection.
     """
+    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     if additional_options:
-        config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **additional_options}
+        config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options.update(additional_options)}
     return config
 
 
@@ -191,16 +192,17 @@ if os.environ.get("DB_SOURCE"):
         "db_r1": _configure_database_connection("DB_R1"),
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
-else:
-    if not os.environ.get(dj_database_url.DEFAULT_ENV):
-        raise EnvironmentError(
-            "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
-        )
+elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection(
-            dj_database_url.DEFAULT_ENV, options="-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
-        )
+        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
+        "db_r1": _configure_database_connection(dj_database_url.DEFAULT_ENV)
     }
+    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
+else:
+    raise EnvironmentError(
+        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
+    )
+
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
