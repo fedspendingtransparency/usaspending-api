@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='psc',
-            name='code',
-            field=models.CharField(max_length=4),
-        ),
         migrations.AddField(
             model_name='psc',
             name='length',

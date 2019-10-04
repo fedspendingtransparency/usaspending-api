@@ -65,13 +65,13 @@ def load_psc(fullpath, update):
 def check_start_end_dates(psc, start_date, end_date):
     if psc.start_date:
         if start_date:
-            if psc.start_date < start_date:
+            if psc.start_date < start_date.date():
                 psc.start_date = start_date
     else:
         psc.start_date = start_date
     if psc.end_date:
         if end_date:
-            if psc.end_date < end_date:
+            if psc.end_date < end_date.date():
                 psc.end_date = end_date
 
     else:
