@@ -168,7 +168,6 @@ def _configure_database_connection(environment_variable):
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
-    additional_options are any additional options you want to provide to the connection.
     """
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
@@ -179,10 +178,8 @@ def _configure_database_connection(environment_variable):
 # If DB_SOURCE is set, use it as our default database, otherwise use dj_database_url.DEFAULT_ENV
 # (which is "DATABASE_URL" by default).  Generally speaking, DB_SOURCE is used to support server
 # environments that support the API/website whereas DATABASE_URL is used for development and
-# operational environments (Jenkins primarily).  As such, DATABASE_URL receives some additional
-# options.  As a future enhancement, I would like to see all connections use statement_timeout
-# and we ensure it is set correctly in every environment.  If DB_SOURCE is provided, then DB_R1
-# (read replica) must also be provided.
+# operational environments (Jenkins primarily).  If DB_SOURCE is provided, then DB_R1 (read replica)
+# must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
         raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
