@@ -138,7 +138,7 @@ class Command(BaseCommand):
             self.load_fpds_from_date(get_last_load_date("fpds"))
 
         if self.modified_award_ids:
-            logger.info("cleaning orphaned rows")
+            logger.info("cleaning orphaned metadata")
             destroy_orphans()
             logger.info(
                 "updating award values ({} awards touched by transaction modifications)".format(
