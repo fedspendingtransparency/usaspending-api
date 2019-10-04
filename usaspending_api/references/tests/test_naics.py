@@ -81,8 +81,8 @@ def test_with_filter(client, naics_test_data):
                         "naics_description": "Oilseed and Grain Farming",
                         "count": 2,
                         "children": [
-                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 0},
-                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0},
+                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 1},
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
                         ],
                     }
                 ],
