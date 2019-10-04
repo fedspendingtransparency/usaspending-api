@@ -39,45 +39,34 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
   - pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
+  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
   - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
-  - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
-  - psql -c "\du" --username ${USASPENDING_DB_USER} --dbname postgres
   - psql -c "CREATE DATABASE ${USASPENDING_DB_NAME}" --username ${USASPENDING_DB_USER} --dbname postgres
   - psql -c "CREATE USER readonly"
-  - psql -c "\du"
-  - psql -c "\l"
   # Establish foreign server for dblink to Broker
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
   - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
   - python manage.py migrate
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname from pg_foreign_server where srvname = 'broker_server'"
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname as name, srvowner::regrole as owner, fdwname as wrapper, srvoptions as options from pg_foreign_server join pg_foreign_data_wrapper w on w.oid = srvfdw"
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select * from pg_user_mapping"
   # Spin up Broker database in a container for ETL integration tests
   - cd ${BROKER_REPO_FOLDER}
   - cp dataactcore/config_example.yml dataactcore/config.yml
   - cp dataactcore/local_config_example.yml dataactcore/local_config.yml
   - cp dataactcore/local_secrets_example.yml dataactcore/local_secrets.yml
-  - date
   - docker-compose up -d dataact-broker-db dataact-broker-init-db
-  - date
-  - sleep 10  # wait for Postgres to be up
   - cd ${TRAVIS_BUILD_DIR}
-  - pip list
+  - sleep 10  # wait for Elasticsearch and Broker Postgres to be up
 
 script:
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose -c "SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)"
   - flake8
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
-  - pytest -s usaspending_api/broker/tests/integration/test_broker_integration.py
-  #- pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api
-  #- pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term
+  - pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api
+  - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
 after_success:

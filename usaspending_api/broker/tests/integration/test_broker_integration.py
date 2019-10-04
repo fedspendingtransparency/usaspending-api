@@ -21,19 +21,14 @@ def test_can_connect_to_broker_by_dblink():
     It will be skipped if the `broker_server` server is not created in the USAspending database-under-test
     """
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        print("connected with: " + str(get_database_dsn_string()))
         with connection.cursor() as cursor:
             cursor.execute("select srvname from pg_foreign_server where srvname = 'broker_server'")
             results = cursor.fetchall()
-            if results:
-                print(str(results))
-                print(str(results[0][0]))
-                b = results[0][0] == 'broker_server'
-                print(str(b))
-            if not results or not results[0][0] == 'broker_server':
-                print("no results: " + str(results))
-                raise SkipTest("No foreign server named 'broker_server' has been setup on this USAspending database. "
-                               "Skipping the test of integration with that server via dblink")
+            if not results or not results[0][0] == "broker_server":
+                raise SkipTest(
+                    "No foreign server named 'broker_server' has been setup on this USAspending database. "
+                    "Skipping the test of integration with that server via dblink"
+                )
             cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)")
             results = cursor.fetchall()
     assert results is not None
