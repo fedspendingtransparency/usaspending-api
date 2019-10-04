@@ -18,15 +18,16 @@ env:
   global:
   - USASPENDING_DB_USER=usaspending
   - USASPENDING_DB_PASSWORD=usaspender
-  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@localhost:5432/usaspending_api
+  - USASPENDING_DB_NAME=data_store_api
+  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@localhost:5432/${USASPENDING_DB_NAME}
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
   - BROKER_DB_PORT=5435
   - BROKER_DB_USER=admin
   - BROKER_DB_PASSWORD=root
-  - BROKER_DB_DBNAME=data_broker
-  - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_DBNAME}
+  - BROKER_DB_NAME=data_broker
+  - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
 
 before_install:
@@ -42,8 +43,11 @@ before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}'"
-  - psql -c "CREATE DATABASE usaspending_api;" --username ${USASPENDING_DB_USER}
-  - psql -c "CREATE USER readonly;"
+  - psql -c "\du"
+  - psql -c "\du" --username postgres
+  - psql -c "\du" --username ${USASPENDING_DB_USER}
+  - psql -c "CREATE DATABASE ${USASPENDING_DB_NAME}" --username ${USASPENDING_DB_USER}
+  - psql -c "CREATE USER readonly"
   # Establish foreign server for dblink to Broker
   - psql --username ${USASPENDING_DB_USER} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
   - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
