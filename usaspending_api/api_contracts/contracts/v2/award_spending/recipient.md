@@ -22,7 +22,7 @@ This endpoint returns a list of recipients and their amounts.
 + Response 200 (application/json)
     + Attributes
         + `page_metadata` (PageMetadataObject)
-        + `results` (array[RecipientListing])
+        + `results` (array[RecipientListing], fixed-type)
 
 # Data Structures
 
