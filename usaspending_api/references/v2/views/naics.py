@@ -64,6 +64,7 @@ class NAICSViewSet(APIView):
                 result["naics_description"] = naic.description
                 result["count"] = 1
             results.append(result)
+        results.sort(key=lambda x: x["naics"])
         return results
 
     def _filter_search(self, naics_filter: dict) -> dict:
@@ -108,6 +109,7 @@ class NAICSViewSet(APIView):
             result["naics_description"] = naic.description
             result["count"] = 1
             tier2_results[naic.code[:4]]["children"].append(result)
+            tier2_results[naic.code[:4]]["children"].sort(key=lambda x: x["naics"])
 
         tier1_results = {}
         for naic in tier1:
@@ -121,9 +123,11 @@ class NAICSViewSet(APIView):
             tier1_results[naic.code] = result
         for key in tier2_results.keys():
             tier1_results[key[:2]]["children"].append(tier2_results[key])
+            tier1_results[key[:2]]["children"].sort(key=lambda x: x["naics"])
         results = []
         for key in tier1_results.keys():
             results.append(tier1_results[key])
+        results.sort(key=lambda x: x["naics"])
         response_content = OrderedDict({"results": results})
         return response_content
 
