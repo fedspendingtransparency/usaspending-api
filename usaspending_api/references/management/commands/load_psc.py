@@ -51,12 +51,7 @@ def load_psc(fullpath, update):
             psc, created = PSC.objects.get_or_create(code=psc_code)
             psc.description = psc_description
             psc.length = psc_length
-            if psc_start_date:
-                if psc.start_date and psc_start_date.date() >= psc.start_date:
-                    psc.start_date = psc_start_date
-            if psc_end_date:
-                if psc.end_date and psc_end_date.date() >= psc.end_date:
-                    psc.end_date = psc_end_date
+            check_start_end_dates(psc, psc_start_date, psc_end_date)
             psc.full_name = psc_full_name
             psc.excludes = psc_excludes
             psc.notes = psc_notes
@@ -67,6 +62,22 @@ def load_psc(fullpath, update):
             logger.log(20, "Updated PSC codes.")
     except IOError:
         logger.error("Could not open file {}".format(fullpath))
+
+def check_start_end_dates(psc, start_date, end_date):
+    if psc.start_date:
+        if start_date:
+            if psc.start_date < start_date:
+                psc.start_date = start_date
+    else:
+        psc.start_date = start_date
+    if psc.end_date:
+        if end_date:
+            if psc.end_date < end_date:
+                psc.end_date = end_date
+
+    else:
+        psc.end_date = end_date
+
 
 
 def update_lengths():
