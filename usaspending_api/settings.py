@@ -164,7 +164,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(environment_variable, **additional_options):
+def _configure_database_connection(environment_variable):
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
@@ -172,8 +172,7 @@ def _configure_database_connection(environment_variable, **additional_options):
     """
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
-    if additional_options:
-        config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options.update(additional_options)}
+    config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     return config
 
 
@@ -191,17 +190,17 @@ if os.environ.get("DB_SOURCE"):
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
     }
-    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
         "db_r1": _configure_database_connection(dj_database_url.DEFAULT_ENV),
     }
-    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
+
+DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 
 
 # import a second database connection for ETL, connecting to the data broker
