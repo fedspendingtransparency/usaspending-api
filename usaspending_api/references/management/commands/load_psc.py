@@ -2,9 +2,7 @@ from django.core.management.base import BaseCommand
 from usaspending_api.references.models import PSC
 import os
 import logging
-import csv
 from openpyxl import load_workbook
-from datetime import datetime
 
 
 class Command(BaseCommand):
@@ -63,6 +61,7 @@ def load_psc(fullpath, update):
     except IOError:
         logger.error("Could not open file {}".format(fullpath))
 
+
 def check_start_end_dates(psc, start_date, end_date):
     if psc.start_date:
         if start_date:
@@ -77,7 +76,6 @@ def check_start_end_dates(psc, start_date, end_date):
 
     else:
         psc.end_date = end_date
-
 
 
 def update_lengths():
