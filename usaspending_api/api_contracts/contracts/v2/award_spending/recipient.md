@@ -36,8 +36,8 @@ This endpoint returns a list of recipients and their amounts.
 + `previous` (required, string, nullable)
 
 ## RecipientListing (object)
-+ `award_category`: `contracts` (required, string)
-+ `obligated_amount`: 1000000.01 (required, number)
++ `award_category`: `contracts` (required, string, nullable)
++ `obligated_amount`: 1000000.01 (required, string)
 + `recipient` (RecipientObject)
 
         
