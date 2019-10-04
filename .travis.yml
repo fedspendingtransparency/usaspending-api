@@ -2,7 +2,7 @@ language: python
 
 python:
   - '3.5'
-  - '3.7'
+#  - '3.7' # Turning off temporarily to cut down on build traffic
 
 services:
   - postgresql
