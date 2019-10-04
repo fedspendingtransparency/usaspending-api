@@ -98,6 +98,7 @@ class NAICSViewSet(APIView):
             )
             result["children"] = []
             tier2_results[naic.code] = result
+
         for naic in tier3_naics:
             result = OrderedDict()
             result["naics"] = naic.code
