@@ -105,6 +105,7 @@ class NAICSViewSet(APIView):
             result["naics_description"] = naic.description
             result["count"] = 0
             tier2_results[naic.code[:4]]["children"].append(result)
+
         tier1_results = {}
         for naic in tier1_naics:
             result = OrderedDict()
