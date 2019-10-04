@@ -1,6 +1,8 @@
-from model_mommy import mommy
-import pytest
 import json
+import pytest
+
+from model_mommy import mommy
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 @pytest.fixture()
@@ -47,15 +49,6 @@ def test_with_id(client, naics_test_data):
     ]
     assert resp.data["results"] == expected_data
 
-    # mommy.make("references.NAICS", code="11", description="Agriculture, Forestry, Fishing and Hunting")
-    # mommy.make("references.NAICS", code="1111", description="Oilseed and Grain Farming")
-    # mommy.make("references.NAICS", code="111110", description="Soybean Farming")
-    # mommy.make("references.NAICS", code="111120", description="Oilseed (except Soybean) Farming")
-    # mommy.make("references.NAICS", code="1112", description="Vegetable and Melon Farming")
-    # mommy.make("references.NAICS", code="111211", description="Potato Farming")
-    # mommy.make("references.NAICS", code="21", description="Mining, Quarrying, and Oil and Gas Extraction")
-    # mommy.make("references.NAICS", code="22", description="Utilities")
-
     resp = client.get("/api/v2/references/naics/1111/")
     assert resp.status_code == 200
     expected_data = [
@@ -76,10 +69,15 @@ def test_with_id(client, naics_test_data):
     expected_data = [{"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1}]
     assert resp.data["results"] == expected_data
 
+    # Nonexistent id.
     resp = client.get("/api/v2/references/naics/1/")
     assert resp.status_code == 200
     expected_data = []
     assert resp.data["results"] == expected_data
+
+    # Invalid id.
+    resp = client.get("/api/v2/references/naics/a/")
+    assert resp.status_code == 404
 
 
 @pytest.mark.django_db
@@ -139,6 +137,7 @@ def test_with_filter(client, naics_test_data):
     }
     assert json.loads(resp.content.decode("utf-8")) == expected_data
 
+    # A smattering of hits all over the place.
     resp = client.get("/api/v2/references/naics/?filter=farming")
     assert resp.status_code == 200
     expected_data = {
@@ -169,6 +168,7 @@ def test_with_filter(client, naics_test_data):
     }
     assert json.loads(resp.content.decode("utf-8")) == expected_data
 
+    # One Tier 2 with children that don't match + a Tier 2 with children that do.
     resp = client.get("/api/v2/references/naics/?filter=b")
     assert resp.status_code == 200
     expected_data = {
@@ -193,3 +193,42 @@ def test_with_filter(client, naics_test_data):
         ]
     }
     assert json.loads(resp.content.decode("utf-8")) == expected_data
+
+    # Search by code.
+    resp = client.get("/api/v2/references/naics/?filter=12")
+    assert resp.status_code == 200
+    expected_data = {
+        "results": [
+            {
+                "naics": "11",
+                "naics_description": "Agriculture, Forestry, Fishing and Hunting",
+                "count": 3,
+                "children": [
+                    {
+                        "naics": "1111",
+                        "naics_description": "Oilseed and Grain Farming",
+                        "count": 2,
+                        "children": [
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1}
+                        ],
+                    },
+                    {
+                        "naics": "1112",
+                        "naics_description": "Vegetable and Melon Farming",
+                        "count": 1,
+                        "children": [{"naics": "111211", "naics_description": "Potato Farming", "count": 1}],
+                    },
+                ],
+            }
+        ]
+    }
+    assert json.loads(resp.content.decode("utf-8")) == expected_data
+
+    resp = client.get("/api/v2/references/naics/?filter=if+this+matches+anything+id+be+surprised")
+    assert resp.status_code == 200
+    expected_data = {"results": []}
+    assert json.loads(resp.content.decode("utf-8")) == expected_data
+
+    # Invalid filter.
+    with pytest.raises(UnprocessableEntityException):
+        client.get("/api/v2/references/naics/?filter=")
