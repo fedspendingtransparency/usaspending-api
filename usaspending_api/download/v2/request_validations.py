@@ -93,6 +93,7 @@ def validate_idv_request(request_data):
         },
         "limit": parse_limit(request_data),
         "include_data_dictionary": True,
+        "columns": request_data.get("columns", []),
     }
 
 
@@ -116,6 +117,7 @@ def validate_contract_request(request_data):
         "filters": {"award_id": award_id, "award_type_codes": tuple(set(contract_type_mapping))},
         "limit": parse_limit(request_data),
         "include_data_dictionary": True,
+        "columns": request_data.get("columns", []),
     }
 
 
@@ -141,6 +143,7 @@ def validate_assistance_request(request_data):
         "filters": {"award_id": award_id, "award_type_codes": tuple(set(assistance_type_mapping))},
         "limit": parse_limit(request_data),
         "include_data_dictionary": True,
+        "columns": request_data.get("columns", []),
     }
 
 
