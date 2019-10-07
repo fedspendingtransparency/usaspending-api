@@ -542,3 +542,21 @@ award_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
 }
+
+
+def all_broker_columns():
+    retval = []
+    retval.extend(transaction_fpds_columns.keys())
+    retval.extend(transaction_fpds_boolean_columns.keys())
+    retval.extend(transaction_normalized_columns.keys())
+    retval.extend(legal_entity_columns.keys())
+    retval.extend(legal_entity_boolean_columns.keys())
+    retval.extend(recipient_location_columns.keys())
+    retval.extend(place_of_performance_columns.keys())
+
+    # fields from derived_field_functions_fpds. THIS NEEDS TO BE SYNCED MANUALLY
+    retval.append("action_date")
+    retval.append("awarding_sub_tier_agency_c")
+    retval.append("funding_sub_tier_agency_co")
+    retval.append("detached_award_proc_unique")
+    return list(set(retval))

@@ -16,6 +16,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     award_functions,
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
+    all_broker_columns,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import (
     capitalize_if_string,
@@ -141,7 +142,7 @@ def _extract_broker_objects(id_list):
 
     with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            sql = "SELECT * from detached_award_procurement where detached_award_procurement_id in %s"
+            sql = "SELECT {} from detached_award_procurement where detached_award_procurement_id in %s".format(",".join(all_broker_columns()))
             cursor.execute(sql, (tuple(id_list),))
 
             results = cursor.fetchall()
