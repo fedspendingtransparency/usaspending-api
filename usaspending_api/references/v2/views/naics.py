@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models.functions import Length
+from django.db.models import Q
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -22,12 +23,12 @@ class NAICSViewSet(APIView):
 
     def _parse_and_validate_request(self, requested_naics: str, request_data) -> dict:
         naics_filter = request_data.get("filter")
-        data = {"code": requested_naics, "description": naics_filter}
+        data = {"code": requested_naics, "filter": naics_filter}
         models = [
             {"key": "code", "name": "code", "type": "integer", "allow_nulls": True, "optional": True},
             {
-                "key": "description",
-                "name": "description",
+                "key": "filter",
+                "name": "filter",
                 "type": "text",
                 "text_type": "search",
                 "default": None,
@@ -67,13 +68,16 @@ class NAICSViewSet(APIView):
         return results
 
     def _filter_search(self, naics_filter: dict) -> dict:
+        search_filter = Q(description__icontains=naics_filter["description__icontains"])
         if naics_filter.get("code"):
-            naics_filter["code__startswith"] = naics_filter["code"]
-            naics_filter.pop("code")
+            search_filter |= Q(code__startswith=naics_filter["code"])
+        if naics_filter.get("description__icontains").isnumeric():
+            search_filter |= Q(code__icontains=naics_filter["description__icontains"])
         tier1_codes = set()
         tier2_codes = set()
         tier3_codes = set()
-        naics = list(NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter))
+
+        naics = list(NAICS.objects.annotate(text_len=Length("code")).filter(search_filter))
         tier3_naics = [naic for naic in naics if len(naic.code) == 6]
         tier2_naics = [naic for naic in naics if len(naic.code) == 4]
         tier1_naics = [naic for naic in naics if len(naic.code) == 2]
@@ -108,7 +112,7 @@ class NAICSViewSet(APIView):
             result["naics_description"] = naic.description
             result["count"] = 1
             tier2_results[naic.code[:4]]["children"].append(result)
-
+            tier2_results[naic.code[:4]]["children"].sort(key=lambda x: x["naics"])
         tier1_results = {}
         for naic in tier1:
             result = OrderedDict()
@@ -121,9 +125,11 @@ class NAICSViewSet(APIView):
             tier1_results[naic.code] = result
         for key in tier2_results.keys():
             tier1_results[key[:2]]["children"].append(tier2_results[key])
+            tier1_results[key[:2]]["children"].sort(key=lambda x: x["naics"])
         results = []
         for key in tier1_results.keys():
             results.append(tier1_results[key])
+        results.sort(key=lambda x: x["naics"])
         response_content = OrderedDict({"results": results})
         return response_content
 
@@ -145,7 +151,7 @@ class NAICSViewSet(APIView):
     def _business_logic(self, request_data: dict) -> dict:
         naics_filter = {}
         code = request_data.get("code")
-        description = request_data.get("description")
+        description = request_data.get("filter")
 
         if not code and not description:
             return self._default_view()

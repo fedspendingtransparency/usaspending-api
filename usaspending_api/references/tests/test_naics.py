@@ -230,5 +230,5 @@ def test_with_filter(client, naics_test_data):
     assert json.loads(resp.content.decode("utf-8")) == expected_data
 
     # Invalid filter.
-    with pytest.raises(UnprocessableEntityException):
-        client.get("/api/v2/references/naics/?filter=")
+    resp = client.get("/api/v2/references/naics/?filter=")
+    assert resp.status_code == 422
