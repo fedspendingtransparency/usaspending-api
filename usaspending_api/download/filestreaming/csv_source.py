@@ -61,7 +61,7 @@ class CsvSource:
         """Given a list of column names requested, returns the ones available in the source"""
         result = self.human_names
         if requested:
-            result = [header for header in requested if header in self.human_names]
+            result = [header for header in requested if header in self.human_names] or result[:1]
 
         # remove headers that we don't have a query path for
         return [header for header in result if header in self.query_paths]

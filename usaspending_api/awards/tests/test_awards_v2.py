@@ -51,6 +51,8 @@ def awards_and_transactions(db):
     trans_asst3 = {"pk": 4, "award_id": 3}
     trans_asst4 = {"pk": 5, "award_id": 3}
     trans_cont = {"pk": 2, "award_id": 2}
+    trans_cont2 = {"pk": 6, "award_id": 5}
+    trans_cont3 = {"pk": 7, "award_id": 6}
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
@@ -79,6 +81,18 @@ def awards_and_transactions(db):
         website_address="www.website.biz",
         federal_agency="Agency 2",
     )
+    mommy.make("references.PSC", code="10", description="Whatever")
+    mommy.make("references.PSC", code="1005", description="More specific whatever")
+    mommy.make("references.PSC", code="A", description="R&D")
+    mommy.make("references.PSC", code="A1", description="R&D - Steak Sauce")
+    mommy.make("references.PSC", code="A13", description="R&D - Brand specific steak condiments")
+    mommy.make("references.PSC", code="A136", description="R&D - Very specific steak research")
+    mommy.make("references.PSC", code="M", description="Something")
+    mommy.make("references.PSC", code="M1", description="Something More Specific")
+    mommy.make("references.PSC", code="M123", description="Something Most Specific")
+    mommy.make("references.NAICS", code="11", description="Agriculture")
+    mommy.make("references.NAICS", code="1111", description="Soybean & Oilseed Agriculture")
+    mommy.make("references.NAICS", code="111120", description="Soybean Harvesting")
     mommy.make("references.Location", **parent_loc)
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
@@ -106,6 +120,8 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **trans_asst3)
     mommy.make("awards.TransactionNormalized", **trans_asst4)
     mommy.make("awards.TransactionNormalized", **trans_cont)
+    mommy.make("awards.TransactionNormalized", **trans_cont2)
+    mommy.make("awards.TransactionNormalized", **trans_cont3)
     mommy.make("agencies.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
@@ -307,7 +323,7 @@ def awards_and_transactions(db):
         "materials_supplies_descrip": "NO",
         "multi_year_contract_desc": "NO",
         "multiple_or_single_aw_desc": None,
-        "naics": "333911",
+        "naics": "111120",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "number_of_offers_received": None,
         "other_than_full_and_o_desc": None,
@@ -323,7 +339,7 @@ def awards_and_transactions(db):
         "period_of_perf_potential_e": "2003-04-05",
         "price_evaluation_adjustmen": None,
         "product_or_service_co_desc": None,
-        "product_or_service_code": "4730",
+        "product_or_service_code": "1005",
         "program_acronym": None,
         "program_system_or_equipmen": "000",
         "purchase_card_as_paym_desc": "NO",
@@ -347,11 +363,166 @@ def awards_and_transactions(db):
         "officer_2_name": "Stan Burger",
         "officer_2_amount": 1234.00,
     }
+
+    cont_data2 = {
+        "awardee_or_recipient_legal": "John's Pizza",
+        "awardee_or_recipient_uniqu": "456",
+        "clinger_cohen_act_pla_desc": "NO",
+        "commercial_item_acquisitio": "A",
+        "commercial_item_test_desc": "NO",
+        "consolidated_contract_desc": "NOT CONSOLIDATED",
+        "construction_wage_rat_desc": "NO",
+        "cost_or_pricing_data_desc": "NO",
+        "dod_claimant_program_code": "C9E",
+        "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "evaluated_preference_desc": "NO PREFERENCE USED",
+        "extent_competed": "D",
+        "fair_opportunity_limi_desc": None,
+        "fed_biz_opps_description": "YES",
+        "foreign_funding_desc": "NOT APPLICABLE",
+        "idv_type_description": None,
+        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "interagency_contract_desc": "NOT APPLICABLE",
+        "labor_standards_descrip": "NO",
+        "last_modified": "2001-02-03",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_congressional": "90",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_state_code": "NC",
+        "legal_entity_zip5": "12204",
+        "legal_entity_zip_last4": "5312",
+        "major_program": None,
+        "materials_supplies_descrip": "NO",
+        "multi_year_contract_desc": "NO",
+        "multiple_or_single_aw_desc": None,
+        "naics": "111120",
+        "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+        "number_of_offers_received": None,
+        "other_than_full_and_o_desc": None,
+        "pk": 6,
+        "place_of_perf_country_desc": "UNITED STATES",
+        "place_of_perform_city_name": "Charlotte",
+        "place_of_perform_country_c": "USA",
+        "place_of_perform_county_na": "BUNCOMBE",
+        "place_of_performance_congr": "90",
+        "place_of_performance_state": "NC",
+        "place_of_perform_zip_last4": "5312",
+        "place_of_performance_zip5": "12204",
+        "period_of_perf_potential_e": "2003-04-05",
+        "price_evaluation_adjustmen": None,
+        "product_or_service_co_desc": None,
+        "product_or_service_code": "A136",
+        "program_acronym": None,
+        "program_system_or_equipmen": "000",
+        "purchase_card_as_paym_desc": "NO",
+        "referenced_idv_agency_iden": "9700",
+        "referenced_idv_agency_desc": "whatever",
+        "sea_transportation_desc": "NO",
+        "small_business_competitive": False,
+        "solicitation_identifier": None,
+        "solicitation_procedures": "NP",
+        "subcontracting_plan": "B",
+        "transaction": TransactionNormalized.objects.get(pk=6),
+        "type_of_contract_pric_desc": "FIRM FIXED PRICE",
+        "type_of_idc_description": None,
+        "type_set_aside_description": None,
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_unique_ide": "123",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
+    }
+    cont_data3 = {
+        "awardee_or_recipient_legal": "John's Pizza",
+        "awardee_or_recipient_uniqu": "456",
+        "clinger_cohen_act_pla_desc": "NO",
+        "commercial_item_acquisitio": "A",
+        "commercial_item_test_desc": "NO",
+        "consolidated_contract_desc": "NOT CONSOLIDATED",
+        "construction_wage_rat_desc": "NO",
+        "cost_or_pricing_data_desc": "NO",
+        "dod_claimant_program_code": "C9E",
+        "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "evaluated_preference_desc": "NO PREFERENCE USED",
+        "extent_competed": "D",
+        "fair_opportunity_limi_desc": None,
+        "fed_biz_opps_description": "YES",
+        "foreign_funding_desc": "NOT APPLICABLE",
+        "idv_type_description": None,
+        "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
+        "interagency_contract_desc": "NOT APPLICABLE",
+        "labor_standards_descrip": "NO",
+        "last_modified": "2001-02-03",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_city_name": "Charlotte",
+        "legal_entity_congressional": "90",
+        "legal_entity_country_code": "USA",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_name": "BUNCOMBE",
+        "legal_entity_state_code": "NC",
+        "legal_entity_zip5": "12204",
+        "legal_entity_zip_last4": "5312",
+        "major_program": None,
+        "materials_supplies_descrip": "NO",
+        "multi_year_contract_desc": "NO",
+        "multiple_or_single_aw_desc": None,
+        "naics": "111120",
+        "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+        "number_of_offers_received": None,
+        "other_than_full_and_o_desc": None,
+        "pk": 7,
+        "place_of_perf_country_desc": "UNITED STATES",
+        "place_of_perform_city_name": "Charlotte",
+        "place_of_perform_country_c": "USA",
+        "place_of_perform_county_na": "BUNCOMBE",
+        "place_of_performance_congr": "90",
+        "place_of_performance_state": "NC",
+        "place_of_perform_zip_last4": "5312",
+        "place_of_performance_zip5": "12204",
+        "period_of_perf_potential_e": "2003-04-05",
+        "price_evaluation_adjustmen": None,
+        "product_or_service_co_desc": None,
+        "product_or_service_code": "M123",
+        "program_acronym": None,
+        "program_system_or_equipmen": "000",
+        "purchase_card_as_paym_desc": "NO",
+        "referenced_idv_agency_iden": "9700",
+        "referenced_idv_agency_desc": "whatever",
+        "sea_transportation_desc": "NO",
+        "small_business_competitive": False,
+        "solicitation_identifier": None,
+        "solicitation_procedures": "NP",
+        "subcontracting_plan": "B",
+        "transaction": TransactionNormalized.objects.get(pk=7),
+        "type_of_contract_pric_desc": "FIRM FIXED PRICE",
+        "type_of_idc_description": None,
+        "type_set_aside_description": None,
+        "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_unique_ide": "123",
+        "awarding_office_name": "awarding_office",
+        "funding_office_name": "funding_office",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
+    }
     mommy.make("awards.TransactionFABS", **asst_data)
     mommy.make("awards.TransactionFABS", **asst_data2)
     mommy.make("awards.TransactionFABS", **asst_data3)
     mommy.make("awards.TransactionFABS", **asst_data4)
     mommy.make("awards.TransactionFPDS", **cont_data)
+    mommy.make("awards.TransactionFPDS", **cont_data2)
+    mommy.make("awards.TransactionFPDS", **cont_data3)
     award_1_model = {
         "pk": 1,
         "type": "11",
@@ -448,6 +619,60 @@ def awards_and_transactions(db):
         "subaward_count": 0,
         "date_signed": "2004-03-02",
     }
+    award_5_model = {
+        "pk": 5,
+        "type": "A",
+        "type_description": "DEFINITIVE CONTRACT",
+        "category": "contract",
+        "piid": "5678",
+        "parent_award_piid": "1234",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "CONT_AWD_WHATEVER",
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=6),
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "date_signed": "2004-03-02",
+        "fpds_parent_agency_id": "9700",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
+    }
+    award_6_model = {
+        "pk": 6,
+        "type": "A",
+        "type_description": "DEFINITIVE CONTRACT",
+        "category": "contract",
+        "piid": "5678",
+        "parent_award_piid": "1234",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 1000,
+        "base_and_all_options_value": 2000,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "CONT_AWD_WHATEVER2",
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=7),
+        "total_subaward_amount": 12345.00,
+        "subaward_count": 10,
+        "date_signed": "2004-03-02",
+        "fpds_parent_agency_id": "9700",
+        "officer_1_name": "Tom",
+        "officer_1_amount": 10000.00,
+        "officer_2_name": "Stan Burger",
+        "officer_2_amount": 1234.00,
+    }
     parent_award_model = {
         "award_id": 4,
         "generated_unique_award_id": "CONT_IDV_1234_9700",
@@ -468,6 +693,8 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
     mommy.make("awards.Award", **award_4_model)
+    mommy.make("awards.Award", **award_5_model)
+    mommy.make("awards.Award", **award_6_model)
     mommy.make("awards.ParentAward", **parent_award_model)
 
 
@@ -535,6 +762,26 @@ def test_award_mulitple_cfdas(client, awards_and_transactions):
             "cfda_popular_name": "Popular",
         },
     ]
+
+
+def test_award_psc_hierarchy_types(client, awards_and_transactions):
+    resp = client.get("/api/v2/awards/5/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["psc_hierarchy"] == {
+        "toptier_code": {"description": "R&D", "code": "A"},
+        "midtier_code": {"description": "R&D - Steak Sauce", "code": "A1"},
+        "subtier_code": {"description": "R&D - Brand specific steak condiments", "code": "A13"},
+        "base_code": {"description": "R&D - Very specific steak research", "code": "A136"},
+    }
+
+    resp = client.get("/api/v2/awards/6/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["psc_hierarchy"] == {
+        "toptier_code": {"description": "Something", "code": "M"},
+        "midtier_code": {"description": "Something More Specific", "code": "M1"},
+        "subtier_code": {},
+        "base_code": {"description": "Something Most Specific", "code": "M123"},
+    }
 
 
 expected_response_asst = {
@@ -746,7 +993,7 @@ expected_response_cont = {
         "multi_year_contract": None,
         "multi_year_contract_description": "NO",
         "multiple_or_single_award_description": None,
-        "naics": "333911",
+        "naics": "111120",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "number_of_offers_received": None,
         "other_than_full_and_open": None,
@@ -756,7 +1003,7 @@ expected_response_cont = {
         "dod_acquisition_program_description": None,
         "information_technology_commercial_item_category": None,
         "information_technology_commercial_item_category_description": "NOT IT PRODUCTS OR SERVICES",
-        "product_or_service_code": "4730",
+        "product_or_service_code": "1005",
         "product_or_service_description": None,
         "program_acronym": None,
         "purchase_card_as_payment_method": None,
@@ -789,4 +1036,15 @@ expected_response_cont = {
         ]
     },
     "date_signed": "2004-03-02",
+    "naics_hierarchy": {
+        "toptier_code": {"description": "Agriculture", "code": "11"},
+        "midtier_code": {"description": "Soybean & Oilseed Agriculture", "code": "1111"},
+        "base_code": {"description": "Soybean Harvesting", "code": "111120"},
+    },
+    "psc_hierarchy": {
+        "toptier_code": {},
+        "midtier_code": {"description": "Whatever", "code": "10"},
+        "subtier_code": {},
+        "base_code": {"description": "More specific whatever", "code": "1005"},
+    },
 }

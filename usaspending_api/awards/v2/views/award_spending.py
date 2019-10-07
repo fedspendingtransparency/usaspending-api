@@ -58,7 +58,7 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
     Return all award spending by recipient for a given fiscal year and agency id
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/award_spending/recipient.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/award_spending/recipient.md"
     serializer_class = RecipientAwardSpendingSerializer
 
     def get_queryset(self):

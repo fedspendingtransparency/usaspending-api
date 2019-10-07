@@ -148,9 +148,12 @@ class Command(BaseCommand):
             queries.extend([fpds, tn, td])
         # Update Awards
         if update_award_ids:
-            # Adding to AWARD_UPDATE_ID_LIST so the latest_transaction will be recalculated
+            # Removing FK values from awards so constraints don't cause script to fail
+            # Adding to AWARD_UPDATE_ID_LIST so the transaction FKs will be recalculated
             AWARD_UPDATE_ID_LIST.extend(update_award_ids)
-            query_str = "UPDATE awards SET latest_transaction_id = null WHERE id IN ({});"
+            query_str = (
+                "UPDATE awards SET latest_transaction_id = null, earliest_transaction_id = null WHERE id IN ({});"
+            )
             update_awards_query = query_str.format(update_award_str_ids)
             queries.append(update_awards_query)
         if delete_award_ids:

@@ -25,7 +25,7 @@ from usaspending_api.common.helpers.business_categories_helper import get_busine
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import LegalEntity, Cfda
+from usaspending_api.references.models import LegalEntity, Cfda, PSC, NAICS
 
 
 logger = logging.getLogger("console")
@@ -97,6 +97,10 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
+    if transaction["product_or_service_code"]:
+        response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
+    if transaction["naics"]:
+        response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
     response["parent_generated_unique_award_id"] = fetch_parent_award_from_piid_agency(
         award["parent_award_piid"], award["_fpds_parent_agency_id"]
@@ -456,3 +460,65 @@ def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id: i
         return _sum["transaction_obligated_amount__sum"]
 
     return None
+
+
+def fetch_psc_hierarchy(psc_code: str) -> dict:
+    codes = [psc_code, psc_code[:2], psc_code[:1], psc_code[:3] if psc_code[0] == "A" else None]
+    toptier_code = {}
+    midtier_code = {}
+    subtier_code = {}  # only used for R&D codes which start with "A"
+    base_code = {}
+    if psc_code[0].isalpha():  # we only want to look for the toptier code for services, which start with letters
+        try:
+            psc_top = PSC.objects.get(code=codes[2])
+            toptier_code = {"code": psc_top.code, "description": psc_top.description}
+        except PSC.DoesNotExist:
+            pass
+    try:
+        psc_mid = PSC.objects.get(code=codes[1])
+        midtier_code = {"code": psc_mid.code, "description": psc_mid.description}
+    except PSC.DoesNotExist:
+        pass
+    try:
+        psc = PSC.objects.get(code=codes[0])
+        base_code = {"code": psc.code, "description": psc.description}
+    except PSC.DoesNotExist:
+        pass
+    if codes[3] is not None:  # don't bother looking for 3 digit codes unless they start with "A"
+        try:
+            psc_rd = PSC.objects.get(code=codes[3])
+            subtier_code = {"code": psc_rd.code, "description": psc_rd.description}
+        except PSC.DoesNotExist:
+            pass
+
+    results = {
+        "toptier_code": toptier_code,
+        "midtier_code": midtier_code,
+        "subtier_code": subtier_code,
+        "base_code": base_code,
+    }
+    return results
+
+
+def fetch_naics_hierarchy(naics: str) -> dict:
+    codes = [naics, naics[:4], naics[:2]]
+    toptier_code = {}
+    midtier_code = {}
+    base_code = {}
+    try:
+        toptier = NAICS.objects.get(code=codes[2])
+        toptier_code = {"code": toptier.code, "description": toptier.description}
+    except NAICS.DoesNotExist:
+        pass
+    try:
+        midtier = NAICS.objects.get(code=codes[1])
+        midtier_code = {"code": midtier.code, "description": midtier.description}
+    except NAICS.DoesNotExist:
+        pass
+    try:
+        base = NAICS.objects.get(code=codes[0])
+        base_code = {"code": base.code, "description": base.description}
+    except NAICS.DoesNotExist:
+        pass
+    results = {"toptier_code": toptier_code, "midtier_code": midtier_code, "base_code": base_code}
+    return results

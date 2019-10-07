@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0031_delete_cgac'),
+        ('references', '0032_auto_20190926_1308'),
     ]
 
     operations = [
