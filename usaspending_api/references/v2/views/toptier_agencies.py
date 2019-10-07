@@ -6,8 +6,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agencies.models import Agency
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
-from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC, TOTAL_BUDGET_AUTHORITY
 from usaspending_api.submissions.models import SubmissionAttributes
 
 

@@ -6,10 +6,8 @@ from usaspending_api.common.helpers.date_helper import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
-from usaspending_api.agencies.models import Agency
 from usaspending_api.agencies.models import Agency, SubtierAgency, ToptierAgency
-from usaspending_api.awards.models import Award
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
