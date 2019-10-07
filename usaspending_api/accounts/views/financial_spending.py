@@ -1,10 +1,10 @@
 from django.db.models import F, Sum, Case, Value, When
+from usaspending_api.agencies.models import Agency
 from usaspending_api.accounts.serializers import (
     ObjectClassFinancialSpendingSerializer,
     MinorObjectClassFinancialSpendingSerializer,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.views import CachedDetailViewSet

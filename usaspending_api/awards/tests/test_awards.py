@@ -5,8 +5,8 @@ from datetime import date
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.agencies.models import Agency, ToptierAgency, SubtierAgency
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.mark.django_db

@@ -11,10 +11,10 @@ class Subaward(models.Model):
     award = models.ForeignKey("awards.Award", models.CASCADE, related_name="subawards", null=True)
     cfda = models.ForeignKey("references.Cfda", models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(
-        "references.Agency", models.DO_NOTHING, related_name="awarding_subawards", null=True
+        "agencies.Agency", models.DO_NOTHING, related_name="awarding_subawards", null=True
     )
     funding_agency = models.ForeignKey(
-        "references.Agency", models.DO_NOTHING, related_name="funding_subawards", null=True
+        "agencies.Agency", models.DO_NOTHING, related_name="funding_subawards", null=True
     )
 
     subaward_number = models.TextField(db_index=True)

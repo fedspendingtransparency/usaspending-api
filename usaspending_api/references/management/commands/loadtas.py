@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, SkipRowException
 from usaspending_api.references.reference_helpers import (
     insert_federal_accounts,

@@ -9,7 +9,7 @@ def create_agency_data(db):
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
     ttagency1 = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="tta_name",
         cgac_code="100",
         website="http://test.com",
@@ -17,7 +17,7 @@ def create_agency_data(db):
         icon_filename="test",
         justification="test.com/cj",
     )
-    mommy.make("references.Agency", id=1, toptier_agency=ttagency1)
+    mommy.make("agencies.Agency", id=1, toptier_agency=ttagency1)
 
     # create TAS
     tas = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)

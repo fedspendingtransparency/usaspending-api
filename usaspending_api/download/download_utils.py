@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.helpers import write_to_download_log
 from usaspending_api.download.lookups import VALUE_MAPPINGS
-from usaspending_api.references.models import ToptierAgency
 
 
 def create_unique_filename(json_request, request_agency=None):

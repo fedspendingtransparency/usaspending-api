@@ -140,7 +140,7 @@ def test_federal_account_c_defaults_success(client, base_job_data):
 @pytest.mark.django_db
 def test_agency_filter_success(client, base_job_data):
     """ Test the accounts endpoint with a wrong account_level """
-    mommy.make("references.ToptierAgency", toptier_agency_id=-1, cgac_code="-01")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-1, cgac_code="-01")
 
     csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(

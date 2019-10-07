@@ -6,6 +6,7 @@ import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
@@ -15,7 +16,6 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import validate_award_request
 from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
-from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger("console")
 

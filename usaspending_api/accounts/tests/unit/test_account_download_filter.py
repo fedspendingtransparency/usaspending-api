@@ -322,8 +322,8 @@ def test_cgac_agency_filter():
     )
 
     # Create ToptierAgency models
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9999, cgac_code="CGC")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9998, cgac_code="NOT")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-9999, cgac_code="CGC")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-9998, cgac_code="NOT")
 
     # Filter by ToptierAgency (CGAC)
     queryset = account_download_filter(
@@ -356,9 +356,9 @@ def test_frec_agency_filter():
     )
 
     # Create ToptierAgency models
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9999, cgac_code="FREC")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9998, cgac_code="FAKE")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9997, cgac_code="CGC")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-9999, cgac_code="FREC")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-9998, cgac_code="FAKE")
+    mommy.make("agencies.ToptierAgency", toptier_agency_id=-9997, cgac_code="CGC")
 
     # Filter by ToptierAgency (FREC)
     queryset = account_download_filter(

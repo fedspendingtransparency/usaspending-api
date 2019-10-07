@@ -1,6 +1,6 @@
 import logging
 
-from usaspending_api.references.models import Agency
+from usaspending_api.agencies.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 

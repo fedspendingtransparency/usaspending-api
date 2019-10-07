@@ -23,7 +23,7 @@ def award_data(db):
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Things",
         cgac_code="100",
         website="http://test.com",
@@ -31,7 +31,7 @@ def award_data(db):
         icon_filename="test",
     )
     ata2 = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Stuff",
         cgac_code="101",
         website="http://test.com",
@@ -40,16 +40,16 @@ def award_data(db):
     )
 
     # Create Awarding subs
-    asa1 = mommy.make("references.SubtierAgency", name="Bureau of Things")
-    asa2 = mommy.make("references.SubtierAgency", name="Bureau of Stuff")
+    asa1 = mommy.make("agencies.SubtierAgency", name="Bureau of Things")
+    asa2 = mommy.make("agencies.SubtierAgency", name="Bureau of Stuff")
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False)
+    aa1 = mommy.make("agencies.Agency", toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False)
+    aa2 = mommy.make("agencies.Agency", toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False)
 
     # Create Funding Top Agency
     fta = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Money",
         cgac_code="102",
         website="http://test.com",
@@ -58,10 +58,10 @@ def award_data(db):
     )
 
     # Create Funding SUB
-    fsa1 = mommy.make("references.SubtierAgency", name="Bureau of Things")
+    fsa1 = mommy.make("agencies.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
+    mommy.make("agencies.Agency", toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
 
     # Create Federal Account
     mommy.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)

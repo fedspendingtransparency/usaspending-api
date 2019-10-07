@@ -7,8 +7,8 @@ from rest_framework import status
 @pytest.fixture
 def financial_obligations_models():
     fiscal_year = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
-    top_tier_id = mommy.make("references.Agency", id=654, toptier_agency_id=987).toptier_agency_id
-    top_tier = mommy.make("references.ToptierAgency", toptier_agency_id=top_tier_id)
+    top_tier_id = mommy.make("agencies.Agency", id=654, toptier_agency_id=987).toptier_agency_id
+    top_tier = mommy.make("agencies.ToptierAgency", toptier_agency_id=top_tier_id)
     federal_id_awesome = mommy.make(
         "accounts.FederalAccount",
         id=6969,

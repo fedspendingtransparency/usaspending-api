@@ -12,8 +12,8 @@ from usaspending_api.common.api_request_utils import FilterGenerator
 @pytest.fixture
 def mock_data():
     """mock data"""
-    toptier = mommy.make("references.ToptierAgency", toptier_agency_id=11, name="LEXCORP")
-    agency = mommy.make("references.Agency", id=10, toptier_agency=toptier)
+    toptier = mommy.make("agencies.ToptierAgency", toptier_agency_id=11, name="LEXCORP")
+    agency = mommy.make("agencies.Agency", id=10, toptier_agency=toptier)
     mommy.make(
         "awards.Award",
         id=1234,

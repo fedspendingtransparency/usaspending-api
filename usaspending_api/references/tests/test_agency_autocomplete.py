@@ -4,8 +4,8 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.agencies.models import Agency
 from usaspending_api.common.tests.autocomplete import check_autocomplete
-from usaspending_api.references.models import Agency
 
 
 @pytest.fixture

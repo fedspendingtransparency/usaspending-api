@@ -3,9 +3,9 @@ import pytest
 
 from model_mommy import mommy
 from rest_framework import status
-
+from usaspending_api.agencies.models import Agency, ToptierAgency, SubtierAgency
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Location, LegalEntity
 
 
 @pytest.fixture
@@ -46,8 +46,8 @@ def awards_and_transactions(db):
     mommy.make("references.Location", **loc)
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    mommy.make("references.SubtierAgency", subtier_code="def", **subag)
-    mommy.make("references.ToptierAgency", cgac_code="abc", **subag)
+    mommy.make("agencies.SubtierAgency", subtier_code="def", **subag)
+    mommy.make("agencies.ToptierAgency", cgac_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
@@ -79,7 +79,7 @@ def awards_and_transactions(db):
     }
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
-    mommy.make("references.Agency", **ag)
+    mommy.make("agencies.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 

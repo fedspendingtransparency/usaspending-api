@@ -2,9 +2,9 @@ from collections import defaultdict
 from decimal import Decimal
 from django.db import models, connection
 
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -37,7 +37,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     tas_rendering_label = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
     awarding_toptier_agency = models.ForeignKey(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         models.DO_NOTHING,
         null=True,
         related_name="tas_ata",
@@ -49,7 +49,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     # component and agency_id for the FK?)
     agency_id = models.TextField()
     funding_toptier_agency = models.ForeignKey(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         models.DO_NOTHING,
         null=True,
         related_name="tas_aid",

@@ -1,12 +1,12 @@
 from django.db.models import F, Sum
 
-from usaspending_api.accounts.serializers import AgenciesFinancialBalancesSerializer
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.references.models import Agency
+from usaspending_api.accounts.serializers import AgenciesFinancialBalancesSerializer
+from usaspending_api.agencies.models import Agency
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):

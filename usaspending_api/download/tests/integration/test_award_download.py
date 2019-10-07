@@ -26,7 +26,7 @@ def award_data(db):
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Things",
         cgac_code="100",
         website="http://test.com",
@@ -34,7 +34,7 @@ def award_data(db):
         icon_filename="test",
     )
     ata2 = mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Stuff",
         cgac_code="101",
         website="http://test.com",
@@ -43,15 +43,15 @@ def award_data(db):
     )
 
     # Create Awarding subs
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    mommy.make("agencies.SubtierAgency", name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = mommy.make("agencies.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = mommy.make("agencies.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
     mommy.make(
-        "references.ToptierAgency",
+        "agencies.ToptierAgency",
         name="Bureau of Money",
         cgac_code="102",
         website="http://test.com",
@@ -60,10 +60,10 @@ def award_data(db):
     )
 
     # Create Funding SUB
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    mommy.make("agencies.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("agencies.Agency", id=3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make("awards.Award", category="contracts")

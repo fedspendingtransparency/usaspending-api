@@ -74,8 +74,8 @@ def test_txn_total_grouped(client):
 def test_txn_get_or_create():
     """Test TransactionNormalized.get_or_create_transaction method."""
 
-    agency1 = mommy.make("references.Agency")
-    agency2 = mommy.make("references.Agency")
+    agency1 = mommy.make("agencies.Agency")
+    agency2 = mommy.make("agencies.Agency")
     awd1 = mommy.make("awards.Award", awarding_agency=agency1)
     txn1 = mommy.make(
         "awards.TransactionNormalized",
@@ -163,7 +163,7 @@ def test_txn_get_or_create():
 def test_txn_assistance_get_or_create():
     """Test TransactionFABS.get_or_create_2 method."""
 
-    agency1 = mommy.make("references.Agency")
+    agency1 = mommy.make("agencies.Agency")
     awd1 = mommy.make("awards.Award", awarding_agency=agency1)
     txn1 = mommy.make(
         "awards.TransactionNormalized",
@@ -203,7 +203,7 @@ def test_txn_assistance_get_or_create():
 def test_txn_contract_get_or_create():
     """Test TransactionFPDS.get_or_create_2 method."""
 
-    agency1 = mommy.make("references.Agency")
+    agency1 = mommy.make("agencies.Agency")
     awd1 = mommy.make("awards.Award", awarding_agency=agency1)
     txn1 = mommy.make(
         "awards.TransactionNormalized",

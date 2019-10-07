@@ -5,14 +5,15 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.agencies.models import Agency, ToptierAgency
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass,
     SubmissionAttributes,
     TreasuryAppropriationAccount,
 )
-from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency
+from usaspending_api.references.models import GTASTotalObligation
 
 
 ENDPOINT_URL = "/api/v2/spending/"

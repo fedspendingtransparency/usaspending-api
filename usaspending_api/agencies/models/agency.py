@@ -6,8 +6,8 @@ class Agency(models.Model):
     id = models.AutoField(primary_key=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
-    toptier_agency = models.ForeignKey("references.ToptierAgency", models.DO_NOTHING, db_index=True)
-    subtier_agency = models.OneToOneField("references.SubtierAgency", models.DO_NOTHING, null=True, db_index=True)
+    toptier_agency = models.ForeignKey("agencies.ToptierAgency", models.DO_NOTHING, db_index=True)
+    subtier_agency = models.OneToOneField("agencies.SubtierAgency", models.DO_NOTHING, null=True, db_index=True)
     toptier_flag = models.BooleanField(default=False)
     user_selectable = models.BooleanField(default=False)
 

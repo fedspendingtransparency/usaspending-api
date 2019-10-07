@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db import connection
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
+from usaspending_api.agencies.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.matview_manager import (
     DEPENDENCY_FILEPATH,
@@ -15,7 +16,6 @@ from usaspending_api.common.matview_manager import (
     MATVIEW_GENERATOR_FILE,
     DEFAULT_MATIVEW_DIR,
 )
-from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 

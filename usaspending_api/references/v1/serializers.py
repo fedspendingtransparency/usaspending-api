@@ -1,15 +1,6 @@
 from rest_framework import serializers
-from usaspending_api.references.models import (
-    Agency,
-    Cfda,
-    LegalEntity,
-    Location,
-    ObjectClass,
-    RefProgramActivity,
-    SubtierAgency,
-    ToptierAgency,
-    Definition,
-)
+from usaspending_api.agencies.models import Agency, SubtierAgency, ToptierAgency
+from usaspending_api.references.models import Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity, Definition
 from usaspending_api.common.serializers import LimitableSerializer
 
 

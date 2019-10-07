@@ -5,10 +5,10 @@ from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.references.models import ToptierAgency
 
 """
 Account Download Logic

@@ -5,17 +5,18 @@ from copy import copy
 from datetime import datetime, timezone
 from django.db import connections, transaction
 
+from usaspending_api.agencies.models import Agency
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
+from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_assistance_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
-from usaspending_api.references.models import LegalEntity, Agency
+from usaspending_api.references.models import LegalEntity
 
 
 logger = logging.getLogger("console")

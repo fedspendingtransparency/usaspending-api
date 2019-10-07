@@ -17,14 +17,14 @@ from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 # example of a mocked unit test
 def test_check_valid_toptier_agency_valid(monkeypatch):
     agencies = MockSet()
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", agencies)
+    monkeypatch.setattr("usaspending_api.agencies.models.Agency.objects", agencies)
     agencies.add(MockModel(mock_name="toptier agency", id=12345, toptier_flag=True))
     assert check_valid_toptier_agency(12345)
 
 
 def test_check_valid_toptier_agency_invalid(monkeypatch):
     agencies = MockSet()
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", agencies)
+    monkeypatch.setattr("usaspending_api.agencies.models.Agency.objects", agencies)
     agencies.add(MockModel(mock_name="subtier agency", id=54321, toptier_flag=False))
     assert not check_valid_toptier_agency(54321)
 

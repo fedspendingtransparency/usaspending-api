@@ -1,13 +1,12 @@
 from django.db.models import F, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from usaspending_api.agencies.models import Agency
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.models import LegalEntity
-
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
+from usaspending_api.references.models import Cfda, NAICS, PSC, Definition
+from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
-
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 
 

@@ -1,8 +1,8 @@
-from model_mommy import mommy
 from copy import deepcopy
-
+from model_mommy import mommy
+from usaspending_api.agencies.models import Agency, ToptierAgency, SubtierAgency
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Location, LegalEntity
 
 
 def set_up_related_award_objects():
@@ -29,8 +29,8 @@ def set_up_related_award_objects():
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
-    mommy.make("references.SubtierAgency", **subag)
-    mommy.make("references.ToptierAgency", **subag)
+    mommy.make("agencies.SubtierAgency", **subag)
+    mommy.make("agencies.ToptierAgency", **subag)
 
     le = {
         "pk": 1,
@@ -44,7 +44,7 @@ def set_up_related_award_objects():
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_cont)
-    mommy.make("references.Agency", **ag)
+    mommy.make("agencies.Agency", **ag)
     mommy.make("references.LegalEntity", **le)
     cont_data = {
         "pk": 1,

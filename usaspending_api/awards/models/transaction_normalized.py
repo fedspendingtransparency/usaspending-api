@@ -68,13 +68,13 @@ class TransactionNormalized(models.Model):
         help_text="The modification number for this transaction",
     )
     awarding_agency = models.ForeignKey(
-        "references.Agency",
+        "agencies.Agency",
         related_name="%(app_label)s_%(class)s_awarding_agency",
         null=True,
         help_text="The agency which awarded this transaction",
     )
     funding_agency = models.ForeignKey(
-        "references.Agency",
+        "agencies.Agency",
         related_name="%(app_label)s_%(class)s_funding_agency",
         null=True,
         help_text="The agency which is funding this transaction",

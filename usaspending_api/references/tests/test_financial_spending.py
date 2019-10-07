@@ -8,8 +8,8 @@ from rest_framework import status
 def financial_spending_data(db):
     # Create 2 objects that should be returned and one that should not.
     # Create AGENCY AND TopTier AGENCY For FinancialAccountsByProgramActivityObjectClass objects
-    ttagency1 = mommy.make("references.ToptierAgency", name="tta_name", cgac_code="abc")
-    mommy.make("references.Agency", id=1, toptier_agency=ttagency1)
+    ttagency1 = mommy.make("agencies.ToptierAgency", name="tta_name", cgac_code="abc")
+    mommy.make("agencies.Agency", id=1, toptier_agency=ttagency1)
 
     # Object 1
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)

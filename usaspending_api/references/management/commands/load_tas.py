@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.references.reference_helpers import (
     insert_federal_accounts,
     update_federal_accounts,

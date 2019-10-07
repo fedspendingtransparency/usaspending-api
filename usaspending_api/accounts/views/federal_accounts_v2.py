@@ -7,14 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import ToptierAgency
-from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class ObjectClassFederalAccountsViewSet(APIView):

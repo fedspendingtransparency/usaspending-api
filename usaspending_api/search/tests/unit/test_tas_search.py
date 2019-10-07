@@ -20,11 +20,9 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 @pytest.fixture
 def mock_tas_data(db):
 
-    a1 = mommy.make("references.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
-    a2 = mommy.make(
-        "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
-    )
-    mommy.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
+    a1 = mommy.make("agencies.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
+    a2 = mommy.make("agencies.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP")
+    mommy.make("agencies.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
     mommy.make("references.LegalEntity", legal_entity_id=1)
     mommy.make(
         TreasuryAppropriationAccount,

@@ -7,10 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 
+from usaspending_api.agencies.models import Agency
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
-from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
+from usaspending_api.references.models import Location, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import (
     LocationSerializer,
     AgencySerializer,

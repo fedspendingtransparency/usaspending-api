@@ -5,9 +5,9 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.agencies.models import ToptierAgency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.references.models import ToptierAgency
 
 
 class ListMonthlyDownloadsViewSet(APIView):

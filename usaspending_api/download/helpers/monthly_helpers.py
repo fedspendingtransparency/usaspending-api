@@ -4,7 +4,7 @@ import math
 import os
 
 from django.conf import settings
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.agencies.models import ToptierAgency
 
 logger = logging.getLogger("console")
 

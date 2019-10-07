@@ -159,9 +159,9 @@ def mock_agencies(monkeypatch):
     mock_toptier_agency_qs = MockSet()
     mock_subtier_agency_qs = MockSet()
 
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", mock_agency_qs)
-    monkeypatch.setattr("usaspending_api.references.models.ToptierAgency.objects", mock_toptier_agency_qs)
-    monkeypatch.setattr("usaspending_api.references.models.SubtierAgency.objects", mock_subtier_agency_qs)
+    monkeypatch.setattr("usaspending_api.agencies.models.Agency.objects", mock_agency_qs)
+    monkeypatch.setattr("usaspending_api.agencies.models.ToptierAgency.objects", mock_toptier_agency_qs)
+    monkeypatch.setattr("usaspending_api.agencies.models.SubtierAgency.objects", mock_subtier_agency_qs)
 
     mocked_agencies = {
         "agency": mock_agency_qs,

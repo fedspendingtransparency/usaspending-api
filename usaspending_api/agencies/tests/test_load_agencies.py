@@ -6,9 +6,8 @@ from model_mommy import mommy
 from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agencies.management.commands.load_agencies import Command, Agency as AgencyTuple
-from usaspending_api.agencies.models import CGAC, FREC
+from usaspending_api.agencies.models import Agency, CGAC, FREC, SubtierAgency, ToptierAgency
 from usaspending_api.awards.models import Award, Subaward, TransactionFPDS, TransactionNormalized
-from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 
 
 AGENCY_FILE = Path(__file__).resolve().parent / "test_load_agencies.csv"

@@ -4,8 +4,7 @@ from rest_framework.views import APIView
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import CFO_CGACS
-from usaspending_api.references.models import Agency
-from usaspending_api.references.models import SubtierAgency, ToptierAgency
+from usaspending_api.agencies.models import Agency, SubtierAgency, ToptierAgency
 
 
 class DownloadListAgenciesViewSet(APIView):

@@ -5,8 +5,9 @@ import json
 from rest_framework import status
 from model_mommy import mommy
 
+from usaspending_api.agencies.models import Agency, ToptierAgency, SubtierAgency
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Location, LegalEntity
 
 
 @pytest.fixture
@@ -85,8 +86,8 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
-    mommy.make("references.SubtierAgency", subtier_code="def", **sub_agency)
-    mommy.make("references.ToptierAgency", cgac_code="abc", **sub_agency)
+    mommy.make("agencies.SubtierAgency", subtier_code="def", **sub_agency)
+    mommy.make("agencies.ToptierAgency", cgac_code="abc", **sub_agency)
 
     parent_le = {
         "pk": 2,
@@ -105,7 +106,7 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **trans_asst3)
     mommy.make("awards.TransactionNormalized", **trans_asst4)
     mommy.make("awards.TransactionNormalized", **trans_cont)
-    mommy.make("references.Agency", **ag)
+    mommy.make("agencies.Agency", **ag)
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 

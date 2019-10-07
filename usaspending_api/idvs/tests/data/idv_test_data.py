@@ -23,7 +23,7 @@ RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 
 
 def create_idv_test_data():
-    # mommy.make('references.Agency', id=12000)
+    # mommy.make('agencies.Agency', id=12000)
 
     # You'll see a bunch of weird math and such in the code that follows.  The
     # goal is to try to mix values up a bit.  We don't want values to overlap
@@ -42,14 +42,14 @@ def create_idv_test_data():
 
         # Awarding agency
         awarding_toptier_agency = mommy.make(
-            "references.ToptierAgency",
+            "agencies.ToptierAgency",
             toptier_agency_id=8500 + award_id,
             cgac_code=str(award_id).zfill(3),
             name="toptier_awarding_agency_name_%s" % (8500 + award_id),
         )
 
         awarding_agency = mommy.make(
-            "references.Agency",
+            "agencies.Agency",
             id=8000 + award_id,
             toptier_flag=True,
             toptier_agency_id=awarding_toptier_agency.toptier_agency_id,
@@ -57,14 +57,14 @@ def create_idv_test_data():
 
         # Funding agency
         funding_toptier_agency = mommy.make(
-            "references.ToptierAgency",
+            "agencies.ToptierAgency",
             toptier_agency_id=9500 + award_id,
             cgac_code=str(100 + award_id).zfill(3),
             name="toptier_funding_agency_name_%s" % (9500 + award_id),
         )
 
         funding_agency = mommy.make(
-            "references.Agency",
+            "agencies.Agency",
             id=9000 + award_id,
             toptier_flag=True,
             toptier_agency_id=funding_toptier_agency.toptier_agency_id,

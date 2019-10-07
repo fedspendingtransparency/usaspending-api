@@ -1,10 +1,9 @@
 import json
-
 import pytest
+
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.references.models import Agency
+from usaspending_api.agencies.models import Agency
 
 
 @pytest.fixture

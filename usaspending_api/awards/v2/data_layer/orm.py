@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.db.models import Sum
 from typing import Optional
 
+from usaspending_api.agencies.models import Agency, SubtierAgency
 from usaspending_api.awards.models import (
     Award,
     FinancialAccountsByAwards,
@@ -24,7 +25,7 @@ from usaspending_api.common.helpers.business_categories_helper import get_busine
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
+from usaspending_api.references.models import LegalEntity, Cfda
 
 
 logger = logging.getLogger("console")

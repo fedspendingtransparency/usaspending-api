@@ -99,10 +99,10 @@ class Award(DataSourceTrackedModel):
         help_text="The total of the face_value_loan_guarantee from associated transactions",
     )
     awarding_agency = models.ForeignKey(
-        "references.Agency", related_name="+", null=True, help_text="The awarding agency for the award", db_index=True
+        "agencies.Agency", related_name="+", null=True, help_text="The awarding agency for the award", db_index=True
     )
     funding_agency = models.ForeignKey(
-        "references.Agency", related_name="+", null=True, help_text="The funding agency for the award", db_index=True
+        "agencies.Agency", related_name="+", null=True, help_text="The funding agency for the award", db_index=True
     )
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"

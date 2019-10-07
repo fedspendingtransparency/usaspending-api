@@ -10,8 +10,8 @@ from usaspending_api.etl.award_helpers import update_awards, update_contract_awa
 def test_award_update_from_latest_transaction():
     """Test awards fields that should be updated with most recent transaction info."""
 
-    agency1 = mommy.make("references.Agency")
-    agency2 = mommy.make("references.Agency")
+    agency1 = mommy.make("agencies.Agency")
+    agency2 = mommy.make("agencies.Agency")
 
     award = mommy.make(
         "awards.Award",
