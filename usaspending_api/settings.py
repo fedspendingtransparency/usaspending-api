@@ -189,9 +189,7 @@ if os.environ.get("DB_SOURCE"):
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
-    DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)
-    }
+    DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
