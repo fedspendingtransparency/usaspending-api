@@ -27,7 +27,10 @@ def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str,
     sql = SQL(sql).format(table=table)
     if dblink_name is not None:
         sql = wrap_dblink_query(dblink_name, sql, "r", list(data_types), data_types)
-    return sql_helpers.execute_sql_to_ordered_dictionary(sql)
+    # IMPORTANT:  Even though this is a read only operation, since this is being run in support of
+    # a writable operation, we need to run it against the writable connection else we will be
+    # unable to see objects living in our transaction if there is one.
+    return sql_helpers.execute_sql_to_ordered_dictionary(sql, read_only=False)
 
 
 def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> List[str]:
@@ -82,7 +85,10 @@ def get_primary_key_columns(
 def get_query_columns(sql: str) -> List[str]:
     """ Run a NOOP version of the query so we can ascertain its columns. """
     sql = SQL("select * from ({}) as t where false").format(SQL(sql))
-    cursor = sql_helpers.execute_sql(sql, fetcher=sql_helpers.cursor_fetcher)
+    # IMPORTANT:  Even though this is a read only operation, since this is being run in support of
+    # a writable operation, we need to run it against the writable connection else we will be
+    # unable to see objects living in our transaction if there is one.
+    cursor = sql_helpers.execute_sql(sql, fetcher=sql_helpers.cursor_fetcher, read_only=False)
     return [col[0] for col in cursor.description]
 
 
