@@ -19,8 +19,8 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
-# Default timeout for SQL statements in Django. Set to 5 min (in seconds).
-DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS") or 0
+# Default timeout for SQL statements in Django
+DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 CONNECTION_MAX_SECONDS = 10
 
 API_MAX_DATE = "2020-09-30"  # End of FY2020
@@ -169,7 +169,7 @@ def _configure_database_connection(environment_variable):
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
     """
-    default_options = {"options": "-c statement_timeout={0}".format(int(DEFAULT_DB_TIMEOUT_IN_SECONDS) * 1000)}
+    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     return config
