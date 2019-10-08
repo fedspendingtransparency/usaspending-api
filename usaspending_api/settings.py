@@ -19,8 +19,8 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
-# Default timeout for SQL statements in Django. Set to 5 min (in seconds).
-DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS") or 0
+# Default timeout for SQL statements in Django
+DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 CONNECTION_MAX_SECONDS = 10
 
 API_MAX_DATE = "2020-09-30"  # End of FY2020
@@ -176,10 +176,10 @@ def _configure_database_connection(environment_variable):
 
 
 # If DB_SOURCE is set, use it as our default database, otherwise use dj_database_url.DEFAULT_ENV
-# (which is "DATABASE_URL" by default).  Generally speaking, DB_SOURCE is used to support server
-# environments that support the API/website whereas DATABASE_URL is used for development and
-# operational environments (Jenkins primarily).  If DB_SOURCE is provided, then DB_R1 (read replica)
-# must also be provided.
+# (which is "DATABASE_URL" by default). Generally speaking, DB_SOURCE is used to support server
+# environments that support the API/website and docker-compose local setup whereas DATABASE_URL
+# is used for development and operational environments (Jenkins primarily). If DB_SOURCE is provided,
+# then DB_R1 (read replica) must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
         raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
@@ -187,17 +187,15 @@ if os.environ.get("DB_SOURCE"):
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
     }
+    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
-        "db_r1": _configure_database_connection(dj_database_url.DEFAULT_ENV),
+        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)
     }
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
-
-DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 
 
 # import a second database connection for ETL, connecting to the data broker
