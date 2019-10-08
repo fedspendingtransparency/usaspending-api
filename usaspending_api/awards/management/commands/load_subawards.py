@@ -1,10 +1,10 @@
 import logging
-import os
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from psycopg2.sql import Identifier, Literal, SQL
-from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string, get_connection
+from pathlib import Path
+from usaspending_api.common.etl import ETLTable, operations
+from usaspending_api.common.helpers.sql_helpers import execute_update_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
 
 
@@ -12,174 +12,144 @@ logger = logging.getLogger("console")
 
 
 class Command(BaseCommand):
-    help = "Load subawards from Broker into USAspending."
 
-    def __init__(self, *args, **kwargs):
-        self.full_reload = False
-        self.log_sql = False
-        super().__init__(*args, **kwargs)
+    help = "Load subawards from Broker into USAspending."
+    full_reload = False
+    sql_path = Path(__file__).resolve().parent / "load_subawards_sql"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--full-reload",
             action="store_true",
+            default=self.full_reload,
             help="Empties the USAspending subaward and broker_subaward tables before loading.",
-        )
-
-        parser.add_argument(
-            "--sql",
-            action="store_true",
-            help="For debugging.  Log all SQL statements.  More verbose than you might expect.",
         )
 
     def handle(self, *args, **options):
 
-        # Pick out just the last bit of the module name (which should match the
-        # file name minus the extension).
-        module_name = __name__.split(".")[-1]
-        with Timer(module_name):
+        self.full_reload = options["full_reload"]
 
-            self.full_reload = options["full_reload"]
-            self.log_sql = options["sql"]
-
-            if self.full_reload:
-                logger.info("--full-reload flag supplied.  Performing a full reload.")
-                where = ""
-
-            else:
-                max_id, max_created_at, max_updated_at = self._get_maxes()
-
-                if max_id is None and max_created_at is None and max_updated_at is None:
-                    logger.info("USAspending's broker_subaward table is empty.  Promoting to full reload.")
-                    self.full_reload = True
-                    where = ""
-
-                else:
-                    logger.info(
-                        "Performing an incremental load on USAspending's broker_subaward "
-                        "where id > {}, created_at > {}, or "
-                        "updated_at > {}".format(max_id, max_created_at, max_updated_at)
-                    )
-                    where = self._build_where(id=max_id, created_at=max_created_at, updated_at=max_updated_at)
-
-            self._perform_load(where)
-
-    def _execute_sql(self, sql):
-        """
-        Pretty straightforward.  Executes some SQL.
-        """
-        if self.log_sql:
-            logger.info(sql)
-
-        connection = get_connection(read_only=False)
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-            rowcount = cursor.rowcount
-            if rowcount > -1:
-                logger.info("{:,} rows affected".format(rowcount))
-
-    def _execute_sql_file(self, filename, where=None):
-        """
-        Read in a SQL file, perform any injections, execute the results.
-        """
-        filepath = os.path.join(os.path.split(__file__)[0], "load_subawards_sql", filename)
-
-        with open(filepath) as f:
-            sql = f.read()
-
-        if where is not None:
-            sql = sql.format(where=where)
-
-        with Timer(filename):
-            self._execute_sql(sql)
-
-    def _get_maxes(self):
-        """
-        Get some values from the broker_subaward table that we can use to
-        identify new/updated records in Broker.
-        """
-        sql = "select max(id), max(created_at), max(updated_at) from broker_subaward"
-
-        if self.log_sql:
-            logger.info(sql)
-
-        with Timer("Retrieve incremental values from broker_subaward"):
-            connection = get_connection()
-            with connection.cursor() as cursor:
-                cursor.execute(sql)
-                return cursor.fetchall()[0]
-
-    def _perform_load(self, where):
-        """
-        The actual heavy lifting.  Call the SQLs necessary to load subawards.
-        """
-        if not self.full_reload:
-            self._execute_sql_file("010_find_new_awards.sql")
-
-        with transaction.atomic():
-            if self.full_reload:
-                with Timer("delete from broker_subaward"):
-                    self._execute_sql("delete from broker_subaward")
-            self._execute_sql_file("020_import_broker_subawards.sql", where=where)
-
-        self._execute_sql_file("030_frame_out_subawards.sql")
-        self._execute_sql_file("040_enhance_with_awards_data.sql")
-        self._execute_sql_file("050_enhance_with_transaction_data.sql")
-        self._execute_sql_file("060_enhance_with_cfda_data.sql")
-        self._execute_sql_file("070_enhance_with_awarding_agency.sql")
-        self._execute_sql_file("080_enhance_with_funding_agency.sql")
-        self._execute_sql_file("090_create_temp_address_table.sql")
-        self._execute_sql_file("100_enhance_with_pop_county_city.sql")
-        self._execute_sql_file("110_enhance_with_pop_country.sql")
-        self._execute_sql_file("120_enhance_with_recipient_location_county_city.sql")
-        self._execute_sql_file("130_enhance_with_recipient_location_country.sql")
-
-        # For update_award_totals, if we're performing a full reload, update
-        # all awards that have subawards, otherwise, if this is an incremental
-        # update, just update those awards that have may have been affected.
-        if self.full_reload:
-            where = "where award_id is not null"
-        else:
-            where = "where award_id in (select award_id from temp_load_subawards_subaward where award_id is not null)"
-
-        with transaction.atomic():
-            if self.full_reload:
-                with Timer("delete from subaward"):
-                    self._execute_sql("delete from subaward")
-            self._execute_sql_file("140_add_subawards.sql")
-            if self.full_reload:
-                self._execute_sql_file("150_reset_unlinked_award_subaward_fields.sql")
-            self._execute_sql_file("160_update_award_subaward_fields.sql", where=where)
-
-        # We'll do this outside of the transaction since it doesn't hurt
-        # anything to reimport subawards.
-        self._execute_sql_file("170_mark_imported.sql")
-
-        self._execute_sql_file("900_cleanup.sql")
+        with Timer("Load subawards"):
+            try:
+                with transaction.atomic():
+                    self._perform_load()
+                    t = Timer("Committing transaction")
+                    t.log_starting_message()
+                t.log_success_message()
+            except Exception:
+                logger.error("ALL CHANGES WERE ROLLED BACK DUE TO EXCEPTION")
+                raise
 
     @staticmethod
-    def _build_where(**where_columns):
-        """
-        Accepts a keyword arguments that are valid subaward columns names and
-        the value upon which they will be filtered.  Will return a SQL where
-        clause along the lines of:
+    def _execute(message, function, *args, **kwargs):
+        """ Execute an import step. """
 
-            where column1 > value1 or column2 > value2
+        with Timer(message):
+            results = function(*args, **kwargs)
+            if type(results) is int and results > -1:
+                logger.info("{:,} rows affected".format(results))
+            return results
 
-        Uses psycopg Identifier, Literal, and SQL to ensure everything is
-        properly formatted.
-        """
-        wheres = []
-        for column, value in where_columns.items():
-            if value is not None:
-                wheres.append(SQL("{} > {}").format(Identifier(column), Literal(value)))
+    def _execute_sql_file(self, filename):
+        """ Read in a SQL file and execute it. """
 
-        if wheres:
-            # Because our where clause is embedded in a dblink, we need to
-            # wrap it in a literal again to get everything escaped properly.
-            where = SQL("where {}").format(SQL(" or ").join(wheres))
-            where = Literal(convert_composable_query_to_string(where))
-            where = convert_composable_query_to_string(where)
-            return where[1:-1]  # Remove outer quotes
+        filepath = (self.sql_path / filename).with_suffix(".sql")
+        return self._execute(filename, execute_update_sql, sql=filepath.read_text())
 
-        return ""
+    def _perform_load(self):
+        """ Grab the Broker subaward table and use it to update ours. """
+
+        # All of the tables involved in this process.  Yikes.
+        broker_subaward = ETLTable(table_name="broker_subaward", schema_name="public")
+        remote_subaward = ETLTable(table_name="subaward", schema_name="public", dblink_name="broker_server")
+        subaward = ETLTable(table_name="subaward", schema_name="public")
+        temp_broker_subaward = ETLTable(table_name="temp_load_subawards_broker_subaward")
+        temp_new_or_updated = ETLTable(table_name="temp_load_subawards_new_or_updated")
+        temp_subaward = ETLTable(table_name="temp_load_subawards_subaward")
+
+        if self.full_reload:
+            logger.info("--full-reload switch provided.  Emptying subaward tables.")
+            self._execute("Empty broker_subaward table", execute_update_sql, sql="delete from broker_subaward")
+            self._execute("Empty subaward table", execute_update_sql, sql="delete from subaward")
+
+        self._execute(
+            "Copy Broker subaward table",
+            operations.stage_dblink_table,
+            source=remote_subaward,
+            destination=broker_subaward,
+            staging=temp_broker_subaward,
+        )
+
+        # Create a list of new or updated subawards that we can use to filter down
+        # subsequent operations.
+        self._execute(
+            "Identify new or updated rows",
+            operations.identify_new_or_updated,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+            staging=temp_new_or_updated,
+        )
+
+        self._execute(
+            "Delete obsolete broker_subaward rows",
+            operations.delete_obsolete_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
+        self._execute(
+            "Update changed broker_subaward rows",
+            operations.update_changed_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
+        self._execute(
+            "Insert missing broker_subaward rows",
+            operations.insert_missing_rows,
+            source=temp_broker_subaward,
+            destination=broker_subaward,
+        )
+
+        # The Broker subaward table takes up a good bit of space so let's explicitly free
+        # it up before continuing.
+        self._execute(
+            "Drop staging table", execute_update_sql, sql="drop table if exists temp_load_subawards_broker_subaward"
+        )
+
+        self._execute(
+            "Delete obsolete subaward rows",
+            operations.delete_obsolete_rows,
+            source=broker_subaward,
+            destination=subaward,
+        )
+
+        self._execute_sql_file("030_frame_out_subawards")
+        self._execute_sql_file("040_enhance_with_awards_data")
+        self._execute_sql_file("050_enhance_with_transaction_data")
+        self._execute_sql_file("060_enhance_with_cfda_data")
+        self._execute_sql_file("070_enhance_with_awarding_agency")
+        self._execute_sql_file("080_enhance_with_funding_agency")
+        self._execute_sql_file("090_create_temp_address_table")
+        self._execute_sql_file("100_enhance_with_pop_county_city")
+        self._execute_sql_file("110_enhance_with_pop_country")
+        self._execute_sql_file("120_enhance_with_recipient_location_county_city")
+        self._execute_sql_file("130_enhance_with_recipient_location_country")
+
+        self._execute(
+            "Update changed subaward rows", operations.update_changed_rows, source=temp_subaward, destination=subaward
+        )
+        self._execute(
+            "Insert missing subaward rows", operations.insert_missing_rows, source=temp_subaward, destination=subaward
+        )
+
+        self._execute_sql_file("140_link_awards")
+        self._execute_sql_file("150_update_awards")
+
+        # Clean up the remaining temp tables.
+        self._execute(
+            "Drop new or updated temp table",
+            execute_update_sql,
+            sql="drop table if exists temp_load_subawards_new_or_updated",
+        )
+        self._execute(
+            "Drop subaward temp table", execute_update_sql, sql="drop table if exists temp_load_subawards_subaward"
+        )

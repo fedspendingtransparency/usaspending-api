@@ -22,7 +22,7 @@ class ObjectClassFederalAccountsViewSet(APIView):
     Returns financial spending data by object class.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/available_object_classes.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/available_object_classes.md"
 
     @cache_response()
     def get(self, request, pk, format=None):
