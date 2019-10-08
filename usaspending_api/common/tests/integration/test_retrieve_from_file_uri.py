@@ -34,14 +34,12 @@ def test_retrieve_from_http():
         assert len(c) > 0
 
 
+@pytest.mark.skip
 def test_retrieve_from_s3():
     # Can't currently think of a good way to test this.  We'd need a public,
     # always available S3 file.
-
-    # Can test the not implemented bit, though.
-    with pytest.raises(NotImplementedError):
-        with RetrieveFileFromUri("s3://whatever/file.txt").get_file_object(True):
-            pass
+    with RetrieveFileFromUri("s3://whatever/file.txt").get_file_object(True):
+        pass
 
 
 def test_file_copy(temp_file_path):

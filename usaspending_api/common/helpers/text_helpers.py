@@ -2,6 +2,9 @@ import re
 import unicodedata
 
 
+STANDARDIZE_WHITESPACE = re.compile(r"\s+")
+
+
 def slugify_text_for_file_names(text, default=None, max_length=None):
     """
     This function is inspired by django.utils.text.slugify.  The goal here is
@@ -38,3 +41,19 @@ def slugify_text_for_file_names(text, default=None, max_length=None):
         return value[:max_length] if max_length else value
 
     return default
+
+
+def standardize_whitespace(string):
+    """
+    Standardize whitespace by replacing the various kinds of whitespace with a standard space,
+    collapsing down multiple whitespaces, and removing leading and trailing whitespace.
+    """
+    return STANDARDIZE_WHITESPACE.sub(" ", string).strip() if string else string
+
+
+def standardize_nullable_whitespace(string):
+    """
+    Same as standardize_whitespace but for cases where we store missing strings as nulls instead
+    of blanks.
+    """
+    return standardize_whitespace(string) or None
