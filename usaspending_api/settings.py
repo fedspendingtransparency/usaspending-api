@@ -169,17 +169,17 @@ def _configure_database_connection(environment_variable):
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
     """
-    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
+    default_options = {"options": "-c statement_timeout={0}".format(int(DEFAULT_DB_TIMEOUT_IN_SECONDS) * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     return config
 
 
 # If DB_SOURCE is set, use it as our default database, otherwise use dj_database_url.DEFAULT_ENV
-# (which is "DATABASE_URL" by default).  Generally speaking, DB_SOURCE is used to support server
-# environments that support the API/website whereas DATABASE_URL is used for development and
-# operational environments (Jenkins primarily).  If DB_SOURCE is provided, then DB_R1 (read replica)
-# must also be provided.
+# (which is "DATABASE_URL" by default). Generally speaking, DB_SOURCE is used to support server
+# environments that support the API/website and docker-compose local setup whereas DATABASE_URL
+# is used for development and operational environments (Jenkins primarily). If DB_SOURCE is provided,
+# then DB_R1 (read replica) must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
         raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
@@ -187,17 +187,15 @@ if os.environ.get("DB_SOURCE"):
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
     }
+    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
-        "db_r1": _configure_database_connection(dj_database_url.DEFAULT_ENV),
+        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)
     }
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
-
-DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 
 
 # import a second database connection for ETL, connecting to the data broker
