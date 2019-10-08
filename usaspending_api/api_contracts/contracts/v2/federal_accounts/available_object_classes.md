@@ -1,18 +1,21 @@
-## Available Object Classes
-**Route:** `v2/federal_accounts/[federal_account_id]/available_object_classes`
+FORMAT: 1A
+HOST: https://api.usaspending.gov
 
-**Method:** `GET`
+# Available Object Classes [v2/federal_accounts/{federal_account_id}/available_object_classes]
+
+## GET
 
 This route returns object classes that the specified federal account has allotted money to.
 
-**Query Parameters Description:**
++ Parameters
+    + `federal_account_id`: 5 (required, number)
+        Database id for a federal account.
 
-* `federal_account_id` - **REQUIRED** - Database id for a federal account.
-
-### Response (JSON) 
-
-```
-{
++ Response 200 (application/json)
+    + Attributes (object)
+        + `results` (required, array[MajorObjectClass], fixed-type)
+    + Body
+        {
     "results": [
         {
             "id": "10",
@@ -53,17 +56,17 @@ This route returns object classes that the specified federal account has allotte
                     "name": "Grants, subsidies, and contributions"
                 }
             ]
-        },....
+        }
     ]
 }
 
-```
+# Data Structures
 
-### Errors
-Possible HTTP Status Codes:
-* 500 : All other errors
-      ```
-      {
-        "detail": "Sample error message"
-      }
-      ```
+## MajorObjectClass (object)
++ `id` (required, number)
++ `name` (required, string)
++ `minor_object_class` (required, array[MinorObjectClass], fixed-type)
+
+## MinorObjectClass (object)
++ `id` (required, number)
++ `name` (required, string)

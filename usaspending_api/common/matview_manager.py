@@ -11,7 +11,10 @@ DEFAULT_MATIVEW_DIR = Path(settings.BASE_DIR).resolve().parent / "matviews"
 DEPENDENCY_FILEPATH = APP_DIR / "database_scripts/matviews/functions_and_enums.sql"
 JSON_DIR = APP_DIR / "database_scripts/matview_sql_generator"
 MATVIEW_GENERATOR_FILE = APP_DIR / "database_scripts/matview_generator/matview_sql_generator.py"
-OVERLAY_VIEWS = [APP_DIR / "database_scripts/matviews/vw_award_search.sql"]
+OVERLAY_VIEWS = [
+    APP_DIR / "database_scripts/matviews/vw_award_search.sql",
+    APP_DIR / "database_scripts/etl/transaction_delta_view.sql",
+]
 DROP_OLD_MATVIEWS = APP_DIR / "database_scripts/matviews/drop_old_matviews.sql"
 MATERIALIZED_VIEWS = OrderedDict(
     [
