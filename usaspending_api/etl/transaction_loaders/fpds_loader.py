@@ -3,15 +3,15 @@ import logging
 from os import environ
 
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
-    transaction_fpds_columns,
-    transaction_normalized_columns,
+    transaction_fpds_nonboolean_columns,
+    transaction_normalized_nonboolean_columns,
     transaction_normalized_functions,
-    legal_entity_columns,
+    legal_entity_nonboolean_columns,
     legal_entity_boolean_columns,
     legal_entity_functions,
-    recipient_location_columns,
+    recipient_location_nonboolean_columns,
     recipient_location_functions,
-    place_of_performance_columns,
+    place_of_performance_nonboolean_columns,
     place_of_performance_functions,
     award_functions,
     transaction_fpds_boolean_columns,
@@ -173,26 +173,26 @@ def _transform_objects(broker_objects):
         connected_objects = {}
 
         connected_objects["recipient_location"] = _create_load_object(
-            broker_object, recipient_location_columns, None, recipient_location_functions
+            broker_object, recipient_location_nonboolean_columns, None, recipient_location_functions
         )
 
         connected_objects["legal_entity"] = _create_load_object(
-            broker_object, legal_entity_columns, legal_entity_boolean_columns, legal_entity_functions
+            broker_object, legal_entity_nonboolean_columns, legal_entity_boolean_columns, legal_entity_functions
         )
 
         connected_objects["place_of_performance_location"] = _create_load_object(
-            broker_object, place_of_performance_columns, None, place_of_performance_functions
+            broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
         )
 
         # award. NOT used if a matching award is found later
         connected_objects["award"] = _create_load_object(broker_object, None, None, award_functions)
 
         connected_objects["transaction_normalized"] = _create_load_object(
-            broker_object, transaction_normalized_columns, None, transaction_normalized_functions
+            broker_object, transaction_normalized_nonboolean_columns, None, transaction_normalized_functions
         )
 
         connected_objects["transaction_fpds"] = _create_load_object(
-            broker_object, transaction_fpds_columns, transaction_fpds_boolean_columns, transaction_fpds_functions
+            broker_object, transaction_fpds_nonboolean_columns, transaction_fpds_boolean_columns, transaction_fpds_functions
         )
 
         retval.append(connected_objects)

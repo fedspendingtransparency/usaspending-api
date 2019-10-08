@@ -7,13 +7,13 @@ from usaspending_api.etl.transaction_loaders.fpds_loader import (
     _load_transactions,
 )
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
-    transaction_fpds_columns,
-    transaction_normalized_columns,
-    legal_entity_columns,
+    transaction_fpds_nonboolean_columns,
+    transaction_normalized_nonboolean_columns,
+    legal_entity_nonboolean_columns,
     legal_entity_boolean_columns,
-    recipient_location_columns,
+    recipient_location_nonboolean_columns,
     recipient_location_functions,
-    place_of_performance_columns,
+    place_of_performance_nonboolean_columns,
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
 )
@@ -68,12 +68,12 @@ def mock_cursor(monkeypatch, result_value):
 
 def _assemble_dummy_broker_data():
     return {
-        **transaction_fpds_columns,
-        **transaction_normalized_columns,
-        **legal_entity_columns,
+        **transaction_fpds_nonboolean_columns,
+        **transaction_normalized_nonboolean_columns,
+        **legal_entity_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in legal_entity_boolean_columns},
-        **recipient_location_columns,
-        **place_of_performance_columns,
+        **recipient_location_nonboolean_columns,
+        **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }
 
@@ -233,7 +233,7 @@ def test_create_load_object(monkeypatch):
     }
     mock_cursor(monkeypatch, data)
 
-    actual_result = _create_load_object(data, recipient_location_columns, custom_bools, recipient_location_functions)
+    actual_result = _create_load_object(data, recipient_location_nonboolean_columns, custom_bools, recipient_location_functions)
     actual_result.pop("create_date", None)
     actual_result.pop("update_date", None)
     assert actual_result == result
@@ -242,12 +242,12 @@ def test_create_load_object(monkeypatch):
 # Mostly testing that everything gets the primary keys it was looking for
 def test_load_transactions(monkeypatch):
     mega_key_list = {}
-    mega_key_list.update(transaction_fpds_columns)
-    mega_key_list.update(transaction_normalized_columns)
-    mega_key_list.update(legal_entity_columns)
-    mega_key_list.update(recipient_location_columns)
+    mega_key_list.update(transaction_fpds_nonboolean_columns)
+    mega_key_list.update(transaction_normalized_nonboolean_columns)
+    mega_key_list.update(legal_entity_nonboolean_columns)
+    mega_key_list.update(recipient_location_nonboolean_columns)
     mega_key_list.update(recipient_location_functions)
-    mega_key_list.update(place_of_performance_columns)
+    mega_key_list.update(place_of_performance_nonboolean_columns)
     mega_key_list.update(place_of_performance_functions)
 
     unique_val = 1

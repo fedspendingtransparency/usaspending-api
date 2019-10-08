@@ -9,7 +9,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
 from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string
 
 # broker column name -> usaspending column name
-transaction_fpds_columns = {
+transaction_fpds_nonboolean_columns = {
     "detached_award_procurement_id": "detached_award_procurement_id",
     "detached_award_proc_unique": "detached_award_proc_unique",
     "piid": "piid",
@@ -318,7 +318,7 @@ transaction_fpds_boolean_columns = {
 transaction_fpds_functions = {}
 
 # broker column name -> usaspending column name
-transaction_normalized_columns = {
+transaction_normalized_nonboolean_columns = {
     "period_of_performance_star": "period_of_performance_start_date",
     "period_of_performance_curr": "period_of_performance_current_end_date",
     "action_date": "action_date",
@@ -352,7 +352,7 @@ transaction_normalized_functions = {
 }
 
 # broker column name -> usaspending column name
-legal_entity_columns = {
+legal_entity_nonboolean_columns = {
     "awardee_or_recipient_legal": "recipient_name",
     "vendor_doing_as_business_n": "vendor_doing_as_business_name",
     "vendor_phone_number": "vendor_phone_number",
@@ -475,7 +475,7 @@ legal_entity_functions = {
 }
 
 # broker column name -> usaspending column name
-recipient_location_columns = {
+recipient_location_nonboolean_columns = {
     "legal_entity_country_code": "location_country_code",
     "legal_entity_country_name": "country_name",
     "legal_entity_state_code": "state_code",
@@ -503,7 +503,7 @@ recipient_location_functions = {
 }
 
 # broker column name -> usaspending column name
-place_of_performance_columns = {
+place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
     "place_of_perform_country_n": "country_name",
     "place_of_performance_state": "state_code",
@@ -546,13 +546,13 @@ award_functions = {
 
 def all_broker_columns():
     retval = []
-    retval.extend(transaction_fpds_columns.keys())
+    retval.extend(transaction_fpds_nonboolean_columns.keys())
     retval.extend(transaction_fpds_boolean_columns.keys())
-    retval.extend(transaction_normalized_columns.keys())
-    retval.extend(legal_entity_columns.keys())
+    retval.extend(transaction_normalized_nonboolean_columns.keys())
+    retval.extend(legal_entity_nonboolean_columns.keys())
     retval.extend(legal_entity_boolean_columns.keys())
-    retval.extend(recipient_location_columns.keys())
-    retval.extend(place_of_performance_columns.keys())
+    retval.extend(recipient_location_nonboolean_columns.keys())
+    retval.extend(place_of_performance_nonboolean_columns.keys())
 
     # fields from derived_field_functions_fpds. THIS NEEDS TO BE SYNCED MANUALLY
     retval.append("action_date")
