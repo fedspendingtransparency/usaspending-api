@@ -135,7 +135,10 @@ class Command(BaseCommand):
             self.load_fpds_from_file(options["file"])
 
         elif options["since_last_load"]:
-            self.load_fpds_from_date(get_last_load_date("fpds"))
+            last_load = get_last_load_date("fpds")
+            if not last_load:
+                raise ValueError
+            self.load_fpds_from_date(last_load)
 
         if self.modified_award_ids:
             logger.info("cleaning orphaned metadata")
