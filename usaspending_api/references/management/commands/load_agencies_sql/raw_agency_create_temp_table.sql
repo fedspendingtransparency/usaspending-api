@@ -18,6 +18,5 @@ create temporary table temp_load_agencies_raw_agency (
     mission text,
     website text,
     congressional_justification text,
-    icon_filename text,
-    include_toptier_without_subtier boolean
+    icon_filename text
 );

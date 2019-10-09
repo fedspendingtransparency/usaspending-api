@@ -23,11 +23,7 @@ from (
     where
         cgac_agency_code is not null and
         agency_name is not null and
-        is_frec is false and (
-            -- Only load toptiers that have a subtier or are allowed to be standalone
-            subtier_code is not null or
-            include_toptier_without_subtier is true
-        )
+        is_frec is false
     group by
         cgac_agency_code
 
@@ -47,11 +43,7 @@ from (
     where
         frec is not null and
         frec_entity_description is not null and
-        is_frec is true and (
-            -- Only load toptiers that have a subtier or are allowed to be standalone
-            subtier_code is not null or
-            include_toptier_without_subtier is true
-        )
+        is_frec is true
     group by
         frec
 

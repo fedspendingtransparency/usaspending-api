@@ -38,7 +38,6 @@ from (
             end = ta.cgac_code
         left outer join subtier_agency as sa on sa.subtier_code = tlara.subtier_code
     where
-        sa.subtier_code is null and
-        tlara.include_toptier_without_subtier is true
+        sa.subtier_code is null
 
 ) t
