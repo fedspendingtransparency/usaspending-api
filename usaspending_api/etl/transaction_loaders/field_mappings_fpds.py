@@ -217,7 +217,7 @@ transaction_fpds_nonboolean_columns = {
     "high_comp_officer3_amount": "officer_3_amount",
     "high_comp_officer3_full_na": "officer_3_name",
     "high_comp_officer4_amount": "officer_4_amount",
-    "high_comp_officer4_full_na": "officer_5_name",
+    "high_comp_officer4_full_na": "officer_4_name",
     "high_comp_officer5_amount": "officer_5_amount",
     "high_comp_officer5_full_na": "officer_5_name",
     "solicitation_date": "solicitation_date",
