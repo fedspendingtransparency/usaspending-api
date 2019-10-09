@@ -17,9 +17,9 @@ def test_subtier(monkeypatch):
     # Can't run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
     # function that performs the vacuuming.
     monkeypatch.setattr(
-        "usaspending_api.agencies.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
+        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
     )
-    call_command("load_agencies", "usaspending_api/agencies/tests/test_load_agencies.csv")
+    call_command("load_agencies", "usaspending_api/references/tests/data/test_load_agencies.csv")
 
     # Make sure the subtier's top agency = the expected toptier agency
     subtier = Agency.objects.get(toptier_agency__cgac_code="009", subtier_agency__subtier_code="0900")

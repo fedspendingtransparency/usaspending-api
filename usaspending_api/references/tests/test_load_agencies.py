@@ -11,7 +11,7 @@ from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgen
 from usaspending_api.references.models import CGAC, FREC
 
 
-AGENCY_FILE = Path(__file__).resolve().parent / "test_load_agencies.csv"
+AGENCY_FILE = Path(__file__).resolve().parent / "data" / "test_load_agencies.csv"
 BOGUS_ABBREVIATION = "THIS IS A TEST ABBREVIATION"
 
 
