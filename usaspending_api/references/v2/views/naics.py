@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models.functions import Length
+from django.db.models import Q
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -68,13 +69,14 @@ class NAICSViewSet(APIView):
         return results
 
     def _filter_search(self, naics_filter: dict) -> dict:
+        search_filter = Q(description__icontains=naics_filter["description__icontains"])
+        search_filter |= Q(code__icontains=naics_filter["description__icontains"])
         if naics_filter.get("code"):
-            naics_filter["code__startswith"] = naics_filter["code"]
-            naics_filter.pop("code")
+            search_filter &= Q(code__startswith=naics_filter["code"])
         tier1_codes = set()
         tier2_codes = set()
         tier3_codes = set()
-        naics = list(NAICS.objects.annotate(text_len=Length("code")).filter(**naics_filter))
+        naics = list(NAICS.objects.annotate(text_len=Length("code")).filter(search_filter))
         tier3_naics = [naic for naic in naics if len(naic.code) == 6]
         tier2_naics = [naic for naic in naics if len(naic.code) == 4]
         tier1_naics = [naic for naic in naics if len(naic.code) == 2]
