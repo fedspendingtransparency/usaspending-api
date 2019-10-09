@@ -183,7 +183,36 @@ If the award has a `category` of `contract`, the response will look like this:
   "total_obligation": 18014.04,
   "total_subaward_amount": null,
   "type": "C",
-  "type_description": "DELIVERY ORDER"
+  "type_description": "DELIVERY ORDER",
+  "naics_hierarchy": {
+    "toptier_code": {
+      "description": "Professional, Scientific, and Technical Services",
+      "code": "54"
+    },
+    "midtier_code": {
+      "description": "Other Professional, Scientific, and Technical Services",
+      "code": "5419"
+    },
+    "base_code": {
+      "description": "All Other Professional, Scientific, and Technical Services",
+      "code": "541900"
+    }
+  },
+  "psc_hierarchy": {
+    "toptier_code": {
+      "description": "SPECIAL STUDIES/ANALYSIS, NOT R&D",
+      "code": "B"
+    },
+    "midtier_code": {
+      "description": "SPECIAL STUDIES",
+      "code": "B5"
+    },
+    "base_code": {
+      "description": "SPECIAL STUDIES/ANALYSIS",
+      "code": "B507"
+    },
+    "subtier_code": {}
+  }  
 }
 ```
 
