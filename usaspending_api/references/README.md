@@ -1,4 +1,4 @@
-# A Little Background
+# Agencies
 
 Whenever an award or subaward is made, there are several federal agencies tied to the award
 including, but not limited to:
@@ -54,8 +54,7 @@ reporting purposes:
 * 021 Department of the Army
 * 057 Department of the Air Force
 
-This rollup largely occurs in code rather than in the database, however, these agencies are the
-only toptier agencies that may be represented in the agency table without subtiers.
+This rollup largely occurs in code rather than in the database (see DOD_SUBSUMED_CGAC).
 
 ## FEMA
 

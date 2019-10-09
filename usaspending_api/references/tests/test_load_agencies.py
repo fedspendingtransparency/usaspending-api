@@ -5,10 +5,10 @@ from django.core.management.base import CommandError
 from model_mommy import mommy
 from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.agencies.management.commands.load_agencies import Command, Agency as AgencyTuple
-from usaspending_api.agencies.models import CGAC, FREC
 from usaspending_api.awards.models import Award, Subaward, TransactionFPDS, TransactionNormalized
+from usaspending_api.references.management.commands.load_agencies import Command, Agency as AgencyTuple
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
+from usaspending_api.references.models import CGAC, FREC
 
 
 AGENCY_FILE = Path(__file__).resolve().parent / "test_load_agencies.csv"
@@ -22,7 +22,7 @@ def disable_vacuuming(monkeypatch):
     function that performs the vacuuming.
     """
     monkeypatch.setattr(
-        "usaspending_api.agencies.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
+        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
     )
 
 
@@ -80,11 +80,11 @@ def test_create_agency(disable_vacuuming, monkeypatch):
 
     original_read_raw_agencies_csv = Command._read_raw_agencies_csv
 
-    def add_agency(o):
-        original_read_raw_agencies_csv(o)
-        o.agencies.append(
+    def add_agency(self):
+        original_read_raw_agencies_csv(self)
+        self.agencies.append(
             AgencyTuple(
-                row_number=len(o.agencies) + 1,
+                row_number=len(self.agencies) + 1,
                 cgac_agency_code="123",
                 agency_name="BOGUS CGAC NAME",
                 agency_abbreviation="BOGUS CGAC ABBREVIATION",
@@ -101,12 +101,11 @@ def test_create_agency(disable_vacuuming, monkeypatch):
                 website="BOGUS WEBSITE",
                 congressional_justification="BOGUS CONGRESSIONAL JUSTIFICATION",
                 icon_filename="BOGUS ICON FILENAME",
-                include_toptier_without_subtier=False,
             )
         )
 
     monkeypatch.setattr(
-        "usaspending_api.agencies.management.commands.load_agencies.Command._read_raw_agencies_csv", add_agency
+        "usaspending_api.references.management.commands.load_agencies.Command._read_raw_agencies_csv", add_agency
     )
 
     # Reload all the things.
@@ -169,13 +168,13 @@ def test_delete_agency(disable_vacuuming, monkeypatch):
 
     original_read_raw_agencies_csv = Command._read_raw_agencies_csv
 
-    def remove_toptier_agency(o):
-        original_read_raw_agencies_csv(o)
-        toptier_code = o.agencies[0].cgac_agency_code
-        o.agencies = [a for a in o.agencies if a.cgac_agency_code != toptier_code]
+    def remove_toptier_agency(self):
+        original_read_raw_agencies_csv(self)
+        toptier_code = self.agencies[0].cgac_agency_code
+        self.agencies = [a for a in self.agencies if a.cgac_agency_code != toptier_code]
 
     monkeypatch.setattr(
-        "usaspending_api.agencies.management.commands.load_agencies.Command._read_raw_agencies_csv",
+        "usaspending_api.references.management.commands.load_agencies.Command._read_raw_agencies_csv",
         remove_toptier_agency,
     )
 
@@ -273,7 +272,7 @@ def test_exceeding_max_changes(disable_vacuuming, monkeypatch):
     We have a safety cutoff to prevent accidentally updating every record in the database.  Make
     sure we get an exception if we exceed that threshold.
     """
-    monkeypatch.setattr("usaspending_api.agencies.management.commands.load_agencies.MAX_CHANGES", 1)
+    monkeypatch.setattr("usaspending_api.references.management.commands.load_agencies.MAX_CHANGES", 1)
 
     with pytest.raises(RuntimeError):
         call_command("load_agencies", AGENCY_FILE)

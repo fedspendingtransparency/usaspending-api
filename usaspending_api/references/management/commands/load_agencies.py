@@ -12,7 +12,6 @@ from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC
 
 logger = logging.getLogger("console")
 
@@ -36,7 +35,6 @@ Agency = namedtuple(
         "website",
         "congressional_justification",
         "icon_filename",
-        "include_toptier_without_subtier",
     ],
 )
 
@@ -123,7 +121,6 @@ class Command(mixins.ETLMixin, BaseCommand):
                 website=prep(agency["WEBSITE"]),
                 congressional_justification=prep(agency["CONGRESSIONAL JUSTIFICATION"]),
                 icon_filename=prep(agency["ICON FILENAME"]),
-                include_toptier_without_subtier=prep(agency["CGAC AGENCY CODE"]) in DOD_ARMED_FORCES_CGAC,
             )
             for row_number, agency in enumerate(agencies, start=1)
         ]
@@ -201,8 +198,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                         mission,
                         website,
                         congressional_justification,
-                        icon_filename,
-                        include_toptier_without_subtier
+                        icon_filename
                     ) values %s
                 """,
                 self.agencies,
