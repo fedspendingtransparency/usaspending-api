@@ -137,7 +137,7 @@ class Command(BaseCommand):
         elif options["since_last_load"]:
             last_load = get_last_load_date("fpds")
             if not last_load:
-                raise ValueError
+                raise ValueError("No last load date for FPDS stored in the database")
             self.load_fpds_from_date(last_load)
 
         if self.modified_award_ids:
