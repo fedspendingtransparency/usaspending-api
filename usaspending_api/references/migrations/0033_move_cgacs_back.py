@@ -9,40 +9,18 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('references', '0032_auto_20190918_0148'),
-        ('agencies', '0003_move_cgacs_back'),
     ]
 
     operations = [
-        migrations.SeparateDatabaseAndState(
-            database_operations=None,
-            state_operations=[
-                migrations.CreateModel(
-                    name='CGAC',
-                    fields=[
-                        ('cgac_code', models.TextField(primary_key=True, serialize=False)),
-                        ('agency_name', models.TextField()),
-                        ('agency_abbreviation', models.TextField(blank=True, null=True)),
-                    ],
-                    options={
-                        'db_table': 'cgac',
-                    },
-                ),
+        migrations.CreateModel(
+            name='FREC',
+            fields=[
+                ('frec_code', models.TextField(primary_key=True, serialize=False)),
+                ('agency_name', models.TextField()),
+                ('agency_abbreviation', models.TextField(blank=True, null=True)),
             ],
-        ),
-        migrations.SeparateDatabaseAndState(
-            database_operations=None,
-            state_operations=[
-                migrations.CreateModel(
-                    name='FREC',
-                    fields=[
-                        ('frec_code', models.TextField(primary_key=True, serialize=False)),
-                        ('agency_name', models.TextField()),
-                        ('agency_abbreviation', models.TextField(blank=True, null=True)),
-                    ],
-                    options={
-                        'db_table': 'frec',
-                    },
-                ),
-            ],
+            options={
+                'db_table': 'frec',
+            },
         ),
     ]

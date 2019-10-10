@@ -107,7 +107,6 @@ INSTALLED_APPS = [
     "usaspending_api.references",
     "usaspending_api.awards",
     "usaspending_api.accounts",
-    "usaspending_api.agencies",
     "usaspending_api.submissions",
     "usaspending_api.financial_activities",
     "usaspending_api.api_docs",
