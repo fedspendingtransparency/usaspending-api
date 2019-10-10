@@ -75,7 +75,7 @@ def test_with_id(client, naics_test_data):
     assert resp.data["results"] == expected_data
 
     # Invalid id.
-    resp = client.get("/api/v2/references/naics/a/")
+    resp = client.get("/api/v2/references/naics/0/")
     assert resp.status_code == 404
 
 
