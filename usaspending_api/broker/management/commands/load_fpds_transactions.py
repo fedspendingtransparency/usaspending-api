@@ -47,7 +47,7 @@ class Command(BaseCommand):
         else:
             logger.info("fetching fpds transactions since {}...".format(str(date)))
 
-        stale_awards = delete_stale_fpds(date)
+        stale_awards = delete_stale_fpds(date.date())
         self.modified_award_ids.extend(stale_awards)
 
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:

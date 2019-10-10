@@ -91,7 +91,7 @@ def delete_stale_fpds(date):
 
                 # since sql can't handle empty updates, we need to safely exit
                 if not transaction_normalized_ids:
-                    return
+                    return []
 
                 # Set backreferences from Awards to Transaction Normalized to null. These pointers will be correctly updated
                 # in the update awards stage later on
