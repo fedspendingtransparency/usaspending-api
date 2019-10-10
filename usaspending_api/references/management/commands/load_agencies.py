@@ -65,9 +65,10 @@ class Command(mixins.ETLMixin, BaseCommand):
             "--force",
             action="store_true",
             help=(
-                "Reloads agencies even if the change max change threshold of {:,} is exceeded.  This is a safety "
+                "Reloads agencies even if the max change threshold of {:,} is exceeded.  This is a safety "
                 "precaution to prevent accidentally updating every award, transaction, and subaward in the system as "
-                "part of the nightly pipeline.".format(MAX_CHANGES)
+                "part of the nightly pipeline.  Will also force foreign key table links to be examined even if it "
+                "appears there were no agency changes.".format(MAX_CHANGES)
             ),
         )
 
@@ -240,11 +241,11 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         if rows_affected > MAX_CHANGES and not self.force:
             raise RuntimeError(
-                "Exceed maximum number of allowed changes ({:,}).  Use --force switch if this was "
+                "Exceeded maximum number of allowed changes ({:,}).  Use --force switch if this was "
                 "intentional.".format(MAX_CHANGES)
             )
 
-        elif rows_affected > 0:
+        elif rows_affected > 0 or self.force:
             self._execute_etl_dml_sql_directory_file(
                 "treasury_appropriation_account_update", "Update treasury appropriation accounts"
             )

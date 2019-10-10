@@ -71,3 +71,13 @@ The Chief Financial Officers (CFO) Act of 1990 established CFOs at several of th
 agencies.  These agencies are not yet identified in the database but can be found defined in the
 application global constants CFO_CGACS_MAPPING and CFO_CGACS.  It is on the TODO list to
 incorporate this information into the database.
+
+## User Selectable Flag
+
+The proper usage of the `user_selectable` flag has been a little hazy since its introduction.
+Currently, it is being used to control which agencies are displayed in dropdowns on Download pages
+and is used to restrict the agencies for which Delta files are generated.
+
+It is **NOT** currently being used to limit agency typeaheads in advanced search.  In the advanced
+search typeahead, any agency with a subtier is being listed unless it is contained in the
+EXCLUDE_CGAC global.

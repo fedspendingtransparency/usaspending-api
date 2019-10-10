@@ -66,9 +66,10 @@ columns we maintain on this side of the divide.
 # Conclusion
 
 The current implementation is a bit simplistic.  It handles only columns that exist in
-both tables and requires a primary key in the destination table.  Future implementations
-will want to handle:
+both tables.  Future implementations will want to handle:
 
-- column mappings for situations where source and destination have differing columns
-- ETLColumn... need one instead of the current ColumnDefinition named tuple
+- Column mappings for situations where source and destination have differing columns.
+- A proper ETLColumn class to replace the current ColumnDefinition named tuple.
+- A shared database connection.  Currently we are relying on there only being one
+  writable database connection in the app.
 - and so much more... there's so much we can do with this
