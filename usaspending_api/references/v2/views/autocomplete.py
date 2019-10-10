@@ -44,7 +44,8 @@ class BaseAutocompleteViewSet(APIView):
         search_text, limit = self.get_request_payload(request)
 
         queryset = (
-            Agency.objects.exclude(toptier_agency__cgac_code__in=EXCLUDE_CGAC).filter(
+            Agency.objects.exclude(toptier_agency__cgac_code__in=EXCLUDE_CGAC)
+            .filter(
                 Q(subtier_agency__name__icontains=search_text) | Q(subtier_agency__abbreviation__icontains=search_text)
             )
             .order_by("-toptier_flag", "toptier_agency_id", "subtier_agency__name")
