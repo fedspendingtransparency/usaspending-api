@@ -28,8 +28,9 @@ GET_FUNDING_SQL = SQL(
                 inner join awards pa on pa.id = gaids.award_id
                 inner join awards ca on
                     ca.parent_award_piid = pa.piid and
-                    ca.fpds_parent_agency_id = pa.fpds_agency_id
-                    or ca.id = pa.id
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id and
+                    ca.type not like 'IDV%' and
+                    (ca.piid = {piid} or {piid} is null)
     ), gather_financial_accounts_by_awards as (
         select  ga.award_id,
                 faba.financial_accounts_by_awards_id
@@ -50,10 +51,21 @@ class IDVFederalAccountCountViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/count/federal_account.md"
 
     @staticmethod
-    def _parse_and_validate_request(requested_award: str) -> dict:
-        request_dict = {"award_id": requested_award}
-        models = get_internal_or_generated_award_id_model()
-        return TinyShield([models]).block(request_dict)
+    def _parse_and_validate_request(requested_award: str, request_data: dict) -> dict:
+        piid = request_data.get("piid")
+        data = {"award_id": requested_award, "piid": piid}
+        models = [
+            get_internal_or_generated_award_id_model(),
+            {
+                "key": "piid",
+                "name": "piid",
+                "allow_nulls": True,
+                "optional": True,
+                "type": "text",
+                "text_type": "search",
+            },
+        ]
+        return TinyShield(models).block(data)
 
     @staticmethod
     def _business_logic(request_data: dict) -> list:
@@ -65,13 +77,14 @@ class IDVFederalAccountCountViewSet(APIView):
 
         sql = GET_FUNDING_SQL.format(
             award_id_column=Identifier(award_id_column),
-            award_id=Literal(award_id)
+            award_id=Literal(award_id),
+            piid=Literal(request_data.get("piid")),
         )
 
         return execute_sql_to_ordered_dictionary(sql)
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:
-        request_data = self._parse_and_validate_request(requested_award=requested_award)
+        request_data = self._parse_and_validate_request(requested_award, request.GET)
         results = self._business_logic(request_data)
         return Response(results[0])

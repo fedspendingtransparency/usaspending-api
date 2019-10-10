@@ -63,8 +63,9 @@ GET_FUNDING_SQL = SQL(
                 inner join awards pa on pa.id = gaids.award_id
                 inner join awards ca on
                     ca.parent_award_piid = pa.piid and
-                    ca.fpds_parent_agency_id = pa.fpds_agency_id
-                    or ca.id = pa.id
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id and
+                    ca.type not like 'IDV%' and
+                    (ca.piid = {piid} or {piid} is null)
     ), gather_financial_accounts_by_awards as (
         select  ga.award_id,
                 ga.generated_unique_award_id,
