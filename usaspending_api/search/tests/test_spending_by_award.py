@@ -97,12 +97,14 @@ def awards_over_different_date_ranges():
     for award_category in award_category_list:
         for date_range in date_range_list:
             award_id += 1
+            guai = "AWARD_{}".format(award_id)
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
             recipient = mommy.make("references.LegalEntity", legal_entity_id=2000 + award_id)
             award = mommy.make(
                 "awards.Award",
                 id=award_id,
+                generated_unique_award_id=guai,
                 type=award_type,
                 category=award_category,
                 latest_transaction_id=1000 + award_id,
@@ -178,7 +180,7 @@ def test_date_range_search_with_one_range(client, awards_over_different_date_ran
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"] == [{"Award ID": "abcdefg1", "internal_id": 1}]
+    assert resp.data["results"] == [{"Award ID": "abcdefg1", "internal_id": 1, "generated_internal_id": "AWARD_1"}]
 
     # Test with no award showing
     request_for_no_awards = {
@@ -270,7 +272,10 @@ def test_date_range_search_with_two_ranges(client, awards_over_different_date_ra
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert resp.data["results"] == [{"Award ID": "xyz44", "internal_id": 44}, {"Award ID": "xyz33", "internal_id": 33}]
+    assert resp.data["results"] == [
+        {"Award ID": "xyz44", "internal_id": 44, "generated_internal_id": "AWARD_44"},
+        {"Award ID": "xyz33", "internal_id": 33, "generated_internal_id": "AWARD_33"},
+    ]
 
     # Test with no award showing
     request_for_no_awards = {

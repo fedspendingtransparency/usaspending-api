@@ -5,6 +5,7 @@ from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -35,7 +36,7 @@ from usaspending_api.common.recipient_lookups import annotate_recipient_id, anno
 
 GLOBAL_MAP = {
     "award": {
-        "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type", "award__generated_unique_award_id"},
+        "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type"},
         "api_to_db_mapping_list": [
             award_contracts_mapping,
             award_idv_mapping,
@@ -44,7 +45,8 @@ GLOBAL_MAP = {
         ],
         "award_semaphore": "type",
         "award_id_fields": ["piid", "fain", "uri"],
-        "internal_id_fields": {"internal_id": "award_id", "generated_internal_id": "award__generated_unique_award_id"},
+        "internal_id_fields": {"internal_id": "award_id"},
+        "generated_award_field": ("generated_internal_id", "internal_id"),
         "type_code_to_field_map": {
             **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
             **{award_type: award_idv_mapping for award_type in idv_type_mapping},
@@ -55,14 +57,12 @@ GLOBAL_MAP = {
         "filter_queryset_func": matview_search_filter_determine_award_matview_model,
     },
     "subaward": {
-        "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award__generated_unique_award_id"},
+        "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award_id"},
         "api_to_db_mapping_list": [contract_subaward_mapping, grant_subaward_mapping],
         "award_semaphore": "award_type",
         "award_id_fields": ["award__piid", "award__fain"],
-        "internal_id_fields": {
-            "internal_id": "subaward_number",
-            "prime_generated_internal_id": "award__generated_unique_award_id",
-        },
+        "internal_id_fields": {"internal_id": "subaward_number", "prime_internal_id": "award_id"},
+        "generated_award_field": ("prime_generated_internal_id", "prime_internal_id"),
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
@@ -147,7 +147,19 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         break
             results.append(row)
 
+        results = self.add_award_generated_id_field(results)
+
         return self.populate_response(results=results, has_next=len(queryset) > self.pagination["limit"])
+
+    def add_award_generated_id_field(self, records):
+        """Obtain the generated_unique_award_id an add to response"""
+        dest, source = self.constants["generated_award_field"]
+        internal_ids = [record[source] for record in records]
+        award_ids = Award.objects.filter(id__in=internal_ids).values_list("id", "generated_unique_award_id")
+        award_ids = {internal_id: guai for internal_id, guai in award_ids}
+        for record in records:
+            record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepency
+        return records
 
     def get_sort_by_fields(self):
         if self.pagination["sort_key"] == "Award ID":
