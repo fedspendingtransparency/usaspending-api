@@ -23,12 +23,12 @@ class NAICSViewSet(APIView):
 
     def _parse_and_validate_request(self, requested_naics: str, request_data) -> dict:
         naics_filter = request_data.get("filter")
-        data = {"code": requested_naics, "description": naics_filter}
+        data = {"code": requested_naics, "filter": naics_filter}
         models = [
             {"key": "code", "name": "code", "type": "integer", "allow_nulls": True, "optional": True},
             {
-                "key": "description",
-                "name": "description",
+                "key": "filter",
+                "name": "filter",
                 "type": "text",
                 "text_type": "search",
                 "default": None,
@@ -112,7 +112,6 @@ class NAICSViewSet(APIView):
             result["count"] = 1
             tier2_results[naic.code[:4]]["children"].append(result)
             tier2_results[naic.code[:4]]["children"].sort(key=lambda x: x["naics"])
-
         tier1_results = {}
         for naic in tier1:
             result = OrderedDict()
@@ -151,7 +150,7 @@ class NAICSViewSet(APIView):
     def _business_logic(self, request_data: dict) -> dict:
         naics_filter = {}
         code = request_data.get("code")
-        description = request_data.get("description")
+        description = request_data.get("filter")
 
         if not code and not description:
             return self._default_view()
