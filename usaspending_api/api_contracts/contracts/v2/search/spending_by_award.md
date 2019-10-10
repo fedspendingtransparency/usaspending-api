@@ -15,8 +15,12 @@ This endpoint takes award filters and fields, and returns the fields of the filt
         + `fields` (required, SpendingByAwardFields)
         + `limit` (optional, number)
             How many results are returned. If no limit is specified, the limit is set to 10.
-        + `order` (optional, string)
-            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order. Defaults to asc.
+        + `order` (optional, enum[string])
+            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
+            + Default: `desc`
+            + Members
+                + `desc`
+                + `asc`
         + `page` (optional, number)
             The page number that is currently returned.
         + `sort` (optional, string)
@@ -109,7 +113,9 @@ List of table columns
     Sub-Awards only, returns the name of the prime award's recipient.
 + `prime_award_recipient_id` (optional, string, nullable)
     Sub-Awards only, return the recipient id of the prime award's recipient.
-+ `prime_generated_internal_id` (optional, string)
++ `prime_award_internal_id` (optional, string, nullable)
+    Sub-Awards only, return the award id of the prime award.
++ `prime_award_generated_internal_id` (optional, string)
     Sub-Awards only, return the generated unique award id of the prime award.
 + `Recipient DUNS Number` (optional, string, nullable)
 + `Recipient Name` (optional, string, nullable)

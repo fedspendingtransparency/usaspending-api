@@ -61,8 +61,8 @@ GLOBAL_MAP = {
         "api_to_db_mapping_list": [contract_subaward_mapping, grant_subaward_mapping],
         "award_semaphore": "award_type",
         "award_id_fields": ["award__piid", "award__fain"],
-        "internal_id_fields": {"internal_id": "subaward_number", "prime_internal_id": "award_id"},
-        "generated_award_field": ("prime_generated_internal_id", "prime_internal_id"),
+        "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
+        "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
@@ -152,7 +152,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return self.populate_response(results=results, has_next=len(queryset) > self.pagination["limit"])
 
     def add_award_generated_id_field(self, records):
-        """Obtain the generated_unique_award_id an add to response"""
+        """Obtain the generated_unique_award_id and add to response"""
         dest, source = self.constants["generated_award_field"]
         internal_ids = [record[source] for record in records]
         award_ids = Award.objects.filter(id__in=internal_ids).values_list("id", "generated_unique_award_id")
