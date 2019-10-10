@@ -2,7 +2,6 @@ import json
 import pytest
 
 from model_mommy import mommy
-from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 @pytest.fixture()
