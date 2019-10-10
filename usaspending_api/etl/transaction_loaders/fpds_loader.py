@@ -146,7 +146,9 @@ def _extract_broker_objects(id_list):
 
     with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            sql = "SELECT {} from detached_award_procurement where detached_award_procurement_id in %s".format(",".join(all_broker_columns()))
+            sql = "SELECT {} from detached_award_procurement where detached_award_procurement_id in %s".format(
+                ",".join(all_broker_columns())
+            )
             cursor.execute(sql, (tuple(id_list),))
 
             results = cursor.fetchall()
@@ -196,7 +198,10 @@ def _transform_objects(broker_objects):
         )
 
         connected_objects["transaction_fpds"] = _create_load_object(
-            broker_object, transaction_fpds_nonboolean_columns, transaction_fpds_boolean_columns, transaction_fpds_functions
+            broker_object,
+            transaction_fpds_nonboolean_columns,
+            transaction_fpds_boolean_columns,
+            transaction_fpds_functions,
         )
 
         retval.append(connected_objects)

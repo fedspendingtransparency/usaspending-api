@@ -234,7 +234,9 @@ def test_create_load_object(monkeypatch):
     }
     mock_cursor(monkeypatch, data)
 
-    actual_result = _create_load_object(data, recipient_location_nonboolean_columns, custom_bools, recipient_location_functions)
+    actual_result = _create_load_object(
+        data, recipient_location_nonboolean_columns, custom_bools, recipient_location_functions
+    )
     actual_result.pop("create_date", None)
     actual_result.pop("update_date", None)
     assert actual_result == result

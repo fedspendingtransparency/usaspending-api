@@ -143,9 +143,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
         "WHERE t is null {}"
     ).format(" AND a.id IN %s " if award_tuple else "")
 
-    _modify_subawards_sql = (
-        "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(_find_empty_awards_sql)
-    )
+    _modify_subawards_sql = "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(_find_empty_awards_sql)
 
     _modify_financial_accounts_sql = (
         "UPDATE financial_accounts_by_awards "
@@ -153,10 +151,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
         "WHERE award_id IN ({});".format(_find_empty_awards_sql)
     )
 
-    _delete_parent_award_sql = str(
-        "DELETE FROM parent_award "
-        "WHERE award_id in ({});".format(_find_empty_awards_sql)
-    )
+    _delete_parent_award_sql = str("DELETE FROM parent_award " "WHERE award_id in ({});".format(_find_empty_awards_sql))
 
     _prune_empty_awards_sql = str("DELETE FROM awards " "WHERE id IN ({}) ").format(_find_empty_awards_sql)
 
