@@ -2,6 +2,7 @@ import json
 import pytest
 
 from model_mommy import mommy
+from django.urls import Resolver404
 
 
 @pytest.fixture()
@@ -75,8 +76,10 @@ def test_with_id(client, naics_test_data):
     assert resp.data["results"] == expected_data
 
     # Invalid id.
-    resp = client.get("/api/v2/references/naics/0/")
-    assert resp.status_code == 404
+    with pytest.raises(Resolver404):
+        resp = client.get("/api/v2/references/naics/a/")
+        if resp.status_code == 404:  # Python 3.5 + libs don't throw and exception on the previous line, throw one here
+            raise Resolver404
 
 
 @pytest.mark.django_db
