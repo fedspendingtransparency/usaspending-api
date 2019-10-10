@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import TASAutocompleteMatview
-from usaspending_api.agencies.models import CGAC
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models import CGAC
 
 
 TINY_SHIELD_MODELS = [

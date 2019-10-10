@@ -8,7 +8,7 @@ from pathlib import Path
 from psycopg2.extensions import AsIs
 from usaspending_api.awards.management.commands.load_subawards import Command
 from usaspending_api.awards.models import BrokerSubaward, Subaward
-from usaspending_api.common.etl.operations import stage_dblink_table
+from usaspending_api.common.etl.operations import stage_table
 from usaspending_api.common.helpers.sql_helpers import get_connection
 
 
@@ -17,7 +17,7 @@ MIN_ID = min([r["id"] for r in SAMPLE_DATA])
 MAX_ID = max([r["id"] for r in SAMPLE_DATA])
 
 
-def _stage_dblink_table_mock(source, destination, staging):
+def _stage_table_mock(source, destination, staging):
     # Insert our mock data into the database.
     insert_statement = "insert into temp_load_subawards_broker_subaward (%s) values %s"
     connection = get_connection(read_only=False)
@@ -39,16 +39,16 @@ def cursor_fixture(db, monkeypatch):
     """
     Don't attempt to make dblink calls to Broker, but allow other SQL executes to occur.
     """
-    original_execute = Command._execute
+    original_execute = Command._execute_function
 
-    def _execute(self, message, function, *args, **kwargs):
-        if function is not stage_dblink_table:
+    def _execute(self, function, timer_message, *args, **kwargs):
+        if function is not stage_table:
             # Allow non-dblink calls to happen "normally".
-            return original_execute(message, function, *args, **kwargs)
+            return original_execute(function, timer_message, *args, **kwargs)
 
-        return original_execute(message, _stage_dblink_table_mock, *args, **kwargs)
+        return original_execute(_stage_table_mock, timer_message, *args, **kwargs)
 
-    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute", _execute)
+    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute_function", _execute)
 
 
 def _check_data():
