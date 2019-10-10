@@ -55,11 +55,12 @@ GLOBAL_MAP = {
         "filter_queryset_func": matview_search_filter_determine_award_matview_model,
     },
     "subaward": {
-        "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type"},
+        "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award_id"},
         "api_to_db_mapping_list": [contract_subaward_mapping, grant_subaward_mapping],
         "award_semaphore": "award_type",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_field": "subaward_number",
+        "internal_prime_award_id_field": "award_id",
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
@@ -131,6 +132,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         results = []
         for record in queryset[: self.pagination["limit"]]:
             row = {"internal_id": record[self.constants["internal_id_field"]]}
+            if self.is_subaward:
+                row["internal_prime_award_id"] = record[self.constants["internal_prime_award_id_field"]]
 
             for field in self.fields:
                 row[field] = record.get(

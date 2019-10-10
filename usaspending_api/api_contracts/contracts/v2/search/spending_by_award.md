@@ -109,6 +109,8 @@ List of table columns
 + `prime_award_recipient_id` (optional, string, nullable)
     For subawards, return the recipient id of the prime award's recipient.
 + `internal_id` (optional, string)
++ `internal_prime_award_id` (optional, string, nullable)
+    For subawards, returns the award id of the prime award.
 
 ## PageMetadataObject (object)
 + `page` (required, number)
