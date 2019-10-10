@@ -4,15 +4,17 @@ import pytest
 import tempfile
 
 from django.conf import settings
+from django.db import DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_transaction_delta_view_exists
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
 logger = logging.getLogger("console")
-VALID_DB_CURSORS = ["default", "data_broker"]
+VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
 
 
 @pytest.fixture()
@@ -178,20 +180,11 @@ def mock_agencies(monkeypatch):
 def mock_matviews_qs(monkeypatch):
     """Mocks all matvies to a single mock queryset"""
     mock_qs = MockSet()  # mock queryset
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SubawardView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryAwardView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryCfdaNumbersView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryNaicsCodesView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryPscCodesView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryStateView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionFedAcctView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionGeoView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionMonthView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionRecipientView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryTransactionView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.SummaryView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalAwardView.objects", mock_qs)
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", mock_qs)
+    for k, v in MATERIALIZED_VIEWS.items():
+        if k not in ["tas_autocomplete_matview"]:
+            monkeypatch.setattr(
+                "usaspending_api.awards.models_matviews.{}.objects".format(v["model"].__name__), mock_qs
+            )
 
     yield mock_qs
 
@@ -202,9 +195,9 @@ def pytest_configure():
     # To make sure the test setup process doesn't try
     # to set up another test db, remove everything but the default
     # DATABASE_URL from the list of databases in django settings
-    test_db = settings.DATABASES.pop("default", None)
+    test_db = settings.DATABASES.pop(DEFAULT_DB_ALIAS, None)
     settings.DATABASES.clear()
-    settings.DATABASES["default"] = test_db
+    settings.DATABASES[DEFAULT_DB_ALIAS] = test_db
     # Also remove any database routers
     settings.DATABASE_ROUTERS.clear()
 

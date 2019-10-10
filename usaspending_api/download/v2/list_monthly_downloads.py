@@ -3,19 +3,19 @@ import re
 
 from django.conf import settings
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.views import APIDocumentationView
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
 
 
-class ListMonthlyDownloadsViewset(APIDocumentationView):
+class ListMonthlyDownloadsViewSet(APIView):
     """
-     Returns a list of the current versions of generated archive files for a given fiscal year and agency.
+    Returns a list of the current versions of generated archive files for a given fiscal year and agency.
+    """
 
-    endpoint_doc: /download/list_downloads.md
-    """
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_downloads.md"
 
     s3_handler = S3Handler(
         bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR

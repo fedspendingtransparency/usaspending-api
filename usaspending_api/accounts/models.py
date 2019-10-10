@@ -1,10 +1,11 @@
 from collections import defaultdict
 from decimal import Decimal
 from django.db import models, connection
-from usaspending_api.common.helpers.generic_helper import fy
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import ToptierAgency
+
+from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.models import ToptierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class FederalAccount(models.Model):
@@ -78,12 +79,10 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     def update_agency_linkages(self):
-        self.awarding_toptier_agency = (
-            ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).order_by("fpds_code").first()
-        )
-        self.funding_toptier_agency = (
-            ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").first()
-        )
+        self.awarding_toptier_agency = ToptierAgency.objects.filter(
+            cgac_code=self.allocation_transfer_agency_id
+        ).first()
+        self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).first()
 
     @staticmethod
     def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
@@ -427,9 +426,13 @@ class BudgetAuthority(models.Model):
         unique_together = (("agency_identifier", "fr_entity_code", "year"),)
 
 
-class TASAwardMatview(models.Model):
+class TASAutocompleteMatview(models.Model):
+    """
+    Supports TAS autocomplete.  For performance reasons, pre-filters the TAS
+    codes/numbers/symbols/whatever that can be linked to File D data.
+    """
 
-    tas_award_id = models.UUIDField(primary_key=True)
+    tas_autocomplete_id = models.IntegerField(primary_key=True)
     allocation_transfer_agency_id = models.TextField(null=True)
     agency_id = models.TextField()
     beginning_period_of_availability = models.TextField(null=True)
@@ -437,9 +440,9 @@ class TASAwardMatview(models.Model):
     availability_type_code = models.TextField(null=True)
     main_account_code = models.TextField()
     sub_account_code = models.TextField(null=True)
-    award_id = models.BigIntegerField()
+    tas_rendering_label = models.TextField()
 
     class Meta:
 
-        db_table = "tas_award_matview"
+        db_table = "tas_autocomplete_matview"
         managed = False

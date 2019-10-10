@@ -1,11 +1,71 @@
 import json
 import pytest
 
+from django.db import connection
+from model_mommy import mommy
 from rest_framework import status
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.tests.test_mock_data_search import all_filters
 
-from django_mock_queries.query import MockModel
+
+@pytest.fixture
+@pytest.mark.django_db
+def test_data():
+    mommy.make("references.LegalEntity", legal_entity_id=1)
+
+    mommy.make("awards.Award", id=1, type="A", recipient_id=1, latest_transaction_id=1)
+    mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=1,
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_zip5="00501",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_zip5="00001",
+    )
+
+    mommy.make("awards.Award", id=2, type="A", recipient_id=1, latest_transaction_id=2)
+    mommy.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=2,
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_zip5="00502",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_zip5="00002",
+    )
+
+    mommy.make("awards.Award", id=3, type="A", recipient_id=1, latest_transaction_id=3)
+    mommy.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=3,
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_zip5="00503",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_zip5="00003",
+    )
+
+    mommy.make("awards.Award", id=4, type="A", recipient_id=1, latest_transaction_id=4)
+    mommy.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=4,
+        legal_entity_country_code="GIB",
+        legal_entity_country_name="GIBRALTAR",
+        legal_entity_zip5="00504",
+        place_of_perform_country_c="GIB",
+        place_of_perform_country_n="GIBRALTAR",
+        place_of_performance_zip5="00004",
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute("refresh materialized view concurrently mv_contract_award_search")
 
 
 @pytest.mark.django_db
@@ -75,39 +135,8 @@ def test_spending_by_award_type_failure(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
+def test_spending_by_award_pop_zip_filter(client, test_data):
     """ Test that filtering by pop zips works"""
-    mock_model_1 = MockModel(
-        pop_zip5="00501",
-        pop_country_code="USA",
-        award_id=1,
-        piid=None,
-        fain="abc",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_2 = MockModel(
-        pop_zip5="00502",
-        pop_country_code="USA",
-        award_id=2,
-        piid=None,
-        fain="abd",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_3 = MockModel(
-        pop_zip5="00503",
-        pop_country_code="USA",
-        award_id=3,
-        piid=None,
-        fain="abe",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
 
     # test simple, single zip
     resp = client.post(
@@ -118,13 +147,13 @@ def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
                 "fields": ["Place of Performance Zip5"],
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "place_of_performance_locations": [{"country": "USA", "zip": "00501"}],
+                    "place_of_performance_locations": [{"country": "USA", "zip": "00001"}],
                 },
             }
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00501"}
+    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
 
     # test that adding a zip that has no results doesn't remove the results from the first zip
     resp = client.post(
@@ -136,7 +165,7 @@ def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "place_of_performance_locations": [
-                        {"country": "USA", "zip": "00501"},
+                        {"country": "USA", "zip": "00001"},
                         {"country": "USA", "zip": "10000"},
                     ],
                 },
@@ -144,7 +173,7 @@ def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00501"}
+    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
 
     # test that we get 2 results with 2 valid zips
     resp = client.post(
@@ -156,16 +185,16 @@ def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "place_of_performance_locations": [
-                        {"country": "USA", "zip": "00501"},
-                        {"country": "USA", "zip": "00502"},
+                        {"country": "USA", "zip": "00001"},
+                        {"country": "USA", "zip": "00002"},
                     ],
                 },
             }
         ),
     )
     possible_results = (
-        {"internal_id": 1, "Place of Performance Zip5": "00501"},
-        {"internal_id": 2, "Place of Performance Zip5": "00502"},
+        {"internal_id": 1, "Place of Performance Zip5": "00001"},
+        {"internal_id": 2, "Place of Performance Zip5": "00002"},
     )
     assert len(resp.data["results"]) == 2
     assert resp.data["results"][0] in possible_results
@@ -175,42 +204,8 @@ def test_spending_by_award_pop_zip_filter(client, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_recipient_zip_filter(client, mock_matviews_qs):
+def test_spending_by_award_recipient_zip_filter(client, test_data):
     """ Test that filtering by recipient zips works"""
-    mock_model_1 = MockModel(
-        recipient_location_zip5="00501",
-        recipient_location_country_code="USA",
-        pop_zip5="00001",
-        award_id=1,
-        piid=None,
-        fain="abc",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_2 = MockModel(
-        recipient_location_zip5="00502",
-        recipient_location_country_code="USA",
-        pop_zip5="00002",
-        award_id=2,
-        piid=None,
-        fain="abd",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_3 = MockModel(
-        recipient_location_zip5="00503",
-        recipient_location_country_code="USA",
-        pop_zip5="00003",
-        award_id=3,
-        piid=None,
-        fain="abe",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
 
     # test simple, single zip
     resp = client.post(
@@ -272,45 +267,8 @@ def test_spending_by_award_recipient_zip_filter(client, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
+def test_spending_by_award_both_zip_filter(client, test_data):
     """ Test that filtering by both kinds of zips works"""
-    mock_model_1 = MockModel(
-        recipient_location_zip5="00501",
-        recipient_location_country_code="USA",
-        pop_zip5="00001",
-        pop_country_code="USA",
-        award_id=1,
-        piid=None,
-        fain="abc",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_2 = MockModel(
-        recipient_location_zip5="00502",
-        recipient_location_country_code="USA",
-        pop_zip5="00002",
-        pop_country_code="USA",
-        award_id=2,
-        piid=None,
-        fain="abd",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    mock_model_3 = MockModel(
-        recipient_location_zip5="00503",
-        recipient_location_country_code="USA",
-        pop_zip5="00003",
-        pop_country_code="USA",
-        award_id=3,
-        piid=None,
-        fain="abe",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-    )
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_2, mock_model_3])
 
     # test simple, single pair of zips that both match
     resp = client.post(
@@ -370,51 +328,8 @@ def test_spending_by_award_both_zip_filter(client, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
+def test_spending_by_award_foreign_filter(client, test_data):
     """ Verify that foreign country filter is returning the correct results """
-    mock_model_0 = MockModel(
-        award_id=0,
-        piid=None,
-        fain="aaa",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_country_code="USA",
-    )
-    mock_model_1 = MockModel(
-        award_id=1,
-        piid=None,
-        fain="abc",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-        recipient_location_country_name="",
-        recipient_location_country_code="USA",
-    )
-    mock_model_2 = MockModel(
-        award_id=2,
-        piid=None,
-        fain="abd",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_country_code="",
-    )
-    mock_model_3 = MockModel(
-        award_id=3,
-        piid=None,
-        fain="abe",
-        uri=None,
-        type="B",
-        pulled_from="AWARD",
-        recipient_location_country_name="Gibraltar",
-        recipient_location_country_code="GIB",
-    )
-
-    add_to_mock_objects(mock_matviews_qs, [mock_model_0, mock_model_1, mock_model_2, mock_model_3])
-    # add_to_mock_objects(mock_matviews_qs, [mock_model_1, mock_model_3])
 
     resp = client.post(
         "/api/v2/search/spending_by_award/",
@@ -446,3 +361,20 @@ def test_spending_by_award_foreign_filter(client, mock_matviews_qs):
     )
     # One result is returned when searching for "Foreign" recipients
     assert len(resp.data["results"]) == 1
+
+
+# test subaward types
+@pytest.mark.django_db
+def test_spending_by_subaward_type_success(client, refresh_matviews):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "fields": ["Sub-Award ID"],
+                "filters": {"award_type_codes": ["10", "06", "07", "08", "09", "11"]},
+                "subawards": True,
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK

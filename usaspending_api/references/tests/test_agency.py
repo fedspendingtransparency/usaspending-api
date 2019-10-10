@@ -16,19 +16,6 @@ def agency_data():
 
 
 @pytest.mark.django_db
-def test_department(agency_data):
-    """
-    Make sure an instance of a department is properly created
-    Uses African Development Foundation as test
-    """
-
-    # In this department, the FREC is being used as the cgac_code
-    Agency.objects.get(
-        toptier_agency__cgac_code="1136", toptier_agency__fpds_code="1100", subtier_agency__subtier_code="1141"
-    )
-
-
-@pytest.mark.django_db
 def test_subtier(agency_data):
     """
     Make sure a subtier is properly mapped to its parent department
@@ -36,13 +23,9 @@ def test_subtier(agency_data):
     """
 
     # Make sure the subtier's top agency = the expected toptier agency
-    subtier = Agency.objects.get(
-        toptier_agency__cgac_code="013", toptier_agency__fpds_code="1300", subtier_agency__subtier_code="1341"
-    )
+    subtier = Agency.objects.get(toptier_agency__cgac_code="013", subtier_agency__subtier_code="1341")
 
-    department = Agency.objects.get(
-        toptier_agency__cgac_code="013", toptier_agency__fpds_code="1300", toptier_flag=True
-    )
+    department = Agency.objects.get(toptier_agency__cgac_code="013", toptier_flag=True)
 
     print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))
 
@@ -54,7 +37,7 @@ def test_get_by_toptier():
     """Test Agency lookup by toptier CGAC code."""
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="yo")
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -75,7 +58,7 @@ def test_get_by_subtier():
     """Test Agency lookup by subtier."""
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -99,7 +82,6 @@ def test_get_by_toptier_subtier():
     toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
-    mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
     mommy.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -107,7 +89,7 @@ def test_get_by_toptier_subtier():
     )
     agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
 
-    # lookup should return agency w/ most recent updatea_date that
+    # lookup should return agency w/ most recent updated_date that
     # matches the toptier and subtier code
     assert Agency.get_by_toptier_subtier("xyz", "abc") == agency1
     # if there's no match, we should get none

@@ -23,8 +23,11 @@ API_VERSION = settings.API_VERSION
 
 class NewAwardsOverTimeVisualizationViewSet(APIView):
     """
-    endpoint_doc: /advanced_award_search/new_awards_over_time.md
+    This route returns a list of time periods with the new awards in the
+    appropriate period within the provided time range
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/new_awards_over_time.md"
 
     def validate_api_request(self, json_payload):
         self.groupings = {

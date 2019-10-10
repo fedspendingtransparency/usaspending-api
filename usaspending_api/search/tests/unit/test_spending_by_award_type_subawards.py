@@ -1,9 +1,9 @@
 import json
 import pytest
 
+from django.db import connection
+from model_mommy import mommy
 from rest_framework import status
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
-from django_mock_queries.query import MockModel
 
 
 @pytest.mark.django_db
@@ -31,147 +31,100 @@ def test_spending_by_award_subawards_fail(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Sub-Award ID"], "filters": {"award_type_codes": ["06"]}, "subawards": True}),
+        data=json.dumps({"fields": ["Sub-Award ID"], "filters": {"award_type_codes": ["X"]}, "subawards": True}),
     )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards(client, mock_matviews_qs):
+def test_spending_by_award_subawards(client):
 
-    mock_model_0 = MockModel(
-        fain="",
-        prime_award_type="IDV_A",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-0",
-        award_type="procurement",
-        recipient_name="Frodo Baggins",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Frodo Baggins",
+    mommy.make(
+        "awards.Subaward", id=1, recipient_unique_id="DUNS A", prime_award_type="IDV_A", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=2, recipient_unique_id="DUNS B", prime_award_type="IDV_B", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=3, recipient_unique_id="DUNS C", prime_award_type="IDV_C", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=4, recipient_unique_id="DUNS D", prime_award_type="IDV_D", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=5, recipient_unique_id="DUNS E", prime_award_type="IDV_E", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=6, recipient_unique_id="DUNS B_A", prime_award_type="IDV_B_A", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=7, recipient_unique_id="DUNS B_B", prime_award_type="IDV_B_B", award_type="procurement"
+    )
+    mommy.make(
+        "awards.Subaward", id=8, recipient_unique_id="DUNS B_C", prime_award_type="IDV_B_C", award_type="procurement"
     )
 
-    mock_model_1 = MockModel(
-        fain="",
-        prime_award_type="IDV_B",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-1",
-        award_type="procurement",
-        recipient_name="Samwise Gamgee",
-        action_date="2013-09-01",
-        amount=102432,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Samwise Gamgee",
+    mommy.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")
+    mommy.make("recipient.RecipientLookup", duns="DUNS B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942")
+    mommy.make("recipient.RecipientLookup", duns="DUNS C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943")
+    mommy.make("recipient.RecipientLookup", duns="DUNS D", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944")
+    mommy.make("recipient.RecipientLookup", duns="DUNS E", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945")
+    mommy.make("recipient.RecipientLookup", duns="DUNS B_A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946")
+    mommy.make("recipient.RecipientLookup", duns="DUNS B_B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947")
+    mommy.make("recipient.RecipientLookup", duns="DUNS B_C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948")
+
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS A",
+        recipient_level="P",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS B",
+        recipient_level="C",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS C",
+        recipient_level="R",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS D",
+        recipient_level="P",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS E",
+        recipient_level="C",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS B_A",
+        recipient_level="R",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS B_B",
+        recipient_level="P",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_unique_id="DUNS B_C",
+        recipient_level="C",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
     )
 
-    mock_model_2 = MockModel(
-        fain="",
-        prime_award_type="IDV_C",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-2",
-        award_type="procurement",
-        recipient_name="Legolas Greenleaf",
-        action_date="2013-09-01",
-        amount=10,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Legolas Greenleaf",
-    )
+    with connection.cursor() as cursor:
+        cursor.execute("refresh materialized view concurrently subaward_view")
 
-    mock_model_3 = MockModel(
-        fain="",
-        prime_award_type="IDV_D",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-3",
-        award_type="procurement",
-        recipient_name="Gandalf",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Gandalf",
-    )
-
-    mock_model_4 = MockModel(
-        fain="",
-        prime_award_type="IDV_E",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-4",
-        award_type="procurement",
-        recipient_name="Radagast",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Radagast",
-    )
-
-    mock_model_5 = MockModel(
-        fain="",
-        prime_award_type="IDV_B_A",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-5",
-        award_type="procurement",
-        recipient_name="Tom Bombadil",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Tom Bombadil",
-    )
-
-    mock_model_6 = MockModel(
-        fain="",
-        prime_award_type="IDV_B_B",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-6",
-        award_type="procurement",
-        recipient_name="Tom Bombadil",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Tom Bombadil",
-    )
-
-    mock_model_7 = MockModel(
-        fain="",
-        prime_award_type="IDV_B_C",
-        award_ts_vector="",
-        subaward_number="EP-W-13-028-7",
-        award_type="procurement",
-        recipient_name="Sauron",
-        action_date="2013-10-01",
-        amount=125000,
-        awarding_toptier_agency_name="Environmental Protection Agency",
-        awarding_subtier_agency_name="Environmental Protection Agency",
-        piid="EPW13028",
-        prime_recipient_name="Sauron",
-    )
-
-    add_to_mock_objects(
-        mock_matviews_qs,
-        [
-            mock_model_0,
-            mock_model_1,
-            mock_model_2,
-            mock_model_3,
-            mock_model_4,
-            mock_model_5,
-            mock_model_6,
-            mock_model_7,
-        ],
-    )
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",

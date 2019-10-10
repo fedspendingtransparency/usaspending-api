@@ -29,7 +29,7 @@ def test_award_endpoint(client):
             data=json.dumps(
                 {
                     "filters": [
-                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "equals", "value": "0300"}
+                        {"field": "funding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "0300"}
                     ]
                 }
             ),
@@ -48,12 +48,12 @@ def test_award_endpoint(client):
                             "combine_method": "OR",
                             "filters": [
                                 {
-                                    "field": "funding_agency__toptier_agency__fpds_code",
+                                    "field": "funding_agency__toptier_agency__cgac_code",
                                     "operation": "equals",
                                     "value": "0300",
                                 },
                                 {
-                                    "field": "awarding_agency__toptier_agency__fpds_code",
+                                    "field": "awarding_agency__toptier_agency__cgac_code",
                                     "operation": "equals",
                                     "value": "0300",
                                 },
@@ -73,7 +73,7 @@ def test_award_endpoint(client):
             data=json.dumps(
                 {
                     "filters": [
-                        {"field": "funding_agency__toptier_agency__fpds_code", "operation": "ff", "value": "0300"}
+                        {"field": "funding_agency__toptier_agency__cgac_code", "operation": "ff", "value": "0300"}
                     ]
                 }
             ),

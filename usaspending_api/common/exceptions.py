@@ -11,7 +11,7 @@ class NoDataFoundException(APIException):
 
 
 class InvalidParameterException(APIException):
-    """Exception for invalid request parameters."""
+    """Exception for invalid API request parameters."""
 
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Request contained an invalid parameter"
@@ -19,7 +19,10 @@ class InvalidParameterException(APIException):
 
 
 class UnprocessableEntityException(APIException):
-    """https://tools.ietf.org/html/rfc4918"""
+    """Exception for valid API request parameters but there are unmet constraints on the values.
+
+    https://tools.ietf.org/html/rfc4918
+    """
 
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Request parameter is valid but unable to process due to constraints"
@@ -35,6 +38,8 @@ class ElasticsearchConnectionException(APIException):
 
 
 class NotImplementedException(APIException):
+    """Exception to block an endpoint or specific logic path which will soon be available."""
+
     status_code = status.HTTP_501_NOT_IMPLEMENTED
     default_detail = "Functionality Not (yet) Implemented"
     default_code = "invalid_request"

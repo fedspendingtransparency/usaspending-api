@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
-from django.db.models import Sum
+from django.db.models import Case, IntegerField, Sum, Value, When
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,10 +13,12 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.recipient.models import RecipientLookup, StateData
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile, StateData
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.references.models import Agency, Cfda, LegalEntity, NAICS, PSC, RefCountryCode
 
 
@@ -38,7 +40,7 @@ ALIAS_DICT = {
         "funding_subtier_agency_abbreviation": "code",
     },
     "recipient_duns": {
-        "recipient_id": "id",
+        "recipient_id": "recipient_id",
         "recipient_name": "name",
         "recipient_unique_id": "code",
         "parent_recipient_unique_id": "code",
@@ -68,8 +70,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by the defined category/scope.
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
-    endpoint_doc: /advanced_award_search/spending_by_category.md
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_category.md"
 
     @cache_response()
     def post(self, request: dict):
@@ -218,6 +221,44 @@ class BusinessLogic:
             row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "funding_subagency")
         return results
 
+    @staticmethod
+    def _get_recipient_id(row):
+        """
+        In the recipient_profile table there is a 1 to 1 relationship between hashes and DUNS
+        (recipient_unique_id) and the hashes+duns match exactly between recipient_profile and
+        recipient_lookup where there are matches.  Grab the level from recipient_profile by
+        hash if we have one or by DUNS if we have one of those.
+        """
+        if "recipient_hash" in row:
+            profile_filter = {"recipient_hash": row["recipient_hash"]}
+        elif "recipient_unique_id" in row:
+            profile_filter = {"recipient_unique_id": row["recipient_unique_id"]}
+        else:
+            raise RuntimeError(
+                "Attempted to lookup recipient profile using a queryset that contains neither "
+                "'recipient_hash' nor 'recipient_unique_id'"
+            )
+
+        profile = (
+            RecipientProfile.objects.filter(**profile_filter)
+            .exclude(recipient_name__in=SPECIAL_CASES)
+            .annotate(
+                sort_order=Case(
+                    When(recipient_level="C", then=Value(0)),
+                    When(recipient_level="R", then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            )
+            .values("recipient_hash", "recipient_level")
+            .order_by("sort_order")
+            .first()
+        )
+
+        return (
+            combine_recipient_hash_and_level(profile["recipient_hash"], profile["recipient_level"]) if profile else None
+        )
+
     def recipient(self) -> list:
         if self.category == "recipient_duns":
             filters = {}
@@ -238,8 +279,11 @@ class BusinessLogic:
         # DB hit here
         query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         for row in query_results:
-            row["recipient_id"] = None
+
+            row["recipient_id"] = self._get_recipient_id(row)
+
             if not self.subawards:
+
                 lookup = (
                     RecipientLookup.objects.filter(recipient_hash=row["recipient_hash"])
                     .values("legal_business_name", "duns")

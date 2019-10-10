@@ -9,8 +9,16 @@ from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 def recipient_lookup(db):
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
     recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
+    mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
+    mommy.make("recipient.RecipientProfile", **recipient_profile)
+
+    # This is required for test_child_recipient_with_name_and_no_id.
+    recipient_profile = {"recipient_hash": "75c74068-3dd4-8770-52d0-999353d20f67", "recipient_level": "C"}
+    mommy.make("recipient.RecipientProfile", **recipient_profile)
 
 
 # Child Recipient Tests

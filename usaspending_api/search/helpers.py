@@ -1,34 +1,27 @@
 from django.db.models import Q
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.accounts.models import TASAwardMatview
-from usaspending_api.common.helpers.orm_helpers import generate_where_clause
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
-def build_tas_codes_filter(queryset, model, value):
+def build_tas_codes_filter(queryset, tas_filters):
     """
-    Build the TAS codes filter.  Because of performance issues, the normal
-    trick of checking for award_id in a subquery wasn't cutting it.  To
-    work around this, we're going to use the query.extra function to add SQL
-    that should give us a better query plan.
+    Filter the queryset to take advantage of the GIN indexed integer array of
+    treasury_appropriation_account treasury_account_identifiers by:
+
+        - Grabbing the list of all treasury_account_identifiers that match the filters provided.
+        - Assembling an integer array overlap (&&) query to search for those integers.
     """
 
-    # Build the filtering for the tas_award_matview.
-    or_queryset = Q()
-    for tas in value:
-        or_queryset |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas.items()})
+    tas_qs = Q()
+    for tas_filter in tas_filters:
+        tas_qs |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
 
-    if or_queryset:
-        # Now that we've built the actual filter, let's turn it into SQL that we
-        # can provide to the queryset.extra method.  We do this by converting the
-        # queryset to raw SQL.
-        where_sql, where_params = generate_where_clause(TASAwardMatview.objects.filter(or_queryset))
-        return queryset.extra(
-            tables=[TASAwardMatview._meta.db_table],
-            where=[
-                '"{}".award_id = "{}".award_id'.format(TASAwardMatview._meta.db_table, model._meta.db_table),
-                where_sql,
-            ],
-            params=where_params
+    # No sense continuing if this resulted in an empty Q statement for whatever reason.
+    if not tas_qs:
+        return queryset
+
+    return queryset.filter(
+        treasury_account_identifiers__overlap=list(
+            TreasuryAppropriationAccount.objects.filter(tas_qs).values_list("treasury_account_identifier", flat=True)
         )
-
-    return queryset
+    )

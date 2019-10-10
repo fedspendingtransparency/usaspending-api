@@ -1,9 +1,9 @@
 import datetime
-
-from model_mommy import mommy
 import pytest
 
-from usaspending_api.etl.award_helpers import get_award_financial_transaction, update_awards, update_contract_awards
+from model_mommy import mommy
+
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
 
 
 @pytest.mark.django_db
@@ -210,87 +210,176 @@ def test_award_update_contract_txn_with_list():
     assert awards[2].base_exercised_options_val == 500
 
 
-@pytest.mark.skip(reason="deletion feature not yet implemented")
 @pytest.mark.django_db
-def test_deleted_transactions():
-    """Test that award values are updated correctly when a txn is deleted."""
-    # writing these tests revealed that we're not updating awards fields when transactions are deleted. since the
-    # TransactionNormalized model's delete() method may not fire during a bulk deletion, we may want to use a signal
-    # rather than override delete()
+def test_award_update_contract_executive_comp():
+    """Test executive comp is loaded correctly awards from txn contract."""
 
-
-class FakeRow:
-    "Simulated row of financial transaction data"
-
-    def __init__(self, **kwargs):
-        self.fain = None
-        self.piid = None
-        self.uri = None
-        self.parent_award_id = None
-        self.__dict__.update(**kwargs)
-
-
-@pytest.mark.django_db
-def test_get_award_financial_transaction():
-    """Test looking up txn records ("D File") for an award financial ("C File") record"""
-
-    cgac = "1111"
-    toptier = mommy.make("references.ToptierAgency", cgac_code=cgac)
-    agency = mommy.make("references.Agency", toptier_agency=toptier)
-
-    txn1 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=1)
-    mommy.make("awards.TransactionFPDS", transaction=txn1, piid="abc")
-
-    txn2 = mommy.make(
-        "awards.TransactionNormalized", awarding_agency=agency, action_date=datetime.date(2017, 5, 1), id=2
+    award = mommy.make("awards.Award")
+    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
+    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=txn,
+        officer_1_name="Professor Plum",
+        officer_1_amount=1,
+        officer_2_name="Mrs. White",
+        officer_2_amount=2,
+        officer_3_name="Mrs. Peacock",
+        officer_3_amount=3,
+        officer_4_name="Mr. Green",
+        officer_4_amount=4,
+        officer_5_name="Colonel Mustard",
+        officer_5_amount=5,
     )
-    mommy.make("awards.TransactionFPDS", transaction=txn2, piid="abc", parent_award_id="def")
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=txn2,
+        officer_1_name="Jack Mustard",
+        officer_1_amount=100,
+        officer_2_name="Jacob Green",
+        officer_2_amount=200,
+        officer_3_name="Diane White",
+        officer_3_amount=300,
+        officer_4_name="Kasandra Scarlet",
+        officer_4_amount=400,
+        officer_5_name="Victor Plum",
+        officer_5_amount=500,
+    )
 
-    txn3 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=3)
-    mommy.make("awards.TransactionFABS", transaction=txn3, fain="123")
+    update_contract_awards()
+    award.refresh_from_db()
 
-    txn4 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=4)
-    mommy.make("awards.TransactionFABS", transaction=txn4, uri="456")
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
 
-    txn5 = mommy.make("awards.TransactionNormalized", awarding_agency=agency, id=5)
-    mommy.make("awards.TransactionFABS", transaction=txn5, fain="789", uri="nah")
+    # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    # match on piid
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc"))
-    assert txn == str(agency.id)
+    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionFPDS", transaction=txn3)
 
-    # match on piid + parent award id
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc", parent_award_id="def"))
-    assert txn == str(agency.id)
+    update_contract_awards()
+    award.refresh_from_db()
 
-    # match on fain
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="123"))
-    assert txn == str(agency.id)
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
 
-    # fain/uri combo should be unique
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="123", uri="fakeuri"))
-    assert txn is None
 
-    # match on uri alone
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri="456"))
-    assert txn == str(agency.id)
+@pytest.mark.django_db
+def test_award_update_assistance_executive_comp():
+    """Test executive comp is loaded correctly awards from txn contract."""
 
-    # if there's an unmatched fain, we should not find a txn match, even if there's a match on the URI
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="fakefain", uri="456"))
-    assert txn is None
+    award = mommy.make("awards.Award")
+    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
+    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction=txn,
+        officer_1_name="Professor Plum",
+        officer_1_amount=1,
+        officer_2_name="Mrs. White",
+        officer_2_amount=2,
+        officer_3_name="Mrs. Peacock",
+        officer_3_amount=3,
+        officer_4_name="Mr. Green",
+        officer_4_amount=4,
+        officer_5_name="Colonel Mustard",
+        officer_5_amount=5,
+    )
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction=txn2,
+        officer_1_name="Jack Mustard",
+        officer_1_amount=100,
+        officer_2_name="Jacob Green",
+        officer_2_amount=200,
+        officer_3_name="Diane White",
+        officer_3_amount=300,
+        officer_4_name="Kasandra Scarlet",
+        officer_4_amount=400,
+        officer_5_name="Victor Plum",
+        officer_5_amount=500,
+    )
 
-    # match on fain alone, even when there's no uri = Null record in the txn table
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain="789"))
-    assert txn == str(agency.id)
+    update_assistance_awards()
+    award.refresh_from_db()
 
-    # should not match on award id fields for a different cgac
-    txn = get_award_financial_transaction(FakeRow(agency_identifier="999", piid="abc"))
-    assert txn is None
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
 
-    # if there is more than one txn match, we should get the one with the most recent action date
+    # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
+
+    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionFABS", transaction=txn3)
+
+    update_assistance_awards()
+    award.refresh_from_db()
+
+    assert award.officer_1_name == "Jack Mustard"
+    assert award.officer_5_amount == 500
+
+
+@pytest.mark.django_db
+def test_award_update_transaction_fk():
+    """Test executive comp is loaded correctly awards from txn contract."""
+
+    award = mommy.make("awards.Award")
+    txn1 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2011-10-01",
+        description="Original Desc",
+        modification_number="P0001",
+    )
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2014-10-01")
+    mommy.make("awards.TransactionNormalized", award=award, action_date="2015-10-01")
     txn6 = mommy.make(
-        "awards.TransactionNormalized", awarding_agency=agency, action_date=datetime.date(2017, 5, 8), id=6
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2016-10-01",
+        description="Last Desc",
+        modification_number="P0011",
+        period_of_performance_current_end_date="2020-10-01",
     )
-    mommy.make("awards.TransactionFPDS", transaction=txn6, piid="abc", parent_award_id="def")
-    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid="abc", parent_award_id="def"))
-    assert txn == str(agency.id)
+
+    update_awards()
+    award.refresh_from_db()
+
+    assert award.description == txn1.description
+    assert award.earliest_transaction == txn1
+    assert award.latest_transaction == txn6
+    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
+    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
+    assert (
+        award.period_of_performance_current_end_date.strftime("%Y-%m-%d") == txn6.period_of_performance_current_end_date
+    )
+
+    txn0 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=txn1.action_date,
+        description="Updated Original Desc",
+        modification_number="P0000",
+    )
+
+    txn10 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=txn6.action_date,
+        modification_number="P1000",
+        period_of_performance_current_end_date="2019-10-01",
+    )
+
+    update_awards()
+    award.refresh_from_db()
+
+    assert award.description == txn0.description
+    assert award.earliest_transaction == txn0
+    assert award.latest_transaction == txn10
+    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
+    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
+    assert (
+        award.period_of_performance_current_end_date.strftime("%Y-%m-%d")
+        == txn10.period_of_performance_current_end_date
+    )

@@ -5,6 +5,9 @@ Sets up mappings from column names used in downloads to the query paths used to 
 
 Not in use while we pull CSV data from the non-historical tables. Until we switch to pulling CSV downloads from the
 historical tables TransactionFPDS and TransactionFABS, import download_column_lookups.py instead.
+
+NOTE: To allow for annotations to be used on download a pair of ("<alias>", None) is used so that a placeholder
+for the column is made, but it can be removed to avoid being used as a query path.
 """
 """
 Code to generate these from spreadsheets:
@@ -14,10 +17,12 @@ d2_columns.csv
 
 """
 
+
 query_paths = {
     "award": {
         "d1": OrderedDict(
             [
+                ("contract_award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "award__piid"),
                 ("parent_award_agency_id", "award__latest_transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "award__latest_transaction__contract_data__referenced_idv_agency_desc"),
@@ -38,6 +43,7 @@ query_paths = {
                     "award__latest_transaction__contract_data__period_of_perf_potential_e",
                 ),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
+                ("solicitation_date", "award__earliest_transaction__contract_data__solicitation_date"),
                 ("awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
                 ("awarding_agency_name", "award__latest_transaction__contract_data__awarding_agency_name"),
                 ("awarding_sub_agency_code", "award__latest_transaction__contract_data__awarding_sub_tier_agency_c"),
@@ -50,6 +56,8 @@ query_paths = {
                 ("funding_sub_agency_name", "award__latest_transaction__contract_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "award__latest_transaction__contract_data__funding_office_code"),
                 ("funding_office_name", "award__latest_transaction__contract_data__funding_office_name"),
+                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "award__latest_transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "award__latest_transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "award__latest_transaction__contract_data__sam_exception"),
@@ -110,8 +118,14 @@ query_paths = {
                     "award__latest_transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "award__latest_transaction__contract_data__pulled_from"),
-                ("award_type_code", "award__latest_transaction__contract_data__contract_award_type"),
-                ("award_type", "award__latest_transaction__contract_data__contract_award_type_desc"),
+                (
+                    "award_type_code",
+                    "award__latest_transaction__contract_data__contract_award_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "award_type",
+                    "award__latest_transaction__contract_data__contract_award_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 (
@@ -126,7 +140,7 @@ query_paths = {
                 ("type_of_idc", "award__latest_transaction__contract_data__type_of_idc_description"),
                 ("type_of_contract_pricing_code", "award__latest_transaction__contract_data__type_of_contract_pricing"),
                 ("type_of_contract_pricing", "award__latest_transaction__contract_data__type_of_contract_pric_desc"),
-                ("award_description", "award__latest_transaction__contract_data__award_description"),
+                ("award_description", "award__description"),
                 ("solicitation_identifier", "award__latest_transaction__contract_data__solicitation_identifier"),
                 ("number_of_actions", "award__latest_transaction__contract_data__number_of_actions"),
                 (
@@ -277,8 +291,14 @@ query_paths = {
                 ),
                 ("other_statutory_authority", "award__latest_transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "award__latest_transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "award__latest_transaction__contract_data__referenced_idv_type"),
-                ("parent_award_type", "award__latest_transaction__contract_data__referenced_idv_type_desc"),
+                (
+                    "parent_award_type_code",
+                    "award__latest_transaction__contract_data__referenced_idv_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type",
+                    "award__latest_transaction__contract_data__referenced_idv_type_desc",
+                ),  # Column is appended to in account_download.py
                 (
                     "parent_award_single_or_multiple_code",
                     "award__latest_transaction__contract_data__referenced_mult_or_single",
@@ -539,11 +559,22 @@ query_paths = {
                     "sba_certified_8a_joint_venture",
                     "award__latest_transaction__contract_data__sba_certified_8_a_joint_ve",
                 ),
+                ("highly_compensated_officer_1_name", "award__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "award__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "award__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "award__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "award__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "award__officer_3_amount"),
+                ("highly_compensated_officer_4_name", "award__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "award__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
                 ("last_modified_date", "award__latest_transaction__contract_data__last_modified"),
             ]
         ),
         "d2": OrderedDict(
             [
+                ("assistance_award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_fain", "award__fain"),
                 ("award_id_uri", "award__uri"),
                 ("sai_number", "award__latest_transaction__assistance_data__sai_number"),
@@ -568,6 +599,8 @@ query_paths = {
                 ("funding_sub_agency_name", "award__latest_transaction__assistance_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "award__latest_transaction__assistance_data__funding_office_code"),
                 ("funding_office_name", "award__latest_transaction__assistance_data__funding_office_name"),
+                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "award__latest_transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -644,7 +677,7 @@ query_paths = {
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("assistance_type_code", "award__latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "award__latest_transaction__assistance_data__assistance_type_desc"),
-                ("award_description", "award__latest_transaction__assistance_data__award_description"),
+                ("award_description", "award__description"),
                 (
                     "business_funds_indicator_code",
                     "award__latest_transaction__assistance_data__business_funds_indicator",
@@ -657,6 +690,16 @@ query_paths = {
                 ("business_types_description", "award__latest_transaction__assistance_data__business_types_desc"),
                 ("record_type_code", "award__latest_transaction__assistance_data__record_type"),
                 ("record_type_description", "award__latest_transaction__assistance_data__record_type_description"),
+                ("highly_compensated_officer_1_name", "award__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "award__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "award__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "award__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "award__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "award__officer_3_amount"),
+                ("highly_compensated_officer_4_name", "award__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "award__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
                 ("last_modified_date", "award__latest_transaction__assistance_data__modified_at"),
             ]
         ),
@@ -665,6 +708,7 @@ query_paths = {
         "d1": OrderedDict(
             [
                 ("contract_transaction_unique_key", "transaction__contract_data__detached_award_proc_unique"),
+                ("contract_award_unique_key", "transaction__award__generated_unique_award_id"),
                 ("award_id_piid", "transaction__contract_data__piid"),
                 ("modification_number", "transaction__contract_data__award_modification_amendme"),
                 ("transaction_number", "transaction__contract_data__transaction_number"),
@@ -679,10 +723,12 @@ query_paths = {
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
                 ("action_date", "transaction__action_date"),
+                ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
                 ("period_of_performance_current_end_date", "transaction__contract_data__period_of_performance_curr"),
                 ("period_of_performance_potential_end_date", "transaction__contract_data__period_of_perf_potential_e"),
                 ("ordering_period_end_date", "transaction__contract_data__ordering_period_end_date"),
+                ("solicitation_date", "transaction__contract_data__solicitation_date"),
                 ("awarding_agency_code", "transaction__contract_data__awarding_agency_code"),
                 ("awarding_agency_name", "transaction__contract_data__awarding_agency_name"),
                 ("awarding_sub_agency_code", "transaction__contract_data__awarding_sub_tier_agency_c"),
@@ -695,6 +741,8 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__contract_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__contract_data__funding_office_code"),
                 ("funding_office_name", "transaction__contract_data__funding_office_name"),
+                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
@@ -728,8 +776,14 @@ query_paths = {
                     "transaction__contract_data__place_of_performance_congr",
                 ),
                 ("award_or_idv_flag", "transaction__contract_data__pulled_from"),
-                ("award_type_code", "transaction__contract_data__contract_award_type"),
-                ("award_type", "transaction__contract_data__contract_award_type_desc"),
+                (
+                    "award_type_code",
+                    "transaction__contract_data__contract_award_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "award_type",
+                    "transaction__contract_data__contract_award_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("idv_type_code", "transaction__contract_data__idv_type"),
                 ("idv_type", "transaction__contract_data__idv_type_description"),
                 ("multiple_or_single_award_idv_code", "transaction__contract_data__multiple_or_single_award_i"),
@@ -829,8 +883,14 @@ query_paths = {
                 ("interagency_contracting_authority", "transaction__contract_data__interagency_contract_desc"),
                 ("other_statutory_authority", "transaction__contract_data__other_statutory_authority"),
                 ("program_acronym", "transaction__contract_data__program_acronym"),
-                ("parent_award_type_code", "transaction__contract_data__referenced_idv_type"),
-                ("parent_award_type", "transaction__contract_data__referenced_idv_type_desc"),
+                (
+                    "parent_award_type_code",
+                    "transaction__contract_data__referenced_idv_type",
+                ),  # Column is appended to in account_download.py
+                (
+                    "parent_award_type",
+                    "transaction__contract_data__referenced_idv_type_desc",
+                ),  # Column is appended to in account_download.py
                 ("parent_award_single_or_multiple_code", "transaction__contract_data__referenced_mult_or_single"),
                 ("parent_award_single_or_multiple", "transaction__contract_data__referenced_mult_or_si_desc"),
                 ("major_program", "transaction__contract_data__major_program"),
@@ -988,12 +1048,23 @@ query_paths = {
                     "transaction__contract_data__historically_underutilized",
                 ),
                 ("sba_certified_8a_joint_venture", "transaction__contract_data__sba_certified_8_a_joint_ve"),
+                ("highly_compensated_officer_1_name", "transaction__contract_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "transaction__contract_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "transaction__contract_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "transaction__contract_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "transaction__contract_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "transaction__contract_data__officer_3_amount"),
+                ("highly_compensated_officer_4_name", "transaction__contract_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "transaction__contract_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "transaction__contract_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "transaction__contract_data__officer_5_amount"),
                 ("last_modified_date", "transaction__contract_data__last_modified"),
             ]
         ),
         "d2": OrderedDict(
             [
                 ("assistance_transaction_unique_key", "transaction__assistance_data__afa_generated_unique"),
+                ("assistance_award_unique_key", "transaction__award__generated_unique_award_id"),
                 ("award_id_fain", "transaction__assistance_data__fain"),
                 ("modification_number", "transaction__modification_number"),
                 ("award_id_uri", "transaction__assistance_data__uri"),
@@ -1006,6 +1077,7 @@ query_paths = {
                 ("total_subsidy_cost", "transaction__award__total_subsidy_cost"),
                 ("total_loan_value", "transaction__award__total_loan_value"),
                 ("action_date", "transaction__action_date"),
+                ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "transaction__period_of_performance_current_end_date"),
                 ("awarding_agency_code", "transaction__assistance_data__awarding_agency_code"),
@@ -1020,6 +1092,8 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__assistance_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__assistance_data__funding_office_code"),
                 ("funding_office_name", "transaction__assistance_data__funding_office_name"),
+                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_name", "transaction__assistance_data__ultimate_parent_legal_enti"),
@@ -1083,6 +1157,16 @@ query_paths = {
                 ("action_type_description", "transaction__assistance_data__action_type_description"),
                 ("record_type_code", "transaction__assistance_data__record_type"),
                 ("record_type_description", "transaction__assistance_data__record_type_description"),
+                ("highly_compensated_officer_1_name", "transaction__assistance_data__officer_1_name"),
+                ("highly_compensated_officer_1_amount", "transaction__assistance_data__officer_1_amount"),
+                ("highly_compensated_officer_2_name", "transaction__assistance_data__officer_2_name"),
+                ("highly_compensated_officer_2_amount", "transaction__assistance_data__officer_2_amount"),
+                ("highly_compensated_officer_3_name", "transaction__assistance_data__officer_3_name"),
+                ("highly_compensated_officer_3_amount", "transaction__assistance_data__officer_3_amount"),
+                ("highly_compensated_officer_4_name", "transaction__assistance_data__officer_4_name"),
+                ("highly_compensated_officer_4_amount", "transaction__assistance_data__officer_4_amount"),
+                ("highly_compensated_officer_5_name", "transaction__assistance_data__officer_5_name"),
+                ("highly_compensated_officer_5_amount", "transaction__assistance_data__officer_5_amount"),
                 ("last_modified_date", "transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1090,159 +1174,243 @@ query_paths = {
     "subaward": {
         "d1": OrderedDict(
             [
-                ("subaward_number", "subaward_number"),
-                ("prime_award_piid", "award__piid"),
-                ("prime_award_parent_piid", "award__parent_award_piid"),
-                ("subaward_amount", "subaward__amount"),
-                ("subaward_action_date", "subaward__action_date"),
-                ("subaward_report_year", "subaward__award_report_fy_year"),
-                ("subaward_report_month", "subaward__award_report_fy_month"),
-                ("prime_awarding_agency_code", "award__latest_transaction__contract_data__awarding_agency_code"),
-                ("prime_awarding_agency_name", "award__latest_transaction__contract_data__awarding_agency_name"),
+                ("prime_award_unique_key", "broker_subaward__unique_award_key"),
+                ("prime_award_piid", "broker_subaward__award_id"),
+                ("prime_award_parent_piid", "broker_subaward__parent_award_id"),
+                ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_action_date", "broker_subaward__action_date"),
+                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_fiscal_year", "broker_subaward__fy"),
+                ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
+                ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
+                ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
+                ("prime_award_awarding_sub_agency_name", "broker_subaward__awarding_sub_tier_agency_n"),
+                ("prime_award_awarding_office_code", "broker_subaward__awarding_office_code"),
+                ("prime_award_awarding_office_name", "broker_subaward__awarding_office_name"),
+                ("prime_award_funding_agency_code", "broker_subaward__funding_office_code"),
+                ("prime_award_funding_agency_name", "broker_subaward__funding_office_name"),
+                ("prime_award_funding_sub_agency_code", "broker_subaward__funding_sub_tier_agency_co"),
+                ("prime_award_funding_sub_agency_name", "broker_subaward__funding_sub_tier_agency_na"),
+                ("prime_award_funding_office_code", "broker_subaward__funding_office_code"),
+                ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
+                ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
+                ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
+                ("prime_awardee_dba_name", "broker_subaward__dba_name"),
+                ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
+                ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
+                ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
+                ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
+                ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
+                ("prime_awardee_city_name", "broker_subaward__legal_entity_city_name"),
+                ("prime_awardee_state_code", "broker_subaward__legal_entity_state_code"),
+                ("prime_awardee_state_name", "broker_subaward__legal_entity_state_name"),
+                ("prime_awardee_zip_code", "broker_subaward__legal_entity_zip"),
+                ("prime_awardee_congressional_district", "broker_subaward__legal_entity_congressional"),
+                ("prime_awardee_foreign_postal_code", "broker_subaward__legal_entity_foreign_posta"),
+                ("prime_awardee_business_types", "broker_subaward__business_types"),
+                ("prime_award_primary_place_of_performance_city_name", "broker_subaward__place_of_perform_city_name"),
+                ("prime_award_primary_place_of_performance_state_code", "broker_subaward__place_of_perform_state_code"),
+                ("prime_award_primary_place_of_performance_state_name", "broker_subaward__place_of_perform_state_name"),
                 (
-                    "prime_awarding_sub_agency_code",
-                    "award__latest_transaction__contract_data__awarding_sub_tier_agency_c",
+                    "prime_award_primary_place_of_performance_address_zip_code",
+                    "broker_subaward__place_of_performance_zip",
                 ),
                 (
-                    "prime_awarding_sub_agency_name",
-                    "award__latest_transaction__contract_data__awarding_sub_tier_agency_n",
-                ),
-                ("prime_awarding_office_code", "award__latest_transaction__contract_data__awarding_office_code"),
-                ("prime_awarding_office_name", "award__latest_transaction__contract_data__awarding_office_name"),
-                (
-                    "prime_award_principal_place_city",
-                    "award__latest_transaction__contract_data__place_of_perform_city_name",
+                    "prime_award_primary_place_of_performance_congressional_district",
+                    "broker_subaward__place_of_perform_congressio",
                 ),
                 (
-                    "prime_award_principal_place_state",
-                    "award__latest_transaction__contract_data__place_of_performance_state",
+                    "prime_award_primary_place_of_performance_country_code",
+                    "broker_subaward__place_of_perform_country_co",
                 ),
                 (
-                    "prime_award_principal_place_zip",
-                    "award__latest_transaction__contract_data__place_of_performance_zip4a",
+                    "prime_award_primary_place_of_performance_country_name",
+                    "broker_subaward__place_of_perform_country_na",
+                ),
+                ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_naics_code", "broker_subaward__naics"),
+                ("prime_award_naics_description", "broker_subaward__naics_description"),
+                ("subaward_type", "broker_subaward__subaward_type"),
+                ("subaward_report_year", "broker_subaward__subaward_report_year"),
+                ("subaward_report_month", "broker_subaward__subaward_report_month"),
+                ("subaward_number", "broker_subaward__subaward_number"),
+                ("subaward_amount", "broker_subaward__subaward_amount"),
+                ("subaward_action_date", "broker_subaward__sub_action_date"),
+                ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("subawardee_duns", "broker_subaward__sub_awardee_or_recipient_uniqu"),
+                ("subawardee_name", "broker_subaward__sub_awardee_or_recipient_legal"),
+                ("subawardee_dba_name", "broker_subaward__sub_dba_name"),
+                ("subawardee_parent_duns", "broker_subaward__sub_ultimate_parent_unique_ide"),
+                ("subawardee_parent_name", "broker_subaward__sub_ultimate_parent_legal_enti"),
+                ("subawardee_country_code", "broker_subaward__sub_legal_entity_country_code"),
+                ("subawardee_country_name", "broker_subaward__sub_legal_entity_country_name"),
+                ("subawardee_address_line_1", "broker_subaward__sub_legal_entity_address_line1"),
+                ("subawardee_city_name", "broker_subaward__sub_legal_entity_city_name"),
+                ("subawardee_state_code", "broker_subaward__sub_legal_entity_state_code"),
+                ("subawardee_state_name", "broker_subaward__sub_legal_entity_state_name"),
+                ("subawardee_zip_code", "broker_subaward__sub_legal_entity_zip"),
+                ("subawardee_congressional_district", "broker_subaward__sub_legal_entity_congressional"),
+                ("subawardee_foreign_postal_code", "broker_subaward__sub_legal_entity_foreign_posta"),
+                ("subawardee_business_types", "broker_subaward__sub_business_types"),
+                ("subaward_primary_place_of_performance_address_line_1", "broker_subaward__place_of_perform_street"),
+                ("subaward_primary_place_of_performance_city_name", "broker_subaward__sub_place_of_perform_city_name"),
+                (
+                    "subaward_primary_place_of_performance_state_code",
+                    "broker_subaward__sub_place_of_perform_state_code",
                 ),
                 (
-                    "prime_award_principal_place_country",
-                    "award__latest_transaction__contract_data__place_of_perform_country_c",
+                    "subaward_primary_place_of_performance_state_name",
+                    "broker_subaward__sub_place_of_perform_state_name",
                 ),
-                ("prime_awardee_duns", "award__latest_transaction__contract_data__awardee_or_recipient_uniqu"),
-                ("prime_awardee_name", "award__latest_transaction__contract_data__awardee_or_recipient_legal"),
-                ("prime_award_date_signed", "award__date_signed"),
-                ("prime_award_amount", "award__total_obligation"),
-                ("subawardee_duns", "subaward__recipient_unique_id"),
-                ("subawardee_name", "subaward__recipient_name"),
-                ("subawardee_dba_name", "subaward__dba_name"),
-                ("subawardee_parent_duns", "subaward__parent_recipient_unique_id"),
-                ("subawardee_parent_name", "subaward__parent_recipient_name"),
-                ("subawardee_address_line_1", "subaward__recipient_location_street_address"),
-                ("subawardee_city_name", "subaward__recipient_location_city_name"),
-                ("subawardee_state_code", "subaward__recipient_location_state_code"),
-                ("subawardee_state_name", "subaward__recipient_location_state_name"),
-                ("subawardee_zip_4", "subaward__recipient_location_zip4"),
-                ("subawardee_congressional_district", "subaward__recipient_location_congressional_code"),
-                ("subawardee_country_code", "subaward__recipient_location_country_code"),
-                ("subawardee_country_name", "subaward__recipient_location_country_name"),
-                ("subawardee_foreign_postal_code", "subaward__recipient_location_foreign_postal_code"),
-                ("subaward_primary_place_of_performance_address_line_1", "subaward__pop_street_address"),
-                ("subaward_primary_place_of_performance_city_name", "subaward__pop_city_name"),
-                ("subaward_primary_place_of_performance_state_code", "subaward__pop_state_code"),
-                ("subaward_primary_place_of_performance_state_name", "subaward__pop_state_name"),
-                ("subaward_primary_place_of_performance_address_zip_4", "subaward__pop_zip4"),
-                ("subaward_primary_place_of_performance_congressional_district", "subaward__pop_congressional_code"),
-                ("subaward_primary_place_of_performance_country_code", "subaward__pop_country_code"),
-                ("subaward_primary_place_of_performance_country_name", "subaward__pop_country_name"),
-                ("subaward_description", "subaward__description"),
-                ("subaward_naics_code", "award__latest_transaction__contract_data__naics"),
-                ("subaward_naics_description", "award__latest_transaction__contract_data__naics_description"),
-                ("subawardee_business_type_code", "subaward__business_type_code"),
-                ("subawardee_business_type_description", "subaward__business_type_description"),
-                ("highly_compensated_officer_1_name", "subaward__officer_1_name"),
-                ("highly_compensated_officer_1_amount", "subaward__officer_1_amount"),
-                ("highly_compensated_officer_2_name", "subaward__officer_2_name"),
-                ("highly_compensated_officer_2_amount", "subaward__officer_2_amount"),
-                ("highly_compensated_officer_3_name", "subaward__officer_3_name"),
-                ("highly_compensated_officer_3_amount", "subaward__officer_3_amount"),
-                ("highly_compensated_officer_4_name", "subaward__officer_4_name"),
-                ("highly_compensated_officer_4_amount", "subaward__officer_4_amount"),
-                ("highly_compensated_officer_5_name", "subaward__officer_5_name"),
-                ("highly_compensated_officer_5_amount", "subaward__officer_5_amount"),
+                (
+                    "subaward_primary_place_of_performance_address_zip_code",
+                    "broker_subaward__sub_place_of_performance_zip",
+                ),
+                (
+                    "subaward_primary_place_of_performance_congressional_district",
+                    "broker_subaward__sub_place_of_perform_congressio",
+                ),
+                (
+                    "subaward_primary_place_of_performance_country_code",
+                    "broker_subaward__sub_place_of_perform_country_co",
+                ),
+                (
+                    "subaward_primary_place_of_performance_country_name",
+                    "broker_subaward__sub_place_of_perform_country_na",
+                ),
+                ("subaward_description", "broker_subaward__subaward_description"),
+                ("subawardee_highly_compensated_officer_1_name", "broker_subaward__sub_high_comp_officer1_full_na"),
+                ("subawardee_highly_compensated_officer_1_amount", "broker_subaward__sub_high_comp_officer1_amount"),
+                ("subawardee_highly_compensated_officer_2_name", "broker_subaward__sub_high_comp_officer2_full_na"),
+                ("subawardee_highly_compensated_officer_2_amount", "broker_subaward__sub_high_comp_officer2_amount"),
+                ("subawardee_highly_compensated_officer_3_name", "broker_subaward__sub_high_comp_officer3_full_na"),
+                ("subawardee_highly_compensated_officer_3_amount", "broker_subaward__sub_high_comp_officer3_amount"),
+                ("subawardee_highly_compensated_officer_4_name", "broker_subaward__sub_high_comp_officer4_full_na"),
+                ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
+                ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
+                ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
             ]
         ),
         "d2": OrderedDict(
             [
-                ("subaward_number", "subaward_number"),
-                ("prime_award_fain", "award__fain"),
-                ("subaward_amount", "subaward__amount"),
-                ("subaward_action_date", "subaward__action_date"),
-                ("subaward_report_year", "subaward__award_report_fy_year"),
-                ("subaward_report_month", "subaward__award_report_fy_month"),
-                ("prime_awarding_agency_code", "award__latest_transaction__assistance_data__awarding_agency_code"),
-                ("prime_awarding_agency_name", "award__latest_transaction__assistance_data__awarding_agency_name"),
+                ("prime_award_unique_key", "broker_subaward__unique_award_key"),
+                ("prime_award_fain", "broker_subaward__award_id"),
+                ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_action_date", "broker_subaward__action_date"),
+                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_fiscal_year", "broker_subaward__fy"),
+                ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
+                ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
+                ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
+                ("prime_award_awarding_sub_agency_name", "broker_subaward__awarding_sub_tier_agency_n"),
+                ("prime_award_awarding_office_code", "broker_subaward__awarding_office_code"),
+                ("prime_award_awarding_office_name", "broker_subaward__awarding_office_name"),
+                ("prime_award_funding_agency_code", "broker_subaward__funding_office_code"),
+                ("prime_award_funding_agency_name", "broker_subaward__funding_office_name"),
+                ("prime_award_funding_sub_agency_code", "broker_subaward__funding_sub_tier_agency_co"),
+                ("prime_award_funding_sub_agency_name", "broker_subaward__funding_sub_tier_agency_na"),
+                ("prime_award_funding_office_code", "broker_subaward__funding_office_code"),
+                ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
+                ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
+                ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
+                ("prime_awardee_dba_name", "broker_subaward__dba_name"),
+                ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
+                ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
+                ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
+                ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
+                ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
+                ("prime_awardee_city_name", "broker_subaward__legal_entity_city_name"),
+                ("prime_awardee_state_code", "broker_subaward__legal_entity_state_code"),
+                ("prime_awardee_state_name", "broker_subaward__legal_entity_state_name"),
+                ("prime_awardee_zip_code", "broker_subaward__legal_entity_zip"),
+                ("prime_awardee_congressional_district", "broker_subaward__legal_entity_congressional"),
+                ("prime_awardee_foreign_postal_code", "broker_subaward__legal_entity_foreign_posta"),
+                ("prime_awardee_business_types", "broker_subaward__business_types"),
+                ("prime_award_primary_place_of_performance_city_name", "broker_subaward__place_of_perform_city_name"),
+                ("prime_award_primary_place_of_performance_state_code", "broker_subaward__place_of_perform_state_code"),
+                ("prime_award_primary_place_of_performance_state_name", "broker_subaward__place_of_perform_state_name"),
                 (
-                    "prime_awarding_sub_agency_code",
-                    "award__latest_transaction__assistance_data__awarding_sub_tier_agency_c",
+                    "prime_award_primary_place_of_performance_address_zip_code",
+                    "broker_subaward__place_of_performance_zip",
                 ),
                 (
-                    "prime_awarding_sub_agency_name",
-                    "award__latest_transaction__assistance_data__awarding_sub_tier_agency_n",
+                    "prime_award_primary_place_of_performance_congressional_district",
+                    "broker_subaward__place_of_perform_congressio",
                 ),
                 (
-                    "prime_award_principal_place_city",
-                    "award__latest_transaction__assistance_data__place_of_performance_city",
+                    "prime_award_primary_place_of_performance_country_code",
+                    "broker_subaward__place_of_perform_country_co",
                 ),
                 (
-                    "prime_award_principal_place_state",
-                    "award__latest_transaction__assistance_data__place_of_perform_state_nam",
+                    "prime_award_primary_place_of_performance_country_name",
+                    "broker_subaward__place_of_perform_country_na",
+                ),
+                ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_cfda_number", "broker_subaward__cfda_numbers"),
+                ("prime_award_cfda_title", "broker_subaward__cfda_titles"),
+                ("subaward_type", "broker_subaward__subaward_type"),
+                ("subaward_report_year", "broker_subaward__subaward_report_year"),
+                ("subaward_report_month", "broker_subaward__subaward_report_month"),
+                ("subaward_number", "broker_subaward__subaward_number"),
+                ("subaward_amount", "broker_subaward__subaward_amount"),
+                ("subaward_action_date", "broker_subaward__sub_action_date"),
+                ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("subawardee_duns", "broker_subaward__sub_awardee_or_recipient_uniqu"),
+                ("subawardee_name", "broker_subaward__sub_awardee_or_recipient_legal"),
+                ("subawardee_dba_name", "broker_subaward__sub_dba_name"),
+                ("subawardee_parent_duns", "broker_subaward__sub_ultimate_parent_unique_ide"),
+                ("subawardee_parent_name", "broker_subaward__sub_ultimate_parent_legal_enti"),
+                ("subawardee_country_code", "broker_subaward__sub_legal_entity_country_code"),
+                ("subawardee_country_name", "broker_subaward__sub_legal_entity_country_name"),
+                ("subawardee_address_line_1", "broker_subaward__sub_legal_entity_address_line1"),
+                ("subawardee_city_name", "broker_subaward__sub_legal_entity_city_name"),
+                ("subawardee_state_code", "broker_subaward__sub_legal_entity_state_code"),
+                ("subawardee_state_name", "broker_subaward__sub_legal_entity_state_name"),
+                ("subawardee_zip_code", "broker_subaward__sub_legal_entity_zip"),
+                ("subawardee_congressional_district", "broker_subaward__sub_legal_entity_congressional"),
+                ("subawardee_foreign_postal_code", "broker_subaward__sub_legal_entity_foreign_posta"),
+                ("subawardee_business_types", "broker_subaward__sub_business_types"),
+                ("subaward_primary_place_of_performance_address_line_1", "broker_subaward__place_of_perform_street"),
+                ("subaward_primary_place_of_performance_city_name", "broker_subaward__sub_place_of_perform_city_name"),
+                (
+                    "subaward_primary_place_of_performance_state_code",
+                    "broker_subaward__sub_place_of_perform_state_code",
                 ),
                 (
-                    "prime_award_principal_place_zip",
-                    "award__latest_transaction__assistance_data__place_of_performance_zip4a",
+                    "subaward_primary_place_of_performance_state_name",
+                    "broker_subaward__sub_place_of_perform_state_name",
                 ),
                 (
-                    "prime_award_principal_place_country",
-                    "award__latest_transaction__assistance_data__place_of_perform_country_c",
+                    "subaward_primary_place_of_performance_address_zip_code",
+                    "broker_subaward__sub_place_of_performance_zip",
                 ),
-                ("prime_award_date_signed", "award__date_signed"),
-                ("prime_award_amount", "award__total_obligation"),
-                ("prime_awardee_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
-                ("prime_awardee_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
-                ("subawardee_duns", "subaward__recipient_unique_id"),
-                ("subawardee_name", "subaward__recipient_name"),
-                ("subawardee_dba_name", "subaward__dba_name"),
-                ("subawardee_parent_duns", "subaward__parent_recipient_unique_id"),
-                ("subawardee_parent_name", "subaward__parent_recipient_name"),
-                ("subawardee_address_line_1", "subaward__recipient_location_street_address"),
-                ("subawardee_city_name", "subaward__recipient_location_city_name"),
-                ("subawardee_state_code", "subaward__recipient_location_state_code"),
-                ("subawardee_state_name", "subaward__recipient_location_state_name"),
-                ("subawardee_zip_4", "subaward__recipient_location_zip4"),
-                ("subawardee_congressional_district", "subaward__recipient_location_congressional_code"),
-                ("subawardee_country_code", "subaward__recipient_location_country_code"),
-                ("subawardee_country_name", "subaward__recipient_location_country_name"),
-                ("subawardee_foreign_postal_code", "subaward__recipient_location_foreign_postal_code"),
-                ("subaward_primary_place_of_performance_address_line_1", "subaward__pop_street_address"),
-                ("subaward_primary_place_of_performance_city_name", "subaward__pop_city_name"),
-                ("subaward_primary_place_of_performance_state_code", "subaward__pop_state_code"),
-                ("subaward_primary_place_of_performance_state_name", "subaward__pop_state_name"),
-                ("subaward_primary_place_of_performance_address_zip_4", "subaward__pop_zip4"),
-                ("subaward_primary_place_of_performance_congressional_district", "subaward__pop_congressional_code"),
-                ("subaward_primary_place_of_performance_country_code", "subaward__pop_country_code"),
-                ("subaward_primary_place_of_performance_country_name", "subaward__pop_country_name"),
-                ("subaward_description", "subaward__description"),
-                ("subaward_cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
-                ("subaward_cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
-                ("subawardee_business_type_code", "subaward__business_type_code"),
-                ("subawardee_business_type_description", "subaward__business_type_description"),
-                ("highly_compensated_officer_1_name", "subaward__officer_1_name"),
-                ("highly_compensated_officer_1_amount", "subaward__officer_1_amount"),
-                ("highly_compensated_officer_2_name", "subaward__officer_2_name"),
-                ("highly_compensated_officer_2_amount", "subaward__officer_2_amount"),
-                ("highly_compensated_officer_3_name", "subaward__officer_3_name"),
-                ("highly_compensated_officer_3_amount", "subaward__officer_3_amount"),
-                ("highly_compensated_officer_4_name", "subaward__officer_4_name"),
-                ("highly_compensated_officer_4_amount", "subaward__officer_4_amount"),
-                ("highly_compensated_officer_5_name", "subaward__officer_5_name"),
-                ("highly_compensated_officer_5_amount", "subaward__officer_5_amount"),
+                (
+                    "subaward_primary_place_of_performance_congressional_district",
+                    "broker_subaward__sub_place_of_perform_congressio",
+                ),
+                (
+                    "subaward_primary_place_of_performance_country_code",
+                    "broker_subaward__sub_place_of_perform_country_co",
+                ),
+                (
+                    "subaward_primary_place_of_performance_country_name",
+                    "broker_subaward__sub_place_of_perform_country_na",
+                ),
+                ("subaward_description", "broker_subaward__subaward_description"),
+                ("subawardee_highly_compensated_officer_1_name", "broker_subaward__sub_high_comp_officer1_full_na"),
+                ("subawardee_highly_compensated_officer_1_amount", "broker_subaward__sub_high_comp_officer1_amount"),
+                ("subawardee_highly_compensated_officer_2_name", "broker_subaward__sub_high_comp_officer2_full_na"),
+                ("subawardee_highly_compensated_officer_2_amount", "broker_subaward__sub_high_comp_officer2_amount"),
+                ("subawardee_highly_compensated_officer_3_name", "broker_subaward__sub_high_comp_officer3_full_na"),
+                ("subawardee_highly_compensated_officer_3_amount", "broker_subaward__sub_high_comp_officer3_amount"),
+                ("subawardee_highly_compensated_officer_4_name", "broker_subaward__sub_high_comp_officer4_full_na"),
+                ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
+                ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
+                ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
             ]
         ),
     },
@@ -1256,12 +1424,16 @@ query_paths = {
                 ("availability_type_code", "treasury_account_identifier__availability_type_code"),
                 ("main_account_code", "treasury_account_identifier__main_account_code"),
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account_identifier__account_title"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 (
                     "budget_authority_unobligated_balance_brought_forward",
@@ -1292,9 +1464,9 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
                 (
@@ -1335,12 +1507,16 @@ query_paths = {
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account__account_title"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1357,9 +1533,9 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -1388,12 +1564,16 @@ query_paths = {
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),
-                ("agency_name", "agency_name"),
-                ("allocation_transfer_agency_name", "allocation_transfer_agency_name"),
+                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_name", "treasury_account__account_title"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
+                (
+                    "allocation_transfer_agency_name",
+                    "allocation_transfer_agency_name",
+                ),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1405,8 +1585,8 @@ query_paths = {
                 ("fain", "fain"),
                 ("uri", "uri"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("award_type_code", "award_type_code"),
-                ("award_type", "award_type"),
+                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
+                ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
@@ -1441,9 +1621,9 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("submission_period", "reporting_period_end"),
-                ("federal_account_symbol", "federal_account_symbol"),
+                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_name", "agency_name"),
+                ("agency_name", "agency_name"),  # Column is appended to in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -1456,8 +1636,8 @@ query_paths = {
                 ("fain", "fain"),
                 ("uri", "uri"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("award_type_code", "award_type_code"),
-                ("award_type", "award_type"),
+                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
+                ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
@@ -1489,18 +1669,30 @@ query_paths = {
         ),
     },
 }
-
 # IDV Orders are nearly identical to awards but start from the Awards table
 # instead of from UniversalAwardView materialized view so we need to lop off
 # the leading "award__" bit.
 query_paths["idv_orders"] = {
-    "d1": OrderedDict([(k, v[7:] if v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items()])
+    "d1": OrderedDict(
+        [(k, v[7:] if v is not None and v.startswith("award__") else v) for k, v in query_paths["award"]["d1"].items()]
+    )
 }
 
 # Likewise, IDV Transactions start directly in TransactionFPDS instead of
 # UniversalTransactionView.
 query_paths["idv_transaction_history"] = {
     "d1": OrderedDict(
-        [(k, v[13:] if v.startswith("transaction__") else v) for k, v in query_paths["transaction"]["d1"].items()]
+        [
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction"]["d1"].items()
+        ]
+    )
+}
+query_paths["assistance_transaction_history"] = {
+    "d2": OrderedDict(
+        [
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction"]["d2"].items()
+        ]
     )
 }

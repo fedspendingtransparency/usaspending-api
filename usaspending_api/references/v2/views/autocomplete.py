@@ -63,6 +63,8 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve awarding agencies matching the specified search text.
     """
 
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/awarding_agency.md"
+
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
@@ -73,6 +75,8 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve funding agencies matching the specified search text.
     """
 
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/funding_agency.md"
+
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
@@ -82,6 +86,8 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve CFDA programs matching the specified search text.
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/cfda.md"
 
     @cache_response()
     def post(self, request):
@@ -106,6 +112,8 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve NAICS objects matching the specified search text.
     """
 
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/naics.md"
+
     @cache_response()
     def post(self, request):
         """Return all NAICS table entries matching the provided search text"""
@@ -119,6 +127,9 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         else:
             queryset = queryset.filter(description__icontains=search_text)
 
+        # Only include 6 digit codes
+        queryset = queryset.extra(where=["CHAR_LENGTH(code) = 6"])
+
         # rename columns...
         queryset = queryset.annotate(naics=F("code"), naics_description=F("description"))
 
@@ -128,9 +139,10 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve product or service (PSC) codes and their descriptions based
-    on a search string.
-    This may be the 4-character PSC code or a description string.
+    on a search string. This may be the 4-character PSC code or a description string.
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/psc.md"
 
     @cache_response()
     def post(self, request):
@@ -154,8 +166,10 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve Parent and Recipient DUNS
-     matching the search text in order of similarity.
+    matching the search text in order of similarity.
     """
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/recipient.md"
 
     @cache_response()
     def post(self, request):
@@ -195,6 +209,12 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
 
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This endpoint returns glossary autocomplete data for submitted text snippet.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/glossary.md"
+
     @cache_response()
     def post(self, request):
 

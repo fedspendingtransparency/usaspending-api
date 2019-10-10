@@ -19,9 +19,11 @@ class CsvSource:
                 self.agency_code = agency.cgac_code
             else:
                 raise InvalidParameterException("Agency with that ID does not exist")
-        self.queryset = None
+        self._queryset = None
         self.file_name = None
         self.is_for_idv = VALUE_MAPPINGS[source_type].get("is_for_idv", False)
+        self.is_for_contract = VALUE_MAPPINGS[source_type].get("is_for_contract", False)
+        self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
 
     def __repr__(self):
         return "CsvSource('{}', '{}', '{}', '{}')".format(
@@ -30,6 +32,26 @@ class CsvSource:
 
     def __str__(self):
         return self.__repr__()
+
+    @property
+    def queryset(self):
+        return self._queryset
+
+    @queryset.setter
+    def queryset(self, queryset):
+        """
+        If there are annotations listed in VALUE_MAPPINGS that have not already been applied to
+        the queryset, apply them.  This function added to ensure annotations are always available
+        to consumers of this class.  Previously, annotations weren't added until row_emitter
+        which occasionally prevented them from being applied if the queryset was used outside
+        of row_emitter (as was the case where a UNION was applied to the queryset).
+        """
+        annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
+        if annotations_function:
+            for field, annotation in annotations_function().items():
+                if field not in queryset.query.annotation_select:
+                    queryset = queryset.annotate(**{field: annotation})
+        self._queryset = queryset
 
     def values(self, header):
         query_paths = [self.query_paths[hn] for hn in header]
@@ -46,5 +68,16 @@ class CsvSource:
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
-        query_paths = [self.query_paths[hn] for hn in headers]
+        annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
+        annotations = annotations_function() if annotations_function is not None else {}
+
+        query_paths = []
+        for hn in headers:
+            if self.query_paths[hn] is None:
+                if annotations[hn] is None:
+                    raise Exception("Annotated column {} is not in annotations function".format(hn))
+                query_paths.append(hn)
+            else:
+                query_paths.append(self.query_paths[hn])
+
         return self.queryset.values(*query_paths)

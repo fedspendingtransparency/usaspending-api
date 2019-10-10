@@ -38,7 +38,7 @@ class FiscalYear:
 class FilterGenerator:
     """
     Creating the class requires a filter map - this maps one parameter filter
-    key to another, for instance you could map "fpds_code" to "subtier_agency__fpds_code"
+    key to another, for instance you could map "subtier_code" to "subtier_agency__subtier_code"
     This is useful for allowing users to filter on a fk relationship without
     having to specify the more complicated filter
     Additionally, ignored parameters specifies parameters to ignore. Always includes

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import glob
 import hashlib
@@ -63,7 +65,9 @@ TEMPLATE = {
     "analyze": "ANALYZE VERBOSE {};",
     "vacuum": "VACUUM ANALYZE VERBOSE {};",
     "create_index": "CREATE {}INDEX {} ON {} USING {}({}){}{};",
+    "create_stats": "CREATE STATISTICS {} ON {} FROM {};",
     "rename_index": "ALTER INDEX {}{} RENAME TO {};",
+    "rename_stats": "ALTER STATISTICS {} RENAME TO {};",
     "grant_select": "GRANT SELECT ON {} TO {};",
     "sql_print_output": "DO $$ BEGIN RAISE NOTICE '{}'; END $$;",
 }
@@ -208,6 +212,42 @@ def make_indexes_sql(sql_json, matview_name):
     return indexes_and_msg, rename_old_indexes, rename_new_indexes
 
 
+def make_stats_sql(sql_json, matview_name):
+    unique_name_list = []
+    create_stats = []
+    rename_new_stats = []
+    rename_old_stats = []
+    if not sql_json.get("stats"):
+        return create_stats, rename_old_stats, rename_new_stats
+
+    rename_old_stats = ["DO $$ BEGIN"]
+
+    for stat in sql_json["stats"]:
+        if len(stat["name"]) > MAX_NAME_LENGTH:
+            raise Exception("Desired stat name is too long. Keep under {} chars".format(MAX_NAME_LENGTH))
+
+        final_stat = "st_" + COMMIT_HASH + RANDOM_CHARS + "_" + stat["name"]
+        final_stat = final_stat.replace("-", "")
+        unique_name_list.append(final_stat)
+        tmp_stat = final_stat + "_temp"
+        old_stat = final_stat + "_old"
+
+        columns = ", ".join(stat["columns"])
+        stat_str = TEMPLATE["create_stats"].format(tmp_stat, columns, matview_name)
+
+        create_stats.append(stat_str)
+        rename_new_stats.append(TEMPLATE["rename_stats"].format(tmp_stat, final_stat))
+        rename_old_stats.append(TEMPLATE["rename_stats"].format(final_stat, old_stat))
+
+    rename_old_stats.append("EXCEPTION WHEN undefined_object THEN")
+    rename_old_stats.append("RAISE NOTICE 'Skipping statistics renames, no conflicts'; END; $$ language 'plpgsql';")
+
+    if len(unique_name_list) != len(set(unique_name_list)):
+        raise Exception("Name collision detected. Examine JSON file")
+
+    return create_stats, rename_old_stats, rename_new_stats
+
+
 def make_modification_sql(matview_name):
     global CLUSTERING_INDEX
     sql_strings = []
@@ -219,15 +259,19 @@ def make_modification_sql(matview_name):
     return sql_strings
 
 
-def make_rename_sql(matview_name, old_indexes, new_indexes):
+def make_rename_sql(matview_name, old_indexes, old_stats, new_indexes, new_stats):
     matview_temp_name = matview_name + "_temp"
     matview_archive_name = matview_name + "_old"
     sql_strings = []
     sql_strings.append(TEMPLATE["rename_matview"].format("IF EXISTS ", matview_name, matview_archive_name))
     sql_strings += old_indexes
     sql_strings.append("")
+    sql_strings += old_stats
+    sql_strings.append("")
     sql_strings.append(TEMPLATE["rename_matview"].format("", matview_temp_name, matview_name))
     sql_strings += new_indexes
+    sql_strings.append("")
+    sql_strings += new_stats
     return sql_strings
 
 
@@ -249,6 +293,7 @@ def create_all_sql_strings(sql_json):
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
+    create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name)
 
     final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append("")
@@ -257,9 +302,13 @@ def create_all_sql_strings(sql_json):
     final_sql_strings.append("")
     final_sql_strings += create_indexes
     final_sql_strings.append("")
+    final_sql_strings += create_stats
+    final_sql_strings.append("")
     if GLOBAL_ARGS.no_data:
         final_sql_strings.extend([TEMPLATE["refresh_matview"].format("", matview_name), ""])
-    final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
+    final_sql_strings.extend(
+        make_rename_sql(matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats)
+    )
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name))
     return final_sql_strings
@@ -283,6 +332,7 @@ def create_componentized_files(sql_json):
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
+    create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name)
 
     sql_strings = make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + "__drops")
@@ -290,18 +340,21 @@ def create_componentized_files(sql_json):
     sql_strings = make_matview_create(matview_name, sql_json["matview_sql"])
     write_sql_file(sql_strings, filename_base + "__matview")
 
-    write_sql_file(create_indexes, filename_base + "__indexes")
+    indexes_and_stats = create_indexes + create_stats
+    write_sql_file(indexes_and_stats, filename_base + "__indexes")
 
     if GLOBAL_ARGS.batch_indexes > 1:
         if not os.path.exists(index_dir_path):
             os.makedirs(index_dir_path)
-        for i, index_block in enumerate(split_indexes_chunks(create_indexes, GLOBAL_ARGS.batch_indexes)):
+        for i, index_block in enumerate(split_indexes_chunks(indexes_and_stats, GLOBAL_ARGS.batch_indexes)):
             write_sql_file(index_block, index_dir_path + "group_{}".format(i))
 
     sql_strings = make_modification_sql(matview_name)
     write_sql_file(sql_strings, filename_base + "__mods")
 
-    sql_strings = make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
+    sql_strings = make_rename_sql(
+        matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats
+    )
     write_sql_file(sql_strings, filename_base + "__renames")
 
     if "refresh" in sql_json and sql_json["refresh"] is True:

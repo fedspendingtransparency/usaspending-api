@@ -40,7 +40,6 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
 
-    filter_map = {"awarding_fpds": "awarding_agency__fpds_code", "funding_fpds": "funding_agency__fpds_code"}
     serializer_class = AwardSerializer
 
     def get_queryset(self):
@@ -49,7 +48,7 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         """
         queryset = Award.nonempty.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
@@ -63,7 +62,6 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     This endpoint allows you to search and filter by almost any attribute of an award object.
     """
 
-    filter_map = {"awarding_fpds": "awarding_agency__fpds_code", "funding_fpds": "funding_agency__fpds_code"}
     serializer_class = AwardSerializer
 
     def get_queryset(self):
@@ -72,7 +70,7 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         """
         queryset = Award.nonempty.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
@@ -180,7 +178,7 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
 
 @method_decorator(deprecated, name="list")
 @method_decorator(deprecated, name="retrieve")
-class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
+class TransactionListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
     Handles requests for award transaction data.
@@ -201,7 +199,7 @@ class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
 
 @method_decorator(deprecated, name="list")
 @method_decorator(deprecated, name="retrieve")
-class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
+class TransactionRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
     Handles requests for award transaction data.

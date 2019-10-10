@@ -3,7 +3,7 @@ from rest_framework import serializers
 from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
 from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import (
     AgencySerializer,
@@ -254,7 +254,6 @@ class AwardSerializer(LimitableSerializer):
             "type_description",
             "category",
             "total_obligation",
-            "total_outlay",
             "total_subsidy_cost",
             "total_loan_value",
             "date_signed",
@@ -265,7 +264,6 @@ class AwardSerializer(LimitableSerializer):
             "uri",
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
-            "potential_total_value_of_award",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",

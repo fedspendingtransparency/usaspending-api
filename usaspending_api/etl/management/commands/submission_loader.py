@@ -44,7 +44,7 @@ class Command(BaseCommand):
         for submission_id in list_of_submission_ids:
             logger.info("Running submission load for submission ID {}".format(submission_id))
             try:
-                call_command("load_submission", "--noclean", submission_id)
+                call_command("load_submission", submission_id)
             except SystemExit:
                 logger.info("Skipping submission ID {} due to error. Continuing...".format(submission_id))
             except (CommandError, Exception):

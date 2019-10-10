@@ -1,6 +1,8 @@
 import logging
+
+from copy import copy
 from datetime import datetime
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
@@ -9,8 +11,8 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
-from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.etl.management.load_base import get_or_create_location, format_date, load_data_into_model
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
 
 
 logger = logging.getLogger("console")
@@ -19,6 +21,7 @@ exception_logger = logging.getLogger("exceptions")
 # Lists to store for update_awards and update_contract_awards
 award_update_id_list = []
 award_contract_update_id_list = []
+award_assistance_update_id_list = []
 
 subtier_agency_map = {
     subtier_agency["subtier_code"]: subtier_agency["subtier_agency_id"]
@@ -244,6 +247,7 @@ class Command(BaseCommand):
 
             award_bulk.append(award)
             award_update_id_list.append(award.id)
+            award_assistance_update_id_list.append(award.id)
 
         logger.info("Bulk creating {} award rows...".format(len(award_bulk)))
         try:
@@ -555,11 +559,11 @@ class Command(BaseCommand):
         with timer("updating awards to reflect their latest associated transaction info", logger.info):
             update_awards(tuple(award_update_id_list))
 
+        with timer("updating assistance-specific awards to reflect their latest transaction info", logger.info):
+            update_assistance_awards(tuple(award_assistance_update_id_list))
+
         with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
             update_contract_awards(tuple(award_contract_update_id_list))
-
-        with timer("updating award category variables", logger.info):
-            update_award_categories(tuple(award_update_id_list))
 
         # Done!
         logger.info("FINISHED")
