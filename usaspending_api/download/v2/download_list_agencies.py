@@ -1,16 +1,11 @@
-import os
-import pandas as pd
-
-from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import CFO_CGACS
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import Agency
+from usaspending_api.references.models import SubtierAgency, ToptierAgency
 
 
 class DownloadListAgenciesViewSet(APIView):
@@ -19,26 +14,15 @@ class DownloadListAgenciesViewSet(APIView):
     """
 
     endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_agencies.md"
-
-    # Get list of agencies without duplicates
-    modified_agencies_list = os.path.join(
-        settings.BASE_DIR, "usaspending_api", "data", "user_selectable_agency_list.csv"
-    )
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
-        # Get a dict of used subtiers and their associated CGAC code pulled from
-        # modified_agencies_list
-        with open(self.modified_agencies_list, encoding="Latin-1") as modified_agencies_list_csv:
-            mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
-        mod_gencies_list_df = mod_gencies_list_df[["CGAC AGENCY CODE", "SUBTIER CODE", "FREC", "IS_FREC"]]
-        mod_gencies_list_df["CGAC AGENCY CODE"] = mod_gencies_list_df["CGAC AGENCY CODE"].apply(lambda x: x.zfill(3))
-        mod_gencies_list_df["FREC"] = mod_gencies_list_df["FREC"].apply(lambda x: x.zfill(4))
-        for _, row in mod_gencies_list_df.iterrows():
-            # cgac_code in the database can be either agency cgac or frec code (if a frec agency)
-            self.sub_agencies_map[row["SUBTIER CODE"]] = (
-                row["FREC"] if row["IS_FREC"].upper() == "TRUE" else row["CGAC AGENCY CODE"]
+        self.sub_agencies_map = {
+            sa["subtier_code"]: sa["agency__toptier_agency__cgac_code"]
+            for sa in SubtierAgency.objects.filter(agency__user_selectable=True).values(
+                "subtier_code", "agency__toptier_agency__cgac_code"
             )
+        }
 
     def post(self, request):
         """Return list of agencies if no POST data is provided.

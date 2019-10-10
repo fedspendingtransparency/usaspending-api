@@ -252,11 +252,11 @@ def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
         return fetcher(cursor)
 
 
-def execute_update_sql(sql, model=Award):
+def execute_dml_sql(sql, model=Award):
     """
     Convenience function to execute a sql query against a database that performs
-    some sort of update (INSERT, UPDATE, DELETE, etc).  Returns the number of
-    rows affected.
+    some sort of data manipulation (INSERT, UPDATE, DELETE, etc).  Returns the number
+    of rows affected.
     """
     return execute_sql(sql=sql, model=model, fetcher=rowcount_fetcher, read_only=False)
 
