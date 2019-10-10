@@ -46,7 +46,7 @@ GET_FUNDING_SQL = SQL(
 
 
 class IDVFederalAccountCountViewSet(APIView):
-    """Returns the total number of funding transactions for an IDV and all child and grandchild awards."""
+    """Returns the total number of funding transactions for an IDV's child and grandchild awards, but not the IDV itself."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/count/federal_account.md"
 

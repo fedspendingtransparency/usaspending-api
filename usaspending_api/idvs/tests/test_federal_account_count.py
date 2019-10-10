@@ -58,12 +58,6 @@ class IDVFundingTestCase(TestCase):
         assert response2.status_code == status.HTTP_200_OK
         assert len(response2.data["results"]) == response.data["count"]
 
-        response = self.client.get("/api/v2/idvs/count/federal_account/9/")
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["count"] == 1
-        response2 = self.client.post("/api/v2/idvs/funding/", {"award_id": 9})
-        assert response2.status_code == status.HTTP_200_OK
-        assert len(response2.data["results"]) == response.data["count"]
 
         # test with generated id
         response = self.client.get("/api/v2/idvs/count/federal_account/GENERATED_UNIQUE_AWARD_ID_001/")
@@ -78,3 +72,20 @@ class IDVFundingTestCase(TestCase):
         response = self.client.get("/api/v2/idvs/count/federal_account/GENERATED_UNIQUE_AWARD_ID_000/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 0
+
+    def test_with_piid(self):
+        # doesn't return federal accounts for idvs
+        response = self.client.get("/api/v2/idvs/count/federal_account/2/?piid=piid_002")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 0
+        response2 = self.client.post("/api/v2/idvs/funding/", {"award_id": 2, "piid": "piid_002"})
+        assert response2.status_code == status.HTTP_200_OK
+        assert len(response2.data["results"]) == response.data["count"]
+
+        # returns results for child awards
+        response = self.client.get("/api/v2/idvs/count/federal_account/2/?piid=piid_011")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+        response2 = self.client.post("/api/v2/idvs/funding/", {"award_id": 2, "piid": "piid_011"})
+        assert response2.status_code == status.HTTP_200_OK
+        assert len(response2.data["results"]) == response.data["count"]
