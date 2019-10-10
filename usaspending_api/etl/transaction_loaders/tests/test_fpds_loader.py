@@ -91,6 +91,7 @@ def test_load_ids_empty():
     fpds_loader.load_ids([])
 
 
+# These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
     "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
