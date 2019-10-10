@@ -52,7 +52,7 @@ FROM
 WHERE
     fpds.detached_award_procurement_id = broker.detached_award_procurement_id
     AND (
-        solicitation_date IS DISTINCT FROM broker.solicitation_date
+        fpds.solicitation_date IS DISTINCT FROM broker.solicitation_date
     )
 RETURNING fpds.transaction_id
 """
