@@ -254,9 +254,13 @@ def matview_search_filter(filters, model, for_downloads=False):
                 queryset = queryset.filter(cfda_number__in=in_query)
 
         elif key == "naics_codes":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset = queryset.filter(naics_code__in=in_query)
+            naics_filter = Q()
+            for v in value:
+                if len(v) == 6:
+                    naics_filter |= Q(naics_code=v)
+                else:
+                    naics_filter |= Q(naics_code__startswith=v)
+            queryset = queryset.filter(naics_filter)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
