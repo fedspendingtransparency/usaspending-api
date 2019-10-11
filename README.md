@@ -28,13 +28,13 @@ Now, navigate to the base file directory where you will store the USAspending re
     $ cd usaspending-api
 
 ## Database Setup
-There are three options for how you want to setup your database in order to run the API. You can:
+There are three documented options for setting up a local database in order to run the API:
 
 1. Use your own local postgres database for the API to use.
 2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database.
 3. Download either the _whole_ database or a database subset from the USAspending website.
 
-#### Option 1: Using a Locally Hosted Postgres Database
+### Option 1: Using a Locally Hosted Postgres Database
 Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
  - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
@@ -42,13 +42,13 @@ Make sure to grant whatever user you created for the data_store api database sup
 
     postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
 
-#### Option 2: Using the Docker Compose Postgres Database
+### Option 2: Using the Docker Compose Postgres Database
 See below for basic setup instructions. For help with Docker Compose:
  - [Docker Installation](https://docs.docker.com/install/)
  - [Docker Compose](https://docs.docker.com/compose/)
 
 
-### Database Setup and Initialization with Docker Compose
+#### Database Setup and Initialization with Docker Compose
 
 - **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.**
 
@@ -65,7 +65,7 @@ See below for basic setup instructions. For help with Docker Compose:
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
-#### Option 3: Downloading the database or a subset of the database and loading it into PosgreSQL
+### Option 3: Downloading the database or a subset of the database and loading it into PosgreSQL
 
 For further instructions on how to download, use, and setup the database using a subset of our data please go to:
 

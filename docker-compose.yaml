@@ -25,6 +25,7 @@ services:
     command: /bin/sh -c "python -u manage.py shell"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOSTNAME}
 
   usaspending-db-sql:
     build: .
