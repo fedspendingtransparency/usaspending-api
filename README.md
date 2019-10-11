@@ -60,12 +60,12 @@ See below for basic setup instructions. For help with Docker Compose:
 
 	- `docker-compose run usaspending-manage python -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
+	- `docker-compose run usaspending-db-sql`, then `docker-compose run usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
 
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
 
-### Option 3: Downloading the database or a subset of the database and loading it into PosgreSQL
+### Option 3: Downloading the database or a subset of the database and loading it into PostgreSQL
 
 For further instructions on how to download, use, and setup the database using a subset of our data please go to:
 
@@ -74,14 +74,14 @@ For further instructions on how to download, use, and setup the database using a
 ## Elasticsearch Setup
 Some of the API endpoints reach into Elasticsearch for data.
 
-- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+- `docker-compose run usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
 
 - The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
 ## Running the API
-`docker-compose up usaspending-api`
+`docker-compose run usaspending-api`
 
 - You can update environment variables in `settings.py` (buckets, elasticsearch, local paths) and they will be mounted and used when you run this.
 
