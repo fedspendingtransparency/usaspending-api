@@ -6,39 +6,23 @@ from calendar import monthrange, isleap
 from datetime import datetime as dt
 from django.conf import settings
 from django.db import connection
-from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.matview_manager import (
+    OVERLAY_VIEWS,
+    DEPENDENCY_FILEPATH,
+    MATERIALIZED_VIEWS,
+    MATVIEW_GENERATOR_FILE,
+    DEFAULT_MATIVEW_DIR,
+)
 from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
-TEMP_SQL_FILES = [
-    "../matviews/mv_award_summary.sql",
-    "../matviews/mv_contract_award_search.sql",
-    "../matviews/mv_directpayment_award_search.sql",
-    "../matviews/mv_grant_award_search.sql",
-    "../matviews/mv_idv_award_search.sql",
-    "../matviews/mv_loan_award_search.sql",
-    "../matviews/mv_other_award_search.sql",
-    "../matviews/mv_pre2008_award_search.sql",
-    "../matviews/subaward_view.sql",
-    "../matviews/summary_state_view.sql",
-    "../matviews/summary_transaction_fed_acct_view.sql",
-    "../matviews/summary_transaction_geo_view.sql",
-    "../matviews/summary_transaction_month_view.sql",
-    "../matviews/summary_transaction_recipient_view.sql",
-    "../matviews/summary_transaction_view.sql",
-    "../matviews/summary_view.sql",
-    "../matviews/summary_view_cfda_number.sql",
-    "../matviews/summary_view_naics_codes.sql",
-    "../matviews/summary_view_psc_codes.sql",
-    "../matviews/tas_autocomplete_matview.sql",
-    "../matviews/universal_transaction_matview.sql",
-]
-MATVIEW_GENERATOR_FILE = "usaspending_api/database_scripts/matview_generator/matview_sql_generator.py"
-ENUM_FILE = ["usaspending_api/database_scripts/matviews/functions_and_enums.sql"]
+TEMP_SQL_FILES = [str(DEFAULT_MATIVEW_DIR / val["sql_filename"]) for val in MATERIALIZED_VIEWS.values()]
+
+VIEW_SQL_FILES = [str(val) for val in OVERLAY_VIEWS]
 
 
 def read_text_file(filepath):
@@ -198,10 +182,12 @@ def within_one_year(d1, d2):
 def generate_matviews():
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
-        cursor.execute(get_sql(ENUM_FILE)[0])
-        subprocess.call("python  " + MATVIEW_GENERATOR_FILE + " --quiet", shell=True)
-        for file in get_sql(TEMP_SQL_FILES):
-            cursor.execute(file)
+        cursor.execute(get_sql([str(DEPENDENCY_FILEPATH)])[0])
+        subprocess.call("python {} --quiet".format(MATVIEW_GENERATOR_FILE), shell=True)
+        for matview_sql_file in get_sql(TEMP_SQL_FILES):
+            cursor.execute(matview_sql_file)
+        for view_sql_file in get_sql(VIEW_SQL_FILES):
+            cursor.execute(view_sql_file)
 
 
 def get_sql(sql_files):
@@ -322,25 +308,6 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
     return page_metadata
 
 
-def fy(raw_date):
-    """Federal fiscal year corresponding to date"""
-
-    if raw_date is None:
-        return None
-
-    if isinstance(raw_date, str):
-        raw_date = parse_date(raw_date)
-
-    try:
-        result = raw_date.year
-        if raw_date.month > 9:
-            result += 1
-    except AttributeError:
-        raise TypeError("{} needs year and month attributes".format(raw_date))
-
-    return result
-
-
 # Raw SQL run during a migration
 FY_PG_FUNCTION_DEF = """
     CREATE OR REPLACE FUNCTION fy(raw_date DATE)
@@ -437,3 +404,8 @@ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
 CREATE ROLE readonly;
 END IF;
 END$$;"""
+
+
+def generate_test_db_connection_string():
+    db = connection.cursor().db.settings_dict
+    return "postgres://{}:{}@{}:5432/{}".format(db["USER"], db["PASSWORD"], db["HOST"], db["NAME"])

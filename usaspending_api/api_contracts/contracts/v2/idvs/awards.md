@@ -117,10 +117,10 @@ List child IDVs, child awards, or grandchild awards for IDV
     Unique internal surrogate identifier for an award.  Deprecated.  Use `generated_unique_award_id`.
 + `award_type`: `BPA`(required, string)
 + `description`: `OTHER THAN SCHEDULE,IGF::OT::IGF` (required, string, nullable)
-+ `funding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
-+ `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string)
-+ `funding_agency_id`: 634 (required, number)
-+ `awarding_agency_id`: 634 (required, number)
++ `funding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string, nullable)
++ `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string, nullable)
++ `funding_agency_id`: 634 (required, number, nullable)
++ `awarding_agency_id`: 634 (required, number, nullable)
 + `generated_unique_award_id`: `CONT_IDV_DJB30605051_1540` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)

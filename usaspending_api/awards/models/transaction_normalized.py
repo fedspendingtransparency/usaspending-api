@@ -1,6 +1,6 @@
 from django.db import models
 
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 
 
 class TransactionNormalized(models.Model):

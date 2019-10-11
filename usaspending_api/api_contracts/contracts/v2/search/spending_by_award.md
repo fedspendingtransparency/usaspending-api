@@ -13,23 +13,29 @@ This endpoint takes award filters and fields, and returns the fields of the filt
     + Attributes (object)
         + `filters` (required, FilterObject)
         + `fields` (required, SpendingByAwardFields)
-        + `limit`: 60 (optional, number)
+        + `limit` (optional, number)
             How many results are returned. If no limit is specified, the limit is set to 10.
-        + `order`: `desc` (optional, string)
-            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order. Defaults to asc.
-        + `page`: 1 (optional, number)
+        + `order` (optional, enum[string])
+            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
+            + Default: `desc`
+            + Members
+                + `desc`
+                + `asc`
+        + `page` (optional, number)
             The page number that is currently returned.
-        + `sort`: `Award Amount` (optional, string)
+        + `sort` (optional, string)
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
-        + `subawards`: false (optional, boolean)
+        + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
     + Body
 
             {
-                "filters": { 
+                "subawards": false,
+                "limit": 10,
+                "filters": {
                     "award_type_codes": ["A", "B", "C"]
                 },
-                "fields": [ 
+                "fields": [
                     "Award ID",
                     "Recipient Name",
                     "Start Date",
@@ -40,7 +46,7 @@ This endpoint takes award filters and fields, and returns the fields of the filt
                     "Contract Award Type",
                     "Award Type",
                     "Funding Agency",
-                    "Funding Sub Agency" 
+                    "Funding Sub Agency"
                 ]
             }
 
@@ -69,40 +75,67 @@ List of table columns
 - `Funding Sub Agency`
 
 ## SpendingByAwardResponse (object)
-+ `Recipient Name` (optional, string, nullable)
++ `internal_id` (required, string)
++ `Award Amount` (optional, number)
++ `Award ID` (optional, string)
++ `Award Type` (optional, string)
++ `Awarding Agency Code` (optional, string, nullable)
++ `Awarding Agency` (optional, string, nullable)
++ `Awarding Sub Agency Code` (optional, string, nullable)
++ `Awarding Sub Agency` (optional, string, nullable)
++ `Base Obligation Date` (optional, string)
++ `CFDA Number` (optional, string, nullable)
+    Assistance awards only
++ `Contract Award Type` (optional, string)
+    Procurement awards only
++ `Description` (optional, string, nullable)
++ `End Date` (optional, string)
++ `Funding Agency Code` (optional, string, nullable)
++ `Funding Agency` (optional, string, nullable)
++ `Funding Sub Agency Code` (optional, string, nullable)
++ `Funding Sub Agency` (optional, string, nullable)
++ `generated_internal_id` (optional, string)
++ `Issued Date` (optional, string, nullable)
++ `Last Date to Order` (optional, string, nullable)
+    Procurement IDVs only
++ `Last Modified Date` (optional, string)
++ `Loan Value` (optional, number, nullable)
+    Assistance awards only
++ `Period of Performance Current End Date` (optional, string, nullable)
++ `Period of Performance Start Date` (optional, string)
++ `Place of Performance City Code` (optional, number)
++ `Place of Performance Country Code` (optional, string, nullable)
++ `Place of Performance State Code` (optional, number, nullable)
++ `Place of Performance Zip5` (optional, number)
++ `Prime Award ID` (optional, string, nullable)
+    Sub-Awards only, returns the ID (piid/fain/uri) of the prime award.
++ `Prime Recipient Name` (optional, string, nullable)
+    Sub-Awards only, returns the name of the prime award's recipient.
++ `prime_award_recipient_id` (optional, string, nullable)
+    Sub-Awards only, return the recipient id of the prime award's recipient.
++ `prime_award_internal_id` (optional, string, nullable)
+    Sub-Awards only, return the award id of the prime award.
++ `prime_award_generated_internal_id` (optional, string)
+    Sub-Awards only, return the generated unique award id of the prime award.
 + `Recipient DUNS Number` (optional, string, nullable)
++ `Recipient Name` (optional, string, nullable)
 + `recipient_id` (optional, string, nullable)
     A unique identifier for the recipient which includes the recipient hash and level.
-+ `Awarding Agency` (optional, string, nullable)
-+ `Awarding Agency Code` (optional, string, nullable)
-+ `Awarding Sub Agency` (optional, string, nullable)
-+ `Awarding Sub Agency Code` (optional, string, nullable)
-+ `Funding Agency` (optional, string, nullable)
-+ `Funding Agency Code` (optional, string, nullable)
-+ `Funding Sub Agency` (optional, string, nullable)
-+ `Funding Sub Agency Code` (optional, string, nullable)
-+ `Place of Performance City Code` (optional, number)
-+ `Place of Performance State Code `(optional, number, nullable)
-+ `Place of Performance Country Code` (optional, string, nullable)
-+ `Place of Performance Zip5` (optional, number)
-+ `Period of Performance Start Date` (optional, string)
-+ `Period of Performance Current End Date` (optional, string, nullable)
-+ `Description` (optional, string, nullable)
-+ `Last Modified Date` (optional, string)
-+ `Base Obligation Date` (optional, string)
-+ `Award ID` (optional, string)
-+ `Start Date` (optional, string)
-+ `End Date` (optional, string)
-+ `Last Date to Order` (optional, string, nullable)
-+ `Award Amount` (optional, number)
-+ `Award Type` (optional, string)
-+ `Contract Award Type` (optional, string)
 + `SAI Number` (optional, string, nullable)
-+ `CFDA Number` (optional, string, nullable)
-+ `Issued Date` (optional, string, nullable)
-+ `Loan Value` (optional, number, nullable)
+    Assistance awards only
++ `Start Date` (optional, string)
++ `Sub-Award Amount` (optional, string)
+    Sub-Awards only
++ `Sub-Award Date` (optional, string)
+    Sub-Awards only
++ `Sub-Award ID` (optional, string)
+    Sub-Awards only
++ `Sub-Award Type` (optional, string)
+    Sub-Awards only
++ `Sub-Awardee Name` (optional, string)
+    Sub-Awards only
 + `Subsidy Cost` (optional, number, nullable)
-+ `internal_id` (optional, string)
+    Assistance awards only
 
 ## PageMetadataObject (object)
 + `page` (required, number)

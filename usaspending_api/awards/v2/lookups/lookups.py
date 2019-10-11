@@ -59,6 +59,7 @@ contract_subaward_mapping = {
     "Awarding Sub Agency": "awarding_subtier_agency_name",
     "Prime Award ID": "piid",
     "Prime Recipient Name": "prime_recipient_name",
+    "prime_award_recipient_id": "_prime_award_recipient_id",
 }
 
 grant_subaward_mapping = {
@@ -71,6 +72,7 @@ grant_subaward_mapping = {
     "Awarding Sub Agency": "awarding_subtier_agency_name",
     "Prime Award ID": "fain",
     "Prime Recipient Name": "prime_recipient_name",
+    "prime_award_recipient_id": "_prime_award_recipient_id",
 }
 
 award_assistance_mapping = {
@@ -79,11 +81,7 @@ award_assistance_mapping = {
     **direct_payment_award_mapping,
     **other_award_mapping,
 }
-non_loan_assistance_award_mapping = assistance_award_mapping = {
-    **grant_award_mapping,
-    **direct_payment_award_mapping,
-    **other_award_mapping,
-}
+non_loan_assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping, **other_award_mapping}
 
 # TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {

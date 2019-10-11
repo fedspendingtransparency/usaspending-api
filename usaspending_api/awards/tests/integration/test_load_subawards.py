@@ -3,36 +3,55 @@ import pytest
 
 from datetime import date
 from django.core.management import call_command
+from model_mommy import mommy
+from pathlib import Path
+from psycopg2.extensions import AsIs
 from usaspending_api.awards.management.commands.load_subawards import Command
 from usaspending_api.awards.models import BrokerSubaward, Subaward
+from usaspending_api.common.etl.operations import stage_table
+from usaspending_api.common.helpers.sql_helpers import get_connection
+
+
+SAMPLE_DATA = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+MIN_ID = min([r["id"] for r in SAMPLE_DATA])
+MAX_ID = max([r["id"] for r in SAMPLE_DATA])
+
+
+def _stage_table_mock(source, destination, staging):
+    # Insert our mock data into the database.
+    insert_statement = "insert into temp_load_subawards_broker_subaward (%s) values %s"
+    connection = get_connection(read_only=False)
+    with connection.cursor() as cursor:
+        cursor.execute("drop table if exists temp_load_subawards_broker_subaward")
+        cursor.execute(
+            "create table temp_load_subawards_broker_subaward as " "select * from broker_subaward where 0 = 1"
+        )
+        for record in SAMPLE_DATA:
+            columns = record.keys()
+            values = tuple(record[column] for column in columns)
+            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+            cursor.execute(sql)
+    return len(SAMPLE_DATA)
 
 
 @pytest.fixture
 def cursor_fixture(db, monkeypatch):
     """
-    Don't attempt to make the dblink call to Broker, but otherwise, allow all
-    other SQL executes to occur.
+    Don't attempt to make dblink calls to Broker, but allow other SQL executes to occur.
     """
-    original_execute_sql = Command._execute_sql
+    original_execute = Command._execute_function
 
-    def _execute_sql(self, sql):
-        if "dblink" not in sql and "broker_server" not in sql:
-            original_execute_sql(self, sql)
-        else:
-            BrokerSubaward.objects.all().delete()
-            with open("usaspending_api/awards/tests/data/broker_subawards.json") as json_data:
-                records = json.load(json_data)
-            for record in records:
-                BrokerSubaward.objects.create(**record)
+    def _execute(self, function, timer_message, *args, **kwargs):
+        if function is not stage_table:
+            # Allow non-dblink calls to happen "normally".
+            return original_execute(function, timer_message, *args, **kwargs)
 
-    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute_sql", _execute_sql)
+        return original_execute(_stage_table_mock, timer_message, *args, **kwargs)
+
+    monkeypatch.setattr("usaspending_api.awards.management.commands.load_subawards.Command._execute_function", _execute)
 
 
-def test_defaults(cursor_fixture):
-    call_command("load_subawards")
-    assert BrokerSubaward.objects.all().count() == 4
-    assert Subaward.objects.all().count() == 4
-
+def _check_data():
     subaward = Subaward.objects.get(id=3613892)
 
     assert subaward.id == 3613892
@@ -117,13 +136,56 @@ def test_defaults(cursor_fixture):
     assert subaward.unique_award_key == "UNIQUE AWARD KEY A"
 
 
+def test_defaults(cursor_fixture):
+    call_command("load_subawards")
+    assert BrokerSubaward.objects.count() == 4
+    assert Subaward.objects.count() == 4
+
+    _check_data()
+
+
 def test_full(cursor_fixture):
     call_command("load_subawards", "--full-reload")
-    assert BrokerSubaward.objects.all().count() == 4
-    assert Subaward.objects.all().count() == 4
+    assert BrokerSubaward.objects.count() == 4
+    assert Subaward.objects.count() == 4
 
 
-def test_sql_logging(cursor_fixture):
-    call_command("load_subawards", "--sql")
-    assert BrokerSubaward.objects.all().count() == 4
-    assert Subaward.objects.all().count() == 4
+def test_some_data_correction_conditions(cursor_fixture):
+    call_command("load_subawards")
+    assert BrokerSubaward.objects.count() == 4
+    assert Subaward.objects.count() == 4
+
+    # Add some garbage so we can check that everything resets after a load.
+    BrokerSubaward.objects.filter(id=MIN_ID).delete()
+
+    mommy.make("awards.BrokerSubaward", id=MAX_ID + 1)
+    mommy.make("awards.BrokerSubaward", id=MAX_ID + 2)
+    mommy.make("awards.BrokerSubaward", id=MAX_ID + 3)
+
+    mommy.make("awards.Subaward", id=MAX_ID + 7)
+    mommy.make("awards.Subaward", id=MAX_ID + 8)
+    mommy.make("awards.Subaward", id=MAX_ID + 9)
+
+    broker_subaward = BrokerSubaward.objects.get(id=3613892)
+    broker_subaward.sub_recovery_model_q1 = True
+    broker_subaward.save()
+
+    broker_subaward = BrokerSubaward.objects.get(id=3613892)
+    assert broker_subaward.sub_recovery_model_q1 is True
+
+    subaward = Subaward.objects.get(id=3613892)
+    subaward.recovery_model_question1 = "maybe"
+    subaward.save()
+
+    subaward = Subaward.objects.get(id=3613892)
+    assert subaward.recovery_model_question1 == "maybe"
+
+    assert BrokerSubaward.objects.count() == 6
+    assert Subaward.objects.count() == 7
+
+    # Make sure this fixes everything.
+    call_command("load_subawards")
+    assert BrokerSubaward.objects.count() == 4
+    assert Subaward.objects.count() == 4
+
+    _check_data()
