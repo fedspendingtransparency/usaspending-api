@@ -12,7 +12,9 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 def test_data():
     mommy.make("references.LegalEntity", legal_entity_id=1)
 
-    mommy.make("awards.Award", id=1, type="A", recipient_id=1, latest_transaction_id=1)
+    mommy.make(
+        "awards.Award", id=1, type="A", recipient_id=1, latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1"
+    )
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     mommy.make(
         "awards.TransactionFPDS",
@@ -25,7 +27,9 @@ def test_data():
         place_of_performance_zip5="00001",
     )
 
-    mommy.make("awards.Award", id=2, type="A", recipient_id=1, latest_transaction_id=2)
+    mommy.make(
+        "awards.Award", id=2, type="A", recipient_id=1, latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2"
+    )
     mommy.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
     mommy.make(
         "awards.TransactionFPDS",
@@ -38,7 +42,9 @@ def test_data():
         place_of_performance_zip5="00002",
     )
 
-    mommy.make("awards.Award", id=3, type="A", recipient_id=1, latest_transaction_id=3)
+    mommy.make(
+        "awards.Award", id=3, type="A", recipient_id=1, latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3"
+    )
     mommy.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
     mommy.make(
         "awards.TransactionFPDS",
@@ -51,7 +57,9 @@ def test_data():
         place_of_performance_zip5="00003",
     )
 
-    mommy.make("awards.Award", id=4, type="A", recipient_id=1, latest_transaction_id=4)
+    mommy.make(
+        "awards.Award", id=4, type="A", recipient_id=1, latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4"
+    )
     mommy.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
     mommy.make(
         "awards.TransactionFPDS",
@@ -153,7 +161,11 @@ def test_spending_by_award_pop_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "generated_internal_id": "CONT_AWD_1",
+        "Place of Performance Zip5": "00001",
+    }
 
     # test that adding a zip that has no results doesn't remove the results from the first zip
     resp = client.post(
@@ -173,7 +185,11 @@ def test_spending_by_award_pop_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "generated_internal_id": "CONT_AWD_1",
+        "Place of Performance Zip5": "00001",
+    }
 
     # test that we get 2 results with 2 valid zips
     resp = client.post(
@@ -193,8 +209,8 @@ def test_spending_by_award_pop_zip_filter(client, test_data):
         ),
     )
     possible_results = (
-        {"internal_id": 1, "Place of Performance Zip5": "00001"},
-        {"internal_id": 2, "Place of Performance Zip5": "00002"},
+        {"internal_id": 1, "Place of Performance Zip5": "00001", "generated_internal_id": "CONT_AWD_1"},
+        {"internal_id": 2, "Place of Performance Zip5": "00002", "generated_internal_id": "CONT_AWD_2"},
     )
     assert len(resp.data["results"]) == 2
     assert resp.data["results"][0] in possible_results
@@ -222,7 +238,11 @@ def test_spending_by_award_recipient_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "Place of Performance Zip5": "00001",
+        "generated_internal_id": "CONT_AWD_1",
+    }
 
     # test that adding a zip that has no results doesn't remove the results from the first zip
     resp = client.post(
@@ -239,7 +259,11 @@ def test_spending_by_award_recipient_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "Place of Performance Zip5": "00001",
+        "generated_internal_id": "CONT_AWD_1",
+    }
 
     # test that we get 2 results with 2 valid zips
     resp = client.post(
@@ -256,8 +280,8 @@ def test_spending_by_award_recipient_zip_filter(client, test_data):
         ),
     )
     possible_results = (
-        {"internal_id": 1, "Place of Performance Zip5": "00001"},
-        {"internal_id": 2, "Place of Performance Zip5": "00002"},
+        {"internal_id": 1, "Place of Performance Zip5": "00001", "generated_internal_id": "CONT_AWD_1"},
+        {"internal_id": 2, "Place of Performance Zip5": "00002", "generated_internal_id": "CONT_AWD_2"},
     )
     assert len(resp.data["results"]) == 2
     assert resp.data["results"][0] in possible_results
@@ -286,7 +310,11 @@ def test_spending_by_award_both_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "Place of Performance Zip5": "00001",
+        "generated_internal_id": "CONT_AWD_1",
+    }
 
     # test simple, single pair of zips that don't match
     resp = client.post(
@@ -324,7 +352,11 @@ def test_spending_by_award_both_zip_filter(client, test_data):
         ),
     )
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"][0] == {"internal_id": 1, "Place of Performance Zip5": "00001"}
+    assert resp.data["results"][0] == {
+        "internal_id": 1,
+        "Place of Performance Zip5": "00001",
+        "generated_internal_id": "CONT_AWD_1",
+    }
 
 
 @pytest.mark.django_db
