@@ -4,6 +4,7 @@ import pytest
 from model_mommy import mommy
 from django.template.library import InvalidTemplateLibrary
 
+
 @pytest.fixture()
 def naics_test_data():
     mommy.make("references.NAICS", code="11", description="Agriculture, Forestry, Fishing and Hunting")
