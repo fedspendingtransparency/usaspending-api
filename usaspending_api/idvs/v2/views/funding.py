@@ -34,14 +34,7 @@ DEFAULT_SORT_COLUMN = "reporting_fiscal_date"
 # Get funding information for child and grandchild contracts of an IDV but
 # not the IDVs themselves.  As per direction from the product owner, agency
 # data is to be retrieved from the File D (awards) data not File C
-# (financial_accounts_by_awards).  Also, even though this query structure looks
-# terrible, it managed to boost performance a bit over straight joins.
-# agency_id_to_agency_id_for_toptier_mapping is used to turn agency ids into
-# agency ids for toptier agencies.  Unfortunately that logic is... not 100%
-# straightforward.  To determine if an agency is a toptier agency, apparently
-# the topter name and subtier names have to match and, even then, there can be
-# more than one match... or no match in the three cases where agencies don't
-# have subtiers.
+# (financial_accounts_by_awards).
 GET_FUNDING_SQL = SQL(
     """
     with gather_award_ids as (
@@ -80,28 +73,6 @@ GET_FUNDING_SQL = SQL(
                 faba.object_class_id
         from    gather_awards ga
                 inner join financial_accounts_by_awards faba on faba.award_id = ga.award_id
-    ), agency_id_to_agency_id_for_toptier_mapping as (
-        select
-            a.id                            agency_id,
-            t.agency_id                     agency_id_for_toptier,
-            t.toptier_agency_name
-        from (
-                select
-                    a.id                    agency_id,
-                    ta.toptier_agency_id,
-                    ta.name                 toptier_agency_name,
-                    row_number() over(
-                        partition by ta.toptier_agency_id
-                        order by sa.name is not distinct from ta.name desc, a.update_date asc, a.id desc
-                    ) as per_toptier_row_number
-                from
-                    agency a
-                    inner join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
-                    left outer join subtier_agency sa on sa.subtier_agency_id = a.subtier_agency_id
-            ) t
-            inner join agency a on a.toptier_agency_id = t.toptier_agency_id
-        where
-            t.per_toptier_row_number = 1
     )
     select
         gfaba.award_id,
@@ -109,10 +80,10 @@ GET_FUNDING_SQL = SQL(
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
         gfaba.piid,
-        aamap.agency_id_for_toptier         awarding_agency_id,
-        aamap.toptier_agency_name           awarding_agency_name,
-        famap.agency_id_for_toptier         funding_agency_id,
-        famap.toptier_agency_name           funding_agency_name,
+        aa.id                               awarding_agency_id,
+        ata.name                            awarding_agency_name,
+        faa.id                              funding_agency_id,
+        fta.name                            funding_agency_name,
         taa.agency_id,
         taa.main_account_code,
         fa.account_title,
@@ -129,8 +100,10 @@ GET_FUNDING_SQL = SQL(
         left outer join federal_account fa on fa.id = taa.federal_account_id
         left outer join ref_program_activity rpa on rpa.id = gfaba.program_activity_id
         left outer join object_class oc on oc.id = gfaba.object_class_id
-        left outer join agency_id_to_agency_id_for_toptier_mapping aamap on aamap.agency_id = gfaba.awarding_agency_id
-        left outer join agency_id_to_agency_id_for_toptier_mapping famap on famap.agency_id = gfaba.funding_agency_id
+        left outer join agency aa on aa.id = gfaba.awarding_agency_id
+        left outer join toptier_agency ata on ata.toptier_agency_id = aa.toptier_agency_id
+        left outer join agency faa on faa.id = gfaba.funding_agency_id
+        left outer join toptier_agency fta on fta.toptier_agency_id = faa.toptier_agency_id
     {order_by}
     limit {limit} offset {offset}
 """

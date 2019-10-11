@@ -52,6 +52,8 @@ This endpoint returns a list of data that is associated with the award profile p
     Award id
 + `parent_award_piid`: `1301` (required, string, nullable)
     null if the contract has no parent
++ `parent_generated_unique_award_id`: `CONT_IDV_W56HZV10AA913_9700` (required, string, nullable)
+    null if the contract has no parent
 + `description`: `ewraijwrw` (required, string, nullable)
     Description of the first transaction for this award
 + `total_obligation`: 30400 (required, number)
@@ -68,6 +70,27 @@ This endpoint returns a list of data that is associated with the award profile p
 + `place_of_performance` (required, Location, fixed-type)
 + `latest_transaction_contract_data` (required, ContractDetails, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
++ `naics_hierarchy` (required, object)
+    - `toptier_code` (object)
+        - `description`: Professional, Scientific, and Technical Services (string)
+        - `code`: 54 (string)
+    - `midtier_code` (object)
+        - `description`: Other Professional, Scientific, and Technical Services (string)
+        - `code`: 5419 (string)
+    - `base_code` (object)
+        - `description`: All Other Professional, Scientific, and Technical Services (string)
+        - `code`: 541900 (string)
++ `psc_hierarchy` (required, object)
+    - `toptier_code` (object)
+        - `description`: SPECIAL STUDIES/ANALYSIS, NOT R&D (string)
+        - `code`: B (string)
+    - `midtier_code` (object)
+        - `description`: SPECIAL STUDIES - NOT R and D (string)
+        - `code`: B5 (string)
+    - `base_code` (object)
+        - `description`: SPECIAL STUDIES/ANALYSIS- ECONOMIC (string)
+        - `code`: B507 (string)
+    - `subtier_code` (object)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])

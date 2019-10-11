@@ -11,6 +11,7 @@ import traceback
 
 from django.conf import settings
 
+from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -26,6 +27,7 @@ from usaspending_api.download.helpers import (
     write_to_download_log as write_to_log,
 )
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
+
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
@@ -125,8 +127,18 @@ def get_csv_sources(json_request):
 
         if VALUE_MAPPINGS[download_type]["source_type"] == "award":
             # Award downloads
-            queryset = filter_function(json_request["filters"])
-            award_type_codes = set(json_request["filters"]["award_type_codes"])
+
+            # Use correct date range columns for advanced search
+            # (Will not change anything for keyword search since "time_period" is not provided))
+            filters = add_date_range_comparison_types(
+                json_request["filters"],
+                is_subaward=download_type != "awards",
+                gte_date_type="action_date",
+                lte_date_type="date_signed",
+            )
+
+            queryset = filter_function(filters)
+            award_type_codes = set(filters["award_type_codes"])
 
             if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
                 # only generate d1 files if the user is asking for contract data
@@ -142,7 +154,6 @@ def get_csv_sources(json_request):
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
 
-            verify_requested_columns_available(tuple(csv_sources), json_request.get("columns", []))
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
             account_source = CsvSource(
@@ -155,6 +166,8 @@ def get_csv_sources(json_request):
                 json_request["account_level"],
             )
             csv_sources.append(account_source)
+
+    verify_requested_columns_available(tuple(csv_sources), json_request.get("columns", []))
 
     return csv_sources
 

@@ -1,14 +1,13 @@
 import json
 import os
-import string
 
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection
 from elasticsearch import Elasticsearch
-from random import choice
-from usaspending_api.common.helpers.sql_helpers import fetchall_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
+from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
 from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_for_processing
 
@@ -47,7 +46,7 @@ class TestElasticSearchIndex:
         """
         with connection.cursor() as cursor:
             cursor.execute("select * from transaction_delta_view")
-            transactions = fetchall_to_ordered_dictionary(cursor)
+            transactions = ordered_dictionary_fetcher(cursor)
 
         for transaction in transactions:
             self.client.index(
@@ -70,14 +69,10 @@ class TestElasticSearchIndex:
         with connection.cursor() as cursor:
             cursor.execute("refresh materialized view universal_transaction_matview;")
 
-    @staticmethod
-    def _generate_random_string(size=6, chars=string.ascii_lowercase + string.digits):
-        return "".join(choice(chars) for _ in range(size))
-
     @classmethod
     def _generate_index_name(cls):
         return "test-{}-{}".format(
-            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), cls._generate_random_string()
+            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
         )
 
 

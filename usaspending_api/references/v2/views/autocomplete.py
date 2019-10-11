@@ -2,12 +2,11 @@ from django.db.models import F, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.models import LegalEntity
-
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.constants import EXCLUDE_CGAC
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
+from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
-
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 
 
@@ -45,7 +44,8 @@ class BaseAutocompleteViewSet(APIView):
         search_text, limit = self.get_request_payload(request)
 
         queryset = (
-            Agency.objects.filter(
+            Agency.objects.exclude(toptier_agency__cgac_code__in=EXCLUDE_CGAC)
+            .filter(
                 Q(subtier_agency__name__icontains=search_text) | Q(subtier_agency__abbreviation__icontains=search_text)
             )
             .order_by("-toptier_flag", "toptier_agency_id", "subtier_agency__name")
@@ -126,6 +126,9 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
             queryset = queryset.filter(code__icontains=search_text)
         else:
             queryset = queryset.filter(description__icontains=search_text)
+
+        # Only include 6 digit codes
+        queryset = queryset.extra(where=["CHAR_LENGTH(code) = 6"])
 
         # rename columns...
         queryset = queryset.annotate(naics=F("code"), naics_description=F("description"))

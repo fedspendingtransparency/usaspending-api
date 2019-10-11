@@ -3,6 +3,7 @@ from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.definition import Definition
 from usaspending_api.references.models.filter_hash import FilterHash
+from usaspending_api.references.models.frec import FREC
 from usaspending_api.references.models.frec_map import FrecMap
 from usaspending_api.references.models.gtas_total_obligation import GTASTotalObligation
 from usaspending_api.references.models.legal_entity import LegalEntity
@@ -24,6 +25,7 @@ __all__ = [
     "CGAC",
     "Definition",
     "FilterHash",
+    "FREC",
     "FrecMap",
     "GTASTotalObligation",
     "LegalEntity",

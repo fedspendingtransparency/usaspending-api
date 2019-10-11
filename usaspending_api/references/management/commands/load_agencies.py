@@ -1,163 +1,267 @@
-from django.db import connection
-from django.core.management.base import BaseCommand
-from usaspending_api.references.models import ToptierAgency, SubtierAgency, Agency
-import os
-import csv
 import logging
-import django
 
-# TODO: Is this still needed?
-MATVIEW_SQL = """
-    DROP MATERIALIZED VIEW IF EXISTS agency_by_subtier_and_optionally_toptier;
-    CREATE MATERIALIZED VIEW agency_by_subtier_and_optionally_toptier AS
-    WITH subq AS (
-        SELECT a.id,
-               s.subtier_code,
-               ''::TEXT AS cgac_code,
-               rank() OVER (PARTITION BY s.subtier_agency_id ORDER BY s.update_date DESC) AS update_rank
-        FROM   agency a
-        JOIN   subtier_agency s ON (s.subtier_agency_id = a.subtier_agency_id) )
-    SELECT subtier_code, cgac_code, id
-    FROM   subq
-    WHERE  update_rank = 1   -- forces only one row per subtier code
-    UNION ALL
-    SELECT
-           s.subtier_code,
-           t.cgac_code,
-           a.id
-    FROM   agency a
-    JOIN   subtier_agency s ON (s.subtier_agency_id = a.subtier_agency_id)
-    JOIN   toptier_agency t ON (t.toptier_agency_id = a.toptier_agency_id);
-    CREATE INDEX ON agency_by_subtier_and_optionally_toptier (subtier_code, cgac_code);
-    """
+from collections import namedtuple
+from distutils.util import strtobool
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from pathlib import Path
+from psycopg2.extras import execute_values
+from psycopg2.sql import SQL
+from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
+from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
+from usaspending_api.common.helpers.sql_helpers import get_connection
+from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
+from usaspending_api.common.helpers.timing_helpers import Timer
+
+logger = logging.getLogger("console")
+
+Agency = namedtuple(
+    "Agency",
+    [
+        "row_number",
+        "cgac_agency_code",
+        "agency_name",
+        "agency_abbreviation",
+        "frec",
+        "frec_entity_description",
+        "frec_abbreviation",
+        "subtier_code",
+        "subtier_name",
+        "subtier_abbreviation",
+        "toptier_flag",
+        "is_frec",
+        "user_selectable",
+        "mission",
+        "website",
+        "congressional_justification",
+        "icon_filename",
+    ],
+)
+
+MAX_CHANGES = 75
 
 
-class Command(BaseCommand):
-    help = "Loads agencies and sub-tier agencies from authoritative OMB list in \
-            the folder of this management command."
+class Command(mixins.ETLMixin, BaseCommand):
+    help = (
+        "Loads CGACs, FRECs, Subtier Agencies, Toptier Agencies, and Agencies.  Load is all or nothing.  "
+        "If anything fails, nothing gets saved."
+    )
 
-    logger = logging.getLogger("console")
+    agency_file = None
+    force = False
+
+    etl_logger_function = logger.info
+    etl_dml_sql_directory = Path(__file__).resolve().parent / "load_agencies_sql"
+
+    def add_arguments(self, parser):
+
+        parser.add_argument(
+            "agency_file",
+            metavar="AGENCY_FILE",
+            help="Path (for local files) or URI (for http(s) or S3 files) of the raw agency CSV file to be loaded.",
+        )
+
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help=(
+                "Reloads agencies even if the max change threshold of {:,} is exceeded.  This is a safety "
+                "precaution to prevent accidentally updating every award, transaction, and subaward in the system as "
+                "part of the nightly pipeline.  Will also force foreign key table links to be examined even if it "
+                "appears there were no agency changes.".format(MAX_CHANGES)
+            ),
+        )
 
     def handle(self, *args, **options):
 
-        """
-            The toptier table is expected to contain unique CGACs or FRECs, based on the
-            name specified in the CSV. The names must match for this to consider it a toptier agency.
+        self.agency_file = options["agency_file"]
+        self.force = options["force"]
 
-            The ordering of the CSV important because the toptier must exist before any
-            other subtiers can be inserted.
+        logger.info("AGENCY FILE: {}".format(self.agency_file))
+        logger.info("FORCE SWITCH: {}".format(self.force))
+        logger.info("MAX CHANGE LIMIT: {}".format("unlimited" if self.force else "{:,}".format(MAX_CHANGES)))
 
-            Every normalized "Agency" entry will point to a "ToptierAgency (CGAC/FREC) and a SubtierAgency (FPDS, or
-            name only) entry.
+        with Timer("Load agencies"):
+            try:
+                with transaction.atomic():
+                    self._perform_load()
+                    t = Timer("Commit agency transaction")
+                    t.log_starting_message()
+                t.log_success_message()
+            except Exception:
+                logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
+                raise
 
-            Toptier normalized "Agency" entries also have their FPDS and other info in a SubtierAgency entry.
+            try:
+                self._vacuum_tables()
+            except Exception:
+                logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
+                raise
 
-            NB:
-                Air Force / Army / Navy are toptiers, not subtiers of DoD, in this implementation of the agency list.
+    def _read_raw_agencies_csv(self):
+        agencies = read_csv_file_as_list_of_dictionaries(self.agency_file)
+        if len(agencies) < 1:
+            raise RuntimeError("Agency file '{}' appears to be empty".format(self.agency_file))
 
-                Any agencies with unknown subtiers are ignored.
+        self.agencies = [
+            Agency(
+                row_number=row_number,
+                cgac_agency_code=prep(agency["CGAC AGENCY CODE"]),
+                agency_name=prep(agency["AGENCY NAME"]),
+                agency_abbreviation=prep(agency["AGENCY ABBREVIATION"]),
+                frec=prep(agency["FREC"]),
+                frec_entity_description=prep(agency["FREC Entity Description"]),
+                frec_abbreviation=prep(agency["FREC ABBREVIATION"]),
+                subtier_code=prep(agency["SUBTIER CODE"]),
+                subtier_name=prep(agency["SUBTIER NAME"]),
+                subtier_abbreviation=prep(agency["SUBTIER ABBREVIATION"]),
+                toptier_flag=bool(strtobool(prep(agency["TOPTIER_FLAG"]))),
+                is_frec=bool(strtobool(prep(agency["IS_FREC"]))),
+                user_selectable=bool(strtobool(prep(agency["USER SELECTABLE ON USASPENDING.GOV"]))),
+                mission=prep(agency["MISSION"]),
+                website=prep(agency["WEBSITE"]),
+                congressional_justification=prep(agency["CONGRESSIONAL JUSTIFICATION"]),
+                icon_filename=prep(agency["ICON FILENAME"]),
+            )
+            for row_number, agency in enumerate(agencies, start=1)
+        ]
 
-                "U.S. Congress" (000) and "Other (Listed Under Department of State)" (000) are also skipped.
+        return len(self.agencies)
 
-        """
+    @staticmethod
+    def _validate_raw_agency(agency):
+        messages = []
 
-        try:
-            with open(
-                os.path.join(django.conf.settings.BASE_DIR, "usaspending_api", "data", "authoritative_agency_list.csv"),
-                encoding="Latin-1",
-            ) as csvfile:
+        if agency.cgac_agency_code is not None and agency.agency_name is None:
+            message = "Row number {:,} has a CGAC AGENCY CODE but no AGENCY NAME"
+            messages.append(message.format(agency.row_number))
+        if agency.frec is not None and agency.frec_entity_description is None:
+            messages.append("Row number {:,} has a FREC but no FREC Entity Description".format(agency.row_number))
+        if agency.subtier_code is not None and agency.subtier_name is None:
+            messages.append("Row number {:,} has a SUBTIER CODE but no SUBTIER NAME".format(agency.row_number))
+        if agency.is_frec is True and agency.frec is None:
+            messages.append("Row number {:,} is marked as IS_FREC but has no FREC".format(agency.row_number))
+        if agency.is_frec is not True and agency.cgac_agency_code is None:
+            messages.append(
+                "Row number {:,} is not marked as IS_FREC but has no CGAC AGENCY CODE".format(agency.row_number)
+            )
+        if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
+            messages.append(
+                "Row number {:,} has CGAC AGENCY CODE that is not 3 characters long ({})".format(
+                    agency.row_number, agency.cgac_agency_code
+                )
+            )
+        if agency.frec and len(agency.frec) != 4:
+            messages.append(
+                "Row number {:,} has FREC that is not 4 characters long ({})".format(agency.row_number, agency.frec)
+            )
+        if agency.subtier_code and len(agency.subtier_code) != 4:
+            messages.append(
+                "Row number {:,} has SUBTIER CODE that is not 4 characters long ({})".format(
+                    agency.row_number, agency.subtier_code
+                )
+            )
 
-                reader = csv.DictReader(csvfile)
+        return messages
 
-                for row in reader:
-                    cgac_code = row.get("CGAC AGENCY CODE", "")
-                    frec_code = row.get("FREC", "")
-                    department_name = row.get("AGENCY NAME", "")
-                    department_abbr = row.get("AGENCY ABBREVIATION", "")
-                    subtier_name = row.get("SUBTIER NAME", "")
-                    subtier_code = row.get("SUBTIER CODE", "")
-                    subtier_abbr = row.get("SUBTIER ABBREVIATION", "")
-                    frec_entity_description = row.get("FREC Entity Description", "")
-                    mission = row.get("MISSION", "")
-                    website = row.get("WEBSITE", "")
-                    justification = row.get("CONGRESSIONAL JUSTIFICATION", "")
-                    icon_filename = row.get("ICON FILENAME", "")
-                    is_frec = row.get("IS_FREC", "FALSE")
+    def _validate_raw_agencies(self):
 
-                    # Skip these agencies altogether
-                    if "unknown" in subtier_code.lower() or cgac_code in ["000", "067"]:
-                        continue
+        messages = []
+        for agency in self.agencies:
+            messages += self._validate_raw_agency(agency)
 
-                    toptier_agency = None
-                    subtier_agency = None
-                    toptier_flag = False
+        if messages:
+            for message in messages:
+                logger.error(message)
+            raise RuntimeError(
+                "{:,} problem(s) have been found with the agency file.  See log for details.".format(len(messages))
+            )
 
-                    # This comparison determines what we consider a toptier
-                    if is_frec == "TRUE":
-                        toptier_flag = subtier_name == frec_entity_description
-                    else:
-                        toptier_flag = subtier_name == department_name
+    def _import_raw_agencies(self):
+        with get_connection(read_only=False).cursor() as cursor:
+            execute_values(
+                cursor.cursor,
+                """
+                    insert into temp_load_agencies_raw_agency (
+                        row_number,
+                        cgac_agency_code,
+                        agency_name,
+                        agency_abbreviation,
+                        frec,
+                        frec_entity_description,
+                        frec_abbreviation,
+                        subtier_code,
+                        subtier_name,
+                        subtier_abbreviation,
+                        toptier_flag,
+                        is_frec,
+                        user_selectable,
+                        mission,
+                        website,
+                        congressional_justification,
+                        icon_filename
+                    ) values %s
+                """,
+                self.agencies,
+                page_size=len(self.agencies),
+            )
+            return cursor.rowcount
 
-                    if toptier_flag:  # create or update the toptier agency
-                        toptier_name = subtier_name  # based on matching above
-                        toptier_agency, created = ToptierAgency.objects.get_or_create(name=toptier_name)
+    def _perform_load(self):
 
-                        if is_frec == "TRUE":
-                            toptier_agency.cgac_code = frec_code
-                            toptier_agency.abbreviation = subtier_abbr
-                        else:
-                            toptier_agency.cgac_code = cgac_code
-                            toptier_agency.abbreviation = department_abbr
+        overrides = {
+            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
+            "update_overrides": {"update_date": SQL("now()")},
+        }
 
-                        toptier_agency.mission = mission
-                        toptier_agency.website = website
-                        toptier_agency.icon_filename = icon_filename
-                        toptier_agency.justification = justification
+        agency_table = ETLTable("agency", key_overrides=["toptier_agency_id", "subtier_agency_id"], **overrides)
+        cgac_table = ETLTable("cgac", key_overrides=["cgac_code"])
+        frec_table = ETLTable("frec", key_overrides=["frec_code"])
+        subtier_agency_table = ETLTable("subtier_agency", key_overrides=["subtier_code"], **overrides)
+        toptier_agency_table = ETLTable("toptier_agency", key_overrides=["cgac_code"], **overrides)
 
-                        if is_frec == "TRUE":
-                            toptier_agency.cgac_code = frec_code
-                            toptier_agency.abbreviation = subtier_abbr
-                        else:
-                            toptier_agency.cgac_code = cgac_code
-                            toptier_agency.abbreviation = department_abbr
+        agency_query = ETLQueryFile(self.etl_dml_sql_directory / "agency_query.sql")
+        cgac_query = ETLQueryFile(self.etl_dml_sql_directory / "cgac_query.sql")
+        frec_query = ETLQueryFile(self.etl_dml_sql_directory / "frec_query.sql")
+        subtier_agency_query = ETLQueryFile(self.etl_dml_sql_directory / "subtier_agency_query.sql")
+        toptier_agency_query = ETLQueryFile(self.etl_dml_sql_directory / "toptier_agency_query.sql")
 
-                        toptier_agency.save()
+        self._execute_etl_dml_sql_directory_file("raw_agency_create_temp_table", "Create raw agency temp table")
+        self._execute_function_and_log(self._read_raw_agencies_csv, "Read raw agencies csv")
+        self._execute_function(self._validate_raw_agencies, "Validate raw agencies")
+        self._execute_function_and_log(self._import_raw_agencies, "Import raw agencies")
 
-                    # Navy / Army / Air Force will just be a toptier, skip subtier
-                    if "subsumed under dod" in subtier_code.lower():
-                        toptier_agency, created = ToptierAgency.objects.get_or_create(name=department_name)
-                        toptier_agency.cgac_code = cgac_code
-                        toptier_agency.abbreviation = department_abbr
-                        toptier_agency.save()
+        self._delete_update_insert_rows("CGACs", cgac_query, cgac_table)
+        self._delete_update_insert_rows("FRECs", frec_query, frec_table)
 
-                        agency, created = Agency.objects.get_or_create(
-                            toptier_agency=toptier_agency, subtier_agency=None, toptier_flag=True
-                        )
-                        agency.save()
+        rows_affected = 0
+        rows_affected += self._delete_update_insert_rows("toptier agencies", toptier_agency_query, toptier_agency_table)
+        rows_affected += self._delete_update_insert_rows("subtier agencies", subtier_agency_query, subtier_agency_table)
+        rows_affected += self._delete_update_insert_rows("agencies", agency_query, agency_table)
 
-                        continue
+        if rows_affected > MAX_CHANGES and not self.force:
+            raise RuntimeError(
+                "Exceeded maximum number of allowed changes ({:,}).  Use --force switch if this was "
+                "intentional.".format(MAX_CHANGES)
+            )
 
-                    # Still need to grab the toptier for mapping
-                    if is_frec == "TRUE":
-                        toptier_agency = ToptierAgency.objects.get(cgac_code=frec_code)
-                    else:
-                        toptier_agency = ToptierAgency.objects.get(cgac_code=cgac_code)
+        elif rows_affected > 0 or self.force:
+            self._execute_etl_dml_sql_directory_file(
+                "treasury_appropriation_account_update", "Update treasury appropriation accounts"
+            )
+            self._execute_etl_dml_sql_directory_file("transaction_normalized_update", "Update transactions")
+            self._execute_etl_dml_sql_directory_file("award_update", "Update awards")
+            self._execute_etl_dml_sql_directory_file("subaward_update", "Update subawards")
 
-                    # Sanity check
-                    assert subtier_code.isalnum() and len(subtier_code) == 4
+        else:
+            logger.info(
+                "Skipping treasury_appropriation_account, transaction_normalized, "
+                "awards, and subaward updates since there were no agency changes."
+            )
 
-                    subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code)
-                    subtier_agency.name = subtier_name
-                    subtier_agency.abbreviation = subtier_abbr
-                    subtier_agency.save()
-
-                    agency, created = Agency.objects.get_or_create(
-                        toptier_agency=toptier_agency, subtier_agency=subtier_agency, toptier_flag=toptier_flag
-                    )
-                    agency.save()
-
-                with connection.cursor() as cursor:
-                    cursor.execute(MATVIEW_SQL)
-
-        except IOError:
-            self.logger.log("Could not open file to load from")
+    def _vacuum_tables(self):
+        self._execute_dml_sql("vacuum (full, analyze) agency", "Vacuum agency table")
+        self._execute_dml_sql("vacuum (full, analyze) cgac", "Vacuum cgac table")
+        self._execute_dml_sql("vacuum (full, analyze) frec", "Vacuum frec table")
+        self._execute_dml_sql("vacuum (full, analyze) subtier_agency", "Vacuum subtier_agency table")
+        self._execute_dml_sql("vacuum (full, analyze) toptier_agency", "Vacuum toptier_agency table")

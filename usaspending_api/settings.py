@@ -19,8 +19,8 @@ MAX_DOWNLOAD_LIMIT = 500000
 # User-specified timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
-# Default timeout for SQL statements in Django. Set to 5 min (in seconds).
-DEFAULT_DB_TIMEOUT_IN_SECONDS = os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS") or 0
+# Default timeout for SQL statements in Django
+DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 CONNECTION_MAX_SECONDS = 10
 
 API_MAX_DATE = "2020-09-30"  # End of FY2020
@@ -75,6 +75,9 @@ ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(
     BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt"
 )
 CONTRACT_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/ContractSummary_download_readme.txt")
+AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
+    "-nonprod" if DOWNLOAD_ENV != "production" else ""
+)
 
 # Elasticsearch
 ES_HOSTNAME = ""
@@ -163,39 +166,37 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(environment_variable, **additional_options):
+def _configure_database_connection(environment_variable):
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
-    additional_options are any additional options you want to provide to the connection.
     """
+    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
-    if additional_options:
-        config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **additional_options}
+    config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     return config
 
 
 # If DB_SOURCE is set, use it as our default database, otherwise use dj_database_url.DEFAULT_ENV
-# (which is "DATABASE_URL" by default).  Generally speaking, DB_SOURCE is used to support server
-# environments that support the API/website whereas DATABASE_URL is used for development and
-# operational environments (Jenkins primarily).  As such, DATABASE_URL receives some additional
-# options.  As a future enhancement, I would like to see all connections use statement_timeout
-# and we ensure it is set correctly in every environment.  If DB_SOURCE is provided, then DB_R1
-# (read replica) must also be provided.
+# (which is "DATABASE_URL" by default). Generally speaking, DB_SOURCE is used to support server
+# environments that support the API/website and docker-compose local setup whereas DATABASE_URL
+# is used for development and operational environments (Jenkins primarily). If DB_SOURCE is provided,
+# then DB_R1 (read replica) must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
-        raise EnvironmentError("DB_SOURCE environment variable provided without DB_R1")
+        raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
+elif os.environ.get(dj_database_url.DEFAULT_ENV):
+    DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
 else:
-    DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection(
-            dj_database_url.DEFAULT_ENV, options="-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)
-        )
-    }
+    raise EnvironmentError(
+        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
+    )
+
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
