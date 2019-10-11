@@ -6,8 +6,7 @@ from model_mommy import mommy
 from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS, Award
-from usaspending_api.awards.models_matviews import ContractAwardSearchMatview, AwardSearchView
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
