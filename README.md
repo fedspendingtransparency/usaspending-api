@@ -54,13 +54,13 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-	- `docker-compose run usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
+	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
 
 	- `docker-compose run usaspending-manage python -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
 	- `docker-compose run usaspending-manage python -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-	- `docker-compose run usaspending-db-sql`, then `docker-compose run usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
+	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
 
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
@@ -74,14 +74,14 @@ For further instructions on how to download, use, and setup the database using a
 ## Elasticsearch Setup
 Some of the API endpoints reach into Elasticsearch for data.
 
-- `docker-compose run usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
 
 - The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
 ## Running the API
-`docker-compose run usaspending-api`
+`docker-compose up usaspending-api`
 
 - You can update environment variables in `settings.py` (buckets, elasticsearch, local paths) and they will be mounted and used when you run this.
 
