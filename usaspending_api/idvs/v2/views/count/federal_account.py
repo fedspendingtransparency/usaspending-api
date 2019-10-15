@@ -9,7 +9,7 @@ from usaspending_api.common.validator.award import get_internal_or_generated_awa
 from usaspending_api.common.validator.tinyshield import TinyShield
 
 
-GET_FUNDING_SQL = SQL(
+GET_COUNT_SQL = SQL(
     """
     with gather_award_ids as (
         select  award_id
@@ -48,7 +48,7 @@ GET_FUNDING_SQL = SQL(
 class IDVFederalAccountCountViewSet(APIView):
     """Returns the total number of funding transactions for an IDV's child and grandchild awards, but not the IDV itself."""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/count/federal_account.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/count/federal_account/award_id.md"
 
     @staticmethod
     def _parse_and_validate_request(requested_award: str, request_data: dict) -> dict:
@@ -75,7 +75,7 @@ class IDVFederalAccountCountViewSet(APIView):
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
 
-        sql = GET_FUNDING_SQL.format(
+        sql = GET_COUNT_SQL.format(
             award_id_column=Identifier(award_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get("piid")),
