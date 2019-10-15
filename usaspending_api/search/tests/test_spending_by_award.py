@@ -293,3 +293,136 @@ def test_date_range_search_with_two_ranges(client, awards_over_different_date_ra
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
+
+@pytest.fixture
+def naics_hierarchy():
+    naics = ["923120", "923230", "923140", "111110", "111120", "111130"]
+    award_id = 0
+    for naic in naics:
+        award_id += 1
+        mommy.make("references.NAICS", code=naic, description="NAICS Code: {}".format(naic))
+        mommy.make("awards.TransactionNormalized", pk=1000 + award_id, award_id=award_id, is_fpds=True,)
+        mommy.make("awards.TransactionFPDS", transaction_id=1000 + award_id, naics=naic)
+        recipient = mommy.make("references.LegalEntity", legal_entity_id=2000 + award_id)
+        mommy.make(
+            "awards.Award",
+            id=award_id,
+            type="A",
+            type_description="DEFINITIVE CONTRACT",
+            category="contract",
+            latest_transaction_id=1000 + award_id,
+            recipient=recipient,
+            piid="abcdefg{}".format(award_id),
+            fain="xyz{}".format(award_id),
+            uri="abcxyx{}".format(award_id),
+        )
+
+
+@pytest.mark.django_db
+def test_naics_hierarchy_search(client, naics_hierarchy, refresh_matviews):
+
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["11"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 3
+
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["11", "92"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 6
+
+    # midtier test
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["9231"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 2
+
+    # regular test
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["923120"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 1
+
+    # test both regular code and hierarchy code
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["923120", "11"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 4
+
+    # naics doesn't exist
+    naics_search = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "naics_codes": ["923121"]
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(naics_search)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 0
