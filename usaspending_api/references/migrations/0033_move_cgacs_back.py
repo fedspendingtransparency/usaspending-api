@@ -12,6 +12,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # This doesn't need a reverse as the reverse for this entire migration is to drop the FREC table.
+        migrations.RunSQL(
+            ["drop table if exists frec"],
+        ),
         migrations.CreateModel(
             name='FREC',
             fields=[
