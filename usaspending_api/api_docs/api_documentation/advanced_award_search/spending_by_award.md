@@ -152,19 +152,20 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
     "limit": 10,
     "results": [
         {
-            "internal_id": 1018950,
-            "Award ID": null,
-            "Recipient Name": "The Example Company",
-            "recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R",
-            "Start Date": null,
-            "End Date": null,
-            "Award Amount": 1573663,
+            "internal_id": 286131,
+            "generated_internal_id": "CONT_AWD_0002_2800_SS001060023_2800",
+            "Award ID": "0002",
+            "Recipient Name": "BOWHEAD SYSTEMS MANAGEMENT, LLC",
+            "Start Date": "2010-05-13",
+            "End Date": "2013-04-05",
+            "Award Amount": 1392316.8,
             "Awarding Agency": "Social Security Administration",
             "Awarding Sub Agency": "Social Security Administration",
-            "Award Type": "10",
+            "Award Type": null,
             "Funding Agency": "Social Security Administration",
             "Funding Sub Agency": "Social Security Administration"
-        }
+        },
+        ...
     ],
     "page_metadata": {
         "page": 1,
@@ -181,18 +182,18 @@ The possible fields returned are split by contracts (and IDV) or assistance awar
     "limit": 10,
     "results": [
         {
-            "internal_id": 4712890,
-            "Subaward ID": null,
-            "Subaward Type": "procurement",
-            "Subawardee Name": null,
-            "Subaward Date": null,
-            "Subaward Amount": 1573663,
-            "Awarding Agency": "Social Security Administration",
-            "Awarding Sub Agency": "Social Security Administration",
-            "Prime Award ID": null,
-            "Prime Recipient Name": "The Example Company",
-            "prime_award_recipient_id": "d78c12d6-5e3f-0cb2-31a8-8df321c03c95-R"
-        }
+            "internal_id": "8-312-0214780 MOD 6",
+            "prime_generated_internal_id": "CONT_AWD_HHSP23337003T_7555_HHSP233201500039I_7555",
+            "Sub-Award ID": "8-312-0214780 MOD 6",
+            "Prime Recipient Name": "RESEARCH TRIANGLE INSTITUTE",
+            "Sub-Award Date": "2018-06-27",
+            "Sub-Awardee Name": "NEW EDITIONS, INC.",
+            "Sub-Award Amount": 6174861748.0,
+            "Awarding Agency": "Department of Health and Human Services",
+            "Awarding Sub Agency": "Office of the Assistant Secretary for Administration",
+            "Sub-Award Type": "procurement"
+        },
+        ...
     ],
     "page_metadata": {
         "page": 1,
