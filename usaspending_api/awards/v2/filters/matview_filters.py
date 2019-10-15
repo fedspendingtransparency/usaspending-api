@@ -256,10 +256,7 @@ def matview_search_filter(filters, model, for_downloads=False):
         elif key == "naics_codes":
             naics_filter = Q()
             for v in value:
-                if len(v) == 6:
-                    naics_filter |= Q(naics_code=v)
-                else:
-                    naics_filter |= Q(naics_code__startswith=v)
+                naics_filter |= Q(naics_code__startswith=v)
             queryset = queryset.filter(naics_filter)
 
         elif key == "psc_codes":
