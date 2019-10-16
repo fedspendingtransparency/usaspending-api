@@ -138,9 +138,9 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
     _find_empty_awards_sql = str(
         "SELECT a.id "
         "FROM awards a "
-        "LEFT JOIN transaction_normalized t "
-        "ON t.award_id = a.id "
-        "WHERE t is null {}"
+        "LEFT JOIN transaction_normalized tn "
+        "ON tn.award_id = a.id "
+        "WHERE tn IS NULL {}"
     ).format(" AND a.id IN %s " if award_tuple else "")
 
     _modify_subawards_sql = "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(_find_empty_awards_sql)
