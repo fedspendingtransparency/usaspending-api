@@ -19,6 +19,7 @@ env:
   - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
+  - DATA_BROKER_DATABASE_URL='postgres://postgres@localhost/data_broker'
 
 before_install:
   - npm install dredd@5.4.1 --global
