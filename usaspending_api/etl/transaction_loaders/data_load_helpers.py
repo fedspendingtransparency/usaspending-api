@@ -10,9 +10,9 @@ from django.conf import settings
 logger = logging.getLogger("console")
 
 
-def capitalize_if_string(val):
+def capitalize_and_compress_if_string(val):
     try:
-        return val.upper()
+        return val.upper().replace(r" +", " ")
     except AttributeError:
         return val
 

@@ -1,10 +1,10 @@
-from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, false_if_null
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_and_compress_if_string, false_if_null
 
 
 def test_capitalize_if_string():
-    assert capitalize_if_string("bob4") == "BOB4"
-    assert capitalize_if_string(7) == 7
-    assert capitalize_if_string(None) is None
+    assert capitalize_and_compress_if_string("bob4") == "BOB4"
+    assert capitalize_and_compress_if_string(7) == 7
+    assert capitalize_and_compress_if_string(None) is None
 
 
 def test_false_if_null():

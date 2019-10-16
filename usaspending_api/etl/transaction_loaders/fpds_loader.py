@@ -18,7 +18,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     all_broker_columns,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    capitalize_if_string,
+    capitalize_and_compress_if_string,
     false_if_null,
     get_deleted_fpds_data_from_s3,
 )
@@ -159,7 +159,7 @@ def _create_load_object(broker_object, non_boolean_column_map, boolean_column_ma
     retval = {}
     if non_boolean_column_map:
         retval.update(
-            {non_boolean_column_map[key]: capitalize_if_string(broker_object[key]) for key in non_boolean_column_map}
+            {non_boolean_column_map[key]: capitalize_and_compress_if_string(broker_object[key]) for key in non_boolean_column_map}
         )
 
     if boolean_column_map:
