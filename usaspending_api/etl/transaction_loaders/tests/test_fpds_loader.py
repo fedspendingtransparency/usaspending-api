@@ -84,6 +84,10 @@ def _stub___extract_broker_objects(id_list):
         dummy_row = _assemble_dummy_broker_data()
         dummy_row["detached_award_procurement_id"] = id
         dummy_row["detached_award_proc_unique"] = str(id)
+        dummy_row["ordering_period_end_date"] = "2010-01-01 00:00:00"
+        dummy_row["action_date"] = "2010-01-01 00:00:00"
+        dummy_row["initial_report_date"] = "2010-01-01 00:00:00"
+        dummy_row["solicitation_date"] = "2010-01-01 00:00:00"
         yield dummy_row
 
 
@@ -257,6 +261,9 @@ def test_load_transactions(monkeypatch):
     for key in mega_key_list.keys():
         mega_key_list[key] = "value{}".format(unique_val)
 
+    for key in ["ordering_period_end_date", "action_date", "initial_report_date", "solicitation_date"]:
+        mega_key_list[key] = "2010-01-01 00:00:00"
+
     mega_boolean_key_list = {}
     mega_boolean_key_list.update(transaction_fpds_boolean_columns)
     mega_boolean_key_list.update(legal_entity_boolean_columns)
@@ -265,8 +272,6 @@ def test_load_transactions(monkeypatch):
         mega_boolean_key_list[key] = "false"
 
     mega_key_list.update(mega_boolean_key_list)
-
-    mega_key_list["action_date"] = "2007-10-01 00:00:00"
 
     load_objects = _transform_objects([mega_key_list])
 

@@ -4,7 +4,6 @@ import re
 import boto3
 import csv
 import logging
-import dateutil
 
 from django.conf import settings
 
@@ -28,7 +27,7 @@ def truncate_timestamp(val):
     if isinstance(val, datetime):
         return val.date()
     elif isinstance(val, str):
-        return dateutil.parser.parse(val).date()
+        return datetime.strptime(val, "%Y-%m-%d %H:%M:%S").date()
     elif val is None:
         return None
     else:
