@@ -1,6 +1,5 @@
 import psycopg2
 import logging
-from os import environ
 
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
