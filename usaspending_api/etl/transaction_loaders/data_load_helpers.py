@@ -35,7 +35,6 @@ def truncate_timestamp(val):
         raise ValueError("{} is not parsable as a date!".format(val.type))
 
 
-
 def format_value_for_sql(val, cur):
     return str(cur.mogrify("%s", (val,)), "utf-8")
 
