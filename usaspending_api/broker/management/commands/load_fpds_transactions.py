@@ -119,7 +119,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # loads can take a while, so we record last updated date from the start of all transactions
+        # Record script execution start time to update the FPDS last updated date in DB as appropriate
         update_time = datetime.now(timezone.utc)
 
         if options["reload_all"]:

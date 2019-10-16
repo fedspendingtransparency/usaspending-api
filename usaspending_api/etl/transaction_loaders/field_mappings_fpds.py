@@ -1,3 +1,4 @@
+from usaspending_api.broker.helpers.award_category_helper import award_types
 from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import (
     calculate_fiscal_year,
     calculate_awarding_agency,
@@ -8,7 +9,10 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     created_at,
     updated_at,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_and_compress_if_string, truncate_timestamp
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    capitalize_and_compress_if_string,
+    truncate_timestamp,
+)
 
 # broker column name -> usaspending column name
 transaction_fpds_nonboolean_columns = {
@@ -327,7 +331,6 @@ transaction_fpds_functions = {
 transaction_normalized_nonboolean_columns = {
     "period_of_performance_star": "period_of_performance_start_date",
     "period_of_performance_curr": "period_of_performance_current_end_date",
-    "action_date": "action_date",
     "action_type": "action_type",
     "action_type_description": "action_type_description",
     "federal_action_obligation": "federal_action_obligation",
@@ -339,6 +342,8 @@ transaction_normalized_nonboolean_columns = {
 
 # usaspending column name -> derivation function
 transaction_normalized_functions = {
+    "type": lambda broker: award_types(broker)[0],
+    "type_description": lambda broker: award_types(broker)[1],
     "is_fpds": lambda broker: True,
     "transaction_unique_id": unique_transaction_id,
     "usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
