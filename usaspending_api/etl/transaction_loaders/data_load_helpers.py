@@ -11,9 +11,11 @@ logger = logging.getLogger("console")
 
 
 def capitalize_if_string(val):
-    try:
+    if val is str:
         return val.upper()
-    except AttributeError:
+    elif val is datetime:
+        val.date()
+    else:
         return val
 
 
