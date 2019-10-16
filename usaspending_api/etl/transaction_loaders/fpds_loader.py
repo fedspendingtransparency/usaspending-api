@@ -266,7 +266,8 @@ def _matching_award(cursor, load_object):
     find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
         load_object["transaction_fpds"]["unique_award_key"]
     )
-    results = cursor.execute(find_matching_award_sql)
+    cursor.execute(find_matching_award_sql)
+    results = cursor.fetchall()
     return results[0][0] if results else None
 
 
