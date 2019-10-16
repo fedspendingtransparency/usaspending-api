@@ -4,6 +4,7 @@ import re
 import boto3
 import csv
 import logging
+import dateutil
 
 from django.conf import settings
 
@@ -11,11 +12,9 @@ logger = logging.getLogger("console")
 
 
 def capitalize_if_string(val):
-    if val is str:
+    try:
         return val.upper()
-    elif val is datetime:
-        val.date()
-    else:
+    except AttributeError:
         return val
 
 
@@ -23,6 +22,18 @@ def false_if_null(val):
     if val is None:
         return False
     return val
+
+
+def truncate_timestamp(val):
+    if isinstance(val, datetime):
+        return val.date()
+    elif isinstance(val, str):
+        return dateutil.parser.parse(val).date()
+    elif val is None:
+        return None
+    else:
+        raise ValueError("{} is not parsable as a date!".format(val.type))
+
 
 
 def format_value_for_sql(val, cur):

@@ -6,7 +6,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     current_datetime,
     business_categories,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, truncate_timestamp
 
 # broker column name -> usaspending column name
 transaction_fpds_nonboolean_columns = {
@@ -55,7 +55,6 @@ transaction_fpds_nonboolean_columns = {
     "period_of_performance_star": "period_of_performance_star",
     "period_of_performance_curr": "period_of_performance_curr",
     "period_of_perf_potential_e": "period_of_perf_potential_e",
-    "ordering_period_end_date": "ordering_period_end_date",
     "action_date": "action_date",
     "action_type": "action_type",
     "action_type_description": "action_type_description",
@@ -315,7 +314,12 @@ transaction_fpds_boolean_columns = {
     "us_local_government": "us_local_government",
 }
 
-transaction_fpds_functions = {}
+transaction_fpds_functions = {
+    "ordering_period_end_date": lambda broker: truncate_timestamp(broker["ordering_period_end_date"]),
+    "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
+    "initial_report_date": lambda broker: truncate_timestamp(broker["initial_report_date"]),
+    "solicitation_date": lambda broker: truncate_timestamp(broker["solicitation_date"]),
+}
 
 # broker column name -> usaspending column name
 transaction_normalized_nonboolean_columns = {
@@ -349,6 +353,7 @@ transaction_normalized_functions = {
     "non_federal_funding_amount": lambda broker: None,  # FABS only
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
+    "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
 }
 
 # broker column name -> usaspending column name
@@ -548,4 +553,5 @@ def all_broker_columns():
     retval = []
     retval.extend(transaction_fpds_nonboolean_columns.keys())
     retval.extend(transaction_fpds_boolean_columns.keys())
+    retval.extend(transaction_fpds_functions.keys())
     return list(set(retval))
