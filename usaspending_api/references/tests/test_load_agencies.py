@@ -201,7 +201,7 @@ def test_update_treasury_appropriation_account(disable_vacuuming):
     # Ensure our TAS got updated.
     assert (
         TreasuryAppropriationAccount.objects.first().funding_toptier_agency_id
-        == ToptierAgency.objects.get(cgac_code="009").toptier_agency_id
+        == ToptierAgency.objects.get(toptier_code="009").toptier_agency_id
     )
 
     # Set it to something else and reload to make sure it gets updated.
@@ -220,7 +220,7 @@ def test_update_treasury_appropriation_account(disable_vacuuming):
     # Was it fixed?
     assert (
         TreasuryAppropriationAccount.objects.first().funding_toptier_agency_id
-        == ToptierAgency.objects.get(cgac_code="005").toptier_agency_id
+        == ToptierAgency.objects.get(toptier_code="005").toptier_agency_id
     )
 
 

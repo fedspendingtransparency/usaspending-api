@@ -11,11 +11,13 @@ def create_agency_data(db):
     ttagency1 = mommy.make(
         "references.ToptierAgency",
         name="tta_name",
-        cgac_code="100",
+        toptier_code="100",
         abbreviation="tta_abrev",
         justification="test.com/cj",
     )
-    ttagency2 = mommy.make("references.ToptierAgency", name="tta_name_2", cgac_code="200", abbreviation="tta_abrev_2")
+    ttagency2 = mommy.make(
+        "references.ToptierAgency", name="tta_name_2", toptier_code="200", abbreviation="tta_abrev_2"
+    )
 
     mommy.make("references.Agency", id=1, toptier_agency=ttagency1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency=ttagency2, toptier_flag=True)
@@ -25,13 +27,13 @@ def create_agency_data(db):
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency2)
 
     # CREATE SUBMISSIONS
-    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, cgac_code='100')
+    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, toptier_code='100')
     submission_1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, cgac_code="100"
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, toptier_code="100"
     )
-    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, cgac_code='100')
+    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, toptier_code='100')
     submission_2 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, cgac_code="200"
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, toptier_code="200"
     )
 
     # CREATE AppropriationAccountBalances

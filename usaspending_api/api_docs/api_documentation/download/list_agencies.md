@@ -27,7 +27,7 @@ When agency is not provided or agency is 0:
             {
                 "name": "Department of Agriculture",
                 "toptier_agency_id": 513,
-                "cgac_code": "012"
+                "toptier_code": "012"
             },
             ...
         ],
@@ -35,7 +35,7 @@ When agency is not provided or agency is 0:
             {
                 "name": "Abraham Lincoln Bicentennial Commission",
                 "toptier_agency_id": 644,
-                "cgac_code": "289"
+                "toptier_code": "289"
             },
             ...
         ]
@@ -67,7 +67,7 @@ The response includes 3 possible objects
 * `agencies` - list of all agencies, provided if no `agency` is provided in the request
     * `name`
     * `toptier_agency_id` - database id
-    * `cgac_code` - a unique code used by the government to identify agencies (Common Government-wide Accounting Classification)
+    * `toptier_code` - a unique code used by the government to identify agencies (Common Government-wide Accounting Classification)
 * `sub_agencies`- list of subtier agencies associated with the agency id provided
     * `subtier_agency_name`
 * `federal_accounts` - list of federal acounts associated with the agency id provided

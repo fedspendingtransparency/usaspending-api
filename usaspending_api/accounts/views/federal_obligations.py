@@ -36,16 +36,16 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
         # Using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == DOD_CGAC:
+        if toptier_agency.toptier_code == DOD_CGAC:
             tta_list = DOD_ARMED_FORCES_CGAC
             queryset = AppropriationAccountBalances.final_objects.filter(
                 submission__reporting_fiscal_year=fiscal_year,
-                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list,
+                treasury_account_identifier__funding_toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = AppropriationAccountBalances.final_objects.filter(
                 submission__reporting_fiscal_year=fiscal_year,
-                treasury_account_identifier__funding_toptier_agency__cgac_code=toptier_agency.cgac_code,
+                treasury_account_identifier__funding_toptier_agency__toptier_code=toptier_agency.toptier_code,
             )
 
         queryset = queryset.annotate(

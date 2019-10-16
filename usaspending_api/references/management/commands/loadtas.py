@@ -54,8 +54,10 @@ class Command(BaseCommand):
             "availability_type_code": lambda row: row["A"].strip(),
             "main_account_code": lambda row: row["MAIN"].strip(),
             "sub_account_code": lambda row: row["SUB"].strip(),
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip()).first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip()).first(),
+            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(
+                toptier_code=row["ATA"].strip()
+            ).first(),
+            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"].strip()).first(),
         }
 
         loader = ThreadedDataLoader(
@@ -78,7 +80,7 @@ class Command(BaseCommand):
         for next_tas in unmapped_funding_agencies:
             # CGAC code is a combination of FRECs and CGACs. It will never be empty and it will always
             # be unique in ToptierAgencies; this should be safe to do.
-            frec_match = ToptierAgency.objects.filter(cgac_code=next_tas.fr_entity_code).first()
+            frec_match = ToptierAgency.objects.filter(toptier_code=next_tas.fr_entity_code).first()
             if frec_match:
                 match_count += 1
                 self.logger.info(

@@ -12,14 +12,14 @@ def agency_data(db):
     mommy.make(
         Agency,
         toptier_agency__name="Lunar Colonization Society",
-        toptier_agency__cgac_code="LCS123",
+        toptier_agency__toptier_code="LCS123",
         subtier_agency=None,
         _fill_optional=True,
     ),
     mommy.make(
         Agency,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
-        toptier_agency__cgac_code="CMEC",
+        toptier_agency__toptier_code="CMEC",
         subtier_agency=None,
         _fill_optional=True,
     ),
