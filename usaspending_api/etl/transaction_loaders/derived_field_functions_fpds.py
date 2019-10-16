@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 
 
 def calculate_fiscal_year(broker_input):
@@ -31,3 +32,11 @@ def current_datetime(broker_input):
 
 def business_categories(broker_input):
     return get_business_categories(broker_input, "fpds")
+
+
+def created_at(broker_input):
+    return cast_datetime_to_utc(broker_input["created_at"])
+
+
+def updated_at(broker_input):
+    return cast_datetime_to_utc(broker_input["updated_at"])

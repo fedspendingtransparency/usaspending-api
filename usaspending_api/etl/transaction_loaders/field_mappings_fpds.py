@@ -5,6 +5,8 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     unique_transaction_id,
     current_datetime,
     business_categories,
+    created_at,
+    updated_at,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_and_compress_if_string, truncate_timestamp
 
@@ -220,8 +222,6 @@ transaction_fpds_nonboolean_columns = {
     "high_comp_officer5_amount": "officer_5_amount",
     "high_comp_officer5_full_na": "officer_5_name",
     "solicitation_date": "solicitation_date",
-    "created_at": "created_at",
-    "updated_at": "updated_at",
 }
 
 transaction_fpds_boolean_columns = {
@@ -319,6 +319,8 @@ transaction_fpds_functions = {
     "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
     "initial_report_date": lambda broker: truncate_timestamp(broker["initial_report_date"]),
     "solicitation_date": lambda broker: truncate_timestamp(broker["solicitation_date"]),
+    "created_at": created_at,
+    "updated_at": updated_at,
 }
 
 # broker column name -> usaspending column name
