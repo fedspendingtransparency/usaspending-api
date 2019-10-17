@@ -7,6 +7,12 @@ def test_capitalize_if_string():
     assert capitalize_and_compress_if_string(None) is None
 
 
+def test_compress_string():
+    assert capitalize_and_compress_if_string("bob") == "BOB"
+    assert capitalize_and_compress_if_string("bob bob") == "BOB BOB"
+    assert capitalize_and_compress_if_string("bob  bob bob") == "BOB BOB BOB"
+
+
 def test_false_if_null():
     assert false_if_null("true") == "true"
     assert false_if_null("false") == "false"

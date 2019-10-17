@@ -12,7 +12,7 @@ logger = logging.getLogger("console")
 
 def capitalize_and_compress_if_string(val):
     try:
-        return val.upper().replace(r" +", " ")
+        return re.sub(r"[ ]+", " ", val.upper())
     except AttributeError:
         return val
 
