@@ -3,7 +3,6 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     calculate_fiscal_year,
     calculate_awarding_agency,
     calculate_funding_agency,
-    unique_transaction_id,
     current_datetime,
     business_categories,
     created_at,
@@ -338,6 +337,7 @@ transaction_normalized_nonboolean_columns = {
     "last_modified": "last_modified_date",
     "award_modification_amendme": "modification_number",
     "unique_award_key": "unique_award_key",
+    "detached_award_proc_unique": "transaction_unique_id",
 }
 
 # usaspending column name -> derivation function
@@ -345,7 +345,6 @@ transaction_normalized_functions = {
     "type": lambda broker: award_types(broker)[0],
     "type_description": lambda broker: award_types(broker)[1],
     "is_fpds": lambda broker: True,
-    "transaction_unique_id": unique_transaction_id,
     "usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
     "original_loan_subsidy_cost": lambda broker: None,  # FABS only
     "face_value_loan_guarantee": lambda broker: None,  # FABS only
@@ -388,6 +387,7 @@ legal_entity_nonboolean_columns = {
     "domestic_or_foreign_e_desc": "domestic_or_foreign_entity_description",
     "division_name": "division_name",
     "division_number_or_office": "division_number",
+    "detached_award_proc_unique": "transaction_unique_id",
 }
 
 legal_entity_boolean_columns = {
@@ -472,7 +472,6 @@ legal_entity_boolean_columns = {
 # usaspending column name -> derivation function
 legal_entity_functions = {
     "is_fpds": lambda broker: True,
-    "transaction_unique_id": unique_transaction_id,
     "data_source": lambda broker: "DBR",
     "business_types": lambda broker: None,  # FABS only
     "business_types_description": lambda broker: None,  # FABS only
@@ -502,6 +501,7 @@ recipient_location_nonboolean_columns = {
     "legal_entity_zip4": "zip4",
     "legal_entity_zip5": "zip5",
     "legal_entity_zip_last4": "zip_last4",
+    "detached_award_proc_unique": "transaction_unique_id",
 }
 
 # usaspending column name -> derivation function
@@ -509,7 +509,6 @@ recipient_location_functions = {
     "is_fpds": lambda broker: True,
     "place_of_performance_flag": lambda broker: False,
     "recipient_flag": lambda broker: True,
-    "transaction_unique_id": unique_transaction_id,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
 }
@@ -527,6 +526,7 @@ place_of_performance_nonboolean_columns = {
     "place_of_performance_zip4a": "zip4",
     "place_of_performance_zip5": "zip5",
     "place_of_perform_zip_last4": "zip_last4",
+    "detached_award_proc_unique": "transaction_unique_id",
 }
 
 # usaspending column name -> derivation function
@@ -534,7 +534,6 @@ place_of_performance_functions = {
     "is_fpds": lambda broker: True,
     "place_of_performance_flag": lambda broker: True,
     "recipient_flag": lambda broker: False,
-    "transaction_unique_id": unique_transaction_id,
     "address_line1": lambda broker: None,
     "address_line2": lambda broker: None,
     "address_line3": lambda broker: None,
@@ -546,7 +545,7 @@ place_of_performance_functions = {
 award_functions = {
     "is_fpds": lambda broker: True,
     "generated_unique_award_id": lambda broker: capitalize_and_compress_if_string(broker["unique_award_key"]),
-    "transaction_unique_id": unique_transaction_id,
+    "transaction_unique_id": lambda broker: capitalize_and_compress_if_string(broker["detached_award_proc_unique"]),
     "subaward_count": lambda broker: 0,
     "awarding_agency_id": calculate_awarding_agency,
     "funding_agency_id": calculate_funding_agency,

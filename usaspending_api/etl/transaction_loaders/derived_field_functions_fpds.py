@@ -22,10 +22,6 @@ def _fetch_subtier_agency_id(code):
     return subtier_agency_list().get(code, {}).get("id")
 
 
-def unique_transaction_id(broker_input):
-    return broker_input["detached_award_proc_unique"]
-
-
 def current_datetime(broker_input):
     return datetime.now(timezone.utc)
 
