@@ -18,7 +18,7 @@ class SubawardsViewSet(APIView):
     awards if desired.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/subawards.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/subawards.md"
 
     subaward_lookup = {
         # "Display Name": "database_column"

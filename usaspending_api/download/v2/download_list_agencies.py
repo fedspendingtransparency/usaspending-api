@@ -13,7 +13,7 @@ class DownloadListAgenciesViewSet(APIView):
     This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/download/list_agencies.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_agencies.md"
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):

@@ -218,7 +218,7 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## Recipient (object)
 + `recipient_name`: `Booz Allen Hamilton` (required, string, nullable)
-+ `recipient_hash`: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string)
++ `recipient_hash`: `e4096343-5e8f-352a-f8af-d2a8b0f0ae68-C` (required, string, nullable)
 + `recipient_unique_id`: `2424224` (required, string, nullable)
     The recipient's DUNS
 + `parent_recipient_name`: `HoneyWell` (string, nullable)
@@ -226,23 +226,23 @@ This endpoint returns a list of data that is associated with the award profile p
 + `parent_recipient_unique_id`: `2424232` (required, string, nullable)
     The recipient's parent's DUNS
 + `location` (required, Location, nullable)
-    The recipeint's location
+    The recipient's location
 + `business_categories` (required, array[string])
-    Names of the recipients' business catagories in human readable format
+    Names of the recipients' business categories in human readable format
 
-## PeriodOfPerformance
+## PeriodOfPerformance (object)
 + `start_date`: `2004-02-19` (required, string)
 + `end_date`: `2005-02-19` (required, string)
     Corresponds to database fields current_end_date for contracts and ordering_period_end_date for IDVs
 + `last_modified_date`: `2301-02-20` (required, string)
 + `potential_end_date`: `2301-02-23` (required, string, nullable)
 
-## PeriodOfPerformanceAssistance
+## PeriodOfPerformanceAssistance (object)
 + `start_date`: `2004-02-19` (required, string, nullable)
 + `end_date`: `2005-02-19` (required, string, nullable)
 + `last_modified_date`: `2301-02-20` (required, string, nullable)
 
-## Location
+## Location (object)
 + `address_line1`: `123 Sesame St` (required, string, nullable)
 + `address_line2` (required, string, nullable)
 + `address_line3` (required, string, nullable)
@@ -250,7 +250,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `city_name`: `McLean` (required, string, nullable)
 + `county_name`: `Fairfax` (required, string, nullable)
 + `state_code`: `VA` (required, string, nullable)
-+ `state_name`: `Virginia` (required, string, nullable)
++ `state_name`: `Virginia` (optional, string, nullable)
 + `zip5`: `22102` (required, string, nullable)
 + `zip4` (required, string, nullable)
 + `foreign_postal_code` (required, string, nullable)
@@ -258,7 +258,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `location_country_code`: `TW` (required, string, nullable)
 + `congressional_code`: `05` (required, string, nullable)
 
-## ContractDetails
+## ContractDetails (object)
 + `clinger_cohen_act_planning` (required, string, nullable)
 + `clinger_cohen_act_planning_description` (required, string, nullable)
 + `commercial_item_acquisition` (required, string, nullable)
@@ -327,9 +327,9 @@ This endpoint returns a list of data that is associated with the award profile p
 + `type_set_aside` (required, string, nullable)
 + `type_set_aside_description` (required, string, nullable)
 
-## Executive
+## Executive (object)
 + `officers` (required, array[Officer], fixed-type)
 
-## Officer
-+ `name`: `John Doe` (required, string)
-+ `amount`: 234242 (required, number)
+## Officer (object)
++ `name` (required, string, nullable)
++ `amount` (required, number, nullable)

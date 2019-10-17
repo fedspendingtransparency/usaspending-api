@@ -12,7 +12,7 @@ class ListBudgetFunctionViewSet(APIView):
     ordered by Budget Function code.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/budget_functions/list_budget_function.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/budget_functions/list_budget_functions.md"
 
     @cache_response()
     def get(self, request):
@@ -33,7 +33,7 @@ class ListBudgetSubfunctionViewSet(APIView):
     ordered by Budget Subfunction code. Can be filtered by Budget Function.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/budget_functions/list_budget_subfunction.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/budget_functions/list_budget_subfunctions.md"
 
     @cache_response()
     def post(self, request):

@@ -51,8 +51,8 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             }
 
 + Response 200 (application/json)
-    + Attributes
-        + `limit`: 60 (optional, number)
+    + Attributes (object)
+        + `limit` (optional, number)
         + `results` (array[SpendingByAwardResponse])
         + `page_metadata` (PageMetadataObject)
 
