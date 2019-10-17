@@ -1,5 +1,6 @@
 import usaspending_api.etl.transaction_loaders.fpds_loader as fpds_loader
 import random
+import datetime
 from usaspending_api.etl.transaction_loaders.fpds_loader import (
     _extract_broker_objects,
     _create_load_object,
@@ -88,6 +89,8 @@ def _stub___extract_broker_objects(id_list):
         dummy_row["action_date"] = "2010-01-01 00:00:00"
         dummy_row["initial_report_date"] = "2010-01-01 00:00:00"
         dummy_row["solicitation_date"] = "2010-01-01 00:00:00"
+        dummy_row["created_at"] = datetime.datetime.fromtimestamp(0)
+        dummy_row["updated_at"] = datetime.datetime.fromtimestamp(0)
         yield dummy_row
 
 
@@ -263,6 +266,9 @@ def test_load_transactions(monkeypatch):
 
     for key in ["ordering_period_end_date", "action_date", "initial_report_date", "solicitation_date"]:
         mega_key_list[key] = "2010-01-01 00:00:00"
+
+    for key in ["created_at", "updated_at"]:
+        mega_key_list[key] = datetime.datetime.fromtimestamp(0)
 
     mega_boolean_key_list = {}
     mega_boolean_key_list.update(transaction_fpds_boolean_columns)
