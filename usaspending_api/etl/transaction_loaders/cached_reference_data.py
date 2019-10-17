@@ -7,6 +7,7 @@ SUBTIER_AGENCY_LIST_CACHE = {}
 
 
 def _fetch_reference_data():
+    global SUBTIER_AGENCY_LIST_CACHE
     with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             sql = (
@@ -16,9 +17,7 @@ def _fetch_reference_data():
             )
 
             cursor.execute(sql)
-            results = cursor.fetchall()
-            for result in results:
-                SUBTIER_AGENCY_LIST_CACHE[result["subtier_code"]] = result
+            SUBTIER_AGENCY_LIST_CACHE = {result["subtier_code"]: result for result in cursor.fetchall()}
 
 
 def subtier_agency_list():
