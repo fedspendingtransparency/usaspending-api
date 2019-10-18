@@ -542,7 +542,8 @@ place_of_performance_functions = {
 award_nonboolean_columns = {
     "unique_award_key": "generated_unique_award_id",
     "detached_award_proc_unique": "transaction_unique_id",
-    "piid": "piid"
+    "piid": "piid",
+    "parent_award_id": "parent_award_piid",
 }
 
 # usaspending column name -> derivation function
