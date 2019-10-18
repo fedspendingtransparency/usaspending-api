@@ -27,7 +27,7 @@ def obtain_filename_prefix_from_agency_id(request_agency):
     if request_agency:
         toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
         if toptier_agency_filter:
-            result = toptier_agency_filter.cgac_code
+            result = toptier_agency_filter.toptier_code
     return result
 
 

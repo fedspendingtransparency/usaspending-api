@@ -129,7 +129,7 @@ def test_intro_tutorial_get_requests(client, url, documentation_test_data):
             "/api/v1/awards/",
             {
                 "filters": [
-                    {"field": "awarding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "097"}
+                    {"field": "awarding_agency__toptier_agency__toptier_code", "operation": "equals", "value": "097"}
                 ]
             },
         ),
@@ -149,7 +149,7 @@ def test_recipe_post_requests(client, url, req, documentation_test_data):
     assert client.post(url, data=json.dumps(req), content_type="application/json").status_code == status.HTTP_200_OK
 
 
-@pytest.mark.parametrize("url", ["/api/v1/awards/?awarding_agency__toptier_agency__cgac_code=097"])
+@pytest.mark.parametrize("url", ["/api/v1/awards/?awarding_agency__toptier_agency__toptier_code=097"])
 @pytest.mark.django_db
 def test_recipe_get_requests(client, url, documentation_test_data):
     assert client.get(url).status_code == status.HTTP_200_OK

@@ -24,14 +24,14 @@ These example requests are for the `/api/v1/awards/` endpoint.
 This request will find all awards awarded by the Department of Defense, which is a top-tier agency with a CGAC code of '097'.
 
 GET
-`/api/v1/awards/?awarding_agency__toptier_agency__cgac_code=097`
+`/api/v1/awards/?awarding_agency__toptier_agency__toptier_code=097`
 
 POST
 ```
 {
   "filters": [
     {
-      "field": "awarding_agency__toptier_agency__cgac_code",
+      "field": "awarding_agency__toptier_agency__toptier_code",
       "operation": "equals",
       "value": "097"
     }

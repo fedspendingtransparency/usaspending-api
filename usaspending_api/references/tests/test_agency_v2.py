@@ -11,7 +11,7 @@ def create_agency_data(db):
     ttagency1 = mommy.make(
         "references.ToptierAgency",
         name="tta_name",
-        cgac_code="100",
+        toptier_code="100",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -23,11 +23,11 @@ def create_agency_data(db):
     tas = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
 
     # CREATE SUBMISSIONS
-    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, cgac_code='100')
+    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, toptier_code='100')
     submission_1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, cgac_code="100"
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, toptier_code="100"
     )
-    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, cgac_code='100')
+    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, toptier_code='100')
 
     # CREATE AppropriationAccountBalances
     mommy.make(

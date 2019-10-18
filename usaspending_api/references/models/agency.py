@@ -18,12 +18,12 @@ class Agency(models.Model):
         db_table = "agency"
 
     @staticmethod
-    def get_by_toptier(toptier_cgac_code):
+    def get_by_toptier(toptier_code):
         """
         Get an agency record by toptier information only
 
         Args:
-            toptier_cgac_code: a CGAC (aka department) code
+            toptier_code: a CGAC or FREC code
 
         Returns:
             an Agency instance
@@ -31,7 +31,7 @@ class Agency(models.Model):
         """
         return (
             Agency.objects.filter(
-                toptier_agency__cgac_code=toptier_cgac_code, subtier_agency__name=F("toptier_agency__name")
+                toptier_agency__toptier_code=toptier_code, subtier_agency__name=F("toptier_agency__name")
             )
             .order_by("-update_date")
             .first()
@@ -54,12 +54,12 @@ class Agency(models.Model):
             return Agency.objects.filter(subtier_agency__subtier_code=subtier_code).order_by("-update_date").first()
 
     @staticmethod
-    def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
+    def get_by_toptier_subtier(toptier_code, subtier_code):
         """
         Lookup an Agency record by toptier cgac code and subtier code
 
         Args:
-            toptier_cgac_code: a CGAC (aka department) code
+            toptier_code: a CGAC or FREC code
             subtier_code: an agency subtier code
 
         Returns:
@@ -67,9 +67,7 @@ class Agency(models.Model):
 
         """
         return (
-            Agency.objects.filter(
-                toptier_agency__cgac_code=toptier_cgac_code, subtier_agency__subtier_code=subtier_code
-            )
+            Agency.objects.filter(toptier_agency__toptier_code=toptier_code, subtier_agency__subtier_code=subtier_code)
             .order_by("-update_date")
             .first()
         )
