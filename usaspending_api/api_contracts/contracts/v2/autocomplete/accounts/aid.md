@@ -29,11 +29,7 @@ List of potential Agency Identifiers
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `results` (required, array, fixed-type)
-            + (object)
-                + `aid` (required, string)
-                + `agency_name` (required, string, nullable)
-                + `agency_abbreviation` (required, string, nullable)
+        + `results` (required, array[AIDMatch], fixed-type)
 
     + Body
 
@@ -58,6 +54,11 @@ List of potential Agency Identifiers
             }
 
 # Data Structures
+
+# AIDMatch (object)
++ `aid` (required, string)
++ `agency_name` (required, string, nullable)
++ `agency_abbreviation` (required, string, nullable)
 
 ## ComponentFilters (object)
 

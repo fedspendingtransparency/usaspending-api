@@ -22,8 +22,11 @@ This route sends a request to the backend to retrieve CFDA programs matching the
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array)
-            + (object)
-                + `popular_name` (required, string)
-                + `program_number` (required, string)
-                + `program_title` (required, string)
+        + `results` (required, array[CFDAMatch], fixed-type)
+
+# Data Structures
+
+## CFDAMatch (object)
++ `popular_name` (required, string)
++ `program_number` (required, string)
++ `program_title` (required, string)

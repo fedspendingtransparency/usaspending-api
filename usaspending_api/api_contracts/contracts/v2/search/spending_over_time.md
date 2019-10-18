@@ -30,7 +30,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
             }
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `group` (required, enum[string])
             + Members
                 + `fiscal_year`

@@ -23,7 +23,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
             }
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (AwardTypeResult)
 
 # Data Structures

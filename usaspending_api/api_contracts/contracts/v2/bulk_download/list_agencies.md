@@ -14,19 +14,21 @@ This route lists all the agencies and the subagencies or federal accounts associ
 + Response 200 (application/json)
     + Attributes (object)
         + `agencies` (required, object)
-            + `cfo_agencies` (required, array[Agency])
-            + `other_agencies` (required, array[Agency])
-        + `federal_accounts` (required, array)
-            + (object)
-                + `federal_account_id` (required, number)
-                + `federal_account_name` (required, string)
-        + `sub_agencies` (required, array)
-            + (object)
-                + `subtier_agency_name` (required, string)
-          
+            + `cfo_agencies` (required, array[Agency], fixed-type)
+            + `other_agencies` (required, array[Agency], fixed-type)
+        + `federal_accounts` (required, array[FederalAgency], fixed-type)
+        + `sub_agencies` (required, array[SubAgency], fixed-type)
+
 # Data Structures
 
 ## Agency (object)
 + `cgac_code` (required, string)
 + `name` (required, string)
 + `toptier_agency_id` (required, number)
+
+## FederalAgency (object)
++ `federal_account_id` (required, number)
++ `federal_account_name` (required, string)
+
+## SubAgency (object)
++ `subtier_agency_name` (required, string)

@@ -35,7 +35,10 @@ List of cities matching search criteria
 + Response 200 (application/json)
     + Attributes (object)
         + `count`(required, number)
-        + `results` (required, array)
-            + (object)
-                + `city_name` (required, string)
-                + `state_code` (required, string, nullable)
+        + `results` (required, array[CityMatch], fixed-type)
+
+# Data Structures
+
+## CityMatch (object)
++ `city_name` (required, string)
++ `state_code` (required, string, nullable)

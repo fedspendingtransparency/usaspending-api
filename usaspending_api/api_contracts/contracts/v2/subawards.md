@@ -33,7 +33,7 @@ This endpoint returns a filtered set of subawards.
             Award ID of parent Award
             
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[SubawardResponse], fixed-type)
         + `page_metadata` (required, PageMetadataObject)
 

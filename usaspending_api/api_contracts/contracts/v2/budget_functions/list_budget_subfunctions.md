@@ -13,7 +13,10 @@ This route sends a request to the backend to retrieve a list of all Budget Subfu
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array)
-          + (object)
-            + `budget_subfunction_code` (required, string)
-            + `budget_subfunction_title` (required, string)
+        + `results` (required, array[BudgetSubfunctions], fixed-type)
+
+# Data Structures
+
+## BudgetSubfunctions (object)
++ `budget_subfunction_code` (required, string)
++ `budget_subfunction_title` (required, string)

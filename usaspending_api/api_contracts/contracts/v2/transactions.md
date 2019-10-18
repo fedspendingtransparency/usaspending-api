@@ -35,7 +35,7 @@ This endpoint returns a list of transactions, their amount, type, action date, a
             + Default: `desc`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (array[TransactionResult], fixed-type)
         + `page_metadata` (PageMetaDataObject)
 

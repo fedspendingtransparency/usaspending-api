@@ -14,7 +14,7 @@ Get aggregated award counts and funding amounts for IDV contracts
          Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `award_id`: 68841198 (required, number)
         + `generated_unique_award_id`: `CONT_IDV_GS10F0201R_4730` (required, string)
         * `child_idv_count`: 2 (required, number)

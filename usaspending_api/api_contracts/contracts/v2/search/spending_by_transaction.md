@@ -30,7 +30,7 @@ Returns transaction records which match the keyword and award type code filters.
                 + `desc`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[TransactionResponse], fixed-type)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
         + `limit`: 10 (required, number)

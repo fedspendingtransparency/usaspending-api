@@ -11,7 +11,7 @@ This endpoint returns a list of federal accounts under a given IDV.
 
 ### List Federal Accounts [POST]
 + Request (application/json)
-    + Attributes
+    + Attributes (object)
         + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string) 
             IDV to return accounts for
         + `page`: 1 (optional, number)
@@ -24,7 +24,7 @@ This endpoint returns a list of federal accounts under a given IDV.
             The field to sort on
 
 + Response 200 (application/json)
-    + Attributes 
+    + Attributes (object) 
        + `results` (required, array[AccountListing], fixed-type)
        + `page_metadata` (required, PageMetadata, fixed-type)
     + Body

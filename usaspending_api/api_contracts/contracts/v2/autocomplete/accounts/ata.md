@@ -29,28 +29,24 @@ List of potential Allocation Transfer Agency Identifiers
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `results` (required, array, fixed-type)
-            + (object)
-                + `ata` (required, string)
-                + `agency_name` (required, string, nullable)
-                + `agency_abbreviation` (required, string, nullable)
+        + `results` (required, array[ATAMatch], fixed-type)
 
     + Body
 
             {
                  "results": [
                       {
-                          "aid": "020",
+                          "ata": "020",
                           "agency_name": "Department of the Treasury",
                           "agency_abbreviation": "TREAS"
                       },
                       {
-                          "aid": "021",
+                          "ata": "021",
                           "agency_name": "Department of the Army",
                           "agency_abbreviation": null
                       },
                       {
-                          "aid": "023",
+                          "ata": "023",
                           "agency_name": "U.S. Tax Court",
                           "agency_abbreviation": "USTAXCOURT"
                       }
@@ -58,6 +54,11 @@ List of potential Allocation Transfer Agency Identifiers
             }
 
 # Data Structures
+
+## ATAMatch (object)
++ `ata` (required, string)
++ `agency_name` (required, string, nullable)
++ `agency_abbreviation` (required, string, nullable)
 
 ## ComponentFilters (object)
 

@@ -25,15 +25,18 @@ Returns a list of the current versions of generated archive files for a given fi
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `monthly_files` (required, array)
-            + (object)
-                + `agency_name` (required, string)
-                + `agency_acronym` (required, string, nullable)
-                + `file_name` (required, string)
-                + `fiscal_year` (required, string)
-                + `type` (required, enum[string])
-                    + Members
-                        + `assistance`
-                        + `contracts`
-                + `updated_date` (required, string)
-                + `url` (required, string)
+        + `monthly_files` (required, array[MonthlyFile], fixed-type)
+
+# Data Structures
+
+## MonthlyFile (object)
++ `agency_name` (required, string)
++ `agency_acronym` (required, string, nullable)
++ `file_name` (required, string)
++ `fiscal_year` (required, string)
++ `type` (required, enum[string])
+    + Members
+        + `assistance`
+        + `contracts`
++ `updated_date` (required, string)
++ `url` (required, string)

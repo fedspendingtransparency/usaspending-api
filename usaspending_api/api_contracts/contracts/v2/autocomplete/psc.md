@@ -22,7 +22,10 @@ This route sends a request to the backend to retrieve product or service (PSC) c
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array)
-            + (object)
-                + `product_or_service_code` (required, string)
-                + `psc_description` (required, string)
+        + `results` (required, array[PSCMatch], fixed-type)
+
+# Data Structures
+
+## PSCMatch (object)
++ `product_or_service_code` (required, string)
++ `psc_description` (required, string)

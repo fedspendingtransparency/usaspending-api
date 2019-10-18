@@ -43,7 +43,7 @@ List File C financial data for an IDV award's descendant contracts
                 + `desc`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[IDVFundingResponse], fixed-type)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
 

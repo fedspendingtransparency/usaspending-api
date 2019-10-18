@@ -22,7 +22,10 @@ This route sends a request to the backend to retrieve NAICS objects matching the
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array)
-            + (object)
-                + `naics` (required, string)
-                + `naics_description` (required, string)
+        + `results` (required, array[NAICSMatch], fixed-type)
+
+# Data Structures
+
+## NAICSMatch (object)
++ `naics` (required, string)
++ `naics_description` (required, string)
