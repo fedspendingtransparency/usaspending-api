@@ -80,7 +80,7 @@ class Command(load_base.Command):
         ds_cursor.execute(
             "WITH agency_list AS ("
             "  SELECT "
-            "    tta.cgac_code AS agency_code,"
+            "    tta.toptier_code AS agency_code,"
             "    tta.name AS agency_name,"
             "    sta.subtier_code AS sub_tier_code,"
             "    sta.name AS sub_tier_name"

@@ -16,7 +16,7 @@ class CsvSource:
         else:
             agency = ToptierAgency.objects.filter(toptier_agency_id=agency_id).first()
             if agency:
-                self.agency_code = agency.cgac_code
+                self.agency_code = agency.toptier_code
             else:
                 raise InvalidParameterException("Agency with that ID does not exist")
         self._queryset = None

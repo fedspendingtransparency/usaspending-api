@@ -218,7 +218,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         cgac_table = ETLTable("cgac", key_overrides=["cgac_code"])
         frec_table = ETLTable("frec", key_overrides=["frec_code"])
         subtier_agency_table = ETLTable("subtier_agency", key_overrides=["subtier_code"], **overrides)
-        toptier_agency_table = ETLTable("toptier_agency", key_overrides=["cgac_code"], **overrides)
+        toptier_agency_table = ETLTable("toptier_agency", key_overrides=["toptier_code"], **overrides)
 
         agency_query = ETLQueryFile(self.etl_dml_sql_directory / "agency_query.sql")
         cgac_query = ETLQueryFile(self.etl_dml_sql_directory / "cgac_query.sql")

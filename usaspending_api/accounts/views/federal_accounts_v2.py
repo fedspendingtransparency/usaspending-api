@@ -511,7 +511,7 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef("corrected_agency_identifier"))
+        agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
             FederalAccount.objects.filter(
                 treasuryappropriationaccount__account_balances__final_of_fy=True,

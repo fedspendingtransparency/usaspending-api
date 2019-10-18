@@ -100,7 +100,7 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
     mommy.make("references.SubtierAgency", subtier_code="def", **sub_agency)
-    mommy.make("references.ToptierAgency", cgac_code="abc", **sub_agency)
+    mommy.make("references.ToptierAgency", toptier_code="abc", **sub_agency)
 
     parent_le = {
         "pk": 2,
