@@ -72,7 +72,7 @@ def test_fy_returns_correct(raw_date, expected_fy):
 
 @pytest.mark.parametrize("not_date", not_dates)
 def test_fy_type_exceptions(not_date):
-    with pytest.raises(TypeError):
+    with pytest.raises(Exception):
         fy(not_date)
 
 
