@@ -18,7 +18,7 @@ List Autocomplete Glossary
     + Body
 
             {
-                "search_text": "Defense"
+                "search_text": "Award"
             }
 
 + Response 200 (application/json)

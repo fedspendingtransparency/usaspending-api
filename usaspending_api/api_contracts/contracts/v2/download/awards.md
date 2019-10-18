@@ -60,10 +60,10 @@ This route sends a request to the backend to begin generating a zipfile of award
 ## Filter Objects
 
 ### Filters (object)
-+ `award_amounts` (optional, array[string])
++ `award_amounts` (optional, array[AwardAmount], fixed-type)
 + `award_ids` (optional, array[string])
 + `award_type_codes` (optional, array[string])
-+ `agencies` (optional, array[string])
++ `agencies` (optional, array[Agency], fixed-type)
 + `contract_pricing_type_codes` (optional, array[string])
 + `elasticsearch_keyword` (optional, string)
 + `extent_competed_type_codes` (optional, array[string])
@@ -83,6 +83,21 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `recipient_type_names` (optional, array[string])
 + `set_aside_type_codes` (optional, array[string])
 + `time_period` (optional, array[TimePeriod], fixed-type)
+
+### AwardAmount (object)
++ `lower_bound` (optional, number)
++ `upper_bound` (optional, number)
+
+### Agency (object)
++ `name` (required, string)
++ `tier` (required, enum[string])
+    + Members
+        + `toptier`
+        + `subtier`
++ `type` (required, enum[string])
+    + Members
+        + `funding`
+        + `awarding`
 
 ### TimePeriod (object)
 + `start_date` (required, string)

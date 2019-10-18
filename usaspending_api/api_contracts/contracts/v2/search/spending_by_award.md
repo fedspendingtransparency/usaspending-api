@@ -52,8 +52,8 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `limit` (optional, number)
-        + `results` (array[SpendingByAwardResponse])
+        + `limit` (required, number)
+        + `results` (required, array[SpendingByAwardResponse], fixed-type)
         + `page_metadata` (PageMetadataObject)
 
 # Data Structures
@@ -75,10 +75,10 @@ List of table columns
 - `Funding Sub Agency`
 
 ## SpendingByAwardResponse (object)
-+ `internal_id` (required, string)
++ `internal_id` (required, number)
 + `Award Amount` (optional, number)
 + `Award ID` (optional, string)
-+ `Award Type` (optional, string)
++ `Award Type` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
 + `Awarding Agency` (optional, string, nullable)
 + `Awarding Sub Agency Code` (optional, string, nullable)

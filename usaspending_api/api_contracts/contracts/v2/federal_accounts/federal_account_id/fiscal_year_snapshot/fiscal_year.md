@@ -21,3 +21,17 @@ This route sends a request to the backend to retrieve budget information for a f
             + `other_budgetary_resources` (required, number)
             + `appropriations` (required, number)
             + `name` (required, string)
+    + Body
+
+            {
+                "results": {
+                    "other_budgetary_resources": 0.0,
+                    "balance_brought_forward": 970000000.0,
+                    "outlay": 0.0,
+                    "name": "Foreign Currency Fluctuations, Defense",
+                    "appropriations": 0.0,
+                    "unobligated": 970000000.0,
+                    "budget_authority": 970000000.0,
+                    "obligated": 0.0
+                }
+            }

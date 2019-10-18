@@ -11,16 +11,27 @@ Generate files and return metadata using filters on custom account
 
 + Request (application/json)
     + Attributes (object)
-        + `account_level`: `treasury_account`(required, enum[string])
+        + `account_level` (required, enum[string])
             The account level is used to filter for a specific type of file.
             + Members
                 + `treasury_account`
                 + `federal_account`
-        + `file_format`: `csv` (optional, string)
+        + `file_format` (optional, string)
             The file format that should be returned.
             + Default: `csv`
         + `filters` (required, FilterObject)
             The filters used to filter the data
+    + Body
+
+            {
+                "account_level": "treasury_account",
+                "file_format": "csv",
+                "filters": {
+                    "fy": "2018",
+                    "quarter": "1",
+                    "submission_type": "account_balances"
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -50,19 +61,19 @@ Generate files and return metadata using filters on custom account
 # Data Structures
 
 ## FilterObject (object)
-+ `agency`: `all` (optional, string)
++ `agency` (optional, string)
     The agency to filter by. This field is an internal id.
     + Default: `all`
-+ `federal_account`: `6282` (optional, string)
++ `federal_account`(optional, string)
     This field is an internal id.
-+ `submission_type`: `account_balances`(required, enum[string])
++ `submission_type` (required, enum[string])
     + Members
         + `account_balances`
         + `object_class_program_activity`
         + `award_financial`
-+ `fy`: `2017` (required, string)
++ `fy` (required, string)
     The fiscal year to filter by in the format `YYYY`
-+ `quarter`: `1` (required, enum[string])
++ `quarter` (required, enum[string])
     + Members
         + `1`
         + `2`

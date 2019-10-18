@@ -81,7 +81,7 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `action_date`
         + `last_modified_date`
 + `keyword` (optional, string)
-+ `place_of_performance_locations` (optional, array[Location])
++ `place_of_performance_locations` (optional, array[Location], fixed-type)
 + `recipient_locations` (optional, array[Location], fixed-type)
 + `sub_agency` (optional, string) 
     Sub-agency name to include (based on the agency filter)

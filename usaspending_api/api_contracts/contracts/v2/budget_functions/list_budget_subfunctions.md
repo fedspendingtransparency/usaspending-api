@@ -10,6 +10,11 @@ This route sends a request to the backend to retrieve a list of all Budget Subfu
 + Request (application/json)
     + Attributes (object)
         + `budget_function` (optional, string)
+    + Body
+
+            {
+                "budget_function": "800"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
