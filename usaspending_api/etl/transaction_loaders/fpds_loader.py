@@ -159,10 +159,7 @@ def _create_load_object(broker_object, non_boolean_column_map, boolean_column_ma
     retval = {}
     if non_boolean_column_map:
         retval.update(
-            {
-                non_boolean_column_map[key]: capitalize_if_string(broker_object[key])
-                for key in non_boolean_column_map
-            }
+            {non_boolean_column_map[key]: capitalize_if_string(broker_object[key]) for key in non_boolean_column_map}
         )
 
     if boolean_column_map:

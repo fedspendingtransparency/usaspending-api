@@ -8,10 +8,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     created_at,
     updated_at,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    capitalize_if_string,
-    truncate_timestamp,
-)
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, truncate_timestamp
 
 # broker column name -> usaspending column name
 transaction_fpds_nonboolean_columns = {
