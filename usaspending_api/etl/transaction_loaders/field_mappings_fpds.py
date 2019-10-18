@@ -538,11 +538,16 @@ place_of_performance_functions = {
     "update_date": current_datetime,
 }
 
+# broker column name -> usaspending column name
+award_nonboolean_columns = {
+    "unique_award_key": "generated_unique_award_id",
+    "detached_award_proc_unique": "transaction_unique_id",
+    "piid": "piid"
+}
+
 # usaspending column name -> derivation function
 award_functions = {
     "is_fpds": lambda broker: True,
-    "generated_unique_award_id": lambda broker: capitalize_if_string(broker["unique_award_key"]),
-    "transaction_unique_id": lambda broker: capitalize_if_string(broker["detached_award_proc_unique"]),
     "subaward_count": lambda broker: 0,
     "awarding_agency_id": calculate_awarding_agency,
     "funding_agency_id": calculate_funding_agency,

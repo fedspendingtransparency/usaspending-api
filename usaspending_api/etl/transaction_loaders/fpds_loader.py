@@ -12,6 +12,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     recipient_location_functions,
     place_of_performance_nonboolean_columns,
     place_of_performance_functions,
+    award_nonboolean_columns,
     award_functions,
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
@@ -190,7 +191,7 @@ def _transform_objects(broker_objects):
         )
 
         # award. NOT used if a matching award is found later
-        connected_objects["award"] = _create_load_object(broker_object, None, None, award_functions)
+        connected_objects["award"] = _create_load_object(broker_object, award_nonboolean_columns, None, award_functions)
 
         connected_objects["transaction_normalized"] = _create_load_object(
             broker_object, transaction_normalized_nonboolean_columns, None, transaction_normalized_functions
