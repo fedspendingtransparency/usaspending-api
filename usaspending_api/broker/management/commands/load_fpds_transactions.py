@@ -53,8 +53,9 @@ class Command(BaseCommand):
             logger.info("fetching fpds transactions since {}...".format(str(date)))
 
         # First clear any transactions marked for deletion. If the transactions have since been re-added, they will be back in the broker DB and will be re-inserted in the next step
-        stale_awards = delete_stale_fpds(date.date())
-        self.modified_award_ids.extend(stale_awards)
+        if date:
+            stale_awards = delete_stale_fpds(date.date())
+            self.modified_award_ids.extend(stale_awards)
 
         with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
