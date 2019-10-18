@@ -194,17 +194,17 @@ class Command(BaseCommand):
         include_all = True
         if use_modified_list:
             used_cgacs = set(pull_modified_agencies_cgacs())
-            toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
+            toptier_agencies = ToptierAgency.objects.filter(toptier_code__in=used_cgacs)
         if agencies:
             if "all" in agencies:
                 agencies.remove("all")
             else:
                 include_all = False
             toptier_agencies = ToptierAgency.objects.filter(toptier_agency_id__in=agencies)
-        toptier_agencies = list(toptier_agencies.values("name", "toptier_agency_id", "cgac_code"))
+        toptier_agencies = list(toptier_agencies.values("name", "toptier_agency_id", "toptier_code"))
         # Adding 'all' to prevent duplication of code
         if include_all:
-            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "cgac_code": "all"})
+            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "toptier_code": "all"})
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date) + 1)
 
@@ -226,7 +226,7 @@ class Command(BaseCommand):
                 start_date = "{}-10-01".format(fiscal_year - 1)
                 end_date = "{}-09-30".format(fiscal_year)
                 for award_type in award_types:
-                    file_name = "{}_{}_{}".format(fiscal_year, agency["cgac_code"], award_type.capitalize())
+                    file_name = "{}_{}_{}".format(fiscal_year, agency["toptier_code"], award_type.capitalize())
                     full_file_name = "{}_Full_{}.zip".format(file_name, updated_date_timestamp)
                     if not clobber and file_name in reuploads:
                         logger.info("Skipping already uploaded: {}".format(full_file_name))

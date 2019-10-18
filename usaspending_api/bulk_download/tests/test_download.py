@@ -25,7 +25,7 @@ def award_data(db):
     ata1 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Things",
-        cgac_code="100",
+        toptier_code="100",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -33,7 +33,7 @@ def award_data(db):
     ata2 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Stuff",
-        cgac_code="101",
+        toptier_code="101",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -51,7 +51,7 @@ def award_data(db):
     fta = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
-        cgac_code="102",
+        toptier_code="102",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -160,7 +160,7 @@ def test_download_status_nonexistent_file_404(client):
 
 
 def sort_function(agency):
-    return agency["cgac_code"]
+    return agency["toptier_code"]
 
 
 @pytest.mark.skip
@@ -169,16 +169,16 @@ def test_list_agencies(client, award_data):
     resp = client.post("/api/v2/bulk_download/list_agencies", content_type="application/json", data=json.dumps({}))
 
     all_toptiers = [
-        {"name": "Bureau of Things", "cgac_code": "100"},
-        {"name": "Bureau of Stuff", "cgac_code": "101"},
-        {"name": "Bureau of Money", "cgac_code": "102"},
+        {"name": "Bureau of Things", "toptier_code": "100"},
+        {"name": "Bureau of Stuff", "toptier_code": "101"},
+        {"name": "Bureau of Money", "toptier_code": "102"},
     ]
 
     index = 0
     agency_ids = []
     for toptier in sorted(resp.json()["agencies"]["other_agencies"], key=sort_function):
         assert toptier["name"] == all_toptiers[index]["name"]
-        assert toptier["cgac_code"] == all_toptiers[index]["cgac_code"]
+        assert toptier["toptier_code"] == all_toptiers[index]["toptier_code"]
         agency_ids.append(toptier["toptier_agency_id"])
         index += 1
     assert resp.json()["sub_agencies"] == []

@@ -22,7 +22,7 @@ This route lists all the agencies and the subagencies or federal accounts associ
 # Data Structures
 
 ## Agency (object)
-+ `cgac_code` (required, string)
++ `toptier_code` (required, string)
 + `name` (required, string)
 + `toptier_agency_id` (required, number)
 

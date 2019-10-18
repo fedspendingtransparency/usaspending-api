@@ -37,10 +37,10 @@ class ListMonthlyDownloadsViewSet(APIView):
         # Capitalize type_param and retrieve agency information from agency ID
         download_type = type_param.capitalize()
         if agency_id == "all":
-            agency = {"cgac_code": "all", "name": "All", "abbreviation": None}
+            agency = {"toptier_code": "all", "name": "All", "abbreviation": None}
         else:
             agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values(
-                "cgac_code", "name", "abbreviation"
+                "toptier_code", "name", "abbreviation"
             )
             if agency_check:
                 agency = agency_check[0]
@@ -48,9 +48,9 @@ class ListMonthlyDownloadsViewSet(APIView):
                 raise InvalidParameterException("{} agency not found".format(agency_id))
 
         # Populate regex
-        monthly_download_prefixes = "{}_{}_{}".format(fiscal_year, agency["cgac_code"], download_type)
+        monthly_download_prefixes = "{}_{}_{}".format(fiscal_year, agency["toptier_code"], download_type)
         monthly_download_regex = r"{}_Full_.*\.zip".format(monthly_download_prefixes)
-        delta_download_prefixes = "{}_{}".format(agency["cgac_code"], download_type)
+        delta_download_prefixes = "{}_{}".format(agency["toptier_code"], download_type)
         delta_download_regex = r"{}_Delta_.*\.zip".format(delta_download_prefixes)
 
         # Retrieve and filter the files we need

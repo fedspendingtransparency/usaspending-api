@@ -44,7 +44,7 @@ class BaseAutocompleteViewSet(APIView):
         search_text, limit = self.get_request_payload(request)
 
         queryset = (
-            Agency.objects.exclude(toptier_agency__cgac_code__in=EXCLUDE_CGAC)
+            Agency.objects.exclude(toptier_agency__toptier_code__in=EXCLUDE_CGAC)
             .filter(
                 Q(subtier_agency__name__icontains=search_text) | Q(subtier_agency__abbreviation__icontains=search_text)
             )
@@ -54,7 +54,7 @@ class BaseAutocompleteViewSet(APIView):
         # The below is a one-off fix to promote FEMA as a subtier to the top when "FEMA" is searched
         # This is the only way to do this because you cannot use annotate and distinct together
         evaled = AgencySerializer(queryset[:limit], many=True).data
-        evaled.sort(key=lambda x: x["toptier_agency"]["cgac_code"] == "058")
+        evaled.sort(key=lambda x: x["toptier_agency"]["toptier_code"] == "058")
         return Response({"results": evaled})
 
 

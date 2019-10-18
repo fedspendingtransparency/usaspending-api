@@ -5,6 +5,7 @@ from usaspending_api.idvs.v2.views.amounts import IDVAmountsViewSet
 from usaspending_api.idvs.v2.views.awards import IDVAwardsViewSet
 from usaspending_api.idvs.v2.views.funding import IDVFundingViewSet
 from usaspending_api.idvs.v2.views.funding_rollup import IDVFundingRollupViewSet
+from usaspending_api.idvs.v2.views.count.federal_account import IDVFederalAccountCountViewSet
 
 
 urlpatterns = [
@@ -14,4 +15,5 @@ urlpatterns = [
     url(r"^awards/$", IDVAwardsViewSet.as_view()),
     url(r"^funding/$", IDVFundingViewSet.as_view()),
     url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
+    url(r"^count/federal_account/(?P<requested_award>[A-Za-z0-9_. -]+)/$", IDVFederalAccountCountViewSet.as_view()),
 ]

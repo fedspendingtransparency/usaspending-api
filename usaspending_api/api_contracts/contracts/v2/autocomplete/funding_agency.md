@@ -35,5 +35,5 @@ This route sends a request to the backend to retrieve funding agencies matching 
 + `toptier_agency` (required, object)
     + `abbreviation` (required, string, nullable)
     + `name` (required, string)
-    + `cgac_code` (required, string)
+    + `toptier_code` (required, string)
 + `toptier_flag` (required, boolean)

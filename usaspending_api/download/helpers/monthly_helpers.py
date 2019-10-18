@@ -46,4 +46,4 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 
 
 def pull_modified_agencies_cgacs():
-    return ToptierAgency.objects.filter(agency__user_selectable=True).values_list("cgac_code", flat=True)
+    return ToptierAgency.objects.filter(agency__user_selectable=True).values_list("toptier_code", flat=True)

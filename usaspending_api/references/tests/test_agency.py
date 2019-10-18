@@ -22,8 +22,8 @@ def test_subtier(monkeypatch):
     call_command("load_agencies", "usaspending_api/references/tests/data/test_load_agencies.csv")
 
     # Make sure the subtier's top agency = the expected toptier agency
-    subtier = Agency.objects.get(toptier_agency__cgac_code="009", subtier_agency__subtier_code="0900")
-    department = Agency.objects.get(toptier_agency__cgac_code="009", toptier_flag=True)
+    subtier = Agency.objects.get(toptier_agency__toptier_code="009", subtier_agency__subtier_code="0900")
+    department = Agency.objects.get(toptier_agency__toptier_code="009", toptier_flag=True)
     print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))
     assert subtier.toptier_agency == department.toptier_agency
 
@@ -31,7 +31,7 @@ def test_subtier(monkeypatch):
 @pytest.mark.django_db
 def test_get_by_toptier():
     """Test Agency lookup by toptier CGAC code."""
-    toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
+    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="yo")
 
     mommy.make(
@@ -52,7 +52,7 @@ def test_get_by_toptier():
 @pytest.mark.django_db
 def test_get_by_subtier():
     """Test Agency lookup by subtier."""
-    toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
+    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
     mommy.make(
@@ -75,7 +75,7 @@ def test_get_by_subtier():
 @pytest.mark.django_db
 def test_get_by_toptier_subtier():
     """Test Agency lookup by subtier."""
-    toptier = mommy.make("references.ToptierAgency", cgac_code="xyz", name="yo")
+    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
     subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
     mommy.make(
