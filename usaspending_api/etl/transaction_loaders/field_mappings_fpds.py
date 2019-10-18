@@ -9,7 +9,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     updated_at,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    capitalize_and_compress_if_string,
+    capitalize_if_string,
     truncate_timestamp,
 )
 
@@ -544,8 +544,8 @@ place_of_performance_functions = {
 # usaspending column name -> derivation function
 award_functions = {
     "is_fpds": lambda broker: True,
-    "generated_unique_award_id": lambda broker: capitalize_and_compress_if_string(broker["unique_award_key"]),
-    "transaction_unique_id": lambda broker: capitalize_and_compress_if_string(broker["detached_award_proc_unique"]),
+    "generated_unique_award_id": lambda broker: capitalize_if_string(broker["unique_award_key"]),
+    "transaction_unique_id": lambda broker: capitalize_if_string(broker["detached_award_proc_unique"]),
     "subaward_count": lambda broker: 0,
     "awarding_agency_id": calculate_awarding_agency,
     "funding_agency_id": calculate_funding_agency,
