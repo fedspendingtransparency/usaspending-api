@@ -75,7 +75,7 @@ class ListRecipients(APIView):
     This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/recipient/list_recipients.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
 
     @cache_response()
     def post(self, request):

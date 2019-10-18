@@ -41,7 +41,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `scope`
         + `geo_layer`
         + `results` (array[GeographyTypeResult], fixed-type)

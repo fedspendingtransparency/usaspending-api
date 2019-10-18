@@ -72,4 +72,3 @@ Restore Filters From URL Hash Data
                     "version": "2017-11-21"
                 }
             }
-

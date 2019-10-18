@@ -13,7 +13,7 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
     Returns a Appropriation Account Balance's obligated amount broken up by TAS.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_obligations.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_obligations.md"
 
     serializer_class = FederalAccountByObligationSerializer
 

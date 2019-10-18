@@ -16,7 +16,7 @@ class AgencyViewSet(APIView):
     Return an agency name and active fy.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/agency.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/agency/id.md"
 
     @cache_response()
     def get(self, request, pk, format=None):

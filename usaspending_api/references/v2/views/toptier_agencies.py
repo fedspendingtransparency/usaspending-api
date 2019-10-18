@@ -18,7 +18,7 @@ class ToptierAgenciesViewSet(APIView):
     This route sends a request to the backend to retrieve all toptier agencies and related, relevant data.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/toptier_agencies.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/toptier_agencies.md"
 
     @cache_response()
     def get(self, request, format=None):
