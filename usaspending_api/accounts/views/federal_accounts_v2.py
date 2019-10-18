@@ -22,7 +22,9 @@ class ObjectClassFederalAccountsViewSet(APIView):
     Returns financial spending data by object class.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/available_object_classes.md"
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/available_object_classes.md"
+    )
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -79,7 +81,9 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/fiscal_year_snapshot.md"
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/fiscal_year_snapshot.md"
+    )
 
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
