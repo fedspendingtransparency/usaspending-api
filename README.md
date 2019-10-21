@@ -4,21 +4,28 @@
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
-![USAspending Landing Page](readme.jpg?raw=true "Readme")
+![USAspending Landing Page](readme.png?raw=true "Readme")
 
 ## Creating a Development Environment
 
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-- [`PostgreSQL`](https://www.postgresql.org/download/) 10.x (with a dedicated `data_store_api` database)
-- [`direnv`](https://github.com/direnv/direnv#install)
-  - For Mac OSX, be sure to put the hook in your `~/.bash_profile`, not `~/.bashrc`
+- [`Docker`](https://www.docker.com/products/docker-desktop) which will handle application dependencies.
 - `Bash` or another Unix Shell equivalent
   - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+- [`Git`](https://git-scm.com/downloads)
+
+#### If not using Docker:
+> Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools.
+
 - Command line package manager
   - Windows' WSL bash uses `apt-get`
   - OSX users will use [`Homebrew`](https://brew.sh/)
+- [`PostgreSQL`](https://www.postgresql.org/download/) version 10.x (with a dedicated `data_store_api` database)
+- [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 6.3
+- Python 3.7 environment
+  - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
 
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
@@ -56,9 +63,9 @@ See below for basic setup instructions. For help with Docker Compose:
 
 	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
 
-	- `docker-compose run usaspending-manage python -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+	- `docker-compose run usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
-	- `docker-compose run usaspending-manage python -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+	- `docker-compose run usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
 	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
 
