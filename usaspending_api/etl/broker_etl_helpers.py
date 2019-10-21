@@ -4,7 +4,7 @@ import os
 
 from django.db import connection, connections
 
-from usaspending_api.common.helpers.sql_helpers import fetchall_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
 
 logger = logging.getLogger("console")
@@ -15,7 +15,7 @@ def dictfetchall(cursor):
         if not cursor.results:
             return []
         return cursor.results
-    return fetchall_to_ordered_dictionary(cursor)
+    return ordered_dictionary_fetcher(cursor)
 
 
 class PhonyCursor:
