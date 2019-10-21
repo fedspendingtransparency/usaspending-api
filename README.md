@@ -11,7 +11,7 @@ _This API is utilized by USAspending.gov to obtain all federal spending data whi
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-- [`Docker`](https://www.docker.com/products/docker-desktop) which will handle application dependencies.
+- [`Docker`](https://docs.docker.com/install/) which will handle the other application dependencies.
 - `Bash` or another Unix Shell equivalent
   - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - [`Git`](https://git-scm.com/downloads)
@@ -22,6 +22,7 @@ Ensure the following dependencies are installed and working prior to continuing:
 - Command line package manager
   - Windows' WSL bash uses `apt-get`
   - OSX users will use [`Homebrew`](https://brew.sh/)
+  - Linux users already know their package manager (yum, apt, pacman, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 10.x (with a dedicated `data_store_api` database)
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 6.3
 - Python 3.7 environment
@@ -43,7 +44,7 @@ There are three documented options for setting up a local database in order to r
 
 ### Option 1: Using a Locally Hosted Postgres Database
 Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
- - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
+ - [Postgres Setup Help](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
 Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
 
@@ -51,7 +52,6 @@ Make sure to grant whatever user you created for the data_store api database sup
 
 ### Option 2: Using the Docker Compose Postgres Database
 See below for basic setup instructions. For help with Docker Compose:
- - [Docker Installation](https://docs.docker.com/install/)
  - [Docker Compose](https://docs.docker.com/compose/)
 
 
