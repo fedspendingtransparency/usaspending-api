@@ -1,7 +1,6 @@
 language: python
 
 python:
-  - '3.5'
   - '3.7'
 
 services:
@@ -25,7 +24,7 @@ before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
+  - travis_retry pip install -r requirements/requirements.txt
   - pip install coveralls
 
 before_script:
@@ -37,7 +36,7 @@ before_script:
 
 script:
   - flake8
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
+  - black --check .
   - python manage.py check_for_endpoint_documentation
   - pytest --cov=usaspending_api
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
