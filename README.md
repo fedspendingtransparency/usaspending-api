@@ -67,7 +67,7 @@ See below for basic setup instructions. For help with Docker Compose:
 
 	- `docker-compose run usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
+	- `docker-compose run usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
 
 #### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
