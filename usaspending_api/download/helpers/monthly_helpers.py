@@ -2,9 +2,9 @@ import boto3
 import logging
 import math
 import os
-import pandas as pd
 
 from django.conf import settings
+from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger("console")
 
@@ -46,13 +46,4 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 
 
 def pull_modified_agencies_cgacs():
-    # Get a cgac_codes from the modified_agencies_list
-    file_path = os.path.join(settings.BASE_DIR, "usaspending_api", "data", "user_selectable_agency_list.csv")
-    with open(file_path, encoding="Latin-1") as modified_agencies_list_csv:
-        mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
-
-    mod_gencies_list_df = mod_gencies_list_df[["CGAC AGENCY CODE"]]
-    mod_gencies_list_df["CGAC AGENCY CODE"] = mod_gencies_list_df["CGAC AGENCY CODE"].apply(lambda x: x.zfill(3))
-
-    # Return list of CGAC codes
-    return [row["CGAC AGENCY CODE"] for _, row in mod_gencies_list_df.iterrows()]
+    return ToptierAgency.objects.filter(agency__user_selectable=True).values_list("toptier_code", flat=True)

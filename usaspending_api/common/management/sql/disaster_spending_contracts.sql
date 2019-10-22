@@ -22,9 +22,9 @@ SELECT
         )
     )
     AS "treasury_account_symbol",
-    (SELECT U0."name" FROM "toptier_agency" U0 WHERE U0."cgac_code" = ( "treasury_appropriation_account"."agency_id") LIMIT 1)
+    (SELECT U0."name" FROM "toptier_agency" U0 WHERE U0."toptier_code" = ( "treasury_appropriation_account"."agency_id") LIMIT 1)
       AS "agency_name",
-    (SELECT U0. "name" FROM "toptier_agency" U0 WHERE U0."cgac_code" = ( "treasury_appropriation_account"."allocation_transfer_agency_id") LIMIT 1)
+    (SELECT U0. "name" FROM "toptier_agency" U0 WHERE U0."toptier_code" = ( "treasury_appropriation_account"."allocation_transfer_agency_id") LIMIT 1)
       AS "allocation_transfer_agency_name",
     "treasury_appropriation_account"."budget_function_title" AS "budget_function",
     "treasury_appropriation_account"."budget_subfunction_title" AS "budget_subfunction",

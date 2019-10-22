@@ -13,13 +13,13 @@ def agency_data(db):
     mommy.make(
         Agency,
         toptier_agency__name="Lunar Colonization Society",
-        toptier_agency__cgac_code="LCS123",
+        toptier_agency__toptier_code="LCS123",
         _fill_optional=True,
     ),
     mommy.make(
         Agency,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
-        toptier_agency__cgac_code="CMEC",
+        toptier_agency__toptier_code="CMEC",
         _fill_optional=True,
     ),
     mommy.make(
@@ -43,9 +43,9 @@ def agency_data(db):
     [
         (["toptier_agency__name"], "ext", {"toptier_agency__name": ["Cerean Mineral Extraction Corp."]}),
         (
-            ["toptier_agency__name", "toptier_agency__cgac_code"],
+            ["toptier_agency__name", "toptier_agency__toptier_code"],
             "123",
-            {"toptier_agency__name": [], "toptier_agency__cgac_code": ["LCS123"]},
+            {"toptier_agency__name": [], "toptier_agency__toptier_code": ["LCS123"]},
         ),
     ],
 )

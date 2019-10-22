@@ -43,9 +43,9 @@ This endpoint returns a list of the top results of specific categories sorted by
             }
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `category`: `awarding_agency` (required, string)
-        + `results` (array[CategoryResult], fixed-type)
+        + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
 

@@ -23,7 +23,7 @@ List child and grandchild awards for a given IDV
             Choose whether or not to hide awards that have no/negative obligated amounts and/or no/negative awarded amounts and/or no end date
             + Default: false
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[ChildAward], fixed-type)
             Results are sorted by obligated amount in descending order.
         + `page_metadata` (required, PageMetaData)

@@ -7,8 +7,8 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 class Explorer(object):
     def __init__(self, alt_set, queryset):
         # Moving agency mapping outside function to reduce response time
-        agency_queryet = Agency.objects.filter(toptier_flag=True).values("id", "toptier_agency__cgac_code")
-        self.agency_ids = {agency["toptier_agency__cgac_code"]: agency["id"] for agency in agency_queryet}
+        agency_queryet = Agency.objects.filter(toptier_flag=True).values("id", "toptier_agency__toptier_code")
+        self.agency_ids = {agency["toptier_agency__toptier_code"]: agency["id"] for agency in agency_queryet}
 
         self.alt_set = alt_set
         self.queryset = queryset
@@ -119,17 +119,17 @@ class Explorer(object):
                 type=Value("agency", output_field=CharField()),
                 name=Case(
                     When(
-                        treasury_account__funding_toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC,
+                        treasury_account__funding_toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC,
                         then=Value("Department of Defense"),
                     ),
                     default=F("treasury_account__funding_toptier_agency__name"),
                 ),
                 code=Case(
                     When(
-                        treasury_account__funding_toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC,
+                        treasury_account__funding_toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC,
                         then=Value(DOD_CGAC),
                     ),
-                    default=F("treasury_account__funding_toptier_agency__cgac_code"),
+                    default=F("treasury_account__funding_toptier_agency__toptier_code"),
                 ),
             )
             .values("type", "name", "code")

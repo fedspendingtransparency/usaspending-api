@@ -79,12 +79,17 @@ Install Dredd:
 npm install -g dredd
 ```
 
+Install Dredd Hooks:
+```
+pip install dredd_hooks
+```
+
 Call Dredd with either a glob (to match against multiple contracts) or a file path (to match against a specific contract) and an endpoint to test.
 
 Testing all API contracts:
 
 ```
-dredd ./contracts/**/*.md http://localhost:8000
+dredd ./contracts/**/*.md http://localhost:8000 --language=python --hookfiles=./hooks/hooks.py --hooks-worker-timeout=10000
 ```
 
 This will run all the API contracts against a local server on port 8000.
@@ -92,7 +97,7 @@ This will run all the API contracts against a local server on port 8000.
 Testing a specific API contract:
 
 ```
-dredd ./contracts/state/StateProfile.md http://localhost:8000
+dredd ./contracts/state/StateProfile.md http://localhost:8000 --language=python --hookfiles=./hooks/hooks.py --hooks-worker-timeout=10000
 ```
 
 **Remember:** Your developed endpoint must pass *all* API contracts at PR time.

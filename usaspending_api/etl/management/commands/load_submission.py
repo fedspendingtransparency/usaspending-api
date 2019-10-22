@@ -302,13 +302,13 @@ def get_submission_attributes(broker_submission_id, submission_data):
         call_command("rm_submission", broker_submission_id)
 
     logger.info("Merging CGAC and FREC columns")
-    submission_data["cgac_code"] = (
+    submission_data["toptier_code"] = (
         submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
     )
 
     # Find the previous submission for this CGAC and fiscal year (if there is one)
     previous_submission = get_previous_submission(
-        submission_data["cgac_code"],
+        submission_data["toptier_code"],
         submission_data["reporting_fiscal_year"],
         submission_data["reporting_fiscal_period"],
     )
@@ -353,7 +353,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
     # If there were any submissions which were temporarily modified, reassign the submission
     for conflict in potential_conflicts:
         remapped_previous = get_previous_submission(
-            conflict.cgac_code, conflict.reporting_fiscal_year, conflict.reporting_fiscal_period
+            conflict.toptier_code, conflict.reporting_fiscal_year, conflict.reporting_fiscal_period
         )
         logger.info(
             "New Previous Submission ID for Submission ID {} permanently mapped to {} ".format(

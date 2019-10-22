@@ -19,7 +19,7 @@ class TransactionCountRetrieveViewSet(APIView):
     This route sends a request to the backend to retrieve the number of transactions associated with the requested award
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/count/transaction.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/count/transaction/award_id.md"
 
     def _parse_and_validate_request(self, provided_award_id: str) -> dict:
         request_dict = {"award_id": provided_award_id}

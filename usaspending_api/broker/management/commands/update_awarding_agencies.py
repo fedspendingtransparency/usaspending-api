@@ -12,11 +12,11 @@ logger = logging.getLogger("console")
 
 
 agency_no_sub_map = {
-    (agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency
+    (agency.toptier_agency.toptier_code, agency.subtier_agency.subtier_code): agency
     for agency in Agency.objects.filter(subtier_agency__isnull=False)
 }
 agency_cgac_only_map = {
-    agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)
+    agency.toptier_agency.toptier_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)
 }
 
 
@@ -43,8 +43,8 @@ class Command(BaseCommand):
             transaction_cgac_subtier_map = [
                 {
                     "transaction_id": transaction_FPDS["transaction_id"],
-                    "awarding_cgac_code": transaction_FPDS["awarding_agency_code"],
-                    "funding_cgac_code": transaction_FPDS["funding_agency_code"],
+                    "awarding_toptier_code": transaction_FPDS["awarding_agency_code"],
+                    "funding_toptier_code": transaction_FPDS["funding_agency_code"],
                     "awarding_subtier_code": transaction_FPDS["awarding_sub_tier_agency_c"],
                     "funding_subtier_code": transaction_FPDS["funding_sub_tier_agency_co"],
                 }
@@ -62,8 +62,8 @@ class Command(BaseCommand):
             transaction_cgac_subtier_map = [
                 {
                     "transaction_id": transaction_FABS["transaction_id"],
-                    "awarding_cgac_code": transaction_FABS["awarding_agency_code"],
-                    "funding_cgac_code": transaction_FABS["funding_agency_code"],
+                    "awarding_toptier_code": transaction_FABS["awarding_agency_code"],
+                    "funding_toptier_code": transaction_FABS["funding_agency_code"],
                     "awarding_subtier_code": transaction_FABS["awarding_sub_tier_agency_c"],
                     "funding_subtier_code": transaction_FABS["funding_sub_tier_agency_co"],
                 }
@@ -105,28 +105,24 @@ class Command(BaseCommand):
                 logger.error("Unable to find Transaction {}".format(str(row["transaction_id"])))
                 continue
 
-            # Update awarding and funding agency if awarding of funding agency is empty
-            awarding_agency = Agency.get_by_toptier_subtier(row["awarding_cgac_code"], row["awarding_subtier_code"])
-            funding_agency = Agency.get_by_toptier_subtier(row["funding_cgac_code"], row["funding_subtier_code"])
-
             # Find the agency that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = agency_no_sub_map.get((row["awarding_cgac_code"], row["awarding_subtier_code"]))
+            awarding_agency = agency_no_sub_map.get((row["awarding_toptier_code"], row["awarding_subtier_code"]))
 
             if awarding_agency is None:
-                awarding_agency = agency_cgac_only_map.get(row["awarding_cgac_code"])
+                awarding_agency = agency_cgac_only_map.get(row["awarding_toptier_code"])
 
-            funding_agency = agency_no_sub_map.get((row["funding_cgac_code"], row["funding_subtier_code"]))
+            funding_agency = agency_no_sub_map.get((row["funding_toptier_code"], row["funding_subtier_code"]))
 
             if funding_agency is None:
-                funding_agency = agency_cgac_only_map.get(row["funding_cgac_code"])
+                funding_agency = agency_cgac_only_map.get(row["funding_toptier_code"])
 
             # If unable to get agency moves on to the next transaction
             if awarding_agency is None and funding_agency is None:
                 logger.error(
                     "Unable to find awarding agency CGAC {} Subtier {} and funding agency CGAC {} Subtier {}".format(
-                        row["awarding_cgac_code"],
+                        row["awarding_toptier_code"],
                         row["awarding_subtier_code"],
-                        row["funding_cgac_code"],
+                        row["funding_toptier_code"],
                         row["awarding_subtier_code"],
                     )
                 )
@@ -135,7 +131,7 @@ class Command(BaseCommand):
             if awarding_agency is None:
                 logger.error(
                     "Unable to find awarding agency for CGAC {} Subtier {}".format(
-                        row["awarding_cgac_code"], row["awarding_subtier_code"]
+                        row["awarding_toptier_code"], row["awarding_subtier_code"]
                     )
                 )
 

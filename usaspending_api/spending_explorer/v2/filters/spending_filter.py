@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def spending_filter(alt_set, queryset, filters, _type):
-    dod_agency = str(Agency.objects.filter(toptier_agency__cgac_code=DOD_CGAC).values_list("id", flat=True).first())
+    dod_agency = str(Agency.objects.filter(toptier_agency__toptier_code=DOD_CGAC).values_list("id", flat=True).first())
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -82,7 +82,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # Currently default to filtering on toptier
                 if value == dod_agency:
                     dod_agencies = Agency.objects.filter(
-                        toptier_flag=True, toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC
+                        toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
                     ).values_list("toptier_agency", flat=True)
 
                     and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency__in=dod_agencies)
@@ -146,7 +146,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
                 if value == dod_agency:
                     dod_agencies = Agency.objects.filter(
-                        toptier_flag=True, toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC
+                        toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
                     ).values_list("toptier_agency", flat=True)
 
                     and_queryset = queryset.filter(treasury_account__funding_toptier_agency__in=dod_agencies)

@@ -1178,9 +1178,8 @@ query_paths = {
                 ("prime_award_piid", "broker_subaward__award_id"),
                 ("prime_award_parent_piid", "broker_subaward__parent_award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
-                ("prime_award_action_date", "broker_subaward__action_date"),
-                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_fiscal_year", "broker_subaward__fy"),
+                ("prime_award_base_action_date", "broker_subaward__action_date"),
+                ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
                 ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
                 ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
@@ -1298,9 +1297,8 @@ query_paths = {
                 ("prime_award_unique_key", "broker_subaward__unique_award_key"),
                 ("prime_award_fain", "broker_subaward__award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
-                ("prime_award_action_date", "broker_subaward__action_date"),
-                ("prime_award_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_fiscal_year", "broker_subaward__fy"),
+                ("prime_award_base_action_date", "broker_subaward__action_date"),
+                ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
                 ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
                 ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
@@ -1590,7 +1588,7 @@ query_paths = {
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
-                ("awarding_agency_code", "award__awarding_agency__toptier_agency__cgac_code"),
+                ("awarding_agency_code", "award__awarding_agency__toptier_agency__toptier_code"),
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
@@ -1641,7 +1639,7 @@ query_paths = {
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
-                ("awarding_agency_code", "award__awarding_agency__toptier_agency__cgac_code"),
+                ("awarding_agency_code", "award__awarding_agency__toptier_agency__toptier_code"),
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),

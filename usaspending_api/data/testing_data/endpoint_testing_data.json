@@ -52,7 +52,7 @@
           "awarding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -65,7 +65,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -143,7 +143,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -225,7 +225,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -242,7 +242,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -259,7 +259,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -276,7 +276,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -293,7 +293,7 @@
           "funding_agency": {
             "id": 1234567,
             "toptier_agency": {
-              "cgac_code": "019",
+              "toptier_code": "019",
               "abbreviation": null,
               "name": "Department of State"
             },
@@ -551,7 +551,7 @@
       },
       "results": [
         {
-          "cgac_code": "073"
+          "toptier_code": "073"
         }
       ]
     },
@@ -559,7 +559,7 @@
     "method": "POST",
     "request_object": {
       "fields": [
-        "cgac_code"
+        "toptier_code"
       ],
       "filters": [
         {
@@ -679,7 +679,7 @@
           },
           "submission": {
             "submission_id": 12,
-            "cgac_code": "073",
+            "toptier_code": "073",
             "reporting_fiscal_year": 2016,
             "reporting_fiscal_quarter": 1
           }
