@@ -2,7 +2,4 @@ from usaspending_api.transactions.models.source_assistance_transaction import So
 from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurmentTransaction
 
 
-__all__ = [
-    "SourceAssistanceTransaction",
-    "SourceProcurmentTransaction",
-]
+__all__ = ["SourceAssistanceTransaction", "SourceProcurmentTransaction"]

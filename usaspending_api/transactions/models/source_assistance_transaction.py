@@ -116,3 +116,7 @@ class SourceAssistanceTransaction(models.Model):
 
     class Meta:
         db_table = "source_assistance_transaction"
+
+    @property
+    def table_name(self):
+        return self._meta.db_table

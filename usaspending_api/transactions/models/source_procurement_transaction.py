@@ -324,3 +324,7 @@ class SourceProcurmentTransaction(models.Model):
 
     class Meta:
         db_table = "source_procurement_transaction"
+
+    @property
+    def table_name(self):
+        return self._meta.db_table
