@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
+from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+
 
 class SourceAssistanceTransaction(models.Model):
     """Raw assistance transaction record originating from Broker
@@ -9,17 +11,17 @@ class SourceAssistanceTransaction(models.Model):
         award modifications (aka transactions) stored in
         published_award_financial_assistance from a Broker database.
 
-        NO DATA MANIPULATION SHOULD PERFORMED BY DATA ETL
+        NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
         Put non-null fields on the top, all other fields sort alphabetically
     """
 
-    created_at = models.DateTimeField(help="creation datetime in Broker")  # Broker value is timezone-naive
-    updated_at = models.DateTimeField(help="update datetime in Broker")  # Broker value is timezone-naive
+    created_at = NaiveTimestampField(help_text="creation datetime in Broker")
+    updated_at = NaiveTimestampField(help_text="update datetime in Broker")
     published_award_financial_assistance_id = models.IntegerField(
-        primary_key=True, help="surrogate primary key defined in Broker"
+        primary_key=True, help_text="surrogate primary key defined in Broker"
     )
-    afa_generated_unique = models.TextField(unique=True, help="natural key defined in Broker")
+    afa_generated_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)
@@ -44,9 +46,9 @@ class SourceAssistanceTransaction(models.Model):
     cfda_title = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
-    face_value_loan_guarantee = models.DecimalField(blank=True, null=True)
+    face_value_loan_guarantee = NumericField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True, db_index=True)
-    federal_action_obligation = models.DecimalField(blank=True, null=True)
+    federal_action_obligation = NumericField(blank=True, null=True)
     fiscal_year_and_quarter_co = models.TextField(blank=True, null=True)
     funding_agency_code = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
@@ -84,9 +86,9 @@ class SourceAssistanceTransaction(models.Model):
     legal_entity_state_name = models.TextField(blank=True, null=True)
     legal_entity_zip5 = models.TextField(blank=True, null=True)
     legal_entity_zip_last4 = models.TextField(blank=True, null=True)
-    modified_at = models.DateTimeField(blank=True, null=True)  # Broker value is timezone-naive
-    non_federal_funding_amount = models.DecimalField(blank=True, null=True)
-    original_loan_subsidy_cost = models.DecimalField(blank=True, null=True)
+    modified_at = NaiveTimestampField(blank=True, null=True)
+    non_federal_funding_amount = NumericField(blank=True, null=True)
+    original_loan_subsidy_cost = NumericField(blank=True, null=True)
     period_of_performance_curr = models.TextField(blank=True, null=True)
     period_of_performance_star = models.TextField(blank=True, null=True)
     place_of_perfor_state_code = models.TextField(blank=True, null=True)
@@ -105,7 +107,7 @@ class SourceAssistanceTransaction(models.Model):
     record_type = models.IntegerField(blank=True, null=True)
     record_type_description = models.TextField(blank=True, null=True)
     sai_number = models.TextField(blank=True, null=True)
-    submission_id = models.DecimalField(blank=True, null=True)
+    submission_id = NumericField(blank=True, null=True)
     total_funding_amount = models.TextField(blank=True, null=True)
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)

@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
+    "usaspending_api.transactions",
     "django_spaghetti",
     "simple_history",
 ]

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
+from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+
 
 class SourceProcurmentTransaction(models.Model):
     """Raw procurement transaction record originating from FPDS-NG
@@ -10,17 +12,17 @@ class SourceProcurmentTransaction(models.Model):
         Broker database which is obtained source data from FPDS-NG:
             https://www.fpds.gov/fpdsng_cms/index.php/en/
 
-        NO DATA MANIPULATION SHOULD PERFORMED BY DATA ETL
+        NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
         Put non-null fields on the top, all other fields sort alphabetically
     """
 
-    created_at = models.DateTimeField(help="creation datetime in Broker")  # Broker value is timezone-naive
-    updated_at = models.DateTimeField(help="update datetime in Broker")  # Broker value is timezone-naive
+    created_at = NaiveTimestampField(help_text="record creation datetime in Broker")
+    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker")
     detached_award_procurement_id = models.IntegerField(
-        primary_key=True, help="surrogate primary key defined in Broker"
+        primary_key=True, help_text="surrogate primary key defined in Broker"
     )
-    detached_award_proc_unique = models.TextField(unique=True, help="natural key defined in Broker")
+    detached_award_proc_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
     a_76_fair_act_action = models.TextField(blank=True, null=True)
     a_76_fair_act_action_desc = models.TextField(blank=True, null=True)
     action_date = models.TextField(blank=True, null=True)
@@ -110,7 +112,7 @@ class SourceProcurmentTransaction(models.Model):
     fair_opportunity_limited_s = models.TextField(blank=True, null=True)
     fed_biz_opps = models.TextField(blank=True, null=True)
     fed_biz_opps_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(blank=True, null=True)
+    federal_action_obligation = NumericField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
     federally_funded_research = models.TextField(blank=True, null=True)
     for_profit_organization = models.TextField(blank=True, null=True)
