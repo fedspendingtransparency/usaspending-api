@@ -59,7 +59,7 @@ def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_3(client, refresh_matviews, mock_matviews_qs):
     mock_model_4 = MockModel(**subaward_12)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_4])
