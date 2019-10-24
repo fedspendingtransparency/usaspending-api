@@ -584,7 +584,7 @@ query_paths = {
                 ("total_obligated_amount", "award__total_obligation"),
                 ("total_non_federal_funding_amount", "award__non_federal_funding_amount"),
                 ("total_funding_amount", "award__total_funding_amount"),
-                ("total_loan_face_value", "award__total_loan_value"),
+                ("total_face_value_of_loan", "award__total_loan_value"),
                 ("total_loan_subsidy_cost", "award__total_subsidy_cost"),
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
