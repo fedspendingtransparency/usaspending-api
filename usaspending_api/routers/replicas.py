@@ -14,22 +14,32 @@ It splits requests among two databases but you can add more.
 """
 
 
-class ReadReplicaRouter(object):
+class ReadReplicaRouter:
+
+    usaspending_db_list = (DEFAULT_DB_ALIAS, "db_r1")
+    broker_db_list = ("data_broker",)
+
     def db_for_read(self, model, **hints):
-        # these are the only models we write to; to deal with replication lag just get them from the source db
+        """ For reads, choose a connection randomly.  FilterHash and DownloadJob are writable tables so always
+            read from source (default) to mitigation replication lag issues. """
         if model in [FilterHash, DownloadJob]:
             return DEFAULT_DB_ALIAS
-        return random.choice([DEFAULT_DB_ALIAS, "db_r1"])
+        return random.choice(self.usaspending_db_list)
 
     def db_for_write(self, model, **hints):
-        # write to source db only (bc read replicas)
+        """ Write to source (default) db only because replicas are read only. """
         return DEFAULT_DB_ALIAS
 
     def allow_relation(self, obj1, obj2, **hints):
-        db_list = (DEFAULT_DB_ALIAS, "db_r1")
-        if obj1._state.db in db_list and obj2._state.db in db_list:
-            return True
-        return None
+        """ Relations are allowed between similar databases so USAspending to USAspending or Broker to Broker. """
+        return (obj1._state.db in self.usaspending_db_list and obj2._state.db in self.usaspending_db_list) or (
+            obj1._state.db in self.broker_db_list and obj2._state.db in self.broker_db_list
+        )
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        return True
+        """ We do not allow migrations against Broker. """
+        return db not in self.broker_db_list
+
+
+class DefaultOnlyRouter(ReadReplicaRouter):
+    usaspending_db_list = (DEFAULT_DB_ALIAS,)
