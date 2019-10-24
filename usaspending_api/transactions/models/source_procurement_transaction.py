@@ -328,3 +328,7 @@ class SourceProcurmentTransaction(models.Model):
     @property
     def table_name(self):
         return self._meta.db_table
+
+    @property
+    def model_fields(self):
+        return tuple([f.name for f in self._meta.get_fields(include_parents=False)])

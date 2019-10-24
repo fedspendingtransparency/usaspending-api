@@ -1,26 +1,51 @@
 import logging
 
-from django.conf import settings
+# from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
-from psycopg2.sql import Composable, Composed, Identifier, SQL, Literal
 
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
-
-from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
+# from psycopg2.sql import Composable, Composed, Identifier, SQL, Literal
+# from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
+# from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.transactions.models import SourceProcurmentTransaction
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
+from datetime import datetime, timezone
 
 
-def get_model_fields(model):
-    return tuple([f.name for f in model._meta.get_fields(include_parents=False)])
+CHUNK_SIZE = 500000
+
+
+def filepath_command_line_argument_type():
+    """"""
+
+    def _filepath_command_line_argument_type(provided_uri):
+        """"""
+        try:
+            with RetrieveFileFromUri(provided_uri).get_file_object() as file:
+                # while True:
+                #     lines = [int(line.decode("utf-8")) for line in file.readlines(CHUNK_SIZE)]
+                #     if len(lines) == 0:
+                #         break
+                #     yield lines
+                return [int(line.decode("utf-8")) for line in file.readlines()]
+
+        except Exception as e:
+            raise RuntimeError("Issue with reading/parsing file: {}".format(e))
+
+    return _filepath_command_line_argument_type
 
 
 class Command(BaseCommand):
 
     help = "Upsert procurement transactions from a broker system into USAspending"
     logger = logging.getLogger("console")
+    last_load_record = "source_procurement_transaction"
+    is_incremental = False
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
@@ -39,33 +64,70 @@ class Command(BaseCommand):
         )
         mutually_exclusive_group.add_argument(
             "--since-last-load",
+            dest="incremental_date",
             action="store_true",
             help="Equivalent to loading from date, but date is drawn from last update date recorded in DB",
         )
         mutually_exclusive_group.add_argument(
             "--file",
-            metavar="FILEPATH",
-            type=str,
-            help="Load/Reload transactions using the detached_award_procurement_id list stored at this file path (one ID per line)"
-            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+            dest="file",
+            type=filepath_command_line_argument_type(),
+            help=(
+                "Load/Reload transactions using detached_award_procurement_id values stored at this file path"
+                " (one ID per line) {}".format(SCHEMA_HELP_TEXT)
+            ),
         )
         mutually_exclusive_group.add_argument(
             "--reload-all",
             action="store_true",
-            help="Script will load or reload all FPDS records in broker database, from all time. This does NOT clear the USASpending database first",
+            help=(
+                "Script will load or reload all FPDS records in broker database, from all time. "
+                "This does NOT clear the USASpending database first"
+            ),
         )
 
     def handle(self, *args, **options):
-        self.date = "2019-10-23"
+        self.logger.info("starting transfer script")
+        if options["incremental_date"]:
+            self.logger.info("INCREMENTAL LOAD")
+            self.is_incremental = True
+            options["date"] = get_last_load_date(self.last_load_record)
+            if not options["date"]:
+                raise SystemExit("No date stored in the database, unable to use --since-last-load")
+
+        self.start_time = datetime.now(timezone.utc)
+        self.predicate = self.parse_options(options)
+
+        self.logger.warn(self.predicate)
+        return
+
         self.old_school()
 
-    def new_school(self):
-        procurement = ETLTable(SourceProcurmentTransaction().table_name)
-        remote_procurement = ETLDBLinkTable("detached_award_procurement", "broker_server", procurement.data_types)
+        if self.is_incremental:
+            update_last_load_date(self.last_load_record, self.start_time)
 
-    def old_school(self):
-        fields = get_model_fields(SourceProcurmentTransaction)
-        excluded = ", ".join(["{col} = EXCLUDED.{col}".format(col=field) for field in fields])
+    def parse_options(self, options):
+        """Create the SQL predicate to limit which transaction records are transfered"""
+        if options["reload_all"]:
+            return ""
+        elif options["date"]:
+            return "WHERE updated_at >= ''{}''".format(options["date"])
+        else:
+            ids = options["file"] if options["file"] else options["ids"]
+            return "WHERE detached_award_procurement_id IN {}".format(tuple(ids))
+
+    def clear_table(self):
+        sql = "DELETE FROM {} WHERE true".format(SourceProcurmentTransaction().table_name)
+        with connection.cursor() as cursor:
+            self.logger.info("clearing {}".format(SourceProcurmentTransaction().table_name))
+            cursor.execute(sql)
+            self.logger.info("DELETED {} records".format(cursor.rowcount))
+
+    def new_school(self):
+        """Use Kirk's schmancy ETLTables"""
+
+        # procurement = ETLTable(SourceProcurmentTransaction().table_name)
+        # remote_procurement = ETLDBLinkTable("detached_award_procurement", "broker_server", procurement.data_types)
 
         # sql = SQL(UPSERT_SQL).format(
         #     destination=Identifier(SourceProcurmentTransaction().table_name),
@@ -73,22 +135,23 @@ class Command(BaseCommand):
         #     excluded=Composable(excluded),
         #     predicate=SQL("updated_at >= '2019-10-23'")
         # )
+
+    def old_school(self):
+        fields = SourceProcurmentTransaction().model_fields
+        excluded = ", ".join(["{col} = EXCLUDED.{col}".format(col=field) for field in fields])
+
         sql = UPSERT_SQL.format(
             destination=SourceProcurmentTransaction().table_name,
             fields=", ".join([field for field in fields]),
             excluded=excluded,
-            predicate="WHERE updated_at >= ''{date}''".format(date=self.date) if self.date else ""
+            predicate=self.predicate,
         )
 
-        # print(sql)
-        # print("=======================================")
-        # print(convert_composable_query_to_string(sql=sql, model=SourceProcurmentTransaction))
-
         with connection.cursor() as cursor:
-            self.logger.info("Upserting procurement records")
-            cursor.execute(sql)
-            rowcount = cursor.rowcount
-            self.logger.info("Upserted {} records".format(rowcount))
+            with Timer(message="Upserting procurement records", success_logger=self.logger.info):
+                cursor.execute(sql)
+                rowcount = cursor.rowcount
+                self.logger.info("Upserted {} records".format(rowcount))
 
 
 UPSERT_SQL = """
