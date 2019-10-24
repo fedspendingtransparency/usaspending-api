@@ -26,7 +26,6 @@ from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency, PSC, NAICS
 
-
 logger = logging.getLogger("console")
 
 
@@ -427,7 +426,7 @@ def fetch_all_cfda_details(award: dict) -> list:
             OrderedDict(
                 [
                     ("applicant_eligibility", details.get("applicant_eligibility")),
-                    ("benficiary_eligibility", details.get("benficiary_eligibility")),
+                    ("beneficiary_eligibility", details.get("beneficiary_eligibility")),
                     ("cfda_federal_agency", details.get("federal_agency")),
                     ("cfda_number", cfda_number),
                     ("cfda_objectives", details.get("objectives")),
@@ -447,7 +446,17 @@ def fetch_all_cfda_details(award: dict) -> list:
 
 
 def fetch_cfda_details_using_cfda_number(cfda: str) -> dict:
-    values = ["program_title", "objectives", "federal_agency", "website_address", "url", "obligations", "popular_name"]
+    values = [
+        "applicant_eligibility",
+        "beneficiary_eligibility",
+        "program_title",
+        "objectives",
+        "federal_agency",
+        "website_address",
+        "url",
+        "obligations",
+        "popular_name",
+    ]
     cfda_details = Cfda.objects.filter(program_number=cfda).values(*values).first()
 
     return cfda_details or {}
