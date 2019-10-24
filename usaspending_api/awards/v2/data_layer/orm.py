@@ -426,6 +426,8 @@ def fetch_all_cfda_details(award: dict) -> list:
         final_cfda_objects.append(
             OrderedDict(
                 [
+                    ("applicant_eligibility", details.get("applicant_eligibility")),
+                    ("benficiary_eligibility", details.get("benficiary_eligibility")),
                     ("cfda_federal_agency", details.get("federal_agency")),
                     ("cfda_number", cfda_number),
                     ("cfda_objectives", details.get("objectives")),
