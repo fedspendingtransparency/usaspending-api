@@ -3,7 +3,7 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum
+from django.db.models import Sum, F
 from typing import Optional
 
 from usaspending_api.awards.models import (
@@ -77,6 +77,9 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
+    response["parent_award"] = fetch_contract_parent_award_details(
+        award["_parent_award_piid"], award["_fpds_parent_agency_id"]
+    )
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -101,9 +104,6 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
-    response["parent_generated_unique_award_id"] = fetch_parent_award_from_piid_agency(
-        award["parent_award_piid"], award["_fpds_parent_agency_id"]
-    )
     return delete_keys_from_dict(response)
 
 
@@ -127,12 +127,9 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         return None
     response.update(award)
 
-    parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
-
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
-    response["parent_award"] = parent_award
-    response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
+    response["parent_award"] = fetch_idv_parent_award_details(award["generated_unique_award_id"])
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -257,31 +254,43 @@ def fetch_award_details(filter_q: dict, mapper_fields: OrderedDict) -> dict:
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
 
-def fetch_parent_award_from_piid_agency(piid, fpds_agency):
-    if piid and fpds_agency:
-        parent_unique_key = "CONT_IDV_{}_{}".format(piid, fpds_agency)
-        parent = (
-            ParentAward.objects.filter(generated_unique_award_id=parent_unique_key)
-            .values("generated_unique_award_id")
-            .first()
-        )
-        if parent:
-            return parent["generated_unique_award_id"]
-    return None
+def fetch_contract_parent_award_details(parent_piid: str, parent_fpds_agency: str) -> Optional[OrderedDict]:
+    parent_guai = "CONT_IDV_{}_{}".format(parent_piid or "NONE", parent_fpds_agency or "NONE")
 
-
-def fetch_parent_award_details(guai: str) -> Optional[OrderedDict]:
     parent_award_ids = (
-        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
-        .values("parent_award__award_id", "parent_award__generated_unique_award_id")
+        ParentAward.objects.filter(generated_unique_award_id=parent_guai)
+        .annotate(parent_award_award_id=F("award_id"), parent_award_guai=F("generated_unique_award_id"))
+        .values("parent_award_award_id", "parent_award_guai")
         .first()
     )
 
+    return _fetch_parent_award_details(parent_award_ids)
+
+
+def fetch_idv_parent_award_details(guai: str) -> Optional[OrderedDict]:
+    parent_award_ids = (
+        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
+        .annotate(
+            parent_award_award_id=F("parent_award__award_id"),
+            parent_award_guai=F("parent_award__generated_unique_award_id"),
+        )
+        .values("parent_award_award_id", "parent_award_guai")
+        .first()
+    )
+
+    return _fetch_parent_award_details(parent_award_ids)
+
+
+def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]:
     if not parent_award_ids:
         return None
 
+    # These are not exact query paths but instead expected aliases to allow reuse
+    parent_award_award_id = parent_award_ids["parent_award_award_id"]
+    parent_award_guai = parent_award_ids["parent_award_guai"]
+
     parent_award = (
-        Award.objects.filter(id=parent_award_ids["parent_award__award_id"])
+        Award.objects.filter(id=parent_award_award_id)
         .values(
             "latest_transaction__contract_data__agency_id",
             "latest_transaction__contract_data__idv_type_description",
@@ -293,8 +302,9 @@ def fetch_parent_award_details(guai: str) -> Optional[OrderedDict]:
     )
 
     if not parent_award:
-        logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
+        logging.debug("Unable to find award for award id %s" % parent_award_award_id)
         return None
+
     parent_agency = (
         SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
         .values("name")
@@ -305,8 +315,8 @@ def fetch_parent_award_details(guai: str) -> Optional[OrderedDict]:
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
             ("agency_name", parent_agency["name"]),
-            ("award_id", parent_award_ids["parent_award__award_id"]),
-            ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
+            ("award_id", parent_award_award_id),
+            ("generated_unique_award_id", parent_award_guai),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
             (
                 "multiple_or_single_aw_desc",

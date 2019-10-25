@@ -60,7 +60,6 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("id", "id"),
         ("generated_unique_award_id", "generated_unique_award_id"),
         ("piid", "piid"),
-        ("parent_award_piid", "parent_award_piid"),
         ("category", "category"),
         ("type", "type"),
         ("type_description", "type_description"),
@@ -80,6 +79,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("period_of_performance_current_end_date", "_end_date"),
         ("date_signed", "date_signed"),
         ("fpds_parent_agency_id", "_fpds_parent_agency_id"),
+        ("parent_award_piid", "_parent_award_piid"),
     ]
 )
 
