@@ -16,20 +16,23 @@ addons:
 
 env:
   global:
+  - USASPENDING_DB_HOST=localhost
+  - USASPENDING_DB_PORT=5432
   - USASPENDING_DB_USER=usaspending
   - USASPENDING_DB_PASSWORD=usaspender
   - USASPENDING_DB_NAME=data_store_api
-  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@localhost:5432/${USASPENDING_DB_NAME}
+  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
-  - BROKER_DB_PORT=5435
+  - BROKER_DB_PORT=5432
   - BROKER_DB_USER=admin
   - BROKER_DB_PASSWORD=root
   - BROKER_DB_NAME=data_broker
   - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
   - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
-  - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
+  #- BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
+  - BROKER_REPO_BRANCH=ftr/dev-1526-broker-integ-test-db
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
 
 before_install:
@@ -43,32 +46,31 @@ install:
   - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
+  # TODO: verify that the test_<db> can't be created by django if a user is not provided with superuser privs (or create db privs)
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
-  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
-  - psql -c "CREATE DATABASE ${USASPENDING_DB_NAME}" --username ${USASPENDING_DB_USER} --dbname postgres
-  - psql -c "CREATE USER readonly"
-  # Establish foreign server for dblink to Broker
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
-  - eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
-  - python manage.py migrate
-  # Spin up Broker database in a container for ETL integration tests
-  - cd ${BROKER_REPO_FOLDER}
-  - cp dataactcore/config_example.yml dataactcore/config.yml
-  - cp dataactcore/local_config_example.yml dataactcore/local_config.yml
-  - cp dataactcore/local_secrets_example.yml dataactcore/local_secrets.yml
-  - docker-compose up -d dataact-broker-db dataact-broker-init-db
-  - cd ${TRAVIS_BUILD_DIR}
-  - sleep 10  # wait for Elasticsearch and Broker Postgres to be up
+  #- psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  #- psql -c "CREATE DATABASE ${USASPENDING_DB_NAME}" --username ${USASPENDING_DB_USER} --dbname postgres
+  # TODO: verify that matview creation step will fail if there's not a user named readonly
+  #- psql -c "CREATE USER readonly"  # matviews creation scripts reference a user named readonly
+  # Setup Broker config files to work with the same DB configured via Travis env vars
+  # When pytest calls the Broker DB fixtures that invoke a python script via docker run against the checked-out Broker source code, it will use these config values
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/config.yml
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_secrets_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml
+  - 'sed -i.bak -E "s/host:.*$/host: ${BROKER_DB_HOST}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
+  - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
+  - sleep 10  # wait for Elasticsearch to be up
 
 script:
   - flake8
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
-  - pytest usaspending_api/broker/tests/integration/test_broker_integration.py
+  - pytest usaspending_api/broker/tests/integration/test_broker_integration.py -rs -s -vvv --no-cov
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname as name, srvowner::regrole as owner, fdwname as wrapper, srvoptions as options from pg_foreign_server join pg_foreign_data_wrapper w on w.oid = srvfdw"
   - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select * from pg_user_mapping"
-  #- pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report=
+  #- pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= -rs
   #- pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 

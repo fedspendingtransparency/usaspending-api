@@ -50,7 +50,7 @@ py-gfm==0.1.3
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
-pytest-cov==2.5.1
+pytest-cov==2.8.1
 pytest-django==3.5.1
 pytest==4.3.1
 python-dateutil==2.7.3

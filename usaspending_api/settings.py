@@ -174,6 +174,7 @@ def _configure_database_connection(environment_variable):
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
+    config["TEST"] = {"SERIALIZE": False}
     return config
 
 
@@ -201,10 +202,15 @@ else:
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get("DATA_BROKER_DATABASE_URL") and not sys.argv[1:2] == ["test"]:
-    DATABASES["data_broker"] = dj_database_url.parse(
-        os.environ.get("DATA_BROKER_DATABASE_URL"), conn_max_age=CONNECTION_MAX_SECONDS
-    )
-
+    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+    # Ensure that the broker DB never has migrations applied to it (even under test), by injecting a router that will
+    # return False from allow_migrations(...) when the db == "data_broker"
+    try:
+        DATABASE_ROUTERS
+    except NameError:
+        DATABASE_ROUTERS = ["usaspending_api.routers.broker.BrokerRouter"]
+    else:
+        DATABASE_ROUTERS.insert(0, "usaspending_api.routers.broker.BrokerRouter")
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
