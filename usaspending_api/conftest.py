@@ -3,7 +3,7 @@ import os
 import pytest
 import tempfile
 
-from django.db import DEFAULT_DB_ALIAS
+from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from usaspending_api.common.helpers.generic_helper import generate_matviews
@@ -192,7 +192,12 @@ def mock_matviews_qs(monkeypatch):
 
 def pytest_configure():
     # This function used to remove all non-default DB connections.  We undid this 10/2019 to allow testing of loaders.
-    pass
+    for connection_name in connections:
+        host = connections[connection_name].settings_dict.get("HOST")
+        if "amazonaws" in host:
+            raise RuntimeError(
+                "Connection '{}' appears to be pointing to an AWS database: [{}]".format(connection_name, host)
+            )
 
 
 def pytest_addoption(parser):

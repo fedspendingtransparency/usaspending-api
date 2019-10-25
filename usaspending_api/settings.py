@@ -5,7 +5,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 
 import dj_database_url
 import os
-import sys
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
