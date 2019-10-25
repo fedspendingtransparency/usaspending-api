@@ -301,7 +301,7 @@ def broker_db_setup(django_db_setup):
     This will use the Broker test database that Django sets up for the "data_broker" entry in settings.DATABASES,
     which is likely to be named "test_data_broker" by Django.
     """
-    broker_docker_image = "dataact-broker-backend:bogus"
+    broker_docker_image = "dataact-broker-backend:latest"
     broker_src_dir_path_obj = Path(settings.BASE_DIR).resolve().parent / "data-act-broker-backend"
     broker_docker_volume_target = "/data-act/backend"
 

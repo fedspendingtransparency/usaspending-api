@@ -34,6 +34,7 @@ env:
   #- BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
   - BROKER_REPO_BRANCH=ftr/dev-1526-broker-integ-test-db
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
+  - BROKER_DOCKER_IMAGE=dataact-broker-backend
 
 before_install:
   - npm install dredd@5.4.1 --global
@@ -63,9 +64,12 @@ before_script:
   - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
   - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
+  - cd ${BROKER_REPO_FOLDER}
+  - docker build -t ${BROKER_DOCKER_IMAGE}
   - sleep 10  # wait for Elasticsearch to be up
 
 script:
+  - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
   - flake8
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
