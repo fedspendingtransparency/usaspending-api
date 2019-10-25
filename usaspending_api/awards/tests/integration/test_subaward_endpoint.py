@@ -25,9 +25,9 @@ def test_subaward_failure(client, refresh_matviews):
     resp = client.post(
         "/api/v2/subawards/",
         content_type="application/json",
-        data=json.dumps({"order": "desc", "limit": 100, "award_id": "not an integer"}),
+        data=json.dumps({"order": "desc", "limit": 100, "award_id": {"not": "a string or integer"}}),
     )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db

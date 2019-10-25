@@ -57,12 +57,14 @@ class SubawardsViewSet(APIView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = SubawardView.objects.all().values(*list(self.subaward_lookup.values()))
+        queryset = SubawardView.objects.all()
 
         award_id = request_data["award_id"]
         if award_id is not None:
             award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
             queryset = queryset.filter(**{award_id_column: award_id})
+
+        queryset = queryset.values(*list(self.subaward_lookup.values()))
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True))
