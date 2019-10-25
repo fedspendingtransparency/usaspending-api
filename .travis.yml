@@ -74,8 +74,8 @@ script:
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check --diff . ; fi
   - python manage.py check_for_endpoint_documentation
   #- pytest usaspending_api/broker/tests/integration/test_broker_integration.py -rs -s -vvv --no-cov
-  - pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= -rs -s -vvv
-  - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term -rs -s -vvv
+  - pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rs -s -vvv
+  - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --reuse-db -rs -s -vvv
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
 after_success:
