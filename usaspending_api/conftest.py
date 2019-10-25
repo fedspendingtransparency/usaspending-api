@@ -191,7 +191,6 @@ def mock_matviews_qs(monkeypatch):
 
 
 def pytest_configure():
-    # This function used to remove all non-default DB connections.  We undid this 10/2019 to allow testing of loaders.
     for connection_name in connections:
         host = connections[connection_name].settings_dict.get("HOST")
         if "amazonaws" in host:
