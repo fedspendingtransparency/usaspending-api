@@ -7,7 +7,7 @@ import tempfile
 
 from django.conf import settings
 from django.db import DEFAULT_DB_ALIAS
-from django.test import override_settings, TestCase
+from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
 from usaspending_api.common.helpers.generic_helper import generate_matviews

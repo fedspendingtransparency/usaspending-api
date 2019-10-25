@@ -120,7 +120,7 @@ def ensure_broker_server_dblink_exists():
         settings.BASE_DIR, "usaspending_api/database_scripts/extensions/extensions.sql"
     )
     broker_server_script_path = os.path.join(
-        settings.BASE_DIR,  "usaspending_api/database_scripts/servers/broker_server.sql"
+        settings.BASE_DIR, "usaspending_api/database_scripts/servers/broker_server.sql"
     )
     with open(extensions_script_path) as f1, open(broker_server_script_path) as f2:
         extensions_script = f1.read()
