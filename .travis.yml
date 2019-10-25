@@ -47,8 +47,9 @@ install:
 
 before_script:
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
-  # Our Postgres DB provided by Travis needs to have the (super) user specified by our env var DB URLs used
+  # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   # TODO: verify that the `test_data_store_api` db can still be created if a `data_store_api` is not explicitly created
   #- psql -c "CREATE DATABASE ${USASPENDING_DB_NAME}" --username ${USASPENDING_DB_USER} --dbname postgres
   # TODO: verify that matview creation step will fail if there's not a user named readonly
