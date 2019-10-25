@@ -9,10 +9,14 @@ class ReadReplicaRouter:
     """
     The USAspending API is *mostly* a readonly application.  This router is used to balance loads
     between multiple databases defined by the environment variables in settings.py, and handle
-    the models that are *not* readonly appropriately.
+    the models that are *not* readonly appropriately.  Also prevents model access/migrations to Broker.
     """
 
-    usaspending_db_list = (DEFAULT_DB_ALIAS, "db_r1")
+    writable_database = DEFAULT_DB_ALIAS
+    read_replicas = ["db_r1"]
+
+    def __init__(self):
+        self.usaspending_databases = [self.writable_database] + self.read_replicas
 
     def db_for_read(self, model, **hints):
         """
@@ -20,23 +24,22 @@ class ReadReplicaRouter:
         mitigate replication lag.  Otherwise, choose a connection randomly.
         """
         if model in [FilterHash, DownloadJob]:
-            return DEFAULT_DB_ALIAS
-        return random.choice(self.usaspending_db_list)
+            return self.writable_database
+        return random.choice(self.usaspending_databases)
 
     def db_for_write(self, model, **hints):
-        """ Write to source (default) db only because replicas are read only. """
-        return DEFAULT_DB_ALIAS
+        return self.writable_database
 
     def allow_relation(self, obj1, obj2, **hints):
-        """ Relations are currently only allowed in USAspending. """
-        return obj1._state.db in self.usaspending_db_list and obj2._state.db in self.usaspending_db_list
+        """ Relations are currently only allowed in USAspending.  Cross database relations are not allowed. """
+        return obj1._state.db in self.usaspending_databases and obj2._state.db == obj1._state.db
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        """ Migrations should only run in USAspending, never in Broker. """
-        return db in self.usaspending_db_list
+        """ Migrations should only run in USAspending against the writable database. """
+        return db == self.writable_database
 
 
 class DefaultOnlyRouter(ReadReplicaRouter):
-    """ For when only the default connection is used.  Prevents migrations to Broker. """
+    """ For when only the default connection is used.  Prevents model access/migrations to Broker. """
 
-    usaspending_db_list = (DEFAULT_DB_ALIAS,)
+    read_replicas = []
