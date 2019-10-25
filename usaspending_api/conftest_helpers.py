@@ -113,7 +113,7 @@ def ensure_broker_server_dblink_exists():
         raise Exception("'data_broker' database not configured in django settings.DATABASES")
     db_conn_tokens_dict = {
         **{"USASPENDING_DB_" + k: v for k, v in settings.DATABASES[DEFAULT_DB_ALIAS].items()},
-        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES["data_broker"].items()}
+        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES["data_broker"].items()},
     }
 
     extensions_script_path = os.path.join(

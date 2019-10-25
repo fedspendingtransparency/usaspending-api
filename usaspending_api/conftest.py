@@ -15,7 +15,7 @@ from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_transaction_delta_view_exists,
-    ensure_broker_server_dblink_exists
+    ensure_broker_server_dblink_exists,
 )
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
@@ -240,11 +240,7 @@ def django_db_setup(
         setup_databases_args["keepdb"] = True
 
     with django_db_blocker.unblock():
-        db_cfg = setup_databases(
-            verbosity=request.config.option.verbose,
-            interactive=False,
-            **setup_databases_args
-        )
+        db_cfg = setup_databases(verbosity=request.config.option.verbose, interactive=False, **setup_databases_args)
         # Matviews and views can't be crated under these conditions, because either their underlying schema objects
         # would not exist, or we want to reuse a DB and not recreate these objects
         skip_views = not django_db_use_migrations or (django_db_keepdb and not django_db_createdb)
@@ -263,11 +259,7 @@ def django_db_setup(
             try:
                 teardown_databases(db_cfg, verbosity=request.config.option.verbose)
             except Exception as exc:
-                request.node.warn(
-                    pytest.PytestWarning(
-                        "Error when trying to teardown test databases: %r" % exc
-                    )
-                )
+                request.node.warn(pytest.PytestWarning("Error when trying to teardown test databases: %r" % exc))
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
@@ -340,13 +332,13 @@ def broker_db_setup(django_db_setup):
     # Run the DB setup script using the Broker docker image.
     if "data_broker" not in settings.DATABASES:
         logger.error("Did not find 'data_broker' database configured in django settings.DATABASES.")
-        raise Exception("'data_broker' database not configured in django settings.DATABASES. "
-                        "Do you have the environment variable set for this database connection string?")
+        raise Exception(
+            "'data_broker' database not configured in django settings.DATABASES. "
+            "Do you have the environment variable set for this database connection string?"
+        )
     broker_test_db_name = settings.DATABASES["data_broker"]["NAME"]
     mounted_src = docker.types.Mount(
-        type="bind",
-        source=str(broker_src_dir_path_obj),
-        target=broker_docker_volume_target
+        type="bind", source=str(broker_src_dir_path_obj), target=broker_docker_volume_target
     )
     broker_db_setup_command = "python dataactcore/scripts/setup_all_db.py --dbname {}".format(broker_test_db_name)
     logger.info("Running command `{}` in a container of image {}".format(broker_db_setup_command, broker_docker_image))
@@ -359,7 +351,7 @@ def broker_db_setup(django_db_setup):
         network_mode="host",
         mounts=[mounted_src],
         stderr=True,
-        stream=True
+        stream=True,
     )
     [logger.info(str(log)) for log in log_gen]  # log container logs from returned streaming log generator
     logger.info("Command ran to completion in container. Broker DB should be setup for tests.")

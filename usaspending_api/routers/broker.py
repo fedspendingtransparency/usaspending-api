@@ -5,6 +5,7 @@ class BrokerRouter(object):
 
     This will also prohibit migrations when using this database and a connection to it when running tests
     """
+
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if db == "data_broker":
             return False
