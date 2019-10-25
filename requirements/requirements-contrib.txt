@@ -4,6 +4,9 @@ coverage==4.3.4
 dredd-hooks==0.2.0
 flake8==3.7.8
 git+https://github.com/fedspendingtransparency/django-mock-queries#egg=django-mock-queries
+mccabe==0.6.1
+mock==3.0.5
+model-mommy==1.6.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
 pytest-cov==2.5.1
