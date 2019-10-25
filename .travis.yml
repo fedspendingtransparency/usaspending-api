@@ -64,8 +64,7 @@ before_script:
   - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
   - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
-  - cd ${BROKER_REPO_FOLDER}
-  - docker build -t ${BROKER_DOCKER_IMAGE}
+  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
   - sleep 10  # wait for Elasticsearch to be up
 
 script:
@@ -74,8 +73,6 @@ script:
   - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check . ; fi
   - python manage.py check_for_endpoint_documentation
   - pytest usaspending_api/broker/tests/integration/test_broker_integration.py -rs -s -vvv --no-cov
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select srvname as name, srvowner::regrole as owner, fdwname as wrapper, srvoptions as options from pg_foreign_server join pg_foreign_data_wrapper w on w.oid = srvfdw"
-  - psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} -c "select * from pg_user_mapping"
   #- pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= -rs
   #- pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
