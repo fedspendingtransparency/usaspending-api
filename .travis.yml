@@ -57,10 +57,11 @@ before_script:
   #- psql -c "CREATE USER readonly"  # matviews creation scripts reference a user named readonly
   # Setup Broker config files to work with the same DB configured via Travis env vars
   # When pytest calls the Broker DB fixtures that invoke a python script via docker run against the checked-out Broker source code, it will use these config values
+  # It will however be running the command from within docker, where "localhost" is not resolvable, so change host to host.docker.internal
   - cp ${BROKER_REPO_FOLDER}/dataactcore/config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/config.yml
   - cp ${BROKER_REPO_FOLDER}/dataactcore/local_config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml
   - cp ${BROKER_REPO_FOLDER}/dataactcore/local_secrets_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml
-  - 'sed -i.bak -E "s/host:.*$/host: ${BROKER_DB_HOST}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/host:.*$/host: host.docker.internal/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
   - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
