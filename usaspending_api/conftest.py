@@ -351,9 +351,12 @@ def broker_db_setup(django_db_setup):
     broker_db_setup_command = "python dataactcore/scripts/setup_all_db.py --dbname {}".format(broker_test_db_name)
     logger.info("Running command `{}` in a container of image {}".format(broker_db_setup_command, broker_docker_image))
     logger.info("Container will access Broker scripts from mounted source dir: {}".format(broker_src_dir_path_obj))
+    # NOTE: use ofo network_mode="host" applies ONLY when on Linux
+    # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
     log_gen = docker_client.containers.run(
         broker_docker_image,
         broker_db_setup_command,
+        network_mode="host",
         mounts=[mounted_src],
         stderr=True,
         stream=True

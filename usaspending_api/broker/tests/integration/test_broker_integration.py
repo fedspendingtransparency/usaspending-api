@@ -23,11 +23,14 @@ class BrokerIntegrationTestCase(TestCase):
     @pytest.mark.usefixtures("broker_db_setup")
     def test_broker_db_fully_setup(self):
         """Simple 'integration test' that checks a Broker DB had its schema setup"""
-        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        broker_conn = get_broker_dsn_string()
+        print("BROKER CONN = " + broker_conn)
+        with psycopg2.connect(dsn=broker_conn) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("select * from pg_tables where tablename = 'alembic_version'")
                 results = cursor.fetchall()
         assert results is not None
+        assert len(results) > 0
         assert len(str(results[0][0])) > 0
 
 
@@ -48,4 +51,5 @@ def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup):
             cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)")
             results = cursor.fetchall()
     assert results is not None
+    assert len(results) > 0
     assert len(str(results[0][0])) > 0

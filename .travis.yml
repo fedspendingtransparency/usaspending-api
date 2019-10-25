@@ -61,7 +61,7 @@ before_script:
   - cp ${BROKER_REPO_FOLDER}/dataactcore/config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/config.yml
   - cp ${BROKER_REPO_FOLDER}/dataactcore/local_config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml
   - cp ${BROKER_REPO_FOLDER}/dataactcore/local_secrets_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml
-  - 'sed -i.bak -E "s/host:.*$/host: host.docker.internal/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/host:.*$/host: ${BROKER_DB_HOST}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
   - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
   - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
