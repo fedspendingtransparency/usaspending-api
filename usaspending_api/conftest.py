@@ -241,14 +241,13 @@ def django_db_setup(
 
     with django_db_blocker.unblock():
         db_cfg = setup_databases(verbosity=request.config.option.verbose, interactive=False, **setup_databases_args)
-        # Matviews and views can't be crated under these conditions, because either their underlying schema objects
-        # would not exist, or we want to reuse a DB and not recreate these objects
-        skip_views = not django_db_use_migrations or (django_db_keepdb and not django_db_createdb)
-        if skip_views:
+        # If migrations are skipped, assume matviews and views are not to be (re)created either
+        # Other scenarios (such as reuse or keep DB) may still lead to creation of a non-existent DB, so they must be
+        # (re)created under those conditions
+        if not django_db_use_migrations:
             logger.warning(
-                "Not generating materialized views or other views in this test run because one of: "
-                "1) migrations are not running in this session and their underlying schema objects won't exist, or "
-                "2) A prior DB is being reused for this test session"
+                "Skipping generation of materialized views or other views in this test run because migrations are also "
+                "being skipped. "
             )
         else:
             generate_matviews()
