@@ -360,30 +360,9 @@ def broker_db_setup(django_db_setup):
 @pytest.fixture(scope="session")
 def broker_server_dblink_setup(django_db_blocker, broker_db_setup):
     """Fixture to use during a pytest session if you will run integration tests connecting to the broker DB via dblink.
-
-
     """
-    # TODO: Same thing that .travis.yml does
-    # TODO: 1) get broker-db-under-test conn, and CURRENT usaspending db-under-test conn
-    # TODO: 2) run the extensions.sql file to ensure extensions are on that usaspending db
-    # TODO: 3) replace the env vars in the broker_server.sql script
-    # TODO: 4) run the broker_server.sql script
     with django_db_blocker.unblock():
         ensure_broker_server_dblink_exists()
-
-
-@pytest.fixture(scope="function")
-def self_cleaning_broker_db(broker_db_setup, broker_server_dblink_setup):
-    """Fixture to use on a pytest integration test that puts data into the integration-testing broker DB, which needs
-    too be removed afterward.
-    """
-    # TODO: docker exec command inside broker image container that removes all table data?
-    # TODO: Or ... just connect to that broker db and run SQL to delete all table data?
-    # Probably don't want to remove all table data, since the broker setup_all_db command sets up good reference data
-    # Is there a way to revert to a point in time of the transaction log?
-    # Maybe save off a pg_dump of the data and tables that setup_all_db did, and use that to nuke and pave the DB
-    # each time?
-    pass
 
 
 @pytest.fixture
