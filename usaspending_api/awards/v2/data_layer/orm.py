@@ -314,7 +314,7 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
-            ("agency_name", parent_agency["name"]),
+            ("agency_name", parent_agency["name"] if parent_agency else None),
             ("award_id", parent_award_award_id),
             ("generated_unique_award_id", parent_award_guai),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
