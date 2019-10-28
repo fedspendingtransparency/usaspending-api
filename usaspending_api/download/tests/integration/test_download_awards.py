@@ -132,7 +132,7 @@ def test_download_awards_with_columns(client, download_test_data):
             {
                 "filters": {"award_type_codes": []},
                 "columns": [
-                    "obligated_amount",
+                    "total_obligated_amount",
                     "product_or_service_code",
                     "product_or_service_code_description",
                     "naics_code",
