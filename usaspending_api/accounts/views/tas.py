@@ -9,6 +9,8 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.api_versioning import removed
+from django.utils.decorators import method_decorator
 
 
 class TASBalancesAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
@@ -152,6 +154,7 @@ class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin, CachedDet
         return ordered_queryset
 
 
+@method_decorator(removed, name="list")
 class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account (i.e., TAS) information.
