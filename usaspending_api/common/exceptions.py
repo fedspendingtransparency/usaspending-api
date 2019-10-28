@@ -18,6 +18,14 @@ class InvalidParameterException(APIException):
     default_code = "invalid_request"
 
 
+class EndpointRemovedException(APIException):
+    """Exception for invalid API request parameters."""
+
+    status_code = status.HTTP_410_GONE
+    default_detail = "Endpoint has been removed"
+    default_code = "removed_endpoint"
+
+
 class UnprocessableEntityException(APIException):
     """Exception for valid API request parameters but there are unmet constraints on the values.
 
