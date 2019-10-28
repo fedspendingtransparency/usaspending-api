@@ -100,6 +100,8 @@ Using the response from the general Spending Explorer, you can drill down to mor
 ## SpendingExplorerGeneralResponse (object)
 + `code`: `019` (required, string)
 + `id`: `315` (required, string)
++ `generated_unique_award_id` (optional, string)
+    Durable identifier for an award.  This value only returned for award type.
 + `type`: `agency` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
 + `name`: `Department of State` (required, string)
@@ -108,6 +110,8 @@ Using the response from the general Spending Explorer, you can drill down to mor
 ### SpendingExplorerDetailedResponse (object)
 + `code`: `0006` (required, string)
 + `id`: `11367` (required, string)
++ `generated_unique_award_id` (optional, string)
+    Durable identifier for an award.  This value only returned for award type requests.
 + `type`: `program_activity` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
 + `name`: `Law Enforcement Operations` (required, string)
@@ -118,6 +122,8 @@ Using the response from the general Spending Explorer, you can drill down to mor
 ## SpendingExplorerGeneralUnreportedResponse (object)
 + `code` (optional, nullable)
 + `id` (optional, nullable)
++ `generated_unique_award_id` (optional, string)
+    Durable identifier for an award.  This value only returned for award type.
 + `type`: `agency` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
 + `name`: `Unreported Data` (required, string)
