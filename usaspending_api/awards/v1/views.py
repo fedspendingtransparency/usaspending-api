@@ -6,15 +6,15 @@ from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializ
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
-from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.common.api_versioning import removed
 from django.utils.decorators import method_decorator
 
 
 AggregateItem = namedtuple("AggregateItem", ["field", "func"])
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -31,8 +31,8 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -53,8 +53,8 @@ class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -75,8 +75,8 @@ class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -93,7 +93,7 @@ class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, Cach
         return queryset
 
 
-@method_decorator(deprecated, name="post")
+@method_decorator(removed, name="post")
 class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     DEPRECATED
@@ -114,8 +114,8 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -136,8 +136,8 @@ class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -158,8 +158,8 @@ class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -176,8 +176,8 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class TransactionListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -197,8 +197,8 @@ class TransactionListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class TransactionRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
