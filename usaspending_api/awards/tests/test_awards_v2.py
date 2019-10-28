@@ -112,15 +112,15 @@ def awards_and_transactions(db):
 
     # Toptier Agency
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+    toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "1000"}
 
     mommy.make("references.ToptierAgency", **toptier_agency_1)
+    mommy.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
-    subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
     mommy.make("references.SubtierAgency", **subtier_agency_1)
-    mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
     agency = {
@@ -1225,7 +1225,7 @@ expected_response_cont = {
 
 expected_contract_award_parent = {
     "agency_id": "1000",
-    "agency_name": "SUBTIER AGENCY 2",
+    "agency_name": "TOPTIER AGENCY 2",
     "award_id": 8,
     "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
     "idv_type_description": "TYPE DESCRIPTION TRANS 9",
@@ -1236,7 +1236,7 @@ expected_contract_award_parent = {
 
 expected_idv_award_parent = {
     "agency_id": "1000",
-    "agency_name": "SUBTIER AGENCY 2",
+    "agency_name": "TOPTIER AGENCY 2",
     "award_id": 9,
     "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
     "idv_type_description": "TYPE DESCRIPTION TRANS 10",

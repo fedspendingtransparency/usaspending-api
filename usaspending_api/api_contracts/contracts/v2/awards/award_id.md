@@ -198,6 +198,7 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## ParentDetails (object)
 + `agency_id`: `123` (required, string)
+    This is the toptier agency id
 + `agency_name`: `Department of Justice` (required, string)
 + `award_id`: 5738 (required, number, nullable)
 + `generated_unique_award_id` (required, string)

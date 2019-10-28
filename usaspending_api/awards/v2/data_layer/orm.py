@@ -24,7 +24,7 @@ from usaspending_api.common.helpers.business_categories_helper import get_busine
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency, PSC, NAICS
+from usaspending_api.references.models import Agency, LegalEntity, Cfda, PSC, NAICS, ToptierAgency
 
 logger = logging.getLogger("console")
 
@@ -305,7 +305,7 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
         return None
 
     parent_agency = (
-        SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
+        ToptierAgency.objects.filter(toptier_code=parent_award["latest_transaction__contract_data__agency_id"])
         .values("name")
         .first()
     )
