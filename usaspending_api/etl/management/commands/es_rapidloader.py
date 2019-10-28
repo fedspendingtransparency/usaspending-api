@@ -42,14 +42,19 @@ if "https" in settings.ES_HOSTNAME:
 else:
     ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
-INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
-
+TRANSACTION_INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
+AWARDS_INDEX_MAPPING_FILE = "usaspending_api/etl/es_award_mapping.json"
 
 class Command(BaseCommand):
     help = """"""
 
     # used by parent class
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--awards",
+            action="store_true",
+            help="Load awards index instead of transaction index."
+        )
         parser.add_argument(
             "fiscal_years",
             nargs="+",
@@ -122,7 +127,7 @@ class Command(BaseCommand):
         printf({"msg": "---------------------------------------------------------------"})
 
     def transform_cli_arguments(self, options):
-        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast")
+        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast", "awards")
         self.config = set_config(simple_args, options)
 
         self.config["fiscal_years"] = fiscal_years_for_processing(options)
@@ -141,7 +146,7 @@ class Command(BaseCommand):
             #   And keep it timezone-award for S3
             self.config["starting_date"] = get_last_load_date("es_transactions", default=DEFAULT_DATETIME)
 
-        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing()
+        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing(self.config["awards"])
 
         does_index_exist = ES.indices.exists(self.config["index_name"])
         self.config["is_incremental_load"] = self.config["starting_date"] != DEFAULT_DATETIME
@@ -156,7 +161,7 @@ class Command(BaseCommand):
             printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
             raise SystemExit(1)
         elif not does_index_exist or self.config["reload_all"]:
-            printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
+            printf({"msg": "Skipping deletions for this load, provide_deleted overwritten to False"})
             self.config["provide_deleted"] = False
 
     def controller(self):
@@ -169,8 +174,10 @@ class Command(BaseCommand):
             job_number += 1
             index = self.config["index_name"]
             filename = "{dir}{fy}_transactions.csv".format(dir=self.config["directory"], fy=fy)
+            if self.config["awards"]:
+                filename = "{dir}{fy}_awards.csv".format(dir=self.config["directory"], fy=fy)
 
-            new_job = DataJob(job_number, index, fy, filename)
+            new_job = DataJob(job_number, index, fy, filename, self.config["awards"])
 
             if os.path.exists(filename):
                 os.remove(filename)
@@ -215,7 +222,7 @@ class Command(BaseCommand):
 
         if self.config["reload_all"]:
             printf({"msg": "Closing old indices and adding aliases"})
-            swap_aliases(ES, self.config["index_name"])
+            swap_aliases(ES, self.config["index_name"], self.config["awards"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})
@@ -229,6 +236,7 @@ def set_config(copy_args, arg_parse_options):
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
         "root_index": settings.TRANSACTIONS_INDEX_ROOT,
         "processing_start_datetime": datetime.now(timezone.utc),
+        "awards_root_index": settings.AWARDS_INDEX_ROOT
     }
 
     # convert the management command's levels of verbosity to a boolean
@@ -246,8 +254,11 @@ def fiscal_years_for_processing(options):
     return [int(x) for x in options["fiscal_years"]]
 
 
-def mapping_data_for_processing():
-    mappingfile = os.path.join(settings.BASE_DIR, INDEX_MAPPING_FILE)
+def mapping_data_for_processing(awards):
+    if awards:
+        mappingfile = os.path.join(settings.BASE_DIR, AWARDS_INDEX_MAPPING_FILE)
+    else:
+        mappingfile = os.path.join(settings.BASE_DIR, TRANSACTION_INDEX_MAPPING_FILE)
     with open(mappingfile) as f:
         mapping_dict = json.load(f)
         mapping = json.dumps(mapping_dict)

@@ -16,7 +16,8 @@ CURL_COMMANDS = {
 }
 
 FILES = {
-    "template": "/usaspending_api/etl/es_transaction_template.json",
+    "transaction_template": "/usaspending_api/etl/es_transaction_template.json",
+    "award_template": "/usaspending_api/etl/es_award_template.json",
     "settings": "/usaspending_api/etl/es_settings.json",
 }
 
@@ -27,6 +28,13 @@ class Command(BaseCommand):
     Requires env var ES_HOSTNAME to be set
     """
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--awards",
+            action="store_true",
+            help="Load awards template instead of transaction template."
+        )
+
     # used by parent class
     def handle(self, *args, **options):
         """ Script execution of custom code starts in this method"""
@@ -34,14 +42,18 @@ class Command(BaseCommand):
         if not settings.ES_HOSTNAME:
             print("$ES_HOSTNAME is not set! Abort Script")
             raise SystemExit
-
+        awards = options["awards"]
         cluster, index_settings = get_elasticsearch_settings()
-        template = create_template()
+        template = create_template(awards)
         host = settings.ES_HOSTNAME
 
         run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=host)
         run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=host)
-        run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=host, name="transaction_template")
+
+        if not awards:
+            run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=host, name="transaction_template")
+        else:
+            run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=host, name="award_template")
         print("Script completed in {} seconds".format(perf_counter() - start))
 
 
@@ -68,10 +80,14 @@ def get_elasticsearch_settings():
     return es_config["cluster"], es_config["settings"]
 
 
-def create_template():
-    template_file = os.path.curdir + FILES["template"]
+def create_template(awards):
+    template_file = os.path.curdir + FILES["transaction_template"]
+    if awards:
+        template_file = os.path.curdir + FILES["award_template"]
     # Read and parse file as JSON validation before sending it to ES
     with open(template_file, "r") as f:
         template = json.load(f)
     template["index_patterns"] = [settings.TRANSACTIONS_INDEX_ROOT + "*"]
+    if awards:
+        template["index_patterns"] = [settings.AWARDS_INDEX_ROOT + "*"]
     return template

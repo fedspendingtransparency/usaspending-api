@@ -21,7 +21,7 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
 
-VIEW_COLUMNS = [
+TRANSACTION_VIEW_COLUMNS = [
     "transaction_id",
     "detached_award_proc_unique",
     "afa_generated_unique",
@@ -88,20 +88,102 @@ VIEW_COLUMNS = [
     "recipient_location_city_name",
 ]
 
+AWARD_VIEW_COLUMNS = [
+    "award_id",
+    "generated_unique_award_id",
+    "display_award_id",
+    "category",
+    "type",
+    "type_description",
+    "piid",
+    "fain",
+    "uri",
+    "total_obligation",
+    "description",
+    "total_obl_bin",
+    "total_subsidy_cost",
+    "total_loan_value",
+    "recipient_id",
+    "recipient_name",
+    "recipient_unique_id",
+    "parent_recipient_unique_id",
+    "business_categories",
+    "action_date",
+    "fiscal_year",
+    "last_modified_date",
+    "period_of_performance_start_date",
+    "period_of_performance_current_end_date",
+    "date_signed",
+    "ordering_period_end_date",
+    "original_loan_subsidy_cost",
+    "face_value_loan_guarantee",
+    "awarding_agency_id",
+    "funding_agency_id",
+    "awarding_toptier_agency_name",
+    "funding_toptier_agency_name",
+    "awarding_subtier_agency_name",
+    "funding_subtier_agency_name",
+    "awarding_toptier_agency_code",
+    "funding_toptier_agency_code",
+    "awarding_subtier_agency_code",
+    "funding_subtier_agency_code",
+    "recipient_location_country_code",
+    "recipient_location_country_name",
+    "recipient_location_state_code",
+    "recipient_location_county_code",
+    "recipient_location_county_name",
+    "recipient_location_congressional_code",
+    "recipient_location_zip5",
+    "recipient_location_city_name",
+    "pop_country_name",
+    "pop_country_code",
+    "pop_state_code",
+    "pop_county_code",
+    "pop_county_name",
+    "pop_city_name",
+    "pop_zip5",
+    "pop_congressional_code",
+    "cfda_number",
+    "sai_number",
+    "pulled_from",
+    "type_of_contract_pricing",
+    "extent_competed",
+    "type_set_aside",
+    "product_or_service_code",
+    "product_or_service_description",
+    "naics_code",
+    "naics_description",
+    "treasury_account_identifiers"
+]
+
+LAST_MODIFIED_DATE_SQL = "AND last_modified_date >= '{}'"
+
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
-COUNT_SQL = """SELECT COUNT(*) AS count
+TRANSACTION_COUNT_SQL = """SELECT COUNT(*) AS count
 FROM transaction_delta_view
 WHERE transaction_fiscal_year={fy}{update_date};"""
 
-COPY_SQL = """"COPY (
+AWARD_COUNT_SQL = """SELECT COUNT(*) AS count
+FROM award_delta_view
+WHERE fiscal_year={fy}{update_date};"""
+
+
+TRANSACTION_COPY_SQL = """"COPY (
     SELECT *
     FROM transaction_delta_view
     WHERE transaction_fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
-CHECK_IDS_SQL = """
+AWARD_COPY_SQL = """"COPY (
+    SELECT *
+    FROM award_delta_view
+    WHERE fiscal_year={fy}{update_date}
+) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
+"""
+
+TRANSACTION_CHECK_IDS_SQL = """
 WITH temp_transaction_ids AS (
   SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
 )
@@ -112,6 +194,20 @@ WHERE EXISTS (
   WHERE
     transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
     AND transaction_fiscal_year={fy}
+);
+"""
+
+AWARD_CHECK_IDS_SQL = """
+WITH temp_award_ids AS (
+  SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_award_id)
+)
+SELECT award_id, generated_unique_award_id, last_modified_date FROM transaction_delta_view
+WHERE EXISTS (
+  SELECT *
+  FROM temp_award_ids
+  WHERE
+    award_delta_view.generated_unique_award_id = temp_award_ids.generated_unique_award_id
+    AND award_fiscal_year={fy}
 );
 """
 
@@ -130,6 +226,7 @@ AWARD_DESC_CATEGORIES = {
 
 UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
 
+UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
 
 class DataJob:
     def __init__(self, *args):
@@ -166,18 +263,26 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
+    awards = config["awards"]
+
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
-    copy_sql = COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
+    copy_sql = TRANSACTION_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
 
-    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
+    count_sql = TRANSACTION_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
+
+    if awards:
+        update_date_str = LAST_MODIFIED_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+
+        copy_sql = AWARD_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
+
+        count_sql = AWARD_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
 
     if deleted_ids and config["provide_deleted"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])
+        id_sql = TRANSACTION_CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])
     else:
         id_sql = None
-
     return copy_sql, id_sql, count_sql
 
 
@@ -220,6 +325,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "provide_deleted": config["provide_deleted"],
+                "awards": config["awards"]
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -262,10 +368,13 @@ def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
     return count
 
 
-def csv_chunk_gen(filename, chunksize, job_id):
+def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS}
+    if awards:
+        dtype = {k: str for k in AWARD_VIEW_COLUMNS}
+    else:
+        dtype = {k: str for k in TRANSACTION_VIEW_COLUMNS}
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
@@ -310,9 +419,14 @@ def put_alias(client, index, alias_name, award_type_codes):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, silent=False):
+def create_aliases(client, index, awards, silent=False):
+    print(awards)
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        if awards:
+            alias_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type)
+        else:
+            alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        print(alias_name)
         if silent is False:
             printf(
                 {
@@ -324,14 +438,17 @@ def create_aliases(client, index, silent=False):
         put_alias(client, index, alias_name, award_type_codes)
 
 
-def swap_aliases(client, index):
+def swap_aliases(client, index, awards):
     client.indices.refresh(index)
     # add null values to contracts alias
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
 
-    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + "*"
+    if not awards:
+        alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + "*"
+    else:
+        alias_patterns = settings.AWARDS_INDEX_ROOT + "*"
 
     try:
         old_indices = client.indices.get_alias("*", alias_patterns).keys()
@@ -341,8 +458,7 @@ def swap_aliases(client, index):
             printf({"msg": 'Removing aliases & closing "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
-
-    create_aliases(client, index)
+    create_aliases(client, index, awards)
 
     es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
     with open(es_settingsfile) as f:
@@ -380,7 +496,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             printf({"msg": "MAPPING FAILED TO STICK TO {}".format(job.index), "job": job.name, "f": "ES Create"})
             raise SystemExit(1)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["awards"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})

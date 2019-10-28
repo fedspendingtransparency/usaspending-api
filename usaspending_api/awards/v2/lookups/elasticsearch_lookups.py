@@ -24,6 +24,24 @@ TRANSACTIONS_LOOKUP = {
     "Last Date to Order": "ordering_period_end_date",
 }
 
+AWARDS_LOOKUP = {
+    "Recipient Name": "recipient_name",
+    "Action Date": "action_date",
+    "Award Amount": "total_obligation",
+    "Award Type": "type_description",
+    "Awarding Agency": "awarding_toptier_agency_name",
+    "Awarding Sub Agency": "awarding_subtier_agency_name",
+    "Funding Agency": "funding_toptier_agency_name",
+    "Funding Sub Agency": "funding_subtier_agency_name",
+    "Issued Date": "period_of_performance_start_date",
+    "Loan Value": "face_value_loan_guarantee",
+    "Subsidy Cost": "original_loan_subsidy_cost",
+    "Award ID": "display_award_id",
+    "awarding_agency_id": "awarding_agency_id",
+    "internal_id": "award_id",
+    "Last Date to Order": "ordering_period_end_date",
+}
+
 
 INDEX_ALIASES_TO_AWARD_TYPES = deepcopy(all_award_types_mappings)
 INDEX_ALIASES_TO_AWARD_TYPES["directpayments"] = INDEX_ALIASES_TO_AWARD_TYPES.pop("direct_payments")

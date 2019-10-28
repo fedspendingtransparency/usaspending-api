@@ -84,6 +84,7 @@ ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
 TRANSACTIONS_INDEX_ROOT = os.environ.get("ES_TRX_ROOT") or "future-transactions"
+AWARDS_INDEX_ROOT = os.environ.get("ES_AWD_ROOT") or "future-awards"
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
 
