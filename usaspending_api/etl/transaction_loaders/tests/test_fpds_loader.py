@@ -126,6 +126,7 @@ def test_load_ids_dummy_id(
     mock__bulk_insert_recipient_location,
     mock__fy,
     mock__extract_broker_objects,
+    db,
 ):
 
     # Mock output data of key participant functions in this test scenario
@@ -250,7 +251,7 @@ def test_create_load_object(monkeypatch):
 
 
 # Mostly testing that everything gets the primary keys it was looking for
-def test_load_transactions(monkeypatch):
+def test_load_transactions(monkeypatch, db):
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
