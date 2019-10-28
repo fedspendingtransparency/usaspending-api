@@ -175,6 +175,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
 
 ## CFDAInfo (object)
++ `applicant_eligibility` (required, string, nullable)
++ `beneficiary_eligibility` (required, string, nullable)
 + `cfda_number` (required, string)
 + `cfda_title` (required, string, nullable)
 + `cfda_objectives` (required, string, nullable) 

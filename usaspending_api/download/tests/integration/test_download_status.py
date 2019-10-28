@@ -175,7 +175,7 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
             {
                 "filters": {"award_type_codes": []},
                 "columns": [
-                    "obligated_amount",
+                    "total_obligated_amount",
                     "product_or_service_code",
                     "product_or_service_code_description",
                     "naics_code",
