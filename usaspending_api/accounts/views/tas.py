@@ -9,11 +9,11 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.api_versioning import removed
+from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
-@method_decorator(removed, name="list")
+@method_decorator(deprecated, name="list")
 class TASBalancesAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     Return aggregated award information.
@@ -90,7 +90,7 @@ class TASCategoryList(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(removed, name="list")
+@method_decorator(deprecated, name="list")
 class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation
@@ -107,7 +107,7 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-@method_decorator(removed, name="list")
+@method_decorator(deprecated, name="list")
 class TASCategoryQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation

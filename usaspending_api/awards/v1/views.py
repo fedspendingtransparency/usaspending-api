@@ -6,15 +6,15 @@ from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializ
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
-from usaspending_api.common.api_versioning import removed
+from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
 AggregateItem = namedtuple("AggregateItem", ["field", "func"])
 
 
-@method_decorator(removed, name="list")
-@method_decorator(removed, name="retrieve")
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -31,8 +31,8 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
-@method_decorator(removed, name="list")
-@method_decorator(removed, name="retrieve")
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
