@@ -44,6 +44,7 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
+@method_decorator(removed, name="list")
 class TASBalancesQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation
@@ -75,6 +76,7 @@ class TASCategoryAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDe
         return queryset
 
 
+@method_decorator(removed, name="list")
 class TASCategoryList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account balance information.
@@ -107,7 +109,7 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-@method_decorator(deprecated, name="list")
+@method_decorator(removed, name="list")
 class TASCategoryQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation

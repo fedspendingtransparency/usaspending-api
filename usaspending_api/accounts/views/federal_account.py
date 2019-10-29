@@ -2,6 +2,8 @@ from usaspending_api.accounts.serializers import FederalAccountSerializer
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet, AutocompleteView
+from usaspending_api.common.api_versioning import removed
+from django.utils.decorators import method_decorator
 
 
 class FederalAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
@@ -22,6 +24,8 @@ class FederalAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class FederalAccountViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for federal account information.
