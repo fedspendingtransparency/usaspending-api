@@ -158,8 +158,12 @@ class Explorer(object):
     def award(self):
         # Awards Queryset
         alt_set = (
-            self.alt_set.annotate(id=F("award__id"), type=Value("award", output_field=CharField()))
-            .values("id", "type", "piid", "fain", "uri", "amount")
+            self.alt_set.annotate(
+                id=F("award__id"),
+                generated_unique_award_id=F("award__generated_unique_award_id"),
+                type=Value("award", output_field=CharField()),
+            )
+            .values("id", "generated_unique_award_id", "type", "piid", "fain", "uri", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
         )
