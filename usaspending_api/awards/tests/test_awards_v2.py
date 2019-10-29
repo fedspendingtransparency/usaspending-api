@@ -68,6 +68,8 @@ def awards_and_transactions(db):
         url="www.website.com",
         website_address="www.website.biz",
         federal_agency="Agency 1",
+        applicant_eligibility="Hello. I am an applicant eligibility statement.",
+        beneficiary_eligibility="Hello. I am a beneficiary eligibility statement.",
     )
     mommy.make(
         "references.Cfda",
@@ -739,6 +741,8 @@ def test_award_mulitple_cfdas(client, awards_and_transactions):
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["cfda_info"] == [
         {
+            "applicant_eligibility": None,
+            "beneficiary_eligibility": None,
             "cfda_objectives": "objectives",
             "cfda_number": "10.002",
             "cfda_title": "CFDA Title 2",
@@ -752,6 +756,8 @@ def test_award_mulitple_cfdas(client, awards_and_transactions):
             "cfda_popular_name": "Popular",
         },
         {
+            "applicant_eligibility": "Hello. I am an applicant eligibility statement.",
+            "beneficiary_eligibility": "Hello. I am a beneficiary eligibility statement.",
             "cfda_objectives": "objectives",
             "cfda_number": "10.001",
             "cfda_title": "CFDA Title",
@@ -799,6 +805,8 @@ expected_response_asst = {
     "description": "lorem ipsum",
     "cfda_info": [
         {
+            "applicant_eligibility": None,
+            "beneficiary_eligibility": None,
             "cfda_objectives": None,
             "cfda_number": "12.340",
             "cfda_title": None,

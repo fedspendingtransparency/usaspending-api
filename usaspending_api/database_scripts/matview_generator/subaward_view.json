@@ -27,6 +27,7 @@
     "  award_report_fy_year,",
     "",
     "  sub.award_id,",
+    "  sub.unique_award_key as generated_unique_award_id,",
     "  awarding_agency_id,",
     "  funding_agency_id,",
     "  awarding_toptier_agency_name,",
@@ -122,6 +123,12 @@
       "name": "subaward_id",
       "unique": true,
       "columns": [{"name": "subaward_id"}]
+    }, {
+      "name": "award_id",
+      "columns": [{"name": "award_id"}]
+    }, {
+      "name": "generated_unique_award_id",
+      "columns": [{"name": "generated_unique_award_id"}]
     }, {
       "name": "broker_subaward_id",
       "unique": true,
