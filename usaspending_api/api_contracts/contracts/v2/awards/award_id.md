@@ -151,6 +151,7 @@ This endpoint returns a list of data that is associated with the award profile p
         + `09`
         + `10`
         + `11`
++ `record_type`: 1 (required, number)
 + `type_description`: `Direct Loans` (required, string)
 + `generated_unique_award_id`: `42954959` (required, string)
 + `fain`: `43533A3` (required, string, nullable)
@@ -180,6 +181,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
 
 ## CFDAInfo (object)
++ `applicant_eligibility` (required, string, nullable)
++ `beneficiary_eligibility` (required, string, nullable)
 + `cfda_number` (required, string)
 + `cfda_title` (required, string, nullable)
 + `cfda_objectives` (required, string, nullable) 

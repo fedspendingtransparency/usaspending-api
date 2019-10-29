@@ -26,7 +26,6 @@ from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency, PSC, NAICS
 
-
 logger = logging.getLogger("console")
 
 
@@ -42,6 +41,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
+    response["record_type"] = transaction["record_type"]
     response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
@@ -426,6 +426,8 @@ def fetch_all_cfda_details(award: dict) -> list:
         final_cfda_objects.append(
             OrderedDict(
                 [
+                    ("applicant_eligibility", details.get("applicant_eligibility")),
+                    ("beneficiary_eligibility", details.get("beneficiary_eligibility")),
                     ("cfda_federal_agency", details.get("federal_agency")),
                     ("cfda_number", cfda_number),
                     ("cfda_objectives", details.get("objectives")),
@@ -445,7 +447,17 @@ def fetch_all_cfda_details(award: dict) -> list:
 
 
 def fetch_cfda_details_using_cfda_number(cfda: str) -> dict:
-    values = ["program_title", "objectives", "federal_agency", "website_address", "url", "obligations", "popular_name"]
+    values = [
+        "applicant_eligibility",
+        "beneficiary_eligibility",
+        "program_title",
+        "objectives",
+        "federal_agency",
+        "website_address",
+        "url",
+        "obligations",
+        "popular_name",
+    ]
     cfda_details = Cfda.objects.filter(program_number=cfda).values(*values).first()
 
     return cfda_details or {}
