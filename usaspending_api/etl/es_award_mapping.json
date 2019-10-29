@@ -100,8 +100,11 @@
         },
         "last_modified_date": {
           "type": "date",
-          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-          "index": false
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "update_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         },
         "period_of_performance_start_date": {
           "type": "date",

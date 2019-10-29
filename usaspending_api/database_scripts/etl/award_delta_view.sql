@@ -31,6 +31,7 @@ SELECT
   latest_transaction.action_date,
   latest_transaction.fiscal_year,
   latest_transaction.last_modified_date,
+  latest_transaction.update_date,
   awards.period_of_performance_start_date,
   awards.period_of_performance_current_end_date,
   awards.date_signed,
@@ -80,7 +81,7 @@ SELECT
   psc.description AS product_or_service_description,
   transaction_fpds.naics AS naics_code,
   transaction_fpds.naics_description,
-  REPLACE(REPLACE(tas.treasury_account_identifiers::text, '{', '['), '}', ']') AS treasury_account_identifiers
+  tas.treasury_account_identifiers AS treasury_account_identifiers
 FROM
   awards
 JOIN

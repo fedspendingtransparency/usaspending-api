@@ -121,7 +121,7 @@ class Command(BaseCommand):
 
         if self.config["is_incremental_load"]:
             printf({"msg": "Updating Last Load record with {}".format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
+            update_last_load_date("es_{}".format("awards" if self.config["awards"] else "transactions"), self.config["processing_start_datetime"])
         printf({"msg": "---------------------------------------------------------------"})
         printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
         printf({"msg": "---------------------------------------------------------------"})
@@ -173,10 +173,7 @@ class Command(BaseCommand):
         for fy in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = "{dir}{fy}_transactions.csv".format(dir=self.config["directory"], fy=fy)
-            if self.config["awards"]:
-                filename = "{dir}{fy}_awards.csv".format(dir=self.config["directory"], fy=fy)
-
+            filename = "{dir}{fy}_{type}.csv".format(dir=self.config["directory"], fy=fy, type="awards" if self.config["awards"] else "transactions")
             new_job = DataJob(job_number, index, fy, filename, self.config["awards"])
 
             if os.path.exists(filename):

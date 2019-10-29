@@ -371,10 +371,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
 def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    if awards:
-        dtype = {k: str for k in AWARD_VIEW_COLUMNS}
-    else:
-        dtype = {k: str for k in TRANSACTION_VIEW_COLUMNS}
+    dtype = {k: str for k in AWARD_VIEW_COLUMNS} if awards else {k: str for k in TRANSACTION_VIEW_COLUMNS}
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
@@ -420,13 +417,8 @@ def put_alias(client, index, alias_name, award_type_codes):
 
 
 def create_aliases(client, index, awards, silent=False):
-    print(awards)
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        if awards:
-            alias_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type)
-        else:
-            alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
-        print(alias_name)
+        alias_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type) if awards else "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
         if silent is False:
             printf(
                 {
@@ -445,11 +437,7 @@ def swap_aliases(client, index, awards):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
 
-    if not awards:
-        alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + "*"
-    else:
-        alias_patterns = settings.AWARDS_INDEX_ROOT + "*"
-
+    alias_patterns = settings.AWARDS_INDEX_ROOT + "*" if awards else settings.TRANSACTIONS_INDEX_ROOT + "*"
     try:
         old_indices = client.indices.get_alias("*", alias_patterns).keys()
         for old_index in old_indices:
@@ -648,7 +636,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     printf({"msg": "Deleting up to {} document(s)".format(len(id_list)), "f": "ES Delete", "job": job_id})
 
     if index is None:
-        index = "{}-*".format(config["root_index"])
+        index = "{}-*".format(config["awards_root_index"]) if config["awards"] else "{}-*".format(config["root_index"])
     start_ = client.search(index=index)["hits"]["total"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
