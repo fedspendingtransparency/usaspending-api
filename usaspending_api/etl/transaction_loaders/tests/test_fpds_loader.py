@@ -99,6 +99,10 @@ def test_load_ids_empty():
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.psycopg2.connect")
+@patch(
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1
+)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
     "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
@@ -126,13 +130,26 @@ def test_load_ids_dummy_id(
     mock__bulk_insert_recipient_location,
     mock__fy,
     mock__extract_broker_objects,
-    db,
+    mock___fetch_subtier_agency_id,
+    mock_psycopg2_connect,
 ):
-
+    """
+    End-to-end unit test (which should not attempt database connections) to exercise the code-under-test
+    independently, given fake broker IDs to load
+    """
+    ###################
+    # BEGIN SETUP MOCKS
+    ###################
     # Mock output data of key participant functions in this test scenario
     # This is the baseline unconstrained scenario, where all patched functions' MagicMocks will behave as
     # required by the code
+
+    # Mock the broker objects' data
     mock__extract_broker_objects.side_effect = _stub___extract_broker_objects
+
+    ###################
+    # END SETUP MOCKS
+    ###################
 
     # Test run of the loader
     dummy_broker_ids = [101, 201, 301]
@@ -171,6 +188,8 @@ def test_load_ids_dummy_id(
     assert load_objects_pre_transaction["award"]["transaction_unique_id"] == str(dummy_broker_ids[0])
     assert load_objects_pre_transaction["transaction_normalized"]["transaction_unique_id"] == str(dummy_broker_ids[0])
     assert load_objects_pre_transaction["transaction_normalized"]["award_id"] == final_award_id
+    assert load_objects_pre_transaction["transaction_normalized"]["funding_agency_id"] == 1
+    assert load_objects_pre_transaction["transaction_normalized"]["awarding_agency_id"] == 1
     assert 2001 <= load_objects_pre_transaction["transaction_normalized"]["fiscal_year"] <= 2019
 
 
@@ -250,8 +269,11 @@ def test_create_load_object(monkeypatch):
     assert actual_result == result
 
 
-# Mostly testing that everything gets the primary keys it was looking for
-def test_load_transactions(monkeypatch, db):
+@patch(
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1
+)
+def test_load_transactions(mock__fetch_subtier_agency_id, monkeypatch):
+    """Mostly testing that everything gets the primary keys it was looking for"""
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
