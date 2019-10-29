@@ -18,7 +18,7 @@ class SubawardsViewSet(APIView):
     awards if desired.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/subawards.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/subawards.md"
 
     subaward_lookup = {
         # "Display Name": "database_column"
@@ -28,7 +28,6 @@ class SubawardsViewSet(APIView):
         "action_date": "action_date",
         "amount": "amount",
         "recipient_name": "recipient_name",
-        "award_id": "award_id",
     }
 
     def _parse_and_validate_request(self, request_dict):
@@ -37,7 +36,8 @@ class SubawardsViewSet(APIView):
             {
                 "key": "award_id",
                 "name": "award_id",
-                "type": "integer",
+                "type": "any",
+                "models": [{"type": "integer"}, {"type": "text", "text_type": "search"}],
                 "optional": True,
                 "default": None,
                 "allow_nulls": True,
@@ -57,10 +57,14 @@ class SubawardsViewSet(APIView):
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = SubawardView.objects.all().values(*list(self.subaward_lookup.values()))
+        queryset = SubawardView.objects.all()
 
-        if request_data["award_id"] is not None:
-            queryset = queryset.filter(award_id=request_data["award_id"])
+        award_id = request_data["award_id"]
+        if award_id is not None:
+            award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+            queryset = queryset.filter(**{award_id_column: award_id})
+
+        queryset = queryset.values(*list(self.subaward_lookup.values()))
 
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True))
@@ -68,7 +72,7 @@ class SubawardsViewSet(APIView):
             queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True))
 
         rows = list(queryset[lower_limit : upper_limit + 1])
-        return [{k: row[v] for k, v in self.subaward_lookup.items() if k != "award_id"} for row in rows]
+        return [{k: row[v] for k, v in self.subaward_lookup.items()} for row in rows]
 
     @cache_response()
     def post(self, request):

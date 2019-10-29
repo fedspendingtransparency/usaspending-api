@@ -10,7 +10,7 @@ This endpoint powers USAspending.gov's data dictionary page.
 This endpoint returns data corresponding to the latest data dictionary csv file.
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `document` (object)
             + `metadata` (required, DictionaryMetadata)
             + `sections` (array[Section], fixed-type)

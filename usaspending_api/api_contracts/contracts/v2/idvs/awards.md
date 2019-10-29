@@ -40,7 +40,7 @@ List child IDVs, child awards, or grandchild awards for IDV
             + Default: `desc`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[IDVRelatedAwardsResponse], fixed-type)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
 

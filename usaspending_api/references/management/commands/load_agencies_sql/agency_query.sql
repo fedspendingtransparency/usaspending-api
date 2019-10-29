@@ -18,7 +18,7 @@ from (
             case
                 when tlara.is_frec is true then tlara.frec
                 else tlara.cgac_agency_code
-            end = ta.cgac_code
+            end = ta.toptier_code
         inner join subtier_agency as sa on sa.subtier_code = tlara.subtier_code
 
     union all
@@ -35,7 +35,7 @@ from (
             case
                 when tlara.is_frec is true then tlara.frec
                 else tlara.cgac_agency_code
-            end = ta.cgac_code
+            end = ta.toptier_code
         left outer join subtier_agency as sa on sa.subtier_code = tlara.subtier_code
     where
         sa.subtier_code is null

@@ -6,7 +6,7 @@ import pytest
 import tempfile
 
 from django.conf import settings
-from django.db import DEFAULT_DB_ALIAS
+from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
@@ -196,6 +196,15 @@ def mock_matviews_qs(monkeypatch):
     yield mock_qs
 
     mock_qs.delete()
+
+
+def pytest_configure():
+    for connection_name in connections:
+        host = connections[connection_name].settings_dict.get("HOST")
+        if "amazonaws" in host:
+            raise RuntimeError(
+                "Connection '{}' appears to be pointing to an AWS database: [{}]".format(connection_name, host)
+            )
 
 
 def pytest_addoption(parser):

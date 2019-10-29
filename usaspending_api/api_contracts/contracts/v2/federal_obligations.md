@@ -20,7 +20,7 @@ This endpoint returns the amount that the specific agency has obligated to vario
         The response page to return (the record offset is (`page` - 1) * `limit`).
         
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[FederalAccount], fixed-type)
         + `page_metadata` (required, PageMetadataObject)
 

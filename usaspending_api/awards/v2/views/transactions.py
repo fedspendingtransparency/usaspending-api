@@ -19,7 +19,7 @@ class TransactionViewSet(APIView):
     a specific parent award.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/awards/transactions.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/transactions.md"
 
     transaction_lookup = {
         # "Display Name": "database_column"

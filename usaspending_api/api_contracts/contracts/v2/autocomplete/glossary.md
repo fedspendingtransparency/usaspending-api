@@ -10,16 +10,19 @@ This endpoint returns glossary autocomplete data for submitted text snippet.
 List Autocomplete Glossary 
 
 + Request (application/json)
-
-    + Attributes
-
-        + `search_text`: `aw` (required, string)
+    + Attributes (object)
+        + `search_text` (required, string)
             The text snippet that you are trying to autocomplete using a glossary term.
-        + `limit`: 10 (optional, number)
+        + `limit` (optional, number)
             Maximum number to return
+    + Body
+
+            {
+                "search_text": "Award"
+            }
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[string], fixed-type)
         + `count` (required, number)
         + `search_text` (required, string)

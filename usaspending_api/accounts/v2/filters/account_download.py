@@ -46,9 +46,9 @@ def account_download_filter(account_type, download_table, filters, account_level
     if filters.get("agency", False) and filters["agency"] != "all":
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).first()
         if agency:
-            # Agency is FREC if the cgac_code is 4 digits, CGAC otherwise
-            agency_filter_type = "fr_entity_code" if len(agency.cgac_code) == 4 else "agency_id"
-            query_filters["{}__{}".format(tas_id, agency_filter_type)] = agency.cgac_code
+            # Agency is FREC if the toptier_code is 4 digits, CGAC otherwise
+            agency_filter_type = "fr_entity_code" if len(agency.toptier_code) == 4 else "agency_id"
+            query_filters["{}__{}".format(tas_id, agency_filter_type)] = agency.toptier_code
         else:
             raise InvalidParameterException("Agency with that ID does not exist")
 
@@ -131,8 +131,8 @@ def get_account_aid_toptier_agency_name_annotation(tas_id):
     """
     ta = ToptierAgency.objects
     return Coalesce(
-        Subquery(ta.filter(cgac_code=OuterRef("{}__agency_id".format(tas_id))).values("name")[:1]),
-        Subquery(ta.filter(cgac_code=OuterRef("{}__fr_entity_code".format(tas_id))).values("name")[:1]),
+        Subquery(ta.filter(toptier_code=OuterRef("{}__agency_id".format(tas_id))).values("name")[:1]),
+        Subquery(ta.filter(toptier_code=OuterRef("{}__fr_entity_code".format(tas_id))).values("name")[:1]),
     )
 
 
@@ -140,7 +140,9 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
     # for all account types
-    ata_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef("{}__allocation_transfer_agency_id".format(tas_id)))
+    ata_subquery = ToptierAgency.objects.filter(
+        toptier_code=OuterRef("{}__allocation_transfer_agency_id".format(tas_id))
+    )
     derived_fields = {
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         "treasury_account_symbol": Concat(

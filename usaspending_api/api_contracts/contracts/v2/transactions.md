@@ -11,8 +11,8 @@ This endpoint returns a list of transactions, their amount, type, action date, a
 
 + Request (application/json)
     + Attributes (object)
-        + `award_id`: `12342er` (required, string)
-            The internal id of the award to filter on.
+        + `award_id`: `ASST_NON_NNX17AJ96A_8000` (required, string)
+            Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
         + `limit`: 15 (optional, number)
             The number of results to include per page.
             + Default: 10
@@ -35,7 +35,7 @@ This endpoint returns a list of transactions, their amount, type, action date, a
             + Default: `desc`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (array[TransactionResult], fixed-type)
         + `page_metadata` (PageMetaDataObject)
 

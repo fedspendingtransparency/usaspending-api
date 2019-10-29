@@ -5,7 +5,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 
 import dj_database_url
 import os
-import sys
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
@@ -193,6 +192,7 @@ if os.environ.get("DB_SOURCE"):
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
+    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)

@@ -32,9 +32,7 @@ class Command(BaseCommand):
             msg_str = "\n=== Found {} unmatched funding agencies across all TAS objects. ==="
             logger.info(msg_str.format(unmapped_funding_agencies.count()))
             for next_tas in unmapped_funding_agencies:
-                # CGAC code is a combination of FRECs and CGACs. It will never be empty and it will always
-                # be unique in ToptierAgencies; this should be safe to do.
-                frec_match = ToptierAgency.objects.filter(cgac_code=next_tas.fr_entity_code).first()
+                frec_match = ToptierAgency.objects.filter(toptier_code=next_tas.fr_entity_code).first()
                 if frec_match:
                     match_count += 1
                     logger.info(

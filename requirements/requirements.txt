@@ -17,6 +17,7 @@ django-spaghetti-and-meatballs==0.2.2
 Django==1.11.23
 djangorestframework==3.9.4
 docker==4.1.0
+dredd-hooks==0.2.0
 drf-extensions==0.3.1
 drf-tracking==1.4.0
 django-partial-index==0.5.2

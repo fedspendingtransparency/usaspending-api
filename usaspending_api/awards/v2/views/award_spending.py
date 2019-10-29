@@ -84,18 +84,18 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
         queryset = TransactionNormalized.objects.filter(federal_action_obligation__isnull=False)
 
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == DOD_CGAC:
+        if toptier_agency.toptier_code == DOD_CGAC:
             tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
                 # Filter based on fiscal_year and awarding_category_id
                 fiscal_year=fiscal_year,
-                awarding_agency__toptier_agency__cgac_code__in=tta_list,
+                awarding_agency__toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = queryset.filter(
                 # Filter based on fiscal_year and awarding_category_id
                 fiscal_year=fiscal_year,
-                awarding_agency__toptier_agency__cgac_code=toptier_agency.cgac_code,
+                awarding_agency__toptier_agency__toptier_code=toptier_agency.toptier_code,
             )
 
         queryset = queryset.annotate(

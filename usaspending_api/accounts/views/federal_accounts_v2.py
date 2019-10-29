@@ -22,7 +22,9 @@ class ObjectClassFederalAccountsViewSet(APIView):
     Returns financial spending data by object class.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/available_object_classes.md"
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/available_object_classes.md"
+    )
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -79,7 +81,9 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/fiscal_year_snapshot.md"
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_id/fiscal_year_snapshot.md"
+    )
 
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
@@ -429,7 +433,7 @@ class FederalAccountViewSet(APIView):
     This route sends a request to the backend to retrieve a federal account based on its federal_account_code.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/account_number.md"
 
     @cache_response()
     def get(self, request, fed_acct_code, format=None):
@@ -448,7 +452,7 @@ class FederalAccountsViewSet(APIView):
     This route sends a request to the backend to retrieve a list of federal accounts.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/federal_account/federal_account.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts.md"
 
     def _parse_and_validate_request(self, request_dict):
         """ Validate the Request object includes the required fields """
@@ -511,7 +515,7 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef("corrected_agency_identifier"))
+        agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
             FederalAccount.objects.filter(
                 treasuryappropriationaccount__account_balances__final_of_fy=True,

@@ -13,7 +13,7 @@ Returns the counts of transaction records which match the keyword grouped by awa
             Need to provide `keywords`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, object)
             - `idvs`: 1 (required, number)
             - `loans`: 100 (required, number)

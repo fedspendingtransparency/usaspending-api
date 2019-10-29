@@ -13,7 +13,7 @@ Returns the high-level aggregations of the counts and dollar amounts for all tra
             Need to provide `keywords`
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, object)
             - `prime_awards_obligation_amount`: 1000000 (required, number)
             - `prime_awards_count`: 3 (required, number)
