@@ -14,8 +14,6 @@ from usaspending_api.broker.helpers.last_load_date import get_last_load_date, up
 
 logger = logging.getLogger("console")
 
-BROKER_CONNECTION_STRING = get_broker_dsn_string()
-
 CHUNK_SIZE = 5000
 
 ALL_FPDS_QUERY = "SELECT {} FROM detached_award_procurement"
@@ -57,7 +55,7 @@ class Command(BaseCommand):
             stale_awards = delete_stale_fpds(date.date())
             self.modified_award_ids.extend(stale_awards)
 
-        with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
+        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
             logger.info("{} total records".format(total_records))
