@@ -11,6 +11,11 @@ Purpose:
     Update awards where the earliest transaction, latest transaction, or officers is incorrect
     according to new sorting algorithm.
 
+Life expectancy:
+
+    Once Sprint 94 has been rolled out to production, this script is safe to delete... although I
+    would recommend keeping it around for a few additional sprint for reference.
+
 """
 import logging
 import math
