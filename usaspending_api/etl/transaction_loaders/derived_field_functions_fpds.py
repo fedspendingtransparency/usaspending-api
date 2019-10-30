@@ -5,7 +5,7 @@ from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
-from usaspending_api.references.abbreviations import code_to_name, state_to_code
+from usaspending_api.references.abbreviations import code_to_state, state_to_code
 
 ZIP_CODE_PATTERN = re.compile(r"^(\d{5})\-?(\d{4})?$")
 
@@ -66,7 +66,7 @@ def legal_entity_state_code(broker_input):
     if broker_input["legal_entity_state_code"]:
         return broker_input["legal_entity_state_code"]
     elif broker_input["legal_entity_state_descrip"]:
-        return code_to_name.get(broker_input["legal_entity_state_descrip"])
+        return code_to_state.get(broker_input["legal_entity_state_descrip"], {}).get("name")
     return ""
 
 
@@ -74,7 +74,7 @@ def legal_entity_state_description(broker_input):
     if broker_input["legal_entity_state_descrip"]:
         return broker_input["legal_entity_state_descrip"]
     elif broker_input["legal_entity_state_code"]:
-        return code_to_name.get(broker_input["legal_entity_state_code"])
+        return code_to_state.get(broker_input["legal_entity_state_code"], {}).get("name")
     return ""
 
 
