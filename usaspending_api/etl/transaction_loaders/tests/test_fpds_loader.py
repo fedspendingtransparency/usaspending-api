@@ -100,9 +100,7 @@ def test_load_ids_empty():
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.psycopg2.connect")
-@patch(
-    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1
-)
+@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
     "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
@@ -269,9 +267,7 @@ def test_create_load_object(monkeypatch):
     assert actual_result == result
 
 
-@patch(
-    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1
-)
+@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
 def test_load_transactions(mock__fetch_subtier_agency_id, monkeypatch):
     """Mostly testing that everything gets the primary keys it was looking for"""
     mega_key_list = {}
