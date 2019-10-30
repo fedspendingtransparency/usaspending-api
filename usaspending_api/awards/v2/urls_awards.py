@@ -13,10 +13,10 @@ urlpatterns = [
     url(r"^funding/$", AwardFundingViewSet.as_view()),
     url(r"^funding_rollup/$", AwardFundingRollupViewSet.as_view()),
     url(r"^last_updated", AwardLastUpdatedViewSet.as_view()),
-    url(r"^(?P<requested_award>[A-Za-z0-9_. -]+)/$", AwardRetrieveViewSet.as_view()),
-    url(r"^count/transaction/(?P<requested_award>[A-Za-z0-9_. -]+)/$", TransactionCountRetrieveViewSet.as_view()),
-    url(r"^count/subaward/(?P<requested_award>[A-Za-z0-9_. -]+)/$", SubawardCountRetrieveViewSet.as_view()),
+    url(r"^count/transaction/(?P<requested_award>[A-Za-z0-9:~/$@*\"#()Â,^&+=`!'%_. -]+)/$", TransactionCountRetrieveViewSet.as_view()),
+    url(r"^count/subaward/(?P<requested_award>[A-Za-z0-9:~$@*\"#()Â,^&+=`!'%/_. -]+)/$", SubawardCountRetrieveViewSet.as_view()),
     url(
-        r"^count/federal_account/(?P<requested_award>[A-Za-z0-9_. -]+)/$", FederalAccountCountRetrieveViewSet.as_view()
+        r"^count/federal_account/(?P<requested_award>[A-Za-z0-9:~$@*\"#()Â,^&+=`!'%/_. -]+)/$", FederalAccountCountRetrieveViewSet.as_view()
     ),
+    url(r"^(?P<requested_award>[A-Za-z0-9:~$@*\"#()Â,^&+=`!'%/_. -]+)/$", AwardRetrieveViewSet.as_view()),
 ]
