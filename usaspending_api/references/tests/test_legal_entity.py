@@ -17,6 +17,7 @@ def recipients_data():
     LegalEntity.objects.filter(pk=le.pk).update(business_categories=["us_government_entity", "minority_owned_business"])
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_endpoints(client, recipients_data):
     resp = client.get("/api/v1/references/recipients/")
