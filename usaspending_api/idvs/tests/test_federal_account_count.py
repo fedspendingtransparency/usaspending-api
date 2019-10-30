@@ -59,19 +59,20 @@ class IDVFundingTestCase(TestCase):
         assert response2.status_code == status.HTTP_200_OK
         assert len(response2.data["results"]) == response.data["count"]
 
+        mommy.make("awards.Award", id=500, generated_unique_award_id="CONT_IDV_9000_001")
+
         # test with generated id
-        response = self.client.get("/api/v2/idvs/count/federal_account/GENERATED_UNIQUE_AWARD_ID_001/")
+        response = self.client.get("/api/v2/idvs/count/federal_account/CONT_IDV_9000_001/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["count"] == 1
+        assert response.data["count"] == 0
 
     def test_with_nonexistent_id(self):
         response = self.client.get("/api/v2/idvs/count/federal_account/0/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 0
-        #
+        # invalid id
         response = self.client.get("/api/v2/idvs/count/federal_account/GENERATED_UNIQUE_AWARD_ID_000/")
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["count"] == 0
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_with_piid(self):
         # doesn't return federal accounts for idvs

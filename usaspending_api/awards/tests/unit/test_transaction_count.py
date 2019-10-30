@@ -32,7 +32,7 @@ def awards_transaction_data(db):
     mommy.make(
         "awards.Award",
         id=3,
-        generated_unique_award_id="ASST_bbb_abc123",
+        generated_unique_award_id="ASST_NON_bbb_abc123",
         piid="bbb",
         fain="abc123",
         type="04",
@@ -63,7 +63,7 @@ def test_award_success(client, awards_transaction_data):
 def test_award_no_transactions(client, awards_transaction_data):
     """Test transaction count endpoint for award with no transactions"""
 
-    resp = client.get("/api/v2/awards/count/transaction/ASST_bbb_abc123/")
+    resp = client.get("/api/v2/awards/count/transaction/ASST_NON_bbb_abc123/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["transactions"] == 0
 

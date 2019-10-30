@@ -33,7 +33,7 @@ def awards_federal_account_data(db):
     mommy.make(
         "awards.Award",
         id=3,
-        generated_unique_award_id="ASST_bbb_abc123",
+        generated_unique_award_id="ASST_NON_bbb_abc123",
         piid="bbb",
         fain="abc123",
         type="04",
@@ -64,7 +64,7 @@ def test_award_success(client, awards_federal_account_data):
 def test_award_no_federal_accounts(client, awards_federal_account_data):
     """Test federal_account count endpoint for award with no federal_accounts"""
 
-    resp = client.get("/api/v2/awards/count/federal_account/ASST_bbb_abc123/")
+    resp = client.get("/api/v2/awards/count/federal_account/ASST_NON_bbb_abc123/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["federal_accounts"] == 0
 
