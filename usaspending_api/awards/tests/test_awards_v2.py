@@ -804,9 +804,19 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
         "subtier_code": {},
         "base_code": {"description": "Something Most Specific", "code": "M123"},
     }
+
+
 def test_special_characters(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/awards/count/transaction/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+    resp = client.get("/api/v2/awards/count/subaward/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+    resp = client.get("/api/v2/awards/count/federal_account/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+
 
 expected_response_asst = {
     "id": 1,
