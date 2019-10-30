@@ -4,7 +4,7 @@ Jira Ticket Number(s): DEV-3759
 
 Expected CLI:
 
-    $ python usaspending_api/database_scripts/job_archive/fix_awards_earliest_latest_transactions.py
+    $ python usaspending_api/database_scripts/job_archive/fix_awards_earliest_latest_transactions_and_exec_comp.py
 
 Purpose:
 
