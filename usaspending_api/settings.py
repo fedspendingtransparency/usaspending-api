@@ -201,7 +201,7 @@ else:
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
-if os.environ.get("DATA_BROKER_DATABASE_URL") and not sys.argv[1:2] == ["test"]:
+if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
     # Ensure that the broker DB never has migrations applied to it (even under test), by injecting a router that will
     # return False from allow_migrations(...) when the db == "data_broker"
