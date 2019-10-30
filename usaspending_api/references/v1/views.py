@@ -24,7 +24,7 @@ from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
-@method_decorator(removed, name="post")
+@method_decorator(deprecated, name="post")
 class FilterEndpoint(APIView):
     """DEPRECATED"""
 
@@ -59,7 +59,7 @@ class FilterEndpoint(APIView):
         return Response({"hash": hash})
 
 
-@method_decorator(removed, name="post")
+@method_decorator(deprecated, name="post")
 class HashEndpoint(APIView):
     """DEPRECATED"""
 
