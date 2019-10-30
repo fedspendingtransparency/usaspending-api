@@ -11,9 +11,14 @@ from usaspending_api.idvs.v2.views.count.federal_account import IDVFederalAccoun
 urlpatterns = [
     url(r"^accounts/$", IDVAccountsViewSet.as_view()),
     url(r"^activity/$", IDVActivityViewSet.as_view()),
-    url(r"^amounts/(?P<requested_award>[A-Za-z0-9_. -]+)/$", IDVAmountsViewSet.as_view()),
+    url(r"^amounts/(?P<requested_award>[0-9]+)/$", IDVAmountsViewSet.as_view()),
+    url("^amounts/(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$", IDVAmountsViewSet.as_view()),
     url(r"^awards/$", IDVAwardsViewSet.as_view()),
     url(r"^funding/$", IDVFundingViewSet.as_view()),
     url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
-    url(r"^count/federal_account/(?P<requested_award>[A-Za-z0-9_. -]+)/$", IDVFederalAccountCountViewSet.as_view()),
+    url(r"^count/federal_account/(?P<requested_award>[0-9]+)/$", IDVFederalAccountCountViewSet.as_view()),
+    url(
+        "^count/federal_account/(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$",
+        IDVFederalAccountCountViewSet.as_view(),
+    ),
 ]

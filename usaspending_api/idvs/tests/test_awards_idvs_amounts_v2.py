@@ -10,7 +10,7 @@ ENDPOINT = "/api/v2/idvs/amounts/"
 
 EXPECTED_GOOD_OUTPUT = {
     "award_id": 1,
-    "generated_unique_award_id": "CONT_AW_2",
+    "generated_unique_award_id": "CONT_AWD_2",
     "child_idv_count": 3,
     "child_award_count": 4,
     "child_award_total_obligation": 5.01,
@@ -30,7 +30,7 @@ class IDVAmountsTestCase(TestCase):
         mommy.make(
             "awards.ParentAward",
             award_id=1,
-            generated_unique_award_id="CONT_AW_2",
+            generated_unique_award_id="CONT_AWD_2",
             direct_idv_count=3,
             direct_contract_count=4,
             direct_total_obligation="5.01",
@@ -52,7 +52,15 @@ class IDVAmountsTestCase(TestCase):
 
     def test_awards_idvs_amounts_v2(self):
         self._test_get(1, EXPECTED_GOOD_OUTPUT)
-        self._test_get("CONT_AW_2", EXPECTED_GOOD_OUTPUT)
+        self._test_get("CONT_AWD_2", EXPECTED_GOOD_OUTPUT)
         self._test_get(3, {"detail": "No IDV award found with this id"}, status.HTTP_404_NOT_FOUND)
-        self._test_get("BOGUS_ID", {"detail": "No IDV award found with this id"}, status.HTTP_404_NOT_FOUND)
+        self._test_get("BOGUS_ID", expected_status_code=status.HTTP_404_NOT_FOUND)
         self._test_get("INVALID_ID_12345", expected_status_code=status.HTTP_404_NOT_FOUND)
+
+    def test_special_characters(self):
+        mommy.make("awards.Award", pk=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+        mommy.make(
+            "awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700"
+        )
+        response = self.client.get("/api/v2/idvs/amounts/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+        assert response.status_code == status.HTTP_200_OK
