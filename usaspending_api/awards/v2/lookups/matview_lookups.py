@@ -101,8 +101,4 @@ award_assistance_mapping = {
     **direct_payment_award_mapping,
     **other_award_mapping,
 }
-non_loan_assistance_award_mapping = assistance_award_mapping = {
-    **grant_award_mapping,
-    **direct_payment_award_mapping,
-    **other_award_mapping,
-}
+non_loan_assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping, **other_award_mapping}

@@ -32,8 +32,8 @@ subtier_to_agency_map = {
     for agency in Agency.objects.values("id", "toptier_agency_id", "subtier_agency_id")
 }
 toptier_agency_map = {
-    toptier_agency["toptier_agency_id"]: toptier_agency["cgac_code"]
-    for toptier_agency in ToptierAgency.objects.values("toptier_agency_id", "cgac_code")
+    toptier_agency["toptier_agency_id"]: toptier_agency["toptier_code"]
+    for toptier_agency in ToptierAgency.objects.values("toptier_agency_id", "toptier_code")
 }
 
 
@@ -210,8 +210,8 @@ class Command(BaseCommand):
             if row["awarding_agency_code"] is None or len(row["awarding_agency_code"].strip()) < 1:
                 awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
                 awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]["toptier_agency_id"]
-                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
-                row["awarding_agency_code"] = awarding_cgac_code
+                awarding_toptier_code = toptier_agency_map[awarding_toptier_agency_id]
+                row["awarding_agency_code"] = awarding_toptier_code
 
             # If funding toptier agency code (aka CGAC) is empty, try using the sub
             # tier funding code to look it up. Unlike the awarding agency, we can't
@@ -220,10 +220,10 @@ class Command(BaseCommand):
                 funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                 if funding_subtier_agency_id is not None:
                     funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]["toptier_agency_id"]
-                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                    funding_toptier_code = toptier_agency_map[funding_toptier_agency_id]
                 else:
-                    funding_cgac_code = None
-                row["funding_agency_code"] = funding_cgac_code
+                    funding_toptier_code = None
+                row["funding_agency_code"] = funding_toptier_code
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             awarding_agency = Agency.get_by_toptier_subtier(
@@ -434,8 +434,8 @@ class Command(BaseCommand):
                 if row["awarding_agency_code"] is None or len(row["awarding_agency_code"].strip()) < 1:
                     awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
                     awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]["toptier_agency_id"]
-                    awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
-                    row["awarding_agency_code"] = awarding_cgac_code
+                    awarding_toptier_code = toptier_agency_map[awarding_toptier_agency_id]
+                    row["awarding_agency_code"] = awarding_toptier_code
 
                 # If funding toptier agency code (aka CGAC) is empty, try using the sub
                 # tier funding code to look it up. Unlike the awarding agency, we can't
@@ -446,10 +446,10 @@ class Command(BaseCommand):
                         funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id][
                             "toptier_agency_id"
                         ]
-                        funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                        funding_toptier_code = toptier_agency_map[funding_toptier_agency_id]
                     else:
-                        funding_cgac_code = None
-                    row["funding_agency_code"] = funding_cgac_code
+                        funding_toptier_code = None
+                    row["funding_agency_code"] = funding_toptier_code
 
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
                 awarding_agency = Agency.get_by_toptier_subtier(

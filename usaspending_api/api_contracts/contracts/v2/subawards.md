@@ -23,17 +23,16 @@ This endpoint returns a filtered set of subawards.
                 + `action_date`
                 + `amount`
                 + `recipient_name`
-                + `award_id`
         + `order` (required, enum[string], fixed-type)
             + Members
                 + `asc`
                 + `desc`
             + Default: `desc`
-        + `award_id` (optional, number)
-            Award ID of parent Award
+        + `award_id` (optional, string)
+            Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
             
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `results` (required, array[SubawardResponse], fixed-type)
         + `page_metadata` (required, PageMetadataObject)
 

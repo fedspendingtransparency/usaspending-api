@@ -44,7 +44,7 @@ class BaseAutocompleteViewSet(APIView):
         search_text, limit = self.get_request_payload(request)
 
         queryset = (
-            Agency.objects.exclude(toptier_agency__cgac_code__in=EXCLUDE_CGAC)
+            Agency.objects.exclude(toptier_agency__toptier_code__in=EXCLUDE_CGAC)
             .filter(
                 Q(subtier_agency__name__icontains=search_text) | Q(subtier_agency__abbreviation__icontains=search_text)
             )
@@ -54,7 +54,7 @@ class BaseAutocompleteViewSet(APIView):
         # The below is a one-off fix to promote FEMA as a subtier to the top when "FEMA" is searched
         # This is the only way to do this because you cannot use annotate and distinct together
         evaled = AgencySerializer(queryset[:limit], many=True).data
-        evaled.sort(key=lambda x: x["toptier_agency"]["cgac_code"] == "058")
+        evaled.sort(key=lambda x: x["toptier_agency"]["toptier_code"] == "058")
         return Response({"results": evaled})
 
 
@@ -63,7 +63,7 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve awarding agencies matching the specified search text.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/awarding_agency.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency.md"
 
     @cache_response()
     def post(self, request):
@@ -75,7 +75,7 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve funding agencies matching the specified search text.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/funding_agency.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency.md"
 
     @cache_response()
     def post(self, request):
@@ -87,7 +87,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve CFDA programs matching the specified search text.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/cfda.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/cfda.md"
 
     @cache_response()
     def post(self, request):
@@ -112,7 +112,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
     This route sends a request to the backend to retrieve NAICS objects matching the specified search text.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/naics.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/naics.md"
 
     @cache_response()
     def post(self, request):
@@ -142,7 +142,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
     on a search string. This may be the 4-character PSC code or a description string.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/psc.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/psc.md"
 
     @cache_response()
     def post(self, request):
@@ -169,7 +169,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
     matching the search text in order of similarity.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/autocomplete/recipient.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/recipient.md"
 
     @cache_response()
     def post(self, request):

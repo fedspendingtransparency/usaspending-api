@@ -33,15 +33,15 @@ BROKER_CONNECTION_STRING = environ["DATA_BROKER_DATABASE_URL"]
 BROKER_FABS_SELECT_SQL = """
 SELECT
     published_award_financial_assistance_id,
-    high_comp_officer1_full_na,
+    UPPER(high_comp_officer1_full_na),
     high_comp_officer1_amount,
-    high_comp_officer2_full_na,
+    UPPER(high_comp_officer2_full_na),
     high_comp_officer2_amount,
-    high_comp_officer3_full_na,
+    UPPER(high_comp_officer3_full_na),
     high_comp_officer3_amount,
-    high_comp_officer4_full_na,
+    UPPER(high_comp_officer4_full_na),
     high_comp_officer4_amount,
-    high_comp_officer5_full_na,
+    UPPER(high_comp_officer5_full_na),
     high_comp_officer5_amount
 FROM
     published_award_financial_assistance
@@ -52,15 +52,15 @@ WHERE
 BROKER_FPDS_SELECT_SQL = """
 SELECT
     detached_award_procurement_id,
-    high_comp_officer1_full_na,
+    UPPER(high_comp_officer1_full_na),
     high_comp_officer1_amount,
-    high_comp_officer2_full_na,
+    UPPER(high_comp_officer2_full_na),
     high_comp_officer2_amount,
-    high_comp_officer3_full_na,
+    UPPER(high_comp_officer3_full_na),
     high_comp_officer3_amount,
-    high_comp_officer4_full_na,
+    UPPER(high_comp_officer4_full_na),
     high_comp_officer4_amount,
-    high_comp_officer5_full_na,
+    UPPER(high_comp_officer5_full_na),
     high_comp_officer5_amount
 FROM
     detached_award_procurement
@@ -157,8 +157,8 @@ RETURNING fpds.transaction_id
 """
 
 ADD_TRANSACTIONS_TO_DELTA = """
-INSERT INTO transaction_delta
-VALUES {}
+INSERT INTO transaction_delta (transaction_id, created_at)
+VALUES {} ON CONFLICT (transaction_id) DO NOTHING
 """
 
 GET_FABS_IDS_WITH_EC_SQL = """

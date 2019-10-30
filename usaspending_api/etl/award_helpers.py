@@ -3,7 +3,7 @@ from typing import Optional
 from django.db import connection
 
 
-def execute_database_insert_statement(sql: str, values: Optional[list] = None) -> int:
+def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
     """Execute the SQL and return the UPDATE count"""
     with connection.cursor() as cursor:
         if values:
@@ -16,7 +16,8 @@ def execute_database_insert_statement(sql: str, values: Optional[list] = None) -
 
 
 def update_awards(award_tuple: Optional[tuple] = None) -> int:
-    """Update Award records in `awards` using transaction data
+    """
+    Update Award records in `awards` using transaction data
 
     Awards can have one or more transactions. We maintain some information on
     the award model that needs to be updated as its transactions change.
@@ -24,13 +25,6 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     transaction's obligated amounts. Another example is a series of fields
     (award type, awarding agency, etc.) that will always be set to the value of
     the Award's most recent transaction.
-
-    This function keeps those awards fields synced with transactions.
-    Obviously the raw SQL is not ideal. That said, the complex update of award
-    fields based on the earliest, latest, and aggregate values of the
-    transactions was problematic to do in a set-based way via the ORM. These
-    updates do need to be set-based, as looping through and updating individual
-    award records would be an ETL bottleneck.
     """
 
     _earliest_transaction_cte = str(
@@ -136,7 +130,35 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(earliest_transaction_cte, latest_transaction_cte, aggregate_transaction_cte)
-    return execute_database_insert_statement(sql_update, values)
+    # We don't need to worry about this double counting awards, because if it's deleted in the first step it can't be updated!
+    return prune_empty_awards(award_tuple) + execute_database_statement(sql_update, values)
+
+
+def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
+    _find_empty_awards_sql = str(
+        "SELECT a.id "
+        "FROM awards a "
+        "LEFT JOIN transaction_normalized tn "
+        "ON tn.award_id = a.id "
+        "WHERE tn IS NULL {}"
+    ).format(" AND a.id IN %s " if award_tuple else "")
+
+    _modify_subawards_sql = "UPDATE subaward SET award_id = null WHERE award_id IN ({});".format(_find_empty_awards_sql)
+
+    _modify_financial_accounts_sql = (
+        "UPDATE financial_accounts_by_awards "
+        "SET award_id = null "
+        "WHERE award_id IN ({});".format(_find_empty_awards_sql)
+    )
+
+    _delete_parent_award_sql = "DELETE FROM parent_award WHERE award_id in ({});".format(_find_empty_awards_sql)
+
+    _prune_empty_awards_sql = "DELETE FROM awards WHERE id IN ({}) ".format(_find_empty_awards_sql)
+
+    return execute_database_statement(
+        _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,
+        [award_tuple, award_tuple, award_tuple, award_tuple],
+    )
 
 
 def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
@@ -182,7 +204,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
         values = None
         sql_update = _sql_update.format("")
 
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)
 
 
 def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
@@ -293,7 +315,7 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(aggregate_transaction_cte, extra_fpds_fields, executive_comp_cte)
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)
 
 
 def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
@@ -328,4 +350,4 @@ def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(sql_sub_totals)
-    return execute_database_insert_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)

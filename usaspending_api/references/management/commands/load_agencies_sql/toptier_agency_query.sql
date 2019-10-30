@@ -1,5 +1,5 @@
 select
-    cgac_code,
+    toptier_code,
     abbreviation,
     name,
     mission,
@@ -11,7 +11,7 @@ from (
 
     -- CGAC agencies
     select
-        cgac_agency_code as cgac_code,
+        cgac_agency_code as toptier_code,
         max(agency_abbreviation) as abbreviation,
         max(agency_name) as name,
         max(mission) as mission,
@@ -31,7 +31,7 @@ from (
 
     -- FREC agencies
     select
-        frec as cgac_code,
+        frec as toptier_code,
         max(frec_abbreviation) as abbreviation,
         max(frec_entity_description) as name,
         max(mission) as mission,

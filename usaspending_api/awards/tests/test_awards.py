@@ -29,7 +29,11 @@ def test_award_endpoint(client):
             data=json.dumps(
                 {
                     "filters": [
-                        {"field": "funding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "0300"}
+                        {
+                            "field": "funding_agency__toptier_agency__toptier_code",
+                            "operation": "equals",
+                            "value": "0300",
+                        }
                     ]
                 }
             ),
@@ -48,12 +52,12 @@ def test_award_endpoint(client):
                             "combine_method": "OR",
                             "filters": [
                                 {
-                                    "field": "funding_agency__toptier_agency__cgac_code",
+                                    "field": "funding_agency__toptier_agency__toptier_code",
                                     "operation": "equals",
                                     "value": "0300",
                                 },
                                 {
-                                    "field": "awarding_agency__toptier_agency__cgac_code",
+                                    "field": "awarding_agency__toptier_agency__toptier_code",
                                     "operation": "equals",
                                     "value": "0300",
                                 },
@@ -73,7 +77,7 @@ def test_award_endpoint(client):
             data=json.dumps(
                 {
                     "filters": [
-                        {"field": "funding_agency__toptier_agency__cgac_code", "operation": "ff", "value": "0300"}
+                        {"field": "funding_agency__toptier_agency__toptier_code", "operation": "ff", "value": "0300"}
                     ]
                 }
             ),
@@ -143,8 +147,8 @@ def test_get_or_create_summary_award():
     sta1 = mommy.make(SubtierAgency, subtier_code="1234", name="Bureau of Effective Unit Tests")
     sta2 = mommy.make(SubtierAgency, subtier_code="5678", name="Bureau of Breaky Unit Tests")
     sta3 = mommy.make(SubtierAgency, subtier_code="0509", name="Bureau of Testing Bureaucracy")
-    tta1 = mommy.make(ToptierAgency, cgac_code="020", name="Department of Unit Tests")
-    tta2 = mommy.make(ToptierAgency, cgac_code="089", name="Department of Integrated Tests")
+    tta1 = mommy.make(ToptierAgency, toptier_code="020", name="Department of Unit Tests")
+    tta2 = mommy.make(ToptierAgency, toptier_code="089", name="Department of Integrated Tests")
 
     a1 = mommy.make(Agency, id=1, toptier_agency=tta1, subtier_agency=sta1)
     a2 = mommy.make(Agency, id=2, toptier_agency=tta1)

@@ -18,14 +18,10 @@ Toptier Agencies are likely what most people think of when they think of governm
 Examples include Department of Defense (DoD), Department of the Treasury (TREAS), Department
 of Health and Human Services (HHS), etc.  There are about 195 of these.
 
-Toptier Agencies are identified by their `cgac_code` which is, unfortunately, a bit of
-a misnomer.  While MOST agencies are identified by their three digit Common Government-Wide
-Accounting Classification (CGAC), there are several identified by their Financial Reporting
-Entity Code (FREC).  This is a point of confusion for many new developers and is on a very
-long TODO list of things to clean up when we have time.
-
-Deciding whether to use CGAC or FREC to identify a toptier agency is controlled by the `is_frec`
-flag in the source agency CSV file.
+Toptier Agencies are identified by their `toptier_code` which can be either the agency's three
+digit Common Government-Wide Accounting Classification (CGAC) or four digit Financial Reporting
+Entity Code (FREC).  Deciding whether to use CGAC or FREC to identify a toptier agency is
+controlled by the `is_frec` flag in the source agency CSV file.
 
 ## Subtier Agency
 

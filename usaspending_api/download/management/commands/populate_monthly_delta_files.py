@@ -215,7 +215,7 @@ class Command(BaseCommand):
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
         subtier_agencies = list(
-            SubtierAgency.objects.filter(agency__toptier_agency__cgac_code=agency_code).values_list(
+            SubtierAgency.objects.filter(agency__toptier_agency__toptier_code=agency_code).values_list(
                 "subtier_code", flat=True
             )
         )
@@ -384,7 +384,7 @@ class Command(BaseCommand):
 
         agency_code = agency
         if agency != "all":
-            agency_code = agency["cgac_code"]
+            agency_code = agency["toptier_code"]
             filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": agency["name"]}]
 
         return filters, agency_code
@@ -437,7 +437,7 @@ class Command(BaseCommand):
         self.debugging_end_date = options["debugging_end_date"]
         self.debugging_skip_deleted = options["debugging_skip_deleted"]
 
-        toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=set(pull_modified_agencies_cgacs()))
+        toptier_agencies = ToptierAgency.objects.filter(toptier_code__in=set(pull_modified_agencies_cgacs()))
         include_all = True
         if agencies:
             if "all" in agencies:
@@ -445,7 +445,9 @@ class Command(BaseCommand):
             else:
                 include_all = False
             toptier_agencies = ToptierAgency.objects.filter(toptier_agency_id__in=agencies)
-        toptier_agencies = list(toptier_agencies.order_by("cgac_code").values("name", "toptier_agency_id", "cgac_code"))
+        toptier_agencies = list(
+            toptier_agencies.order_by("toptier_code").values("name", "toptier_agency_id", "toptier_code")
+        )
 
         if include_all:
             toptier_agencies.append("all")

@@ -72,7 +72,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/advanced_award_search/spending_by_category.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category.md"
 
     @cache_response()
     def post(self, request: dict):

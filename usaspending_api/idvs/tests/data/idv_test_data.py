@@ -44,7 +44,7 @@ def create_idv_test_data():
         awarding_toptier_agency = mommy.make(
             "references.ToptierAgency",
             toptier_agency_id=8500 + award_id,
-            cgac_code=str(award_id).zfill(3),
+            toptier_code=str(award_id).zfill(3),
             name="toptier_awarding_agency_name_%s" % (8500 + award_id),
         )
 
@@ -59,7 +59,7 @@ def create_idv_test_data():
         funding_toptier_agency = mommy.make(
             "references.ToptierAgency",
             toptier_agency_id=9500 + award_id,
-            cgac_code=str(100 + award_id).zfill(3),
+            toptier_code=str(100 + award_id).zfill(3),
             name="toptier_funding_agency_name_%s" % (9500 + award_id),
         )
 
@@ -111,18 +111,18 @@ def create_idv_test_data():
         federal_account = mommy.make(
             "accounts.FederalAccount",
             id=2000 + award_id,
-            agency_identifier=funding_toptier_agency.cgac_code,
+            agency_identifier=funding_toptier_agency.toptier_code,
             main_account_code=str(award_id).zfill(4),
             account_title="federal_account_title_%s" % (2000 + award_id),
-            federal_account_code=funding_toptier_agency.cgac_code + "-" + str(award_id).zfill(4),
+            federal_account_code=funding_toptier_agency.toptier_code + "-" + str(award_id).zfill(4),
         )
 
         treasury_appropriation_account = mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3000 + award_id,
             federal_account_id=federal_account.id,
-            reporting_agency_id=awarding_toptier_agency.cgac_code,
-            reporting_agency_name="reporting_agency_name_%s" % awarding_toptier_agency.cgac_code,
+            reporting_agency_id=awarding_toptier_agency.toptier_code,
+            reporting_agency_name="reporting_agency_name_%s" % awarding_toptier_agency.toptier_code,
             agency_id=federal_account.agency_identifier,
             main_account_code=federal_account.main_account_code,
             account_title="treasury_appropriation_account_title_%s" % string_award_id,

@@ -29,7 +29,7 @@ def download_test_data(db):
     ata1 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Things",
-        cgac_code="100",
+        toptier_code="100",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -37,7 +37,7 @@ def download_test_data(db):
     ata2 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Stuff",
-        cgac_code="101",
+        toptier_code="101",
         website="http://test.com",
         mission="test",
         icon_filename="test",
@@ -54,7 +54,7 @@ def download_test_data(db):
     mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
-        cgac_code="102",
+        toptier_code="102",
         website="http://test.com",
         mission="test",
         icon_filename="test",

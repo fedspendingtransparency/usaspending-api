@@ -10,9 +10,181 @@ from usaspending_api.search.tests.test_mock_data_search import all_filters
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
 
-@pytest.mark.django_db
-def test_spending_by_award_subaward_success(client, refresh_matviews):
+@pytest.fixture
+def spending_by_award_test_data():
 
+    mommy.make("references.LegalEntity", legal_entity_id=1001)
+    mommy.make("references.LegalEntity", legal_entity_id=1002)
+    mommy.make("references.LegalEntity", legal_entity_id=1003)
+
+    mommy.make(
+        "recipient.RecipientLookup",
+        id=1001,
+        recipient_hash="bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+        legal_business_name="recipient_name_for_award_1001",
+        duns="duns_1001",
+    )
+    mommy.make(
+        "recipient.RecipientLookup",
+        id=1002,
+        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        legal_business_name="recipient_name_for_award_1002",
+        duns="duns_1002",
+    )
+    mommy.make(
+        "recipient.RecipientLookup",
+        id=1003,
+        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        legal_business_name="recipient_name_for_award_1003",
+        duns="duns_1003",
+    )
+
+    mommy.make(
+        "recipient.RecipientProfile",
+        id=2001,
+        recipient_hash="bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+        recipient_level="R",
+        recipient_name="recipient_name_1001",
+        recipient_unique_id="duns_1001",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        id=2002,
+        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        recipient_level="R",
+        recipient_name="recipient_name_1002",
+        recipient_unique_id="duns_1002",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        id=2003,
+        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        recipient_level="R",
+        recipient_name="recipient_name_1003",
+        recipient_unique_id="duns_1003",
+    )
+
+    mommy.make(
+        "awards.Award",
+        id=1,
+        type="A",
+        category="contract",
+        piid="abc111",
+        recipient_id=1001,
+        latest_transaction_id=1,
+        generated_unique_award_id="CONT_AWD_TESTING_1",
+    )
+    mommy.make(
+        "awards.Award",
+        id=2,
+        type="A",
+        category="contract",
+        piid="abc222",
+        recipient_id=1002,
+        latest_transaction_id=2,
+        generated_unique_award_id="CONT_AWD_TESTING_2",
+    )
+    mommy.make(
+        "awards.Award",
+        id=3,
+        type="A",
+        category="contract",
+        piid="abc333",
+        recipient_id=1003,
+        latest_transaction_id=6,
+        generated_unique_award_id="CONT_AWD_TESTING_3",
+    )
+
+    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2014-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=2, award_id=1, action_date="2015-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=3, award_id=2, action_date="2016-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=4, award_id=3, action_date="2017-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=5, award_id=3, action_date="2018-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=6, award_id=3, action_date="2019-01-01", is_fpds=True)
+
+    mommy.make("awards.TransactionFPDS", transaction_id=1)
+    mommy.make("awards.TransactionFPDS", transaction_id=2)
+    mommy.make("awards.TransactionFPDS", transaction_id=3)
+    mommy.make("awards.TransactionFPDS", transaction_id=4)
+    mommy.make("awards.TransactionFPDS", transaction_id=5)
+    mommy.make("awards.TransactionFPDS", transaction_id=6)
+
+    mommy.make("awards.BrokerSubaward", id=1, award_id=1, subaward_number=11111, awardee_or_recipient_uniqu="duns_1001")
+    mommy.make("awards.BrokerSubaward", id=2, award_id=2, subaward_number=22222, awardee_or_recipient_uniqu="duns_1002")
+    mommy.make("awards.BrokerSubaward", id=3, award_id=2, subaward_number=33333, awardee_or_recipient_uniqu="duns_1002")
+    mommy.make("awards.BrokerSubaward", id=4, award_id=3, subaward_number=44444, awardee_or_recipient_uniqu="duns_1003")
+    mommy.make("awards.BrokerSubaward", id=6, award_id=3, subaward_number=66666, awardee_or_recipient_uniqu="duns_1003")
+
+    mommy.make(
+        "awards.Subaward",
+        id=1,
+        award_id=1,
+        latest_transaction_id=1,
+        subaward_number=11111,
+        prime_award_type="A",
+        award_type="procurement",
+        action_date="2014-01-01",
+        amount=10000,
+        prime_recipient_name="recipient_name_for_award_1001",
+        recipient_unique_id="duns_1001",
+        piid="PIID1001",
+        awarding_toptier_agency_name="awarding toptier 8001",
+        awarding_subtier_agency_name="awarding subtier 8001",
+    )
+    mommy.make(
+        "awards.Subaward",
+        id=2,
+        award_id=1,
+        latest_transaction_id=2,
+        subaward_number=22222,
+        prime_award_type="A",
+        award_type="procurement",
+        action_date="2015-01-01",
+        amount=20000,
+        prime_recipient_name="recipient_name_for_award_1001",
+        recipient_unique_id="duns_1001",
+        piid="PIID2001",
+        awarding_toptier_agency_name="awarding toptier 8002",
+        awarding_subtier_agency_name="awarding subtier 8002",
+    )
+    mommy.make(
+        "awards.Subaward",
+        id=3,
+        award_id=2,
+        latest_transaction_id=3,
+        subaward_number=33333,
+        prime_award_type="A",
+        award_type="procurement",
+        action_date="2016-01-01",
+        amount=30000,
+        prime_recipient_name="recipient_name_for_award_1002",
+        recipient_unique_id="duns_1002",
+        piid="PIID3002",
+        awarding_toptier_agency_name="awarding toptier 8003",
+        awarding_subtier_agency_name="awarding subtier 8003",
+    )
+    mommy.make(
+        "awards.Subaward",
+        id=6,
+        award_id=3,
+        latest_transaction_id=6,
+        subaward_number=66666,
+        prime_award_type="A",
+        award_type="procurement",
+        action_date="2019-01-01",
+        amount=60000,
+        prime_recipient_name="recipient_name_for_award_1003",
+        recipient_unique_id="duns_1003",
+        piid="PIID6003",
+        awarding_toptier_agency_name="awarding toptier 8006",
+        awarding_subtier_agency_name="awarding subtier 8006",
+    )
+
+
+@pytest.mark.django_db
+def test_spending_by_award_subaward_success(client, spending_by_award_test_data, refresh_matviews):
+
+    # Testing all filters
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -21,6 +193,68 @@ def test_spending_by_award_subaward_success(client, refresh_matviews):
         ),
     )
     assert resp.status_code == status.HTTP_200_OK
+
+    # Testing contents of what is returned
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "subawards": True,
+                "fields": [
+                    "Sub-Award ID",
+                    "Sub-Awardee Name",
+                    "Sub-Award Date",
+                    "Sub-Award Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Prime Award ID",
+                    "Prime Recipient Name",
+                    "recipient_id",
+                    "prime_award_recipient_id",
+                ],
+                "sort": "Sub-Award ID",
+                "filters": {"award_type_codes": ["A"]},
+                "limit": 2,
+                "page": 1,
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["page_metadata"]["page"] == 1
+    assert resp.json()["page_metadata"]["hasNext"]
+    assert resp.json()["limit"] == 2
+    assert len(resp.json()["results"]) == 2
+    assert resp.json()["results"][0] == {
+        "Awarding Agency": "awarding toptier 8006",
+        "Awarding Sub Agency": "awarding subtier 8006",
+        "Prime Award ID": "PIID6003",
+        "Prime Recipient Name": "recipient_name_for_award_1003",
+        "Sub-Award Amount": 60000.0,
+        "Sub-Award Date": "2019-01-01",
+        "Sub-Award ID": "66666",
+        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
+        "prime_award_internal_id": 3,
+        "internal_id": "66666",
+        "prime_award_recipient_id": "28aae030-b4b4-4494-8a75-3356208469cf-R",
+        "recipient_id": None,
+        "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
+    }
+    assert resp.json()["results"][1] == {
+        "Awarding Agency": "awarding toptier 8003",
+        "Awarding Sub Agency": "awarding subtier 8003",
+        "Prime Award ID": "PIID3002",
+        "Prime Recipient Name": "recipient_name_for_award_1002",
+        "Sub-Award Amount": 30000.0,
+        "Sub-Award Date": "2016-01-01",
+        "Sub-Award ID": "33333",
+        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
+        "prime_award_internal_id": 2,
+        "internal_id": "33333",
+        "prime_award_recipient_id": "180bddfc-67f0-42d6-8279-a014d1062d65-R",
+        "recipient_id": None,
+        "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
+    }
 
 
 @pytest.mark.django_db
@@ -97,12 +331,14 @@ def awards_over_different_date_ranges():
     for award_category in award_category_list:
         for date_range in date_range_list:
             award_id += 1
+            guai = "AWARD_{}".format(award_id)
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
             recipient = mommy.make("references.LegalEntity", legal_entity_id=2000 + award_id)
             award = mommy.make(
                 "awards.Award",
                 id=award_id,
+                generated_unique_award_id=guai,
                 type=award_type,
                 category=award_category,
                 latest_transaction_id=1000 + award_id,
@@ -178,7 +414,7 @@ def test_date_range_search_with_one_range(client, awards_over_different_date_ran
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"] == [{"Award ID": "abcdefg1", "internal_id": 1}]
+    assert resp.data["results"] == [{"Award ID": "abcdefg1", "internal_id": 1, "generated_internal_id": "AWARD_1"}]
 
     # Test with no award showing
     request_for_no_awards = {
@@ -270,7 +506,10 @@ def test_date_range_search_with_two_ranges(client, awards_over_different_date_ra
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert resp.data["results"] == [{"Award ID": "xyz44", "internal_id": 44}, {"Award ID": "xyz33", "internal_id": 33}]
+    assert resp.data["results"] == [
+        {"Award ID": "xyz44", "internal_id": 44, "generated_internal_id": "AWARD_44"},
+        {"Award ID": "xyz33", "internal_id": 33, "generated_internal_id": "AWARD_33"},
+    ]
 
     # Test with no award showing
     request_for_no_awards = {

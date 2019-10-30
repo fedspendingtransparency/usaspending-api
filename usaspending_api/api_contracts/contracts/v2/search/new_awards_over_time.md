@@ -20,7 +20,7 @@ This endpoint returns the count of new awards grouped by time period in ascendin
         + `filters` (required, TimeFilterObject)
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `group`: `quarter` (required, enum[string])
            + Members
                 + `fiscal_year`
