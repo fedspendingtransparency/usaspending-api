@@ -37,19 +37,89 @@ CONNECTION_STRING = environ["DATABASE_URL"]
 
 SQLS = (
     (
-        "Extract pertinent transaction data",
+        "Update earliest/latest transactions",
         """
-            create temporary table
-                temp_dev_3759_transaction_data
-            as
+            with
+            earliest_transaction as (
+                select distinct on (award_id)
+                    award_id,
+                    id as transaction_id,
+                    action_date
+                from
+                    transaction_normalized
+                order by
+                    award_id,
+                    action_date asc,
+                    modification_number asc,
+                    transaction_unique_id asc
+            ),
+            latest_transaction as (
+                select distinct on (award_id)
+                    award_id,
+                    id as transaction_id
+                from
+                    transaction_normalized
+                order by
+                    award_id,
+                    action_date desc,
+                    modification_number desc,
+                    transaction_unique_id desc
+            ),
+            requiring_update as (
                 select
+                    a.id as award_id,
+                    e.transaction_id as earliest_transaction_id,
+                    l.transaction_id as latest_transaction_id
+                from
+                    awards as a
+                    left outer join earliest_transaction e on e.award_id = a.id
+                    left outer join latest_transaction l on l.award_id = a.id
+                where
+                    a.earliest_transaction_id is distinct from e.transaction_id or
+                    a.latest_transaction_id is distinct from l.transaction_id
+            )
+            update
+                awards as a
+            set
+                earliest_transaction_id = e.id,
+                date_signed = e.action_date,
+                description = e.description,
+                period_of_performance_start_date = e.period_of_performance_start_date,
+                latest_transaction_id = l.id,
+                awarding_agency_id = l.awarding_agency_id,
+                category = case
+                    when l.type in ('A', 'B', 'C', 'D') then 'contract'
+                    when l.type in ('02', '03', '04', '05') then 'grant'
+                    when l.type in ('06', '10') then 'direct payment'
+                    when l.type in ('07', '08') then 'loans'
+                    when l.type = '09' then 'insurance'
+                    when l.type = '11' then 'other'
+                    when l.type like 'IDV%%' then 'idv'
+                    else null
+                end,
+                certified_date = l.action_date,
+                funding_agency_id = l.funding_agency_id,
+                last_modified_date = l.last_modified_date,
+                period_of_performance_current_end_date = l.period_of_performance_current_end_date,
+                place_of_performance_id = l.place_of_performance_id,
+                recipient_id = l.recipient_id,
+                type = l.type,
+                type_description = l.type_description
+            from
+                requiring_update r
+                left outer join transaction_normalized e on e.id = r.earliest_transaction_id
+                left outer join transaction_normalized l on l.id = r.latest_transaction_id
+            where
+                a.id = r.award_id
+        """,
+    ),
+    (
+        "Update executive compensation",
+        """
+            with
+            executive_compensation as (
+                select distinct on (award_id)
                     tn.award_id,
-                    tn.id as transaction_id,
-                    tn.action_date,
-                    tn.modification_number,
-                    tn.transaction_unique_id,
-                    tn.description,
-                    tn.period_of_performance_start_date,
                     coalesce(fabs.officer_1_amount, fpds.officer_1_amount) as officer_1_amount,
                     coalesce(fabs.officer_1_name, fpds.officer_1_name) as officer_1_name,
                     coalesce(fabs.officer_2_amount, fpds.officer_2_amount) as officer_2_amount,
@@ -59,205 +129,35 @@ SQLS = (
                     coalesce(fabs.officer_4_amount, fpds.officer_4_amount) as officer_4_amount,
                     coalesce(fabs.officer_4_name, fpds.officer_4_name) as officer_4_name,
                     coalesce(fabs.officer_5_amount, fpds.officer_5_amount) as officer_5_amount,
-                    coalesce(fabs.officer_5_name, fpds.officer_5_name) as officer_5_name,
-                    tn.awarding_agency_id,
-                    tn.funding_agency_id,
-                    tn.last_modified_date,
-                    tn.period_of_performance_current_end_date,
-                    tn.place_of_performance_id,
-                    tn.recipient_id,
-                    tn.type,
-                    tn.type_description,
-                    CASE WHEN tn.type IN ('A', 'B', 'C', 'D') THEN 'contract'
-                    WHEN tn.type IN ('02', '03', '04', '05') THEN 'grant'
-                    WHEN tn.type in ('06', '10') THEN 'direct payment'
-                    WHEN tn.type in ('07', '08') THEN 'loans'
-                    WHEN tn.type = '09' THEN 'insurance'
-                    WHEN tn.type = '11' THEN 'other'
-                    WHEN tn.type LIKE 'IDV%%' THEN 'idv'
-                    ELSE NULL END AS category
+                    coalesce(fabs.officer_5_name, fpds.officer_5_name) as officer_5_name
                 from
                     transaction_normalized as tn
                     left outer join transaction_fabs fabs on fabs.transaction_id = tn.id
                     left outer join transaction_fpds fpds on fpds.transaction_id = tn.id
-        """,
-    ),  # 17 minutes
-    (
-        "Index pertinent transaction data",
-        """
-            create index
-                temp_dev_3759_transaction_data_ix1
-            on
-                temp_dev_3759_transaction_data (
-                    award_id,
-                    action_date,
-                    modification_number,
-                    transaction_unique_id,
-                    transaction_id
-                )
-        """,
-    ),  # 3 minutes
-    (
-        "Index pertinent transaction data the other way",
-        """
-            create index
-                temp_dev_3759_transaction_data_ix2
-            on
-                temp_dev_3759_transaction_data (
-                    award_id,
-                    action_date desc,
-                    modification_number desc,
-                    transaction_unique_id desc,
-                    transaction_id desc
-                )
-        """,
-    ),  # 3 minutes
-    (
-        "Determine earliest transaction id",
-        """
-            create temporary table
-                temp_dev_3759_earliest_transaction
-            as
-                select distinct on (award_id)
-                    award_id,
-                    transaction_id
-                from
-                    temp_dev_3759_transaction_data
-                order by
-                    award_id,
-                    action_date asc,
-                    modification_number asc,
-                    transaction_unique_id asc
-        """,
-    ),
-    (
-        "Index earliest transaction",
-        """
-            create unique index
-                temp_dev_3759_earliest_transaction_ix
-            on
-                temp_dev_3759_earliest_transaction (award_id)
-        """,
-    ),
-    (
-        "Determine latest transaction id",
-        """
-            create temporary table
-                temp_dev_3759_latest_transaction
-            as
-                select distinct on (award_id)
-                    award_id,
-                    transaction_id
-                from
-                    temp_dev_3759_transaction_data
-                order by
-                    award_id,
-                    action_date desc,
-                    modification_number desc,
-                    transaction_unique_id desc
-        """,
-    ),
-    (
-        "Index latest transaction",
-        """
-            create unique index
-                temp_dev_3759_latest_transaction_ix
-            on
-                temp_dev_3759_latest_transaction (award_id)
-        """,
-    ),
-    (
-        "Determine executive compensation",
-        """
-            create temporary table
-                temp_dev_3759_executive_compensation
-            as
-                select distinct on (award_id)
-                    award_id,
-                    officer_1_amount,
-                    officer_1_name,
-                    officer_2_amount,
-                    officer_2_name,
-                    officer_3_amount,
-                    officer_3_name,
-                    officer_4_amount,
-                    officer_4_name,
-                    officer_5_amount,
-                    officer_5_name
-                from
-                    temp_dev_3759_transaction_data
                 where
-                    officer_1_name is not null
+                    coalesce(fabs.officer_1_name, fpds.officer_1_name) is not null
                 order by
-                    award_id,
-                    action_date desc,
-                    modification_number desc,
-                    transaction_unique_id desc
-        """,
-    ),
-    (
-        "Index executive compensation",
-        """
-            create unique index
-                temp_dev_3759_executive_compensation_ix
-            on
-                temp_dev_3759_executive_compensation (award_id)
-        """,
-    ),
-    (
-        "Update awards",
-        """
-            update
-                awards as a
-            set
-                earliest_transaction_id = e.transaction_id,
-                date_signed = e.action_date,
-                description = e.description,
-                period_of_performance_start_date = e.period_of_performance_start_date,
-                latest_transaction_id = l.transaction_id,
-                awarding_agency_id = l.awarding_agency_id,
-                category = l.category,
-                certified_date = l.action_date,
-                funding_agency_id = l.funding_agency_id,
-                last_modified_date = l.last_modified_date,
-                period_of_performance_current_end_date = l.period_of_performance_current_end_date,
-                place_of_performance_id = l.place_of_performance_id,
-                recipient_id = l.recipient_id,
-                type = l.type,
-                type_description = l.type_description,
-                officer_1_amount = ec.officer_1_amount,
-                officer_1_name = ec.officer_1_name,
-                officer_2_amount = ec.officer_2_amount,
-                officer_2_name = ec.officer_2_name,
-                officer_3_amount = ec.officer_3_amount,
-                officer_3_name = ec.officer_3_name,
-                officer_4_amount = ec.officer_4_amount,
-                officer_4_name = ec.officer_4_name,
-                officer_5_amount = ec.officer_5_amount,
-                officer_5_name = ec.officer_5_name
-            from
-                temp_dev_3759_earliest_transaction as et
-                inner join temp_dev_3759_transaction_data as e on e.transaction_id = et.transaction_id
-                inner join temp_dev_3759_latest_transaction as lt on lt.award_id = et.award_id
-                inner join temp_dev_3759_transaction_data as l on l.transaction_id = lt.transaction_id
-                left outer join temp_dev_3759_executive_compensation ec on ec.award_id = et.award_id
-            where
-                a.id = et.award_id and (
-                    a.earliest_transaction_id is distinct from e.transaction_id or
-                    a.date_signed is distinct from e.action_date or
-                    a.description is distinct from e.description or
-                    a.period_of_performance_start_date is distinct from e.period_of_performance_start_date or
-                    a.latest_transaction_id is distinct from l.transaction_id or
-                    a.awarding_agency_id is distinct from l.awarding_agency_id or
-                    a.category is distinct from l.category or
-                    a.certified_date is distinct from l.action_date or
-                    a.funding_agency_id is distinct from l.funding_agency_id or
-                    a.last_modified_date is distinct from l.last_modified_date or
-                    a.period_of_performance_current_end_date is distinct from l.period_of_performance_current_end_date or
-                    a.place_of_performance_id is distinct from l.place_of_performance_id or
-                    a.recipient_id is distinct from l.recipient_id or
-                    a.type is distinct from l.type or
-                    a.type_description is distinct from l.type_description or
+                    tn.award_id,
+                    tn.action_date desc,
+                    tn.modification_number desc,
+                    tn.transaction_unique_id desc
+            ), requiring_update as (
+                select
+                    a.id as award_id,
+                    ec.officer_1_amount,
+                    ec.officer_1_name,
+                    ec.officer_2_amount,
+                    ec.officer_2_name,
+                    ec.officer_3_amount,
+                    ec.officer_3_name,
+                    ec.officer_4_amount,
+                    ec.officer_4_name,
+                    ec.officer_5_amount,
+                    ec.officer_5_name
+                from
+                    awards as a
+                    left outer join executive_compensation ec on ec.award_id = a.id
+                where
                     a.officer_1_amount is distinct from ec.officer_1_amount or
                     a.officer_1_name is distinct from ec.officer_1_name or
                     a.officer_2_amount is distinct from ec.officer_2_amount or
@@ -268,7 +168,24 @@ SQLS = (
                     a.officer_4_name is distinct from ec.officer_4_name or
                     a.officer_5_amount is distinct from ec.officer_5_amount or
                     a.officer_5_name is distinct from ec.officer_5_name
-                )
+            )
+            update
+                awards as a
+            set
+                officer_1_amount = r.officer_1_amount,
+                officer_1_name = r.officer_1_name,
+                officer_2_amount = r.officer_2_amount,
+                officer_2_name = r.officer_2_name,
+                officer_3_amount = r.officer_3_amount,
+                officer_3_name = r.officer_3_name,
+                officer_4_amount = r.officer_4_amount,
+                officer_4_name = r.officer_4_name,
+                officer_5_amount = r.officer_5_amount,
+                officer_5_name = r.officer_5_name
+            from
+                requiring_update as r
+            where
+                a.id = r.award_id
         """,
     ),
 )
