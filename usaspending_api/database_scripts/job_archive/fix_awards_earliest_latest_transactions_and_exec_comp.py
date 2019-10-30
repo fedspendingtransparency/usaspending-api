@@ -14,7 +14,7 @@ Purpose:
 Life expectancy:
 
     Once Sprint 94 has been rolled out to production, this script is safe to delete... although I
-    would recommend keeping it around for a few additional sprint for reference.
+    would recommend keeping it around for a few additional sprints for reference.
 
 """
 import logging
