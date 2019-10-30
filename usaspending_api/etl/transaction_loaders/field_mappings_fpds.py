@@ -9,6 +9,10 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     updated_at,
     legal_entity_zip5,
     place_of_performance_zip5,
+    legal_entity_state_code,
+    legal_entity_state_description,
+    place_of_performance_state_code,
+    place_of_performance_state_description
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
 
@@ -44,8 +48,6 @@ transaction_fpds_nonboolean_columns = {
     "legal_entity_city_name": "legal_entity_city_name",
     "legal_entity_county_code": "legal_entity_county_code",
     "legal_entity_county_name": "legal_entity_county_name",
-    "legal_entity_state_code": "legal_entity_state_code",
-    "legal_entity_state_descrip": "legal_entity_state_descrip",
     "legal_entity_zip4": "legal_entity_zip4",
     "legal_entity_zip_last4": "legal_entity_zip_last4",
     "legal_entity_congressional": "legal_entity_congressional",
@@ -77,8 +79,6 @@ transaction_fpds_nonboolean_columns = {
     "funding_agency_code": "funding_agency_code",
     "funding_agency_name": "funding_agency_name",
     "place_of_performance_locat": "place_of_performance_locat",
-    "place_of_performance_state": "place_of_performance_state",
-    "place_of_perfor_state_desc": "place_of_perfor_state_desc",
     "place_of_perform_country_c": "place_of_perform_country_c",
     "place_of_perf_country_desc": "place_of_perf_country_desc",
     "idv_type": "idv_type",
@@ -323,6 +323,11 @@ transaction_fpds_functions = {
     "updated_at": updated_at,
     "legal_entity_zip5": legal_entity_zip5,
     "place_of_performance_zip5": place_of_performance_zip5,
+    "legal_entity_state_code": legal_entity_state_code,
+    "legal_entity_state_descrip": legal_entity_state_description,
+    "place_of_performance_state": place_of_performance_state_code,
+    "place_of_perfor_state_desc": place_of_performance_state_description,
+
 }
 
 # broker column name -> usaspending column name
@@ -488,8 +493,6 @@ legal_entity_functions = {
 recipient_location_nonboolean_columns = {
     "legal_entity_country_code": "location_country_code",
     "legal_entity_country_name": "country_name",
-    "legal_entity_state_code": "state_code",
-    "legal_entity_state_descrip": "state_description",
     "legal_entity_county_code": "county_code",
     "legal_entity_county_name": "county_name",
     "legal_entity_congressional": "congressional_code",
@@ -510,14 +513,14 @@ recipient_location_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "zip5": legal_entity_zip5,
+    "state_code": legal_entity_state_code,
+    "state_description": legal_entity_state_description,
 }
 
 # broker column name -> usaspending column name
 place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
     "place_of_perform_country_n": "country_name",
-    "place_of_performance_state": "state_code",
-    "place_of_perfor_state_desc": "state_description",
     "place_of_perform_county_co": "county_code",
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
@@ -539,6 +542,8 @@ place_of_performance_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "zip5": place_of_performance_zip5,
+    "state_code": place_of_performance_state_code,
+    "state_description": place_of_performance_state_description,
 }
 
 # broker column name -> usaspending column name

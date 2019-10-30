@@ -74,6 +74,7 @@ territory_country_codes = {
     "PLW": "Palau",
 }
 
+code_to_name = {k: v["name"] for (k, v) in code_to_state.items()}
 state_to_code = {v["name"]: k for (k, v) in code_to_state.items()}
 
 fips_to_code = {fips["fips"]: code for (code, fips) in code_to_state.items()}
