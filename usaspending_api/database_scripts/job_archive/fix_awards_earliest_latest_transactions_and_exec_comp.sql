@@ -21,8 +21,7 @@ with
 earliest_transaction as (
     select distinct on (award_id)
         award_id,
-        id as transaction_id,
-        action_date
+        id as transaction_id
     from
         transaction_normalized
     order by
