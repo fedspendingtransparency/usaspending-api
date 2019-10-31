@@ -121,7 +121,7 @@ set
         when l.type in ('07', '08') then 'loans'
         when l.type = '09' then 'insurance'
         when l.type = '11' then 'other'
-        when l.type like 'IDV%%' then 'idv'
+        when l.type like 'IDV%' then 'idv'
         else null
     end,
     certified_date = l.action_date,
