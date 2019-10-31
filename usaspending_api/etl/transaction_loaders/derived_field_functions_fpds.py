@@ -3,6 +3,7 @@ import re
 
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.references.abbreviations import code_to_state, state_to_code
@@ -44,7 +45,7 @@ def updated_at(broker_input):
 
 def legal_entity_zip5(broker_input):
     if broker_input["legal_entity_zip5"]:
-        return broker_input["legal_entity_zip5"]
+        return capitalize_if_string(broker_input["legal_entity_zip5"])
     elif broker_input["legal_entity_zip4"]:
         match = ZIP_CODE_PATTERN.match(broker_input["legal_entity_zip4"])
         if match:
@@ -54,7 +55,7 @@ def legal_entity_zip5(broker_input):
 
 def place_of_performance_zip5(broker_input):
     if broker_input["place_of_performance_zip5"]:
-        return broker_input["place_of_performance_zip5"]
+        return capitalize_if_string(broker_input["place_of_performance_zip5"])
     elif broker_input["place_of_performance_zip4a"]:
         match = ZIP_CODE_PATTERN.match(broker_input["place_of_performance_zip4a"])
         if match:
@@ -64,7 +65,7 @@ def place_of_performance_zip5(broker_input):
 
 def legal_entity_state_code(broker_input):
     if broker_input["legal_entity_state_code"]:
-        return broker_input["legal_entity_state_code"]
+        return capitalize_if_string(broker_input["legal_entity_state_code"])
     elif broker_input["legal_entity_state_descrip"]:
         return code_to_state.get(broker_input["legal_entity_state_descrip"], {}).get("name")
     return ""
@@ -72,7 +73,7 @@ def legal_entity_state_code(broker_input):
 
 def legal_entity_state_description(broker_input):
     if broker_input["legal_entity_state_descrip"]:
-        return broker_input["legal_entity_state_descrip"]
+        return capitalize_if_string(broker_input["legal_entity_state_descrip"])
     elif broker_input["legal_entity_state_code"]:
         return code_to_state.get(broker_input["legal_entity_state_code"], {}).get("name")
     return ""
@@ -80,7 +81,7 @@ def legal_entity_state_description(broker_input):
 
 def place_of_performance_state_code(broker_input):
     if broker_input["place_of_performance_state"]:
-        return broker_input["place_of_performance_state"]
+        return capitalize_if_string(broker_input["place_of_performance_state"])
     elif broker_input["place_of_perfor_state_desc"]:
         return state_to_code.get(broker_input["place_of_perfor_state_desc"])
     return ""
@@ -88,7 +89,7 @@ def place_of_performance_state_code(broker_input):
 
 def place_of_performance_state_description(broker_input):
     if broker_input["place_of_perfor_state_desc"]:
-        return broker_input["place_of_perfor_state_desc"]
+        return capitalize_if_string(broker_input["place_of_perfor_state_desc"])
     elif broker_input["place_of_performance_state"]:
         return state_to_code.get(broker_input["place_of_performance_state"])
     return ""

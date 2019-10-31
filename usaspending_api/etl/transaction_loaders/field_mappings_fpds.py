@@ -44,11 +44,14 @@ transaction_fpds_nonboolean_columns = {
     "place_of_perform_county_co": "place_of_perform_county_co",
     "place_of_perform_county_na": "place_of_perform_county_na",
     "place_of_performance_congr": "place_of_performance_congr",
+    "place_of_performance_state": "place_of_performance_state",
+    "place_of_perfor_state_desc": "place_of_perfor_state_desc",
     "awardee_or_recipient_legal": "awardee_or_recipient_legal",
     "legal_entity_city_name": "legal_entity_city_name",
     "legal_entity_county_code": "legal_entity_county_code",
     "legal_entity_county_name": "legal_entity_county_name",
     "legal_entity_zip4": "legal_entity_zip4",
+    "legal_entity_zip5": "legal_entity_zip5",
     "legal_entity_zip_last4": "legal_entity_zip_last4",
     "legal_entity_congressional": "legal_entity_congressional",
     "legal_entity_address_line1": "legal_entity_address_line1",
@@ -59,6 +62,8 @@ transaction_fpds_nonboolean_columns = {
     "period_of_performance_star": "period_of_performance_star",
     "period_of_performance_curr": "period_of_performance_curr",
     "period_of_perf_potential_e": "period_of_perf_potential_e",
+    "legal_entity_state_code": "legal_entity_state_code",
+    "legal_entity_state_descrip": "legal_entity_state_descrip",
     "action_date": "action_date",
     "action_type": "action_type",
     "action_type_description": "action_type_description",
@@ -321,13 +326,7 @@ transaction_fpds_functions = {
     "solicitation_date": lambda broker: truncate_timestamp(broker["solicitation_date"]),
     "created_at": created_at,
     "updated_at": updated_at,
-    "legal_entity_zip5": legal_entity_zip5,
     "place_of_performance_zip5": place_of_performance_zip5,
-    "legal_entity_state_code": legal_entity_state_code,
-    "legal_entity_state_descrip": legal_entity_state_description,
-    "place_of_performance_state": place_of_performance_state_code,
-    "place_of_perfor_state_desc": place_of_performance_state_description,
-
 }
 
 # broker column name -> usaspending column name
