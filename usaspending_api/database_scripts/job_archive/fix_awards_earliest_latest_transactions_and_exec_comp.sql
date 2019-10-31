@@ -59,8 +59,8 @@ executive_compensation as (
         coalesce(fabs.officer_5_name, fpds.officer_5_name) as officer_5_name
     from
         transaction_normalized as tn
-        left outer join transaction_fabs fabs on fabs.transaction_id = tn.id
-        left outer join transaction_fpds fpds on fpds.transaction_id = tn.id
+        left outer join transaction_fabs as fabs on fabs.transaction_id = tn.id
+        left outer join transaction_fpds as fpds on fpds.transaction_id = tn.id
     where
         coalesce(fabs.officer_1_name, fpds.officer_1_name) is not null
     order by
@@ -87,9 +87,9 @@ requiring_update as (
         ec.officer_5_name
     from
         awards as a
-        left outer join earliest_transaction e on e.award_id = a.id
-        left outer join latest_transaction l on l.award_id = a.id
-        left outer join executive_compensation ec on ec.award_id = a.id
+        left outer join earliest_transaction as e on e.award_id = a.id
+        left outer join latest_transaction as l on l.award_id = a.id
+        left outer join executive_compensation as ec on ec.award_id = a.id
     where
         a.earliest_transaction_id is distinct from e.transaction_id or
         a.latest_transaction_id is distinct from l.transaction_id or
@@ -143,8 +143,8 @@ set
     officer_5_amount = r.officer_5_amount,
     officer_5_name = r.officer_5_name
 from
-    requiring_update r
-    left outer join transaction_normalized e on e.id = r.earliest_transaction_id
-    left outer join transaction_normalized l on l.id = r.latest_transaction_id
+    requiring_update as r
+    left outer join transaction_normalized as e on e.id = r.earliest_transaction_id
+    left outer join transaction_normalized as l on l.id = r.latest_transaction_id
 where
     a.id = r.award_id;
