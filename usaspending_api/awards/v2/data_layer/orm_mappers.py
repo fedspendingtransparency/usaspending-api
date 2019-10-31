@@ -86,6 +86,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
         ("modified_at", "_modified_at"),

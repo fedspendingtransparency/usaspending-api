@@ -179,6 +179,7 @@ def awards_and_transactions(db):
     # Transaction FABS
     asst_trans_1 = {
         "pk": 1,
+        "record_type": 111,
         "transaction": TransactionNormalized.objects.get(pk=1),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
@@ -216,6 +217,7 @@ def awards_and_transactions(db):
     }
     asst_trans_2 = {
         "pk": 3,
+        "record_type": 333,
         "transaction": TransactionNormalized.objects.get(pk=3),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
@@ -256,6 +258,7 @@ def awards_and_transactions(db):
     }
     asst_trans_3 = {
         "pk": 4,
+        "record_type": 444,
         "transaction": TransactionNormalized.objects.get(pk=4),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
@@ -296,6 +299,7 @@ def awards_and_transactions(db):
     }
     asst_trans_4 = {
         "pk": 5,
+        "record_type": 555,
         "transaction": TransactionNormalized.objects.get(pk=5),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
@@ -950,6 +954,7 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
 
 expected_response_asst = {
     "id": 1,
+    "record_type": 111,
     "type": "11",
     "category": "grant",
     "type_description": "OTHER FINANCIAL ASSISTA1NCE",
