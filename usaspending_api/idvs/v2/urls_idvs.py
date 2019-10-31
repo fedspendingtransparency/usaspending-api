@@ -16,7 +16,6 @@ urlpatterns = [
     url(r"^funding/$", IDVFundingViewSet.as_view()),
     url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
     url(
-        "^count/federal_account/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$",
-        IDVFederalAccountCountViewSet.as_view(),
+        "^count/federal_account/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVFederalAccountCountViewSet.as_view()
     ),
 ]
