@@ -31,7 +31,7 @@ class IDVFundingTestCase(TestCase):
             results.append(
                 {
                     "award_id": _id,
-                    "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % _sid,
+                    "generated_unique_award_id": "CONT_IDV_%s" % _sid,
                     "reporting_fiscal_year": 2000 + _id,
                     "reporting_fiscal_quarter": _id % 4 + 1,
                     "piid": "piid_%s" % _sid,
@@ -83,7 +83,7 @@ class IDVFundingTestCase(TestCase):
 
         self._test_post({"award_id": 1}, (None, None, 1, False, False, 6))
 
-        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_001"}, (None, None, 1, False, False, 6))
+        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 6))
 
         self._test_post({"award_id": 2}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9))
 
@@ -91,7 +91,7 @@ class IDVFundingTestCase(TestCase):
 
         self._test_post({"award_id": 0}, (None, None, 1, False, False))
 
-        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"}, (None, None, 1, False, False))
+        self._test_post({"award_id": "CONT_IDV_000"}, (None, None, 1, False, False))
 
     def test_with_bogus_id(self):
 
