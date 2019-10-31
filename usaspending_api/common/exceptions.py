@@ -22,7 +22,11 @@ class EndpointRemovedException(APIException):
     """Exception for invalid API request parameters."""
 
     status_code = status.HTTP_410_GONE
-    default_detail = "Endpoint has been removed"
+    default_detail = (
+        "Endpoint has been removed. Please refer to https://api.usaspending.gov/docs/endpoints for "
+        "currently supported endpoints, or https://github.com/fedspendingtransparency/usaspending-api to "
+        "report an issue."
+    )
     default_code = "removed_endpoint"
 
 
