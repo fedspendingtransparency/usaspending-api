@@ -44,17 +44,14 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/psc/](/api/v2/autocomplete/psc/)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.|
 |[/api/v2/autocomplete/recipient/](/api/v2/autocomplete/recipient/)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id|
-|[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/66945037/)|GET| Returns details about specific award|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns details about specific award|
 |[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
 |[/api/v2/awards/funding_rollup](/api/v2/awards/funding_rollup)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for an award|
 |[/api/v2/awards/funding](/api/v2/awards/funding)|POST| Returns federal account, awarding agencies, funding agencies, and transaction obligated amount information for a requested award|
 |[/api/v2/awards/last_updated/](/api/v2/awards/last_updated/)|GET| Returns date of last update|
-|[/api/v2/awards/count/transaction/<AWARD_ID\>/](/api/v2/awards/count/transaction/66945037/)|GET| Returns the number of transactions associated with the award|
 |[/api/v2/awards/count/transaction/<AWARD_ID\>/](/api/v2/awards/count/transaction/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns the number of transactions associated with the award|
 |[/api/v2/awards/count/subaward/<AWARD_ID\>/](/api/v2/awards/count/subaward/66945037/)|GET| Returns the number of subawards associated with the award|
 |[/api/v2/awards/count/subaward/<AWARD_ID\>/](/api/v2/awards/count/subaward/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns the number of subawards associated with the award|
-|[/api/v2/awards/count/federal_account/<AWARD_ID\>/](/api/v2/awards/count/federal_account/66945037/)|GET| Returns the number of federal accounts associated with the award|
 |[/api/v2/awards/count/federal_account/<AWARD_ID\>/](/api/v2/awards/count/federal_account/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns the number of federal accounts associated with the award|
 |[/api/v2/budget_functions/list_budget_functions/](/api/v2/budget_functions/list_budget_functions/)|GET| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
 |[/api/v2/budget_functions/list_budget_subfunctions/](/api/v2/budget_functions/list_budget_subfunctions/)|POST| Returns all Budget Functions associated with a TAS, ordered by Budget Function code|
@@ -81,12 +78,10 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=4324&major_object_class_code=20)|GET| Returns financial spending data by object class for the latest quarter based on the given fiscal year|
 |[/api/v2/idvs/accounts/](/api/v2/idvs/accounts/)|POST| Returns a list of federal accounts for the indicated IDV|
 |[/api/v2/idvs/activity/](/api/v2/idvs/activity/)|POST| Returns information about child awards and grandchild awards for a given IDV (Indefinite Delivery Vehicle).|
-|[/api/v2/idvs/amounts/<AWARD_ID\>/](/api/v2/idvs/amounts/69309317/)|GET| Returns the direct children of an IDV|
 |[/api/v2/idvs/amounts/<AWARD_ID\>/](/api/v2/idvs/amounts/CONT_IDV_NNK14MA74C_8000/)|GET| Returns the direct children of an IDV|
 |[/api/v2/idvs/awards/](/api/v2/idvs/awards/)|POST| Returns IDVs or contracts related to the requested Indefinite Delivery Vehicle award (IDV)|
 |[/api/v2/idvs/funding/](/api/v2/idvs/funding/)|POST| Returns File C funding records associated with an IDV|
 |[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV|
-|[/api/v2/idvs/count/federal_account/<AWARD_ID\>/](/api/v2/idvs/count/federal_account/CONT_IDV_NNK14MA74C_8000/)|GET| Returns the number of federal accounts associated with children and grandchild awards of an IDV.|
 |[/api/v2/idvs/count/federal_account/<AWARD_ID\>/](/api/v2/idvs/count/federal_account/732450987/)|GET| Returns the number of federal accounts associated with children and grandchild awards of an IDV.|
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number|
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/42c19cbe-ced7-5d41-2f80-cd27a22b1575-P/)|GET| Returns a high-level overview of a specific recipient, given its id|

@@ -13,21 +13,17 @@ urlpatterns = [
     url(r"^funding/$", AwardFundingViewSet.as_view()),
     url(r"^funding_rollup/$", AwardFundingRollupViewSet.as_view()),
     url(r"^last_updated", AwardLastUpdatedViewSet.as_view()),
-    url(r"^count/transaction/(?P<requested_award>[0-9]+)/$", TransactionCountRetrieveViewSet.as_view()),
     url(
-        "^count/transaction/(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$",
+        "^count/transaction/(?P<requested_award>(((CONT|ASST)_(AWD|IDV|NON|AGG)_.+)|([0-9]+)))/$",
         TransactionCountRetrieveViewSet.as_view(),
     ),
-    url(r"^count/subaward/(?P<requested_award>[0-9]+)/$", SubawardCountRetrieveViewSet.as_view()),
     url(
-        "^count/subaward/(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$",
+        "^count/subaward/(?P<requested_award>(((CONT|ASST)_(AWD|IDV|NON|AGG)_.+)|([0-9]+)))/$",
         SubawardCountRetrieveViewSet.as_view(),
     ),
-    url(r"^count/federal_account/(?P<requested_award>[0-9]+)/$", FederalAccountCountRetrieveViewSet.as_view()),
     url(
-        "^count/federal_account/(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$",
+        "^count/federal_account/(?P<requested_award>(((CONT|ASST)_(AWD|IDV|NON|AGG)_.+)|([0-9]+)))/$",
         FederalAccountCountRetrieveViewSet.as_view(),
     ),
-    url(r"^(?P<requested_award>[0-9]+)/$", AwardRetrieveViewSet.as_view()),
-    url("^(?P<requested_award>(CONT|ASST)_(AWD|IDV|NON|AGG)_.+)/$", AwardRetrieveViewSet.as_view()),
+    url("^(?P<requested_award>(((CONT|ASST)_(AWD|IDV|NON|AGG)_.+)|([0-9]+)))/$", AwardRetrieveViewSet.as_view()),
 ]
