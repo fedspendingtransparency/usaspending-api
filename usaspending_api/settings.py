@@ -200,17 +200,12 @@ else:
 
 
 # import a second database connection for ETL, connecting to the data broker
-# using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
+# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
     # Ensure that the broker DB never has migrations applied to it (even under test), by injecting a router that will
     # return False from allow_migrations(...) when the db == "data_broker"
-    try:
-        DATABASE_ROUTERS
-    except NameError:
-        DATABASE_ROUTERS = ["usaspending_api.routers.broker.BrokerRouter"]
-    else:
-        DATABASE_ROUTERS.insert(0, "usaspending_api.routers.broker.BrokerRouter")
+    DATABASE_ROUTERS.insert(0, "usaspending_api.routers.broker.BrokerRouter")
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
