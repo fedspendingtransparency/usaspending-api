@@ -129,6 +129,7 @@ def awards_and_transactions(db):
 
     asst_data = {
         "pk": 1,
+        "record_type": 111,
         "transaction": TransactionNormalized.objects.get(pk=1),
         "cfda_number": 12.340,
         "cfda_title": "Shiloh",
@@ -167,6 +168,7 @@ def awards_and_transactions(db):
 
     asst_data2 = {
         "pk": 3,
+        "record_type": 333,
         "transaction": TransactionNormalized.objects.get(pk=3),
         "cfda_number": 10.001,
         "federal_action_obligation": 100,
@@ -208,6 +210,7 @@ def awards_and_transactions(db):
 
     asst_data3 = {
         "pk": 4,
+        "record_type": 444,
         "transaction": TransactionNormalized.objects.get(pk=4),
         "cfda_number": "10.002",
         "cfda_title": "CFDA Title 2",
@@ -249,6 +252,7 @@ def awards_and_transactions(db):
 
     asst_data4 = {
         "pk": 5,
+        "record_type": 555,
         "transaction": TransactionNormalized.objects.get(pk=5),
         "cfda_number": "10.002",
         "cfda_title": "CFDA Title 2",
@@ -791,6 +795,7 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
 
 expected_response_asst = {
     "id": 1,
+    "record_type": 111,
     "type": "11",
     "category": "grant",
     "type_description": "OTHER FINANCIAL ASSISTANCE",
