@@ -99,7 +99,7 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     for field in fields:
         # Let's handle the data source field here for all objects
-        if field == "data_source":
+        if field == "data_source" and field not in value_map:
             store_value(mod, field, "DBR", reverse)
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
@@ -109,10 +109,10 @@ def load_data_into_model(model_instance, data, **kwargs):
         sts = False
         if value_map:
             if broker_field in value_map:
-                store_value(mod, field, value_map[broker_field], reverse)
+                store_value(mod, field, value_map[broker_field], reverse, data)
                 sts = True
             elif field in value_map:
-                store_value(mod, field, value_map[field], reverse)
+                store_value(mod, field, value_map[field], reverse, data)
                 sts = True
         if field_map and not sts:
             if broker_field in field_map:
@@ -250,13 +250,17 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
         return None, None
 
 
-def store_value(model_instance_or_dict, field, value, reverse=None):
+def store_value(model_instance_or_dict, field, value, reverse=None, data=None):
     # turn datetimes into dates
     if field.endswith("date") and isinstance(value, str):
         try:
             value = dateutil.parser.parse(value).date()
         except (TypeError, ValueError):
             pass
+
+    # handles the value_map containing a function
+    if callable(value) and data:
+        value = value(data)
 
     if reverse and reverse.search(field):
         try:
