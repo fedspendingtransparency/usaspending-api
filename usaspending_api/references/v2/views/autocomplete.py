@@ -8,7 +8,8 @@ from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definiti
 from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-
+from usaspending_api.common.api_versioning import deprecated, removed
+from django.utils.decorators import method_decorator
 
 class BaseAutocompleteViewSet(APIView):
     @staticmethod
@@ -163,6 +164,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
         return Response({"results": list(queryset.values("product_or_service_code", "psc_description")[:limit])})
 
 
+@method_decorator(removed, name="post")
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve Parent and Recipient DUNS

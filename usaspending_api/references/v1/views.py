@@ -143,8 +143,8 @@ class AgencyAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
