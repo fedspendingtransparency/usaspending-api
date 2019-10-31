@@ -8,7 +8,7 @@ from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definiti
 from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.common.api_versioning import deprecated, removed
+from usaspending_api.common.api_versioning import removed
 from django.utils.decorators import method_decorator
 
 
