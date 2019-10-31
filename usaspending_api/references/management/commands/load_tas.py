@@ -38,11 +38,11 @@ class Command(BaseCommand):
     The second option requires that a dblink is setup between USAspending and Broker databases.
     """
 
-    help = "Update TAS records using either DATA Broker or a local CARS file if provided."
+    help = "Update TAS records using either DATA Broker or a TAS file if provided."
     logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
-        parser.add_argument("-l", "--location", dest="location", help="(OPTIONAL) location of the CARS file to load")
+        parser.add_argument("-l", "--location", dest="location", help="(OPTIONAL) location of the TAS file to load")
 
     @transaction.atomic()
     def handle(self, *args, **options):
