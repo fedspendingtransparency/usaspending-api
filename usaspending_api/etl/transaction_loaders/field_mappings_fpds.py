@@ -12,7 +12,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     legal_entity_state_code,
     legal_entity_state_description,
     place_of_performance_state_code,
-    place_of_performance_state_description
+    place_of_performance_state_description,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
 
@@ -53,6 +53,7 @@ transaction_fpds_nonboolean_columns = {
     "legal_entity_zip4": "legal_entity_zip4",
     "legal_entity_zip5": "legal_entity_zip5",
     "legal_entity_zip_last4": "legal_entity_zip_last4",
+    "place_of_performance_zip5": "place_of_performance_zip5",
     "legal_entity_congressional": "legal_entity_congressional",
     "legal_entity_address_line1": "legal_entity_address_line1",
     "legal_entity_address_line2": "legal_entity_address_line2",
@@ -326,7 +327,6 @@ transaction_fpds_functions = {
     "solicitation_date": lambda broker: truncate_timestamp(broker["solicitation_date"]),
     "created_at": created_at,
     "updated_at": updated_at,
-    "place_of_performance_zip5": place_of_performance_zip5,
 }
 
 # broker column name -> usaspending column name
