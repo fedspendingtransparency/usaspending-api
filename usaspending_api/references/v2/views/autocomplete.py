@@ -11,6 +11,7 @@ from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
+
 class BaseAutocompleteViewSet(APIView):
     @staticmethod
     def get_request_payload(request):
