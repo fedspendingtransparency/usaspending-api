@@ -17,6 +17,7 @@ def capitalize_if_string(val):
         return val
 
 
+# 10/31/2019: According to PO direction, this functionality is NOT desired, and should be phased out as soon as it's safe
 def false_if_null(val):
     if val is None:
         return False
