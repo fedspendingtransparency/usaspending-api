@@ -12,7 +12,7 @@ from usaspending_api.awards.v2.views.subawards import SubawardsViewSet
 
 
 def strip_award_id(api_dict):
-    d = {k: v for k, v in api_dict.items() if k != "award_id"}
+    d = {k: v for k, v in api_dict.items() if k not in ("award_id", "generated_unique_award_id")}
     return remap_subaward_id(d)
 
 
@@ -95,6 +95,7 @@ subaward_1 = {
     "amount": "100",
     "recipient_name": "ACME",
     "award_id": 99,
+    "generated_unique_award_id": "generated_unique_award_id_for_99",
 }
 
 subaward_2 = {
@@ -111,6 +112,7 @@ subaward_2 = {
     "amount": "200",
     "recipient_name": "Tools",
     "award_id": 99,
+    "generated_unique_award_id": "generated_unique_award_id_for_99",
 }
 
 subaward_3 = {
@@ -129,6 +131,7 @@ subaward_3 = {
     "amount": "5000",
     "recipient_name": "Inc",
     "award_id": 99,
+    "generated_unique_award_id": "generated_unique_award_id_for_99",
 }
 
 subaward_10 = {
@@ -139,6 +142,7 @@ subaward_10 = {
     "amount": "5000",
     "recipient_name": "Big",
     "award_id": 99,
+    "generated_unique_award_id": "generated_unique_award_id_for_99",
 }
 
 subaward_11 = {
@@ -149,6 +153,7 @@ subaward_11 = {
     "amount": "400",
     "recipient_name": "Corp",
     "award_id": 99,
+    "generated_unique_award_id": "generated_unique_award_id_for_99",
 }
 
 subaward_12 = {
@@ -159,4 +164,5 @@ subaward_12 = {
     "amount": "444",
     "recipient_name": "First Tractor",
     "award_id": 88,
+    "generated_unique_award_id": "generated_unique_award_id_for_88",
 }

@@ -1,14 +1,13 @@
 import psycopg2
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
-USASPENDING_CONNECTION_STRING = get_database_dsn_string()
 
 SUBTIER_AGENCY_LIST_CACHE = {}
 
 
 def _fetch_reference_data():
     global SUBTIER_AGENCY_LIST_CACHE
-    with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             sql = (
                 "SELECT * FROM subtier_agency "

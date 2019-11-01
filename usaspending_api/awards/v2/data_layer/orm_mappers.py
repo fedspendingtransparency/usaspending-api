@@ -86,6 +86,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
         ("modified_at", "_modified_at"),
@@ -97,6 +98,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_name", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
@@ -203,6 +205,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_descrip", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),

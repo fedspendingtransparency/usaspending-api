@@ -41,6 +41,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
+    response["record_type"] = transaction["record_type"]
     response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
@@ -187,6 +188,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                         ("location_country_code", db_row_dict["_rl_location_country_code"]),
                         ("country_name", db_row_dict["_rl_country_name"]),
                         ("state_code", db_row_dict["_rl_state_code"]),
+                        ("state_name", db_row_dict["_rl_state_name"]),
                         ("city_name", db_row_dict["_rl_city_name"]),
                         ("county_name", db_row_dict["_rl_county_name"]),
                         ("address_line1", db_row_dict["_rl_address_line1"]),
