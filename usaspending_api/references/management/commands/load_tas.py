@@ -150,8 +150,9 @@ class Command(BaseCommand):
                 taa_instance = current_record or TreasuryAppropriationAccount()
 
                 # Don't load Financing TAS
-                if row["financial_indicator_type2"] == "F" and taa_instance.treasury_account_identifier:
-                    taa_instance.delete()
+                if row["financial_indicator_type2"] == "F":
+                    if taa_instance.treasury_account_identifier:
+                        taa_instance.delete()
                     logger.info("   Row contains Financing TAS, Skipping...")
                     continue
 
