@@ -34,9 +34,9 @@ Now, navigate to the base file directory where you will store the USAspending re
 ### Database Setup
 There are three documented options for setting up a local database in order to run the API:
 
-1. Use your own local postgres database for the API to use.
-2. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database.
-3. Download either the _whole_ database or a database subset from the USAspending website.
+1. **Local Empty DB**. Use your own local postgres database for the API to use.
+2. **Containerized Empty DB**. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database.
+3. **Local Populated DB**. Download either the _whole_ database or a database subset from the USAspending website.
 
 #### Option 1: Using a Locally Hosted Postgres Database
 Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
@@ -91,7 +91,7 @@ Some of the API endpoints reach into Elasticsearch for data.
 
 The application will now be available at `http://localhost:8000`.
 
-## Using the API
+### Using the API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
@@ -111,7 +111,7 @@ For details on how our data loaders modify incoming data, see [data_reformatting
 To run tests, you need:
 1. **Postgres** A running PostgreSQL database server _(See [Database Setup above](#database-setup))_
 1. **Required Python Libraries** Python package dependencies downloaded and discoverable _(See below)_
-1. **Environment Variables** Tell where to connect to the various data stores _(See below)_
+1. **Environment Variables** Tell python where to connect to the various data stores _(See below)_
 
 Once these are satisfied, simply run:
 
@@ -149,15 +149,21 @@ _Alternatively, you could skip using `direnv` and just export these variables in
 
 ### Including Broker Integration Tests
 Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If the dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
+(You can see messages about those skipped tests by adding the `-rs` flag to pytest, like: `pytest -rs`)
+
 To satisfy these dependencies and include execution of these tests, do the following:
 1. Ensure you have [`Docker`](https://docs.docker.com/install/) installed and running on your machine
-2. Ensure the `Broker` source code is checked out alongside this repo at `../data-act-broker-backend`
-3. Ensure you have built the `Broker` backend Docker image by running: 
+1. Ensure the `Broker` source code is checked out alongside this repo at `../data-act-broker-backend`
+1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and pointing to a live PostgreSQL server (no database required)
+1. Ensure you have built the `Broker` backend Docker image by running: 
 
-
-    $ docker build -t dataact-broker-backend ../data-act-broker-backend
+```shell
+    (usaspending-api) $ docker build -t dataact-broker-backend ../data-act-broker-backend
+```
     
 _NOTE: Broker source code should be re-fetched and image rebuilt to ensure latest integration is tested_
+
+Re-running the test suite using `pytest -rs` with these dependencies satisfied should yield no more skips of the broker integration tests.
 
 ## Contributing
 To submit fixes or enhancements, or to suggest changes, see [CONTRIBUTING.md](CONTRIBUTING.md)
