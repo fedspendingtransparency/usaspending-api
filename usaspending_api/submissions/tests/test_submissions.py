@@ -8,6 +8,7 @@ def submissions_data():
     mommy.make("submissions.SubmissionAttributes", _quantity=2)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_submissions_list(submissions_data, client):
     """
