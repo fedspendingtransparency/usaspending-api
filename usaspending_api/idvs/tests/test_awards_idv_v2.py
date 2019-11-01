@@ -412,12 +412,10 @@ def test_award_endpoint_for_null_recipient_information(client, awards_and_transa
 expected_response_idv = {
     "id": 2,
     "type": "IDV_A",
-    "parent_generated_unique_award_id": None,
     "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
     "category": "idv",
     "type_description": "GWAC",
     "piid": "5678",
-    "parent_award_piid": "1234",
     "parent_award": None,
     "description": "lorem ipsum",
     "period_of_performance": {
