@@ -64,7 +64,7 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         #     self.logger.warning("created_transactions = " + str(created_transactions))
 
         fpds_loader.load_ids(broker_id_list)
-        usaspending_transactions = TransactionFPDS.objects.all()
+        # usaspending_transactions = TransactionFPDS.objects.all()
         # assert len(usaspending_transactions) == 3
         # assert 101 in [_.transaction.id for _ in usaspending_transactions]
         # assert 201 in [_.transaction.id for _ in usaspending_transactions]
