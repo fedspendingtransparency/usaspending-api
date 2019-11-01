@@ -96,13 +96,6 @@ class ObjectClassSerializer(LimitableSerializer):
         fields = ("id", "major_object_class", "major_object_class_name", "object_class", "object_class_name")
 
 
-class DefinitionSerializer(LimitableSerializer):
-    class Meta:
-
-        model = Definition
-        fields = ["term", "slug", "data_act_term", "plain", "official", "resources"]
-
-
 class FilterSerializer(serializers.Serializer):
 
     hash = serializers.CharField()
