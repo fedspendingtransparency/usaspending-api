@@ -15,6 +15,7 @@ def recipients_data(db):
     mommy.make(LegalEntity, recipient_name="LOOK NO DUNS.", recipient_unique_id=None)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.parametrize(
     "fields,value,expected",
     [
@@ -29,6 +30,7 @@ def test_recipients_autocomplete(client, recipients_data, fields, value, expecte
     check_autocomplete("references/recipients", client, fields, value, expected)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_recipients_autocomplete_request(client):
     """Verify error on bad autocomplete request for recipients."""
@@ -39,6 +41,7 @@ def test_bad_recipients_autocomplete_request(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_recipient_autocomplete_null_duns_exclusion(client, recipients_data):
     resp = client.post(

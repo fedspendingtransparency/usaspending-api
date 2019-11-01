@@ -26,6 +26,7 @@ def award_models():
     )
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_awards_list(award_models, client):
     """
@@ -36,6 +37,7 @@ def test_awards_list(award_models, client):
     assert len(resp.data["results"]) == 3
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_awards(award_models, client):
     """
