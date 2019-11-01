@@ -46,6 +46,11 @@ install:
   - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
+  # Get dependencies to report code coverage to code climate
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+  # Run elasticsearch
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
@@ -72,5 +77,5 @@ script:
   - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --reuse-db -rsx
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
-after_success:
-  - codeclimate-test-reporter
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
