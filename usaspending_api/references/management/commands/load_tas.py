@@ -27,13 +27,13 @@ TAS_SQL_PATH = "usaspending_api/references/management/sql/restock_tas.sql"
 class Command(BaseCommand):
     """
     Used to load TAS either from Broker or a local tas_list file. There is a tas_list file inside
-    of the project that can be found at: "/usaspending_api/data/tas_list.csv"
+    of the project that can be found at: "usaspending_api/data/tas_list.csv"
 
     As of 10/30/19 the CSV functionality is used by the "load_reference_data" management
     command to load initial TAS data for local development.
 
     There are two ways to run the loader:
-        - ./manage.py load_tas --location="/usaspending_api/data/tas_list.csv"
+        - ./manage.py load_tas --location="usaspending_api/data/tas_list.csv"
         - ./manage.py load_tas
     The second option requires that a dblink is setup between USAspending and Broker databases.
     """
@@ -93,6 +93,13 @@ class Command(BaseCommand):
     def csv_tas_loader(self, file_path):
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
+            "allocation_transfer_agency_id": "ATA",
+            "agency_id": "AID",
+            "beginning_period_of_availability": "BPOA",
+            "ending_period_of_availability": "EPOA",
+            "availability_type_code": "A",
+            "main_account_code": "MAIN",
+            "sub_account_code": "SUB",
             "account_title": "GWA_TAS_NAME",
             "reporting_agency_id": "Agency AID",
             "reporting_agency_name": "Agency Name",
@@ -126,7 +133,7 @@ class Command(BaseCommand):
         with RetrieveFileFromUri(file_path).get_file_object(True) as tas_list_file_object:
             # Get a total count for print out
             tas_list_reader = csv.DictReader(tas_list_file_object)
-            total_count = len(list(tas_list_reader)) + 1
+            total_count = len(list(tas_list_reader))
 
             # Reset the reader back to the beginning of the file
             tas_list_file_object.seek(0)
