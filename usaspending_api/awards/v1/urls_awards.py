@@ -6,7 +6,4 @@ from usaspending_api.awards.v1 import views
 award_list = views.AwardListViewSet.as_view({"get": "list", "post": "list"})
 award_total = views.AwardAggregateViewSet.as_view({"get": "list", "post": "list"})
 
-urlpatterns = [
-    url(r"^$", award_list, name="award-list"),
-    url(r"^total/", award_total, name="award-total"),
-]
+urlpatterns = [url(r"^$", award_list, name="award-list"), url(r"^total/", award_total, name="award-total")]
