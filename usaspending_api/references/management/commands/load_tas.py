@@ -117,9 +117,9 @@ class Command(BaseCommand):
             "data_source": "USA",
             "tas_rendering_label": self.generate_tas_rendering_label,
             "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(
-                toptier_code=row["ATA"].strip()
+                toptier_code=row["ATA"]
             ).first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"].strip()).first(),
+            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"]).first(),
             "internal_start_date": lambda row: datetime.strftime(
                 datetime.strptime(row["DT_TM_ESTAB"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
             ),
@@ -141,13 +141,20 @@ class Command(BaseCommand):
 
             for count, row in enumerate(tas_list_reader, 1):
                 for key, value in row.items():
-                    row[key] = value.strip() if value else None
+                    row[key] = value.strip() or None
 
                 # Check to see if we need to update or create a TreasuryAppropriationAccount record
                 current_record = TreasuryAppropriationAccount.objects.filter(
                     treasury_account_identifier=row["ACCT_NUM"]
                 ).first()
                 taa_instance = current_record or TreasuryAppropriationAccount()
+
+                # Don't load Financing TAS
+                if row["financial_indicator_type2"] == "F":
+                    current_record.delete()
+                    logger.info("   Row contains Financing TAS, Skipping...")
+                    continue
+
                 load_data_into_model(taa_instance, row, field_map=field_map, value_map=value_map, save=True)
 
                 if count % 1000 == 0:
