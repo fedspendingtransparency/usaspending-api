@@ -5,11 +5,8 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import EXCLUDE_CGAC
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
-from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.common.api_versioning import removed
-from django.utils.decorators import method_decorator
 
 
 class BaseAutocompleteViewSet(APIView):

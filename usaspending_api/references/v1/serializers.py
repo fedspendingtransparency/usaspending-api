@@ -8,7 +8,6 @@ from usaspending_api.references.models import (
     RefProgramActivity,
     SubtierAgency,
     ToptierAgency,
-    Definition,
 )
 from usaspending_api.common.serializers import LimitableSerializer
 
