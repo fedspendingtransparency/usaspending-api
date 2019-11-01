@@ -43,15 +43,9 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         load_object = [dict(detached_award_procurement=_) for _ in broker_objects]
         connection = connections["data_broker"]
         with connection.cursor() as cursor:
-            columns, values = format_bulk_insert_list_column_sql(
-                cursor,
-                load_object,
-                "detached_award_procurement"
-            )
+            columns, values = format_bulk_insert_list_column_sql(cursor, load_object, "detached_award_procurement")
             insert_sql = (
-                "INSERT INTO detached_award_procurement {} "
-                "VALUES {} "
-                "RETURNING detached_award_procurement_id"
+                "INSERT INTO detached_award_procurement {} VALUES {} RETURNING detached_award_procurement_id"
             ).format(columns, values)
             cursor.execute(insert_sql)
             created_transactions = cursor.fetchall()
