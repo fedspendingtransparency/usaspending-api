@@ -195,6 +195,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                         ("location_country_code", db_row_dict["_rl_location_country_code"]),
                         ("country_name", db_row_dict["_rl_country_name"]),
                         ("state_code", db_row_dict["_rl_state_code"]),
+                        ("state_name", db_row_dict["_rl_state_name"]),
                         ("city_name", db_row_dict["_rl_city_name"]),
                         ("county_name", db_row_dict["_rl_county_name"]),
                         ("address_line1", db_row_dict["_rl_address_line1"]),
