@@ -16,6 +16,7 @@ def federal_account_models():
     )
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_federal_account_list(federal_account_models, client):
     """

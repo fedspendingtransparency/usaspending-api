@@ -152,6 +152,10 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
+    if transaction["product_or_service_code"]:
+        response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
+    if transaction["naics"]:
+        response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
     return delete_keys_from_dict(response)
 
@@ -191,6 +195,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                         ("location_country_code", db_row_dict["_rl_location_country_code"]),
                         ("country_name", db_row_dict["_rl_country_name"]),
                         ("state_code", db_row_dict["_rl_state_code"]),
+                        ("state_name", db_row_dict["_rl_state_name"]),
                         ("city_name", db_row_dict["_rl_city_name"]),
                         ("county_name", db_row_dict["_rl_county_name"]),
                         ("address_line1", db_row_dict["_rl_address_line1"]),

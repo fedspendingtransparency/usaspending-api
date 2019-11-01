@@ -140,6 +140,7 @@ def awards_and_transactions(db):
         "legal_entity_country_code": "USA",
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_name": "North Carolina",
         "legal_entity_city_name": "Charlotte",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_address_line1": "123 main st",
@@ -182,6 +183,7 @@ def awards_and_transactions(db):
         "legal_entity_country_code": "USA",
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_name": "North Carolina",
         "legal_entity_city_name": "Charlotte",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_address_line1": "123 main st",
@@ -224,6 +226,7 @@ def awards_and_transactions(db):
         "legal_entity_country_code": "USA",
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_name": "North Carolina",
         "legal_entity_city_name": "Charlotte",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_address_line1": "123 main st",
@@ -266,6 +269,7 @@ def awards_and_transactions(db):
         "legal_entity_country_code": "USA",
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_name": "North Carolina",
         "legal_entity_city_name": "Charlotte",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_address_line1": "123 main st",
@@ -322,6 +326,7 @@ def awards_and_transactions(db):
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_descrip": "North Carolina",
         "legal_entity_zip5": "12204",
         "legal_entity_zip_last4": "5312",
         "major_program": None,
@@ -399,6 +404,7 @@ def awards_and_transactions(db):
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_descrip": "North Carolina",
         "legal_entity_zip5": "12204",
         "legal_entity_zip_last4": "5312",
         "major_program": None,
@@ -475,6 +481,7 @@ def awards_and_transactions(db):
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_descrip": "North Carolina",
         "legal_entity_zip5": "12204",
         "legal_entity_zip_last4": "5312",
         "major_program": None,
@@ -694,12 +701,35 @@ def awards_and_transactions(db):
         "parent_award_id": None,
     }
 
+    award_7_model = {
+        "pk": 7,
+        "type": "03",
+        "type_description": "FORMULA GRANT (A)",
+        "category": "grant",
+        "piid": "000",
+        "parent_award_piid": "000",
+        "description": "lorem ipsum",
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "recipient": LegalEntity.objects.get(pk=1),
+        "total_obligation": 600,
+        "base_and_all_options_value": 600,
+        "period_of_performance_start_date": "2004-02-04",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "generated_unique_award_id": "ASST_NON_:~$@*\"()#/,^&+=`!'%/_. -_9700",
+        "place_of_performance": Location.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "total_subaward_amount": 0,
+        "subaward_count": 0,
+        "date_signed": "2004-03-02",
+    }
     mommy.make("awards.Award", **award_1_model)
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
     mommy.make("awards.Award", **award_4_model)
     mommy.make("awards.Award", **award_5_model)
     mommy.make("awards.Award", **award_6_model)
+    mommy.make("awards.Award", **award_7_model)
     mommy.make("awards.ParentAward", **parent_award_model)
 
 
@@ -793,6 +823,18 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
     }
 
 
+def test_special_characters(client, awards_and_transactions):
+    resp = client.get("/api/v2/awards/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/awards/count/transaction/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+    resp = client.get("/api/v2/awards/count/subaward/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+    resp = client.get("/api/v2/awards/count/federal_account/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    assert resp.status_code == status.HTTP_200_OK
+
+
 expected_response_asst = {
     "id": 1,
     "record_type": 111,
@@ -856,6 +898,7 @@ expected_response_asst = {
             "city_name": "Charlotte",
             "county_name": "BUNCOMBE",
             "state_code": "NC",
+            "state_name": "North Carolina",
             "zip5": "12204",
             "zip4": "5312",
             "foreign_postal_code": None,
@@ -934,6 +977,7 @@ expected_response_cont = {
             "city_name": "Charlotte",
             "county_name": "BUNCOMBE",
             "state_code": "NC",
+            "state_name": "North Carolina",
             "zip5": "12204",
             "zip4": "5312",
             "foreign_postal_code": None,

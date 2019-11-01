@@ -33,7 +33,7 @@ Returns a list of the current versions of generated archive files for a given fi
 + `agency_name` (required, string)
 + `agency_acronym` (required, string, nullable)
 + `file_name` (required, string)
-+ `fiscal_year` (required, string)
++ `fiscal_year` (required, number)
 + `type` (required, enum[string])
     + Members
         + `assistance`
