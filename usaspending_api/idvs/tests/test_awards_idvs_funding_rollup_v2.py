@@ -66,7 +66,7 @@ class IDVFundingRollupTestCase(TestCase):
 
         self._test_post({"award_id": 0}, (0,))
 
-        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"}, (0,))
+        self._test_post({"award_id": "CONT_IDV_000"}, (0,))
 
     def test_with_bogus_id(self):
 

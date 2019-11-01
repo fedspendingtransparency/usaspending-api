@@ -84,7 +84,7 @@ def create_idv_test_data():
         mommy.make(
             "awards.Award",
             id=award_id,
-            generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
+            generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             type=("IDV_%s" if award_id in IDVS else "CONTRACT_%s") % string_award_id,
             piid="piid_%s" % string_award_id,
             type_description="type_description_%s" % string_award_id,
@@ -183,7 +183,7 @@ def create_idv_test_data():
         mommy.make(
             "awards.ParentAward",
             award_id=award_id,
-            generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
+            generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             rollup_total_obligation=300000 + award_id,
             parent_award_id=PARENTS.get(award_id),
             rollup_contract_count=400000 + award_id,

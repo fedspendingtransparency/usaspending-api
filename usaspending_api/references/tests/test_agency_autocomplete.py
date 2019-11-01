@@ -38,6 +38,7 @@ def agency_data(db):
     )
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.parametrize(
     "fields,value,expected",
     [
@@ -56,6 +57,7 @@ def test_agency_autocomplete(client, agency_data, fields, value, expected):
     check_autocomplete("references/agency", client, fields, value, expected)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_agency_autocomplete_request(client):
     """Verify error on bad autocomplete request for recipients."""
@@ -64,6 +66,7 @@ def test_bad_agency_autocomplete_request(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_agency_autocomplete_sorting(client, agency_data):
     """Verify error on bad autocomplete request for recipients."""
