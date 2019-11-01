@@ -316,7 +316,6 @@ def broker_db_setup(django_db_setup):
             "Docker is not running, so a broker database cannot be setup. "
             "Skipping tests of integration with the Broker DB"
         )
-        yield None
 
     # Check required Broker docker image is available
     found = docker_client.images.list(name=broker_docker_image)
@@ -326,7 +325,6 @@ def broker_db_setup(django_db_setup):
             "Could not find the Docker Image named {} used to setup a broker database. "
             "Skipping tests of integration with the Broker DB".format(broker_docker_image)
         )
-        yield None
 
     # Check that the Broker source code is checked out
     if not Path.exists(broker_src_dir_path_obj):
@@ -335,7 +333,6 @@ def broker_db_setup(django_db_setup):
             "Could not find the Broker source code checked out next to this repo's source code, at {}. "
             "Skipping tests of integration with the Broker DB".format(broker_src_dir_path_obj)
         )
-        yield None
 
     # Run the DB setup script using the Broker docker image.
     if "data_broker" not in settings.DATABASES:
@@ -363,7 +360,6 @@ def broker_db_setup(django_db_setup):
     )
     [logger.info(str(log)) for log in log_gen]  # log container logs from returned streaming log generator
     logger.info("Command ran to completion in container. Broker DB should be setup for tests.")
-    yield
 
 
 @pytest.fixture(scope="session")
