@@ -33,6 +33,7 @@ The format for entries in this json file are as follows (NB: if you use method "
 """
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_endpoints(endpoint_data, client):
     json_data = open(os.path.join(os.path.dirname(__file__), "../../data/testing_data/endpoint_testing_data.json"))

@@ -8,6 +8,7 @@ from rest_framework import status
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_transaction_endpoint_v1(client):
     """Test the transaction endpoint."""
@@ -19,6 +20,7 @@ def test_transaction_endpoint_v1(client):
     assert client.post("/api/v1/transactions/?page=1&limit=4", content_type="application/json").status_code == 200
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_transaction_endpoint_v1_award_fk(client):
     """Test the transaction endpoint."""

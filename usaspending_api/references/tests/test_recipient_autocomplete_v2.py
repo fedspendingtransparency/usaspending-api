@@ -37,6 +37,7 @@ def recipients_data(db):
     )
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_recipient_autocomplete_success(client, recipients_data):
 
@@ -61,6 +62,7 @@ def test_recipient_autocomplete_success(client, recipients_data):
     assert 274178 in resp.data["results"]["recipient_id_list"]
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_recipient_autocomplete_failure(client):
     """Empty string test"""

@@ -20,7 +20,7 @@ from usaspending_api.references.v1.serializers import (
     FilterSerializer,
     HashSerializer,
 )
-from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
@@ -84,8 +84,8 @@ class HashEndpoint(APIView):
             )
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class LocationEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -105,7 +105,7 @@ class LocationEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="post")
+@method_decorator(removed, name="post")
 class LocationGeoCompleteEndpoint(APIView):
     """
     DEPRECATED
@@ -125,7 +125,7 @@ class LocationGeoCompleteEndpoint(APIView):
         return Response(response_data)
 
 
-@method_decorator(deprecated, name="post")
+@method_decorator(removed, name="post")
 class AgencyAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     DEPRECATED
@@ -143,8 +143,8 @@ class AgencyAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -162,8 +162,8 @@ class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class CfdaListEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -182,8 +182,8 @@ class CfdaListEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class CfdaRetrieveEndpoint(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -202,8 +202,8 @@ class CfdaRetrieveEndpoint(FilterQuerysetMixin, DetailViewSet):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class RecipientListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -221,8 +221,8 @@ class RecipientListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class RecipientRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     DEPRECATED
@@ -240,7 +240,7 @@ class RecipientRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
-@method_decorator(deprecated, name="post")
+@method_decorator(removed, name="post")
 class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     DEPRECATED
@@ -258,8 +258,8 @@ class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class GlossaryViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     DEPRECATED
@@ -277,7 +277,7 @@ class GlossaryViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         return filtered_queryset
 
 
-@method_decorator(deprecated, name="post")
+@method_decorator(removed, name="post")
 class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     DEPRECATED
