@@ -90,6 +90,13 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **trans_cont_1)
     mommy.make("awards.TransactionNormalized", **trans_cont_2)
 
+    mommy.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
+    mommy.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
+
+    mommy.make("references.NAICS", code="333911", description="PUMP AND PUMPING EQUIPMENT MANUFACTURING")
+    mommy.make("references.NAICS", code="3339", description="Other General Purpose Machinery Manufacturing")
+    mommy.make("references.NAICS", code="33", description="Manufacturing")
+
     award_1_model = {
         "pk": 1,
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
@@ -556,6 +563,17 @@ expected_response_idv = {
         ]
     },
     "date_signed": "2004-03-02",
+    "naics_hierarchy": {
+        "toptier_code": {"description": "Manufacturing", "code": "33"},
+        "midtier_code": {"description": "Other General Purpose Machinery Manufacturing", "code": "3339"},
+        "base_code": {"description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING", "code": "333911"},
+    },
+    "psc_hierarchy": {
+        "toptier_code": {},
+        "midtier_code": {"description": "PIPE, TUBING, HOSE, AND FITTINGS", "code": "47"},
+        "subtier_code": {},
+        "base_code": {"description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS", "code": "4730"},
+    },
 }
 
 
