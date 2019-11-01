@@ -116,9 +116,7 @@ class Command(BaseCommand):
         value_map = {
             "data_source": "USA",
             "tas_rendering_label": self.generate_tas_rendering_label,
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(
-                toptier_code=row["ATA"]
-            ).first(),
+            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["ATA"]).first(),
             "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"]).first(),
             "internal_start_date": lambda row: datetime.strftime(
                 datetime.strptime(row["DT_TM_ESTAB"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
