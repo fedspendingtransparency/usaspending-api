@@ -50,17 +50,13 @@ def legal_entity_zip5(broker_input):
         match = ZIP_CODE_PATTERN.match(broker_input["legal_entity_zip4"])
         if match:
             return match.group(1)
-    return ""
+    return None
 
 
 def place_of_performance_zip5(broker_input):
     if broker_input["place_of_performance_zip5"]:
         return capitalize_if_string(broker_input["place_of_performance_zip5"])
-    elif broker_input["place_of_performance_zip4a"]:
-        match = ZIP_CODE_PATTERN.match(broker_input["place_of_performance_zip4a"])
-        if match:
-            return match.group(1)
-    return ""
+    return None
 
 
 def legal_entity_state_code(broker_input):
@@ -68,7 +64,7 @@ def legal_entity_state_code(broker_input):
         return capitalize_if_string(broker_input["legal_entity_state_code"])
     elif broker_input["legal_entity_state_descrip"]:
         return code_to_state.get(broker_input["legal_entity_state_descrip"], {}).get("name")
-    return ""
+    return None
 
 
 def legal_entity_state_description(broker_input):
@@ -76,7 +72,7 @@ def legal_entity_state_description(broker_input):
         return capitalize_if_string(broker_input["legal_entity_state_descrip"])
     elif broker_input["legal_entity_state_code"]:
         return code_to_state.get(broker_input["legal_entity_state_code"], {}).get("name")
-    return ""
+    return None
 
 
 def place_of_performance_state_code(broker_input):
@@ -84,7 +80,7 @@ def place_of_performance_state_code(broker_input):
         return capitalize_if_string(broker_input["place_of_performance_state"])
     elif broker_input["place_of_perfor_state_desc"]:
         return state_to_code.get(broker_input["place_of_perfor_state_desc"])
-    return ""
+    return None
 
 
 def place_of_performance_state_description(broker_input):
@@ -92,4 +88,4 @@ def place_of_performance_state_description(broker_input):
         return capitalize_if_string(broker_input["place_of_perfor_state_desc"])
     elif broker_input["place_of_performance_state"]:
         return state_to_code.get(broker_input["place_of_performance_state"])
-    return ""
+    return None
