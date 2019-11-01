@@ -1,6 +1,5 @@
 from django.conf.urls import url
 
-from usaspending_api.awards.v1 import views
 from usaspending_api.common.views import RemovedEndpointView
 
 # map reqest types to viewset method; replace this with a router

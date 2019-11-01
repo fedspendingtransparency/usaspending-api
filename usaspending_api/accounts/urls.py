@@ -5,12 +5,8 @@ from usaspending_api.common.views import RemovedEndpointView
 
 # bind ViewSets to URLs
 financial_accounts_by_award = views.FinancialAccountsByAwardListViewSet.as_view({"get": "list", "post": "list"})
-financial_accounts_by_award_detail = RemovedEndpointView.as_view(
-    {"get": "retrieve", "post": "retrieve"}
-)
-financial_accounts_by_award_total = RemovedEndpointView.as_view(
-    {"get": "retrieve", "post": "retrieve"}
-)
+financial_accounts_by_award_detail = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+financial_accounts_by_award_total = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 
 urlpatterns = [
     url(r"^awards/$", financial_accounts_by_award),

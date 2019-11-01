@@ -100,6 +100,5 @@ class MarkdownView(TemplateView):
 # placeholder for retired URLs
 @method_decorator(removed, name="retrieve")
 class RemovedEndpointView(viewsets.ViewSet):
-
     def retrieve(self, request, *args, **kwargs):
         raise Exception("Dummy endpoint not returning 410")

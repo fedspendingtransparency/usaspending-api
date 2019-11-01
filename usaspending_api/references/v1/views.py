@@ -4,14 +4,9 @@ import json
 from django.http import HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.common.mixins import FilterQuerysetMixin
-from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.references.models import Definition, FilterHash
-from usaspending_api.references.v1.serializers import (
-    FilterSerializer,
-    HashSerializer,
-)
-from usaspending_api.common.api_versioning import deprecated, removed
+from usaspending_api.references.models import FilterHash
+from usaspending_api.references.v1.serializers import FilterSerializer, HashSerializer
+from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
 

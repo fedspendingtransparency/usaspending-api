@@ -15,7 +15,11 @@ urlpatterns = [
     url(r"^agency/$", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     url(r"^agency/autocomplete", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     url(r"^recipients/$", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"}), name="recipient-list"),
-    url(r"^recipients/(?P<pk>[0-9]+)/$", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"}), name="recipient-detail"),
+    url(
+        r"^recipients/(?P<pk>[0-9]+)/$",
+        RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"}),
+        name="recipient-detail",
+    ),
     url(r"^recipients/autocomplete", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     url(r"^glossary/autocomplete", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     url(r"^glossary/$", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
