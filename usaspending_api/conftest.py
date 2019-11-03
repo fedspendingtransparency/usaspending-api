@@ -294,13 +294,17 @@ def elasticsearch_transaction_index(db):
 
 
 @pytest.fixture(scope="session")
-def broker_db_setup(django_db_setup):
+def broker_db_setup(django_db_setup, django_db_use_migrations):
     """Fixture to use during a pytest session if you will run integration tests that requires an actual broker
     database on the other end.
 
     This will use the Broker test database that Django sets up for the "data_broker" entry in settings.DATABASES,
     which is likely to be named "test_data_broker" by Django.
     """
+    if not django_db_use_migrations:
+        logger.info("broker_db_setup: Skipping execution of broker DB migrations because --nomigrations flag was used.")
+        return
+
     broker_docker_image = "dataact-broker-backend:latest"
     broker_src_dir_path_obj = Path(settings.BASE_DIR).resolve().parent / "data-act-broker-backend"
     broker_docker_volume_target = "/data-act/backend"
