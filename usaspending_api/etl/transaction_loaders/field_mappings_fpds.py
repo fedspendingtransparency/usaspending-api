@@ -524,6 +524,7 @@ place_of_performance_nonboolean_columns = {
     "place_of_performance_congr": "congressional_code",
     "place_of_perform_city_name": "city_name",
     "place_of_performance_zip4a": "zip4",
+    "place_of_performance_zip5": "zip5",
     "place_of_perform_zip_last4": "zip_last4",
     "detached_award_proc_unique": "transaction_unique_id",
 }
@@ -538,7 +539,6 @@ place_of_performance_functions = {
     "address_line3": lambda broker: None,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
-    "zip5": place_of_performance_zip5,
     "state_code": place_of_performance_state_code,
     "state_description": place_of_performance_state_description,
 }
