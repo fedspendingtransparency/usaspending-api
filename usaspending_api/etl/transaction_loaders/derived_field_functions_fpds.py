@@ -53,12 +53,6 @@ def legal_entity_zip5(broker_input):
     return None
 
 
-def place_of_performance_zip5(broker_input):
-    if broker_input["place_of_performance_zip5"]:
-        return capitalize_if_string(broker_input["place_of_performance_zip5"])
-    return None
-
-
 def legal_entity_state_code(broker_input):
     if broker_input["legal_entity_state_code"]:
         return capitalize_if_string(broker_input["legal_entity_state_code"])
