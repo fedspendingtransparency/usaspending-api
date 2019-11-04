@@ -104,5 +104,7 @@ class RemovedEndpointView(viewsets.ViewSet):
         Placeholder for endpoints that have been removed
     """
 
+    endpoint_doc = ""
+
     def retrieve(self, request, *args, **kwargs):
         raise Exception("Dummy endpoint not returning 410")
