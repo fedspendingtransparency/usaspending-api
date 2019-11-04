@@ -42,7 +42,6 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/glossary/](/api/v2/autocomplete/glossary/)|POST| Returns glossary terms matching provided search text|
 |[/api/v2/autocomplete/naics/](/api/v2/autocomplete/naics/)|POST| Returns NAICS objects matching the specified search text|
 |[/api/v2/autocomplete/psc/](/api/v2/autocomplete/psc/)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.|
-|[/api/v2/autocomplete/recipient/](/api/v2/autocomplete/recipient/)|POST| Returns Parent and Recipient DUNS matching the search text in order of similarity. Returns a list of legal entity IDs whose recipient name contains search text, OR a list of legal entity IDs matching a valid DUNS number. Includes search_text in response for frontend.|
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id|
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns details about specific award|
 |[/api/v2/awards/accounts/](/api/v2/awards/accounts/)|POST| Returns a list of federal accounts for the indicated award|
