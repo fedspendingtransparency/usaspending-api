@@ -13,7 +13,7 @@ tas_test_file = os.path.join(settings.BASE_DIR, "usaspending_api/data/testing_da
 
 @pytest.fixture()
 def tas_data():
-    call_command("loadtas", tas_test_file)
+    call_command("load_tas", location=tas_test_file)
 
 
 @pytest.mark.django_db(transaction=True)

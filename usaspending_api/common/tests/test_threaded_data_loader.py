@@ -30,7 +30,7 @@ def test_threaded_data_loader():
 
     # Load it once
     loader.load_from_file(file_path_1)
-    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="45736")
+    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="53021")
 
     # Check that we loaded successfully
     assert gwa_tas.account_title == file_1_account_title
@@ -40,7 +40,7 @@ def test_threaded_data_loader():
     gwa_tas.save()
 
     loader.load_from_file(file_path_2)
-    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="45736")
+    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="53021")
 
     assert gwa_tas.account_title == file_2_account_title
     assert gwa_tas.beginning_period_of_availability == "2004"
@@ -50,7 +50,7 @@ def test_threaded_data_loader():
     loader.collision_behavior = "delete"
     loader.load_from_file(file_path_1)
 
-    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="45736")
+    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="53021")
     assert gwa_tas.beginning_period_of_availability is None
     assert gwa_tas.account_title == file_1_account_title
 
@@ -58,14 +58,14 @@ def test_threaded_data_loader():
     loader.collision_behavior = "skip"
     loader.load_from_file(file_path_2)
 
-    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="45736")
+    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="53021")
     assert gwa_tas.account_title == file_1_account_title
 
     # Now test skip and complain
     loader.collision_behavior = "skip_and_complain"
     loader.load_from_file(file_path_2)
 
-    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="45736")
+    gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier="53021")
     assert gwa_tas.account_title == file_1_account_title
 
 

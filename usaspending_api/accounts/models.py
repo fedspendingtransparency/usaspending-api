@@ -77,6 +77,8 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     drv_appropriation_account_expired_status = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    internal_start_date = models.DateField(blank=True, null=True)
+    internal_end_date = models.DateField(blank=True, null=True)
 
     def update_agency_linkages(self):
         self.awarding_toptier_agency = ToptierAgency.objects.filter(
