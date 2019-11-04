@@ -8,6 +8,7 @@ def glossary_data(db):
     call_command("load_glossary")
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 def test_glossary_endpoint(client, glossary_data):
 
     # Sorry to squash these together, but I don't want to load the guide data

@@ -39,14 +39,14 @@ def test_get_previous_submission():
     # set up some related submissions
     sub1 = mommy.make(
         SubmissionAttributes,
-        cgac_code="073",
+        toptier_code="073",
         reporting_fiscal_year=2017,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
     )
     mommy.make(
         SubmissionAttributes,
-        cgac_code="073",
+        toptier_code="073",
         reporting_fiscal_year=2017,
         reporting_fiscal_period=6,
         quarter_format_flag=True,
@@ -63,7 +63,7 @@ def test_get_previous_submission():
 
     mommy.make(
         SubmissionAttributes,
-        cgac_code="020",
+        toptier_code="020",
         reporting_fiscal_year=2016,
         reporting_fiscal_period=6,
         quarter_format_flag=False,

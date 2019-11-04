@@ -5,13 +5,17 @@ from usaspending_api.idvs.v2.views.amounts import IDVAmountsViewSet
 from usaspending_api.idvs.v2.views.awards import IDVAwardsViewSet
 from usaspending_api.idvs.v2.views.funding import IDVFundingViewSet
 from usaspending_api.idvs.v2.views.funding_rollup import IDVFundingRollupViewSet
+from usaspending_api.idvs.v2.views.count.federal_account import IDVFederalAccountCountViewSet
 
 
 urlpatterns = [
     url(r"^accounts/$", IDVAccountsViewSet.as_view()),
     url(r"^activity/$", IDVActivityViewSet.as_view()),
-    url(r"^amounts/(?P<requested_award>[A-Za-z0-9_. -]+)/$", IDVAmountsViewSet.as_view()),
+    url("^amounts/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVAmountsViewSet.as_view()),
     url(r"^awards/$", IDVAwardsViewSet.as_view()),
     url(r"^funding/$", IDVFundingViewSet.as_view()),
     url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
+    url(
+        "^count/federal_account/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVFederalAccountCountViewSet.as_view()
+    ),
 ]

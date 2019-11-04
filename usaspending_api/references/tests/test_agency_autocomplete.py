@@ -13,13 +13,13 @@ def agency_data(db):
     mommy.make(
         Agency,
         toptier_agency__name="Lunar Colonization Society",
-        toptier_agency__cgac_code="LCS123",
+        toptier_agency__toptier_code="LCS123",
         _fill_optional=True,
     ),
     mommy.make(
         Agency,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
-        toptier_agency__cgac_code="CMEC",
+        toptier_agency__toptier_code="CMEC",
         _fill_optional=True,
     ),
     mommy.make(
@@ -38,14 +38,15 @@ def agency_data(db):
     )
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.parametrize(
     "fields,value,expected",
     [
         (["toptier_agency__name"], "ext", {"toptier_agency__name": ["Cerean Mineral Extraction Corp."]}),
         (
-            ["toptier_agency__name", "toptier_agency__cgac_code"],
+            ["toptier_agency__name", "toptier_agency__toptier_code"],
             "123",
-            {"toptier_agency__name": [], "toptier_agency__cgac_code": ["LCS123"]},
+            {"toptier_agency__name": [], "toptier_agency__toptier_code": ["LCS123"]},
         ),
     ],
 )
@@ -56,6 +57,7 @@ def test_agency_autocomplete(client, agency_data, fields, value, expected):
     check_autocomplete("references/agency", client, fields, value, expected)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_agency_autocomplete_request(client):
     """Verify error on bad autocomplete request for recipients."""
@@ -64,6 +66,7 @@ def test_bad_agency_autocomplete_request(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_agency_autocomplete_sorting(client, agency_data):
     """Verify error on bad autocomplete request for recipients."""

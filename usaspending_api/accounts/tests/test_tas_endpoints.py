@@ -100,6 +100,7 @@ def account_models():
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_tas_balances_list(account_models, client):
     """
@@ -134,6 +135,7 @@ def test_tas_balances_total(account_models, client):
         assert response_tas_sums[result["item"]] == result["aggregate"]
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_tas_categories_list(account_models, client):
     """
@@ -242,6 +244,7 @@ def test_tas_categories_quarters_total(account_models, client):
         assert response_tas_1_obj_sums[result["item"]] == result["aggregate"]
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_tas_list(account_models, client):
     """
@@ -253,6 +256,7 @@ def test_tas_list(account_models, client):
     assert len(resp.data["results"]) == 2
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_tas_categories_quarters_list(account_models, client):
     """
@@ -263,6 +267,7 @@ def test_tas_categories_quarters_list(account_models, client):
     assert len(resp.data["results"]) == 4
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_tas_balances_quarters_list(account_models, client):
     """

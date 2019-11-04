@@ -6,7 +6,7 @@ class SubmissionAttributes(models.Model):
     broker_submission_id = models.IntegerField(null=True)
     certified_date = models.DateField(blank=True, null=True)
     usaspending_update = models.DateField(blank=True, null=True)
-    cgac_code = models.TextField(blank=True, null=True)
+    toptier_code = models.TextField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     reporting_fiscal_year = models.IntegerField(blank=True, null=True)
@@ -28,7 +28,9 @@ class SubmissionAttributes(models.Model):
         db_table = "submission_attributes"
 
     def __str__(self):
-        return "CGAC {} FY {} QTR {}".format(self.cgac_code, self.reporting_fiscal_year, self.reporting_fiscal_quarter)
+        return "TOPTIER {} FY {} QTR {}".format(
+            self.toptier_code, self.reporting_fiscal_year, self.reporting_fiscal_quarter
+        )
 
     @classmethod
     def last_certified_fy(cls):

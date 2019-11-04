@@ -21,6 +21,7 @@ django-spaghetti-and-meatballs==0.2.2
 Django>=1.11.0,<2.0
 djangorestframework==3.9.4
 docutils==0.15.2
+dredd-hooks==0.2.0
 drf-extensions==0.3.1
 drf-tracking==1.4.0
 elasticsearch==6.3.0

@@ -9,11 +9,11 @@ from usaspending_api.accounts.models import FederalAccount
 
 @pytest.fixture
 def fixture_data(db):
-    mommy.make("references.ToptierAgency", cgac_code="001", abbreviation="ABCD", name="Dept. of Depts")
-    mommy.make("references.ToptierAgency", cgac_code="002", abbreviation="EFGH", name="The Bureau")
-    mommy.make("references.ToptierAgency", cgac_code="1601", abbreviation="DOL", name="Department of Labor")
-    mommy.make("references.ToptierAgency", cgac_code="097", abbreviation="DOD", name="Department of Defense")
-    mommy.make("references.ToptierAgency", cgac_code="021", abbreviation="DOD", name="Department of Navy")
+    mommy.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
+    mommy.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
+    mommy.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
+    mommy.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
+    mommy.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
     fa0 = mommy.make(FederalAccount, agency_identifier="001", main_account_code="0005", account_title="Something")
     fa1 = mommy.make(FederalAccount, agency_identifier="002", main_account_code="0005", account_title="Nothing1")
     fa2 = mommy.make(FederalAccount, agency_identifier="1600", main_account_code="0005", account_title="Nothing2")

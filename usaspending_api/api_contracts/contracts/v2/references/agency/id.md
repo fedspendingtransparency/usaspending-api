@@ -16,7 +16,7 @@ This endpoint returns a high-level overview of a specific government agency, giv
         
 + Response 200 (application/json)
 
-    + Attributes
+    + Attributes (object)
         + `results` (required, AgencyOverview)
 
 # Data Structures

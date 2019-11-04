@@ -38,7 +38,7 @@ FUNDING_SQL = SQL(
         select  a.id
         from    agency as a
                 inner join toptier_agency as ta on ta.toptier_agency_id = a.toptier_agency_id
-        where   cgac_code = {dod_cgac}
+        where   toptier_code = {dod_cgac}
         order
         by      a.toptier_flag desc, a.id asc
         limit 1
@@ -46,7 +46,7 @@ FUNDING_SQL = SQL(
         select  a.id
         from    agency as a
                 inner join toptier_agency as ta on ta.toptier_agency_id = a.toptier_agency_id
-        where   cgac_code in {subsumed_cgacs}
+        where   toptier_code in {subsumed_cgacs}
     ), gather_financial_accounts_by_awards as (
         select  case
                     when a.awarding_agency_id in (select id from get_subsumed_agency_ids) then (select id from get_dod)

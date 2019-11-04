@@ -16,7 +16,7 @@ class DataDictionaryViewSet(APIView):
     This route takes no parameters and returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary
     """
 
-    endpoint_doc = "usaspending_api/api_docs/api_documentation/references/data_dictionary.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/data_dictionary.md"
 
     @cache_response()
     def get(self, request, format=None):

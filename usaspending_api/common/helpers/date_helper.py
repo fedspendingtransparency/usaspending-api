@@ -1,7 +1,6 @@
 from argparse import ArgumentTypeError
 from datetime import timezone
 from dateutil import parser
-from django.utils.dateparse import parse_date
 
 
 def cast_datetime_to_naive(datetime):
@@ -80,7 +79,7 @@ def fy(raw_date):
         return None
 
     if isinstance(raw_date, str):
-        raw_date = parse_date(raw_date)
+        raw_date = parser.parse(raw_date)
 
     try:
         result = raw_date.year

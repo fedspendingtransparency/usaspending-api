@@ -7,7 +7,7 @@ from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownlo
 
 urlpatterns = [
     url(r"^awards", YearLimitedDownloadViewSet.as_view()),
-    url(r"^status", DownloadStatusViewSet.as_view()),
     url(r"^list_agencies", DownloadListAgenciesViewSet.as_view()),
     url(r"^list_monthly_files", ListMonthlyDownloadsViewSet.as_view()),
+    url(r"^status", DownloadStatusViewSet.as_view()),
 ]

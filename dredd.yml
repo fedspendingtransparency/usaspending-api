@@ -1,5 +1,5 @@
 dry-run: null
-hookfiles: null
+hookfiles: usaspending_api/api_contracts/hooks/hooks.py
 language: python
 sandbox: false
 server: python manage.py runserver
@@ -21,7 +21,7 @@ level: info
 timestamp: false
 silent: false
 path: []
-hooks-worker-timeout: 5000
+hooks-worker-timeout: 10000
 hooks-worker-connect-timeout: 1500
 hooks-worker-connect-retry: 500
 hooks-worker-after-connect-wait: 100
