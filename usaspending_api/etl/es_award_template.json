@@ -36,7 +36,7 @@
   "mappings": {
     "award_mapping": {
       "properties": {
-        "award_id": {
+        "id": {
           "type": "integer"
         },
         "generated_unique_award_id": {
@@ -58,13 +58,13 @@
           }
         },
         "piid": {
-          "type": "text"
+          "type": "keyword"
         },
         "fain": {
-          "type": "text"
+          "type": "keyword"
         },
         "uri": {
-          "type": "text"
+          "type": "keyword"
         },
         "total_obligation": {
           "type": "scaled_float",
@@ -94,10 +94,10 @@
           }
         },
         "recipient_unique_id": {
-          "type": "text"
+          "type": "keyword"
         },
         "parent_recipient_unique_id": {
-          "type": "text"
+          "type": "keyword"
         },
          "business_categories": {
           "type": "text"
@@ -156,7 +156,12 @@
           }
         },
         "funding_toptier_agency_name": {
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "awarding_subtier_agency_name": {
           "type": "keyword",
@@ -167,22 +172,52 @@
           }
         },
         "funding_subtier_agency_name": {
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "awarding_toptier_agency_code": {
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "funding_toptier_agency_code": {
-          "type": "text"
+         "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "awarding_subtier_agency_code": {
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "funding_subtier_agency_code": {
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "recipient_location_country_code": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "recipient_location_country_name": {
           "type": "text"
@@ -191,16 +226,16 @@
           "type": "keyword"
         },
         "recipient_location_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_county_name": {
           "type": "text"
         },
         "recipient_location_zip5": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_city_name": {
           "type": "text",
@@ -220,16 +255,16 @@
           "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_county_name": {
           "type": "text"
         },
         "pop_zip5": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_city_name": {
           "type": "text",
@@ -240,37 +275,77 @@
           }
         },
         "cfda_number": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "sai_number": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type_of_contract_pricing": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type_set_aside": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "extent_competed": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pulled_from": {
           "type": "text"
         },
         "product_or_service_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "product_or_service_description": {
           "type": "text"
         },
         "naics_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "naics_description": {
           "type": "text"
         },
         "treasury_account_identifiers": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         }
       }
     }

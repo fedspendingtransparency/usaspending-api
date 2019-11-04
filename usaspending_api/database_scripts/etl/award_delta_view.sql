@@ -1,8 +1,8 @@
-DROP VIEW IF EXISTS award_delta_view;
+DROP VIEW IF EXISTS award_delta_view_full;
 
-CREATE VIEW award_delta_view AS
+CREATE VIEW award_delta_view_full AS
 SELECT
-  awards.id AS award_id,
+  awards.id,
   awards.generated_unique_award_id,
     CASE
     WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
@@ -31,7 +31,6 @@ SELECT
   latest_transaction.action_date,
   latest_transaction.fiscal_year,
   latest_transaction.last_modified_date,
-  latest_transaction.update_date,
   awards.period_of_performance_start_date,
   awards.period_of_performance_current_end_date,
   awards.date_signed,

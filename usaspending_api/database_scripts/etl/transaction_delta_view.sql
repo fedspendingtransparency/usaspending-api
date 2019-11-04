@@ -39,6 +39,9 @@ SELECT
   UTM.recipient_name,
 
   UTM.action_date,
+  select extract(month from UTM.action_date::date + interval '3 months') as fiscal_month
+  select extract(quarter from UTM.action_date::date + interval '3 months') as fiscal_quarter
+  select extract(year from UTM.action_date::date + interval '3 months') as fiscal_year
   AWD.period_of_performance_start_date,
   AWD.period_of_performance_current_end_date,
   FPDS.ordering_period_end_date,
@@ -60,6 +63,7 @@ SELECT
   UTM.awarding_subtier_agency_abbreviation,
   UTM.funding_subtier_agency_abbreviation,
 
+  UTM.cfda_number,
   UTM.cfda_title,
   '' AS cfda_popular_name,
   UTM.type_of_contract_pricing,

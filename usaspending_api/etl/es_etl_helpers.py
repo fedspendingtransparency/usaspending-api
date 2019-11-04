@@ -44,6 +44,9 @@ TRANSACTION_VIEW_COLUMNS = [
     "parent_recipient_unique_id",
     "recipient_name",
     "action_date",
+    "fiscal_month",
+    "fiscal_quarter",
+    "fiscal_year",
     "period_of_performance_start_date",
     "period_of_performance_current_end_date",
     "ordering_period_end_date",
@@ -63,6 +66,7 @@ TRANSACTION_VIEW_COLUMNS = [
     "funding_toptier_agency_abbreviation",
     "awarding_subtier_agency_abbreviation",
     "funding_subtier_agency_abbreviation",
+    "cfda_number",
     "cfda_title",
     "cfda_popular_name",
     "type_of_contract_pricing",
@@ -165,8 +169,8 @@ FROM transaction_delta_view
 WHERE transaction_fiscal_year={fy}{update_date};"""
 
 AWARD_COUNT_SQL = """SELECT COUNT(*) AS count
-FROM award_delta_view
-WHERE fiscal_year={fy}{update_date};"""
+FROM award_delta_view_full
+WHERE fiscal_year={fy};"""
 
 
 TRANSACTION_COPY_SQL = """"COPY (
@@ -178,8 +182,8 @@ TRANSACTION_COPY_SQL = """"COPY (
 
 AWARD_COPY_SQL = """"COPY (
     SELECT *
-    FROM award_delta_view
-    WHERE fiscal_year={fy}{update_date}
+    FROM award_delta_view_full
+    WHERE fiscal_year={fy}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -206,7 +210,7 @@ WHERE EXISTS (
   SELECT *
   FROM temp_award_ids
   WHERE
-    award_delta_view.generated_unique_award_id = temp_award_ids.generated_unique_award_id
+    award_delta_view_full.generated_unique_award_id = temp_award_ids.generated_unique_award_id
     AND award_fiscal_year={fy}
 );
 """
@@ -615,8 +619,8 @@ def filter_query(column, values, query_type="match_phrase"):
     return {"query": {"bool": {"should": [queries]}}}
 
 
-def delete_query(response):
-    return {"query": {"ids": {"type": "transaction_mapping", "values": [i["_id"] for i in response["hits"]["hits"]]}}}
+def delete_query(response, awards):
+    return {"query": {"ids": {"type": "{}_mapping".format("award" if awards else "transaction"), "values": [i["_id"] for i in response["hits"]["hits"]]}}}
 
 
 def chunks(l, n):
@@ -627,7 +631,7 @@ def chunks(l, n):
 
 def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     """
-    id_list = [{key:'key1',col:'tranaction_id'},
+    id_list = [{key:'key1',col:'transaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
                ...]
     """
@@ -652,7 +656,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
             # time of this comment, we are migrating to using a single index.
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
-            delete_body = delete_query(response)
+            delete_body = delete_query(response, config["awards"])
             try:
                 client.delete_by_query(
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
@@ -665,6 +669,31 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     total = str(start_ - end_)
     printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
     return
+
+
+def update_awards(client, config):
+    """
+    :param client:
+    :param job_id:
+    :param config:
+    :param index:
+    :return:
+    """
+
+    SELECT_DELETES_SQL = "SELECT generated_unique_award_id FROM award_delta where operation = 'D'"
+    SELECT_UPDATES_SQL = "SELECT id FROM award_delta_view where operation = 'U'"
+    SELECT_INSERTS_SQL = "SELECT id  FROM award_delta_view where operation = 'I'"
+
+    deletes = [x["generated_unique_award_id"] for x in execute_sql_statement(SELECT_DELETES_SQL, True)]
+    updates = [x["id"] for x in execute_sql_statement(SELECT_UPDATES_SQL, True)]
+    # inserts = [x["id"] for x in execute_sql_statement(SELECT_INSERTS_SQL, True)]
+
+    id_list = [{"key": delete, "col": UNIVERSAL_AWARD_ID_NAME} for delete in deletes]
+    delete_transactions_from_es(client, id_list, None, config, None)
+
+    id_list = [{"key": update, "col": UNIVERSAL_AWARD_ID_NAME} for update in updates]
+
+    # update_query = {"query": {"ids": {"type": "award_mapping", "values": [] } } }
 
 
 def printf(items):

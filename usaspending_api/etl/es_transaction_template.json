@@ -79,13 +79,13 @@
           "analyzer": "stemmer_analyzer"
         },
         "product_or_service_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "product_or_service_description": {
           "type": "text"
         },
         "naics_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "naics_description": {
           "type": "text"
@@ -119,6 +119,15 @@
         "action_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
+        },
+       "fiscal_month": {
+          "type": "keyword"
+        },
+        "fiscal_quarter": {
+          "type": "keyword"
+        },
+        "fiscal_year": {
+          "type": "keyword"
         },
         "period_of_performance_start_date": {
           "type": "date",
@@ -199,7 +208,9 @@
         "funding_subtier_agency_abbreviation": {
           "type": "text"
         },
-
+        "cfda_number": {
+          "type": "keyword"
+        },
         "cfda_title": {
           "type": "text",
           "index": false
@@ -234,16 +245,16 @@
           "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_county_name": {
           "type": "text"
         },
         "pop_zip5": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_city_name": {
           "type": "text",
@@ -253,7 +264,6 @@
             }
           }
         },
-
         "recipient_location_country_code": {
           "type": "keyword"
         },
@@ -264,16 +274,16 @@
           "type": "keyword"
         },
         "recipient_location_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_county_name": {
           "type": "text"
         },
         "recipient_location_zip5": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_city_name": {
           "type": "text",
