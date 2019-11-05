@@ -72,7 +72,7 @@ class Command(BaseCommand):
     @staticmethod
     def next_file_batch_generator(file):
         while True:
-            lines = file.readlines(CHUNK_SIZE*8)  # since this is by bytes, this allows a rough translation to lines
+            lines = file.readlines(CHUNK_SIZE * 8)  # since this is by bytes, this allows a rough translation to lines
             lines = [line.decode("utf-8") for line in lines]
             if len(lines) == 0:
                 break
