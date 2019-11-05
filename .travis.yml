@@ -17,10 +17,24 @@ addons:
 
 env:
   global:
-  - DATABASE_URL='postgres://postgres@localhost/usaspending_api'
+  - USASPENDING_DB_HOST=localhost
+  - USASPENDING_DB_PORT=5432
+  - USASPENDING_DB_USER=usaspending
+  - USASPENDING_DB_PASSWORD=usaspender
+  - USASPENDING_DB_NAME=data_store_api
+  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
-  - DATA_BROKER_DATABASE_URL='postgres://postgres@localhost/data_broker'
+  - BROKER_DB_HOST=localhost
+  - BROKER_DB_PORT=5432
+  - BROKER_DB_USER=admin
+  - BROKER_DB_PASSWORD=root
+  - BROKER_DB_NAME=data_broker
+  - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
+  - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
+  - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
+  - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
+  - BROKER_DOCKER_IMAGE=dataact-broker-backend
 
 before_install:
   - npm install dredd@5.4.1 --global
@@ -28,20 +42,41 @@ before_install:
 install:
   - travis_retry pip install -r requirements/requirements.txt
   - pip install coveralls
+  # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
+  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
+  - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
+  # Get dependencies to report code coverage to code climate
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+  # Run elasticsearch
   - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.1.deb && sudo dpkg -i --force-confnew elasticsearch-6.1.1.deb && sudo service elasticsearch restart
-  - psql -c "CREATE DATABASE usaspending_api;" -U postgres
-  - psql -c "CREATE USER readonly;"
-  - python manage.py migrate
-  - sleep 10  # recommended by Travis to ensure Elasticsearch has time to spin up
+  # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
+  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+  # Setup Broker config files to work with the same DB configured via Travis env vars
+  # When pytest calls the Broker DB fixtures that invoke a python script via docker run against the checked-out Broker source code, it will use these config values
+  # It will however be running the command from within docker, where "localhost" is not resolvable, so change host to host.docker.internal
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/config.yml
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml
+  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_secrets_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml
+  - 'sed -i.bak -E "s/host:.*$/host: ${BROKER_DB_HOST}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
+  - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
+  - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
+  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
+  - sleep 10  # wait for Elasticsearch to be up
 
 script:
+  - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
   - flake8
-  - black --check .
+  - black --check --diff .
   - python manage.py check_for_endpoint_documentation
-  - pytest --cov=usaspending_api
+  - pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
+  - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
   # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
-after_success:
-  - codeclimate-test-reporter
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
