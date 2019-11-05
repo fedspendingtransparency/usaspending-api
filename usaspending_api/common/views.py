@@ -104,7 +104,7 @@ class RemovedEndpointView(viewsets.ViewSet):
         Placeholder for endpoints that have been removed
     """
 
-    no_endpoint_doc = True
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/removed_endpoint.md"
 
     def retrieve(self, request, *args, **kwargs):
-        raise Exception("Dummy endpoint not returning 410")
+        raise Exception("Dummy endpoint failed to return 410")

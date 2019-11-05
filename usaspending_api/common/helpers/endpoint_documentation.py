@@ -81,7 +81,6 @@ def validate_docs(url, url_object, master_endpoint_list):
     messages = []
 
     if not hasattr(view_class, "endpoint_doc"):
-        if not (hasattr(view_class, "no_endpoint_doc") and getattr(view_class, "no_endpoint_doc")):
             messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
         endpoint_doc = getattr(view_class, "endpoint_doc")
