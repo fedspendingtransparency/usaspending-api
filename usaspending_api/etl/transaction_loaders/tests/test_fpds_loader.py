@@ -62,49 +62,9 @@ def mock_cursor(monkeypatch, result_value):
     # I don't think it works this way...
     result.mogrify = mogrify
 
-    #monkeypatch.setattr("psycopg2.connect", mock_connect)
-    monkeypatch.setattr("django.db.connection.connect", mock_connect)
-
+    monkeypatch.setattr("psycopg2.connect", mock_connect)
 
     return result
-
-
-def mock_cursor_builder(mock_connection, result_value):
-    """
-    A mock connection/cursor that ignores calls to cursor.execute and returns from fetchall
-    whatever you tell it based on mock_cursor.expected_value.  This is a bare minimum
-    implementation.  If you use any other connection or cursor features you may need to tweak
-    this accordingly (or you may not... MagicMock is, um, "magic").
-    """
-
-    class Result:
-        pass
-
-    result = Result()
-    result.expected_value = result_value
-
-
-    def mogrify(val1, val2):
-        return str(val2[0]).encode()
-
-    # I don't think it works this way...
-    result.mogrify = mogrify
-
-    def mock_cursor():
-        mock_context = MagicMock()
-        mock_context.execute.return_value = None
-        mock_context.mogrify = mogrify
-        mock_context.fetchall.return_value = result.expected_value
-        return mock_context
-
-    mock_connection.__enter__.return_value = mock_cursor()
-    mock_connection.__exit__.return_value = False
-
-    def mock_connection(cursor_factory=None):
-        mock_context = MagicMock()
-        mock_context.__enter__.return_value = mock_cursor()
-        mock_context.__exit__.return_value = False
-        return mock_context
 
 
 def _assemble_dummy_broker_data():
@@ -139,12 +99,7 @@ def test_load_ids_empty():
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
-#@patch.dict("usaspending_api.etl.transaction_loaders.fpds_loader.connections", data_broker=MagicMock())
-#@patch("django.db.connection.ensure_connection")
-#@patch("django.db.backends.dummy.base.DummyDatabaseWrapper.connect")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
-#@patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection.cursor")
-#@patch("psycopg2.connection.cursor")
 @patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
