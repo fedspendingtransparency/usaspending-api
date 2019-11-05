@@ -105,7 +105,7 @@ class FPDSLoaderIntegrationTestCase(TestCase):
 
 def _assemble_dummy_broker_data():
     """
-    Simple way to reuse the field mappings as a def of all required fields, and then use that as teh basis for
+    Simple way to reuse the field mappings as a def of all required fields, and then use that as the basis for
     populating dummy data.
     """
     return {
