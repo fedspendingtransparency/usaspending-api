@@ -4,8 +4,9 @@ import os
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import connection
+from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
+from string import Template
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
@@ -88,3 +89,47 @@ def ensure_transaction_delta_view_exists():
         transaction_delta_view = f.read()
     with connection.cursor() as cursor:
         cursor.execute(transaction_delta_view)
+
+
+def ensure_broker_server_dblink_exists():
+    """Ensure that all the database extensions exist, and the the broker database is setup as a foreign data server
+
+    This leverages SQL script files and connection strings in ``settings.DATABASES`` in order to setup these database
+    objects. The connection strings for BOTH the USAspending and the Broker databases are needed,
+    as the postgres ``SERVER`` setup needs to reference tokens in both connection strings.
+
+    NOTE: An alternative way to run this through bash scripting is to first ``EXPORT`` the referenced environment
+    variables, then run::
+
+        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
+        eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
+        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
+
+    """
+    # Gather tokens from database connection strings
+    if DEFAULT_DB_ALIAS not in settings.DATABASES:
+        raise Exception("'{}' database not configured in django settings.DATABASES".format(DEFAULT_DB_ALIAS))
+    if "data_broker" not in settings.DATABASES:
+        raise Exception("'data_broker' database not configured in django settings.DATABASES")
+    db_conn_tokens_dict = {
+        **{"USASPENDING_DB_" + k: v for k, v in settings.DATABASES[DEFAULT_DB_ALIAS].items()},
+        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES["data_broker"].items()},
+    }
+
+    extensions_script_path = os.path.join(
+        settings.BASE_DIR, "usaspending_api/database_scripts/extensions/extensions.sql"
+    )
+    broker_server_script_path = os.path.join(
+        settings.BASE_DIR, "usaspending_api/database_scripts/servers/broker_server.sql"
+    )
+    with open(extensions_script_path) as f1, open(broker_server_script_path) as f2:
+        extensions_script = f1.read()
+        broker_server_script = f2.read()
+
+    with connection.cursor() as cursor:
+        # Ensure required extensions added to USAspending db
+        cursor.execute(extensions_script)
+
+        # Ensure foreign server setup to point to the broker DB for dblink to work
+        broker_server_script_template = Template(broker_server_script)
+        cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
