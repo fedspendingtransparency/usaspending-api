@@ -3,7 +3,6 @@ import re
 
 from usaspending_api.settings import BASE_DIR
 
-
 # Typically we only care about v2 API endpoints, but if we ever add v3 or
 # whatever, add the base path to this tuple.
 CURRENT_ENDPOINT_PREFIXES = ("/api/v2/",)
@@ -81,7 +80,7 @@ def validate_docs(url, url_object, master_endpoint_list):
     messages = []
 
     if not hasattr(view_class, "endpoint_doc"):
-            messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
+        messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
         endpoint_doc = getattr(view_class, "endpoint_doc")
         if not endpoint_doc:
@@ -106,6 +105,7 @@ def validate_docs(url, url_object, master_endpoint_list):
         if re.fullmatch(pattern, endpoint):
             break
     else:
-        messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
+        if qualified_name != "usaspending_api.common.views.RemovedEndpointView":
+            messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
 
     return messages
