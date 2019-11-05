@@ -35,9 +35,9 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
         "    tn.action_date, "
         "    tn.description, "
         "    tn.period_of_performance_start_date "
-        "  FROM transaction_normalized tn"
+        "  FROM transaction_normalized tn "
         "  {} "
-        "  ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.id ASC "
+        "  ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.transaction_unique_id ASC "
         ")"
     )
     _latest_transaction_cte = str(
@@ -62,9 +62,9 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
         "      WHEN tn.type = '11' THEN 'other' "
         "      WHEN tn.type LIKE 'IDV%%' THEN 'idv' "
         "      ELSE NULL END AS category "
-        "  FROM transaction_normalized tn"
+        "  FROM transaction_normalized tn "
         "  {} "
-        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC "
         ")"
     )
     _aggregate_transaction_cte = str(
@@ -179,7 +179,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
         "  FROM transaction_normalized tn "
         "  INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id "
         "  WHERE fabs.officer_1_name IS NOT NULL {} "
-        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC "
         ") "
         "UPDATE awards a "
         "  SET "
@@ -269,7 +269,7 @@ def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
         "  FROM transaction_normalized tn "
         "  INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id "
         "  WHERE fpds.officer_1_name IS NOT NULL {} "
-        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.id DESC "
+        "  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC "
         ") "
     )
 

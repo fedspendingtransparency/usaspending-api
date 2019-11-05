@@ -90,6 +90,13 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **trans_cont_1)
     mommy.make("awards.TransactionNormalized", **trans_cont_2)
 
+    mommy.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
+    mommy.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
+
+    mommy.make("references.NAICS", code="333911", description="PUMP AND PUMPING EQUIPMENT MANUFACTURING")
+    mommy.make("references.NAICS", code="3339", description="Other General Purpose Machinery Manufacturing")
+    mommy.make("references.NAICS", code="33", description="Manufacturing")
+
     award_1_model = {
         "pk": 1,
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
@@ -209,6 +216,7 @@ def awards_and_transactions(db):
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_descrip": "North Carolina",
         "legal_entity_zip5": "12204",
         "legal_entity_zip_last4": "5312",
         "major_program": None,
@@ -317,6 +325,7 @@ def awards_and_transactions(db):
         "legal_entity_country_name": "UNITED STATES",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
+        "legal_entity_state_descrip": "North Carolina",
         "legal_entity_zip5": "12204",
         "legal_entity_zip_last4": "5312",
         "major_program": None,
@@ -403,12 +412,10 @@ def test_award_endpoint_for_null_recipient_information(client, awards_and_transa
 expected_response_idv = {
     "id": 2,
     "type": "IDV_A",
-    "parent_generated_unique_award_id": None,
     "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
     "category": "idv",
     "type_description": "GWAC",
     "piid": "5678",
-    "parent_award_piid": "1234",
     "parent_award": None,
     "description": "lorem ipsum",
     "period_of_performance": {
@@ -445,6 +452,7 @@ expected_response_idv = {
             "city_name": "Charlotte",
             "county_name": "BUNCOMBE",
             "state_code": "NC",
+            "state_name": "North Carolina",
             "zip5": "12204",
             "zip4": "5312",
             "foreign_postal_code": None,
@@ -553,6 +561,17 @@ expected_response_idv = {
         ]
     },
     "date_signed": "2004-03-02",
+    "naics_hierarchy": {
+        "toptier_code": {"description": "Manufacturing", "code": "33"},
+        "midtier_code": {"description": "Other General Purpose Machinery Manufacturing", "code": "3339"},
+        "base_code": {"description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING", "code": "333911"},
+    },
+    "psc_hierarchy": {
+        "toptier_code": {},
+        "midtier_code": {"description": "PIPE, TUBING, HOSE, AND FITTINGS", "code": "47"},
+        "subtier_code": {},
+        "base_code": {"description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS", "code": "4730"},
+    },
 }
 
 
@@ -572,6 +591,7 @@ recipient_without_id_and_name = {
         "city_name": "Charlotte",
         "county_name": "BUNCOMBE",
         "state_code": "NC",
+        "state_name": "North Carolina",
         "zip5": "12204",
         "zip4": "5312",
         "foreign_postal_code": None,
