@@ -12,6 +12,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     legal_entity_state_description,
     place_of_performance_state_code,
     place_of_performance_state_description,
+    generated_unique_award_id,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
 
@@ -558,6 +559,7 @@ award_functions = {
     "awarding_agency_id": calculate_awarding_agency,
     "funding_agency_id": calculate_funding_agency,
     "data_source": lambda broker: "DBR",
+    "generated_unique_award_id": generated_unique_award_id,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
 }

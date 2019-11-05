@@ -83,3 +83,10 @@ def place_of_performance_state_description(broker_input):
     elif broker_input["place_of_performance_state"]:
         return state_to_code.get(broker_input["place_of_performance_state"])
     return None
+
+
+def generated_unique_award_id(broker_input):
+    if broker_input["unique_award_key"]:
+        return capitalize_if_string(broker_input["unique_award_key"])
+    else:
+        return "NONE"  # this is not what we want to be doing in the long run, but it's what the old loader does
