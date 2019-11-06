@@ -223,9 +223,9 @@ def _load_transactions(load_objects):
 
         inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
         for index, elem in enumerate(inserted_place_of_performance):
-            load_objects[index]["transaction_normalized"][
-                "place_of_performance_id"
-            ] = inserted_place_of_performance[index]
+            load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[
+                index
+            ]
             load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
 
         # Handle transaction-to-award relationship for each transaction to be loaded

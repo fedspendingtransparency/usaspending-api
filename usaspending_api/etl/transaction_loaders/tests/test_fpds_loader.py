@@ -129,7 +129,7 @@ def test_load_ids_dummy_id(
     mock__fy,
     mock__extract_broker_objects,
     mock___fetch_subtier_agency_id,
-    mock_connection
+    mock_connection,
 ):
     """
     End-to-end unit test (which should not attempt database connections) to exercise the code-under-test
