@@ -47,9 +47,7 @@ class Command(BaseCommand):
             default=DEFAULT_MATIVEW_DIR,
         )
         parser.add_argument(
-            "--dependencies",
-            action="store_true",
-            help="Run the SQL dependencies before the materialized view SQL."
+            "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
 
     def handle(self, *args, **options):

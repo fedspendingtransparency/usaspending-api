@@ -1,4 +1,4 @@
-black==19.3b0
+black==19.10b0
 coverage==4.5.4
 docker==4.1.0
 dredd-hooks==0.2.0
