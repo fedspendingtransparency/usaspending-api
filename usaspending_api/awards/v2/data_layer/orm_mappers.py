@@ -60,7 +60,6 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("id", "id"),
         ("generated_unique_award_id", "generated_unique_award_id"),
         ("piid", "piid"),
-        ("parent_award_piid", "parent_award_piid"),
         ("category", "category"),
         ("type", "type"),
         ("type_description", "type_description"),
@@ -80,12 +79,14 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("period_of_performance_current_end_date", "_end_date"),
         ("date_signed", "date_signed"),
         ("fpds_parent_agency_id", "_fpds_parent_agency_id"),
+        ("parent_award_piid", "_parent_award_piid"),
     ]
 )
 
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
         ("modified_at", "_modified_at"),
@@ -97,6 +98,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_name", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
@@ -203,6 +205,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_descrip", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),

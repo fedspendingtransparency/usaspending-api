@@ -37,9 +37,6 @@ from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 
-USASPENDING_CONNECTION_STRING = get_database_dsn_string()
-BROKER_CONNECTION_STRING = get_broker_dsn_string()
-
 DESTROY_ORPHANS_LEGAL_ENTITY_SQL = (
     "DELETE FROM legal_entity legal WHERE legal.legal_entity_id in "
     "(SELECT l.legal_entity_id FROM legal_entity l "
@@ -61,7 +58,7 @@ logger = logging.getLogger("console")
 
 def destroy_orphans():
     """cleans up tables after load_ids is called"""
-    with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(DESTROY_ORPHANS_LEGAL_ENTITY_SQL)
             cursor.execute(DESTROY_ORPHANS_REFERENCES_LOCATION_SQL)
@@ -79,7 +76,7 @@ def delete_stale_fpds(date):
     detached_award_procurement_ids = get_deleted_fpds_data_from_s3(date)
 
     if detached_award_procurement_ids:
-        with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     "select transaction_id from transaction_fpds where detached_award_procurement_id in ({})".format(
@@ -144,7 +141,7 @@ def load_ids(chunk):
 
 def _extract_broker_objects(id_list):
 
-    with psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as connection:
+    with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             sql = "SELECT {} from detached_award_procurement where detached_award_procurement_id in %s".format(
                 ",".join(all_broker_columns())
@@ -211,7 +208,7 @@ def _transform_objects(broker_objects):
 def _load_transactions(load_objects):
     """returns ids for each award touched"""
     ids_of_awards_created_or_updated = set()
-    with psycopg2.connect(dsn=USASPENDING_CONNECTION_STRING) as connection:
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
 
             # Insert always, even if duplicative

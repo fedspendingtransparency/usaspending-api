@@ -7,6 +7,11 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     business_categories,
     created_at,
     updated_at,
+    legal_entity_zip5,
+    legal_entity_state_code,
+    legal_entity_state_description,
+    place_of_performance_state_code,
+    place_of_performance_state_description,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
 
@@ -486,8 +491,6 @@ legal_entity_functions = {
 recipient_location_nonboolean_columns = {
     "legal_entity_country_code": "location_country_code",
     "legal_entity_country_name": "country_name",
-    "legal_entity_state_code": "state_code",
-    "legal_entity_state_descrip": "state_description",
     "legal_entity_county_code": "county_code",
     "legal_entity_county_name": "county_name",
     "legal_entity_congressional": "congressional_code",
@@ -496,7 +499,6 @@ recipient_location_nonboolean_columns = {
     "legal_entity_address_line2": "address_line2",
     "legal_entity_address_line3": "address_line3",
     "legal_entity_zip4": "zip4",
-    "legal_entity_zip5": "zip5",
     "legal_entity_zip_last4": "zip_last4",
     "detached_award_proc_unique": "transaction_unique_id",
 }
@@ -508,14 +510,15 @@ recipient_location_functions = {
     "recipient_flag": lambda broker: True,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
+    "zip5": legal_entity_zip5,
+    "state_code": legal_entity_state_code,
+    "state_description": legal_entity_state_description,
 }
 
 # broker column name -> usaspending column name
 place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
     "place_of_perform_country_n": "country_name",
-    "place_of_performance_state": "state_code",
-    "place_of_perfor_state_desc": "state_description",
     "place_of_perform_county_co": "county_code",
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
@@ -536,6 +539,8 @@ place_of_performance_functions = {
     "address_line3": lambda broker: None,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
+    "state_code": place_of_performance_state_code,
+    "state_description": place_of_performance_state_description,
 }
 
 # broker column name -> usaspending column name

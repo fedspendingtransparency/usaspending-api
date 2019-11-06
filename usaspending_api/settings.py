@@ -5,7 +5,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 
 import dj_database_url
 import os
-import sys
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
@@ -174,6 +173,7 @@ def _configure_database_connection(environment_variable):
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
+    config["TEST"] = {"SERIALIZE": False}
     return config
 
 
@@ -192,6 +192,7 @@ if os.environ.get("DB_SOURCE"):
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
+    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
@@ -199,12 +200,9 @@ else:
 
 
 # import a second database connection for ETL, connecting to the data broker
-# using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
-if os.environ.get("DATA_BROKER_DATABASE_URL") and not sys.argv[1:2] == ["test"]:
-    DATABASES["data_broker"] = dj_database_url.parse(
-        os.environ.get("DATA_BROKER_DATABASE_URL"), conn_max_age=CONNECTION_MAX_SECONDS
-    )
-
+# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
+if os.environ.get("DATA_BROKER_DATABASE_URL"):
+    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
