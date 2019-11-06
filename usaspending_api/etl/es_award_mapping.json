@@ -29,31 +29,56 @@
           "type": "integer"
         },
         "generated_unique_award_id": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "category": {
           "type": "text"
         },
         "type": {
-          "type": "keyword",
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          },
           "null_value": "NULL"
         },
         "type_description": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "piid": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "fain": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "uri": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "total_obligation": {
           "type": "scaled_float",
@@ -75,21 +100,36 @@
           "scaling_factor": 100
         },
         "recipient_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "recipient_unique_id": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "parent_recipient_unique_id": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
          "business_categories": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "action_date": {
           "type": "date",
@@ -137,66 +177,65 @@
           "type": "integer"
         },
         "awarding_toptier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_toptier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "awarding_subtier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
-          }
-        },
+          }        },
         "funding_subtier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "awarding_toptier_agency_code": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_toptier_agency_code": {
-         "type": "keyword",
+         "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "awarding_subtier_agency_code": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_subtier_agency_code": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
@@ -209,22 +248,47 @@
           }
         },
         "recipient_location_country_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_state_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_county_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_county_name": {
           "type": "text"
         },
         "recipient_location_zip5": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_congressional_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_city_name": {
           "type": "text",
@@ -238,19 +302,39 @@
           "type": "text"
         },
         "pop_country_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_state_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_county_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_county_name": {
           "type": "text"
         },
         "pop_zip5": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_congressional_code": {
           "type": "keyword"

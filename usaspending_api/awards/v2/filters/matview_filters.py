@@ -29,8 +29,7 @@ def universal_transaction_matview_filter(filters):
 
 
 def matview_search_filter_determine_award_matview_model(filters):
-    model = obta
-    in_view_from_award_group(filters.get("award_type_codes"))
+    model = obtain_view_from_award_group(filters.get("award_type_codes"))
     return matview_search_filter(filters, model)
 
 

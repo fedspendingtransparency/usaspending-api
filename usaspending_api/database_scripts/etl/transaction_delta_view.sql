@@ -39,9 +39,9 @@ SELECT
   UTM.recipient_name,
 
   UTM.action_date,
-  select extract(month from UTM.action_date::date + interval '3 months') as fiscal_month
-  select extract(quarter from UTM.action_date::date + interval '3 months') as fiscal_quarter
-  select extract(year from UTM.action_date::date + interval '3 months') as fiscal_year
+  extract(month from UTM.action_date::date + interval '3 months') as fiscal_month,
+  extract(quarter from UTM.action_date::date + interval '3 months') as fiscal_quarter,
+  extract(year from UTM.action_date::date + interval '3 months') as fiscal_year,
   AWD.period_of_performance_start_date,
   AWD.period_of_performance_current_end_date,
   FPDS.ordering_period_end_date,

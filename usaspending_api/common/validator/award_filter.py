@@ -100,6 +100,7 @@ AWARD_FILTER = [
             "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
         },
     },
+    {"name": "elasticsearch", "type": "boolean", "optional": True, "default": False},
 ]
 
 for a in AWARD_FILTER:
