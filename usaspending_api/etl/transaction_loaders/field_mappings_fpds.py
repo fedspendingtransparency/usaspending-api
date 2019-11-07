@@ -8,7 +8,6 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     created_at,
     updated_at,
     legal_entity_zip5,
-    legal_entity_state_code,
     legal_entity_state_description,
     place_of_performance_state_code,
     place_of_performance_state_description,
@@ -492,6 +491,7 @@ recipient_location_nonboolean_columns = {
     "legal_entity_country_code": "location_country_code",
     "legal_entity_country_name": "country_name",
     "legal_entity_county_code": "county_code",
+    "legal_entity_state_code": "state_code",
     "legal_entity_county_name": "county_name",
     "legal_entity_congressional": "congressional_code",
     "legal_entity_city_name": "city_name",
@@ -511,7 +511,6 @@ recipient_location_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "zip5": legal_entity_zip5,
-    "state_code": legal_entity_state_code,
     "state_description": legal_entity_state_description,
 }
 
