@@ -297,13 +297,14 @@ def matview_search_filter(filters, model, for_downloads=False):
             result = Q()
             for oc in value:
                 subresult = Q()
-                for (key, values) in oc.items():
-                    subresult &= filter_on("treasury_account__program_balances__object_class", key, values)
+                subresult &= filter_on("treasury_account__program_balances__object_class", "object_class", oc)
                 result |= subresult
             faba_queryset = faba_queryset.filter(result)
 
         # Federal Account Filter
         elif key == "program_activity":
+            print("it got in here, TIME TO CRASH")
+            SystemExit(10)
             faba_flag = True
             or_queryset = Q()
             for v in value:
