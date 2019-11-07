@@ -356,6 +356,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
     log_gen = docker_client.containers.run(
         broker_docker_image,
         broker_db_setup_command,
+        remove=True,
         network_mode="host",
         mounts=[mounted_src],
         stderr=True,
