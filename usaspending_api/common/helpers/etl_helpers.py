@@ -1,6 +1,8 @@
 from datetime import datetime
 import logging
+from pathlib import Path
 
+from django.conf import settings
 from django.db import connection
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -8,12 +10,14 @@ from usaspending_api.common.helpers.sql_helpers import read_sql_file
 
 
 logger = logging.getLogger("console")
-ETL_SQL_FILE_PATH = "usaspending_api/etl/management/sql/c_file_linkage/"
+
+_APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
+_ETL_SQL_FILE_PATH = _APP_DIR / "etl/management/sql/c_file_linkage/"
 
 
 def get_unlinked_count(file_name):
 
-    file_path = ETL_SQL_FILE_PATH + file_name
+    file_path = str(_ETL_SQL_FILE_PATH / file_name)
     sql_commands = read_sql_file(file_path=file_path)
 
     if len(sql_commands) != 1:
@@ -45,7 +49,7 @@ def update_c_to_d_linkages(type):
     else:
         raise InvalidParameterException("Invalid type provided to process C to D linkages.")
 
-    file_paths = [ETL_SQL_FILE_PATH + file_name for file_name in file_names]
+    file_paths = [str(_ETL_SQL_FILE_PATH / file_name) for file_name in file_names]
 
     starting_unlinked_count = get_unlinked_count(file_name=unlinked_count_file_name)
     logger.info("Current count of unlinked %s records: %s" % (type, str(starting_unlinked_count)))
