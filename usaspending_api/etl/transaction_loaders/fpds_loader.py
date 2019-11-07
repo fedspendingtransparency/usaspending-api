@@ -237,8 +237,11 @@ def _load_transactions(load_objects):
                 load_object["award"]["latest_transaction_id"] = transaction_id
 
             except Error as e:
-                logger.error("load failed for detached_award_procurement_id {}! \nDetails: {}"
-                             .format(load_object["transaction_fpds"]["detached_award_procurement_id"], e.pgerror))
+                logger.error(
+                    "load failed for detached_award_procurement_id {}! \nDetails: {}".format(
+                        load_object["transaction_fpds"]["detached_award_procurement_id"], e.pgerror
+                    )
+                )
                 failed_ids.append(load_object["transaction_fpds"]["detached_award_procurement_id"])
 
     return list(ids_of_awards_created_or_updated)
@@ -260,9 +263,7 @@ def _load_and_link_leaf_objects(cursor, load_objects):
 
     inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
     for index, elem in enumerate(inserted_place_of_performance):
-        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[
-            index
-        ]
+        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[index]
         load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
 
     return load_objects

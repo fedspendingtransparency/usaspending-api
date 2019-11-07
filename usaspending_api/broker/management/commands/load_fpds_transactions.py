@@ -18,6 +18,7 @@ CHUNK_SIZE = 5000
 
 ALL_FPDS_QUERY = "SELECT {} FROM detached_award_procurement"
 
+
 class Command(BaseCommand):
     help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
 
@@ -166,8 +167,11 @@ class Command(BaseCommand):
             update_c_to_d_linkages("contract")
 
         if failed_ids:
-            logger.info("The following detached_award_procurement_ids failed to load: {}"
-                        .format(["{},".format(failure) for failure in failed_ids]))
+            logger.info(
+                "The following detached_award_procurement_ids failed to load: {}".format(
+                    ["{},".format(failure) for failure in failed_ids]
+                )
+            )
 
         if options["reload_all"] or options["since_last_load"]:
             # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
