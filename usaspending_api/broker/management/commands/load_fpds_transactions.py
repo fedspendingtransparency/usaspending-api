@@ -167,7 +167,7 @@ class Command(BaseCommand):
             update_c_to_d_linkages("contract")
 
         if failed_ids:
-            logger.info(
+            logger.error(
                 "The following detached_award_procurement_ids failed to load: {}".format(
                     ["{},".format(failure) for failure in failed_ids]
                 )
