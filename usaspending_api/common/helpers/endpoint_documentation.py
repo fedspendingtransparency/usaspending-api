@@ -79,6 +79,9 @@ def validate_docs(url, url_object, master_endpoint_list):
 
     messages = []
 
+    if qualified_name == "usaspending_api.common.views.RemovedEndpointView":
+        return messages
+
     if not hasattr(view_class, "endpoint_doc"):
         messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
@@ -105,7 +108,6 @@ def validate_docs(url, url_object, master_endpoint_list):
         if re.fullmatch(pattern, endpoint):
             break
     else:
-        if qualified_name != "usaspending_api.common.views.RemovedEndpointView":
-            messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
+        messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
 
     return messages

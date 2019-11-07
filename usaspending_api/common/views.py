@@ -100,11 +100,9 @@ class MarkdownView(TemplateView):
 # placeholder for retired URLs
 @method_decorator(removed, name="retrieve")
 class RemovedEndpointView(viewsets.ViewSet):
-    """
-        Placeholder for endpoints that have been removed
-    """
+    """Placeholder for endpoints that have been removed"""
 
     endpoint_doc = "usaspending_api/api_docs/api_documentation/removed_endpoint.md"
 
     def retrieve(self, request, *args, **kwargs):
-        raise Exception("Dummy endpoint failed to return 410")
+        raise Exception("Endpoint failed to return HTTP 410")
