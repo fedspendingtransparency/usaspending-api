@@ -42,6 +42,29 @@ AWARDS_LOOKUP = {
     "Last Date to Order": "ordering_period_end_date",
 }
 
+AWARDS_QUERIES = {
+    "keywords": {"must": [{"match": "{}"}]},
+    "time_period": {"range": {"action_date": {"gte": "{gte}", "lte": "{lte}"}}},
+    "award_type_codes": "",
+    "agencies": "",
+    "legal_entities": "",
+    "recipient_search_text": "",
+    "recipient_id":"",
+    "recipient_scope": "",
+    "recipient_locations": "",
+    "recipient_type_names": "",
+    "place_of_performance_scope": "",
+    "place_of_performance_locations": "",
+    "award_amounts": "",
+    "award_ids": "",
+    "program_numbers": "",
+    "naics_codes": "",
+    "psc_codes": "",
+    "contract_pricing_type_codes": "",
+    "set_aside_type_codes": "",
+    "extent_competed_type_codes": "",
+    "tas_codes": "",
+}
 
 INDEX_ALIASES_TO_AWARD_TYPES = deepcopy(all_award_types_mappings)
 INDEX_ALIASES_TO_AWARD_TYPES["directpayments"] = INDEX_ALIASES_TO_AWARD_TYPES.pop("direct_payments")

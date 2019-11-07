@@ -88,7 +88,9 @@ SELECT
   UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
-  UTM.recipient_location_city_name
+  UTM.recipient_location_city_name,
+  UTM.treasury_account_identifiers
+
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)

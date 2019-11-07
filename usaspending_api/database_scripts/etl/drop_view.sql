@@ -1,2 +1,2 @@
 DROP VIEW IF EXISTS transaction_delta_view;
-DROP VIEW IF EXISTS award_delta_view_full;
+DROP VIEW IF EXISTS award_delta_view;

@@ -1,8 +1,8 @@
-DROP VIEW IF EXISTS award_delta_view_full;
+DROP VIEW IF EXISTS award_delta_view;
 
-CREATE VIEW award_delta_view_full AS
+CREATE VIEW award_delta_view AS
 SELECT
-  awards.id,
+  awards.id as award_id,
   awards.generated_unique_award_id,
     CASE
     WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
@@ -21,6 +21,7 @@ SELECT
   obligation_to_enum(awards.total_obligation) AS total_obl_bin,
   awards.total_subsidy_cost,
   awards.total_loan_value,
+  awards.update_date,
 
   awards.recipient_id,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,

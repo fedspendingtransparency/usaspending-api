@@ -90,6 +90,7 @@ TRANSACTION_VIEW_COLUMNS = [
     "recipient_location_zip5",
     "recipient_location_congressional_code",
     "recipient_location_city_name",
+    "treasury_account_identifiers",
 ]
 
 AWARD_VIEW_COLUMNS = [
@@ -160,8 +161,6 @@ AWARD_VIEW_COLUMNS = [
     "treasury_account_identifiers"
 ]
 
-LAST_MODIFIED_DATE_SQL = "AND last_modified_date >= '{}'"
-
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
 TRANSACTION_COUNT_SQL = """SELECT COUNT(*) AS count
@@ -169,8 +168,8 @@ FROM transaction_delta_view
 WHERE transaction_fiscal_year={fy}{update_date};"""
 
 AWARD_COUNT_SQL = """SELECT COUNT(*) AS count
-FROM award_delta_view_full
-WHERE fiscal_year={fy};"""
+FROM award_delta_view
+WHERE fiscal_year={fy}{update_date};"""
 
 
 TRANSACTION_COPY_SQL = """"COPY (
@@ -182,8 +181,8 @@ TRANSACTION_COPY_SQL = """"COPY (
 
 AWARD_COPY_SQL = """"COPY (
     SELECT *
-    FROM award_delta_view_full
-    WHERE fiscal_year={fy}
+    FROM award_delta_view
+    WHERE fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -210,8 +209,8 @@ WHERE EXISTS (
   SELECT *
   FROM temp_award_ids
   WHERE
-    award_delta_view_full.generated_unique_award_id = temp_award_ids.generated_unique_award_id
-    AND award_fiscal_year={fy}
+    award_delta_view.generated_unique_award_id = temp_award_ids.generated_unique_award_id
+    AND fiscal_year={fy}
 );
 """
 
@@ -276,7 +275,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     count_sql = TRANSACTION_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
 
     if awards:
-        update_date_str = LAST_MODIFIED_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+        update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
         copy_sql = AWARD_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
 
@@ -417,6 +416,7 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type="trans
 
 def put_alias(client, index, alias_name, award_type_codes):
     alias_body = {"filter": {"terms": {"type": award_type_codes}}}
+    print(alias_body)
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
@@ -669,31 +669,6 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     total = str(start_ - end_)
     printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
     return
-
-
-def update_awards(client, config):
-    """
-    :param client:
-    :param job_id:
-    :param config:
-    :param index:
-    :return:
-    """
-
-    SELECT_DELETES_SQL = "SELECT generated_unique_award_id FROM award_delta where operation = 'D'"
-    SELECT_UPDATES_SQL = "SELECT id FROM award_delta_view where operation = 'U'"
-    SELECT_INSERTS_SQL = "SELECT id  FROM award_delta_view where operation = 'I'"
-
-    deletes = [x["generated_unique_award_id"] for x in execute_sql_statement(SELECT_DELETES_SQL, True)]
-    updates = [x["id"] for x in execute_sql_statement(SELECT_UPDATES_SQL, True)]
-    # inserts = [x["id"] for x in execute_sql_statement(SELECT_INSERTS_SQL, True)]
-
-    id_list = [{"key": delete, "col": UNIVERSAL_AWARD_ID_NAME} for delete in deletes]
-    delete_transactions_from_es(client, id_list, None, config, None)
-
-    id_list = [{"key": update, "col": UNIVERSAL_AWARD_ID_NAME} for update in updates]
-
-    # update_query = {"query": {"ids": {"type": "award_mapping", "values": [] } } }
 
 
 def printf(items):

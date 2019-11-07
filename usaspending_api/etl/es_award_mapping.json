@@ -25,7 +25,7 @@
   "mappings": {
     "award_mapping": {
       "properties": {
-        "id": {
+        "award_id": {
           "type": "integer"
         },
         "generated_unique_award_id": {
@@ -40,12 +40,7 @@
           "type": "text"
         },
         "type": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          },
+          "type": "keyword",
           "null_value": "NULL"
         },
         "type_description": {

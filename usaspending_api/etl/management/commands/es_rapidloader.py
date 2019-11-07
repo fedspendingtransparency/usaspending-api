@@ -15,7 +15,7 @@ from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import DataJob
-from usaspending_api.etl.es_etl_helpers import deleted_transactions, update_awards
+from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
@@ -54,11 +54,6 @@ class Command(BaseCommand):
             "--awards",
             action="store_true",
             help="Load awards index instead of transaction index."
-        )
-        parser.add_argument(
-            "--incremental",
-            action="store_true",
-            help="Incrementally load awards instead of reloading the entire awards table"
         )
         parser.add_argument(
             "fiscal_years",
@@ -132,7 +127,7 @@ class Command(BaseCommand):
         printf({"msg": "---------------------------------------------------------------"})
 
     def transform_cli_arguments(self, options):
-        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast", "awards", "incremental")
+        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast", "awards")
         self.config = set_config(simple_args, options)
 
         self.config["fiscal_years"] = fiscal_years_for_processing(options)
@@ -175,16 +170,15 @@ class Command(BaseCommand):
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_number = 0
-        if  not self.config["incremental"]:
-            for fy in self.config["fiscal_years"]:
-                job_number += 1
-                index = self.config["index_name"]
-                filename = "{dir}{fy}_{type}.csv".format(dir=self.config["directory"], fy=fy, type="awards" if self.config["awards"] else "transactions")
-                new_job = DataJob(job_number, index, fy, filename, self.config["awards"])
+        for fy in self.config["fiscal_years"]:
+            job_number += 1
+            index = self.config["index_name"]
+            filename = "{dir}{fy}_{type}.csv".format(dir=self.config["directory"], fy=fy, type="awards" if self.config["awards"] else "transactions")
+            new_job = DataJob(job_number, index, fy, filename, self.config["awards"])
 
-                if os.path.exists(filename):
-                    os.remove(filename)
-                download_queue.put(new_job)
+            if os.path.exists(filename):
+                os.remove(filename)
+            download_queue.put(new_job)
 
         printf({"msg": "There are {} jobs to process".format(job_number)})
 
@@ -212,11 +206,6 @@ class Command(BaseCommand):
             while process_list[-1].is_alive():
                 printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
                 sleep(7)
-        if self.config["incremental"]:
-            process_list.append(
-                Process(name="awards_update", target=update_awards, args=(ES, self.config))
-            )
-            process_list[-1].start()
 
         process_list[1].start()  # start ES ingest process
 
