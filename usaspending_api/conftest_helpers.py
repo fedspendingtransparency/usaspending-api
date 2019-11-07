@@ -77,20 +77,6 @@ class TestElasticSearchIndex:
         )
 
 
-def ensure_transaction_delta_view_exists():
-    """
-    The transaction_delta_view is used to populate the Elasticsearch index.
-    This function will just ensure the view exists in the database.
-    """
-    transaction_delta_view_path = os.path.join(
-        settings.BASE_DIR, "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
-    )
-    with open(transaction_delta_view_path) as f:
-        transaction_delta_view = f.read()
-    with connection.cursor() as cursor:
-        cursor.execute(transaction_delta_view)
-
-
 def ensure_broker_server_dblink_exists():
     """Ensure that all the database extensions exist, and the the broker database is setup as a foreign data server
 

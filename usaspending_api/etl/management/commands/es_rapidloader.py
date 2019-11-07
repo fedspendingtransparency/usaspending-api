@@ -19,6 +19,7 @@ from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
 from usaspending_api.etl.es_etl_helpers import process_guarddog
+from usaspending_api.etl.es_etl_helpers import set_final_index_config
 from usaspending_api.etl.es_etl_helpers import swap_aliases
 from usaspending_api.etl.es_etl_helpers import take_snapshot
 
@@ -121,12 +122,9 @@ class Command(BaseCommand):
             raise SystemExit("--reload-all requires an index name in --index-name")
         elif self.config["reload_all"]:
             self.config["index_name"] = self.config["index_name"].lower()
-
-            if not self.config["index_name"].endswith(settings.ES_TRANSACTIONS_NAME_PATTERN):
-                raise SystemExit("new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_PATTERN))
             self.config["starting_date"] = self.default_datetime
+            check_new_index_name_is_ok(self.config["index_name"])
         elif options["start_datetime"]:
-            self.config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
             self.config["starting_date"] = options["start_datetime"]
         else:
             # Due to the queries used for fetching postgres data,
@@ -137,8 +135,10 @@ class Command(BaseCommand):
             self.config["starting_date"] = get_last_load_date("es_transactions", default=self.default_datetime)
 
         self.config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+        if not self.config["index_name"]:
+            self.config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
 
-        does_index_exist = self.elasticsearch_client.indices.exists(self.config["index_name"])
+        # does_index_exist = self.elasticsearch_client.indices.exists(self.config["index_name"])
         self.config["is_incremental_load"] = (self.config["starting_date"] != self.default_datetime) or not bool(
             self.config["reload_all"]
         )
@@ -149,12 +149,12 @@ class Command(BaseCommand):
         elif self.config["starting_date"] < self.default_datetime:
             printf({"msg": "`start-datetime` is too early. Set to after {}".format(self.default_datetime)})
             raise SystemExit(1)
-        elif does_index_exist and not self.config["is_incremental_load"]:
-            printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
-            raise SystemExit(1)
-        elif not does_index_exist or self.config["reload_all"]:
-            printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
-            self.config["provide_deleted"] = False
+        # elif does_index_exist and not self.config["is_incremental_load"]:
+        #     printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
+        #     raise SystemExit(1)
+        # elif not does_index_exist or self.config["reload_all"]:
+        #     printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
+        #     self.config["provide_deleted"] = False
 
     def controller(self):
 
@@ -218,6 +218,7 @@ class Command(BaseCommand):
 
         if self.config["reload_all"]:
             printf({"msg": "Closing old indices and adding aliases"})
+            set_final_index_config(self.elasticsearch_client, self.config["index_name"])
             swap_aliases(self.elasticsearch_client, self.config["index_name"])
 
         if self.config["snapshot"]:
@@ -247,3 +248,10 @@ def fiscal_years_for_processing(options):
     if options["reload_all"] or "all" in options["fiscal_years"]:
         return create_fiscal_year_list(start_year=2008)
     return [int(x) for x in options["fiscal_years"]]
+
+
+def check_new_index_name_is_ok(provided_name):
+    if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_PATTERN):
+        raise SystemExit(
+            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_PATTERN)
+        )

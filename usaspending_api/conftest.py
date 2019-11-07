@@ -10,15 +10,14 @@ from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
-    ensure_transaction_delta_view_exists,
     ensure_broker_server_dblink_exists,
 )
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
-
 
 logger = logging.getLogger("console")
 VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
@@ -260,7 +259,7 @@ def django_db_setup(
             )
         else:
             generate_matviews()
-            ensure_transaction_delta_view_exists()
+            ensure_transaction_etl_view_exists()
 
     def teardown_database():
         with django_db_blocker.unblock():

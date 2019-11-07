@@ -82,15 +82,15 @@ AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_cod
 ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
+ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
+ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TRANSACTIONS_NAME_PATTERN = "transactions"
 ES_TRANSACTIONS_READ_ALIAS_PREFIX = "transaction-records"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
-ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

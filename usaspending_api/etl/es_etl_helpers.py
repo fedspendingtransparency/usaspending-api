@@ -14,6 +14,7 @@ from elasticsearch import TransportError
 from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -90,29 +91,33 @@ VIEW_COLUMNS = [
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
-COUNT_SQL = """SELECT COUNT(*) AS count
-FROM transaction_delta_view
-WHERE transaction_fiscal_year={fy}{update_date};"""
+COUNT_SQL = """
+SELECT COUNT(*) AS count
+FROM {view}
+WHERE transaction_fiscal_year={fy}{update_date}
+"""
 
 COPY_SQL = """"COPY (
     SELECT *
-    FROM transaction_delta_view
+    FROM {view}
     WHERE transaction_fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
 CHECK_IDS_SQL = """
 WITH temp_transaction_ids AS (
-  SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
+  SELECT *
+  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
 )
-SELECT transaction_id, generated_unique_transaction_id, update_date FROM transaction_delta_view
+SELECT transaction_id, generated_unique_transaction_id, update_date
+FROM {view}
 WHERE EXISTS (
   SELECT *
   FROM temp_transaction_ids
   WHERE
-    transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
+    {view}.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
     AND transaction_fiscal_year={fy}
-);
+)
 """
 
 # ==============================================================================
@@ -168,9 +173,16 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
-    copy_sql = COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
+    copy_sql = COPY_SQL.format(
+        fy=config["fiscal_year"],
+        update_date=update_date_str,
+        filename=filename,
+        view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+    )
 
-    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
+    count_sql = COUNT_SQL.format(
+        fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+    )
 
     if deleted_ids and config["provide_deleted"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
@@ -205,6 +217,7 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a reoccuring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    ensure_transaction_etl_view_exists()
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
@@ -293,7 +306,8 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 def streaming_post_to_es(client, chunk, index_name, job_id=None):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
+        # "doc_type" is set in the index templete file. Don't change this without changing in json file first
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -328,25 +342,7 @@ def create_aliases(client, index, silent=False):
     put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
-def swap_aliases(client, index):
-    client.indices.refresh(index)
-    # add null values to contracts alias
-    if client.indices.get_alias(index, "*"):
-        printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
-        client.indices.delete_alias(index, "_all")
-
-    alias_patterns = settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX + "*"
-
-    try:
-        old_indices = client.indices.get_alias("*", alias_patterns).keys()
-        for old_index in old_indices:
-            client.indices.delete_alias(old_index, "_all")
-            printf({"msg": 'Removing aliases "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
-    except Exception:
-        printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
-
-    create_aliases(client, index)
-
+def set_final_index_config(client, index):
     es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
@@ -360,8 +356,30 @@ def swap_aliases(client, index):
         message = 'Changing "{}" from {} to {}'.format(setting, current_settings.get(setting), value)
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
+
+def swap_aliases(client, index):
+    client.indices.refresh(index)
+    # add null values to contracts alias
+    if client.indices.get_alias(index, "*"):
+        printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
+        client.indices.delete_alias(index, "_all")
+
+    alias_patterns = settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX + "*"
+    old_indices = []
+
     try:
-        client.indices.delete(index=old_indices, ignore_unavailable=False)
+        old_indices = client.indices.get_alias("*", alias_patterns).keys()
+        for old_index in old_indices:
+            client.indices.delete_alias(old_index, "_all")
+            printf({"msg": 'Removing aliases "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
+    except Exception:
+        printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
+
+    create_aliases(client, index)
+
+    try:
+        if old_indices:
+            client.indices.delete(index=old_indices, ignore_unavailable=False)
     except Exception:
         printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indices), "f": "ES Alias Drop"})
 
