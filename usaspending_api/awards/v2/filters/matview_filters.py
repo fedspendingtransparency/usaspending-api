@@ -303,8 +303,6 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         # Federal Account Filter
         elif key == "program_activity":
-            print("it got in here, TIME TO CRASH")
-            SystemExit(10)
             faba_flag = True
             or_queryset = Q()
             for v in value:
