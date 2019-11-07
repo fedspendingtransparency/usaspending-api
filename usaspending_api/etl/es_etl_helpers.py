@@ -290,10 +290,10 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type="transaction_mapping"):
+def streaming_post_to_es(client, chunk, index_name, job_id=None):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type=doc_type):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -305,14 +305,13 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type="trans
     return success, failed
 
 
-def put_alias(client, index, alias_name, award_type_codes):
-    alias_body = {"filter": {"terms": {"type": award_type_codes}}}
+def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
 def create_aliases(client, index, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX, award_type)
         if silent is False:
             printf(
                 {
@@ -321,7 +320,12 @@ def create_aliases(client, index, silent=False):
                     "f": "ES Alias Put",
                 }
             )
-        put_alias(client, index, alias_name, award_type_codes)
+        alias_body = {"filter": {"terms": {"type": award_type_codes}}}
+        put_alias(client, index, alias_name, alias_body)
+
+    # ensure the new index is added to the alias used for incremental loads.
+    # If the alias is on multiple indexes, the loads will fail!
+    put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
 def swap_aliases(client, index):
@@ -331,14 +335,13 @@ def swap_aliases(client, index):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
 
-    alias_patterns = settings.TRANSACTIONS_INDEX_ROOT + "*"
+    alias_patterns = settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX + "*"
 
     try:
         old_indices = client.indices.get_alias("*", alias_patterns).keys()
         for old_index in old_indices:
             client.indices.delete_alias(old_index, "_all")
-            client.indices.close(old_index)
-            printf({"msg": 'Removing aliases & closing "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
+            printf({"msg": 'Removing aliases "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
@@ -357,11 +360,10 @@ def swap_aliases(client, index):
         message = 'Changing "{}" from {} to {}'.format(setting, current_settings.get(setting), value)
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
-
-def test_mapping(client, index, config):
-    transaction_mapping = json.loads(config["mapping"])["mappings"]
-    index_mapping = client.indices.get(index)[index]["mappings"]
-    return index_mapping == transaction_mapping
+    try:
+        client.indices.delete(index=old_indices, ignore_unavailable=False)
+    except Exception:
+        printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indices), "f": "ES Alias Drop"})
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
@@ -374,11 +376,8 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         raise SystemExit(1)
     if not does_index_exist:
         printf({"msg": 'Creating index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
-        client.indices.create(index=job.index, body=config["mapping"])
+        client.indices.create(index=job.index)
         client.indices.refresh(job.index)
-        if not test_mapping(client, job.index, config):
-            printf({"msg": "MAPPING FAILED TO STICK TO {}".format(job.index), "job": job.name, "f": "ES Create"})
-            raise SystemExit(1)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
@@ -398,7 +397,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, job.name, doc_type=config["doc_type"])
+        streaming_post_to_es(client, chunk, job.index, job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),

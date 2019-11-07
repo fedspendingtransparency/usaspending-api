@@ -288,7 +288,7 @@ def elasticsearch_transaction_index(db):
     See test_demo_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticSearchIndex()
-    with override_settings(TRANSACTIONS_INDEX_ROOT=elastic_search_index.alias_prefix):
+    with override_settings(ES_TRANSACTIONS_READ_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
 

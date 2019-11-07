@@ -1,11 +1,13 @@
-import os
 import json
 import subprocess
 
 from django.core.management.base import BaseCommand
+from pathlib import Path
 from time import perf_counter
+
 from usaspending_api import settings
 
+APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
 
 CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
 
@@ -16,8 +18,8 @@ CURL_COMMANDS = {
 }
 
 FILES = {
-    "template": "/usaspending_api/etl/es_transaction_template.json",
-    "settings": "/usaspending_api/etl/es_settings.json",
+    "template": APP_DIR / "etl/es_transaction_template.json",
+    "settings": APP_DIR / "etl/es_settings.json",
 }
 
 
@@ -36,7 +38,7 @@ class Command(BaseCommand):
             raise SystemExit
 
         cluster, index_settings = get_elasticsearch_settings()
-        template = create_template()
+        template = get_index_template()
         host = settings.ES_HOSTNAME
 
         run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=host)
@@ -56,22 +58,29 @@ def run_curl_cmd(**kwargs):
 
 
 def get_elasticsearch_settings():
-    filename = os.path.curdir + FILES["settings"]
-    if not os.path.isfile(filename):
-        print("File {} does not exist!!!!".format(filename))
-        raise SystemExit
-
-    print("Attemping to use {}".format(filename))
-    # Read and parse file as JSON validation before sending it to ES
-    with open(filename, "r") as f:
-        es_config = json.load(f)
+    es_config = return_json_from_file(FILES["settings"])
+    es_config["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
     return es_config["cluster"], es_config["settings"]
 
 
-def create_template():
-    template_file = os.path.curdir + FILES["template"]
-    # Read and parse file as JSON validation before sending it to ES
-    with open(template_file, "r") as f:
-        template = json.load(f)
-    template["index_patterns"] = [settings.TRANSACTIONS_INDEX_ROOT + "*"]
+def get_index_template():
+    template = return_json_from_file(FILES["template"])
+    template["index_patterns"] = ["*{}".format(settings.ES_TRANSACTIONS_NAME_PATTERN)]
+    template["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
     return template
+
+
+def return_json_from_file(path):
+    """Read and parse file as JSON
+
+    Library performs validation which is helpful before sending to ES
+    """
+    filepath = str(path)
+    if not path.exists():
+        raise SystemExit("File {} does not exist!!!!".format(filepath))
+
+    print("Reading file: {}".format(filepath))
+    with open(filepath, "r") as f:
+        json_to_dict = json.load(f)
+
+    return json_to_dict

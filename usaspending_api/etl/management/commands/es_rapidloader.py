@@ -1,17 +1,17 @@
-import certifi
 import os
-import json
+import re
 
 from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
-from elasticsearch import Elasticsearch
-from multiprocessing import Process, Queue
+from multiprocessing import Process
+from multiprocessing import Queue
 from time import perf_counter
 from time import sleep
 
 from usaspending_api import settings
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import DataJob
@@ -24,31 +24,22 @@ from usaspending_api.etl.es_etl_helpers import swap_aliases
 from usaspending_api.etl.es_etl_helpers import take_snapshot
 
 
-# SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
-# 1. Generate the full list of fiscal years and award descriptions to process as jobs
-# 2. Iterate by job
-#   a. Download 1 CSV file by year and trans type
-#       i. Download the next CSV file until no more jobs need CSVs
-#   b. Upload CSV to Elasticsearch
-# 3. Take a snapshot of the index reloaded
-#
-# IF RELOADING ---
-# python manage.py es_rapidloader --index-name NEWINDEX --reload-all all
-
-DEFAULT_DATETIME = datetime.strptime("2007-10-01+0000", "%Y-%m-%d%z")
-
-if "https" in settings.ES_HOSTNAME:
-    ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300, use_ssl=True, verify_certs=True, ca_certs=certifi.where())
-else:
-    ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
-
-INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
-
-
 class Command(BaseCommand):
-    help = """"""
+    help = """ETL script for Elasticsearch index of transaction data
+        PROCESS
+             1. Generate the full list of fiscal years to process as jobs
+             2. Iterate by job
+               a. Download a CSV file by year (one at a time)
+                   i. Continue to download a CSV file until all years are downloaded
+               b. Upload a CSV to Elasticsearch
+                   i. Continue to upload a CSV file until all years are uploaded to ES
+               c. Delete CSV file
+        IF RELOADING ---
+            python3 manage.py es_rapidloader --index-name NEWINDEX --reload-all all
+    """
 
-    # used by parent class
+    default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
+
     def add_arguments(self, parser):
         parser.add_argument(
             "fiscal_years",
@@ -80,12 +71,11 @@ class Command(BaseCommand):
             "--index-name",
             type=str,
             help="Provide the target index which will be indexed with the new data and process deletes (if --deleted)",
-            required=True,
         )
         parser.add_argument(
             "--reload-all",
             action="store_true",
-            help="Load all transactions. It will close existing indexes "
+            help="Load all transactions. It needs a new unique index name "
             "and set aliases used by API logic to the new index",
         )
         parser.add_argument(
@@ -104,11 +94,11 @@ class Command(BaseCommand):
     # used by parent class
     def handle(self, *args, **options):
         """ Script execution of custom code starts in this method"""
-        start = perf_counter()
-        printf({"msg": "Starting script\n{}".format("=" * 56)})
-
+        self.elasticsearch_client = instantiate_elasticsearch_client()
         self.transform_cli_arguments(options)
 
+        start = perf_counter()
+        printf({"msg": "Starting script\n{}".format("=" * 56)})
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**self.config)})
 
@@ -127,11 +117,17 @@ class Command(BaseCommand):
 
         self.config["fiscal_years"] = fiscal_years_for_processing(options)
         self.config["directory"] = self.config["directory"] + os.sep
-        self.config["index_name"] = self.config["index_name"].lower()
 
-        if self.config["reload_all"]:
-            self.config["starting_date"] = DEFAULT_DATETIME
+        if self.config["reload_all"] and not self.config["index_name"]:
+            raise SystemExit("--reload-all requires an index name in --index-name")
+        elif self.config["reload_all"]:
+            self.config["index_name"] = self.config["index_name"].lower()
+
+            if not self.config["index_name"].endswith(settings.ES_TRANSACTIONS_NAME_PATTERN):
+                raise SystemExit("new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_PATTERN))
+            self.config["starting_date"] = self.default_datetime
         elif options["start_datetime"]:
+            self.config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
             self.config["starting_date"] = options["start_datetime"]
         else:
             # Due to the queries used for fetching postgres data,
@@ -139,18 +135,20 @@ class Command(BaseCommand):
             #      - The earliest records in S3.
             #      - When all transaction records in the USAspending SQL database were updated.
             #   And keep it timezone-award for S3
-            self.config["starting_date"] = get_last_load_date("es_transactions", default=DEFAULT_DATETIME)
+            self.config["starting_date"] = get_last_load_date("es_transactions", default=self.default_datetime)
 
-        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing()
+        self.config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
 
-        does_index_exist = ES.indices.exists(self.config["index_name"])
-        self.config["is_incremental_load"] = self.config["starting_date"] != DEFAULT_DATETIME
+        does_index_exist = self.elasticsearch_client.indices.exists(self.config["index_name"])
+        self.config["is_incremental_load"] = (self.config["starting_date"] != self.default_datetime) or not bool(
+            self.config["reload_all"]
+        )
 
         if not os.path.isdir(self.config["directory"]):
             printf({"msg": "Provided directory does not exist"})
             raise SystemExit(1)
-        elif self.config["starting_date"] < DEFAULT_DATETIME:
-            printf({"msg": "`start-datetime` is too early. Set to after {}".format(DEFAULT_DATETIME)})
+        elif self.config["starting_date"] < self.default_datetime:
+            printf({"msg": "`start-datetime` is too early. Set to after {}".format(self.default_datetime)})
             raise SystemExit(1)
         elif does_index_exist and not self.config["is_incremental_load"]:
             printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
@@ -188,7 +186,9 @@ class Command(BaseCommand):
         )
         process_list.append(
             Process(
-                name="ES Index Process", target=es_data_loader, args=(ES, download_queue, es_ingest_queue, self.config)
+                name="ES Index Process",
+                target=es_data_loader,
+                args=(self.elasticsearch_client, download_queue, es_ingest_queue, self.config),
             )
         )
 
@@ -196,7 +196,11 @@ class Command(BaseCommand):
 
         if self.config["provide_deleted"]:
             process_list.append(
-                Process(name="S3 Deleted Records Scrapper Process", target=deleted_transactions, args=(ES, self.config))
+                Process(
+                    name="S3 Deleted Records Scrapper Process",
+                    target=deleted_transactions,
+                    args=(self.elasticsearch_client, self.config),
+                )
             )
             process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
@@ -215,11 +219,11 @@ class Command(BaseCommand):
 
         if self.config["reload_all"]:
             printf({"msg": "Closing old indices and adding aliases"})
-            swap_aliases(ES, self.config["index_name"])
+            swap_aliases(self.elasticsearch_client, self.config["index_name"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})
-            take_snapshot(ES, self.config["index_name"], settings.ES_REPOSITORY)
+            take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
 
 def set_config(copy_args, arg_parse_options):
@@ -227,7 +231,7 @@ def set_config(copy_args, arg_parse_options):
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-        "root_index": settings.TRANSACTIONS_INDEX_ROOT,
+        "root_index": settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX,
         "processing_start_datetime": datetime.now(timezone.utc),
     }
 
@@ -244,14 +248,3 @@ def fiscal_years_for_processing(options):
     if options["reload_all"] or "all" in options["fiscal_years"]:
         return create_fiscal_year_list(start_year=2008)
     return [int(x) for x in options["fiscal_years"]]
-
-
-def mapping_data_for_processing():
-    mappingfile = os.path.join(settings.BASE_DIR, INDEX_MAPPING_FILE)
-    with open(mappingfile) as f:
-        mapping_dict = json.load(f)
-        mapping = json.dumps(mapping_dict)
-    doc_type = str(list(mapping_dict["mappings"].keys())[0])
-    max_query_size = mapping_dict["settings"]["index.max_result_window"]
-
-    return mapping, doc_type, max_query_size

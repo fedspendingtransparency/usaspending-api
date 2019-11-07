@@ -140,7 +140,7 @@ def build_country_match(country_match_scope, country_match_country):
 
 
 def query_elasticsearch(query):
-    hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
+    hits = es_client_query(index="{}*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX), body=query)
 
     results = []
     if hits and hits["hits"]["total"] > 0:
