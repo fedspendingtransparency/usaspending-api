@@ -16,12 +16,12 @@ CLIENT = None
 
 
 def instantiate_elasticsearch_client():
+    es_kwargs = {"timeout": 300}
+
     if "https" in settings.ES_HOSTNAME:
-        return Elasticsearch(
-            settings.ES_HOSTNAME, timeout=300, use_ssl=True, verify_certs=True, ca_certs=certifi.where()
-        )
-    else:
-        return Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+        es_kwargs.update({"use_ssl": True, "verify_certs": True, "ca_certs": certifi.where()})
+
+    return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
 def create_es_client():

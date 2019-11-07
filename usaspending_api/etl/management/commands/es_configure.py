@@ -2,13 +2,10 @@ import json
 import subprocess
 
 from django.core.management.base import BaseCommand
-from pathlib import Path
 from time import perf_counter
 
 from usaspending_api import settings
 from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
-
-APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
 
 CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
 
@@ -19,8 +16,8 @@ CURL_COMMANDS = {
 }
 
 FILES = {
-    "template": APP_DIR / "etl/es_transaction_template.json",
-    "settings": APP_DIR / "etl/es_settings.json",
+    "template": settings.APP_DIR / "etl" / "es_transaction_template.json",
+    "settings": settings.APP_DIR / "etl" / "es_settings.json",
 }
 
 
@@ -93,3 +90,12 @@ def validate_known_fields(template):
     load_columns = set(VIEW_COLUMNS)
     if defined_fields ^ load_columns:  # check if any fields are not in both sets
         raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
+
+
+def retrieve_transaction_index_template():
+    """This function is used for test configuration"""
+    with open(str(FILES["template"])) as f:
+        mapping_dict = json.load(f)
+        template = json.dumps(mapping_dict)
+
+    return template

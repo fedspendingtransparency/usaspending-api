@@ -343,7 +343,7 @@ def create_aliases(client, index, silent=False):
 
 
 def set_final_index_config(client, index):
-    es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_settings.json")
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
     index_settings = settings_dict["settings"]["index"]

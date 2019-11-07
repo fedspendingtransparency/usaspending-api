@@ -1,5 +1,4 @@
 import logging
-import os.path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -13,9 +12,7 @@ class Command(BaseCommand):
 
     logger = logging.getLogger("console")
 
-    path = "usaspending_api/data/USAspendingGlossary.xlsx"
-    path = os.path.normpath(path)
-    default_path = os.path.join(settings.BASE_DIR, path)
+    default_path = str(settings.APP_DIR / "data" / "USAspendingGlossary.xlsx")
 
     def add_arguments(self, parser):
         parser.add_argument("-p", "--path", help="the path to the Excel spreadsheet to load", default=self.default_path)

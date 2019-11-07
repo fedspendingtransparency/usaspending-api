@@ -1,21 +1,19 @@
 from collections import OrderedDict
-from pathlib import Path
 from django.conf import settings
 
 from usaspending_api.accounts.models import TASAutocompleteMatview
 
 import usaspending_api.awards.models_matviews as mv
 
-APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
-DEFAULT_MATIVEW_DIR = Path(settings.BASE_DIR).resolve().parent / "matviews"
-DEPENDENCY_FILEPATH = APP_DIR / "database_scripts/matviews/functions_and_enums.sql"
-JSON_DIR = APP_DIR / "database_scripts/matview_sql_generator"
-MATVIEW_GENERATOR_FILE = APP_DIR / "database_scripts/matview_generator/matview_sql_generator.py"
+DEFAULT_MATIVEW_DIR = settings.BASE_DIR.parent / "matviews"
+DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"
+JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_sql_generator"
+MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_generator" / "matview_sql_generator.py"
 OVERLAY_VIEWS = [
-    APP_DIR / "database_scripts/matviews/vw_award_search.sql",
-    APP_DIR / "database_scripts/etl/transaction_delta_view.sql",
+    settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
+    settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql",
 ]
-DROP_OLD_MATVIEWS = APP_DIR / "database_scripts/matviews/drop_old_matviews.sql"
+DROP_OLD_MATVIEWS = settings.APP_DIR / "database_scripts" / "matviews" / "drop_old_matviews.sql"
 MATERIALIZED_VIEWS = OrderedDict(
     [
         (

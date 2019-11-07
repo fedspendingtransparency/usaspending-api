@@ -305,7 +305,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
         return
 
     broker_docker_image = "dataact-broker-backend:latest"
-    broker_src_dir_path_obj = Path(settings.BASE_DIR).resolve().parent / "data-act-broker-backend"
+    broker_src_dir_path_obj = settings.BASE_DIR.parent / "data-act-broker-backend"
     broker_docker_volume_target = "/data-act/backend"
 
     docker_client = docker.from_env()

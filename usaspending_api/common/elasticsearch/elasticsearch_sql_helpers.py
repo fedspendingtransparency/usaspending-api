@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from django.conf import settings
 from django.db import connection
 
@@ -16,17 +14,16 @@ def verify_database_view_exists(view_name: str) -> bool:
 
 def ensure_transaction_etl_view_exists(force: bool = False) -> None:
     """
-    The transaction_delta_view is used to populate the Elasticsearch index.
+    The view is used to populate the Elasticsearch transaction index.
     This function will ensure the view exists in the database.
     """
 
     if verify_database_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME) and not force:
         return
 
-    app_path = Path(settings.BASE_DIR).resolve() / "usaspending_api"
-    es_transaction_view_path = app_path / "database_scripts/etl/transaction_delta_view.sql"
+    view_file_path = settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"
 
-    with open(str(es_transaction_view_path)) as f:
-        transaction_delta_view = f.read()
+    with open(str(view_file_path)) as f:
+        view_sql = f.read()
     with connection.cursor() as cursor:
-        cursor.execute(transaction_delta_view)
+        cursor.execute(view_sql)
