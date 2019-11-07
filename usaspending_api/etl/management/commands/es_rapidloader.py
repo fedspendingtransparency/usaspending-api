@@ -1,5 +1,4 @@
 import os
-import re
 
 from datetime import datetime, timezone
 from django.core.management.base import BaseCommand

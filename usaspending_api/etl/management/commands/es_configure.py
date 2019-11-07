@@ -6,6 +6,7 @@ from pathlib import Path
 from time import perf_counter
 
 from usaspending_api import settings
+from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
 
 APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
 
@@ -67,6 +68,7 @@ def get_index_template():
     template = return_json_from_file(FILES["template"])
     template["index_patterns"] = ["*{}".format(settings.ES_TRANSACTIONS_NAME_PATTERN)]
     template["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    validate_known_fields(template)
     return template
 
 
@@ -84,3 +86,10 @@ def return_json_from_file(path):
         json_to_dict = json.load(f)
 
     return json_to_dict
+
+
+def validate_known_fields(template):
+    defined_fields = set([field for field in template["mappings"]["transaction_mapping"]["properties"]])
+    load_columns = set(VIEW_COLUMNS)
+    if defined_fields ^ load_columns:  # check if any fields are not in both sets
+        raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")

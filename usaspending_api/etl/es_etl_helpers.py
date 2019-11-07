@@ -298,7 +298,7 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
             failed = [failed + 1, failed][ok]
 
     except Exception as e:
-        print("MASSIVE FAIL!!!\n\n{}\n\n{}".format(str(e)[:5000], "*" * 80))
+        print("MASSIVE FAIL!!!\n\n{}...\n\n{}".format(str(e)[:5000], "*" * 80))
         raise SystemExit(1)
 
     printf({"msg": "Success: {}, Fails: {}".format(success, failed), "job": job_id, "f": "ES Ingest"})
