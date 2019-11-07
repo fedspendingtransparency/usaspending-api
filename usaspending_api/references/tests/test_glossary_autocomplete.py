@@ -16,6 +16,7 @@ def glossary_data(db):
     mommy.make(Definition, term="Word3", plain="Plaintext response. 3", official="Official language. 3")
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.parametrize(
     "fields,value,expected",
     [(["term"], "Word2", {"term": "Word2", "plain": "Plaintext response. 2", "official": "Official language. 2"})],
@@ -73,6 +74,7 @@ def test_glossary_v2_autocomplete(client):
     assert sorted(json_response["results"]) == []
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_glossary_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""

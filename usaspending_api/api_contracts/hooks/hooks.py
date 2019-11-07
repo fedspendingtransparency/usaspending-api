@@ -59,3 +59,8 @@ def before_download_status_test(transaction):
     transaction["fullPath"] = transaction["fullPath"].replace(
         "all_prime_awards_subawards_20191016202911453381.zip", file_name
     )
+
+
+@hooks.before("./contracts/v2/autocomplete/recipient.md > Recipient Autocomplete > POST")
+def skip_deprecated_endpoints(transaction):
+    transaction["skip"] = True

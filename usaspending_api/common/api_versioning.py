@@ -1,5 +1,5 @@
 from django.utils.decorators import method_decorator
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, EndpointRemovedException
 from usaspending_api.awards.v2.filters.filter_helpers import transform_keyword
 import logging
 
@@ -45,5 +45,15 @@ def deprecated(function):
         )
         response["X-API-Warn"] = msg
         return response
+
+    return wrap
+
+
+def removed(function):
+    """Return 410 response instead of doing anything else"""
+
+    def wrap(request, *args, **kwargs):
+
+        raise EndpointRemovedException()
 
     return wrap
