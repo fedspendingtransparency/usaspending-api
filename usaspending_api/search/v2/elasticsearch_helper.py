@@ -5,8 +5,9 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP, AWARDS_LOOKUP
 from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger("console")
 
@@ -222,3 +223,164 @@ def concat_if_array(data):
             # This should never happen if TinyShield is functioning properly
             logger.error("Keyword submitted was not a string or array")
             return ""
+
+
+def base_awards_query(filters):
+
+    for key, value in filters.items():
+        if value is None:
+            raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
+
+        key_list = [
+            "keywords",
+            "elasticsearch_keyword",
+            "time_period",
+            "award_type_codes",
+            "agencies",
+            "legal_entities",
+            "recipient_id",
+            "recipient_search_text",
+            "recipient_scope",
+            "recipient_locations",
+            "recipient_type_names",
+            "place_of_performance_scope",
+            "place_of_performance_locations",
+            "award_amounts",
+            "award_ids",
+            "program_numbers",
+            "naics_codes",
+            "psc_codes",
+            "contract_pricing_type_codes",
+            "set_aside_type_codes",
+            "extent_competed_type_codes",
+            "tas_codes",
+        ]
+        query = {}
+
+        if key not in key_list:
+            raise InvalidParameterException("Invalid filter: " + key + " does not exist.")
+
+        if key == "keywords":
+            query = base_query(value)
+
+        elif key == "time_period":
+            should = []
+            for v in value:
+                should.append(
+                    {
+                        "bool": {
+                            "should": [
+                                {"range": {"action_date": {"gte": v["start_date"]}}},
+                                {"range": {"date_signed": {"lte": v["end_date"]}}},
+                            ],
+                            "minimum_should_match": 2,
+                        }
+                    }
+                )
+            query = {"bool": {"should": should, "minimum_should_match": 1}}
+
+        elif key == "award_type_codes":
+            query = {"terms": {"type": value}}
+
+        elif key == "agencies":
+            should = []
+            for v in value:
+                field = "{}_{}_agency_name.keyword".format(v["type"], v["tier"])
+                should.append({"match": {field: v["name"]}})
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        # elif key == "legal_entities":
+
+        elif key == "recipient_search_text":
+            should = []
+            for v in value:
+                should.append({"wildcard": {"recipient_name": "{}*".format(v)}})
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        # elif key == "recipient_id":
+        #
+        elif key == "recipient_scope":
+            should = []
+            for v in value:
+                should.append({"match": {"recipient_location_country_code": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        # elif key == "recipient_locations":
+        #     should = []
+        #     country = v.get("country")
+        #     state = v.get("state")
+        #     county = v.get("county")
+        #     district = v.get("district")
+        #     city = v.get("city")
+        #     for v in value:
+        #         should.append({"match": {"recipient_location_{}_{}".format(country, "code")}})
+        #     query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        elif key == "recipient_type_names":
+            should = []
+            for v in value:
+                should.append({"wildcard": {"business_category": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        # elif key == "place_of_performance_scope":
+        #
+        # elif key == "place_of_performance_locations":
+        #
+        # elif key == "award_amounts":
+        #
+        # elif key == "award_ids":
+        #
+        # elif key == "program_numbers":
+        #
+        # elif key == "naics_codes":
+        #
+        # elif key == "psc_codes":
+        #
+        # elif key == "contract_pricing_type_codes":
+        #
+        # elif key == "set_aside_type_codes":
+        #
+        # elif key == "extent_competed_type_codes":
+        #
+        # elif key == "tas_codes":
+
+    return query
+
+
+def search_awards(request_data, lower_limit, limit):
+    """
+    request_data: dictionary
+    lower_limit: integer
+    limit: integer
+
+    if transaction_type_code not found, return results for contracts
+    """
+
+    filters = request_data["filters"]
+    query_fields = [AWARDS_LOOKUP[i] for i in request_data["fields"]]
+    query_fields.extend(["award_id"])
+    query_fields.extend(["generated_unique_award_id"])
+    query_sort = AWARDS_LOOKUP[request_data["sort"]]
+    query = {
+        "_source": query_fields,
+        "from": lower_limit,
+        "size": limit,
+        "query": base_query(filters),
+        "sort": [{query_sort: {"order": request_data["order"]}}],
+    }
+
+    for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
+        if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
+            index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, index)
+            break
+    else:
+        logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
+        return False, "Bad/Missing Award Types requested", None
+
+    response = es_client_query(index=index_name, body=query, retries=10)
+    if response:
+        total = response["hits"]["total"]
+        results = format_for_frontend(response["hits"]["hits"])
+        return True, results, total
+    else:
+        return False, "There was an error connecting to the ElasticSearch cluster", None

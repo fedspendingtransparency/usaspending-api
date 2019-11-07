@@ -43,13 +43,15 @@ AWARDS_LOOKUP = {
 }
 
 AWARDS_QUERIES = {
-    "keywords": {"must": [{"match": "{}"}]},
-    "time_period": {"range": {"action_date": {"gte": "{gte}", "lte": "{lte}"}}},
-    "award_type_codes": "",
+    "keywords": {"query": {"dis_max": {"queries": [{"query_string": {"query": "{query_string}"}}]}}},
+    "time_period": {
+        "bool": {"filter": [{"range": {"action_date": {"gte": "{gte}"}}}, {"range": {"date_signed": {"lte": "{lte}"}}}]}
+    },
+    "award_type_codes": {"terms": {"type": []}},
     "agencies": "",
     "legal_entities": "",
     "recipient_search_text": "",
-    "recipient_id":"",
+    "recipient_id": "",
     "recipient_scope": "",
     "recipient_locations": "",
     "recipient_type_names": "",

@@ -30,9 +30,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--awards",
-            action="store_true",
-            help="Load awards template instead of transaction template."
+            "--awards", action="store_true", help="Load awards template instead of transaction template."
         )
 
     # used by parent class

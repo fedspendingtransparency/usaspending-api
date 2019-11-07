@@ -45,16 +45,13 @@ else:
 TRANSACTION_INDEX_MAPPING_FILE = "usaspending_api/etl/es_transaction_mapping.json"
 AWARDS_INDEX_MAPPING_FILE = "usaspending_api/etl/es_award_mapping.json"
 
+
 class Command(BaseCommand):
     help = """"""
 
     # used by parent class
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--awards",
-            action="store_true",
-            help="Load awards index instead of transaction index."
-        )
+        parser.add_argument("--awards", action="store_true", help="Load awards index instead of transaction index.")
         parser.add_argument(
             "fiscal_years",
             nargs="+",
@@ -121,7 +118,10 @@ class Command(BaseCommand):
 
         if self.config["is_incremental_load"]:
             printf({"msg": "Updating Last Load record with {}".format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_{}".format("awards" if self.config["awards"] else "transactions"), self.config["processing_start_datetime"])
+            update_last_load_date(
+                "es_{}".format("awards" if self.config["awards"] else "transactions"),
+                self.config["processing_start_datetime"],
+            )
         printf({"msg": "---------------------------------------------------------------"})
         printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
         printf({"msg": "---------------------------------------------------------------"})
@@ -146,7 +146,9 @@ class Command(BaseCommand):
             #   And keep it timezone-award for S3
             self.config["starting_date"] = get_last_load_date("es_transactions", default=DEFAULT_DATETIME)
 
-        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing(self.config["awards"])
+        self.config["mapping"], self.config["doc_type"], self.config["max_query_size"] = mapping_data_for_processing(
+            self.config["awards"]
+        )
 
         does_index_exist = ES.indices.exists(self.config["index_name"])
         self.config["is_incremental_load"] = self.config["starting_date"] != DEFAULT_DATETIME
@@ -173,7 +175,9 @@ class Command(BaseCommand):
         for fy in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = "{dir}{fy}_{type}.csv".format(dir=self.config["directory"], fy=fy, type="awards" if self.config["awards"] else "transactions")
+            filename = "{dir}{fy}_{type}.csv".format(
+                dir=self.config["directory"], fy=fy, type="awards" if self.config["awards"] else "transactions"
+            )
             new_job = DataJob(job_number, index, fy, filename, self.config["awards"])
 
             if os.path.exists(filename):
@@ -233,7 +237,7 @@ def set_config(copy_args, arg_parse_options):
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
         "root_index": settings.TRANSACTIONS_INDEX_ROOT,
         "processing_start_datetime": datetime.now(timezone.utc),
-        "awards_root_index": settings.AWARDS_INDEX_ROOT
+        "awards_root_index": settings.AWARDS_INDEX_ROOT,
     }
 
     # convert the management command's levels of verbosity to a boolean

@@ -33,7 +33,6 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
-
 GLOBAL_MAP = {
     "award": {
         "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type"},
@@ -101,7 +100,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.populate_response(results=[], has_next=False))
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
-
+        # if self.filters["elasticsearch"]:
+        #     return Response(self.parse_elastic_response())
         return Response(self.create_response(self.construct_queryset()))
 
     @staticmethod

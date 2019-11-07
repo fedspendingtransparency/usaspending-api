@@ -158,7 +158,7 @@ AWARD_VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_account_identifiers"
+    "treasury_account_identifiers",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -230,6 +230,7 @@ AWARD_DESC_CATEGORIES = {
 UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
 
 UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
+
 
 class DataJob:
     def __init__(self, *args):
@@ -328,7 +329,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "provide_deleted": config["provide_deleted"],
-                "awards": config["awards"]
+                "awards": config["awards"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -416,13 +417,16 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type="trans
 
 def put_alias(client, index, alias_name, award_type_codes):
     alias_body = {"filter": {"terms": {"type": award_type_codes}}}
-    print(alias_body)
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
 def create_aliases(client, index, awards, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type) if awards else "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        alias_name = (
+            "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type)
+            if awards
+            else "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        )
         if silent is False:
             printf(
                 {
@@ -620,7 +624,14 @@ def filter_query(column, values, query_type="match_phrase"):
 
 
 def delete_query(response, awards):
-    return {"query": {"ids": {"type": "{}_mapping".format("award" if awards else "transaction"), "values": [i["_id"] for i in response["hits"]["hits"]]}}}
+    return {
+        "query": {
+            "ids": {
+                "type": "{}_mapping".format("award" if awards else "transaction"),
+                "values": [i["_id"] for i in response["hits"]["hits"]],
+            }
+        }
+    }
 
 
 def chunks(l, n):
