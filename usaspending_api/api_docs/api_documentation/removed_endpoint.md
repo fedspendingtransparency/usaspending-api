@@ -1,5 +1,3 @@
-## GET
-
 This is a placeholder for any endpoint that has been removed, designed to inform users of a proper replacement for the functionality.
         
 + Response 410 (application/json)
