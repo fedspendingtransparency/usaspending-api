@@ -90,7 +90,6 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         assert new_award.id == tx_norm_awd_ids[0] == tx_norm_awd_ids[1] == tx_norm_awd_ids[2]
 
         # And the single award created should refer to the first transaction processed that spawned the award (101)s
-        # TODO: Check if this is true??
         assert new_award.transaction_unique_id == "101"
 
         # Award's latest_transaction should point to transaction with latest action_date
