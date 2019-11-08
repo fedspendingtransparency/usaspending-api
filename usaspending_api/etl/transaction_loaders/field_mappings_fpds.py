@@ -519,7 +519,7 @@ recipient_location_functions = {
 # broker column name -> usaspending column name
 place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
-    "place_of_perform_country_n": "country_name",
+    "place_of_perf_country_desc": "country_name",
     "place_of_perform_county_co": "county_code",
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
