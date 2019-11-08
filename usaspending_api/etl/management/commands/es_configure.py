@@ -28,22 +28,25 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--template-only", action="store_true", help="When this flag is set, skip the cluster and index settings",
+            "--template-only",
+            action="store_true",
+            help="When this flag is set, skip the cluster and index settings. Useful when creating a new index",
         )
 
     def handle(self, *args, **options):
         if not settings.ES_HOSTNAME:
-            print("$ES_HOSTNAME is not set! Abort Script")
-            raise SystemExit
+            raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
 
         cluster, index_settings = get_elasticsearch_settings()
         template = get_index_template()
-        host = settings.ES_HOSTNAME
 
         if not options["template_only"]:
-            run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=host)
-            run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=host)
-        run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=host, name="transaction_template")
+            run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
+            run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
+
+        run_curl_cmd(
+            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name="transaction_template"
+        )
 
 
 def run_curl_cmd(**kwargs):
@@ -73,11 +76,11 @@ def get_index_template():
 def return_json_from_file(path):
     """Read and parse file as JSON
 
-    Library performs validation which is helpful before sending to ES
+    Library performs JSON validation which is helpful before sending to ES
     """
     filepath = str(path)
     if not path.exists():
-        raise SystemExit("File {} does not exist!!!!".format(filepath))
+        raise SystemExit("Fatal error: file {} does not exist.".format(filepath))
 
     print("Reading file: {}".format(filepath))
     with open(filepath, "r") as f:

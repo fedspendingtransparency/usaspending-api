@@ -166,7 +166,7 @@ class Command(BaseCommand):
         while True:
             sleep(10)
             if process_guarddog(process_list):
-                raise SystemExit(1)
+                raise SystemExit("Fatal error: review logs to determine why process died.")
             elif all([not x.is_alive() for x in process_list]):
                 printf({"msg": "All ETL processes completed execution with no error codes"})
                 break
@@ -195,7 +195,7 @@ def process_cli_parameters(options: dict, es_client) -> None:
     config["directory"] = Path(config["directory"]).resolve()
 
     if config["create_new_index"] and not config["index_name"]:
-        raise SystemExit("--create-new-index requires --index-name")
+        raise SystemExit("Fatal error: --create-new-index requires --index-name.")
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = default_datetime
@@ -225,14 +225,14 @@ def process_cli_parameters(options: dict, es_client) -> None:
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):
-            printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
+            printf({"msg": "Fatal error: data load into existing index. Change index name or run an incremental load"})
             raise SystemExit(1)
 
     if not config["directory"].is_dir():
-        printf({"msg": "Provided directory does not exist"})
+        printf({"msg": "Fatal error: provided directory does not exist"})
         raise SystemExit(1)
     elif config["starting_date"] < default_datetime:
-        printf({"msg": "`start-datetime` is too early. Set to after {}".format(default_datetime)})
+        printf({"msg": "Fatal error: --start-datetime is too early. Set no earlier than {}".format(default_datetime)})
         raise SystemExit(1)
     elif not config["is_incremental_load"] and config["process_deletes"]:
         printf({"msg": "Skipping deletions for ths load, --deleted overwritten to False"})
