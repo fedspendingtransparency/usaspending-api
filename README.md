@@ -122,10 +122,10 @@ Once these are satisfied, simply run:
     (usaspending-api) $ pytest
 
 #### Required Python Libraries
-Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`: _`3.5.6` as of this writing_)
+Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.7.x is being used (the latest RHEL package available for `python36u`: _as of this writing_)
 
-    $ pyenv install 3.5.6
-    $ pyenv local 3.5.6
+    $ pyenv install 3.7.2
+    $ pyenv local 3.7.2
     $ python -m venv .venv/usaspending-api
     $ source .venv/usaspending-api/bin/activate
 
