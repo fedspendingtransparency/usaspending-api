@@ -1,26 +1,9 @@
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsSerializer
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.api_versioning import removed, deprecated
+from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
-
-
-@method_decorator(removed, name="list")
-class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
-    """
-    Return aggregated FinancialAccountsByAward information.
-    """
-
-    serializer_class = AggregateSerializer
-
-    def get_queryset(self):
-        queryset = FinancialAccountsByAwards.objects.all()
-        queryset = self.filter_records(self.request, queryset=queryset)
-        queryset = self.aggregate(self.request, queryset=queryset)
-        queryset = self.order_records(self.request, queryset=queryset)
-        return queryset
 
 
 @method_decorator(deprecated, name="list")
