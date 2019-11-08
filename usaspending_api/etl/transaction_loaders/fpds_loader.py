@@ -1,5 +1,6 @@
 import logging
 from psycopg2.extras import DictCursor
+from psycopg2 import Error
 from django.db import connections, connection
 
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
@@ -54,6 +55,8 @@ DESTROY_ORPHANS_REFERENCES_LOCATION_SQL = (
 )
 
 logger = logging.getLogger("console")
+
+failed_ids = []
 
 
 def destroy_orphans():
@@ -172,35 +175,30 @@ def _transform_objects(broker_objects):
     retval = []
 
     for broker_object in broker_objects:
-        connected_objects = {}
-
-        connected_objects["recipient_location"] = _create_load_object(
-            broker_object, recipient_location_nonboolean_columns, None, recipient_location_functions
-        )
-
-        connected_objects["legal_entity"] = _create_load_object(
-            broker_object, legal_entity_nonboolean_columns, legal_entity_boolean_columns, legal_entity_functions
-        )
-
-        connected_objects["place_of_performance_location"] = _create_load_object(
-            broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
-        )
-
-        # award. NOT used if a matching award is found later
-        connected_objects["award"] = _create_load_object(broker_object, award_nonboolean_columns, None, award_functions)
-
-        connected_objects["transaction_normalized"] = _create_load_object(
-            broker_object, transaction_normalized_nonboolean_columns, None, transaction_normalized_functions
-        )
-
-        connected_objects["transaction_fpds"] = _create_load_object(
-            broker_object,
-            transaction_fpds_nonboolean_columns,
-            transaction_fpds_boolean_columns,
-            transaction_fpds_functions,
-        )
-
+        connected_objects = {
+            "recipient_location": _create_load_object(
+                broker_object, recipient_location_nonboolean_columns, None, recipient_location_functions
+            ),
+            "legal_entity": _create_load_object(
+                broker_object, legal_entity_nonboolean_columns, legal_entity_boolean_columns, legal_entity_functions
+            ),
+            "place_of_performance_location": _create_load_object(
+                broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
+            ),
+            # award. NOT used if a matching award is found later
+            "award": _create_load_object(broker_object, award_nonboolean_columns, None, award_functions),
+            "transaction_normalized": _create_load_object(
+                broker_object, transaction_normalized_nonboolean_columns, None, transaction_normalized_functions
+            ),
+            "transaction_fpds": _create_load_object(
+                broker_object,
+                transaction_fpds_nonboolean_columns,
+                transaction_fpds_boolean_columns,
+                transaction_fpds_functions,
+            ),
+        }
         retval.append(connected_objects)
+
     return retval
 
 
@@ -210,51 +208,65 @@ def _load_transactions(load_objects):
     connection.ensure_connection()
     with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
 
-        # Insert always, even if duplicative
-        # First create the records that don't have a foreign key out to anything else in one transaction per type
-        inserted_recipient_locations = bulk_insert_recipient_location(cursor, load_objects)
-        for index, elem in enumerate(inserted_recipient_locations):
-            load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index]
-
-        inserted_recipients = bulk_insert_recipient(cursor, load_objects)
-        for index, elem in enumerate(inserted_recipients):
-            load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index]
-            load_objects[index]["award"]["recipient_id"] = inserted_recipients[index]
-
-        inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
-        for index, elem in enumerate(inserted_place_of_performance):
-            load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[
-                index
-            ]
-            load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
+        # Handle objects that can be inserted in groups Insert these always, even if duplicative.
+        load_objects = _load_and_link_leaf_objects(cursor, load_objects)
 
         # Handle transaction-to-award relationship for each transaction to be loaded
         for load_object in load_objects:
+            try:
+                # AWARD GET OR CREATE
+                award_id = _matching_award(cursor, load_object)
+                if not award_id:
+                    # If there is no award, we need to create one
+                    award_id = insert_award(cursor, load_object)
 
-            # AWARD GET OR CREATE
-            award_id = _matching_award(cursor, load_object)
-            if not award_id:
-                # If there is no award, we need to create one
-                award_id = insert_award(cursor, load_object)
+                load_object["transaction_normalized"]["award_id"] = award_id
+                ids_of_awards_created_or_updated.add(award_id)
 
-            load_object["transaction_normalized"]["award_id"] = award_id
-            ids_of_awards_created_or_updated.add(award_id)
-
-            # TRANSACTION UPSERT
-            transaction_id = _lookup_existing_transaction(cursor, load_object)
-            if transaction_id:
-                # Inject the Primary Key of transaction_normalized+transaction_fpds that was found, so that the
-                # following updates can find it to update
+                # TRANSACTION UPSERT
+                transaction_id = _lookup_existing_transaction(cursor, load_object)
+                if transaction_id:
+                    # Inject the Primary Key of transaction_normalized+transaction_fpds that was found, so that the
+                    # following updates can find it to update
+                    load_object["transaction_fpds"]["transaction_id"] = transaction_id
+                    _update_fpds_transaction(cursor, load_object, transaction_id)
+                else:
+                    # If there is no transaction we create a new one.
+                    transaction_id = _insert_fpds_transaction(cursor, load_object)
                 load_object["transaction_fpds"]["transaction_id"] = transaction_id
-                _update_fpds_transaction(cursor, load_object, transaction_id)
-            else:
-                # If there is no transaction we create a new one.
-                transaction_id = _insert_fpds_transaction(cursor, load_object)
+                load_object["award"]["latest_transaction_id"] = transaction_id
 
-            load_object["transaction_fpds"]["transaction_id"] = transaction_id
-            load_object["award"]["latest_transaction_id"] = transaction_id
+            except Error as e:
+                logger.error(
+                    "load failed for detached_award_procurement_id {}! \nDetails: {}".format(
+                        load_object["transaction_fpds"]["detached_award_procurement_id"], e.pgerror
+                    )
+                )
+                failed_ids.append(load_object["transaction_fpds"]["detached_award_procurement_id"])
 
     return list(ids_of_awards_created_or_updated)
+
+
+def _load_and_link_leaf_objects(cursor, load_objects):
+    """
+    First create the records that don't have a foreign key out to anything else in one transaction per type,
+    then put foreign keys to those objects into the load objects still to be loaded
+    """
+    inserted_recipient_locations = bulk_insert_recipient_location(cursor, load_objects)
+    for index, elem in enumerate(inserted_recipient_locations):
+        load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index]
+
+    inserted_recipients = bulk_insert_recipient(cursor, load_objects)
+    for index, elem in enumerate(inserted_recipients):
+        load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index]
+        load_objects[index]["award"]["recipient_id"] = inserted_recipients[index]
+
+    inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
+    for index, elem in enumerate(inserted_place_of_performance):
+        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[index]
+        load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
+
+    return load_objects
 
 
 def _matching_award(cursor, load_object):
