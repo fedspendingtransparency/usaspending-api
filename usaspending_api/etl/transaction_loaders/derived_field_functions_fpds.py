@@ -73,7 +73,7 @@ def place_of_performance_state_description(broker_input):
     if broker_input["place_of_perfor_state_desc"]:
         return capitalize_if_string(broker_input["place_of_perfor_state_desc"])
     elif broker_input["place_of_performance_state"]:
-        return state_to_code.get(broker_input["place_of_performance_state"], {}).get("name")
+        return code_to_state.get(broker_input["place_of_performance_state"], {}).get("name")
     return None
 
 
