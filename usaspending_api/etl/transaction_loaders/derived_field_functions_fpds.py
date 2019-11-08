@@ -75,3 +75,7 @@ def place_of_performance_state_description(broker_input):
     elif broker_input["place_of_performance_state"]:
         return state_to_code.get(broker_input["place_of_performance_state"])
     return None
+
+
+def data_source(broker_input):
+    return "DBR"
