@@ -6,14 +6,18 @@ from django.db.models import Q
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.accounts.models import AppropriationAccountBalances, AppropriationAccountBalancesQuarterly
-from usaspending_api.financial_activities.models import (FinancialAccountsByProgramActivityObjectClass,
-                                                         TasProgramActivityObjectClassQuarterly)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+    TasProgramActivityObjectClassQuarterly,
+)
 
-SUBMISSION_MODELS = [AppropriationAccountBalances,
-                     FinancialAccountsByAwards,
-                     FinancialAccountsByProgramActivityObjectClass,
-                     TasProgramActivityObjectClassQuarterly,
-                     AppropriationAccountBalancesQuarterly, ]
+SUBMISSION_MODELS = [
+    AppropriationAccountBalances,
+    FinancialAccountsByAwards,
+    FinancialAccountsByProgramActivityObjectClass,
+    TasProgramActivityObjectClassQuarterly,
+    AppropriationAccountBalancesQuarterly,
+]
 
 
 @pytest.fixture
@@ -23,26 +27,32 @@ def submission_data():
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
-    loc1 = mommy.make("references.Location", city_name='city1', )
-    loc2 = mommy.make("references.Location", city_name='city2', )
+    loc1 = mommy.make("references.Location", city_name="city1")
+    loc2 = mommy.make("references.Location", city_name="city2")
     # Making child transaction items creates the parent by default
-    mommy.make("awards.TransactionFABS", transaction__place_of_performance=loc1,
-               transaction__award__piid='ABC123', transaction__award__parent_award__piid='DEF455',
-               _quantity=10)
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction__place_of_performance=loc1,
+        transaction__award__piid="ABC123",
+        transaction__award__parent_award__piid="DEF455",
+        _quantity=10,
+    )
     mommy.make("awards.TransactionFPDS", transaction__place_of_performance=loc2, _quantity=10)
-    mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123,
-               _quantity=10)
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10
+    )
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_123, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_123, _quantity=10)
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
-    loc3 = mommy.make("references.Location", city_name='city3', )
+    loc3 = mommy.make("references.Location", city_name="city3")
     # Making child transaction items creates the parent by default
     mommy.make("awards.TransactionFPDS", transaction__place_of_performance=loc2, _quantity=10)
     mommy.make("awards.TransactionFABS", transaction__place_of_performance=loc3, _quantity=10)
-    mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456,
-               _quantity=10)
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10
+    )
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_456, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_456, _quantity=10)
 

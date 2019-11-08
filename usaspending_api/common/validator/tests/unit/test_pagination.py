@@ -14,58 +14,58 @@ def test_default_pagination():
     pagination = deepcopy(PAGINATION)
 
     r = TinyShield(pagination).block({})
-    assert r == {'page': 1, 'limit': 10, 'order': 'desc'}
+    assert r == {"page": 1, "limit": 10, "order": "desc"}
 
 
 def test_non_default_overridden_pagination():
     pagination = deepcopy(PAGINATION)
 
-    r = TinyShield(pagination).block({'page': 2, 'limit': 11, 'sort': 'whatever', 'order': 'asc'})
-    assert r == {'page': 2, 'limit': 11, 'sort': 'whatever', 'order': 'asc'}
+    r = TinyShield(pagination).block({"page": 2, "limit": 11, "sort": "whatever", "order": "asc"})
+    assert r == {"page": 2, "limit": 11, "sort": "whatever", "order": "asc"}
 
 
 def test_invalid_pagination_values():
     pagination = deepcopy(PAGINATION)
 
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'page': 'minus one'})
+        TinyShield(pagination).block({"page": "minus one"})
     with pytest.raises(UnprocessableEntityException):
-        TinyShield(pagination).block({'page': -1})
+        TinyShield(pagination).block({"page": -1})
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'page': ['test']})
+        TinyShield(pagination).block({"page": ["test"]})
 
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'limit': 'minus one'})
+        TinyShield(pagination).block({"limit": "minus one"})
     with pytest.raises(UnprocessableEntityException):
-        TinyShield(pagination).block({'limit': -1})
+        TinyShield(pagination).block({"limit": -1})
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'limit': ['test']})
+        TinyShield(pagination).block({"limit": ["test"]})
 
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'sort': -1})
+        TinyShield(pagination).block({"sort": -1})
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'sort': ['test']})
+        TinyShield(pagination).block({"sort": ["test"]})
 
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'order': 'whatever'})
+        TinyShield(pagination).block({"order": "whatever"})
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'order': -1})
+        TinyShield(pagination).block({"order": -1})
     with pytest.raises(InvalidParameterException):
-        TinyShield(pagination).block({'order': ['test']})
+        TinyShield(pagination).block({"order": ["test"]})
 
 
 def test_customized_pagination():
-    pagination = customize_pagination_with_sort_columns(['field1', 'fieldA', 'fieldOne'])
+    pagination = customize_pagination_with_sort_columns(["field1", "fieldA", "fieldOne"])
 
     r = TinyShield(pagination).block({})
-    assert r == {'page': 1, 'limit': 10, 'order': 'desc'}
+    assert r == {"page": 1, "limit": 10, "order": "desc"}
 
 
 def test_customized_pagination_with_a_default_sort_column():
-    pagination = customize_pagination_with_sort_columns(['field1', 'fieldA', 'fieldOne'], 'fieldOne')
+    pagination = customize_pagination_with_sort_columns(["field1", "fieldA", "fieldOne"], "fieldOne")
 
     r = TinyShield(pagination).block({})
-    assert r == {'page': 1, 'limit': 10, 'order': 'desc', 'sort': 'fieldOne'}
+    assert r == {"page": 1, "limit": 10, "order": "desc", "sort": "fieldOne"}
 
 
 def test_invalid_customized_pagination_values():
@@ -76,9 +76,9 @@ def test_invalid_customized_pagination_values():
     with pytest.raises(TypeError):
         customize_pagination_with_sort_columns([1, 2, 3])
     with pytest.raises(ValueError):
-        customize_pagination_with_sort_columns(['field1', 'fieldA', 'fieldOne'], 1)
+        customize_pagination_with_sort_columns(["field1", "fieldA", "fieldOne"], 1)
     with pytest.raises(ValueError):
-        customize_pagination_with_sort_columns(['field1', 'fieldA', 'fieldOne'], 'fieldTwo')
+        customize_pagination_with_sort_columns(["field1", "fieldA", "fieldOne"], "fieldTwo")
 
     # This should work.  Last second sanity check.
-    customize_pagination_with_sort_columns(['field1', 'fieldA', 'fieldOne'], 'fieldOne')
+    customize_pagination_with_sort_columns(["field1", "fieldA", "fieldOne"], "fieldOne")

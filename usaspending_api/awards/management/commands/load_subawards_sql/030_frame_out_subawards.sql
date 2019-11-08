@@ -8,8 +8,7 @@ drop table if exists temp_load_subawards_subaward;
 
 
 
--- This will be dropped in the cleanup.sql file.
-create unlogged table temp_load_subawards_subaward as
+create temporary table temp_load_subawards_subaward as
     select * from subaward where 0 = 1;
 
 
@@ -68,7 +67,7 @@ insert into temp_load_subawards_subaward (
 )
 
 select
-    id,                                                     -- id
+    bs.id,                                                  -- id
     upper(subaward_number),                                 -- subaward_number
     subaward_amount,                                        -- amount
     upper(subaward_description),                            -- description
@@ -107,7 +106,7 @@ select
     upper(sub_awardee_or_recipient_uniqu),                  -- recipient_unique_id
     upper(sub_place_of_perform_city_name),                  -- pop_city_name
     upper(sub_place_of_perform_state_name),                 -- pop_state_name
-    null,                                                   -- pop_street_address - didn't make it into new broker subaward table - see DEV-2889
+    upper(sub_place_of_perform_street),                     -- pop_street_address
     upper(sub_legal_entity_city_name),                      -- recipient_location_city_name
     upper(sub_dba_name),                                    -- dba_name
     upper(sub_ultimate_parent_legal_enti),                  -- parent_recipient_name
@@ -130,8 +129,8 @@ select
     unique_award_key                                        -- unique_award_key
 
 from
-    broker_subaward
+    broker_subaward bs
+    inner join temp_load_subawards_new_or_updated t on t.id = bs.id
 
 where
-    subaward_number is not null and
-    imported is false;
+    subaward_number is not null;

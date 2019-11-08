@@ -18,13 +18,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: data_store_api
 
-  usaspending-db-migrate:
+  usaspending-manage:
     build: .
     volumes:
      - .:/dockermount
-    command: /bin/sh -c "python -u manage.py migrate"
+    command: /bin/sh -c "python -u manage.py shell"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOSTNAME}
 
   usaspending-db-sql:
     build: .
@@ -35,15 +36,6 @@ services:
       python -u usaspending_api/database_scripts/matview_generator/matview_sql_generator.py --dest=$$MATVIEW_SQL_DIR"
     environment:
       MATVIEW_SQL_DIR: ${MATVIEW_SQL_DIR}
-
-  usaspending-ref-data:
-    build: .
-    volumes:
-     - .:/dockermount
-    command: >
-      /bin/sh -c "python -u manage.py load_reference_data"
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-db-init:
     image: postgres:10.6-alpine
@@ -66,7 +58,8 @@ services:
       - 8000:8000
     command: /bin/sh -c "python -u manage.py runserver 0.0.0.0:8000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
 

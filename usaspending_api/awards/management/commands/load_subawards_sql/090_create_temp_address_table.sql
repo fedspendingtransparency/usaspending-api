@@ -8,8 +8,7 @@ drop table if exists temp_load_subawards_address_lookup;
 
 -- Create a temporary working table containing all of the address information
 -- from ref_city_county_code that we'll need in subsequent steps.
--- This will be dropped in the cleanup.sql file.
-create unlogged table
+create temporary table
     temp_load_subawards_address_lookup as
 
 select

@@ -34,6 +34,7 @@ class Migration(migrations.Migration):
                 ('award_report_fy_month', models.IntegerField()),
                 ('award_report_fy_year', models.IntegerField()),
                 ('award', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, to='awards.Award')),
+                ('generated_unique_award_id', models.TextField()),
                 ('awarding_agency_id', models.IntegerField()),
                 ('funding_agency_id', models.IntegerField()),
                 ('awarding_toptier_agency_name', models.TextField()),

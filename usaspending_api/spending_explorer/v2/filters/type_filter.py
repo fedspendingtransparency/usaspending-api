@@ -116,7 +116,7 @@ def type_filter(_type, filters, limit=None):
                 fiscal_quarter = int(value)
             else:
                 raise InvalidParameterException(
-                    "Incorrect value provided for quarter parameter. Must be a string " "between 1 and 4"
+                    "Incorrect value provided for quarter parameter. Must be a string between 1 and 4"
                 )
 
     if fiscal_year:
@@ -125,23 +125,28 @@ def type_filter(_type, filters, limit=None):
         )
 
     # Recipient, Award Queryset
-    alt_set = FinancialAccountsByAwards.objects.filter(
-        ~Q(transaction_obligated_amount="NaN"),
-        submission__reporting_fiscal_quarter=fiscal_quarter,
-        submission__reporting_fiscal_year=fiscal_year,
-    ).annotate(amount=Sum("transaction_obligated_amount"), counts=Count("*"))
+    alt_set = (
+        FinancialAccountsByAwards.objects.all()
+        .exclude(transaction_obligated_amount__isnull=True)
+        .exclude(transaction_obligated_amount="NaN")
+        .filter(submission__reporting_fiscal_quarter=fiscal_quarter)
+        .filter(submission__reporting_fiscal_year=fiscal_year)
+        .annotate(amount=Sum("transaction_obligated_amount"))
+    )
 
     # Base Queryset
-    queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
-        submission__reporting_fiscal_quarter=fiscal_quarter,
-        submission__reporting_fiscal_year=fiscal_year,
-        obligations_incurred_by_program_object_class_cpe__isnull=False,
-    ).annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+    queryset = (
+        FinancialAccountsByProgramActivityObjectClass.objects.all()
+        .exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
+        .filter(submission__reporting_fiscal_quarter=fiscal_quarter)
+        .filter(submission__reporting_fiscal_year=fiscal_year)
+        .annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+    )
 
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-    if _type in ("recipient", "award", "award_category", "agency_type"):
+    if _type == "recipient" or _type == "award" or _type == "award_category" or _type == "agency_type":
         # Annotate and get explorer _type filtered results
         exp = Explorer(alt_set, queryset)
 

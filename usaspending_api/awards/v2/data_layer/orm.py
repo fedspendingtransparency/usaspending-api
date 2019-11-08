@@ -2,49 +2,48 @@ import copy
 import logging
 
 from collections import OrderedDict
-from django.db.models import Sum
+from decimal import Decimal
+from django.db.models import Sum, F
+from typing import Optional
 
-from usaspending_api.awards.v2.data_layer.orm_mappers import (
-    FABS_AWARD_FIELDS,
-    FPDS_CONTRACT_FIELDS,
-    FPDS_AWARD_FIELDS,
-    FABS_ASSISTANCE_FIELDS,
-)
 from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards, TransactionFABS, TransactionFPDS, ParentAward
+    Award,
+    FinancialAccountsByAwards,
+    ParentAward,
+    TransactionFABS,
+    TransactionFPDS,
+)
+from usaspending_api.awards.v2.data_layer.orm_mappers import (
+    FABS_ASSISTANCE_FIELDS,
+    FABS_AWARD_FIELDS,
+    FPDS_AWARD_FIELDS,
+    FPDS_CONTRACT_FIELDS,
 )
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
+from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, Cfda, SubtierAgency
-
+from usaspending_api.references.models import Agency, LegalEntity, Cfda, PSC, NAICS, SubtierAgency
 
 logger = logging.getLogger("console")
 
 
-def construct_assistance_response(requested_award_dict):
-    """
-        Build the Python object to return FABS Award summary or meta-data via the API
-
-        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
-        returns: an OrderedDict
-    """
+def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
+    """Build an Assistance Award summary object to send as an API response"""
 
     response = OrderedDict()
     award = fetch_award_details(requested_award_dict, FABS_AWARD_FIELDS)
     if not award:
         return None
+
     response.update(award)
 
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
-    cfda_info = fetch_cfda_details_using_cfda_number(transaction["cfda_number"])
-    response["cfda_number"] = transaction["cfda_number"]
-    response["cfda_title"] = transaction["cfda_title"]
-    response["cfda_objectives"] = cfda_info.get("objectives")
+    response["record_type"] = transaction["record_type"]
+    response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
-
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
         response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
@@ -60,28 +59,27 @@ def construct_assistance_response(requested_award_dict):
     )
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
+    response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
 
     return delete_keys_from_dict(response)
 
 
-def construct_contract_response(requested_award_dict):
-    """
-        Build the Python object to return FPDS Award summary or meta-data via the API
-
-        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
-        returns: an OrderedDict
-    """
+def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
+    """Build a Procurement Award summary object to send as an API response"""
 
     response = OrderedDict()
     award = fetch_award_details(requested_award_dict, FPDS_AWARD_FIELDS)
     if not award:
         return None
+
     response.update(award)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
-    response["executive_details"] = create_officers_object(transaction)
+    response["parent_award"] = fetch_contract_parent_award_details(
+        award["_parent_award_piid"], award["_fpds_parent_agency_id"]
+    )
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -99,18 +97,18 @@ def construct_contract_response(requested_award_dict):
     )
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
+    response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
+    if transaction["product_or_service_code"]:
+        response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
+    if transaction["naics"]:
+        response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
     return delete_keys_from_dict(response)
 
 
-def construct_idv_response(requested_award_dict):
-    """
-        Build the Python object to return FPDS IDV summary or meta-data via the API
-
-        parameter(s): `requested_award` either award.id (int) or generated_unique_award_id (str)
-        returns: an OrderedDict
-    """
+def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
+    """Build a Procurement IDV summary object to send as an API response"""
 
     idv_specific_award_fields = OrderedDict(
         [
@@ -129,12 +127,9 @@ def construct_idv_response(requested_award_dict):
         return None
     response.update(award)
 
-    parent_award = fetch_parent_award_details(award["generated_unique_award_id"])
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
-    response["parent_award"] = parent_award
-    response["parent_generated_unique_award_id"] = parent_award["generated_unique_award_id"] if parent_award else None
-    response["executive_details"] = create_officers_object(transaction)
+    response["parent_award"] = fetch_idv_parent_award_details(award["generated_unique_award_id"])
     response["latest_transaction_contract_data"] = transaction
     response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
     if response["funding_agency"]:
@@ -152,16 +147,22 @@ def construct_idv_response(requested_award_dict):
     )
     transaction["_lei"] = award["_lei"]
     response["recipient"] = create_recipient_object(transaction)
+    response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
+    if transaction["product_or_service_code"]:
+        response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
+    if transaction["naics"]:
+        response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
 
     return delete_keys_from_dict(response)
 
 
-def create_recipient_object(db_row_dict):
+def create_recipient_object(db_row_dict: dict) -> OrderedDict:
     return OrderedDict(
         [
             (
-                "recipient_hash", obtain_recipient_uri(
+                "recipient_hash",
+                obtain_recipient_uri(
                     db_row_dict["_recipient_name"],
                     db_row_dict["_recipient_unique_id"],
                     db_row_dict["_parent_recipient_unique_id"],
@@ -170,19 +171,19 @@ def create_recipient_object(db_row_dict):
             ("recipient_name", db_row_dict["_recipient_name"]),
             ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
             (
-                "parent_recipient_hash", obtain_recipient_uri(
+                "parent_recipient_hash",
+                obtain_recipient_uri(
                     db_row_dict["_parent_recipient_name"],
                     db_row_dict["_parent_recipient_unique_id"],
-                    None,                                           # parent_recipient_unique_id
-                    True                                            # is_parent_recipient
-                )
+                    None,  # parent_recipient_unique_id
+                    True,  # is_parent_recipient
+                ),
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             (
-                "business_categories", get_business_category_display_names(
-                    fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])
-                )
+                "business_categories",
+                get_business_category_display_names(fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
             ),
             (
                 "location",
@@ -191,6 +192,7 @@ def create_recipient_object(db_row_dict):
                         ("location_country_code", db_row_dict["_rl_location_country_code"]),
                         ("country_name", db_row_dict["_rl_country_name"]),
                         ("state_code", db_row_dict["_rl_state_code"]),
+                        ("state_name", db_row_dict["_rl_state_name"]),
                         ("city_name", db_row_dict["_rl_city_name"]),
                         ("county_name", db_row_dict["_rl_county_name"]),
                         ("address_line1", db_row_dict["_rl_address_line1"]),
@@ -208,14 +210,25 @@ def create_recipient_object(db_row_dict):
     )
 
 
-def create_place_of_performance_object(db_row_dict):
+def create_place_of_performance_object(db_row_dict: dict) -> OrderedDict:
     return OrderedDict(
         [
             ("location_country_code", db_row_dict["_pop_location_country_code"]),
             ("country_name", db_row_dict["_pop_country_name"]),
             ("county_name", db_row_dict["_pop_county_name"]),
             ("city_name", db_row_dict["_pop_city_name"]),
-            ("state_code", db_row_dict["_pop_state_code"]),
+            (
+                "state_code",
+                db_row_dict["_pop_state_code"]
+                if db_row_dict["_pop_state_code"]
+                else state_code_from_name(db_row_dict["_pop_state_name"]),
+            ),
+            (
+                "state_name",
+                db_row_dict["_pop_state_name"]
+                if db_row_dict["_pop_state_name"]
+                else state_name_from_code(db_row_dict["_pop_state_code"]),
+            ),
             ("congressional_code", db_row_dict["_pop_congressional_code"]),
             ("zip4", db_row_dict["_pop_zip4"]),
             ("zip5", db_row_dict["_pop_zip5"]),
@@ -228,38 +241,61 @@ def create_place_of_performance_object(db_row_dict):
     )
 
 
-def create_officers_object(db_row_dict):
-    officers = []
-    for officer_num in range(1, 6):
-        officer_name_key = "_officer_{}_name".format(officer_num)
-        officer_amount_key = "_officer_{}_amount".format(officer_num)
-        officer_name = db_row_dict.get(officer_name_key)
-        officer_amount = db_row_dict.get(officer_amount_key)
-        if officer_name or officer_amount:
-            officers.append({
-                "name": officer_name,
-                "amount": officer_amount
-            })
-    return {"officers": officers}
+def create_officers_object(award: dict) -> dict:
+    """Construct the Executive Compensation Object"""
+    return {
+        "officers": [
+            {
+                "name": award.get("_officer_{}_name".format(officer_num)),
+                "amount": award.get("_officer_{}_amount".format(officer_num)),
+            }
+            for officer_num in range(1, 6)
+        ]
+    }
 
 
-def fetch_award_details(filter_q, mapper_fields):
+def fetch_award_details(filter_q: dict, mapper_fields: OrderedDict) -> dict:
     vals, ann = split_mapper_into_qs(mapper_fields)
     return Award.objects.filter(**filter_q).values(*vals).annotate(**ann).first()
 
 
-def fetch_parent_award_details(guai):
+def fetch_contract_parent_award_details(parent_piid: str, parent_fpds_agency: str) -> Optional[OrderedDict]:
+    parent_guai = "CONT_IDV_{}_{}".format(parent_piid or "NONE", parent_fpds_agency or "NONE")
+
     parent_award_ids = (
-        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
-        .values("parent_award__award_id", "parent_award__generated_unique_award_id")
+        ParentAward.objects.filter(generated_unique_award_id=parent_guai)
+        .annotate(parent_award_award_id=F("award_id"), parent_award_guai=F("generated_unique_award_id"))
+        .values("parent_award_award_id", "parent_award_guai")
         .first()
     )
 
+    return _fetch_parent_award_details(parent_award_ids)
+
+
+def fetch_idv_parent_award_details(guai: str) -> Optional[OrderedDict]:
+    parent_award_ids = (
+        ParentAward.objects.filter(generated_unique_award_id=guai, parent_award__isnull=False)
+        .annotate(
+            parent_award_award_id=F("parent_award__award_id"),
+            parent_award_guai=F("parent_award__generated_unique_award_id"),
+        )
+        .values("parent_award_award_id", "parent_award_guai")
+        .first()
+    )
+
+    return _fetch_parent_award_details(parent_award_ids)
+
+
+def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]:
     if not parent_award_ids:
         return None
 
+    # These are not exact query paths but instead expected aliases to allow reuse
+    parent_award_award_id = parent_award_ids["parent_award_award_id"]
+    parent_award_guai = parent_award_ids["parent_award_guai"]
+
     parent_award = (
-        Award.objects.filter(id=parent_award_ids["parent_award__award_id"])
+        Award.objects.filter(id=parent_award_award_id)
         .values(
             "latest_transaction__contract_data__agency_id",
             "latest_transaction__contract_data__idv_type_description",
@@ -271,17 +307,21 @@ def fetch_parent_award_details(guai):
     )
 
     if not parent_award:
-        logging.debug("Unable to find award for award id %s" % parent_award_ids["parent_award__award_id"])
+        logging.debug("Unable to find award for award id %s" % parent_award_award_id)
         return None
-    parent_agency = SubtierAgency.objects.filter(
-        subtier_code=parent_award["latest_transaction__contract_data__agency_id"]).values("name").first()
+
+    parent_agency = (
+        SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
+        .values("name")
+        .first()
+    )
 
     parent_object = OrderedDict(
         [
             ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
-            ("agency_name", parent_agency["name"]),
-            ("award_id", parent_award_ids["parent_award__award_id"]),
-            ("generated_unique_award_id", parent_award_ids["parent_award__generated_unique_award_id"]),
+            ("agency_name", parent_agency["name"] if parent_agency else None),
+            ("award_id", parent_award_award_id),
+            ("generated_unique_award_id", parent_award_guai),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
             (
                 "multiple_or_single_aw_desc",
@@ -295,19 +335,31 @@ def fetch_parent_award_details(guai):
     return parent_object
 
 
-def fetch_fabs_details_by_pk(primary_key, mapper):
+def fetch_fabs_details_by_pk(primary_key: int, mapper: OrderedDict) -> dict:
     vals, ann = split_mapper_into_qs(mapper)
     return TransactionFABS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
-def fetch_fpds_details_by_pk(primary_key, mapper):
+def fetch_fpds_details_by_pk(primary_key: int, mapper: OrderedDict) -> dict:
     vals, ann = split_mapper_into_qs(mapper)
     return TransactionFPDS.objects.filter(pk=primary_key).values(*vals).annotate(**ann).first()
 
 
-def fetch_agency_details(agency_id):
+def fetch_latest_ec_details(award_id: int, mapper: OrderedDict, transaction_type: str) -> dict:
+    vals, ann = split_mapper_into_qs(mapper)
+    model = TransactionFPDS if transaction_type == "fpds" else TransactionFABS
+    retval = (
+        model.objects.filter(transaction__award_id=award_id, officer_1_name__isnull=False)
+        .values(*vals)
+        .annotate(**ann)
+        .order_by("-action_date")
+    )
+    return retval.first()
+
+
+def fetch_agency_details(agency_id: int) -> Optional[dict]:
     values = [
-        "toptier_agency__fpds_code",
+        "toptier_agency__toptier_code",
         "toptier_agency__name",
         "toptier_agency__abbreviation",
         "subtier_agency__subtier_code",
@@ -322,7 +374,7 @@ def fetch_agency_details(agency_id):
             "id": agency_id,
             "toptier_agency": {
                 "name": agency["toptier_agency__name"],
-                "code": agency["toptier_agency__fpds_code"],
+                "code": agency["toptier_agency__toptier_code"],
                 "abbreviation": agency["toptier_agency__abbreviation"],
             },
             "subtier_agency": {
@@ -334,7 +386,7 @@ def fetch_agency_details(agency_id):
     return agency_details
 
 
-def fetch_business_categories_by_legal_entity_id(legal_entity_id):
+def fetch_business_categories_by_legal_entity_id(legal_entity_id: int) -> list:
     le = LegalEntity.objects.filter(pk=legal_entity_id).values("business_categories").first()
 
     if le:
@@ -342,17 +394,157 @@ def fetch_business_categories_by_legal_entity_id(legal_entity_id):
     return []
 
 
-def fetch_cfda_details_using_cfda_number(cfda):
-    c = Cfda.objects.filter(program_number=cfda).values("program_title", "objectives").first()
-    if not c:
-        return {}
-    return c
+def normalize_cfda_number_format(fabs_transaction: dict) -> str:
+    """Normalize a CFDA number to 6 digits by padding 0 in case the value was truncated"""
+    cfda_number = fabs_transaction.get("cfda_number")
+    if cfda_number and len(cfda_number) < 6:
+        cfda_number += "0" * (6 - len(cfda_number))
+
+    return cfda_number
 
 
-def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id):
-    _sum = (
-        FinancialAccountsByAwards.objects.filter(award_id=internal_award_id)
-        .aggregate(Sum("transaction_obligated_amount"))
+def fetch_all_cfda_details(award: dict) -> list:
+    fabs_values = ["cfda_number", "federal_action_obligation", "non_federal_funding_amount", "total_funding_amount"]
+    queryset = TransactionFABS.objects.filter(transaction__award_id=award["id"]).values(*fabs_values)
+    cfda_dicts = {}
+    for transaction in queryset:
+        clean_cfda_number_str = normalize_cfda_number_format(transaction)
+        if cfda_dicts.get(clean_cfda_number_str):
+            cfda_dicts.update(
+                {
+                    clean_cfda_number_str: {
+                        "federal_action_obligation": cfda_dicts[clean_cfda_number_str]["federal_action_obligation"]
+                        + Decimal(transaction["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": cfda_dicts[clean_cfda_number_str]["non_federal_funding_amount"]
+                        + Decimal(transaction["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": cfda_dicts[clean_cfda_number_str]["total_funding_amount"]
+                        + Decimal(transaction["total_funding_amount"] or 0),
+                    }
+                }
+            )
+        else:
+            cfda_dicts.update(
+                {
+                    clean_cfda_number_str: {
+                        "federal_action_obligation": Decimal(transaction["federal_action_obligation"] or 0),
+                        "non_federal_funding_amount": Decimal(transaction["non_federal_funding_amount"] or 0),
+                        "total_funding_amount": Decimal(transaction["total_funding_amount"] or 0),
+                    }
+                }
+            )
+
+    final_cfda_objects = []
+    for cfda_number in cfda_dicts.keys():
+        details = fetch_cfda_details_using_cfda_number(cfda_number)
+        if details.get("url") == "None;":
+            details.update({"url": None})
+        final_cfda_objects.append(
+            OrderedDict(
+                [
+                    ("applicant_eligibility", details.get("applicant_eligibility")),
+                    ("beneficiary_eligibility", details.get("beneficiary_eligibility")),
+                    ("cfda_federal_agency", details.get("federal_agency")),
+                    ("cfda_number", cfda_number),
+                    ("cfda_objectives", details.get("objectives")),
+                    ("cfda_obligations", details.get("obligations")),
+                    ("cfda_popular_name", details.get("popular_name")),
+                    ("cfda_title", details.get("program_title")),
+                    ("cfda_website", details.get("website_address")),
+                    ("federal_action_obligation_amount", cfda_dicts[cfda_number]["federal_action_obligation"]),
+                    ("non_federal_funding_amount", cfda_dicts[cfda_number]["non_federal_funding_amount"]),
+                    ("sam_website", details.get("url")),
+                    ("total_funding_amount", cfda_dicts[cfda_number]["total_funding_amount"]),
+                ]
+            )
+        )
+    final_cfda_objects.sort(key=lambda cfda: cfda["total_funding_amount"], reverse=True)
+    return final_cfda_objects
+
+
+def fetch_cfda_details_using_cfda_number(cfda: str) -> dict:
+    values = [
+        "applicant_eligibility",
+        "beneficiary_eligibility",
+        "program_title",
+        "objectives",
+        "federal_agency",
+        "website_address",
+        "url",
+        "obligations",
+        "popular_name",
+    ]
+    cfda_details = Cfda.objects.filter(program_number=cfda).values(*values).first()
+
+    return cfda_details or {}
+
+
+def fetch_transaction_obligated_amount_by_internal_award_id(internal_award_id: int) -> Optional[Decimal]:
+    _sum = FinancialAccountsByAwards.objects.filter(award_id=internal_award_id).aggregate(
+        Sum("transaction_obligated_amount")
     )
     if _sum:
-        return _sum.get("transaction_obligated_amount__sum")
+        return _sum["transaction_obligated_amount__sum"]
+
+    return None
+
+
+def fetch_psc_hierarchy(psc_code: str) -> dict:
+    codes = [psc_code, psc_code[:2], psc_code[:1], psc_code[:3] if psc_code[0] == "A" else None]
+    toptier_code = {}
+    midtier_code = {}
+    subtier_code = {}  # only used for R&D codes which start with "A"
+    base_code = {}
+    if psc_code[0].isalpha():  # we only want to look for the toptier code for services, which start with letters
+        try:
+            psc_top = PSC.objects.get(code=codes[2])
+            toptier_code = {"code": psc_top.code, "description": psc_top.description}
+        except PSC.DoesNotExist:
+            pass
+    try:
+        psc_mid = PSC.objects.get(code=codes[1])
+        midtier_code = {"code": psc_mid.code, "description": psc_mid.description}
+    except PSC.DoesNotExist:
+        pass
+    try:
+        psc = PSC.objects.get(code=codes[0])
+        base_code = {"code": psc.code, "description": psc.description}
+    except PSC.DoesNotExist:
+        pass
+    if codes[3] is not None:  # don't bother looking for 3 digit codes unless they start with "A"
+        try:
+            psc_rd = PSC.objects.get(code=codes[3])
+            subtier_code = {"code": psc_rd.code, "description": psc_rd.description}
+        except PSC.DoesNotExist:
+            pass
+
+    results = {
+        "toptier_code": toptier_code,
+        "midtier_code": midtier_code,
+        "subtier_code": subtier_code,
+        "base_code": base_code,
+    }
+    return results
+
+
+def fetch_naics_hierarchy(naics: str) -> dict:
+    codes = [naics, naics[:4], naics[:2]]
+    toptier_code = {}
+    midtier_code = {}
+    base_code = {}
+    try:
+        toptier = NAICS.objects.get(code=codes[2])
+        toptier_code = {"code": toptier.code, "description": toptier.description}
+    except NAICS.DoesNotExist:
+        pass
+    try:
+        midtier = NAICS.objects.get(code=codes[1])
+        midtier_code = {"code": midtier.code, "description": midtier.description}
+    except NAICS.DoesNotExist:
+        pass
+    try:
+        base = NAICS.objects.get(code=codes[0])
+        base_code = {"code": base.code, "description": base.description}
+    except NAICS.DoesNotExist:
+        pass
+    results = {"toptier_code": toptier_code, "midtier_code": midtier_code, "base_code": base_code}
+    return results

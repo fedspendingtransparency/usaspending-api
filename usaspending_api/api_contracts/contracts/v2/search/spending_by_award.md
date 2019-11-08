@@ -1,0 +1,254 @@
+FORMAT: 1A
+HOST: https://api.usaspending.gov
+
+# Spending by Award [/api/v2/search/spending_by_award/]
+
+This endpoints supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+
+## POST
+
+This endpoint takes award filters and fields, and returns the fields of the filtered awards.
+
++ Request (application/json)
+    + Attributes (object)
+        + `filters` (required, FilterObject)
+        + `fields` (required, SpendingByAwardFields)
+        + `limit` (optional, number)
+            How many results are returned. If no limit is specified, the limit is set to 10.
+        + `order` (optional, enum[string])
+            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
+            + Default: `desc`
+            + Members
+                + `desc`
+                + `asc`
+        + `page` (optional, number)
+            The page number that is currently returned.
+        + `sort` (optional, string)
+            Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
+        + `subawards` (optional, boolean)
+            True when you want to group by Subawards instead of Awards. Defaulted to False.
+    + Body
+
+            {
+                "subawards": false,
+                "limit": 10,
+                "page": 1,
+                "filters": {
+                    "award_type_codes": ["A", "B", "C"],
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2019-09-30"}]
+                },
+                "fields": [
+                    "Award ID",
+                    "Recipient Name",
+                    "Start Date",
+                    "End Date",
+                    "Award Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Contract Award Type",
+                    "Award Type",
+                    "Funding Agency",
+                    "Funding Sub Agency"
+                ]
+            }
+
++ Response 200 (application/json)
+    + Attributes (object)
+        + `limit` (required, number)
+        + `results` (required, array[SpendingByAwardResponse], fixed-type)
+        + `page_metadata` (PageMetadataObject)
+
+# Data Structures
+
+## SpendingByAwardFields (array)
+List of table columns
+
+### Default
+- `Award ID`
+- `Recipient Name`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Contract Award Type`
+- `Award Type`
+- `Funding Agency`
+- `Funding Sub Agency`
+
+## SpendingByAwardResponse (object)
++ `internal_id` (required, number)
++ `Award Amount` (optional, number)
++ `Award ID` (optional, string)
++ `Award Type` (optional, string, nullable)
++ `Awarding Agency Code` (optional, string, nullable)
++ `Awarding Agency` (optional, string, nullable)
++ `Awarding Sub Agency Code` (optional, string, nullable)
++ `Awarding Sub Agency` (optional, string, nullable)
++ `Base Obligation Date` (optional, string)
++ `CFDA Number` (optional, string, nullable)
+    Assistance awards only
++ `Contract Award Type` (optional, string)
+    Procurement awards only
++ `Description` (optional, string, nullable)
++ `End Date` (optional, string)
++ `Funding Agency Code` (optional, string, nullable)
++ `Funding Agency` (optional, string, nullable)
++ `Funding Sub Agency Code` (optional, string, nullable)
++ `Funding Sub Agency` (optional, string, nullable)
++ `generated_internal_id` (optional, string)
++ `Issued Date` (optional, string, nullable)
++ `Last Date to Order` (optional, string, nullable)
+    Procurement IDVs only
++ `Last Modified Date` (optional, string)
++ `Loan Value` (optional, number, nullable)
+    Assistance awards only
++ `Period of Performance Current End Date` (optional, string, nullable)
++ `Period of Performance Start Date` (optional, string)
++ `Place of Performance City Code` (optional, number)
++ `Place of Performance Country Code` (optional, string, nullable)
++ `Place of Performance State Code` (optional, number, nullable)
++ `Place of Performance Zip5` (optional, number)
++ `Prime Award ID` (optional, string, nullable)
+    Sub-Awards only, returns the ID (piid/fain/uri) of the prime award.
++ `Prime Recipient Name` (optional, string, nullable)
+    Sub-Awards only, returns the name of the prime award's recipient.
++ `prime_award_recipient_id` (optional, string, nullable)
+    Sub-Awards only, return the recipient id of the prime award's recipient.
++ `prime_award_internal_id` (optional, string, nullable)
+    Sub-Awards only, return the award id of the prime award.
++ `prime_award_generated_internal_id` (optional, string)
+    Sub-Awards only, return the generated unique award id of the prime award.
++ `Recipient DUNS Number` (optional, string, nullable)
++ `Recipient Name` (optional, string, nullable)
++ `recipient_id` (optional, string, nullable)
+    A unique identifier for the recipient which includes the recipient hash and level.
++ `SAI Number` (optional, string, nullable)
+    Assistance awards only
++ `Start Date` (optional, string)
++ `Sub-Award Amount` (optional, string)
+    Sub-Awards only
++ `Sub-Award Date` (optional, string)
+    Sub-Awards only
++ `Sub-Award ID` (optional, string)
+    Sub-Awards only
++ `Sub-Award Type` (optional, string)
+    Sub-Awards only
++ `Sub-Awardee Name` (optional, string)
+    Sub-Awards only
++ `Subsidy Cost` (optional, number, nullable)
+    Assistance awards only
+
+## PageMetadataObject (object)
++ `page` (required, number)
++ `hasNext` (required, boolean)
+
+## Filter Objects
+### FilterObject (object)
++ `keywords` : `transport` (optional, array[string])
++ `time_period` (optional, array[TimePeriodObject], fixed-type)
++ `place_of_performance_scope` (optional, enum[string])
+    + Members
+        + `domestic`
+        + `foreign`
++ `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
++ `agencies` (optional, array[AgencyObject], fixed-type)
++ `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_id` (optional, string)
+    A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
++ `recipient_scope` (optional, enum[string])
+    + Members
+        + `domestic`
+        + `foreign`
++ `recipient_locations` (optional, array[LocationObject], fixed-type)
++ `recipient_type_names`: `category_business` (optional, array[string])
++ `award_type_codes` (optional, FilterObjectAwardTypes)
++ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
++ `award_amounts` (optional, array[AwardAmounts], fixed-type)
++ `program_numbers`: `10.331` (optional, array[string])
++ `naics_codes`: `311812` (optional, array[string])
++ `psc_codes`: `8940`, `8910` (optional, array[string])
++ `contract_pricing_type_codes`: `J` (optional, array[string])
++ `set_aside_type_codes`: `NONE` (optional, array[string])
++ `extent_competed_type_codes`: `A` (optional, array[string])
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
+
+### TimePeriodObject (object)
++ `start_date`: `2017-10-01` (required, string)
++ `end_date`: `2018-09-30` (required, string)
++ `date_type` (optional, enum[string])
+    + Members
+        + `action_date`
+        + `last_modified_date`
+
+### LocationObject (object)
++ `country`: `USA` (required, string)
++ `state`: `VA` (optional, string)
++ `county` (optional, string)
++ `city` (optional, string)
++ `district` (optional, string)
++ `zip` (optional, string)
+
+### AgencyObject (object)
++ `type` (required, enum[string])
+    + Members
+        + `awarding`
+        + `funding`
++ `tier` (required, enum[string])
+    + Members
+        + `toptier`
+        + `subtier`
++ `name`: `Department of Defense` (required, string)
+
+### AwardAmounts (object)
++ `lower_bound` (optional, number)
++ `upper_bound`: 1000000 (optional, number)
+
+### TASCodeObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (required, string)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (required, string)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
+
+### FilterObjectAwardTypes (array)
+List of filterable award types
+
+#### Sample
+- `A`
+- `B`
+- `C`
+- `D`
+
+#### Default
+- `02`
+- `03`
+- `04`
+- `05`
+- `06`
+- `07`
+- `08`
+- `09`
+- `10`
+- `11`
+- `A`
+- `B`
+- `C`
+- `D`
+- `IDV_A`
+- `IDV_B`
+- `IDV_B_A`
+- `IDV_B_B`
+- `IDV_B_C`
+- `IDV_C`
+- `IDV_D`
+- `IDV_E`

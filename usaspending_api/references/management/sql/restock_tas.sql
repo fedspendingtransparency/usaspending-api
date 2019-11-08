@@ -39,9 +39,7 @@ SELECT
         FROM
             toptier_agency
         WHERE
-            toptier_agency.cgac_code = broker_tas.allocation_transfer_agency
-        ORDER BY
-            toptier_agency.fpds_code
+            toptier_agency.toptier_code = broker_tas.allocation_transfer_agency
         LIMIT 1
     ) AS awarding_toptier_agency_id,
     broker_tas.beginning_period_of_availa AS beginning_period_of_availability,
@@ -65,11 +63,11 @@ SELECT
         FROM
             toptier_agency
         WHERE
-            toptier_agency.cgac_code = broker_tas.agency_identifier
-        ORDER BY
-            toptier_agency.fpds_code
+            toptier_agency.toptier_code = broker_tas.agency_identifier
         LIMIT 1
     ) AS funding_toptier_agency_id,
+    broker_tas.internal_end_date,
+    broker_tas.internal_start_date,
     broker_tas.main_account_code,
     broker_tas.reporting_agency_aid AS reporting_agency_id,
     broker_tas.reporting_agency_name,
@@ -130,8 +128,8 @@ FROM
             financial_indicator2 TEXT,
             fr_entity_description TEXT,
             fr_entity_type TEXT,
-            internal_end_date TEXT,
-            internal_start_date TEXT,
+            internal_end_date DATE,
+            internal_start_date DATE,
             main_account_code TEXT,
             reporting_agency_aid TEXT,
             reporting_agency_name TEXT,
@@ -165,6 +163,8 @@ INSERT INTO public.treasury_appropriation_account
     fr_entity_description,
     fr_entity_code,
     funding_toptier_agency_id,
+    internal_end_date,
+    internal_start_date,
     main_account_code,
     reporting_agency_id,
     reporting_agency_name,
@@ -197,6 +197,8 @@ SELECT
     fr_entity_description,
     fr_entity_code,
     funding_toptier_agency_id,
+    internal_end_date,
+    internal_start_date,
     main_account_code,
     reporting_agency_id,
     reporting_agency_name,
@@ -222,6 +224,8 @@ FROM public.temp_restock_tas ON CONFLICT (treasury_account_identifier) DO UPDATE
     fr_entity_description = excluded.fr_entity_description,
     fr_entity_code = excluded.fr_entity_code,
     funding_toptier_agency_id = excluded.funding_toptier_agency_id,
+    internal_end_date = excluded.internal_end_date,
+    internal_start_date = excluded.internal_start_date,
     main_account_code = excluded.main_account_code,
     reporting_agency_id = excluded.reporting_agency_id,
     reporting_agency_name = excluded.reporting_agency_name,

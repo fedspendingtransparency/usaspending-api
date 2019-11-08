@@ -4,7 +4,7 @@ def get_model_by_name(models, name):
     given the model's name.  Returns None if the model was not found.
     """
     for model in models:
-        if model.get('name') == name:
+        if model.get("name") == name:
             return model
     return None
 

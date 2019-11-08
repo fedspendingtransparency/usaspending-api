@@ -2,6 +2,8 @@ import codecs
 import csv
 import os
 
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+
 
 def count_rows_in_csv_file(filename, has_header=True, safe=True):
     """
@@ -66,3 +68,11 @@ def partition_large_csv_file(
         current_partition_writer.writerow(row)
 
     return new_csv_list
+
+
+def read_csv_file_as_list_of_dictionaries(file_path):
+    """
+    Read in the specified CSV file and return as a list of dictionaries ("records").
+    """
+    with RetrieveFileFromUri(file_path).get_file_object(True) as f:
+        return list(csv.DictReader(f))

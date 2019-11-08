@@ -3,12 +3,16 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.api_versioning import removed, deprecated
+from django.utils.decorators import method_decorator
 
 
+@method_decorator(removed, name="list")
 class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     Return aggregated FinancialAccountsByAward information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -19,10 +23,13 @@ class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin, AggregateQue
         return queryset
 
 
+@method_decorator(deprecated, name="list")
+@method_decorator(deprecated, name="retrieve")
 class FinancialAccountsByAwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handles requests for financial account data grouped by award.
     """
+
     serializer_class = FinancialAccountsByAwardsSerializer
 
     def get_queryset(self):

@@ -94,9 +94,7 @@ class RecipientProfile(models.Model):
     class Meta:
         managed = True
         db_table = "recipient_profile"
-        unique_together = (
-            ("recipient_hash", "recipient_level")
-        )
+        unique_together = ("recipient_hash", "recipient_level")
         # Note:  A custom index was added in the migration because there's
         # currently not a Django native means by which to add a GinIndex with
         # a specific Postgres operator class:
@@ -104,10 +102,7 @@ class RecipientProfile(models.Model):
         #     create index idx_recipient_profile_name on
         #         public.recipient_profile using gin (recipient_name public.gin_trgm_ops)
         #
-        indexes = [
-            GinIndex(fields=["award_types"]),
-            models.Index(fields=["recipient_unique_id"]),
-        ]
+        indexes = [GinIndex(fields=["award_types"]), models.Index(fields=["recipient_unique_id"])]
 
 
 class RecipientLookup(models.Model):
@@ -135,11 +130,11 @@ class RecipientLookup(models.Model):
 
 
 class SummaryAwardRecipient(models.Model):
-    award_id = models.IntegerField(primary_key=True)
+    award_id = models.BigIntegerField(primary_key=True)
     action_date = models.DateField(blank=True, db_index=True)
     recipient_hash = models.UUIDField(null=True, db_index=True)
     parent_recipient_unique_id = models.TextField(null=True, db_index=True)
 
     class Meta:
         managed = True
-        db_table = 'summary_award_recipient'
+        db_table = "summary_award_recipient"

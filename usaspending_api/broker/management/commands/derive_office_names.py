@@ -5,7 +5,7 @@ from django.db import connection, connections
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.management import load_base
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 class Command(load_base.Command):
@@ -19,34 +19,35 @@ class Command(load_base.Command):
 
     def handle(self, *args, **options):
         # Grab the data broker database connections
-        if not options['test']:
+        if not options["test"]:
             try:
-                db_conn = connections['data_broker']
+                db_conn = connections["data_broker"]
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")
                 logger.critical(print(err))
                 return
         else:
             db_cursor = PhonyCursor()
         ds_cursor = connection.cursor()
 
-        logger.info('Creating a temporary Office table copied from the Broker...')
-        db_cursor.execute('SELECT office_name, office_code, sub_tier_code FROM office')
+        logger.info("Creating a temporary Office table copied from the Broker...")
+        db_cursor.execute("SELECT office_name, office_code, sub_tier_code FROM office")
         all_offices = dictfetchall(db_cursor)
         all_offices_list = []
         for o in all_offices:
-            office_name = o['office_name'].replace("'", "''")
-            office_code = o['office_code'].replace("'", "''")
-            sub_tier_code = o['sub_tier_code'].replace("'", "''")
+            office_name = o["office_name"].replace("'", "''")
+            office_code = o["office_code"].replace("'", "''")
+            sub_tier_code = o["sub_tier_code"].replace("'", "''")
             all_offices_list.append("('" + office_name + "','" + office_code + "','" + sub_tier_code + "')")
-        all_offices_str = ', '.join(all_offices_list)
+        all_offices_str = ", ".join(all_offices_list)
 
-        ds_cursor.execute('CREATE TABLE temp_broker_office (office_name TEXT, office_code TEXT, sub_tier_code TEXT)')
-        ds_cursor.execute('INSERT INTO temp_broker_office (office_name, office_code, sub_tier_code) VALUES ' +
-                          all_offices_str)
+        ds_cursor.execute("CREATE TABLE temp_broker_office (office_name TEXT, office_code TEXT, sub_tier_code TEXT)")
+        ds_cursor.execute(
+            "INSERT INTO temp_broker_office (office_name, office_code, sub_tier_code) VALUES " + all_offices_str
+        )
 
-        logger.info('Deriving FABS awarding_office_names with awarding_office_codes from the temporary Office table...')
+        logger.info("Deriving FABS awarding_office_names with awarding_office_codes from the temporary Office table...")
         ds_cursor.execute(
             "UPDATE transaction_fabs AS t_fabs "
             "SET awarding_office_name = office.office_name "
@@ -54,11 +55,12 @@ class Command(load_base.Command):
             "WHERE t_fabs.awarding_office_code = office.office_code "
             "  AND t_fabs.action_date >= '2018-10-01' "
             "  AND t_fabs.awarding_office_name IS NULL "
-            "  AND t_fabs.awarding_office_code IS NOT NULL")
+            "  AND t_fabs.awarding_office_code IS NOT NULL"
+        )
         logger.info(ds_cursor.rowcount)
         # logger.info('Made changes to {} records'.format(ds_cursor.results))
 
-        logger.info('Deriving FABS funding_office_names with funding_office_codes from the temporary Office table...')
+        logger.info("Deriving FABS funding_office_names with funding_office_codes from the temporary Office table...")
         ds_cursor.execute(
             "UPDATE transaction_fabs AS t_fabs "
             "SET funding_office_name = office.office_name "
@@ -66,16 +68,19 @@ class Command(load_base.Command):
             "WHERE t_fabs.funding_office_code = office.office_code "
             "  AND t_fabs.action_date >= '2018-10-01' "
             "  AND t_fabs.funding_office_name IS NULL "
-            "  AND t_fabs.funding_office_code IS NOT NULL")
+            "  AND t_fabs.funding_office_code IS NOT NULL"
+        )
         logger.info(ds_cursor.rowcount)
         # logger.info('Made changes to {} records'.format(ds_cursor.results))
 
-        logger.info("Deriving FABS funding_sub_tier_agency_co, funding_sub_tier_agency_na, funding_agency_code, "
-                    "funding_agency_name from the temporary Office table...")
+        logger.info(
+            "Deriving FABS funding_sub_tier_agency_co, funding_sub_tier_agency_na, funding_agency_code, "
+            "funding_agency_name from the temporary Office table..."
+        )
         ds_cursor.execute(
             "WITH agency_list AS ("
             "  SELECT "
-            "    tta.cgac_code AS agency_code,"
+            "    tta.toptier_code AS agency_code,"
             "    tta.name AS agency_name,"
             "    sta.subtier_code AS sub_tier_code,"
             "    sta.name AS sub_tier_name"
@@ -102,11 +107,12 @@ class Command(load_base.Command):
             "WHERE t_fabs.funding_office_code = office_list.office_code"
             "  AND t_fabs.action_date >= '2018/10/01'"
             "  AND t_fabs.funding_sub_tier_agency_co IS NULL"
-            "  AND t_fabs.funding_office_code IS NOT NULL")
+            "  AND t_fabs.funding_office_code IS NOT NULL"
+        )
         logger.info(ds_cursor.rowcount)
         # logger.info('Made changes to {} records'.format(ds_cursor.results))
 
-        logger.info('Dropping temporary Office table...')
-        ds_cursor.execute('DROP TABLE temp_broker_office')
+        logger.info("Dropping temporary Office table...")
+        ds_cursor.execute("DROP TABLE temp_broker_office")
 
-        logger.info('Finished derivations.')
+        logger.info("Finished derivations.")

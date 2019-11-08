@@ -6,6 +6,7 @@ class BrokerSubaward(models.Model):
     This table is a direct copy of the "subaward" table in Broker with some
     minor USAspending enhancements (mostly indexes and stronger data typing).
     """
+
     created_at = models.DateTimeField(null=True, blank=True, db_index=True)
     updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     id = models.IntegerField(primary_key=True, db_index=True)
@@ -136,12 +137,8 @@ class BrokerSubaward(models.Model):
     sub_recovery_model_q2 = models.NullBooleanField(null=True, blank=True)
     sub_compensation_q1 = models.NullBooleanField(null=True, blank=True)
     sub_compensation_q2 = models.NullBooleanField(null=True, blank=True)
-
-    # Not shown here is an index on imported where imported is True.
-    # Also, this name is a bit of a misnomer.  This will be True if the
-    # subaward was successfully imported or was not eligible for import.
-    # It's really just a way to keep track of what needs to be imported still.
-    imported = models.BooleanField(default=False)
+    place_of_perform_street = models.TextField(null=True, blank=True)
+    sub_place_of_perform_street = models.TextField(null=True, blank=True)
 
     class Meta:
         managed = True

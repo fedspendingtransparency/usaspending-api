@@ -9,9 +9,7 @@ class Subaward(models.Model):
     id = models.IntegerField(primary_key=True)
 
     award = models.ForeignKey("awards.Award", models.CASCADE, related_name="subawards", null=True)
-    cfda = models.ForeignKey(
-        "references.Cfda", models.DO_NOTHING, related_name="related_subawards", null=True
-    )
+    cfda = models.ForeignKey("references.Cfda", models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(
         "references.Agency", models.DO_NOTHING, related_name="awarding_subawards", null=True
     )
@@ -56,7 +54,7 @@ class Subaward(models.Model):
     )
     unique_award_key = models.TextField(blank=True, null=True, db_index=True)
 
-    latest_transaction_id = models.IntegerField(null=True, blank=True)
+    latest_transaction_id = models.BigIntegerField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
 
     awarding_toptier_agency_name = models.TextField(null=True, blank=True)

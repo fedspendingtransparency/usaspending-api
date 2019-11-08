@@ -3,17 +3,15 @@ from django.db import models
 
 class ToptierAgency(models.Model):
     toptier_agency_id = models.AutoField(primary_key=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-    cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code", db_index=True)
-    fpds_code = models.TextField(blank=True, null=True)
-    abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
-    name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name", db_index=True)
-    mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")
-    website = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Website")
-    justification = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Congressional Justification")
-    icon_filename = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Icon Filename")
+    create_date = models.DateTimeField(auto_now_add=True)
+    update_date = models.DateTimeField(auto_now=True)
+    toptier_code = models.TextField(db_index=True, unique=True)
+    abbreviation = models.TextField(blank=True, null=True)
+    name = models.TextField(db_index=True)
+    mission = models.TextField(blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+    justification = models.URLField(blank=True, null=True)
+    icon_filename = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = "toptier_agency"

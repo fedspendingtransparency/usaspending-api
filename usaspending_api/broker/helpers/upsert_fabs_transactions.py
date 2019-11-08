@@ -10,9 +10,9 @@ from usaspending_api.broker.helpers.get_business_categories import get_business_
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.generic_helper import fy
+from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.timing_helpers import timer
-from usaspending_api.etl.award_helpers import update_awards, update_award_categories
+from usaspending_api.etl.award_helpers import update_awards, update_assistance_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
@@ -118,16 +118,16 @@ def insert_new_fabs(to_insert):
 
         # Create new LegalEntityLocation and LegalEntity from the row data
         legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-        recipient_name = row['awardee_or_recipient_legal']
+        recipient_name = row["awardee_or_recipient_legal"]
         legal_entity = LegalEntity.objects.create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
+            recipient_unique_id=row["awardee_or_recipient_uniqu"],
             recipient_name=recipient_name if recipient_name is not None else "",
-            parent_recipient_unique_id=row['ultimate_parent_unique_ide'],
+            parent_recipient_unique_id=row["ultimate_parent_unique_ide"],
         )
         legal_entity_value_map = {
             "location": legal_entity_location,
-            "business_categories": get_business_categories(row=row, data_type='fabs'),
-            "business_types_description": row['business_types_desc'],
+            "business_categories": get_business_categories(row=row, data_type="fabs"),
+            "business_types_description": row["business_types_desc"],
         }
         legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -140,10 +140,10 @@ def insert_new_fabs(to_insert):
 
         # Create the summary Award
         (created, award) = Award.get_or_create_summary_award(
-            generated_unique_award_id=row['unique_award_key'],
-            fain=row['fain'],
-            uri=row['uri'],
-            record_type=row['record_type'],
+            generated_unique_award_id=row["unique_award_key"],
+            fain=row["fain"],
+            uri=row["uri"],
+            record_type=row["record_type"],
         )
         award.save()
 
@@ -151,9 +151,9 @@ def insert_new_fabs(to_insert):
         update_award_ids.append(award.id)
 
         try:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S.%f").date()
         except ValueError:
-            last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S").date()
 
         parent_txn_value_map = {
             "award": award,
@@ -161,12 +161,12 @@ def insert_new_fabs(to_insert):
             "funding_agency": funding_agency,
             "recipient": legal_entity,
             "place_of_performance": pop_location,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            "action_date": format_date(row['action_date']),
+            "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
+            "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
+            "action_date": format_date(row["action_date"]),
             "last_modified_date": last_mod_date,
-            "type_description": row['assistance_type_desc'],
-            "transaction_unique_id": row['afa_generated_unique'],
+            "type_description": row["assistance_type_desc"],
+            "transaction_unique_id": row["afa_generated_unique"],
         }
 
         transaction_normalized_dict = load_data_into_model(
@@ -178,18 +178,15 @@ def insert_new_fabs(to_insert):
         )
 
         financial_assistance_data = load_data_into_model(
-            TransactionFABS(),  # thrown away
-            row,
-            field_map=fabs_field_map,
-            as_dict=True
+            TransactionFABS(), row, field_map=fabs_field_map, as_dict=True  # thrown away
         )
 
         # Hack to cut back on the number of warnings dumped to the log.
-        financial_assistance_data['updated_at'] = cast_datetime_to_utc(financial_assistance_data['updated_at'])
-        financial_assistance_data['created_at'] = cast_datetime_to_utc(financial_assistance_data['created_at'])
-        financial_assistance_data['modified_at'] = cast_datetime_to_utc(financial_assistance_data['modified_at'])
+        financial_assistance_data["updated_at"] = cast_datetime_to_utc(financial_assistance_data["updated_at"])
+        financial_assistance_data["created_at"] = cast_datetime_to_utc(financial_assistance_data["created_at"])
+        financial_assistance_data["modified_at"] = cast_datetime_to_utc(financial_assistance_data["modified_at"])
 
-        afa_generated_unique = financial_assistance_data['afa_generated_unique']
+        afa_generated_unique = financial_assistance_data["afa_generated_unique"]
         unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
         if unique_fabs.first():
@@ -230,9 +227,11 @@ def upsert_fabs_transactions(ids_to_upsert, externally_updated_award_ids):
         if update_award_ids:
             update_award_ids = tuple(set(update_award_ids))  # Convert to tuple and remove duplicates.
             with timer("updating awards to reflect their latest associated transaction info", logger.info):
-                update_awards(update_award_ids)
-            with timer("updating award category variables", logger.info):
-                update_award_categories(update_award_ids)
+                award_record_count = update_awards(update_award_ids)
+                logger.info("{} awards updated from their transactional data".format(award_record_count))
+            with timer("updating awards with executive compensation data", logger.info):
+                award_record_count = update_assistance_awards(update_award_ids)
+                logger.info("{} awards updated FABS-specific and exec comp data".format(award_record_count))
 
         with timer("updating C->D linkages", logger.info):
             update_c_to_d_linkages("assistance")

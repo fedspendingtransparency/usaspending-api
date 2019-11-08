@@ -45,7 +45,9 @@ def get_last_load_date():
             "Unable to find last_load_date in table {} for external_data_type_id={}. "
             "If this is expected and the goal is to reload all submissions, supply the "
             "--reload-all switch on the command line.".format(
-                ExternalDataLoadDate.objects.model._meta.db_table, external_data_type_id))
+                ExternalDataLoadDate.objects.model._meta.db_table, external_data_type_id
+            )
+        )
     return last_load_date
 
 
@@ -113,22 +115,24 @@ def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_date
 
 def read_afa_ids_from_file(afa_id_file_path):
     with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
-        return tuple(l.decode('utf-8').rstrip() for l in f if l)
+        return tuple(l.decode("utf-8").rstrip() for l in f if l)
 
 
 class Command(BaseCommand):
-    help = "Update FABS data in USAspending from Broker. Command line parameters " \
-           "are ANDed together so, for example, providing a transaction id and a " \
-           "submission id that do not overlap will result no new FABs records."
+    help = (
+        "Update FABS data in USAspending from Broker. Command line parameters "
+        "are ANDed together so, for example, providing a transaction id and a "
+        "submission id that do not overlap will result no new FABs records."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--reload-all",
             action="store_true",
             help="Reload all FABS transactions. Does not clear out USAspending "
-                 "FABS transactions beforehand. If omitted, all submissions from "
-                 "the last successful run will be loaded. THIS SETTING SUPERSEDES "
-                 "ALL OTHER PROCESSING OPTIONS."
+            "FABS transactions beforehand. If omitted, all submissions from "
+            "the last successful run will be loaded. THIS SETTING SUPERSEDES "
+            "ALL OTHER PROCESSING OPTIONS.",
         )
 
         parser.add_argument(
@@ -136,15 +140,15 @@ class Command(BaseCommand):
             metavar="ID",
             nargs="+",
             type=int,
-            help="Broker submission IDs to reload. Nonexistent IDs will be ignored."
+            help="Broker submission IDs to reload. Nonexistent IDs will be ignored.",
         )
 
         parser.add_argument(
             "--afa-id-file",
             metavar="FILEPATH",
             type=str,
-            help='A file containing only broker transaction IDs (afa_generated_unique) '
-                 'to reload, one ID per line. Nonexistent IDs will be ignored.'
+            help="A file containing only broker transaction IDs (afa_generated_unique) "
+            "to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
 
         parser.add_argument(
@@ -152,7 +156,7 @@ class Command(BaseCommand):
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
             help="Processes transactions updated on or after the UTC date/time "
             "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
-            "quotes if date/time contains spaces."
+            "quotes if date/time contains spaces.",
         )
 
         parser.add_argument(
@@ -160,14 +164,13 @@ class Command(BaseCommand):
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
             help="Processes transactions updated prior to the UTC date/time "
             "provided. yyyy-mm-dd hh:mm:ss is always a safe format. Wrap in "
-            "quotes if date/time contains spaces."
+            "quotes if date/time contains spaces.",
         )
 
         parser.add_argument(
             "--do-not-log-deletions",
             action="store_true",
-            help="Disable the feature that creates a file of deleted FABS "
-                 "transactions for clients to download."
+            help="Disable the feature that creates a file of deleted FABS transactions for clients to download.",
         )
 
     def handle(self, *args, **options):
@@ -186,7 +189,7 @@ class Command(BaseCommand):
             end_datetime = None
         else:
             submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
-            afa_ids = read_afa_ids_from_file(options['afa_id_file']) if options['afa_id_file'] else None
+            afa_ids = read_afa_ids_from_file(options["afa_id_file"]) if options["afa_id_file"] else None
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 

@@ -8,12 +8,11 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
 
         with connection.cursor() as curs:

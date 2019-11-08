@@ -57,7 +57,7 @@ def test_rosetta_fresh_load():
             "total_rows": 1,
             "total_size": "10.80KB",
             "total_columns": 12,
-            "download_location": None,
+            "download_location": test_file_path,
         },
         "sections": [
             {"colspan": 3, "section": "Schema Data Label & Description"},

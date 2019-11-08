@@ -18,24 +18,19 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
     """
 
     models_to_mock = [
+        {"model": Award, "id": 999, "piid": "RANDOM_PIID", "parent_award_piid": None},
         {
-            'model': Award,
-            'id': 999,
-            'piid': 'RANDOM_PIID',
-            'parent_award_piid': None
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": 777,
+            "piid": "RANDOM_PIID",
+            "parent_award_id": None,
         },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 777,
-            'piid': 'RANDOM_PIID',
-            'parent_award_id': None
-        }
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
+        mommy.make(entry.pop("model"), **entry)
 
-    call_command('update_file_c_linkages')
+    call_command("update_file_c_linkages")
 
     expected_results = 999
 
@@ -52,49 +47,40 @@ def test_update_contract_linkages_piid_with_parent_piid():
     """
 
     models_to_mock = [
+        {"model": Award, "id": 999, "piid": "RANDOM_PIID", "parent_award_piid": "RANDOM_PARENT_PIID"},
+        {"model": Award, "id": 1999, "piid": "RANDOM_PIID_2", "parent_award_piid": None},
         {
-            'model': Award,
-            'id': 999,
-            'piid': 'RANDOM_PIID',
-            'parent_award_piid': 'RANDOM_PARENT_PIID'
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": 777,
+            "piid": "RANDOM_PIID",
+            "parent_award_id": "RANDOM_PARENT_PIID",
         },
         {
-            'model': Award,
-            'id': 1999,
-            'piid': 'RANDOM_PIID_2',
-            'parent_award_piid': None
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": 1777,
+            "piid": "RANDOM_PIID_2",
+            "parent_award_id": None,
         },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 777,
-            'piid': 'RANDOM_PIID',
-            'parent_award_id': 'RANDOM_PARENT_PIID'
-        },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 1777,
-            'piid': 'RANDOM_PIID_2',
-            'parent_award_id': None
-        }
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
+        mommy.make(entry.pop("model"), **entry)
 
-    call_command('update_file_c_linkages')
+    call_command("update_file_c_linkages")
 
     expected_results = {
-        'award_ids': [999, 1999],
-        'piids': ['RANDOM_PIID', 'RANDOM_PIID_2'],
-        'parent_piids': ['RANDOM_PARENT_PIID', None]
+        "award_ids": [999, 1999],
+        "piids": ["RANDOM_PIID", "RANDOM_PIID_2"],
+        "parent_piids": ["RANDOM_PARENT_PIID", None],
     }
 
-    award_ids = list(FinancialAccountsByAwards.objects.order_by('award_id').values_list('award_id', flat=True))
+    award_ids = list(FinancialAccountsByAwards.objects.order_by("award_id").values_list("award_id", flat=True))
     actual_results = {
-        'award_ids': award_ids,
-        'piids': list(Award.objects.filter(id__in=award_ids).order_by('id').values_list('piid', flat=True)),
-        'parent_piids': list(Award.objects.filter(id__in=award_ids).order_by('id').
-                             values_list('parent_award_piid', flat=True))
+        "award_ids": award_ids,
+        "piids": list(Award.objects.filter(id__in=award_ids).order_by("id").values_list("piid", flat=True)),
+        "parent_piids": list(
+            Award.objects.filter(id__in=award_ids).order_by("id").values_list("parent_award_piid", flat=True)
+        ),
     }
 
     assert expected_results == actual_results
@@ -107,22 +93,14 @@ def test_update_assistance_linkages_fain():
     """
 
     models_to_mock = [
-        {
-            'model': Award,
-            'id': 999,
-            'fain': 'RANDOM_FAIN'
-        },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 777,
-            'fain': 'RANDOM_FAIN'
-        }
+        {"model": Award, "id": 999, "fain": "RANDOM_FAIN"},
+        {"model": FinancialAccountsByAwards, "financial_accounts_by_awards_id": 777, "fain": "RANDOM_FAIN"},
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
+        mommy.make(entry.pop("model"), **entry)
 
-    call_command('update_file_c_linkages')
+    call_command("update_file_c_linkages")
 
     expected_results = 999
 
@@ -139,22 +117,14 @@ def test_update_assistance_linkages_uri():
     """
 
     models_to_mock = [
-        {
-            'model': Award,
-            'id': 999,
-            'uri': 'RANDOM_URI'
-        },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 777,
-            'uri': 'RANDOM_URI'
-        }
+        {"model": Award, "id": 999, "uri": "RANDOM_URI"},
+        {"model": FinancialAccountsByAwards, "financial_accounts_by_awards_id": 777, "uri": "RANDOM_URI"},
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
+        mommy.make(entry.pop("model"), **entry)
 
-    call_command('update_file_c_linkages')
+    call_command("update_file_c_linkages")
 
     expected_results = 999
 
@@ -171,36 +141,26 @@ def test_update_assistance_linkages_fain_and_uri():
     """
 
     models_to_mock = [
+        {"model": Award, "id": 999, "fain": "RANDOM_FAIN_999", "uri": "RANDOM_URI_999"},
+        {"model": Award, "id": 1999, "fain": "RANDOM_FAIN_1999", "uri": "RANDOM_URI_1999"},
         {
-            'model': Award,
-            'id': 999,
-            'fain': 'RANDOM_FAIN_999',
-            'uri': 'RANDOM_URI_999'
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": 777,
+            "fain": "RANDOM_FAIN_999",
+            "uri": "RANDOM_URI_DNE",
         },
         {
-            'model': Award,
-            'id': 1999,
-            'fain': 'RANDOM_FAIN_1999',
-            'uri': 'RANDOM_URI_1999'
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": 1777,
+            "fain": "RANDOM_FAIN_DNE",
+            "uri": "RANDOM_URI_1999",
         },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 777,
-            'fain': 'RANDOM_FAIN_999',
-            'uri': 'RANDOM_URI_DNE'
-        },
-        {
-            'model': FinancialAccountsByAwards,
-            'financial_accounts_by_awards_id': 1777,
-            'fain': 'RANDOM_FAIN_DNE',
-            'uri': 'RANDOM_URI_1999'
-        }
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop('model'), **entry)
+        mommy.make(entry.pop("model"), **entry)
 
-    call_command('update_file_c_linkages')
+    call_command("update_file_c_linkages")
 
     expected_results = 999
 

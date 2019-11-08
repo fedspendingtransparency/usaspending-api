@@ -9,8 +9,11 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.api_versioning import deprecated, removed
+from django.utils.decorators import method_decorator
 
 
+@method_decorator(deprecated, name="list")
 class TASBalancesAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     Return aggregated award information.
@@ -41,11 +44,13 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
+@method_decorator(removed, name="list")
 class TASBalancesQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas)..
     """
+
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
@@ -60,6 +65,7 @@ class TASCategoryAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDe
     """
     Return aggregated award information.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -70,10 +76,12 @@ class TASCategoryAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDe
         return queryset
 
 
+@method_decorator(removed, name="list")
 class TASCategoryList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account balance information.
     """
+
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
@@ -84,11 +92,13 @@ class TASCategoryList(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(deprecated, name="list")
 class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
+
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
@@ -99,11 +109,13 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
+@method_decorator(removed, name="list")
 class TASCategoryQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
+
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
@@ -118,6 +130,7 @@ class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin, Autocomplete
     """
     Handle autocomplete requests for appropriation account (i.e., TAS) information.
     """
+
     serializer_class = TasSerializer
 
     def get_queryset(self):
@@ -131,10 +144,12 @@ class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin, Autocomplete
         return ordered_queryset
 
 
+@method_decorator(removed, name="list")
 class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account balance information.
     """
+
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
@@ -145,10 +160,13 @@ class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin, CachedDet
         return ordered_queryset
 
 
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handle requests for appropriation account (i.e., TAS) information.
     """
+
     serializer_class = TasSerializer
 
     def get_queryset(self):

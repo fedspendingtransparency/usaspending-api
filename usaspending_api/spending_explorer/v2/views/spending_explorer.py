@@ -10,15 +10,16 @@ SPENDING_EXPLORER_LIMIT = 500
 class SpendingExplorerViewSet(APIView):
     """
     This route sends a request to the backend to retrieve spending data information through various types and filters.
-
-    endpoint_doc: /spending_explorer.md
     """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/spending.md"
+
     @cache_response()
     def post(self, request):
 
         json_request = request.data
-        _type = json_request.get('type')
-        filters = json_request.get('filters', None)
+        _type = json_request.get("type")
+        filters = json_request.get("filters", None)
 
         # Returned filtered queryset results
         results = type_filter(_type, filters, SPENDING_EXPLORER_LIMIT)

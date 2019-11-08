@@ -8,17 +8,16 @@ from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency
 
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 
 
 agency_no_sub_map = {
-    (agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency
+    (agency.toptier_agency.toptier_code, agency.subtier_agency.subtier_code): agency
     for agency in Agency.objects.filter(subtier_agency__isnull=False)
-    }
+}
 agency_cgac_only_map = {
-    agency.toptier_agency.cgac_code: agency
-    for agency in Agency.objects.filter(subtier_agency__isnull=True)
-    }
+    agency.toptier_agency.toptier_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)
+}
 
 
 class Command(BaseCommand):
@@ -38,41 +37,44 @@ class Command(BaseCommand):
         range_low = offset
         range_high = offset + limit
 
-        if file_type == 'D1':
+        if file_type == "D1":
             # List of Transaction FPDS mapping transaction ids, cgac code, and subtier code
             # Filters out FPDS transactions where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
-                                               {
-                                                'transaction_id': transaction_FPDS['transaction_id'],
-                                                'awarding_cgac_code': transaction_FPDS['awarding_agency_code'],
-                                                'funding_cgac_code': transaction_FPDS['funding_agency_code'],
-                                                'awarding_subtier_code': transaction_FPDS['awarding_sub_tier_agency_c'],
-                                                'funding_subtier_code': transaction_FPDS['funding_sub_tier_agency_co']
-                                               }
-                                               for transaction_FPDS in TransactionFPDS.objects
-                                               .filter(transaction__fiscal_year=fiscal_year)
-                                               .values('transaction_id',
-                                                       'awarding_agency_code',
-                                                       'funding_agency_code',
-                                                       'awarding_sub_tier_agency_c',
-                                                       'funding_sub_tier_agency_co'
-                                                       )[range_low:range_high]
-                                            ]
-        elif file_type == 'D2':
+                {
+                    "transaction_id": transaction_FPDS["transaction_id"],
+                    "awarding_toptier_code": transaction_FPDS["awarding_agency_code"],
+                    "funding_toptier_code": transaction_FPDS["funding_agency_code"],
+                    "awarding_subtier_code": transaction_FPDS["awarding_sub_tier_agency_c"],
+                    "funding_subtier_code": transaction_FPDS["funding_sub_tier_agency_co"],
+                }
+                for transaction_FPDS in TransactionFPDS.objects.filter(transaction__fiscal_year=fiscal_year).values(
+                    "transaction_id",
+                    "awarding_agency_code",
+                    "funding_agency_code",
+                    "awarding_sub_tier_agency_c",
+                    "funding_sub_tier_agency_co",
+                )[range_low:range_high]
+            ]
+        elif file_type == "D2":
             # List of Transaction FABS mapping transaction ids, cgac code, and subtier code
             # Filters out FABS transactions where the where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
                 {
-                    'transaction_id': transaction_FABS['transaction_id'],
-                    'awarding_cgac_code': transaction_FABS['awarding_agency_code'],
-                    'funding_cgac_code': transaction_FABS['funding_agency_code'],
-                    'awarding_subtier_code': transaction_FABS['awarding_sub_tier_agency_c'],
-                    'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
+                    "transaction_id": transaction_FABS["transaction_id"],
+                    "awarding_toptier_code": transaction_FABS["awarding_agency_code"],
+                    "funding_toptier_code": transaction_FABS["funding_agency_code"],
+                    "awarding_subtier_code": transaction_FABS["awarding_sub_tier_agency_c"],
+                    "funding_subtier_code": transaction_FABS["funding_sub_tier_agency_co"],
                 }
                 for transaction_FABS in TransactionFABS.objects.filter(transaction__fiscal_year=fiscal_year).values(
-                    'transaction_id', 'awarding_agency_code', 'funding_agency_code', 'awarding_sub_tier_agency_c',
-                    'funding_sub_tier_agency_co')[range_low:range_high]
-                ]
+                    "transaction_id",
+                    "awarding_agency_code",
+                    "funding_agency_code",
+                    "awarding_sub_tier_agency_c",
+                    "funding_sub_tier_agency_co",
+                )[range_low:range_high]
+            ]
 
         total_rows = len(transaction_cgac_subtier_map)
 
@@ -87,57 +89,51 @@ class Command(BaseCommand):
         for row in transaction_cgac_subtier_map:
 
             if not (index % 100):
-                logger.info('Updating agencies: Loading row {} of {} ({})'.format(str(index),
-                                                                                  str(total_rows),
-                                                                                  datetime.now() - start_time))
+                logger.info(
+                    "Updating agencies: Loading row {} of {} ({})".format(
+                        str(index), str(total_rows), datetime.now() - start_time
+                    )
+                )
 
             index += 1
 
             # Find corresponding transaction
-            transaction = TransactionNormalized.objects.filter(id=row['transaction_id']).first()
+            transaction = TransactionNormalized.objects.filter(id=row["transaction_id"]).first()
 
             # Skips transaction if unable to find it in Transaction Normalized
             if transaction is None:
-                logger.error('Unable to find Transaction {}'.format(str(row['transaction_id'])))
+                logger.error("Unable to find Transaction {}".format(str(row["transaction_id"])))
                 continue
 
-            # Update awarding and funding agency if awarding of funding agency is empty
-            awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
-            funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
-
             # Find the agency that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = agency_no_sub_map.get((
-                row['awarding_cgac_code'],
-                row["awarding_subtier_code"]
-            ))
+            awarding_agency = agency_no_sub_map.get((row["awarding_toptier_code"], row["awarding_subtier_code"]))
 
             if awarding_agency is None:
-                awarding_agency = agency_cgac_only_map.get(row['awarding_cgac_code'])
+                awarding_agency = agency_cgac_only_map.get(row["awarding_toptier_code"])
 
-            funding_agency = agency_no_sub_map.get((
-                row['funding_cgac_code'],
-                row["funding_subtier_code"]
-            ))
+            funding_agency = agency_no_sub_map.get((row["funding_toptier_code"], row["funding_subtier_code"]))
 
             if funding_agency is None:
-                funding_agency = agency_cgac_only_map.get(row['funding_cgac_code'])
+                funding_agency = agency_cgac_only_map.get(row["funding_toptier_code"])
 
             # If unable to get agency moves on to the next transaction
             if awarding_agency is None and funding_agency is None:
-                logger.error('Unable to find awarding agency CGAC {} Subtier {} and funding agency CGAC {} Subtier {}'
-                             .format(
-                                row['awarding_cgac_code'],
-                                row['awarding_subtier_code'],
-                                row['funding_cgac_code'],
-                                row['awarding_subtier_code'])
-                             )
+                logger.error(
+                    "Unable to find awarding agency CGAC {} Subtier {} and funding agency CGAC {} Subtier {}".format(
+                        row["awarding_toptier_code"],
+                        row["awarding_subtier_code"],
+                        row["funding_toptier_code"],
+                        row["awarding_subtier_code"],
+                    )
+                )
                 continue
 
             if awarding_agency is None:
-                logger.error('Unable to find awarding agency for CGAC {} Subtier {}'.format(
-                                                                                            row['awarding_cgac_code'],
-                                                                                            row['awarding_subtier_code']
-                                                                                            ))
+                logger.error(
+                    "Unable to find awarding agency for CGAC {} Subtier {}".format(
+                        row["awarding_toptier_code"], row["awarding_subtier_code"]
+                    )
+                )
 
             elif funding_agency is None:
                 pass
@@ -148,7 +144,7 @@ class Command(BaseCommand):
             award = Award.objects.filter(id=transaction.award.id).first()
 
             if award is None:
-                logger.error('Unable to find Award {}'.format(str(transaction.award.id)))
+                logger.error("Unable to find Award {}".format(str(transaction.award.id)))
                 continue
 
             award.awarding_agency = awarding_agency
@@ -160,72 +156,60 @@ class Command(BaseCommand):
                 award.save()
 
             except Exception as e:
-                logger.error('Unable to save Transaction {} and Award {}:{}'.format(str(transaction.id),
-                                                                                    str(award.id),
-                                                                                    str(e)))
+                logger.error(
+                    "Unable to save Transaction {} and Award {}:{}".format(str(transaction.id), str(award.id), str(e))
+                )
 
     def add_arguments(self, parser):
 
         parser.add_argument(
-            '--fiscal_year',
-            dest='fiscal_year',
-            nargs='+',
+            "--fiscal_year",
+            dest="fiscal_year",
+            nargs="+",
             type=int,
-            help="Year for which to run awarding agency clean up on"
+            help="Year for which to run awarding agency clean up on",
         )
 
         parser.add_argument(
-            '--assistance',
-            action='store_true',
-            dest='assistance',
+            "--assistance",
+            action="store_true",
+            dest="assistance",
             default=False,
-            help='Runs the award only for Award Financial Assistance (Assistance) data'
+            help="Runs the award only for Award Financial Assistance (Assistance) data",
         )
 
         parser.add_argument(
-            '--contracts',
-            action='store_true',
-            dest='contracts',
+            "--contracts",
+            action="store_true",
+            dest="contracts",
             default=False,
-            help='Runs the historical loader only for Award Procurement (Contract) data'
+            help="Runs the historical loader only for Award Procurement (Contract) data",
         )
 
-        parser.add_argument(
-            '--page',
-            dest="page",
-            nargs='+',
-            type=int,
-            help="Page for batching and parallelization"
-        )
+        parser.add_argument("--page", dest="page", nargs="+", type=int, help="Page for batching and parallelization")
 
-        parser.add_argument(
-            '--limit',
-            dest="limit",
-            nargs='+',
-            type=int,
-            help="Limit for batching and parallelization"
-        )
+        parser.add_argument("--limit", dest="limit", nargs="+", type=int, help="Limit for batching and parallelization")
 
     def handle(self, *args, **options):
-        logger.info('Starting updating awarding agencies...')
+        logger.info("Starting updating awarding agencies...")
 
-        fiscal_year = options.get('fiscal_year')[0]
+        fiscal_year = options.get("fiscal_year")[0]
 
-        page = options.get('page')
-        limit = options.get('limit')
+        page = options.get("page")
+        limit = options.get("limit")
 
         page = page[0] if page else 1
         limit = limit[0] if limit else 500000
 
-        if options.get('contracts', None):
-            with timer('D1 (contracts/FPDS) awarding/funding agencies updates', logger.info):
-                self.update_awarding_funding_agency(fiscal_year, 'D1', page=page, limit=limit)
+        if options.get("contracts", None):
+            with timer("D1 (contracts/FPDS) awarding/funding agencies updates", logger.info):
+                self.update_awarding_funding_agency(fiscal_year, "D1", page=page, limit=limit)
 
-        elif options.get('assistance', None):
-            with timer('D2 (assistance/FABS) awarding/funding agencies updates', logger.info):
-                self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
+        elif options.get("assistance", None):
+            with timer("D2 (assistance/FABS) awarding/funding agencies updates", logger.info):
+                self.update_awarding_funding_agency(fiscal_year, "D2", page=page, limit=limit)
 
         else:
-            logger.error('Not a valid data type: --assistance,--contracts')
+            logger.error("Not a valid data type: --assistance,--contracts")
 
-        logger.info('Finished')
+        logger.info("Finished")

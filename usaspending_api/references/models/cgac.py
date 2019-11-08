@@ -1,12 +1,14 @@
-from django.db import models
+from django.db.models import Model, TextField
 
 
-class CGAC(models.Model):
-    """Common Government-Wide Accounting Classification"""
+class CGAC(Model):
+    """
+    Common Government-Wide Accounting Classification
+    """
 
-    cgac_code = models.TextField(primary_key=True)
-    agency_name = models.TextField()
-    agency_abbreviation = models.TextField(blank=True, null=True)
+    cgac_code = TextField(primary_key=True)
+    agency_name = TextField()
+    agency_abbreviation = TextField(blank=True, null=True)
 
     class Meta:
         db_table = "cgac"

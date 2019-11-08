@@ -10,12 +10,20 @@ def add_to_mock_objects(mock_obj, mock_models_list):
 
 def mappings_test(download_type, sublevel):
     download_mapping = VALUE_MAPPINGS[download_type]
-    table_name = download_mapping['table_name']
-    table = download_mapping['table']
+    table_name = download_mapping["table_name"]
+    table = download_mapping["table"]
+    annotations_function = download_mapping.get("annotations_function")
 
     try:
-        query_values = lookup_mapping.query_paths[table_name][sublevel].values()
-        table.objects.values(*query_values)
+        if annotations_function is not None:
+            query_values = [
+                value for value in lookup_mapping.query_paths[table_name][sublevel].values() if value is not None
+            ]
+            annotations = annotations_function()
+        else:
+            query_values = [value for value in lookup_mapping.query_paths[table_name][sublevel].values()]
+            annotations = {}
+        table.objects.values(*query_values, **annotations)
     except FieldError:
         return False
     return True

@@ -1,9 +1,9 @@
 from django.db.models import F, Sum
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.views import APIDocumentationView
 
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 from usaspending_api.common.cache_decorator import cache_response
@@ -11,17 +11,19 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-class AgencyViewSet(APIDocumentationView):
+class AgencyViewSet(APIView):
     """
     Return an agency name and active fy.
-    endpoint_doc: /agency.md
     """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/agency/id.md"
+
     @cache_response()
     def get(self, request, pk, format=None):
         """
         Return the view's queryset.
         """
-        response = {'results': {}}
+        response = {"results": {}}
         # get id from url
         agency_id = int(pk)
         # get agency's cgac code and use that code to get the agency's submission
@@ -33,13 +35,12 @@ class AgencyViewSet(APIDocumentationView):
         toptier_agency = agency.toptier_agency
         # get corresponding submissions through cgac code
         queryset = SubmissionAttributes.objects.all()
-        queryset = queryset.filter(cgac_code=toptier_agency.cgac_code)
+        queryset = queryset.filter(toptier_code=toptier_agency.toptier_code)
 
         # get the most up to date fy and quarter
-        queryset = queryset.order_by('-reporting_fiscal_year', '-reporting_fiscal_quarter')
+        queryset = queryset.order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
         queryset = queryset.annotate(
-            fiscal_year=F('reporting_fiscal_year'),
-            fiscal_quarter=F('reporting_fiscal_quarter')
+            fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter")
         )
         submission = queryset.first()
         if submission is None:
@@ -55,23 +56,24 @@ class AgencyViewSet(APIDocumentationView):
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == DOD_CGAC:
+        if toptier_agency.toptier_code == DOD_CGAC:
             tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
-                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
+                treasury_account_identifier__funding_toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
-                treasury_account_identifier__funding_toptier_agency=toptier_agency
+                treasury_account_identifier__funding_toptier_agency=toptier_agency,
             )
         aggregate_dict = queryset.aggregate(
-            budget_authority_amount=Sum('total_budgetary_resources_amount_cpe'),
-            obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
-            outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
+            budget_authority_amount=Sum("total_budgetary_resources_amount_cpe"),
+            obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
+            outlay_amount=Sum("gross_outlay_amount_by_tas_cpe"),
+        )
 
         cj = toptier_agency.justification if toptier_agency.justification else None
 
@@ -87,17 +89,18 @@ class AgencyViewSet(APIDocumentationView):
         #     total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
 
         # craft response
-        response['results'] = {'agency_name': toptier_agency.name,
-                               'active_fy': str(active_fiscal_year),
-                               'active_fq': str(active_fiscal_quarter),
-                               'outlay_amount': str(aggregate_dict['outlay_amount']),
-                               'obligated_amount': str(aggregate_dict['obligated_amount']),
-                               'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                               'current_total_budget_authority_amount': str(TOTAL_BUDGET_AUTHORITY),
-                               'mission': toptier_agency.mission,
-                               'website': toptier_agency.website,
-                               'icon_filename': toptier_agency.icon_filename,
-                               'congressional_justification_url': cj,
-                               }
+        response["results"] = {
+            "agency_name": toptier_agency.name,
+            "active_fy": str(active_fiscal_year),
+            "active_fq": str(active_fiscal_quarter),
+            "outlay_amount": str(aggregate_dict["outlay_amount"]),
+            "obligated_amount": str(aggregate_dict["obligated_amount"]),
+            "budget_authority_amount": str(aggregate_dict["budget_authority_amount"]),
+            "current_total_budget_authority_amount": str(TOTAL_BUDGET_AUTHORITY),
+            "mission": toptier_agency.mission,
+            "website": toptier_agency.website,
+            "icon_filename": toptier_agency.icon_filename,
+            "congressional_justification_url": cj,
+        }
 
         return Response(response)
