@@ -2,7 +2,6 @@ import json
 import subprocess
 
 from django.core.management.base import BaseCommand
-from time import perf_counter
 
 from usaspending_api import settings
 from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
@@ -27,10 +26,12 @@ class Command(BaseCommand):
     Requires env var ES_HOSTNAME to be set
     """
 
-    # used by parent class
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--template-only", action="store_true", help="When this flag is set, skip the cluster and index settings",
+        )
+
     def handle(self, *args, **options):
-        """ Script execution of custom code starts in this method"""
-        start = perf_counter()
         if not settings.ES_HOSTNAME:
             print("$ES_HOSTNAME is not set! Abort Script")
             raise SystemExit
@@ -39,10 +40,10 @@ class Command(BaseCommand):
         template = get_index_template()
         host = settings.ES_HOSTNAME
 
-        run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=host)
-        run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=host)
+        if not options["template_only"]:
+            run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=host)
+            run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=host)
         run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=host, name="transaction_template")
-        print("Script completed in {} seconds".format(perf_counter() - start))
 
 
 def run_curl_cmd(**kwargs):
