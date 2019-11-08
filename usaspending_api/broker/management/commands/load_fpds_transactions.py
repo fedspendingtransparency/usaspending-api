@@ -172,6 +172,7 @@ class Command(BaseCommand):
                     ["{},".format(failure) for failure in failed_ids]
                 )
             )
+            SystemExit(1)
 
         if options["reload_all"] or options["since_last_load"]:
             # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
