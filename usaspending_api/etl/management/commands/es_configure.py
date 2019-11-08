@@ -63,7 +63,7 @@ def get_elasticsearch_settings():
 
 def get_index_template():
     template = return_json_from_file(FILES["template"])
-    template["index_patterns"] = ["*{}".format(settings.ES_TRANSACTIONS_NAME_PATTERN)]
+    template["index_patterns"] = ["*{}".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)]
     template["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
     validate_known_fields(template)
     return template

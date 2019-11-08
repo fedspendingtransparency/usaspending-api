@@ -239,7 +239,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             if os.path.isfile(job.csv):
                 os.remove(job.csv)
 
-            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["fast"], config["verbose"])
+            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["skip_counts"], config["verbose"])
             done_jobs.put(job)
             printf(
                 {
@@ -256,8 +256,8 @@ def download_db_records(fetch_jobs, done_jobs, config):
     return
 
 
-def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
-    if fast:
+def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
+    if skip_counts:
         count = None
         printf({"msg": "Skipping count checks. Writing file: {}".format(filename), "job": job_id, "f": "Download"})
     else:
@@ -266,7 +266,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-    if not fast:
+    if not skip_counts:
         download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
         if count != download_count:
             msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
@@ -365,23 +365,24 @@ def swap_aliases(client, index):
         client.indices.delete_alias(index, "_all")
 
     alias_patterns = settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX + "*"
-    old_indices = []
+    old_indexes = []
 
     try:
-        old_indices = client.indices.get_alias("*", alias_patterns).keys()
-        for old_index in old_indices:
+        old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
+        for old_index in old_indexes:
             client.indices.delete_alias(old_index, "_all")
-            printf({"msg": 'Removing aliases "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
+            printf({"msg": 'Removing aliases from "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
     create_aliases(client, index)
 
     try:
-        if old_indices:
-            client.indices.delete(index=old_indices, ignore_unavailable=False)
+        if old_indexes:
+            client.indices.delete(index=old_indexes, ignore_unavailable=False)
+            printf({"msg": 'Deleted index(es) "{}"'.format(old_indexes), "job": None, "f": "ES Alias Drop"})
     except Exception:
-        printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indices), "f": "ES Alias Drop"})
+        printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indexes), "f": "ES Alias Drop"})
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):

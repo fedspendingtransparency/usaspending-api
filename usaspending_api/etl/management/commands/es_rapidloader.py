@@ -63,7 +63,7 @@ class Command(BaseCommand):
             dest="directory",
         )
         parser.add_argument(
-            "--fast",
+            "--skip-counts",
             action="store_true",
             help="When this flag is set, the ETL process will skip the record counts to reduce operation time",
         )
@@ -112,7 +112,7 @@ class Command(BaseCommand):
         printf({"msg": "---------------------------------------------------------------"})
 
     def transform_cli_arguments(self, options):
-        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "fast")
+        simple_args = ("provide_deleted", "reload_all", "snapshot", "index_name", "directory", "skip_counts")
         self.config = set_config(simple_args, options)
 
         self.config["fiscal_years"] = fiscal_years_for_processing(options)
@@ -135,13 +135,23 @@ class Command(BaseCommand):
             self.config["starting_date"] = get_last_load_date("es_transactions", default=self.default_datetime)
 
         self.config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-        if not self.config["index_name"]:
+        if not self.config["reload_all"] and self.config["index_name"]:
+            printf({"msg": "Ignoring provided index name, using alias for incremental load"})
+        elif not self.config["reload_all"]:
             self.config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
 
-        # does_index_exist = self.elasticsearch_client.indices.exists(self.config["index_name"])
         self.config["is_incremental_load"] = (self.config["starting_date"] != self.default_datetime) or not bool(
             self.config["reload_all"]
         )
+
+        if self.config["is_incremental_load"]:
+            if not self.elasticsearch_client.cat.aliases(name=settings.ES_TRANSACTIONS_WRITE_ALIAS):
+                printf({"msg": "Fatal error: write alias '{}' is missing".format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
+                raise SystemExit(1)
+        else:
+            if self.elasticsearch_client.indices.exists(self.config["index_name"]):
+                printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
+                raise SystemExit(1)
 
         if not os.path.isdir(self.config["directory"]):
             printf({"msg": "Provided directory does not exist"})
@@ -149,12 +159,9 @@ class Command(BaseCommand):
         elif self.config["starting_date"] < self.default_datetime:
             printf({"msg": "`start-datetime` is too early. Set to after {}".format(self.default_datetime)})
             raise SystemExit(1)
-        # elif does_index_exist and not self.config["is_incremental_load"]:
-        #     printf({"msg": "Full data load into existing index! Change destination index or load a subset of data"})
-        #     raise SystemExit(1)
-        # elif not does_index_exist or self.config["reload_all"]:
-        #     printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
-        #     self.config["provide_deleted"] = False
+        elif not self.config["is_incremental_load"] and self.config["provide_deleted"]:
+            printf({"msg": "Skipping deletions for ths load, provide_deleted overwritten to False"})
+            self.config["provide_deleted"] = False
 
     def controller(self):
 
@@ -251,7 +258,7 @@ def fiscal_years_for_processing(options):
 
 
 def check_new_index_name_is_ok(provided_name):
-    if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_PATTERN):
+    if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_SUFFIX):
         raise SystemExit(
-            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_PATTERN)
+            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
         )
