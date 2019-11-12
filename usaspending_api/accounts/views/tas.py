@@ -126,6 +126,7 @@ class TASCategoryQuarterList(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
+@method_decorator(removed, "post")
 class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     Handle autocomplete requests for appropriation account (i.e., TAS) information.
