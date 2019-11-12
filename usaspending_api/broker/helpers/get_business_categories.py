@@ -70,7 +70,7 @@ def get_business_categories(row, data_type):
         if business_types in ("P", "21"):
             business_category_set.add("individuals")
 
-        return list(business_category_set)
+        return sorted(business_category_set)
 
     elif data_type == "fpds":
         legal_entity_bool_dict = build_legal_entity_booleans_dict(row)
@@ -407,7 +407,7 @@ def get_business_categories(row, data_type):
         }:
             business_category_set.add("government")
 
-        return list(business_category_set)
+        return sorted(business_category_set)
     else:
         raise ValueError(
             "Invalid object type provided to update_business_categories. "

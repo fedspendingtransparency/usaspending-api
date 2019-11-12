@@ -12,6 +12,7 @@ from usaspending_api.awards.models import (
     ParentAward,
     TransactionFABS,
     TransactionFPDS,
+    TransactionNormalized,
 )
 from usaspending_api.awards.v2.data_layer.orm_mappers import (
     FABS_ASSISTANCE_FIELDS,
@@ -57,7 +58,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
             ("last_modified_date", get_date_from_datetime(transaction["_modified_at"])),
         ]
     )
-    transaction["_lei"] = award["_lei"]
+    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -95,7 +96,7 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    transaction["_lei"] = award["_lei"]
+    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -145,7 +146,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    transaction["_lei"] = award["_lei"]
+    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -183,7 +184,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             (
                 "business_categories",
-                get_business_category_display_names(fetch_business_categories_by_legal_entity_id(db_row_dict["_lei"])),
+                get_business_category_display_names(fetch_business_categories_by_transaction_id(db_row_dict["_trx"])),
             ),
             (
                 "location",
@@ -386,11 +387,11 @@ def fetch_agency_details(agency_id: int) -> Optional[dict]:
     return agency_details
 
 
-def fetch_business_categories_by_legal_entity_id(legal_entity_id: int) -> list:
-    le = LegalEntity.objects.filter(pk=legal_entity_id).values("business_categories").first()
+def fetch_business_categories_by_transaction_id(transaction_id: int) -> list:
+    tn = TransactionNormalized.objects.filter(pk=transaction_id).values("business_categories").first()
 
-    if le:
-        return le["business_categories"]
+    if tn:
+        return tn["business_categories"]
     return []
 
 
