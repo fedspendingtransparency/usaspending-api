@@ -84,6 +84,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("transaction_id", "transaction_id"),
         ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
@@ -126,6 +127,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
 
 FPDS_CONTRACT_FIELDS = OrderedDict(
     [
+        ("transaction_id", "transaction_id"),
         ("idv_type_description", "idv_type_description"),
         ("type_of_idc_description", "type_of_idc_description"),
         ("referenced_idv_agency_iden", "referenced_idv_agency_iden"),

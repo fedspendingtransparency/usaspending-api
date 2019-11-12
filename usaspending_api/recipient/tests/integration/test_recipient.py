@@ -465,11 +465,7 @@ def test_recipient_overview(client, mock_matviews_qs, monkeypatch):
 
     # Mock Legal Entity
     expected_business_cat = ["expected", "business", "cat"]
-    mommy.make(
-        LegalEntity,
-        recipient_name="PARENT RECIPIENT",
-        recipient_unique_id="000000001",
-    )
+    mommy.make(LegalEntity, recipient_name="PARENT RECIPIENT", recipient_unique_id="000000001")
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": expected_business_cat}

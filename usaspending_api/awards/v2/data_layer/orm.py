@@ -25,7 +25,7 @@ from usaspending_api.common.helpers.business_categories_helper import get_busine
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, LegalEntity, Cfda, PSC, NAICS, SubtierAgency
+from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
 
 logger = logging.getLogger("console")
 
@@ -58,7 +58,6 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
             ("last_modified_date", get_date_from_datetime(transaction["_modified_at"])),
         ]
     )
-    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -96,7 +95,6 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -146,7 +144,6 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
-    transaction["_trx"] = award["_trx"]
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
@@ -184,7 +181,9 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             (
                 "business_categories",
-                get_business_category_display_names(fetch_business_categories_by_transaction_id(db_row_dict["_trx"])),
+                get_business_category_display_names(
+                    fetch_business_categories_by_transaction_id(db_row_dict["transaction_id"])
+                ),
             ),
             (
                 "location",

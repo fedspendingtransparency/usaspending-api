@@ -1,20 +1,7 @@
-import pytest
-
-from model_mommy import mommy
-
-from usaspending_api.references.models import LegalEntity
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
 
-@pytest.fixture
-def recipients_data():
-    mommy.make(
-        LegalEntity, legal_entity_id=1111, recipient_name="Lunar Colonization Society", recipient_unique_id="LCS123"
-    )
-
-
-@pytest.mark.django_db
-def test_update_business_type_categories(recipients_data):
+def test_update_business_type_categories():
     business_types = "P"
     business_categories = get_business_categories({"business_types": business_types}, "fabs")
     assert business_categories == ["individuals"]
@@ -29,8 +16,7 @@ def test_update_business_type_categories(recipients_data):
     assert "nonprofit" in business_categories
 
 
-@pytest.mark.django_db
-def test_update_business_type_categories_faads_format(recipients_data):
+def test_update_business_type_categories_faads_format():
     business_types = "01"  # B equivalent
     business_categories = get_business_categories({"business_types": business_types}, "fabs")
     assert "government" in business_categories

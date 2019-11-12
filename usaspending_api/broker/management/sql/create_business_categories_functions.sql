@@ -552,7 +552,7 @@ begin
     end if;
 
     -- Sort and return the array.
-    return array(select unnest(bc_arr) order by 1)
+    return array(select unnest(bc_arr) order by 1);
 end;
 $$  language plpgsql;
 
@@ -661,6 +661,6 @@ begin
     end if;
 
     -- Sort and return the array.
-    return array(select unnest(bc_arr) order by 1)
+    return array(select unnest(bc_arr) order by 1);
 end;
 $$  language plpgsql;
