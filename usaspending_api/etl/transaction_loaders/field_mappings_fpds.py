@@ -8,7 +8,7 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     created_at,
     updated_at,
     legal_entity_zip5,
-    legal_entity_state_description,
+    legal_entity_state_name,
     place_of_performance_state_code,
     place_of_performance_state_description,
     data_source,
@@ -513,7 +513,7 @@ recipient_location_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "zip5": legal_entity_zip5,
-    "state_name": legal_entity_state_description,
+    "state_name": legal_entity_state_name,
 }
 
 # broker column name -> usaspending column name
