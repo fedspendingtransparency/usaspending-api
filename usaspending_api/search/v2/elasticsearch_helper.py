@@ -2,7 +2,10 @@ import logging
 import re
 
 from django.conf import settings
+from django.db.models import Q
 
+from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP, AWARDS_LOOKUP
@@ -305,16 +308,21 @@ def base_awards_query(filters):
                 should.append({"match": {"recipient_location_country_code": v}})
             query = {"bool": {"filter": {"bool": [{"should": should}]}}}
 
-        # elif key == "recipient_locations":
-        #     should = []
-        #     country = v.get("country")
-        #     state = v.get("state")
-        #     county = v.get("county")
-        #     district = v.get("district")
-        #     city = v.get("city")
-        #     for v in value:
-        #         should.append({"match": {"recipient_location_{}_{}".format(country, "code")}})
-        #     query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+        elif key == "recipient_locations":
+            should = []
+            for v in value:
+                locations = {
+                    "country_code": v.get("country"),
+                    "state_code": v.get("state"),
+                    "county_code": v.get("county"),
+                    "congressional_code": v.get("district"),
+                    "city_name": v.get("city")
+                }
+
+                for location in locations.keys():
+                    if locations[location] is not None:
+                        should.append({"match": {"recipient_location_{}".format(location): locations[location]}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": len(should)}}}
 
         elif key == "recipient_type_names":
             should = []
@@ -322,27 +330,91 @@ def base_awards_query(filters):
                 should.append({"wildcard": {"business_category": v}})
             query = {"bool": {"filter": {"bool": [{"should": should}]}}}
 
-        # elif key == "place_of_performance_scope":
-        #
-        # elif key == "place_of_performance_locations":
-        #
-        # elif key == "award_amounts":
-        #
-        # elif key == "award_ids":
-        #
-        # elif key == "program_numbers":
-        #
-        # elif key == "naics_codes":
-        #
-        # elif key == "psc_codes":
-        #
-        # elif key == "contract_pricing_type_codes":
-        #
-        # elif key == "set_aside_type_codes":
-        #
-        # elif key == "extent_competed_type_codes":
-        #
-        # elif key == "tas_codes":
+        elif key == "place_of_performance_scope":
+            should = []
+            for v in value:
+                should.append({"match": {"pop_country_code": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        elif key == "place_of_performance_locations":
+            should = []
+            for v in value:
+                locations = {
+                    "country_code": v.get("country"),
+                    "state_code": v.get("state"),
+                    "county_code": v.get("county"),
+                    "congressional_code": v.get("district"),
+                    "city_name": v.get("city")
+                }
+
+                for location in locations.keys():
+                    if locations[location] is not None:
+                        should.append({"match": {"pop_{}".format(location): locations[location]}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": len(should)}}}
+
+        elif key == "award_amounts":
+            should = []
+            for v in value:
+                lte = v.get("upper_bound")
+                gte = v.get("lower_bound")
+                should.append(
+                    {"range": {"total_obligation": {"gte": gte, "lte": lte}}},
+                )
+            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+
+        elif key == "award_ids":
+            should = []
+            for v in value:
+                should.append({"match": {"piid.keyword": v}})
+                should.append({"match": {"fain.keyword": v}})
+                should.append({"match": {"uri.keyword": v}})
+
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "program_numbers":
+            should = []
+            for v in value:
+                should.append({"match": {"cfda_number.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "naics_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"naics_code.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "psc_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"product_or_service_code.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "contract_pricing_type_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"type_of_contract_pricing.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "set_aside_type_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"product_or_service_code.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "extent_competed_type_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"extent_completed.keyword": v}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+
+        elif key == "tas_codes":
+            should = []
+            for v in value:
+                tas_qs = Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: x for k, x in v.items()})
+                tas_ids = TreasuryAppropriationAccount.objects.filter(tas_qs).values_list("treasury_account_identifier",
+                                                                                flat=True)
+                should.append({"match": {"treasury_account_identifiers": tas_ids}})
+            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
 
     return query
 
