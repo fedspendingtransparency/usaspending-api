@@ -37,7 +37,7 @@ class IDVAwardsTestCase(TestCase):
                     "description": "description_%s" % string_award_id,
                     "funding_agency": "toptier_funding_agency_name_%s" % (9500 + award_id),
                     "funding_agency_id": 9000 + award_id,
-                    "generated_unique_award_id": "GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
+                    "generated_unique_award_id": "CONT_IDV_%s" % string_award_id,
                     "last_date_to_order": "2018-01-%02d" % award_id,
                     "obligated_amount": (300000 if award_id in IDVS else 100000) + award_id,
                     "period_of_performance_current_end_date": "2018-03-%02d" % award_id,
@@ -79,13 +79,13 @@ class IDVAwardsTestCase(TestCase):
 
         self._test_post({"award_id": 1}, (None, None, 1, False, False, 5, 4, 3))
 
-        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_001"}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 5, 4, 3))
 
     def test_with_nonexistent_id(self):
 
         self._test_post({"award_id": 0}, (None, None, 1, False, False))
 
-        self._test_post({"award_id": "GENERATED_UNIQUE_AWARD_ID_000"}, (None, None, 1, False, False))
+        self._test_post({"award_id": "CONT_IDV_000"}, (None, None, 1, False, False))
 
     def test_with_bogus_id(self):
 
@@ -204,7 +204,7 @@ class IDVAwardsTestCase(TestCase):
         mommy.make(
             "awards.Award",
             id=award_id,
-            generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
+            generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             type="CONTRACT_%s" % string_award_id,
             total_obligation=award_id,
             piid="piid_%s" % string_award_id,

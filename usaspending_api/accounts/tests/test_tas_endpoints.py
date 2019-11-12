@@ -101,16 +101,6 @@ def account_models():
 
 
 @pytest.mark.django_db
-def test_tas_balances_list(account_models, client):
-    """
-    Ensure the accounts endpoint lists the right number of entities
-    """
-    resp = client.get("/api/v1/tas/balances/")
-    assert resp.status_code == 200
-    assert len(resp.data["results"]) == 4
-
-
-@pytest.mark.django_db
 def test_tas_balances_total(account_models, client):
     """
     Ensure the categories aggregation counts properly
@@ -132,16 +122,6 @@ def test_tas_balances_total(account_models, client):
     assert resp.status_code == 200
     for result in resp.data["results"]:
         assert response_tas_sums[result["item"]] == result["aggregate"]
-
-
-@pytest.mark.django_db
-def test_tas_categories_list(account_models, client):
-    """
-    Ensure the categories endpoint lists the right number of entities
-    """
-    resp = client.get("/api/v1/tas/categories/")
-    assert resp.status_code == 200
-    assert len(resp.data["results"]) == 4
 
 
 @pytest.mark.django_db
@@ -240,37 +220,6 @@ def test_tas_categories_quarters_total(account_models, client):
     assert resp.status_code == 200
     for result in resp.data["results"]:
         assert response_tas_1_obj_sums[result["item"]] == result["aggregate"]
-
-
-@pytest.mark.django_db
-def test_tas_list(account_models, client):
-    """
-    Ensure the accounts endpoint lists the right number of entities
-    """
-    resp = client.get("/api/v1/tas/")
-    assert resp.status_code == 200
-    assert len(resp.data["results"]) == 2
-    assert len(resp.data["results"]) == 2
-
-
-@pytest.mark.django_db
-def test_tas_categories_quarters_list(account_models, client):
-    """
-    Ensure the tas categories quarters endpoint is functioning
-    """
-    resp = client.get("/api/v1/tas/categories/quarters/")
-    assert resp.status_code == 200
-    assert len(resp.data["results"]) == 4
-
-
-@pytest.mark.django_db
-def test_tas_balances_quarters_list(account_models, client):
-    """
-    Ensure the tas balances quarters endpoint is functioning
-    """
-    resp = client.get("/api/v1/tas/balances/quarters/")
-    assert resp.status_code == 200
-    assert len(resp.data["results"]) == 4
 
 
 @pytest.mark.django_db

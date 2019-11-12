@@ -9,34 +9,6 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 
 
 @pytest.mark.django_db
-def test_transaction_endpoint_v1(client):
-    """Test the transaction endpoint."""
-
-    resp = client.get("/api/v1/transactions/")
-    assert resp.status_code == 200
-    assert len(resp.data) > 1
-
-    assert client.post("/api/v1/transactions/?page=1&limit=4", content_type="application/json").status_code == 200
-
-
-@pytest.mark.django_db
-def test_transaction_endpoint_v1_award_fk(client):
-    """Test the transaction endpoint."""
-
-    awd = mommy.make("awards.Award", id=10, total_obligation="2000", _fill_optional=True)
-    mommy.make("awards.TransactionNormalized", award=awd)
-
-    assert (
-        client.post(
-            "/api/v1/transactions/",
-            content_type="application/json",
-            data=json.dumps({"filters": [{"field": "award", "operation": "equals", "value": "10"}]}),
-        ).status_code
-        == status.HTTP_200_OK
-    )
-
-
-@pytest.mark.django_db
 def test_transaction_endpoint_v2(client):
     """Test the transaction endpoint."""
 
