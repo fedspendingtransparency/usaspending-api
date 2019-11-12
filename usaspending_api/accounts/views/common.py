@@ -3,7 +3,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.api_versioning import removed, deprecated
+from usaspending_api.common.api_versioning import removed
 from django.utils.decorators import method_decorator
 
 
