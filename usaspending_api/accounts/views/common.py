@@ -23,8 +23,8 @@ class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin, AggregateQue
         return queryset
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class FinancialAccountsByAwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handles requests for financial account data grouped by award.
