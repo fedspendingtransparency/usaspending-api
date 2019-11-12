@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.serializers import TasSerializer
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.serializers import LimitableSerializer
@@ -286,18 +286,3 @@ class AwardSerializer(LimitableSerializer):
 
     def get_date_signed__fy(self, obj):
         return fy(obj.date_signed)
-
-
-class SubawardSerializer(LimitableSerializer):
-
-    prefetchable = False
-
-    class Meta:
-        model = Subaward
-        fields = "__all__"
-        nested_serializers = {
-            "award": {"class": AwardSerializer, "kwargs": {"read_only": True}},
-            "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "cfda": {"class": CfdaSerializer, "kwargs": {"read_only": True}},
-        }

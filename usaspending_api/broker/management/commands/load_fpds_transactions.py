@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, destroy_orphans, delete_stale_fpds
+from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, destroy_orphans, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -165,6 +165,14 @@ class Command(BaseCommand):
                 )
             )
             update_c_to_d_linkages("contract")
+
+        if failed_ids:
+            logger.error(
+                "The following detached_award_procurement_ids failed to load: {}".format(
+                    ["{},".format(failure) for failure in failed_ids]
+                )
+            )
+            raise SystemExit(1)
 
         if options["reload_all"] or options["since_last_load"]:
             # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
