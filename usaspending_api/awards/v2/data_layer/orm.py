@@ -182,7 +182,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
             (
                 "business_categories",
                 get_business_category_display_names(
-                    fetch_business_categories_by_transaction_id(db_row_dict["transaction_id"])
+                    fetch_business_categories_by_transaction_id(db_row_dict["_transaction_id"])
                 ),
             ),
             (
