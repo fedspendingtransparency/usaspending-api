@@ -1,17 +1,18 @@
 from django.conf.urls import url
 
 from usaspending_api.accounts.views import tas as views
+from usaspending_api.common.views import RemovedEndpointView
 
 # bind ViewSets to URLs
-tas_list = views.TreasuryAppropriationAccountViewSet.as_view({"get": "list", "post": "list"})
-tas_detail = views.TreasuryAppropriationAccountViewSet.as_view({"get": "retrieve", "post": "retrieve"})
-tas_balances_list = views.TreasuryAppropriationAccountBalancesViewSet.as_view({"get": "list", "post": "list"})
-tas_balances_quarters_list = views.TASBalancesQuarterList.as_view({"get": "list", "post": "list"})
+tas_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+tas_detail = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+tas_balances_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+tas_balances_quarters_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 tas_balances_quarters_total = views.TASBalancesQuarterAggregate.as_view({"get": "list", "post": "list"})
 tas_balances_total = views.TASBalancesAggregate.as_view({"get": "list", "post": "list"})
-tas_categories_list = views.TASCategoryList.as_view({"get": "list", "post": "list"})
+tas_categories_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 tas_categories_total = views.TASCategoryAggregate.as_view({"get": "list", "post": "list"})
-tas_categories_quarters_list = views.TASCategoryQuarterList.as_view({"get": "list", "post": "list"})
+tas_categories_quarters_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 tas_categories_quarters_total = views.TASCategoryQuarterAggregate.as_view({"get": "list", "post": "list"})
 
 urlpatterns = [
