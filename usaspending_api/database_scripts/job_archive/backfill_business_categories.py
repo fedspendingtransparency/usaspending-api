@@ -32,7 +32,7 @@ exec(Path("usaspending_api/common/helpers/timing_helpers.py").read_text())
 
 
 CONNECTION_STRING = environ["DATABASE_URL"]
-CHUNK_SIZE = 2000000
+CHUNK_SIZE = 500000
 
 # Modified from usaspending_api/broker/management/sql/update_business_categories.sql
 UPDATE_SQL = """
@@ -135,10 +135,17 @@ UPDATE_SQL = """
             end
     from
         transaction_normalized as tn
-        left outer join transaction_fpds as fpds on fpds.transaction_id = tn.id and tn.is_fpds is true
-        left outer join transaction_fabs as fabs on fabs.transaction_id = tn.id and tn.is_fpds is false
+        left outer join transaction_fpds as fpds on
+            fpds.transaction_id = tn.id and
+            fpds.transaction_id between %(min_id)s and %(max_id)s and
+            tn.is_fpds is true
+        left outer join transaction_fabs as fabs on
+            fabs.transaction_id = tn.id and
+            fabs.transaction_id between %(min_id)s and %(max_id)s and
+            tn.is_fpds is false
     where
-        tnu.id between %s and %s and
+        tnu.id between %(min_id)s and %(max_id)s and
+        tn.id between %(min_id)s and %(max_id)s and
         (tnu.business_categories is null or tnu.business_categories = '{}'::text[]) and
         tn.id = tnu.id
 """
@@ -196,7 +203,7 @@ def id_ranges():
 
 
 def process_chunk():
-    sql = UPDATE_SQL % (chunk_min_id, chunk_max_id)
+    sql = UPDATE_SQL % {"min_id": chunk_min_id, "max_id": chunk_max_id}
     execute("Update transactions from {} through {}".format(chunk_min_id, chunk_max_id), sql)
     ratio = (chunk_max_id - min_id + 1) / (max_id - min_id + 1)
     logging.info(
