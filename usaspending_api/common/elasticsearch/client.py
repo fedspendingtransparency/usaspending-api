@@ -56,6 +56,42 @@ def es_client_query(index, body, timeout="1m", retries=5):
     logger.error("Unable to reach elasticsearch cluster. {} attempt(s) made".format(retries))
     return None
 
+def es_client_count(index, body, retries=5):
+    if CLIENT is None:
+        create_es_client()
+    if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
+        retries = 0
+    elif retries > 20:
+        retries = 20
+    elif retries < 1:
+        retries = 1
+    for attempt in range(retries):
+        response = _es_count(index=index, body=body)
+        if response is None:
+            logger.info("Failure using these: Index='{}', body={}".format(index, json.dumps(body)))
+        else:
+            return response
+    logger.error("Unable to reach elasticsearch cluster. {} attempt(s) made".format(retries))
+    return None
+
+
+def _es_count(index,body):
+    error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
+    result = None
+    try:
+        result = CLIENT.count(index=index, body=body)
+    except NameError as e:
+        logger.error(error_template.format(type="Hostname", e=str(e)))
+    except (ConnectionError, ConnectionTimeout) as e:
+        logger.error(error_template.format(type="Connection", e=str(e)))
+    except NotFoundError as e:
+        logger.error(error_template.format(type="404 Not Found", e=str(e)))
+    except TransportError as e:
+        logger.error(error_template.format(type="Transport", e=str(e)))
+    except Exception as e:
+        logger.error(error_template.format(type="Generic", e=str(e)))
+    return result
+
 
 def _es_search(index, body, timeout):
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"

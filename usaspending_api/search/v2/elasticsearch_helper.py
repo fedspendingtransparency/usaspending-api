@@ -9,7 +9,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP, AWARDS_LOOKUP
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.client import es_client_query, es_client_count
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger("console")
@@ -18,6 +18,7 @@ DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 KEYWORD_DATATYPE_FIELDS = ["{}.raw".format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
+AWARDS_LOOKUP.update({v: k for k, v in AWARDS_LOOKUP.items()})
 
 
 def es_sanitize(input_string):
@@ -41,14 +42,17 @@ def es_minimal_sanitize(keyword):
     return keyword
 
 
-def swap_keys(dictionary_):
-    return dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items())
+def swap_keys(dictionary_, awards):
+    lookup = TRANSACTIONS_LOOKUP
+    if awards:
+        lookup = AWARDS_LOOKUP
+    return dict((lookup.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items())
 
 
-def format_for_frontend(response):
+def format_for_frontend(response, awards=False):
     """ calls reverse key from TRANSACTIONS_LOOKUP """
     response = [result["_source"] for result in response]
-    return [swap_keys(result) for result in response]
+    return [swap_keys(result, awards) for result in response]
 
 
 def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
@@ -229,7 +233,7 @@ def concat_if_array(data):
 
 
 def base_awards_query(filters):
-
+    query = {"bool": {"filter": {"bool": {"should": []}}}}
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
@@ -257,14 +261,25 @@ def base_awards_query(filters):
             "set_aside_type_codes",
             "extent_competed_type_codes",
             "tas_codes",
+            "elasticsearch" #elasticsearch doesn't do anything but it's here because i put it there and now it's too late to change it
         ]
-        query = {}
 
         if key not in key_list:
             raise InvalidParameterException("Invalid filter: " + key + " does not exist.")
 
         if key == "keywords":
-            query = base_query(value)
+            queries = []
+            for v in value:
+                x = v.split()
+                y = " AND "
+                if len(x) > 1:
+                    z = y.join(x)
+                else:
+                    z = v
+                print(y)
+                queries.append({"query_string": {"query": z}})
+
+            query["bool"]["filter"].update({"dis_max": {"queries": queries}})
 
         elif key == "time_period":
             should = []
@@ -280,17 +295,31 @@ def base_awards_query(filters):
                         }
                     }
                 )
-            query = {"bool": {"should": should, "minimum_should_match": 1}}
+            query["bool"].update({"should": should, "minimum_should_match": 1})
 
-        elif key == "award_type_codes":
-            query = {"terms": {"type": value}}
+        # elif key == "award_type_codes":
+        #     query.update({"terms": {"type": value}})
 
         elif key == "agencies":
+            funding = False
+            awarding = False
             should = []
             for v in value:
+                if v["type"] == "funding":
+                    funding = True
+                else:
+                    awarding = True
                 field = "{}_{}_agency_name.keyword".format(v["type"], v["tier"])
                 should.append({"match": {field: v["name"]}})
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+            min_match = 1
+            if funding and awarding:
+                min_match = 2
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                }
+            )
 
         # elif key == "legal_entities":
 
@@ -298,7 +327,12 @@ def base_awards_query(filters):
             should = []
             for v in value:
                 should.append({"wildcard": {"recipient_name": "{}*".format(v)}})
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         # elif key == "recipient_id":
         #
@@ -306,7 +340,12 @@ def base_awards_query(filters):
             should = []
             for v in value:
                 should.append({"match": {"recipient_location_country_code": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "recipient_locations":
             should = []
@@ -316,25 +355,42 @@ def base_awards_query(filters):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city")
+                    "city_name": v.get("city"),
                 }
-
+                min_match = 0
                 for location in locations.keys():
                     if locations[location] is not None:
+                        min_match += 1
                         should.append({"match": {"recipient_location_{}".format(location): locations[location]}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": len(should)}}}
+
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                }
+            )
 
         elif key == "recipient_type_names":
             should = []
             for v in value:
-                should.append({"wildcard": {"business_category": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+                should.append({"wildcard": {"business_categories": v}})
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "place_of_performance_scope":
             should = []
             for v in value:
                 should.append({"match": {"pop_country_code": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "place_of_performance_locations":
             should = []
@@ -344,23 +400,32 @@ def base_awards_query(filters):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city")
+                    "city_name": v.get("city"),
                 }
-
+                min_match = 0
                 for location in locations.keys():
                     if locations[location] is not None:
+                        min_match += 1
                         should.append({"match": {"pop_{}".format(location): locations[location]}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": len(should)}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                }
+            )
 
         elif key == "award_amounts":
             should = []
             for v in value:
                 lte = v.get("upper_bound")
                 gte = v.get("lower_bound")
-                should.append(
-                    {"range": {"total_obligation": {"gte": gte, "lte": lte}}},
-                )
-            query = {"bool": {"filter": {"bool": [{"should": should}]}}}
+                should.append({"range": {"total_obligation": {"gte": gte, "lt": lte}}})
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "award_ids":
             should = []
@@ -369,52 +434,105 @@ def base_awards_query(filters):
                 should.append({"match": {"fain.keyword": v}})
                 should.append({"match": {"uri.keyword": v}})
 
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "program_numbers":
             should = []
             for v in value:
                 should.append({"match": {"cfda_number.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "naics_codes":
             should = []
             for v in value:
-                should.append({"match": {"naics_code.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+                if len(v) < 6:
+                    should.append({"wildcard": {"naics_code.keyword": "{}*".format(v)}})
+                else:
+                    should.append({"match": {"naics_code.keyword": v}})
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "psc_codes":
             should = []
             for v in value:
                 should.append({"match": {"product_or_service_code.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "contract_pricing_type_codes":
             should = []
             for v in value:
                 should.append({"match": {"type_of_contract_pricing.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "set_aside_type_codes":
             should = []
             for v in value:
                 should.append({"match": {"product_or_service_code.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "extent_competed_type_codes":
             should = []
             for v in value:
                 should.append({"match": {"extent_completed.keyword": v}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
 
         elif key == "tas_codes":
             should = []
             for v in value:
                 tas_qs = Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: x for k, x in v.items()})
-                tas_ids = TreasuryAppropriationAccount.objects.filter(tas_qs).values_list("treasury_account_identifier",
-                                                                                flat=True)
-                should.append({"match": {"treasury_account_identifiers": tas_ids}})
-            query = {"bool": {"filter": {"bool": [{"should": should}], "minimum_should_match": 1}}}
+                tas_ids = TreasuryAppropriationAccount.objects.filter(tas_qs).values_list(
+                    "treasury_account_identifier", flat=True
+                )
+                for id in tas_ids:
+                    should.append({"wildcard": {"treasury_account_identifiers": id}})
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
+                }
+            )
+    if len(query["bool"]["filter"]["bool"]["should"]) == 0:
+        query["bool"]["filter"]["bool"].pop("should")
+        if query["bool"]["filter"]["bool"] == {}:
+            query["bool"]["filter"].pop("bool")
+            if query["bool"]["filter"] == {}:
+                query["bool"].pop("filter")
+                if query["bool"] == {}:
+                    query.pop("bool")
 
     return query
 
@@ -424,7 +542,6 @@ def search_awards(request_data, lower_limit, limit):
     request_data: dictionary
     lower_limit: integer
     limit: integer
-
     if transaction_type_code not found, return results for contracts
     """
 
@@ -432,18 +549,19 @@ def search_awards(request_data, lower_limit, limit):
     query_fields = [AWARDS_LOOKUP[i] for i in request_data["fields"]]
     query_fields.extend(["award_id"])
     query_fields.extend(["generated_unique_award_id"])
+    query_fields.extend(["prime_award_recipient_id"])
     query_sort = AWARDS_LOOKUP[request_data["sort"]]
     query = {
         "_source": query_fields,
         "from": lower_limit,
         "size": limit,
-        "query": base_query(filters),
+        "query": base_awards_query(filters),
         "sort": [{query_sort: {"order": request_data["order"]}}],
     }
-
+    print(query)
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
-            index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, index)
+            index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
             break
     else:
         logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
@@ -452,7 +570,35 @@ def search_awards(request_data, lower_limit, limit):
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         total = response["hits"]["total"]
-        results = format_for_frontend(response["hits"]["hits"])
+        results = format_for_frontend(response["hits"]["hits"], True)
         return True, results, total
+    else:
+        return False, "There was an error connecting to the ElasticSearch cluster", None
+
+def elastic_awards_count(request_data):
+    """
+    request_data: dictionary
+    lower_limit: integer
+    limit: integer
+    if transaction_type_code not found, return results for contracts
+    """
+
+    filters = request_data["filters"]
+    query = {
+        "query": base_awards_query(filters)
+    }
+    types = ["contracts", "idvs", "grants", "directpayments", "loans", "other"]
+    response = {}
+    success = True
+    for t in types:
+        index_name = "future-awards-{}".format(t)
+        results = es_client_count(index=index_name, body=query, retries=10)
+        if t == "directpayments":
+            t = "direct_payments"
+        response.update({t: results["count"]})
+        if results:
+            success &= True
+    if success:
+        return response
     else:
         return False, "There was an error connecting to the ElasticSearch cluster", None
