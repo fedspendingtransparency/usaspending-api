@@ -1,6 +1,7 @@
 import logging
+import psycopg2
 
-# from django.conf import settings
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
 
@@ -9,6 +10,7 @@ from django.db import connection
 # from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
@@ -99,10 +101,8 @@ class Command(BaseCommand):
         self.start_time = datetime.now(timezone.utc)
         self.predicate = self.parse_options(options)
 
-        self.logger.warn(self.predicate)
+        self.retrive_ids_from_broker()
         return
-
-        self.old_school()
 
         if self.is_incremental:
             update_last_load_date(self.last_load_record, self.start_time)
@@ -112,10 +112,26 @@ class Command(BaseCommand):
         if options["reload_all"]:
             return ""
         elif options["date"]:
-            return "WHERE updated_at >= ''{}''".format(options["date"])
+            return "AND updated_at >= '{}'".format(options["date"])
         else:
             ids = options["file"] if options["file"] else options["ids"]
-            return "WHERE published_award_financial_assistance_id IN {}".format(tuple(ids))
+            return "AND published_award_financial_assistance_id IN {}".format(tuple(ids))
+
+    def generate_ids_from_broker(self):
+        sql = """
+        select  published_award_financial_assistance_id
+        from    published_award_financial_assistance
+        where   is_active is true
+        """
+        sql += self.predicate
+        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+            with connection.cursor("fabs_data_transfer") as cursor:
+                cursor.execute(sql)
+                while True:
+                    id_list = [id[0] for id in cursor.fetchmany(size=CHUNK_SIZE)]
+                    if not id_list:
+                        break
+                    yield id_list
 
     def clear_table(self):
         sql = "DELETE FROM {} WHERE true".format(SourceAssistanceTransaction().table_name)
@@ -149,7 +165,7 @@ class Command(BaseCommand):
         )
 
         with connection.cursor() as cursor:
-            with Timer(message="Upserting procurement records", success_logger=self.logger.info):
+            with Timer(message="Upserting assistance records", success_logger=self.logger.info):
                 cursor.execute(sql)
                 rowcount = cursor.rowcount
                 self.logger.info("Upserted {} records".format(rowcount))

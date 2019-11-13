@@ -99,8 +99,6 @@ class Command(BaseCommand):
         self.predicate = self.parse_options(options)
 
         self.logger.warn(self.predicate)
-        return
-
         self.old_school()
 
         if self.is_incremental:
