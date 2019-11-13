@@ -2,7 +2,7 @@ import json
 import pytest
 
 from rest_framework import status
-from usaspending_api.search.tests.test_mock_data_search import all_filters
+from usaspending_api.search.tests.test_mock_data_search import non_legacy_filters
 
 
 @pytest.mark.django_db
@@ -30,7 +30,7 @@ def test_spending_by_geography_state_success(client, refresh_matviews):
                 "scope": "recipient_location",
                 "geo_layer": "county",
                 "geo_layer_filters": ["WA"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )
@@ -62,7 +62,7 @@ def test_spending_by_geography_county_success(client, refresh_matviews):
                 "scope": "recipient_location",
                 "geo_layer": "county",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )
@@ -94,7 +94,7 @@ def test_spending_by_geography_congressional_success(client, refresh_matviews):
                 "scope": "recipient_location",
                 "geo_layer": "district",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )
@@ -124,7 +124,7 @@ def test_spending_by_geography_subawards_success(client, refresh_matviews):
                 "scope": "recipient_location",
                 "geo_layer": "county",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
                 "subawards": True,
             }
         ),
@@ -143,7 +143,7 @@ def test_spending_by_geography_subawards_failure(client, refresh_matviews):
                 "scope": "recipient_location",
                 "geo_layer": "county",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
                 "subawards": "string",
             }
         ),
@@ -162,7 +162,7 @@ def test_spending_by_geography_incorrect_state(client, refresh_matviews):
                 "scope": "place_of_performance",
                 "geo_layer": "state",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )
@@ -181,7 +181,7 @@ def test_spending_by_geography_incorrect_county(client, refresh_matviews):
                 "scope": "place_of_performance",
                 "geo_layer": "county",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )
@@ -199,7 +199,7 @@ def test_spending_by_geography_incorrect_district(client, refresh_matviews):
                 "scope": "place_of_performance",
                 "geo_layer": "district",
                 "geo_layer_filters": ["01"],
-                "filters": all_filters(),
+                "filters": non_legacy_filters(),
             }
         ),
     )

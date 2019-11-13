@@ -1,4 +1,4 @@
-def all_filters():
+def non_legacy_filters():
     return {
         "keywords": ["test", "testing"],
         "time_period": [{"start_date": "2016-10-01", "end_date": "2017-09-30"}],
@@ -25,4 +25,12 @@ def all_filters():
         "contract_pricing_type_codes": ["SAMPLECODE_CPTC"],
         "set_aside_type_codes": ["SAMPLECODE123"],
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"],
+    }
+
+
+def legacy_filters():
+    return {
+        "award_type_codes": ["A", "B"],
+        "object_class": ["111"],
+        "program_activity": ["222"]
     }
