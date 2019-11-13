@@ -2,10 +2,11 @@ from usaspending_api.accounts.serializers import FederalAccountSerializer
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet, AutocompleteView
-from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
+@method_decorator(removed, name="post")
 class FederalAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     Handle autocomplete requests for federal account information.
