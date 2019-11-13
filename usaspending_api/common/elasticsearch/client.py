@@ -56,6 +56,7 @@ def es_client_query(index, body, timeout="1m", retries=5):
     logger.error("Unable to reach elasticsearch cluster. {} attempt(s) made".format(retries))
     return None
 
+
 def es_client_count(index, body, retries=5):
     if CLIENT is None:
         create_es_client()
@@ -75,7 +76,7 @@ def es_client_count(index, body, retries=5):
     return None
 
 
-def _es_count(index,body):
+def _es_count(index, body):
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:

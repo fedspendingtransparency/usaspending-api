@@ -19,6 +19,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import elastic_awards_count
 
+
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardCountVisualizationViewSet(APIView):
     """This route takes award filters, and returns the number of awards in each award type.

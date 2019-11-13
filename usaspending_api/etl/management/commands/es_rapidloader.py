@@ -238,9 +238,8 @@ def set_config(copy_args, arg_parse_options):
         "root_index": settings.TRANSACTIONS_INDEX_ROOT,
         "processing_start_datetime": datetime.now(timezone.utc),
         "awards_root_index": settings.AWARDS_INDEX_ROOT,
-
         # convert the management command's levels of verbosity to a boolean
-        "verbose": arg_parse_options["verbosity"] > 1
+        "verbose": arg_parse_options["verbosity"] > 1,
     }
 
     # simple 1-to-1 transfer from argParse to internal config dict

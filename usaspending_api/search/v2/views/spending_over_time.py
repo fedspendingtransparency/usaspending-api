@@ -90,34 +90,19 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def create_elasticsearch_aggregation(self):
         all_aggregations = {
-            "aggs": {
-                "group_by_fiscal_year": {
-                    "terms": {
-                        "field": "fiscal_year",
-                        "order": {"_key": "asc"},
-                        "size": 50
-                    }
-                }
-            }
+            "aggs": {"group_by_fiscal_year": {"terms": {"field": "fiscal_year", "order": {"_key": "asc"}, "size": 50}}}
         }
 
         sum_obligated_amount_aggregation = {
             "obligated_amount_sum_as_cents": {
-                "sum": {
-                    "script": {
-                        "lang": "painless",
-                        "source": "doc['generated_pragmatic_obligation'].value * 100"
-                    }
-                }
+                "sum": {"script": {"lang": "painless", "source": "doc['generated_pragmatic_obligation'].value * 100"}}
             },
             "obligated_amount_sum_as_dollars": {
                 "bucket_script": {
-                    "buckets_path": {
-                        "obligated_amount_sum": "obligated_amount_sum_as_cents"
-                    },
-                    "script": "params.obligated_amount_sum / 100"
+                    "buckets_path": {"obligated_amount_sum": "obligated_amount_sum_as_cents"},
+                    "script": "params.obligated_amount_sum / 100",
                 }
-            }
+            },
         }
 
         if self.group == "month" or self.group == "quarter":
@@ -128,9 +113,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "terms": {
                         "field": field_name,
                         "order": {"_key": "asc"},
-                        "size": 12 if self.group == "month" else 4
+                        "size": 12 if self.group == "month" else 4,
                     },
-                    "aggs": sum_obligated_amount_aggregation
+                    "aggs": sum_obligated_amount_aggregation,
                 }
             }
         else:
@@ -143,34 +128,30 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         if self.group == "fiscal_year":
             for year_bucket in hits["aggregations"]["group_by_fiscal_year"]["buckets"]:
-                results.append({
-                    "aggregated_amount": year_bucket["obligated_amount_sum_as_dollars"]["value"],
-                    "time_period": {
-                        "fiscal_year": str(year_bucket["key"])
+                results.append(
+                    {
+                        "aggregated_amount": year_bucket["obligated_amount_sum_as_dollars"]["value"],
+                        "time_period": {"fiscal_year": str(year_bucket["key"])},
                     }
-                })
+                )
         else:
             nested_group_by_string = "group_by_fiscal_{}".format(self.group)
             for year_bucket in hits["aggregations"]["group_by_fiscal_year"]["buckets"]:
                 for nested_bucket in year_bucket[nested_group_by_string]["buckets"]:
-                    results.append({
-                        "aggregated_amount": nested_bucket["obligated_amount_sum_as_dollars"]["value"],
-                        "time_period": {
-                            self.group: str(nested_bucket["key"]),
-                            "fiscal_year": str(year_bucket["key"])
+                    results.append(
+                        {
+                            "aggregated_amount": nested_bucket["obligated_amount_sum_as_dollars"]["value"],
+                            "time_period": {
+                                self.group: str(nested_bucket["key"]),
+                                "fiscal_year": str(year_bucket["key"]),
+                            },
                         }
-                    })
+                    )
 
         return results
 
     def query_elasticsearch(self):
-        query = {
-            "query": {
-                **base_awards_query(self.filters)
-            },
-            **self.create_elasticsearch_aggregation(),
-            "size": 0
-        }
+        query = {"query": {**base_awards_query(self.filters)}, **self.create_elasticsearch_aggregation(), "size": 0}
 
         hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
 
