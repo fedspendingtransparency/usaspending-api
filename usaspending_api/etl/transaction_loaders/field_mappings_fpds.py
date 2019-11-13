@@ -8,9 +8,10 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     created_at,
     updated_at,
     legal_entity_zip5,
-    legal_entity_state_description,
+    legal_entity_state_name,
     place_of_performance_state_code,
     place_of_performance_state_description,
+    data_source,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
 
@@ -376,7 +377,6 @@ legal_entity_nonboolean_columns = {
     "limited_liability_corporat": "limited_liability_corporation",
     "sole_proprietorship": "sole_proprietorship",
     "partnership_or_limited_lia": "partnership_or_limited_liability_partnership",
-    "subchapter_s_corporation": "subchapter_scorporation",
     "foundation": "foundation",
     "for_profit_organization": "for_profit_organization",
     "nonprofit_organization": "nonprofit_organization",
@@ -415,6 +415,7 @@ legal_entity_boolean_columns = {
     "c8a_program_participant": "8a_program_participant",
     "sba_certified_8_a_joint_ve": "sba_certified_8a_joint_venture",
     "dot_certified_disadvantage": "dot_certified_disadvantage",
+    "subchapter_s_corporation": "subchapter_scorporation",
     "self_certified_small_disad": "self_certified_small_disadvantaged_business",
     "historically_underutilized": "historically_underutilized_business_zone",
     "small_disadvantaged_busine": "small_disadvantaged_business",
@@ -474,7 +475,7 @@ legal_entity_boolean_columns = {
 # usaspending column name -> derivation function
 legal_entity_functions = {
     "is_fpds": lambda broker: True,
-    "data_source": lambda broker: "DBR",
+    "data_source": data_source,
     "business_types": lambda broker: None,  # FABS only
     "business_types_description": lambda broker: None,  # FABS only
     "city_township_government": lambda broker: None,  # ?
@@ -506,23 +507,24 @@ recipient_location_nonboolean_columns = {
 # usaspending column name -> derivation function
 recipient_location_functions = {
     "is_fpds": lambda broker: True,
+    "data_source": data_source,
     "place_of_performance_flag": lambda broker: False,
     "recipient_flag": lambda broker: True,
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "zip5": legal_entity_zip5,
-    "state_description": legal_entity_state_description,
+    "state_name": legal_entity_state_name,
 }
 
 # broker column name -> usaspending column name
 place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
-    "place_of_perform_country_n": "country_name",
+    "place_of_perf_country_desc": "country_name",
     "place_of_perform_county_co": "county_code",
     "place_of_perform_county_na": "county_name",
     "place_of_performance_congr": "congressional_code",
     "place_of_perform_city_name": "city_name",
-    "place_of_performance_zip4a": "zip4",
+    "place_of_performance_zip4a": "zip_4a",
     "place_of_performance_zip5": "zip5",
     "place_of_perform_zip_last4": "zip_last4",
     "detached_award_proc_unique": "transaction_unique_id",
@@ -531,6 +533,7 @@ place_of_performance_nonboolean_columns = {
 # usaspending column name -> derivation function
 place_of_performance_functions = {
     "is_fpds": lambda broker: True,
+    "data_source": data_source,
     "place_of_performance_flag": lambda broker: True,
     "recipient_flag": lambda broker: False,
     "address_line1": lambda broker: None,
@@ -539,7 +542,7 @@ place_of_performance_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "state_code": place_of_performance_state_code,
-    "state_description": place_of_performance_state_description,
+    "state_name": place_of_performance_state_description,
 }
 
 # broker column name -> usaspending column name
