@@ -33,39 +33,17 @@ AWARDS_LOOKUP = {
     "Awarding Sub Agency": "awarding_subtier_agency_name",
     "Funding Agency": "funding_toptier_agency_name",
     "Funding Sub Agency": "funding_subtier_agency_name",
-    "Issued Date": "period_of_performance_start_date",
     "Loan Value": "face_value_loan_guarantee",
     "Subsidy Cost": "original_loan_subsidy_cost",
     "Award ID": "display_award_id",
     "awarding_agency_id": "awarding_agency_id",
     "internal_id": "award_id",
     "Last Date to Order": "ordering_period_end_date",
-}
-
-AWARDS_QUERIES = {
-    "keywords": {"query": {"dis_max": {"queries": [{"query_string": {"query": "{query_string}"}}]}}},
-    "time_period": {
-        "bool": {"filter": [{"range": {"action_date": {"gte": "{gte}"}}}, {"range": {"date_signed": {"lte": "{lte}"}}}]}
-    },
-    "award_type_codes": {"terms": {"type": []}},
-    "agencies": "",
-    "legal_entities": "",
-    "recipient_search_text": "",
-    "recipient_id": "",
-    "recipient_scope": "",
-    "recipient_locations": "",
-    "recipient_type_names": "",
-    "place_of_performance_scope": "",
-    "place_of_performance_locations": "",
-    "award_amounts": "",
-    "award_ids": "",
-    "program_numbers": "",
-    "naics_codes": "",
-    "psc_codes": "",
-    "contract_pricing_type_codes": "",
-    "set_aside_type_codes": "",
-    "extent_competed_type_codes": "",
-    "tas_codes": "",
+    "Start Date": "period_of_performance_start_date",
+    "End Date": "period_of_performance_current_end_date",
+    "Contract Award Type": "type_description",
+    "recipient_id": "recipient_id",
+    "prime_award_recipient_id": "prime_award_recipient_id",
 }
 
 INDEX_ALIASES_TO_AWARD_TYPES = deepcopy(all_award_types_mappings)

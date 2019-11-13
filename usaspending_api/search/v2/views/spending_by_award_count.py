@@ -17,7 +17,7 @@ from usaspending_api.common.helpers.orm_helpers import category_to_award_materia
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-
+from usaspending_api.search.v2.elasticsearch_helper import elastic_awards_count
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByAwardCountVisualizationViewSet(APIView):
@@ -49,6 +49,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
             return Response({"results": empty_results})
+        if "elasticsearch" in filters:
+            return Response({"results": elastic_awards_count(json_request)})
 
         if subawards:
             results = self.handle_subawards(filters)
