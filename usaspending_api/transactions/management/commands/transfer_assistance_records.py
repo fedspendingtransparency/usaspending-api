@@ -1,41 +1,65 @@
 import logging
 import psycopg2
 
+from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
+from time import perf_counter
 
-# from psycopg2.sql import Composable, Composed, Identifier, SQL, Literal
-# from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
+from psycopg2.sql import Composable, Composed, Identifier, SQL, Literal
+from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins, primatives
 # from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
-from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string, execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
-from datetime import datetime, timezone
 
 
-CHUNK_SIZE = 500000
+CHUNK_SIZE = 15000
 SUBMISSION_LOOKBACK_MINUTES = 15
+LOGGER = logging.getLogger("console")
+
+
+def store_broker_ids_in_file(id_iterable, file_name_prefix="transaction_load"):
+    total_ids = 0
+    file_name = "{}_{}".format(file_name_prefix, datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f"))
+    with open(file_name, "w") as f:
+        for broker_id in id_iterable:
+            total_ids += 1
+            f.writelines("{}\n".format(broker_id))
+
+    return file_name, total_ids
+
+
+def read_file_for_database_ids(provided_uri, chunked_lines: int = -1):
+    """wrapped generator to read file and stream IDs"""
+    if chunked_lines > 0:  # default of -1 indicates to read and decode as much as possible
+        chunked_lines *= 8  # convert lines to bytes
+    try:
+        with RetrieveFileFromUri(provided_uri).get_file_object() as file:
+            for lines in [int(line.decode("utf-8")) for line in file.readlines(chunked_lines)]:
+                yield lines
+    except Exception as e:
+        raise RuntimeError("Issue with reading/parsing file: {}".format(e))
 
 
 def filepath_command_line_argument_type():
-    """"""
-
+    """helper function for parsing files provided by the user"""
     def _filepath_command_line_argument_type(provided_uri):
         """"""
         try:
             with RetrieveFileFromUri(provided_uri).get_file_object() as file:
-                # while True:
-                #     lines = [int(line.decode("utf-8")) for line in file.readlines(CHUNK_SIZE)]
-                #     if len(lines) == 0:
-                #         break
-                #     yield lines
-                return [int(line.decode("utf-8")) for line in file.readlines()]
+                while True:
+                    lines = [line.decode("utf-8") for line in file.readlines()]
+                    if len(lines) == 0:
+                        break
+                    for line in lines:
+                        yield int(line)
 
         except Exception as e:
             raise RuntimeError("Issue with reading/parsing file: {}".format(e))
@@ -46,7 +70,6 @@ def filepath_command_line_argument_type():
 class Command(BaseCommand):
 
     help = "Upsert assistance transactions from a broker system into USAspending"
-    logger = logging.getLogger("console")
     last_load_record = "source_assistance_transaction"
     is_incremental = False
 
@@ -61,7 +84,7 @@ class Command(BaseCommand):
         )
         mutually_exclusive_group.add_argument(
             "--date",
-            dest="date",
+            dest="datetime",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
             help="Load/Reload all FPDS records from the provided datetime to the script execution start time.",
         )
@@ -90,40 +113,55 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.logger.info("starting transfer script")
+        starting = perf_counter()
+        LOGGER.info("starting transfer script")
         if options["incremental_date"]:
-            self.logger.info("INCREMENTAL LOAD")
+            LOGGER.info("INCREMENTAL LOAD")
             self.is_incremental = True
-            options["date"] = get_last_load_date(self.last_load_record, SUBMISSION_LOOKBACK_MINUTES)
-            if not options["date"]:
-                raise SystemExit("No date stored in the database, unable to use --since-last-load")
+            options["datetime"] = get_last_load_date(self.last_load_record, SUBMISSION_LOOKBACK_MINUTES)
+            if not options["datetime"]:
+                raise SystemExit("No datetime stored in the database, unable to use --since-last-load")
 
         self.start_time = datetime.now(timezone.utc)
-        self.predicate = self.parse_options(options)
 
-        self.retrive_ids_from_broker()
-        return
+        file_name, self.total_ids_to_process = self.compile_transactions_to_process(options)
+        LOGGER.info(file_name)
+        LOGGER.info("{} IDs stored".format(self.total_ids_to_process))
+        new_school(file_name)
 
         if self.is_incremental:
             update_last_load_date(self.last_load_record, self.start_time)
+
+        LOGGER.info("Script Completed in {:,.2f}s".format(perf_counter() - starting))
+
+    def compile_transactions_to_process(self, cli_args):
+        ids = []
+        if cli_args["file"]:
+            ids = cli_args["file"]
+        elif cli_args["ids"]:
+            ids = cli_args["ids"]
+        else:
+            ids = self.generate_ids_from_broker(cli_args)
+
+        return store_broker_ids_in_file(ids)
 
     def parse_options(self, options):
         """Create the SQL predicate to limit which transaction records are transfered"""
         if options["reload_all"]:
             return ""
-        elif options["date"]:
-            return "AND updated_at >= '{}'".format(options["date"])
+        elif options["datetime"]:
+            return "AND updated_at >= '{}'".format(options["datetime"])
         else:
             ids = options["file"] if options["file"] else options["ids"]
             return "AND published_award_financial_assistance_id IN {}".format(tuple(ids))
 
-    def generate_ids_from_broker(self):
+    def generate_ids_from_broker(self, cli_args):
         sql = """
         select  published_award_financial_assistance_id
         from    published_award_financial_assistance
         where   is_active is true
         """
-        sql += self.predicate
+        sql += self.parse_options(cli_args)
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("fabs_data_transfer") as cursor:
                 cursor.execute(sql)
@@ -131,27 +169,8 @@ class Command(BaseCommand):
                     id_list = [id[0] for id in cursor.fetchmany(size=CHUNK_SIZE)]
                     if not id_list:
                         break
-                    yield id_list
-
-    def clear_table(self):
-        sql = "DELETE FROM {} WHERE true".format(SourceAssistanceTransaction().table_name)
-        with connection.cursor() as cursor:
-            self.logger.info("clearing {}".format(SourceAssistanceTransaction().table_name))
-            cursor.execute(sql)
-            self.logger.info("DELETED {} records".format(cursor.rowcount))
-
-    def new_school(self):
-        """Use Kirk's schmancy ETLTables"""
-
-        # procurement = ETLTable(SourceProcurmentTransaction().table_name)
-        # remote_procurement = ETLDBLinkTable("detached_award_procurement", "broker_server", procurement.data_types)
-
-        # sql = SQL(UPSERT_SQL).format(
-        #     destination=Identifier(SourceProcurmentTransaction().table_name),
-        #     fields=Composed([Identifier(f) for f in fields]),
-        #     excluded=Composable(excluded),
-        #     predicate=SQL("updated_at >= '2019-10-23'")
-        # )
+                    for broker_id in id_list:
+                        yield broker_id
 
     def old_school(self):
         fields = SourceAssistanceTransaction().model_fields
@@ -165,10 +184,58 @@ class Command(BaseCommand):
         )
 
         with connection.cursor() as cursor:
-            with Timer(message="Upserting assistance records", success_logger=self.logger.info):
+            with Timer(message="Upserting assistance records", success_logger=LOGGER.info):
                 cursor.execute(sql)
                 rowcount = cursor.rowcount
-                self.logger.info("Upserted {} records".format(rowcount))
+                LOGGER.info("Upserted {} records".format(rowcount))
+
+
+def new_school(file_name):
+    """Use Kirk's schmancy ETLTables"""
+    dest_procurement = ETLTable(SourceAssistanceTransaction().table_name)
+    source_procurement = ETLDBLinkTable("published_award_financial_assistance", "broker_server", dest_procurement.data_types)
+    insertable_columns = [c for c in dest_procurement.columns if c in source_procurement.columns]
+
+    # excluded = SQL(", ").join([SQL("{col} = EXCLUDED.{col}").format(col=Identifier(field)) for field in fields])
+    # excluded = SQL(", ").join([SQL("{col} = EXCLUDED.{col}").format(col=SQL(field.name)) for field in fields])
+    excluded = SQL(", ").join([SQL("{dest} = {source}").format(dest=Identifier(field), source=Identifier("EXCLUDED.{col}".format(col=field))) for field in dest_procurement.columns])
+
+    sql = """
+        insert into {destination_object_representation} ({insert_columns})
+        select      {select_columns}
+        from        {source_object} as s
+        ON CONFLICT (published_award_financial_assistance_id) DO UPDATE SET
+        {excluded}
+        RETURNING published_award_financial_assistance_id
+    """
+    while True:
+        ids = read_file_for_database_ids(file_name, CHUNK_SIZE)
+        if not ids:
+            break
+        predicate = "published_award_financial_assistance_id IN {}".format(tuple(ids))
+        # predicate = Identifier("published_award_financial_assistance_id") + SQL("IN") + Values
+        source_object = source_procurement.object_representation + SQL(predicate)
+
+        LOGGER.info("SQL: {}\n\n".format(sql))
+        LOGGER.info("destination_object_representation: {}\n\n".format(dest_procurement.object_representation))
+        LOGGER.info("insert_columns: {}\n\n".format(primatives.make_column_list(insertable_columns)))
+        LOGGER.info("select_columns: {}\n\n".format(primatives.make_column_list(insertable_columns, "s", dest_procurement.insert_overrides)))
+        LOGGER.info("source_object: {}\n\n".format(source_object))
+        LOGGER.info("excluded: {}".format(excluded))
+
+        sql = SQL(sql).format(
+            destination_object_representation=dest_procurement.object_representation,
+            insert_columns=primatives.make_column_list(insertable_columns),
+            select_columns=primatives.make_column_list(insertable_columns, "s", dest_procurement.insert_overrides),
+            source_object=source_object,
+            excluded=excluded,
+        )
+
+        LOGGER.warn(sql)
+
+        # execute_dml_sql(sql)
+
+
 
 
 UPSERT_SQL = """
