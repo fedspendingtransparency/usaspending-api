@@ -38,6 +38,7 @@ SELECT
   UTM.parent_recipient_unique_id,
   UTM.recipient_name,
 
+  AWD.date_signed,
   UTM.action_date,
   extract(month from UTM.action_date::date + interval '3 months') as fiscal_month,
   extract(quarter from UTM.action_date::date + interval '3 months') as fiscal_quarter,
@@ -51,6 +52,7 @@ SELECT
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
   UTM.original_loan_subsidy_cost,
+  UTM.generated_pragmatic_obligation,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,

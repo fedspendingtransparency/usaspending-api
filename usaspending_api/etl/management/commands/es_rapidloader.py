@@ -168,7 +168,7 @@ class Command(BaseCommand):
 
     def controller(self):
 
-        download_queue = Queue()  # Queue for jobs whch need a csv downloaded
+        download_queue = Queue()  # Queue for jobs which need a csv downloaded
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_number = 0
@@ -238,10 +238,10 @@ def set_config(copy_args, arg_parse_options):
         "root_index": settings.TRANSACTIONS_INDEX_ROOT,
         "processing_start_datetime": datetime.now(timezone.utc),
         "awards_root_index": settings.AWARDS_INDEX_ROOT,
-    }
 
-    # convert the management command's levels of verbosity to a boolean
-    config["verbose"] = arg_parse_options["verbosity"] > 1
+        # convert the management command's levels of verbosity to a boolean
+        "verbose": arg_parse_options["verbosity"] > 1
+    }
 
     # simple 1-to-1 transfer from argParse to internal config dict
     for arg in copy_args:

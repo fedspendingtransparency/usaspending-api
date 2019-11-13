@@ -269,11 +269,12 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     awards = config["awards"]
 
+    copy_sql = AWARD_COPY_SQL if awards else TRANSACTION_COPY_SQL
+    count_sql = AWARD_COUNT_SQL if awards else TRANSACTION_COUNT_SQL
+
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-
-    copy_sql = TRANSACTION_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
-
-    count_sql = TRANSACTION_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
+    copy_sql = copy_sql.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
+    count_sql = count_sql.format(fy=config["fiscal_year"], update_date=update_date_str)
 
     if awards:
         update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
