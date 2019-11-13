@@ -11,7 +11,7 @@ Purpose:
 
     Recalculate business categories for all transactions.  We COULD just copy them from legal_entity,
     but I'd sleep better at night knowing we were getting a fresh start even though it'll take
-    significantly longer to update them this way.
+    longer to update them this way.
 
 Life expectancy:
 
@@ -32,7 +32,7 @@ exec(Path("usaspending_api/common/helpers/timing_helpers.py").read_text())
 
 
 CONNECTION_STRING = environ["DATABASE_URL"]
-CHUNK_SIZE = 1000000
+CHUNK_SIZE = 2000000
 
 # Modified from usaspending_api/broker/management/sql/update_business_categories.sql
 UPDATE_SQL = """
