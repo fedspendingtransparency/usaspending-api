@@ -185,7 +185,6 @@ def spending_by_award_test_data():
     # Ref Program Activity
     ref_program_activity_1 = {
         "id": 1,
-        "object_class": "222",
     }
     mommy.make("references.RefProgramActivity", **ref_program_activity_1)
 
