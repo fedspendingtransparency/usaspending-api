@@ -37,7 +37,7 @@ class SourceAssistanceTransaction(models.Model):
     awarding_office_name = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_n = models.TextField(blank=True, null=True)
-    business_categories = ArrayField(models.TextField(), default=None)
+    business_categories = ArrayField(models.TextField(), default=None, null=True)
     business_funds_ind_desc = models.TextField(blank=True, null=True)
     business_funds_indicator = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True)
@@ -122,5 +122,5 @@ class SourceAssistanceTransaction(models.Model):
         return self._meta.db_table
 
     @property
-    def model_fields(self):
-        return tuple([f.name for f in self._meta.get_fields(include_parents=False)])
+    def broker_source_table(self):
+        return "published_award_financial_assistance"

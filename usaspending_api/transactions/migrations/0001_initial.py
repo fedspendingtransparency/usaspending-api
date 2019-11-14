@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('awarding_office_name', models.TextField(blank=True, null=True)),
                 ('awarding_sub_tier_agency_c', models.TextField(blank=True, null=True)),
                 ('awarding_sub_tier_agency_n', models.TextField(blank=True, null=True)),
-                ('business_categories', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=None, size=None)),
+                ('business_categories', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=None, size=None, null=True)),
                 ('business_funds_ind_desc', models.TextField(blank=True, null=True)),
                 ('business_funds_indicator', models.TextField(blank=True, null=True)),
                 ('business_types', models.TextField(blank=True, null=True)),

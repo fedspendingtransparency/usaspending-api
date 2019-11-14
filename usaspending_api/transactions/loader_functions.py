@@ -25,6 +25,7 @@ def store_ids_in_file(id_iter: List, file_name: str = "temp_file") -> Tuple[Path
 
 def filepath_command_line_argument_type(chunk_count):
     """helper function for parsing files provided by the user"""
+
     def _filepath_command_line_argument_type(provided_uri):
         return read_file_for_database_ids(provided_uri, chunk_count)
 

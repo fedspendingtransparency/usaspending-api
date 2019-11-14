@@ -26,6 +26,9 @@ class Command(BaseCommand):
     help = "Upsert assistance transactions from a broker database into an USAspending database"
     last_load_record = "source_assistance_transaction"
     is_incremental = False
+    upsert_records = 0
+    shared_pk = "published_award_financial_assistance_id"
+    successful_run = False
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
@@ -34,7 +37,7 @@ class Command(BaseCommand):
             "--ids",
             nargs="+",
             type=int,
-            help="Load/Reload transactions using this published_award_financial_assistance_id list (space-separated)",
+            help="Load/Reload transactions using this {} list (space-separated)".format(self.shared_pk),
         )
         mutually_exclusive_group.add_argument(
             "--date",
@@ -53,8 +56,8 @@ class Command(BaseCommand):
             dest="file",
             type=filepath_command_line_argument_type(chunk_count=1),
             help=(
-                "Load/Reload transactions using published_award_financial_assistance_id values stored at this file path"
-                " (one ID per line) {}".format(SCHEMA_HELP_TEXT)
+                "Load/Reload transactions using {} values stored at this file path"
+                " (one ID per line) {}".format(self.shared_pk, SCHEMA_HELP_TEXT)
             ),
         )
         mutually_exclusive_group.add_argument(
@@ -67,25 +70,22 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logger.info("starting transfer script")
+        logger.info("STARTING SCRIPT")
         self.start_time = datetime.now(timezone.utc)
         self.options = options
 
         if self.options["incremental_date"]:
-            logger.info("INCREMENTAL LOAD")
             self.is_incremental = True
             self.options["datetime"] = self.obtain_last_date()
-        elif self.options["reload_all"]:
-            self.is_incremental = True
 
-        with Timer(message="script process", success_logger=logger.info, failure_logger=logger.error):
-            try:
+        try:
+            with Timer(message="script process", success_logger=logger.info, failure_logger=logger.error):
                 self.process()
-            except (Exception, SystemExit, KeyboardInterrupt):
-                logger.exception("Fatal error")
-                self.is_incremental = False  # disables update to the database last laoad date
-            finally:
-                self.cleanup()
+            self.successful_run = True
+        except (Exception, SystemExit, KeyboardInterrupt):
+            logger.exception("Fatal error")
+        finally:
+            self.cleanup()
 
     def obtain_last_date(self):
         dt = get_last_load_date(self.last_load_record, SUBMISSION_LOOKBACK_MINUTES)
@@ -97,31 +97,40 @@ class Command(BaseCommand):
         with Timer(message="Compiling IDs to process", success_logger=logger.info, failure_logger=logger.error):
             self.file_path, self.total_ids_to_process = self.compile_transactions_to_process()
 
-        logger.info("{} IDs stored".format(self.total_ids_to_process))
+        logger.info("{:,} IDs stored".format(self.total_ids_to_process))
         with Timer(message="Upsert operation", success_logger=logger.info, failure_logger=logger.error):
-            copy_broker_table_data(
-                str(self.file_path),
-                "published_award_financial_assistance",
+            self.copy_broker_table_data(
+                SourceAssistanceTransaction().broker_source_table,
                 SourceAssistanceTransaction().table_name,
-                "published_award_financial_assistance_id",
+                self.shared_pk,
             )
 
     def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
-        if self.is_incremental:
+        logger.info("Processed {:,} transction records (insert/update)".format(self.upsert_records))
+        if self.successful_run and (self.is_incremental or self.options["reload_all"]):
             logger.info("Updated last run time for next incremental load")
             update_last_load_date(self.last_load_record, self.start_time)
-        # If the script fails beforre the file is created, don't raise an exception
-        # If the file was created and still exists, remove
+
         if hasattr(self, "file_path") and self.file_path.exists():
+            # If the script fails before the file is created, skip
+            # If the file still exists, remove
             self.file_path.unlink()
+
+        if self.successful_run:
+            logger.info("Success. Completing execution")
+        else:
+            logger.info("Failed state on exit")
+            raise SystemExit(1)
 
     def compile_transactions_to_process(self) -> Tuple[Path, int]:
         ids = []
         if self.options["file"]:
             ids = self.options["file"]
+            logger.info("using provided IDs in file")
         elif self.options["ids"]:
             ids = self.options["ids"]
+            logger.info("using provided IDs")
         else:
             ids = self.generate_ids_from_broker()
 
@@ -131,25 +140,24 @@ class Command(BaseCommand):
     def parse_options(self):
         """Create the SQL predicate to limit which transaction records are transfered"""
         if self.options["reload_all"]:
+            logger.info("FULL RELOAD")
             return ""
         elif self.options["datetime"]:
+            logger.info("Using datetime '{}'".format(self.options["datetime"]))
             return "AND updated_at >= '{}'".format(self.options["datetime"])
-        else:
-            ids = self.options["file"] if self.options["file"] else self.options["ids"]
-            return "AND published_award_financial_assistance_id IN {}".format(tuple(ids))
 
     def generate_ids_from_broker(self):
         sql = """
-        SELECT  published_award_financial_assistance_id
-        FROM    published_award_financial_assistance
+        SELECT  {}
+        FROM    {}
         WHERE   is_active IS true
-        """.strip(
-            "\n"
+        """.format(
+            self.shared_pk, SourceAssistanceTransaction().broker_source_table
         )
         sql += self.parse_options()
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("fabs_data_transfer") as cursor:
-                cursor.execute(sql)
+                cursor.execute(sql.strip("\n"))
                 while True:
                     id_list = [id[0] for id in cursor.fetchmany(size=CHUNK_SIZE)]
                     if not id_list:
@@ -157,14 +165,14 @@ class Command(BaseCommand):
                     for broker_id in id_list:
                         yield broker_id
 
+    def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
+        """Loop through the batches of IDs and load using the ETL tables"""
+        destination = ETLTable(dest_tablename)
+        source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
 
-def copy_broker_table_data(file_name, source_tablename, dest_tablename, primary_key):
-    """Loop through the batches of IDs and load using the ETL tables"""
-    destination = ETLTable(dest_tablename)
-    source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
-
-    for id_list in read_file_for_database_ids(file_name, CHUNK_SIZE):
-        predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
-        with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
-            record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
-        logger.info("Success on {:,} upserts".format(record_count))
+        for id_list in read_file_for_database_ids(str(self.file_path), CHUNK_SIZE):
+            predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
+            with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
+                record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
+            logger.info("Success on {:,} upserts".format(record_count))
+            self.upsert_records += record_count
