@@ -2,12 +2,12 @@ from usaspending_api.awards.serializers import FinancialAccountsByAwardsSerializ
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.common.api_versioning import removed
 from django.utils.decorators import method_decorator
 
 
-@method_decorator(deprecated, name="list")
-@method_decorator(deprecated, name="retrieve")
+@method_decorator(removed, name="list")
+@method_decorator(removed, name="retrieve")
 class FinancialAccountsByAwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handles requests for financial account data grouped by award.
