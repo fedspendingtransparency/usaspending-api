@@ -7,7 +7,7 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.common.api_versioning import deprecated, removed
 from django.utils.decorators import method_decorator
 
 
@@ -74,6 +74,7 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
+@method_decorator(removed, "post")
 class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """
     Handle autocomplete requests for appropriation account (i.e., TAS) information.
