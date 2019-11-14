@@ -11,8 +11,8 @@ from django.utils.crypto import get_random_string
 from pathlib import Path
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
-BASE_DIR = Path(__file__).resolve().parent.parent
-APP_DIR = BASE_DIR / "usaspending_api"
+APP_DIR = Path(__file__).resolve().parent
+BASE_DIR = APP_DIR.parent
 
 # User-specified limit on downloads should not be permitted beyond this
 MAX_DOWNLOAD_LIMIT = 500000
@@ -85,7 +85,7 @@ if not ES_HOSTNAME:
 ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
 ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
-ES_TRANSACTIONS_READ_ALIAS_PREFIX = "transaction-records"
+ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""

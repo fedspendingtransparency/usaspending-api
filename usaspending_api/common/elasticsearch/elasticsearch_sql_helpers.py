@@ -23,7 +23,6 @@ def ensure_transaction_etl_view_exists(force: bool = False) -> None:
 
     view_file_path = settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"
 
-    with open(str(view_file_path)) as f:
-        view_sql = f.read()
+    view_sql = view_file_path.read_text()
     with connection.cursor() as cursor:
         cursor.execute(view_sql)

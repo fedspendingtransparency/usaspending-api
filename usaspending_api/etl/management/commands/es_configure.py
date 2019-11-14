@@ -16,7 +16,7 @@ CURL_COMMANDS = {
 
 FILES = {
     "template": settings.APP_DIR / "etl" / "es_transaction_template.json",
-    "settings": settings.APP_DIR / "etl" / "es_settings.json",
+    "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
 }
 
 

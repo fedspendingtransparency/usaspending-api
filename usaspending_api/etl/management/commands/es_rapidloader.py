@@ -182,7 +182,7 @@ class Command(BaseCommand):
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
-            printf({"msg": "Updating last load record in DB with {}".format(self.config["processing_start_datetime"])})
+            printf({"msg": "Storing datetime {} for next incremental load".format(self.config["processing_start_datetime"])})
             update_last_load_date("es_transactions", self.config["processing_start_datetime"])
 
 
@@ -218,7 +218,8 @@ def process_cli_parameters(options: dict, es_client) -> None:
 
     if config["is_incremental_load"]:
         if config["index_name"]:
-            printf({"msg": "Ignoring provided index name, using alias for incremental load"})
+            msg = "Ignoring provided index name, using alias '{}' for incremental load"
+            printf({"msg": msg.format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
         config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
         if not es_client.cat.aliases(name=settings.ES_TRANSACTIONS_WRITE_ALIAS):
             printf({"msg": "Fatal error: write alias '{}' is missing".format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
@@ -246,7 +247,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-        "root_index": settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX,
+        "root_index": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
         "processing_start_datetime": datetime.now(timezone.utc),
         "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
     }

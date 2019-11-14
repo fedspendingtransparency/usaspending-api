@@ -80,7 +80,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
-            index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX, index)
+            index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, index)
             break
     else:
         logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
@@ -96,7 +96,7 @@ def search_transactions(request_data, lower_limit, limit):
 
 
 def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX, sub_index.replace("_", ""))
+    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
     query = {"query": base_query(keyword)}
 
     response = es_client_query(index=index_name, body=query, retries=retries)
@@ -129,7 +129,7 @@ def get_sum_aggregation_results(keyword, field="transaction_amount"):
     """
     Size has to be zero here because you only want the aggregations
     """
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     query = {"query": base_query(keyword), "aggs": {"transaction_sum": {"sum": {"field": field}}}}
 
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -151,7 +151,7 @@ def get_download_ids(keyword, field, size=10000):
 
     Note: this only works for fields in ES of integer type.
     """
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
@@ -183,7 +183,7 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     query = {
         "query": base_query(keyword),
         "aggs": {

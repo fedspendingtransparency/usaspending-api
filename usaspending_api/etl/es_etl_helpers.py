@@ -328,7 +328,7 @@ def put_alias(client, index, alias_name, alias_body):
 
 def create_aliases(client, index, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX, award_type)
+        alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
         if silent is False:
             printf(
                 {
@@ -353,7 +353,7 @@ def create_aliases(client, index, silent=False):
 
 
 def set_final_index_config(client, index):
-    es_settingsfile = str(settings.APP_DIR / "etl" / "es_settings.json")
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
     final_index_settings = settings_dict["final_index_settings"]
@@ -372,7 +372,7 @@ def swap_aliases(client, index):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
 
-    alias_patterns = settings.ES_TRANSACTIONS_READ_ALIAS_PREFIX + "*"
+    alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
     old_indexes = []
 
     try:
