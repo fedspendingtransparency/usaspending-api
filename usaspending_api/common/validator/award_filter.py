@@ -27,7 +27,7 @@ AWARD_FILTER = [
     {"name": "recipient_type_names", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "set_aside_type_codes", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "object_class", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "program_activity", "type": "array", "array_type": "integer"},
+    {"name": "program_activity", "type": "array", "array_type": "integer", "array_max": maxsize},
     {
         "name": "time_period",
         "type": "array",
