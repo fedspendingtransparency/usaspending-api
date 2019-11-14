@@ -4,73 +4,26 @@ import psycopg2
 from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from pathlib import Path
-from psycopg2.sql import Identifier, SQL
+from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, primatives
+from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, operations
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
-from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string, execute_dml_sql
+from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri, SCHEMA_HELP_TEXT
+from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
+from usaspending_api.transactions.loader_functions import filepath_command_line_argument_type
+from usaspending_api.transactions.loader_functions import read_file_for_database_ids
+from usaspending_api.transactions.loader_functions import store_ids_in_file
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
-
-CHUNK_SIZE = 15000
+CHUNK_SIZE = 25000
 SUBMISSION_LOOKBACK_MINUTES = 15
-LOGGER = logging.getLogger("console")
-
-
-def store_broker_ids_in_file(id_iterable, file_name_prefix="transaction_load"):
-    total_ids = 0
-    file_path = Path("{}_{}".format(file_name_prefix, datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")))
-    with open(str(file_path), "w") as f:
-        for broker_id in id_iterable:
-            total_ids += 1
-            f.writelines("{}\n".format(broker_id))
-
-    return file_path.resolve(), total_ids
-
-
-def read_file_for_database_ids(provided_uri):
-    """wrapped generator to read file and stream IDs"""
-    try:
-        with RetrieveFileFromUri(provided_uri).get_file_object() as file:
-            while True:
-                lines = file.readlines(
-                    CHUNK_SIZE * 9
-                )  # since this is by bytes, this allows a rough translation to lines
-                lines = [line.decode("utf-8") for line in lines]
-                if len(lines) == 0:
-                    break
-                yield lines
-
-    except Exception as e:
-        raise RuntimeError("Issue with reading/parsing file: {}".format(e))
-
-
-def filepath_command_line_argument_type():
-    """helper function for parsing files provided by the user"""
-
-    def _filepath_command_line_argument_type(provided_uri):
-        """"""
-        try:
-            with RetrieveFileFromUri(provided_uri).get_file_object() as file:
-                while True:
-                    lines = [line.decode("utf-8") for line in file.readlines(CHUNK_SIZE)]
-                    if len(lines) == 0:
-                        break
-                    for line in lines:
-                        yield int(line)
-
-        except Exception as e:
-            raise RuntimeError("Issue with reading/parsing file: {}".format(e))
-
-    return _filepath_command_line_argument_type
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
-    help = "Upsert assistance transactions from a broker system into USAspending"
+    help = "Upsert assistance transactions from a broker database into an USAspending database"
     last_load_record = "source_assistance_transaction"
     is_incremental = False
 
@@ -98,7 +51,7 @@ class Command(BaseCommand):
         mutually_exclusive_group.add_argument(
             "--file",
             dest="file",
-            type=filepath_command_line_argument_type(),
+            type=filepath_command_line_argument_type(chunk_count=1),
             help=(
                 "Load/Reload transactions using published_award_financial_assistance_id values stored at this file path"
                 " (one ID per line) {}".format(SCHEMA_HELP_TEXT)
@@ -113,37 +66,39 @@ class Command(BaseCommand):
             ),
         )
 
-    # def exit_signal_handler(signum, frame):
-    # """ Attempt to gracefully handle the exiting of the job as a result of receiving an exit signal."""
-    #     signal_or_human = BSD_SIGNALS.get(signum, signum)
-    #     print("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
-
     def handle(self, *args, **options):
-        LOGGER.info("starting transfer script")
+        logger.info("starting transfer script")
         self.start_time = datetime.now(timezone.utc)
+        self.options = options
 
-        if options["incremental_date"]:
-            LOGGER.info("INCREMENTAL LOAD")
+        if self.options["incremental_date"]:
+            logger.info("INCREMENTAL LOAD")
             self.is_incremental = True
-            options["datetime"] = get_last_load_date(self.last_load_record, SUBMISSION_LOOKBACK_MINUTES)
-            if not options["datetime"]:
-                raise SystemExit("No datetime stored in the database, unable to use --since-last-load")
+            self.options["datetime"] = self.obtain_last_date()
+        elif self.options["reload_all"]:
+            self.is_incremental = True
 
-        with Timer("Running script"):
+        with Timer(message="script process", success_logger=logger.info, failure_logger=logger.error):
             try:
-                self.process(options)
+                self.process()
             except (Exception, SystemExit, KeyboardInterrupt):
-                LOGGER.exception("Fatal error")
+                logger.exception("Fatal error")
                 self.is_incremental = False  # disables update to the database last laoad date
             finally:
                 self.cleanup()
 
-    def process(self, options):
-        with Timer("Compiling IDs to process"):
-            self.file_path, self.total_ids_to_process = self.compile_transactions_to_process(options)
+    def obtain_last_date(self):
+        dt = get_last_load_date(self.last_load_record, SUBMISSION_LOOKBACK_MINUTES)
+        if not dt:
+            raise SystemExit("No datetime stored in the database, unable to use --since-last-load")
+        return dt
 
-        LOGGER.info("{} IDs stored".format(self.total_ids_to_process))
-        with Timer("Upsert records into destination database"):
+    def process(self) -> None:
+        with Timer(message="Compiling IDs to process", success_logger=logger.info, failure_logger=logger.error):
+            self.file_path, self.total_ids_to_process = self.compile_transactions_to_process()
+
+        logger.info("{} IDs stored".format(self.total_ids_to_process))
+        with Timer(message="Upsert operation", success_logger=logger.info, failure_logger=logger.error):
             copy_broker_table_data(
                 str(self.file_path),
                 "published_award_financial_assistance",
@@ -151,43 +106,47 @@ class Command(BaseCommand):
                 "published_award_financial_assistance_id",
             )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
         if self.is_incremental:
+            logger.info("Updated last run time for next incremental load")
             update_last_load_date(self.last_load_record, self.start_time)
-        # If the script fails beforre the file is created, don't raise exception
+        # If the script fails beforre the file is created, don't raise an exception
         # If the file was created and still exists, remove
         if hasattr(self, "file_path") and self.file_path.exists():
             self.file_path.unlink()
 
-    def compile_transactions_to_process(self, cli_args):
+    def compile_transactions_to_process(self) -> Tuple[Path, int]:
         ids = []
-        if cli_args["file"]:
-            ids = cli_args["file"]
-        elif cli_args["ids"]:
-            ids = cli_args["ids"]
+        if self.options["file"]:
+            ids = self.options["file"]
+        elif self.options["ids"]:
+            ids = self.options["ids"]
         else:
-            ids = self.generate_ids_from_broker(cli_args)
+            ids = self.generate_ids_from_broker()
 
-        return store_broker_ids_in_file(ids, "assistance_load_ids")
+        file_name = "assistance_load_ids_{}".format(self.start_time.strftime("%Y%m%d_%H%M%S_%f"))
+        return store_ids_in_file(ids, file_name)
 
-    def parse_options(self, options):
+    def parse_options(self):
         """Create the SQL predicate to limit which transaction records are transfered"""
-        if options["reload_all"]:
+        if self.options["reload_all"]:
             return ""
-        elif options["datetime"]:
-            return "AND updated_at >= '{}'".format(options["datetime"])
+        elif self.options["datetime"]:
+            return "AND updated_at >= '{}'".format(self.options["datetime"])
         else:
-            ids = options["file"] if options["file"] else options["ids"]
+            ids = self.options["file"] if self.options["file"] else self.options["ids"]
             return "AND published_award_financial_assistance_id IN {}".format(tuple(ids))
 
-    def generate_ids_from_broker(self, cli_args):
+    def generate_ids_from_broker(self):
         sql = """
-        select  published_award_financial_assistance_id
-        from    published_award_financial_assistance
-        where   is_active is true
-        """
-        sql += self.parse_options(cli_args)
+        SELECT  published_award_financial_assistance_id
+        FROM    published_award_financial_assistance
+        WHERE   is_active IS true
+        """.strip(
+            "\n"
+        )
+        sql += self.parse_options()
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("fabs_data_transfer") as cursor:
                 cursor.execute(sql)
@@ -199,41 +158,13 @@ class Command(BaseCommand):
                         yield broker_id
 
 
-def copy_broker_table_data(file_name, source_table, dest_table, primary_key):
-    """Use Kirk's schmancy ETLTables"""
-    destination_table = ETLTable(dest_table)
-    source_table = ETLDBLinkTable(source_table, "broker_server", destination_table.data_types)
-    insertable_columns = [c for c in destination_table.columns if c in source_table.columns]
-    excluded = SQL(", ").join(
-        [
-            SQL("{dest} = {source}").format(dest=Identifier(field), source=SQL("EXCLUDED.") + Identifier(field))
-            for field in destination_table.columns
-        ]
-    )
+def copy_broker_table_data(file_name, source_tablename, dest_tablename, primary_key):
+    """Loop through the batches of IDs and load using the ETL tables"""
+    destination = ETLTable(dest_tablename)
+    source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
 
-    upsert_sql_template = """
-        INSERT INTO {destination_object_representation} ({insert_columns})
-        SELECT      {select_columns}
-        FROM        {source_object} AS {alias}
-        ON CONFLICT ({primary_key}) DO UPDATE SET
-        {excluded}
-        RETURNING {primary_key}
-    """
-    alias = "s"
-
-    for id_list in read_file_for_database_ids(file_name):
-        int_id_tuple = tuple([int(x) for x in id_list])
-        source_predicate_obj = [{"field": primary_key, "op": "IN", "values": tuple(int_id_tuple)}]
-
-        sql = SQL(upsert_sql_template).format(
-            primary_key=primary_key,
-            alias=alias,
-            destination_object_representation=destination_table.object_representation,
-            insert_columns=primatives.make_column_list(insertable_columns),
-            select_columns=primatives.make_column_list(insertable_columns, alias, destination_table.insert_overrides),
-            source_object=source_table.complex_object_representation(source_predicate_obj),
-            excluded=excluded,
-        )
-        with Timer("insert"):
-            record_count = execute_dml_sql(sql)
-        LOGGER.info("Success on {:,} upserts".format(record_count))
+    for id_list in read_file_for_database_ids(file_name, CHUNK_SIZE):
+        predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
+        with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
+            record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
+        logger.info("Success on {:,} upserts".format(record_count))

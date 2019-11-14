@@ -260,6 +260,7 @@ LOGGING = {
             "format": "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s "
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
+        "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
     },
     "handlers": {
         "server": {
@@ -275,10 +276,12 @@ LOGGING = {
             "formatter": "specifics",
         },
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
     },
 }
 
