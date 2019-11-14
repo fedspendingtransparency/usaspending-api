@@ -261,7 +261,7 @@ def base_awards_query(filters):
             "set_aside_type_codes",
             "extent_competed_type_codes",
             "tas_codes",
-            "elasticsearch" #elasticsearch doesn't do anything but it's here because i put it there and now it's too late to change it
+            "elasticsearch",  # elasticsearch doesn't do anything but it's here because i put it there and now it's too late to change it
         ]
 
         if key not in key_list:
@@ -317,7 +317,8 @@ def base_awards_query(filters):
             query["bool"]["filter"]["bool"].update(
                 {
                     "should": query["bool"]["filter"]["bool"]["should"] + should,
-                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0)
+                    + min_match,
                 }
             )
 
@@ -348,8 +349,9 @@ def base_awards_query(filters):
             )
 
         elif key == "recipient_locations":
-            should = []
+            should_outer = []
             for v in value:
+                should = []
                 locations = {
                     "country_code": v.get("country"),
                     "state_code": v.get("state"),
@@ -362,11 +364,11 @@ def base_awards_query(filters):
                     if locations[location] is not None:
                         min_match += 1
                         should.append({"match": {"recipient_location_{}".format(location): locations[location]}})
-
+                should_outer.append({"bool": {"should": should, "minimum_should_match": min_match}})
             query["bool"]["filter"]["bool"].update(
                 {
-                    "should": query["bool"]["filter"]["bool"]["should"] + should,
-                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                    "should": query["bool"]["filter"]["bool"]["should"] + should_outer,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
                 }
             )
 
@@ -393,8 +395,9 @@ def base_awards_query(filters):
             )
 
         elif key == "place_of_performance_locations":
-            should = []
+            should_outer = []
             for v in value:
+                should = []
                 locations = {
                     "country_code": v.get("country"),
                     "state_code": v.get("state"),
@@ -407,10 +410,11 @@ def base_awards_query(filters):
                     if locations[location] is not None:
                         min_match += 1
                         should.append({"match": {"pop_{}".format(location): locations[location]}})
+                should_outer.append({"bool": {"should": should, "minimum_should_match": min_match}})
             query["bool"]["filter"]["bool"].update(
                 {
-                    "should": query["bool"]["filter"]["bool"]["should"] + should,
-                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + min_match,
+                    "should": query["bool"]["filter"]["bool"]["should"] + should_outer,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
                 }
             )
 
@@ -525,7 +529,9 @@ def base_awards_query(filters):
                     "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0) + 1,
                 }
             )
-    if len(query["bool"]["filter"]["bool"]["should"]) == 0:
+
+    # i am sorry about this
+    if query["bool"]["filter"]["bool"]["should"] == None:
         query["bool"]["filter"]["bool"].pop("should")
         if query["bool"]["filter"]["bool"] == {}:
             query["bool"]["filter"].pop("bool")
@@ -533,7 +539,6 @@ def base_awards_query(filters):
                 query["bool"].pop("filter")
                 if query["bool"] == {}:
                     query.pop("bool")
-
     return query
 
 
@@ -575,6 +580,7 @@ def search_awards(request_data, lower_limit, limit):
     else:
         return False, "There was an error connecting to the ElasticSearch cluster", None
 
+
 def elastic_awards_count(request_data):
     """
     request_data: dictionary
@@ -584,9 +590,7 @@ def elastic_awards_count(request_data):
     """
 
     filters = request_data["filters"]
-    query = {
-        "query": base_awards_query(filters)
-    }
+    query = {"query": base_awards_query(filters)}
     types = ["contracts", "idvs", "grants", "directpayments", "loans", "other"]
     response = {}
     success = True

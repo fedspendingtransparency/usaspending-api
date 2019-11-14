@@ -36,6 +36,9 @@
             }
           }
         },
+        "display_award_id": {
+          "type": "keyword"
+        },
         "category": {
           "type": "text"
         },
