@@ -23,6 +23,9 @@ class ETLObjectBase(metaclass=ABCMeta):
     def object_representation(self) -> Composed:
         return self._get_object_representation()
 
+    def complex_object_representation(self, customizer: List[dict]) -> Composed:
+        return self._get_object_representation(customizer)
+
     @abstractmethod
     def _get_columns(self) -> List[str]:
         """ Returns the list of columns names represented by this object. """
