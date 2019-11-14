@@ -182,7 +182,8 @@ class Command(BaseCommand):
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
-            printf({"msg": "Storing datetime {} for next incremental load".format(self.config["processing_start_datetime"])})
+            msg = "Storing datetime {} for next incremental load"
+            printf({"msg": msg.format(self.config["processing_start_datetime"])})
             update_last_load_date("es_transactions", self.config["processing_start_datetime"])
 
 
