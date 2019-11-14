@@ -29,4 +29,4 @@ def non_legacy_filters():
 
 
 def legacy_filters():
-    return {"award_type_codes": ["A", "B"], "object_class": ["111"], "program_activity": ["222"]}
+    return {"award_type_codes": ["A", "B"], "object_class": ["111"], "program_activity": [222]}
