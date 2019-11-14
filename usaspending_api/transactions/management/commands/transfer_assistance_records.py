@@ -11,8 +11,7 @@ from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, primatives
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string, execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri, SCHEMA_HELP_TEXT
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
@@ -23,8 +22,7 @@ LOGGER = logging.getLogger("console")
 
 def store_broker_ids_in_file(id_iterable, file_name_prefix="transaction_load"):
     total_ids = 0
-    file_name = "{}_{}".format(file_name_prefix, datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f"))
-    file_path = Path(file_name)
+    file_path = Path("{}_{}".format(file_name_prefix, datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")))
     with open(str(file_path), "w") as f:
         for broker_id in id_iterable:
             total_ids += 1
@@ -134,7 +132,7 @@ class Command(BaseCommand):
         with Timer("Running script"):
             try:
                 self.process(options)
-            except (Exception, SystemExit):
+            except (Exception, SystemExit, KeyboardInterrupt):
                 LOGGER.exception("Fatal error")
                 self.is_incremental = False  # disables update to the database last laoad date
             finally:
@@ -146,7 +144,12 @@ class Command(BaseCommand):
 
         LOGGER.info("{} IDs stored".format(self.total_ids_to_process))
         with Timer("Upsert records into destination database"):
-            new_school(str(self.file_path))
+            copy_broker_table_data(
+                str(self.file_path),
+                "published_award_financial_assistance",
+                SourceAssistanceTransaction().table_name,
+                "published_award_financial_assistance_id",
+            )
 
     def cleanup(self):
         """Finalize the execution and cleanup for the next script run"""
@@ -196,40 +199,39 @@ class Command(BaseCommand):
                         yield broker_id
 
 
-def new_school(file_name):
+def copy_broker_table_data(file_name, source_table, dest_table, primary_key):
     """Use Kirk's schmancy ETLTables"""
-    dest_procurement = ETLTable(SourceAssistanceTransaction().table_name)
-    source_procurement = ETLDBLinkTable(
-        "published_award_financial_assistance", "broker_server", dest_procurement.data_types
-    )
-    insertable_columns = [c for c in dest_procurement.columns if c in source_procurement.columns]
+    destination_table = ETLTable(dest_table)
+    source_table = ETLDBLinkTable(source_table, "broker_server", destination_table.data_types)
+    insertable_columns = [c for c in destination_table.columns if c in source_table.columns]
     excluded = SQL(", ").join(
         [
             SQL("{dest} = {source}").format(dest=Identifier(field), source=SQL("EXCLUDED.") + Identifier(field))
-            for field in dest_procurement.columns
+            for field in destination_table.columns
         ]
     )
 
     upsert_sql_template = """
-        insert into {destination_object_representation} ({insert_columns})
-        select      {select_columns}
-        from        {source_object} as s
-        ON CONFLICT (published_award_financial_assistance_id) DO UPDATE SET
+        INSERT INTO {destination_object_representation} ({insert_columns})
+        SELECT      {select_columns}
+        FROM        {source_object} AS {alias}
+        ON CONFLICT ({primary_key}) DO UPDATE SET
         {excluded}
-        RETURNING published_award_financial_assistance_id
+        RETURNING {primary_key}
     """
+    alias = "s"
 
     for id_list in read_file_for_database_ids(file_name):
-        id_list = [int(x) for x in id_list]
-        source_predicate_obj = [
-            {"field": "published_award_financial_assistance_id", "op": "IN", "values": tuple(id_list)}
-        ]
+        int_id_tuple = tuple([int(x) for x in id_list])
+        source_predicate_obj = [{"field": primary_key, "op": "IN", "values": tuple(int_id_tuple)}]
 
         sql = SQL(upsert_sql_template).format(
-            destination_object_representation=dest_procurement.object_representation,
+            primary_key=primary_key,
+            alias=alias,
+            destination_object_representation=destination_table.object_representation,
             insert_columns=primatives.make_column_list(insertable_columns),
-            select_columns=primatives.make_column_list(insertable_columns, "s", dest_procurement.insert_overrides),
-            source_object=source_procurement.complex_object_representation(source_predicate_obj),
+            select_columns=primatives.make_column_list(insertable_columns, alias, destination_table.insert_overrides),
+            source_object=source_table.complex_object_representation(source_predicate_obj),
             excluded=excluded,
         )
         with Timer("insert"):
