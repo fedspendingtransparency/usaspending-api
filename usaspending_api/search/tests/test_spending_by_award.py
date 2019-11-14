@@ -183,16 +183,11 @@ def spending_by_award_test_data():
     )
 
     # Ref Program Activity
-    ref_program_activity_1 = {
-        "id": 1,
-    }
+    ref_program_activity_1 = {"id": 1}
     mommy.make("references.RefProgramActivity", **ref_program_activity_1)
 
     # Ref Object Class
-    ref_object_class_1 = {
-        "id": 1,
-        "object_class": "111",
-    }
+    ref_object_class_1 = {"id": 1, "object_class": "111"}
     mommy.make("references.ObjectClass", **ref_object_class_1)
 
     # Financial Accounts by Awards
@@ -285,7 +280,9 @@ def test_spending_by_award_success(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": non_legacy_filters()}
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
