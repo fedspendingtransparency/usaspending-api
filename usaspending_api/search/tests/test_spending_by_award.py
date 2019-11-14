@@ -203,6 +203,7 @@ def spending_by_award_test_data():
     }
     mommy.make("awards.FinancialAccountsByAwards", **financial_accounts_by_awards_1)
 
+
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, spending_by_award_test_data, refresh_matviews):
 
