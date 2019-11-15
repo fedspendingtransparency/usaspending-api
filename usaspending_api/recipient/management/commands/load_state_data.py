@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand
 logger = logging.getLogger("console")
 
 LOCAL_STATE_DATA_FILENAME = "CensusStateData.csv"
-LOCAL_STATE_DATA = os.path.join(settings.BASE_DIR, "usaspending_api", "data", LOCAL_STATE_DATA_FILENAME)
+LOCAL_STATE_DATA = str(settings.APP_DIR / "data" / LOCAL_STATE_DATA_FILENAME)
 
 
 class Command(BaseCommand):

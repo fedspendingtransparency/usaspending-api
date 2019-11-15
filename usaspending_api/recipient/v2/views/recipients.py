@@ -1,19 +1,20 @@
 import logging
 import uuid
 
+from django.db.models import F, Sum
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import F, Sum
-
-from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
-
+from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
-from usaspending_api.references.models import RefCountryCode, LegalEntity
+from usaspending_api.references.models import RefCountryCode
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def validate_recipient_id(recipient_id):
     """ Validate [duns+name]-[recipient_type] hash
 
         Args:
-            hash: str of the hash+duns to look up
+            recipient_id: str of the hash+duns to look up
 
         Returns:
             uuid of hash
@@ -175,12 +176,13 @@ def extract_location(recipient_hash):
     return location
 
 
-def extract_business_categories(recipient_name, recipient_duns):
+def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
     """ Extract the business categories via the recipient hash
 
         Args:
             recipient_name: name of the recipient
             recipient_duns: duns of the recipient
+            recipient_hash: hash of name and duns
 
         Returns:
             list of business categories
@@ -209,16 +211,19 @@ def extract_business_categories(recipient_name, recipient_duns):
         business_categories |= set(get_business_categories(business_types, data_type="fpds"))
 
     # combine with latest transaction's business categories
-    le_business_cat = (
-        LegalEntity.objects.filter(recipient_name=recipient_name, recipient_unique_id=recipient_duns)
-        .order_by("-update_date")
+    # from usaspending_api.references.models import LegalEntity
+    latest_transaction = (
+        UniversalTransactionView.objects.filter(
+            recipient_hash=recipient_hash, action_date__gte=settings.API_SEARCH_MIN_DATE
+        )
+        .order_by("-action_date", "-transaction_id")
         .values("business_categories")
         .first()
     )
-    if le_business_cat and le_business_cat["business_categories"]:
-        business_categories |= set(le_business_cat["business_categories"])
+    if latest_transaction and latest_transaction["business_categories"]:
+        business_categories |= set(latest_transaction["business_categories"])
 
-    return list(business_categories)
+    return sorted(business_categories)
 
 
 def obtain_recipient_totals(recipient_id, children=False, year="latest", subawards=False):
@@ -287,7 +292,7 @@ class RecipientOverView(APIView):
             parents = [{"parent_id": recipient_id, "parent_duns": recipient_duns, "parent_name": recipient_name}]
 
         location = extract_location(recipient_hash)
-        business_types = extract_business_categories(recipient_name, recipient_duns)
+        business_types = extract_business_categories(recipient_name, recipient_duns, recipient_hash)
         results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
         # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
 
