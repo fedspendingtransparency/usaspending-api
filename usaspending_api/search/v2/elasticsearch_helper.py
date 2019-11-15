@@ -578,7 +578,7 @@ def search_awards(request_data, lower_limit, limit):
         results = format_for_frontend(response["hits"]["hits"], True)
         return True, results, total
     else:
-        return False, "There was an error connecting to the ElasticSearch cluster", None
+        return False, "There was an error connecting to the ElasticSearch cluster", 0
 
 
 def elastic_awards_count(request_data):
@@ -599,10 +599,11 @@ def elastic_awards_count(request_data):
         results = es_client_count(index=index_name, body=query, retries=10)
         if t == "directpayments":
             t = "direct_payments"
-        response.update({t: results["count"]})
         if results:
-            success &= True
+            response.update({t: results["count"]})
+        else:
+            success = False
     if success:
         return response
     else:
-        return False, "There was an error connecting to the ElasticSearch cluster", None
+        return "There was an error connecting to the ElasticSearch cluster"

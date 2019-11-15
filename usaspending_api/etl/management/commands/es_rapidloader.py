@@ -121,7 +121,7 @@ class Command(BaseCommand):
         for fiscal_year in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = "{dir}{fy}_transactions.csv".format(dir=self.config["directory"], fy=fiscal_year)
+            filename = "{dir}{fy}_{level}.csv".format(dir=self.config["directory"], fy=fiscal_year, level="awards" if self.config["awards"] else "transactions")
 
             new_job = DataJob(job_number, index, fiscal_year, filename)
 
@@ -176,7 +176,7 @@ class Command(BaseCommand):
         if self.config["create_new_index"]:
             printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"])
+            swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["awards"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})
@@ -190,7 +190,7 @@ class Command(BaseCommand):
 
 def process_cli_parameters(options: dict, es_client) -> None:
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
-    simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts")
+    simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts", "awards")
     config = set_config(simple_args, options)
 
     config["fiscal_years"] = fiscal_years_for_processing(options)
@@ -201,7 +201,7 @@ def process_cli_parameters(options: dict, es_client) -> None:
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = default_datetime
-        check_new_index_name_is_ok(config["index_name"])
+        check_new_index_name_is_ok(config["index_name"], config["awards"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
@@ -210,9 +210,9 @@ def process_cli_parameters(options: dict, es_client) -> None:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-award for S3
-        config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
+        config["starting_date"] = get_last_load_date("es_awards" if config["awards"] else "es_transactions", default=default_datetime)
 
-    config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    config["max_query_size"] = settings.ES_AWARDS_MAX_RESULT_WINDOW if config["awards"] else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
         config["starting_date"] != default_datetime
@@ -251,7 +251,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
         "root_index": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
         "processing_start_datetime": datetime.now(timezone.utc),
-        "awards_root_index": settings.AWARDS_INDEX_ROOT,
+        "awards_root_index": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
         "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
     }
 
@@ -265,8 +265,8 @@ def fiscal_years_for_processing(options: list) -> list:
     return [int(x) for x in options["fiscal_years"]]
 
 
-def check_new_index_name_is_ok(provided_name: str) -> None:
-    if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_SUFFIX):
+def check_new_index_name_is_ok(provided_name: str, awards: bool) -> None:
+    if not provided_name.endswith(settings.ES_AWARDS_NAME_SUFFIX if awards else settings.ES_TRANSACTIONS_NAME_SUFFIX):
         raise SystemExit(
-            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
+            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_AWARDS_NAME_SUFFIX if awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)
         )

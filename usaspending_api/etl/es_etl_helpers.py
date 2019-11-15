@@ -114,6 +114,7 @@ AWARD_VIEW_COLUMNS = [
     "recipient_unique_id",
     "parent_recipient_unique_id",
     "business_categories",
+    "update_date",
     "action_date",
     "fiscal_year",
     "last_modified_date",
@@ -174,8 +175,7 @@ AWARD_COUNT_SQL = """SELECT COUNT(*) AS count
 FROM award_delta_view
 WHERE fiscal_year={fy}{update_date};"""
 
-
-TRANSACTION_COPY_SQL = """"COPY (
+COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
     WHERE transaction_fiscal_year={fy}{update_date}
@@ -276,16 +276,29 @@ def configure_sql_strings(config, filename, deleted_ids):
 
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
-    copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"],
-        update_date=update_date_str,
-        filename=filename,
-        view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
-    )
+    if not awards:
+        copy_sql = COPY_SQL.format(
+            fy=config["fiscal_year"],
+            update_date=update_date_str,
+            filename=filename,
+            view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+        )
+    else:
+        copy_sql = AWARD_COPY_SQL.format(
+            fy=config["fiscal_year"],
+            update_date=update_date_str,
+            filename=filename,
+            view=settings.ES_AWARDS_ETL_VIEW_NAME,
+        )
 
-    count_sql = COUNT_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-    )
+    if awards:
+        count_sql = AWARD_COUNT_SQL.format(
+            fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_AWARDS_ETL_VIEW_NAME
+        )
+    else:
+        count_sql = COUNT_SQL.format(
+            fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        )
 
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
@@ -334,7 +347,6 @@ def download_db_records(fetch_jobs, done_jobs, config):
             sql_config = {
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
-                "provide_deleted": config["provide_deleted"],
                 "awards": config["awards"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
@@ -390,7 +402,10 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only")
+        if config["awards"]:
+            call_command("es_configure", "--template-only", "--awards")
+        else:
+            call_command("es_configure", "--template-only")
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -409,11 +424,11 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None):
+def streaming_post_to_es(client, chunk, index_name, awards, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -432,7 +447,7 @@ def put_alias(client, index, alias_name, alias_body):
 def create_aliases(client, index, awards, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         alias_name = (
-            "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type)
+            "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
             if awards
             else "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
         )
@@ -451,12 +466,12 @@ def create_aliases(client, index, awards, silent=False):
     # If the alias is on multiple indexes, the loads will fail!
     printf(
         {
-            "msg": "Putting alias '{}' on {}".format(settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
+            "msg": "Putting alias '{}' on {}".format(settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
             "job": None,
             "f": "ES Alias Put",
         }
     )
-    put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
+    put_alias(client, index, settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
 def set_final_index_config(client, index):
@@ -474,7 +489,7 @@ def set_final_index_config(client, index):
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def swap_aliases(client, index):
+def swap_aliases(client, index, awards):
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
@@ -530,7 +545,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, job.name)
+        streaming_post_to_es(client, chunk, job.index, config["awards"], job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
