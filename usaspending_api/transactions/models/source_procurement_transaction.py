@@ -330,5 +330,5 @@ class SourceProcurmentTransaction(models.Model):
         return self._meta.db_table
 
     @property
-    def model_fields(self):
-        return tuple([f.name for f in self._meta.get_fields(include_parents=False)])
+    def broker_source_table(self):
+        return "detached_award_procurement"
