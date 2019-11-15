@@ -124,8 +124,7 @@ class Timer:
         return "[{}] finished successfully after {}".format(self.message, self)
 
     def log_failure_message(self):
-        if self.message:
-            self.failure_logger(self.failure_message)
+        print(self.failure_message)
 
     @property
     def failure_message(self):

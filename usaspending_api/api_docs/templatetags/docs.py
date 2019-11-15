@@ -1,7 +1,7 @@
+import markdown
+
 from django import template
 from django.conf import settings
-import os
-import markdown
 from mdx_gfm import GithubFlavoredMarkdownExtension
 
 
@@ -28,9 +28,7 @@ def get_contents_from_markdown(markdown_file=None, split_string="[//]: # (Begin 
     contents = ""
     if markdown_file:
         try:
-            full_text = open(
-                os.path.join(settings.BASE_DIR, "usaspending_api", "api_docs", "markdown", markdown_file)
-            ).read()
+            full_text = open(str(settings.APP_DIR / "api_docs" / "markdown" / markdown_file)).read()
             split = full_text.split(split_string)
             if index < len(split):
                 contents = split[index]
