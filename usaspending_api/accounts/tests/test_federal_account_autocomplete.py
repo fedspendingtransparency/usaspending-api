@@ -33,6 +33,7 @@ def fed_account_data(db):
         (["federal_account_code"], "999-0000", {"federal_account_code": "999-0000"}),
     ],
 )
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_awards_autocomplete(client, fed_account_data, fields, value, expected):
     """test partial-text search on awards."""
@@ -40,6 +41,7 @@ def test_awards_autocomplete(client, fed_account_data, fields, value, expected):
     check_autocomplete("federal_accounts", client, fields, value, expected)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_awards_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
