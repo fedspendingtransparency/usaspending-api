@@ -58,7 +58,7 @@ class Command(BaseCommand):
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
-            logger.info("{} total records".format(total_records))
+            logger.info("{} total records to update".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
             while True:
                 id_list = cursor.fetchmany(CHUNK_SIZE)
