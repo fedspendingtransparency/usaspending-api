@@ -59,6 +59,9 @@
         "modification_number": {
           "type": "integer"
         },
+        "generated_unique_award_id": {
+          "type": "keyword"
+        },
         "award_id": {
           "type": "integer"
         },
