@@ -1,5 +1,3 @@
-import os
-
 from django.core.management import call_command
 from django.conf import settings
 from model_mommy import mommy
@@ -8,7 +6,7 @@ import pytest
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts
 
-tas_test_file = os.path.join(settings.BASE_DIR, "usaspending_api/data/testing_data/tas_list_1.csv")
+tas_test_file = str(settings.APP_DIR / "data" / "testing_data" / "tas_list_1.csv")
 
 
 @pytest.fixture()
