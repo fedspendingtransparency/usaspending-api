@@ -234,28 +234,6 @@ async def create_chunk_queue(min_id, max_id, loop):
     return queue
 
 
-async def disable_autovacuum(pool):
-    with Timer() as t:
-        sql = """
-            alter table subaward set (autovacuum_enabled = false, toast.autovacuum_enabled = false);
-            alter table transaction_normalized set (autovacuum_enabled = false, toast.autovacuum_enabled = false);
-        """
-        async with pool.acquire() as connection:
-            await connection.execute(sql)
-    logging.info("Disabled autovacuum in {}".format(t))
-
-
-async def enable_autovacuum(pool):
-    with Timer() as t:
-        sql = """
-            alter table subaward set (autovacuum_enabled = true, toast.autovacuum_enabled = true);
-            alter table transaction_normalized set (autovacuum_enabled = true, toast.autovacuum_enabled = true);
-        """
-        async with pool.acquire() as connection:
-            await connection.execute(sql)
-    logging.info("Enabled autovacuum in {}".format(t))
-
-
 async def process_queue(queue, original_queue_size, processed_queue, pool):
     while True:
 
@@ -294,15 +272,11 @@ async def run_pipelines(queue, original_queue_size, processed_queue, loop, pool)
 
 async def main(loop):
     async with asyncpg.create_pool(dsn=CONNECTION_STRING, loop=loop) as pool:
-        try:
-            await update_sql_functions(pool)
-            min_id, max_id = await get_min_max_ids(pool)
-            to_process_queue = await create_chunk_queue(min_id, max_id, loop)
-            processed_queue = asyncio.Queue(loop=loop)
-            await disable_autovacuum(pool)
-            await run_pipelines(to_process_queue, to_process_queue.qsize() - 1, processed_queue, loop, pool)
-        finally:
-            await enable_autovacuum(pool)
+        await update_sql_functions(pool)
+        min_id, max_id = await get_min_max_ids(pool)
+        to_process_queue = await create_chunk_queue(min_id, max_id, loop)
+        processed_queue = asyncio.Queue(loop=loop)
+        await run_pipelines(to_process_queue, to_process_queue.qsize() - 1, processed_queue, loop, pool)
 
 
 if __name__ == "__main__":
