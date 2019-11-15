@@ -81,7 +81,7 @@ SELECT
   psc.description AS product_or_service_description,
   transaction_fpds.naics AS naics_code,
   transaction_fpds.naics_description,
-  tas.treasury_account_identifiers AS treasury_account_identifiers
+  ARRAY_TO_STRING(tas.treasury_account_identifiers, ', ') AS treasury_account_identifiers
 FROM
   awards
 JOIN
