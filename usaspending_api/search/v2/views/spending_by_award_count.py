@@ -31,10 +31,23 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        models = [{"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-                  {"name": "object_class", "key": "filter|object_class", "type": "array", "array_type": "text", "text_type": "search"},
-                  {"name": "program_activity", "key": "filter|program_activity", "type": "array", "array_type": "integer", "array_max": maxsize},
-                  ]
+        models = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "object_class",
+                "key": "filter|object_class",
+                "type": "array",
+                "array_type": "text",
+                "text_type": "search",
+            },
+            {
+                "name": "program_activity",
+                "key": "filter|program_activity",
+                "type": "array",
+                "array_type": "integer",
+                "array_max": maxsize,
+            },
+        ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
