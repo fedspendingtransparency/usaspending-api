@@ -362,6 +362,7 @@ transaction_normalized_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
+    "business_categories": business_categories,
 }
 
 # broker column name -> usaspending column name
@@ -477,7 +478,6 @@ legal_entity_functions = {
     "data_source": data_source,
     "business_types": lambda broker: None,  # FABS only
     "business_types_description": lambda broker: None,  # FABS only
-    "business_categories": business_categories,
     "city_township_government": lambda broker: None,  # ?
     "special_district_government": lambda broker: None,  # ?
     "small_business": lambda broker: None,  # ?

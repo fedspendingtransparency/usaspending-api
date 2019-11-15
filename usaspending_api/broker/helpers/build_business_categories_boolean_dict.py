@@ -1,8 +1,8 @@
 from distutils.util import strtobool
 
 
-def build_legal_entity_booleans_dict(row):
-    le_cols = [
+def build_business_categories_boolean_dict(row):
+    columns = [
         "small_business_competitive",
         "city_local_government",
         "county_local_government",
@@ -91,4 +91,4 @@ def build_legal_entity_booleans_dict(row):
         "other_not_for_profit_organ",
         "us_local_government",
     ]
-    return {le_col: bool(strtobool(row.get(le_col, "false") or "false")) for le_col in le_cols}
+    return {column: bool(strtobool(row.get(column, "false") or "false")) for column in columns}

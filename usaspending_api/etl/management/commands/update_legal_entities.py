@@ -46,9 +46,9 @@ class Command(BaseCommand):
         ),
         new_legal_entities AS
         (
-          INSERT INTO legal_entity (business_categories, data_source, business_types_description, create_date,
+          INSERT INTO legal_entity (data_source, business_types_description, create_date,
                 update_date, recipient_unique_id, recipient_name, location_id)
-            SELECT '{}', 'DBR', 'Unknown Types', NOW(), NOW(), '', 'Multiple Recipients', location_id FROM trans_to_loc
+            SELECT 'DBR', 'Unknown Types', NOW(), NOW(), '', 'Multiple Recipients', location_id FROM trans_to_loc
           ON CONFLICT ON CONSTRAINT legal_entity_recipient_unique_id_reci_58a49e8b_uniq DO NOTHING
           RETURNING legal_entity_id, location_id
         ),

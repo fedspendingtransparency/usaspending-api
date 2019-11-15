@@ -1,6 +1,7 @@
 # Stdlib imports
 import datetime
 from uuid import UUID
+from unittest.mock import Mock
 
 # Core Django imports
 
@@ -311,26 +312,26 @@ def test_cleanup_location():
 
 
 @pytest.mark.django_db
-def test_extract_business_categories():
+def test_extract_business_categories(monkeypatch):
     """ Testing extracting business categories from the recipient name/duns """
     recipient_hash = "00077a9a-5a70-8919-fd19-330762af6b84"
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
     recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]
-    le_business_cat = ["le", "business", "cat"]
+    business_categories = ["le", "business", "cat"]
+
+    utm_objects = Mock()
+    utm_objects.filter().order_by().values().first.return_value = {"business_categories": business_categories}
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
+
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    mommy.make(
-        LegalEntity,
-        business_categories=le_business_cat,
-        recipient_name=recipient_name,
-        recipient_unique_id=recipient_duns,
-    )
+    mommy.make(LegalEntity, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
 
     # Mock DUNS
     # Should add 'category_business'
     mommy.make(DUNS, **TEST_DUNS[recipient_duns])
 
-    expected_business_cat = le_business_cat + ["category_business"]
-    business_cat = recipients.extract_business_categories(recipient_name, recipient_duns)
+    expected_business_cat = business_categories + ["category_business"]
+    business_cat = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
     # testing for equality-only, order unnecessary
     assert sorted(business_cat) == sorted(expected_business_cat)
 
@@ -340,7 +341,8 @@ def test_extract_business_categories_special():
     """ Tesing extracting the business categories for a special case  """
     recipient_name = "MULTIPLE RECIPIENTS"
     recipient_duns = None
-    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns)
+    recipient_hash = ""
+    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
     assert business_categories == []
 
 
@@ -430,7 +432,7 @@ def recipient_overview_endpoint(id, year="latest"):
 
 
 @pytest.mark.django_db
-def test_recipient_overview(client, mock_matviews_qs):
+def test_recipient_overview(client, mock_matviews_qs, monkeypatch):
     """ Testing a simple example of the endpoint as a whole """
     r_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
     recipient_hash = r_id[:-2]
@@ -463,12 +465,11 @@ def test_recipient_overview(client, mock_matviews_qs):
 
     # Mock Legal Entity
     expected_business_cat = ["expected", "business", "cat"]
-    mommy.make(
-        LegalEntity,
-        business_categories=expected_business_cat,
-        recipient_name="PARENT RECIPIENT",
-        recipient_unique_id="000000001",
-    )
+    mommy.make(LegalEntity, recipient_name="PARENT RECIPIENT", recipient_unique_id="000000001")
+
+    utm_objects = Mock()
+    utm_objects.filter().order_by().values().first.return_value = {"business_categories": expected_business_cat}
+    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
 
     resp = client.get(recipient_overview_endpoint(r_id))
     assert resp.status_code == status.HTTP_200_OK
