@@ -30,6 +30,7 @@ VIEW_COLUMNS = [
     "display_award_id",
     "update_date",
     "modification_number",
+    "generated_unique_award_id",
     "award_id",
     "piid",
     "fain",
