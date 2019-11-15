@@ -25,7 +25,7 @@ SELECT
   UTM.piid,
   UTM.fain,
   UTM.uri,
-  UTM.description AS award_description,
+  UTM.transaction_description AS award_description,
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,
