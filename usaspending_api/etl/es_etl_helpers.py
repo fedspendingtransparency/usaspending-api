@@ -7,13 +7,14 @@ import subprocess
 import tempfile
 
 from collections import defaultdict
-from django.conf import settings
 from datetime import datetime
-from elasticsearch import helpers
-from elasticsearch import TransportError
+from django.conf import settings
+from django.core.management import call_command
+from elasticsearch import helpers, TransportError
 from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -163,9 +164,11 @@ AWARD_VIEW_COLUMNS = [
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
-TRANSACTION_COUNT_SQL = """SELECT COUNT(*) AS count
-FROM transaction_delta_view
-WHERE transaction_fiscal_year={fy}{update_date};"""
+COUNT_SQL = """
+SELECT COUNT(*) AS count
+FROM {view}
+WHERE transaction_fiscal_year={fy}{update_date}
+"""
 
 AWARD_COUNT_SQL = """SELECT COUNT(*) AS count
 FROM award_delta_view
@@ -174,7 +177,7 @@ WHERE fiscal_year={fy}{update_date};"""
 
 TRANSACTION_COPY_SQL = """"COPY (
     SELECT *
-    FROM transaction_delta_view
+    FROM {view}
     WHERE transaction_fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
@@ -188,16 +191,18 @@ AWARD_COPY_SQL = """"COPY (
 
 TRANSACTION_CHECK_IDS_SQL = """
 WITH temp_transaction_ids AS (
-  SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
+  SELECT *
+  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
 )
-SELECT transaction_id, generated_unique_transaction_id, update_date FROM transaction_delta_view
+SELECT transaction_id, generated_unique_transaction_id, update_date
+FROM {view}
 WHERE EXISTS (
   SELECT *
   FROM temp_transaction_ids
   WHERE
-    transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
+    {view}.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
     AND transaction_fiscal_year={fy}
-);
+)
 """
 
 AWARD_CHECK_IDS_SQL = """
@@ -271,18 +276,18 @@ def configure_sql_strings(config, filename, deleted_ids):
 
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
 
-    copy_sql = TRANSACTION_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
+    copy_sql = COPY_SQL.format(
+        fy=config["fiscal_year"],
+        update_date=update_date_str,
+        filename=filename,
+        view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+    )
 
-    count_sql = TRANSACTION_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
+    count_sql = COUNT_SQL.format(
+        fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+    )
 
-    if awards:
-        update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-
-        copy_sql = AWARD_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
-
-        count_sql = AWARD_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
-
-    if deleted_ids and config["provide_deleted"]:
+    if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = TRANSACTION_CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])
     else:
@@ -314,6 +319,7 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a reoccuring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    ensure_transaction_etl_view_exists()
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
@@ -336,7 +342,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             if os.path.isfile(job.csv):
                 os.remove(job.csv)
 
-            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["fast"], config["verbose"])
+            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["skip_counts"], config["verbose"])
             done_jobs.put(job)
             printf(
                 {
@@ -349,12 +355,12 @@ def download_db_records(fetch_jobs, done_jobs, config):
 
     # This "Null Job" is used to notify the other (ES data load) process this is the final job
     done_jobs.put(DataJob(None, None, None, None))
-    printf({"msg": "All downloads from Postgres completed", "f": "Download"})
+    printf({"msg": "PostgreSQL COPY operations complete", "f": "Download"})
     return
 
 
-def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
-    if fast:
+def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
+    if skip_counts:
         count = None
         printf({"msg": "Skipping count checks. Writing file: {}".format(filename), "job": job_id, "f": "Download"})
     else:
@@ -363,7 +369,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, fast, verbose):
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-    if not fast:
+    if not skip_counts:
         download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
         if count != download_count:
             msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
@@ -382,6 +388,9 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
 
 
 def es_data_loader(client, fetch_jobs, done_jobs, config):
+    if config["create_new_index"]:
+        # ensure template for index is present and the latest version
+        call_command("es_configure", "--template-only")
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -400,23 +409,23 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type="transaction_mapping"):
+def streaming_post_to_es(client, chunk, index_name, job_id=None):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type=doc_type):
+        # "doc_type" is set in the index templete file. Don't change this without changing in json file first
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
     except Exception as e:
-        print("MASSIVE FAIL!!!\n\n{}\n\n{}".format(str(e)[:5000], "*" * 80))
+        print("Fatal error: \n\n{}...\n\n{}".format(str(e)[:5000], "*" * 80))
         raise SystemExit(1)
 
     printf({"msg": "Success: {}, Fails: {}".format(success, failed), "job": job_id, "f": "ES Ingest"})
     return success, failed
 
 
-def put_alias(client, index, alias_name, award_type_codes):
-    alias_body = {"filter": {"terms": {"type": award_type_codes}}}
+def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
@@ -425,55 +434,69 @@ def create_aliases(client, index, awards, silent=False):
         alias_name = (
             "{}-{}".format(settings.AWARDS_INDEX_ROOT, award_type)
             if awards
-            else "{}-{}".format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+            else "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
         )
         if silent is False:
             printf(
                 {
-                    "msg": 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
-                    "job": "",
+                    "msg": "Putting alias '{}' on {} with award codes {}".format(alias_name, index, award_type_codes),
+                    "job": None,
                     "f": "ES Alias Put",
                 }
             )
-        put_alias(client, index, alias_name, award_type_codes)
+        alias_body = {"filter": {"terms": {"type": award_type_codes}}}
+        put_alias(client, index, alias_name, alias_body)
+
+    # ensure the new index is added to the alias used for incremental loads.
+    # If the alias is on multiple indexes, the loads will fail!
+    printf(
+        {
+            "msg": "Putting alias '{}' on {}".format(settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
+            "job": None,
+            "f": "ES Alias Put",
+        }
+    )
+    put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
-def swap_aliases(client, index, awards):
-    client.indices.refresh(index)
-    # add null values to contracts alias
-    if client.indices.get_alias(index, "*"):
-        printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
-        client.indices.delete_alias(index, "_all")
-
-    alias_patterns = settings.AWARDS_INDEX_ROOT + "*" if awards else settings.TRANSACTIONS_INDEX_ROOT + "*"
-    try:
-        old_indices = client.indices.get_alias("*", alias_patterns).keys()
-        for old_index in old_indices:
-            client.indices.delete_alias(old_index, "_all")
-            client.indices.close(old_index)
-            printf({"msg": 'Removing aliases & closing "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
-    except Exception:
-        printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
-    create_aliases(client, index, awards)
-
-    es_settingsfile = os.path.join(settings.BASE_DIR, "usaspending_api/etl/es_settings.json")
+def set_final_index_config(client, index):
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
-    index_settings = settings_dict["settings"]["index"]
+    final_index_settings = settings_dict["final_index_settings"]
 
     current_settings = client.indices.get(index)[index]["settings"]["index"]
 
-    client.indices.put_settings(index_settings, index)
+    client.indices.put_settings(final_index_settings, index)
     client.indices.refresh(index)
-    for setting, value in index_settings.items():
+    for setting, value in final_index_settings.items():
         message = 'Changing "{}" from {} to {}'.format(setting, current_settings.get(setting), value)
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def test_mapping(client, index, config):
-    transaction_mapping = json.loads(config["mapping"])["mappings"]
-    index_mapping = client.indices.get(index)[index]["mappings"]
-    return index_mapping == transaction_mapping
+def swap_aliases(client, index):
+    if client.indices.get_alias(index, "*"):
+        printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
+        client.indices.delete_alias(index, "_all")
+
+    alias_patterns = settings.AWARDS_INDEX_ROOT + "*" if awards else settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
+    old_indexes = []
+
+    try:
+        old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
+        for old_index in old_indexes:
+            client.indices.delete_alias(old_index, "_all")
+            printf({"msg": 'Removing aliases from "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
+    except Exception:
+        printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
+    create_aliases(client, index, awards)
+
+    try:
+        if old_indexes:
+            client.indices.delete(index=old_indexes, ignore_unavailable=False)
+            printf({"msg": 'Deleted index(es) "{}"'.format(old_indexes), "job": None, "f": "ES Alias Drop"})
+    except Exception:
+        printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indexes), "f": "ES Alias Drop"})
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
@@ -486,11 +509,8 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         raise SystemExit(1)
     if not does_index_exist:
         printf({"msg": 'Creating index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
-        client.indices.create(index=job.index, body=config["mapping"])
+        client.indices.create(index=job.index)
         client.indices.refresh(job.index)
-        if not test_mapping(client, job.index, config):
-            printf({"msg": "MAPPING FAILED TO STICK TO {}".format(job.index), "job": job.name, "f": "ES Create"})
-            raise SystemExit(1)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["awards"])
     for count, chunk in enumerate(csv_generator):
@@ -498,7 +518,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
             continue
         iteration = perf_counter()
-        if config["provide_deleted"]:
+        if config["process_deletes"]:
             id_list = [{"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
             delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
@@ -510,7 +530,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, job.name, doc_type=config["doc_type"])
+        streaming_post_to_es(client, chunk, job.index, job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
@@ -554,7 +574,7 @@ def gather_deleted_ids(config):
     generated by the broker when transactions are removed from the DB.
     """
 
-    if not config["provide_deleted"]:
+    if not config["process_deletes"]:
         printf({"msg": "Skipping the S3 CSV fetch for deleted transactions"})
         return
     printf({"msg": "Gathering all deleted transactions from S3"})

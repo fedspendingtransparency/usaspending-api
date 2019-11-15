@@ -1,11 +1,11 @@
 from django.conf.urls import url
 
-from usaspending_api.awards.v1 import views
+from usaspending_api.common.views import RemovedEndpointView
 
 # map reqest types to viewset method; replace this with a router
-transaction_list = views.TransactionListViewSet.as_view({"get": "list", "post": "list"})
-transaction_detail = views.TransactionRetrieveViewSet.as_view({"get": "retrieve", "post": "retrieve"})
-transaction_total = views.TransactionAggregateViewSet.as_view({"get": "list", "post": "list"})
+transaction_list = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+transaction_detail = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
+transaction_total = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 
 urlpatterns = [
     url(r"^$", transaction_list, name="transaction-list"),

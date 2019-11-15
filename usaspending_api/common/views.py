@@ -7,7 +7,8 @@ from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.mixins import AutocompleteResponseMixin
-
+from usaspending_api.common.api_versioning import removed
+from django.utils.decorators import method_decorator
 
 exception_logger = logging.getLogger("exceptions")
 
@@ -94,3 +95,14 @@ class MarkdownView(TemplateView):
         # Add in the markdown to the context, for use in the template tags
         context["markdown"] = self.markdown
         return context
+
+
+# placeholder for retired URLs
+@method_decorator(removed, name="retrieve")
+class RemovedEndpointView(viewsets.ViewSet):
+    """Placeholder for endpoints that have been removed"""
+
+    endpoint_doc = "usaspending_api/api_docs/api_documentation/removed_endpoint.md"
+
+    def retrieve(self, request, *args, **kwargs):
+        raise Exception("Endpoint failed to return HTTP 410")
