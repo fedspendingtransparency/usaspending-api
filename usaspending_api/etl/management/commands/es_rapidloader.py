@@ -120,7 +120,7 @@ class Command(BaseCommand):
         for fiscal_year in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = "{dir}{fy}_transactions.csv".format(dir=self.config["directory"], fy=fiscal_year)
+            filename = str(self.config["directory"] / "{fy}_transactions.csv".format(fy=fiscal_year))
 
             new_job = DataJob(job_number, index, fiscal_year, filename)
 

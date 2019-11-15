@@ -19,12 +19,13 @@ SELECT
   END AS display_award_id,
 
   TM.update_date,
-  TM.modification_number,
-  AWD.id AS award_id,
+  UTM.modification_number,
+  AWD.generated_unique_award_id,
+  UTM.award_id,
   UTM.piid,
   UTM.fain,
   UTM.uri,
-  AWD.description AS award_description,
+  UTM.description AS award_description,
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,
