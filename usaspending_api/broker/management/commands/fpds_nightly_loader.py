@@ -238,11 +238,7 @@ class Command(BaseCommand):
                 recipient_unique_id=row["awardee_or_recipient_uniqu"],
                 recipient_name=recipient_name if recipient_name is not None else "",
             )
-            legal_entity_value_map = {
-                "location": legal_entity_location,
-                "business_categories": get_business_categories(row=row, data_type="fpds"),
-                "is_fpds": True,
-            }
+            legal_entity_value_map = {"location": legal_entity_location, "is_fpds": True}
             set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -291,6 +287,7 @@ class Command(BaseCommand):
                 "is_fpds": True,
                 "type": award_type,
                 "type_description": award_type_desc,
+                "business_categories": get_business_categories(row=row, data_type="fpds"),
             }
 
             transaction_normalized_dict = load_data_into_model(

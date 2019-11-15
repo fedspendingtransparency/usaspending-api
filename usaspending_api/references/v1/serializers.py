@@ -75,7 +75,6 @@ class LegalEntitySerializer(LimitableSerializer):
             "recipient_name",
             "business_types",
             "business_types_description",
-            "business_categories",
             "location",
         ]
         nested_serializers = {"location": {"class": LocationSerializer, "kwargs": {"read_only": True}}}
