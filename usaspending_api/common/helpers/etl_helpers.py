@@ -1,7 +1,6 @@
-from datetime import datetime
 import logging
-from pathlib import Path
 
+from datetime import datetime
 from django.conf import settings
 from django.db import connection
 
@@ -11,8 +10,7 @@ from usaspending_api.common.helpers.sql_helpers import read_sql_file
 
 logger = logging.getLogger("console")
 
-_APP_DIR = Path(settings.BASE_DIR).resolve() / "usaspending_api"
-_ETL_SQL_FILE_PATH = _APP_DIR / "etl/management/sql/c_file_linkage/"
+_ETL_SQL_FILE_PATH = settings.APP_DIR / "etl" / "management" / "sql" / "c_file_linkage"
 
 
 def get_unlinked_count(file_name):

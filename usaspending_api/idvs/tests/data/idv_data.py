@@ -25,7 +25,7 @@ def set_up_related_award_objects():
     }
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
-    trans_cont = {"pk": 1}
+    trans_cont = {"pk": 1, "business_categories": ["small_business"]}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
     mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
@@ -37,7 +37,6 @@ def set_up_related_award_objects():
         "recipient_name": "John's Pizza",
         "recipient_unique_id": 456,
         "parent_recipient_unique_id": 123,
-        "business_categories": ["small_business"],
         "location": Location.objects.get(pk=1),
     }
 

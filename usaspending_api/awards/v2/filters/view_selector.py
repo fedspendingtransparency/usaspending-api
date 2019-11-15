@@ -137,6 +137,8 @@ MATVIEW_SELECTOR = {
             "recipient_type_names",
             "place_of_performance_scope",
             "place_of_performance_locations",
+            "object_class",
+            "program_activity",
             "award_amounts",
             "award_ids",
             "program_numbers",

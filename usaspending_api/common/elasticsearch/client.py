@@ -1,3 +1,4 @@
+import certifi
 import logging
 import json
 
@@ -12,6 +13,15 @@ from ssl import CERT_NONE
 
 logger = logging.getLogger("console")
 CLIENT = None
+
+
+def instantiate_elasticsearch_client():
+    es_kwargs = {"timeout": 300}
+
+    if "https" in settings.ES_HOSTNAME:
+        es_kwargs.update({"use_ssl": True, "verify_certs": True, "ca_certs": certifi.where()})
+
+    return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
 def create_es_client():

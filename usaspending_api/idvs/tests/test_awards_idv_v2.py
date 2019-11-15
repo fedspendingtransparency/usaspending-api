@@ -65,7 +65,6 @@ def awards_and_transactions(db):
         "pk": 2,
         "recipient_name": "Dave's Pizza LLC",
         "recipient_unique_id": "123",
-        "business_categories": ["limited liability"],
         "location": Location.objects.get(pk=2),
     }
 
@@ -74,7 +73,6 @@ def awards_and_transactions(db):
         "recipient_name": "John's Pizza",
         "recipient_unique_id": "456",
         "parent_recipient_unique_id": "123",
-        "business_categories": ["small_business"],
         "location": Location.objects.get(pk=1),
     }
 
@@ -83,9 +81,9 @@ def awards_and_transactions(db):
     mommy.make("references.LegalEntity", **parent_le)
     mommy.make("references.LegalEntity", **le)
 
-    trans_asst = {"pk": 1, "award_id": 1}
-    trans_cont_1 = {"pk": 2, "award_id": 2}
-    trans_cont_2 = {"pk": 3, "award_id": 3}
+    trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
+    trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
+    trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_cont_1)
     mommy.make("awards.TransactionNormalized", **trans_cont_2)
