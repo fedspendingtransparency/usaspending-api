@@ -19,7 +19,7 @@ from usaspending_api.common.helpers.generic_helper import bolster_missing_time_p
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import base_awards_query
+from usaspending_api.search.v2.elasticsearch_helper import base_awards_query, elasticsearch_dollar_sum_aggregation
 
 logger = logging.getLogger(__name__)
 
@@ -93,17 +93,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "aggs": {"group_by_fiscal_year": {"terms": {"field": "fiscal_year", "order": {"_key": "asc"}, "size": 50}}}
         }
 
-        sum_obligated_amount_aggregation = {
-            "obligated_amount_sum_as_cents": {
-                "sum": {"script": {"lang": "painless", "source": "doc['generated_pragmatic_obligation'].value * 100"}}
-            },
-            "obligated_amount_sum_as_dollars": {
-                "bucket_script": {
-                    "buckets_path": {"obligated_amount_sum": "obligated_amount_sum_as_cents"},
-                    "script": "params.obligated_amount_sum / 100",
-                }
-            },
-        }
+        sum_obligated_amount_aggregation = elasticsearch_dollar_sum_aggregation("generated_pragmatic_obligation")
 
         if self.group == "month" or self.group == "quarter":
             field_name = "fiscal_{}".format(self.group)
@@ -130,7 +120,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             for year_bucket in hits["aggregations"]["group_by_fiscal_year"]["buckets"]:
                 results.append(
                     {
-                        "aggregated_amount": year_bucket["obligated_amount_sum_as_dollars"]["value"],
+                        "aggregated_amount": year_bucket["sum_as_dollars"]["value"],
                         "time_period": {"fiscal_year": str(year_bucket["key"])},
                     }
                 )
@@ -140,7 +130,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 for nested_bucket in year_bucket[nested_group_by_string]["buckets"]:
                     results.append(
                         {
-                            "aggregated_amount": nested_bucket["obligated_amount_sum_as_dollars"]["value"],
+                            "aggregated_amount": nested_bucket["sum_as_dollars"]["value"],
                             "time_period": {
                                 self.group: str(nested_bucket["key"]),
                                 "fiscal_year": str(year_bucket["key"]),
@@ -151,7 +141,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self):
-        query = {"query": {**base_awards_query(self.filters)}, **self.create_elasticsearch_aggregation(), "size": 0}
+        query = {"query": base_awards_query(self.filters), **self.create_elasticsearch_aggregation(), "size": 0}
 
         hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
 

@@ -276,13 +276,6 @@ def configure_sql_strings(config, filename, deleted_ids):
     copy_sql = copy_sql.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
     count_sql = count_sql.format(fy=config["fiscal_year"], update_date=update_date_str)
 
-    if awards:
-        update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-
-        copy_sql = AWARD_COPY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, filename=filename)
-
-        count_sql = AWARD_COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str)
-
     if deleted_ids and config["provide_deleted"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = TRANSACTION_CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])

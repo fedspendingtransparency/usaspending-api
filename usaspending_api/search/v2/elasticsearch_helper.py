@@ -261,7 +261,6 @@ def base_awards_query(filters):
             "set_aside_type_codes",
             "extent_competed_type_codes",
             "tas_codes",
-            "elasticsearch",  # elasticsearch doesn't do anything but it's here because i put it there and now it's too late to change it
         ]
 
         if key not in key_list:
@@ -604,3 +603,14 @@ def elastic_awards_count(request_data):
         return response
     else:
         return False, "There was an error connecting to the ElasticSearch cluster", None
+
+
+def elasticsearch_dollar_sum_aggregation(column_to_sum):
+    return {
+        "sum_as_cents": {
+            "sum": {"script": {"lang": "painless", "source": "doc['{}'].value * 100".format(column_to_sum)}}
+        },
+        "sum_as_dollars": {
+            "bucket_script": {"buckets_path": {"sum_as_cents": "sum_as_cents"}, "script": "params.sum_as_cents / 100"}
+        },
+    }
