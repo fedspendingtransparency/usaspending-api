@@ -9,10 +9,7 @@ class Command(BaseTransferClass, BaseCommand):
     broker_select_sql = "SELECT {} FROM {}"
     broker_source_table_name = SourceProcurmentTransaction().broker_source_table
     destination_table_name = SourceProcurmentTransaction().table_name
-    is_incremental = False
     last_load_record = "source_procurement_transaction"
     lookback_minutes = 0
     shared_pk = "detached_award_procurement_id"
-    successful_run = False
-    upsert_records = 0
     working_file_prefix = "procurement_load_ids"

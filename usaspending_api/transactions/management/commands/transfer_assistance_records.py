@@ -9,10 +9,7 @@ class Command(BaseTransferClass, BaseCommand):
     broker_select_sql = "SELECT {} FROM {} WHERE is_active IS true"
     broker_source_table_name = SourceAssistanceTransaction().broker_source_table
     destination_table_name = SourceAssistanceTransaction().table_name
-    is_incremental = False
     last_load_record = "source_assistance_transaction"
     lookback_minutes = 15
     shared_pk = "published_award_financial_assistance_id"
-    successful_run = False
-    upsert_records = 0
     working_file_prefix = "assistance_load_ids"

@@ -20,6 +20,10 @@ logger = logging.getLogger("script")
 
 
 class BaseTransferClass:
+    is_incremental = False
+    successful_run = False
+    upsert_records = 0
+
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
@@ -132,11 +136,10 @@ class BaseTransferClass:
             return ""
         elif self.options["datetime"]:
             logger.info("Using datetime '{}'".format(self.options["datetime"]))
-            return "AND updated_at >= '{}'".format(self.options["datetime"])
+            return "updated_at >= '{}'".format(self.options["datetime"])
 
     def generate_ids_from_broker(self):
-        sql = self.broker_select_sql.format(self.shared_pk, self.broker_source_table_name,)
-        sql += self.parse_options()
+        sql = self.combine_sql()
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
@@ -146,6 +149,16 @@ class BaseTransferClass:
                         break
                     for broker_id in id_list:
                         yield broker_id
+
+    def combine_sql(self):
+        sql = self.broker_select_sql.format(self.shared_pk, self.broker_source_table_name)
+        predicate = self.parse_options()
+
+        keyword = "WHERE"
+        if "WHERE" in sql:
+            keyword = "AND"
+
+        return "{} {} {}".format(sql, keyword, predicate)
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
