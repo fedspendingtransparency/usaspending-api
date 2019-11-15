@@ -4,7 +4,7 @@ import pytest
 from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
-from usaspending_api.search.tests.test_mock_data_search import all_filters
+from usaspending_api.search.tests.test_mock_data_search import non_legacy_filters
 
 
 @pytest.fixture
@@ -106,7 +106,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Award ID", "Recipient Name"], "filters": all_filters()}),
+        data=json.dumps({"fields": ["Award ID", "Recipient Name"], "filters": non_legacy_filters()}),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -114,7 +114,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Sub-Award ID"], "filters": all_filters(), "subawards": True}),
+        data=json.dumps({"fields": ["Sub-Award ID"], "filters": non_legacy_filters(), "subawards": True}),
     )
     assert resp.status_code == status.HTTP_200_OK
 

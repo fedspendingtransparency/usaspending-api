@@ -1,5 +1,6 @@
 import copy
 
+from sys import maxsize
 from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
@@ -109,6 +110,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "object_class",
+                "key": "filter|object_class",
+                "type": "array",
+                "array_type": "text",
+                "text_type": "search",
+            },
+            {
+                "name": "program_activity",
+                "key": "filter|program_activity",
+                "type": "array",
+                "array_type": "integer",
+                "array_max": maxsize,
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
