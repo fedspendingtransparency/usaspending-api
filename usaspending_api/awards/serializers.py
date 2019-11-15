@@ -7,7 +7,6 @@ from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import (
     AgencySerializer,
-    LegalEntitySerializer,
     LocationSerializer,
     CfdaSerializer,
 )
@@ -236,7 +235,6 @@ class TransactionNormalizedSerializer(LimitableSerializer):
             "assistance_data": {"class": TransactionFABSSerializer, "kwargs": {"read_only": True}},
             # name below must match related_name in TransactionFPDS
             "contract_data": {"class": TransactionFPDSSerializer, "kwargs": {"read_only": True}},
-            "recipient": {"class": LegalEntitySerializer, "kwargs": {"read_only": True}},
             "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
             "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
             "place_of_performance": {"class": LocationSerializer, "kwargs": {"read_only": True}},
@@ -275,7 +273,6 @@ class AwardSerializer(LimitableSerializer):
             "latest_transaction__contract_data",
         ]
         nested_serializers = {
-            "recipient": {"class": LegalEntitySerializer, "kwargs": {"read_only": True}},
             "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
             "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
             "place_of_performance": {"class": LocationSerializer, "kwargs": {"read_only": True}},
