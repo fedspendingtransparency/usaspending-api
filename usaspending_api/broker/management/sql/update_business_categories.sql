@@ -2,7 +2,7 @@
 -- to limit which rows are updated for performance
 
 -- FPDS
-UPDATE legal_entity
+UPDATE transaction_normalized AS tn
 SET business_categories = compile_fpds_business_categories(
     tf.contracting_officers_deter,
     tf.corporate_entity_tax_exemp,
@@ -91,14 +91,14 @@ SET business_categories = compile_fpds_business_categories(
     tf.planning_commission
 )
 FROM transaction_fpds AS tf
-WHERE is_fpds = TRUE AND
-      legal_entity.transaction_unique_id = tf.detached_award_proc_unique;
+WHERE tn.is_fpds IS TRUE AND
+      tn.id = tf.transaction_id;
 
 -- FABS
-UPDATE legal_entity
+UPDATE transaction_normalized AS tn
 SET business_categories = compile_fabs_business_categories(
     tf.business_types
 )
 FROM transaction_fabs AS tf
-WHERE is_fpds = FALSE AND
-      legal_entity.transaction_unique_id = tf.afa_generated_unique;;
+WHERE tn.is_fpds IS FALSE AND
+      tn.id = tf.transaction_id;

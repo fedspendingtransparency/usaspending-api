@@ -8,9 +8,11 @@ import os
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
+from pathlib import Path
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# All paths inside the project should be additive to BASE_DIR or APP_DIR
+APP_DIR = Path(__file__).resolve().parent
+BASE_DIR = APP_DIR.parent
 
 # User-specified limit on downloads should not be permitted beyond this
 MAX_DOWNLOAD_LIMIT = 500000
@@ -46,9 +48,9 @@ if not USASPENDING_AWS_REGION:
     USASPENDING_AWS_REGION = os.environ.get("USASPENDING_AWS_REGION")
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = os.path.join(BASE_DIR, "csv_downloads", "")
+CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads")
 DOWNLOAD_ENV = ""
-BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, "bulk_downloads", "")
+BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads")
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
@@ -69,11 +71,9 @@ if not STATE_DATA_BUCKET:
 DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
-IDV_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/idv_download_readme.txt")
-ASSISTANCE_DOWNLOAD_README_FILE_PATH = os.path.join(
-    BASE_DIR, "usaspending_api/data/AssistanceSummary_download_readme.txt"
-)
-CONTRACT_DOWNLOAD_README_FILE_PATH = os.path.join(BASE_DIR, "usaspending_api/data/ContractSummary_download_readme.txt")
+IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
+ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
+CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
@@ -82,12 +82,15 @@ AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_cod
 ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
-TRANSACTIONS_INDEX_ROOT = os.environ.get("ES_TRX_ROOT") or "future-transactions"
+ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
+ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
+ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
+ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
+ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -173,6 +176,7 @@ def _configure_database_connection(environment_variable):
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
+    config["TEST"] = {"SERIALIZE": False}
     return config
 
 
@@ -199,12 +203,9 @@ else:
 
 
 # import a second database connection for ETL, connecting to the data broker
-# using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
+# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES["data_broker"] = dj_database_url.parse(
-        os.environ.get("DATA_BROKER_DATABASE_URL"), conn_max_age=CONNECTION_MAX_SECONDS
-    )
-
+    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -243,8 +244,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "usaspending_api/static/")
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "usaspending_api/static_doc_files"),)
+STATIC_ROOT = str(APP_DIR / "static/")
+STATICFILES_DIRS = (str(APP_DIR / "static_doc_files"),)
 
 LOGGING = {
     "version": 1,
@@ -266,13 +267,13 @@ LOGGING = {
         "server": {
             "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "usaspending_api/logs/server.log"),
+            "filename": str(APP_DIR / "logs" / "server.log"),
             "formatter": "user_readable",
         },
         "console_file": {
             "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "usaspending_api/logs/console.log"),
+            "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},

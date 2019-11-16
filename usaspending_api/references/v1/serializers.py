@@ -8,7 +8,6 @@ from usaspending_api.references.models import (
     RefProgramActivity,
     SubtierAgency,
     ToptierAgency,
-    Definition,
 )
 from usaspending_api.common.serializers import LimitableSerializer
 
@@ -76,7 +75,6 @@ class LegalEntitySerializer(LimitableSerializer):
             "recipient_name",
             "business_types",
             "business_types_description",
-            "business_categories",
             "location",
         ]
         nested_serializers = {"location": {"class": LocationSerializer, "kwargs": {"read_only": True}}}
@@ -94,13 +92,6 @@ class ObjectClassSerializer(LimitableSerializer):
 
         model = ObjectClass
         fields = ("id", "major_object_class", "major_object_class_name", "object_class", "object_class_name")
-
-
-class DefinitionSerializer(LimitableSerializer):
-    class Meta:
-
-        model = Definition
-        fields = ["term", "slug", "data_act_term", "plain", "official", "resources"]
 
 
 class FilterSerializer(serializers.Serializer):

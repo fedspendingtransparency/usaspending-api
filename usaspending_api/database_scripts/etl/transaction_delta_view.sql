@@ -1,8 +1,6 @@
 -- Needs to be present in the Postgres DB if data needs to be retrieved for Elasticsearch
 
-DROP VIEW IF EXISTS transaction_delta_view;
-
-CREATE VIEW transaction_delta_view AS
+CREATE OR REPLACE VIEW transaction_delta_view AS
 SELECT
   UTM.transaction_id,
   FPDS.detached_award_proc_unique,
@@ -21,12 +19,13 @@ SELECT
   END AS display_award_id,
 
   TM.update_date,
-  TM.modification_number,
-  AWD.id AS award_id,
+  UTM.modification_number,
+  AWD.generated_unique_award_id,
+  UTM.award_id,
   UTM.piid,
   UTM.fain,
   UTM.uri,
-  AWD.description AS award_description,
+  UTM.transaction_description AS award_description,
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,

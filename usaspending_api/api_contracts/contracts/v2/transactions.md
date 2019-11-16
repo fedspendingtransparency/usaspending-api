@@ -42,24 +42,24 @@ This endpoint returns a list of transactions, their amount, type, action date, a
 # Data Structures
 
 ## TransactionResult (object)
-+ `id`: `1` (required, string)
-    The internal transaction id.
-+ `type`: `A` (required, string)
-    Award type code
-+ `type_description`: `BPA` (required, string)
 + `action_date`: `1999-01-15` (required, string)
     Action date in the format `YYYY-MM-DD`.
 + `action_type`: `C` (required, string, nullable)
     Action type code
-+ `action_type_description`: `description` (required, string)
-+ `modification_number`: `0` (required, string)
-+ `description: MANAGEMENT AND OPERATIONS (required, string, nullable)
-+ `federal_action_obligation`: 1234.56 (required, number, nullable)
-    Monetary value of the transaction. Null for results with award type codes that correspond to loans.
++ `action_type_description`: `description` (required, string, nullable)
++ `description`: MANAGEMENT AND OPERATIONS (required, string, nullable)
 + `face_value_loan_guarantee`: 1234.56 (required, number, nullable)
     Face value of the loan. Null for results with award type codes that **do not** correspond to loans.
++ `federal_action_obligation`: 1234.56 (required, number, nullable)
+    Monetary value of the transaction. Null for results with award type codes that correspond to loans.
++ `id`: `1` (required, string)
+    The internal transaction id.
++ `modification_number`: `0` (required, string)
 + `original_loan_subsidy_cost`: 234.12 (required, number, nullable)
     Original subsidy cost of the loan. Null for results with award type codes that **do not** correspond to loans.
++ `type`: `A` (required, string)
+    Award type code
++ `type_description`: `BPA` (required, string, nullable)
 
 ## PageMetaDataObject (object)
 + `page`: 1 (required, number)

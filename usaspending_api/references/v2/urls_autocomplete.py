@@ -5,7 +5,6 @@ from usaspending_api.references.v2.views.autocomplete import (
     CFDAAutocompleteViewSet,
     NAICSAutocompleteViewSet,
     PSCAutocompleteViewSet,
-    RecipientAutocompleteViewSet,
     GlossaryAutocompleteViewSet,
 )
 from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
@@ -18,6 +17,7 @@ from usaspending_api.references.v2.views.tas_autocomplete import (
     TASAutocompleteMAIN,
     TASAutocompleteSUB,
 )
+from usaspending_api.common.views import RemovedEndpointView
 
 
 urlpatterns = [
@@ -26,7 +26,7 @@ urlpatterns = [
     url(r"^cfda", CFDAAutocompleteViewSet.as_view()),
     url(r"^naics", NAICSAutocompleteViewSet.as_view()),
     url(r"^psc", PSCAutocompleteViewSet.as_view()),
-    url(r"^recipient", RecipientAutocompleteViewSet.as_view()),
+    url(r"^recipient", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     url(r"^glossary", GlossaryAutocompleteViewSet.as_view()),
     url(r"^city", CityAutocompleteViewSet.as_view()),
     url(r"^accounts/ata", TASAutocompleteATA.as_view()),

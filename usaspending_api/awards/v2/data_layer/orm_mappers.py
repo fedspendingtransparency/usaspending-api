@@ -44,7 +44,6 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_funding_amount", "total_funding"),
         *OFFICER_FIELDS.items(),
         # extra fields
-        ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
         ("awarding_agency_id", "_awarding_agency"),
         ("funding_agency_id", "_funding_agency"),
@@ -60,7 +59,6 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("id", "id"),
         ("generated_unique_award_id", "generated_unique_award_id"),
         ("piid", "piid"),
-        ("parent_award_piid", "parent_award_piid"),
         ("category", "category"),
         ("type", "type"),
         ("type_description", "type_description"),
@@ -72,7 +70,6 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("total_subaward_amount", "total_subaward_amount"),
         *OFFICER_FIELDS.items(),
         # extra fields
-        ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
         ("awarding_agency_id", "_awarding_agency"),
         ("funding_agency_id", "_funding_agency"),
@@ -80,12 +77,14 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("period_of_performance_current_end_date", "_end_date"),
         ("date_signed", "date_signed"),
         ("fpds_parent_agency_id", "_fpds_parent_agency_id"),
+        ("parent_award_piid", "_parent_award_piid"),
     ]
 )
 
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("transaction_id", "_transaction_id"),
         ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
@@ -98,6 +97,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_name", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
@@ -127,6 +127,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
 
 FPDS_CONTRACT_FIELDS = OrderedDict(
     [
+        ("transaction_id", "_transaction_id"),
         ("idv_type_description", "idv_type_description"),
         ("type_of_idc_description", "type_of_idc_description"),
         ("referenced_idv_agency_iden", "referenced_idv_agency_iden"),
@@ -204,6 +205,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
         ("legal_entity_state_code", "_rl_state_code"),
+        ("legal_entity_state_descrip", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
