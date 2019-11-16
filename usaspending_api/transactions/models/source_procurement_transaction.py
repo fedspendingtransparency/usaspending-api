@@ -17,8 +17,6 @@ class SourceProcurmentTransaction(models.Model):
         Put non-null fields on the top, all other fields sort alphabetically
     """
 
-    created_at = NaiveTimestampField(help_text="record creation datetime in Broker")
-    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker")
     detached_award_procurement_id = models.IntegerField(
         primary_key=True, help_text="surrogate primary key defined in Broker"
     )
@@ -50,7 +48,7 @@ class SourceProcurmentTransaction(models.Model):
     base_and_all_options_value = models.TextField(blank=True, null=True)
     base_exercised_options_val = models.TextField(blank=True, null=True)
     black_american_owned_busin = models.TextField(blank=True, null=True)
-    business_categories = ArrayField(models.TextField(), default=None)
+    business_categories = ArrayField(models.TextField(), default=None, null=True)
     c1862_land_grant_college = models.TextField(blank=True, null=True)
     c1890_land_grant_college = models.TextField(blank=True, null=True)
     c1994_land_grant_college = models.TextField(blank=True, null=True)
@@ -90,6 +88,7 @@ class SourceProcurmentTransaction(models.Model):
     country_of_product_or_desc = models.TextField(blank=True, null=True)
     country_of_product_or_serv = models.TextField(blank=True, null=True)
     county_local_government = models.TextField(blank=True, null=True)
+    created_at = NaiveTimestampField(help_text="record creation datetime in Broker", blank=True, null=True)
     current_total_value_award = models.TextField(blank=True, null=True)
     division_name = models.TextField(blank=True, null=True)
     division_number_or_office = models.TextField(blank=True, null=True)
@@ -302,6 +301,7 @@ class SourceProcurmentTransaction(models.Model):
     undefinitized_action = models.TextField(blank=True, null=True)
     undefinitized_action_desc = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(blank=True, null=True)
+    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker", blank=True, null=True)
     us_federal_government = models.TextField(blank=True, null=True)
     us_government_entity = models.TextField(blank=True, null=True)
     us_local_government = models.TextField(blank=True, null=True)

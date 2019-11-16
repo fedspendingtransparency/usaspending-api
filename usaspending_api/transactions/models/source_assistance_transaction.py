@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField, BooleanFieldWithDefault
 
 
 class SourceAssistanceTransaction(models.Model):
@@ -15,13 +15,10 @@ class SourceAssistanceTransaction(models.Model):
 
         Put non-null fields on the top, all other fields sort alphabetically
     """
-
-    created_at = NaiveTimestampField(help_text="creation datetime in Broker")
-    updated_at = NaiveTimestampField(help_text="update datetime in Broker")
     published_award_financial_assistance_id = models.IntegerField(
         primary_key=True, help_text="surrogate primary key defined in Broker"
     )
-    afa_generated_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
+    afa_generated_unique = models.TextField(help_text="natural key defined in Broker")
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)
@@ -46,6 +43,7 @@ class SourceAssistanceTransaction(models.Model):
     cfda_title = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
+    created_at = NaiveTimestampField(help_text="record creation datetime in Broker", blank=True, null=True)
     face_value_loan_guarantee = NumericField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True, db_index=True)
     federal_action_obligation = NumericField(blank=True, null=True)
@@ -66,7 +64,7 @@ class SourceAssistanceTransaction(models.Model):
     high_comp_officer4_full_na = models.TextField(blank=True, null=True)
     high_comp_officer5_amount = models.TextField(blank=True, null=True)
     high_comp_officer5_full_na = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(null=False, default=False)
+    is_active = BooleanFieldWithDefault()
     is_historical = models.NullBooleanField()
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
@@ -112,6 +110,7 @@ class SourceAssistanceTransaction(models.Model):
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(null=True, db_index=True)
+    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker", blank=True, null=True)
     uri = models.TextField(blank=True, null=True, db_index=True)
 
     class Meta:

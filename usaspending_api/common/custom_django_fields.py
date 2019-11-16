@@ -13,3 +13,10 @@ class NaiveTimestampField(models.Field):
 
     def db_type(self, connection):
         return "timestamp without time zone"
+
+
+class BooleanFieldWithDefault(models.Field):
+    """Django is broken, default value ignored in BooleanField"""
+
+    def db_type(self, connection):
+        return "boolean NOT NULL default false"
