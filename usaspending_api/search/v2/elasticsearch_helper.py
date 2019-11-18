@@ -365,7 +365,7 @@ def base_awards_query(filters):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name.keyword": v.get("city"),
                 }
                 min_match = 0
                 for location in locations.keys():
@@ -411,7 +411,7 @@ def base_awards_query(filters):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name.keyword": v.get("city"),
                 }
                 min_match = 0
                 for location in locations.keys():
@@ -442,9 +442,7 @@ def base_awards_query(filters):
         elif key == "award_ids":
             should = []
             for v in value:
-                should.append({"match": {"piid.keyword": v}})
-                should.append({"match": {"fain.keyword": v}})
-                should.append({"match": {"uri.keyword": v}})
+                should.append({"match": {"display_award_id": v}})
 
             query["bool"]["filter"]["bool"].update(
                 {
