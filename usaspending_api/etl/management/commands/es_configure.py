@@ -32,7 +32,7 @@ class Command(BaseCommand):
             "--awards", action="store_true", help="Load awards template instead of transaction template."
         )
 
-        parser.add_argument( # used by parent class
+        parser.add_argument(  # used by parent class
             "--template-only",
             action="store_true",
             help="When this flag is set, skip the cluster and index settings. Useful when creating a new index",
@@ -48,9 +48,13 @@ class Command(BaseCommand):
             run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
 
         if not awards:
-            run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name="transaction_template")
+            run_curl_cmd(
+                payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name="transaction_template"
+            )
         else:
-            run_curl_cmd(payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name="award_template")
+            run_curl_cmd(
+                payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name="award_template"
+            )
 
 
 def run_curl_cmd(**kwargs):
@@ -71,8 +75,12 @@ def get_elasticsearch_settings():
 
 def get_index_template(awards: bool):
     template = return_json_from_file(FILES["{}_template".format("award" if awards else "transaction")])
-    template["index_patterns"] = ["*{}".format(settings.ES_AWARDS_NAME_SUFFIX if awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)]
-    template["settings"]["index.max_result_window"] = settings.ES_AWARDS_MAX_RESULT_WINDOW if awards else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    template["index_patterns"] = [
+        "*{}".format(settings.ES_AWARDS_NAME_SUFFIX if awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)
+    ]
+    template["settings"]["index.max_result_window"] = (
+        settings.ES_AWARDS_MAX_RESULT_WINDOW if awards else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    )
     validate_known_fields(template, awards)
     return template
 
@@ -94,10 +102,16 @@ def return_json_from_file(path):
 
 
 def validate_known_fields(template, awards):
-    defined_fields = set([field for field in template["mappings"]["award_mapping" if awards else "transaction_mapping"]["properties"]])
+    defined_fields = set(
+        [field for field in template["mappings"]["award_mapping" if awards else "transaction_mapping"]["properties"]]
+    )
     load_columns = set(AWARD_VIEW_COLUMNS) if awards else set(TRANSACTION_VIEW_COLUMNS)
     if defined_fields ^ load_columns:  # check if any fields are not in both sets
-        raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!\n {}".format(defined_fields.difference(load_columns)))
+        raise RuntimeError(
+            "Mismatch between template and fields in ETL! Resolve before continuing!\n {}".format(
+                defined_fields.difference(load_columns)
+            )
+        )
 
 
 def retrieve_transaction_index_template(awards=False):
