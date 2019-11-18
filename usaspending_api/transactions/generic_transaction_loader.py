@@ -19,7 +19,7 @@ CHUNK_SIZE = 25000
 logger = logging.getLogger("script")
 
 
-class BaseTransferClass:
+class GenericTransactionLoader:
     is_incremental = False
     successful_run = False
     upsert_records = 0
@@ -164,13 +164,12 @@ class BaseTransferClass:
         """Loop through the batches of IDs and load using the ETL tables"""
         destination = ETLTable(dest_tablename)
         source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
+        transactions_remaining_count = self.total_ids_to_process
 
         for id_list in read_file_for_database_ids(str(self.file_path), CHUNK_SIZE):
             predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
             with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
                 record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
-            logger.info("Success on {:,} upserts".format(record_count))
+            transactions_remaining_count -= record_count
+            logger.info("{:,} successfull upserts, {:,} remaining.".format(record_count, transactions_remaining_count))
             self.upsert_records += record_count
-
-
-__all__ = ["BaseTransferClass"]

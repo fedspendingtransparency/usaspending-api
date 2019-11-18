@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand
 
-from usaspending_api.transactions.transfer_records_base import BaseTransferClass
+from usaspending_api.transactions.generic_transaction_loader import GenericTransactionLoader
 from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurmentTransaction
 
 
-class Command(BaseTransferClass, BaseCommand):
+class Command(GenericTransactionLoader, BaseCommand):
     help = "Upsert procurement transactions from a Broker database into an USAspending database"
     broker_select_sql = "SELECT {} FROM {}"
     broker_source_table_name = SourceProcurmentTransaction().broker_source_table
