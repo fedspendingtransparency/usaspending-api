@@ -151,8 +151,9 @@ class Command(BaseCommand):
             self.load_fpds_incrementally(last_load)
 
         if self.modified_award_ids:
-            logger.info("cleaning orphaned metadata")
-            destroy_orphans()
+            # TODO: reactivate once this is performant. Currently the tables are too large to allow
+            # logger.info("cleaning orphaned metadata")
+            # destroy_orphans()
             logger.info(
                 "updating award values ({} awards touched by transaction modifications)".format(
                     len(self.modified_award_ids)
