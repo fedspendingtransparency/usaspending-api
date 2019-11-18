@@ -65,8 +65,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return validated_data
 
     def database_data_layer(self):
-        queryset = subaward_filter(self.filters)
-        obligation_column = "amount"
+        if self.subawards:
+            queryset = subaward_filter(self.filters)
+            obligation_column = "amount"
+        else:
+            queryset = spending_over_time(self.filters)
+            obligation_column = "generated_pragmatic_obligation"
 
         values = ["fy"]
         if self.group == "month":
@@ -158,7 +162,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.filters = json_request["filters"]
 
         # Temporarily will handle Subawards with ORM and Awards with ES for proof of concept
-        if self.subawards:
+        if self.subawards or not self.filters.get("elasticsearch"):
             db_results, values = self.database_data_layer()
 
             # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
