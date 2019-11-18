@@ -571,7 +571,6 @@ def search_awards(request_data, lower_limit, limit):
         "query": base_awards_query(filters),
         "sort": [{query_sort: {"order": request_data["order"]}}],
     }
-    print(query)
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
             index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
