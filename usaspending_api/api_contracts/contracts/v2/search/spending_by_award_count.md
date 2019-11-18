@@ -66,6 +66,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `object_class` (optional, array[string])
++ `program_activity` (optional, array[number])
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)

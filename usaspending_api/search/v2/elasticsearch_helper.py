@@ -76,7 +76,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     keyword = request_data["filters"]["keywords"]
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data["fields"]]
-    query_fields.extend(["award_id"])
+    query_fields.extend(["award_id", "generated_unique_award_id"])
     query_sort = TRANSACTIONS_LOOKUP[request_data["sort"]]
     query = {
         "_source": query_fields,

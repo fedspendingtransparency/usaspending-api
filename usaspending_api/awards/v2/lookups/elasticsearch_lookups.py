@@ -21,6 +21,7 @@ TRANSACTIONS_LOOKUP = {
     "Award ID": "display_award_id",
     "awarding_agency_id": "awarding_agency_id",
     "internal_id": "award_id",
+    "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
 }
 
