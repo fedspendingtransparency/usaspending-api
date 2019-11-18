@@ -88,7 +88,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
-            index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, index)
+            index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, index)
             break
     else:
         logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
@@ -104,7 +104,7 @@ def search_transactions(request_data, lower_limit, limit):
 
 
 def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(settings.TRANSACTIONS_INDEX_ROOT, sub_index.replace("_", ""))
+    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
     query = {"query": base_query(keyword)}
 
     response = es_client_query(index=index_name, body=query, retries=retries)
@@ -137,7 +137,7 @@ def get_sum_aggregation_results(keyword, field="transaction_amount"):
     """
     Size has to be zero here because you only want the aggregations
     """
-    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     query = {"query": base_query(keyword), "aggs": {"transaction_sum": {"sum": {"field": field}}}}
 
     response = es_client_query(index=index_name, body=query, retries=10)
@@ -159,7 +159,7 @@ def get_download_ids(keyword, field, size=10000):
 
     Note: this only works for fields in ES of integer type.
     """
-    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
@@ -191,7 +191,7 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = "{}-*".format(settings.TRANSACTIONS_INDEX_ROOT)
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     query = {
         "query": base_query(keyword),
         "aggs": {
@@ -578,7 +578,7 @@ def search_awards(request_data, lower_limit, limit):
         results = format_for_frontend(response["hits"]["hits"], True)
         return True, results, total
     else:
-        return False, "There was an error connecting to the ElasticSearch cluster", None
+        return False, "There was an error connecting to the ElasticSearch cluster", 0
 
 
 def elastic_awards_count(request_data):
@@ -599,13 +599,14 @@ def elastic_awards_count(request_data):
         results = es_client_count(index=index_name, body=query, retries=10)
         if t == "directpayments":
             t = "direct_payments"
-        response.update({t: results["count"]})
         if results:
-            success &= True
+            response.update({t: results["count"]})
+        else:
+            success = False
     if success:
         return response
     else:
-        return False, "There was an error connecting to the ElasticSearch cluster", None
+        return "There was an error connecting to the ElasticSearch cluster"
 
 
 def elasticsearch_dollar_sum_aggregation(column_to_sum):

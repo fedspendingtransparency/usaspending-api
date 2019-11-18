@@ -1,5 +1,4 @@
 import json
-import os
 
 from datetime import datetime, timezone
 from django.conf import settings
@@ -10,7 +9,7 @@ from string import Template
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
-from usaspending_api.etl.management.commands.es_rapidloader import mapping_data_for_processing
+from usaspending_api.etl.management.commands.es_configure import retrieve_transaction_index_template
 
 
 class TestElasticSearchIndex:
@@ -23,7 +22,9 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.mapping, self.doc_type, _ = mapping_data_for_processing()
+        self.template = retrieve_transaction_index_template()
+        self.mappings = json.loads(self.template)["mappings"]
+        self.doc_type = str(list(self.mappings.keys())[0])
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
@@ -36,17 +37,17 @@ class TestElasticSearchIndex:
         """
         self.delete_index()
         self._refresh_materialized_views()
-        self.client.indices.create(self.index_name, self.mapping)
+        self.client.indices.create(self.index_name, self.template)
         create_aliases(self.client, self.index_name, True)
         self._add_contents()
 
     def _add_contents(self):
         """
-        Get all of the transactions presented by transaction_delta_view and
+        Get all of the transactions presented in the view and
         stuff them into the Elasticsearch index.
         """
         with connection.cursor() as cursor:
-            cursor.execute("select * from transaction_delta_view")
+            cursor.execute("SELECT * FROM {}".format(settings.ES_TRANSACTIONS_ETL_VIEW_NAME))
             transactions = ordered_dictionary_fetcher(cursor)
 
         for transaction in transactions:
@@ -63,32 +64,18 @@ class TestElasticSearchIndex:
     @staticmethod
     def _refresh_materialized_views():
         """
-        This materialized view is used by transaction_delta_view.sql, so
-        we will need to refresh it in order for transaction_delta_view to see
+        This materialized view is used by the es etl view, so
+        we will need to refresh it in order for the view to see
         changes to the underlying tables.
         """
         with connection.cursor() as cursor:
-            cursor.execute("refresh materialized view universal_transaction_matview;")
+            cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
 
     @classmethod
     def _generate_index_name(cls):
         return "test-{}-{}".format(
             datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
         )
-
-
-def ensure_transaction_delta_view_exists():
-    """
-    The transaction_delta_view is used to populate the Elasticsearch index.
-    This function will just ensure the view exists in the database.
-    """
-    transaction_delta_view_path = os.path.join(
-        settings.BASE_DIR, "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
-    )
-    with open(transaction_delta_view_path) as f:
-        transaction_delta_view = f.read()
-    with connection.cursor() as cursor:
-        cursor.execute(transaction_delta_view)
 
 
 def ensure_broker_server_dblink_exists():
@@ -116,12 +103,9 @@ def ensure_broker_server_dblink_exists():
         **{"BROKER_DB_" + k: v for k, v in settings.DATABASES["data_broker"].items()},
     }
 
-    extensions_script_path = os.path.join(
-        settings.BASE_DIR, "usaspending_api/database_scripts/extensions/extensions.sql"
-    )
-    broker_server_script_path = os.path.join(
-        settings.BASE_DIR, "usaspending_api/database_scripts/servers/broker_server.sql"
-    )
+    extensions_script_path = str(settings.APP_DIR / "database_scripts" / "extensions" / "extensions.sql")
+    broker_server_script_path = str(settings.APP_DIR / "database_scripts" / "servers" / "broker_server.sql")
+
     with open(extensions_script_path) as f1, open(broker_server_script_path) as f2:
         extensions_script = f1.read()
         broker_server_script = f2.read()

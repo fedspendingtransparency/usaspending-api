@@ -30,6 +30,7 @@ def tas_data(db):
         (["tas_rendering_label"], "ghi", {"tas_rendering_label": []}),
     ],
 )
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_awards_autocomplete(client, tas_data, fields, value, expected):
     """test partial-text search on awards."""
@@ -37,6 +38,7 @@ def test_awards_autocomplete(client, tas_data, fields, value, expected):
     check_autocomplete("tas", client, fields, value, expected)
 
 
+@pytest.mark.skip(reason="Deprecated endpoints; to remove later")
 @pytest.mark.django_db
 def test_bad_awards_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
