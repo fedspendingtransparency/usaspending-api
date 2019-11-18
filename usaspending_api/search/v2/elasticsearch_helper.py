@@ -575,9 +575,9 @@ def search_awards(request_data, lower_limit, limit):
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
             index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
-            break
         else:
-            if set(request_data["filters"]["award_type_codes"])
+            if set(request_data["filters"]["award_type_codes"]).issubset(award_types):
+                index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
