@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, destroy_orphans, delete_stale_fpds
+from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
