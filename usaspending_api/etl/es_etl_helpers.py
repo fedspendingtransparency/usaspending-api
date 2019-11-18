@@ -344,11 +344,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             job = fetch_jobs.get_nowait()
             printf({"msg": 'Preparing to download "{}"'.format(job.csv), "job": job.name, "f": "Download"})
 
-            sql_config = {
-                "starting_date": config["starting_date"],
-                "fiscal_year": job.fy,
-                "awards": config["awards"],
-            }
+            sql_config = {"starting_date": config["starting_date"], "fiscal_year": job.fy, "awards": config["awards"]}
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
             if os.path.isfile(job.csv):
@@ -428,7 +424,9 @@ def streaming_post_to_es(client, chunk, index_name, awards, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")):
+        for ok, item in helpers.streaming_bulk(
+            client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")
+        ):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -466,7 +464,9 @@ def create_aliases(client, index, awards, silent=False):
     # If the alias is on multiple indexes, the loads will fail!
     printf(
         {
-            "msg": "Putting alias '{}' on {}".format(settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
+            "msg": "Putting alias '{}' on {}".format(
+                settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
+            ),
             "job": None,
             "f": "ES Alias Put",
         }

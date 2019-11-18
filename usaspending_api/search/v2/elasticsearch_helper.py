@@ -614,3 +614,14 @@ def elastic_awards_count(request_data):
         return response
     else:
         return "There was an error connecting to the ElasticSearch cluster"
+
+
+def elasticsearch_dollar_sum_aggregation(column_to_sum):
+    return {
+        "sum_as_cents": {
+            "sum": {"script": {"lang": "painless", "source": "doc['{}'].value * 100".format(column_to_sum)}}
+        },
+        "sum_as_dollars": {
+            "bucket_script": {"buckets_path": {"sum_as_cents": "sum_as_cents"}, "script": "params.sum_as_cents / 100"}
+        },
+    }

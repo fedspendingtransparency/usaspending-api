@@ -12,6 +12,7 @@ MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_genera
 OVERLAY_VIEWS = [
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
     settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql",
+    settings.APP_DIR / "database_scripts" / "etl" / "award_delta_view.sql",
 ]
 DROP_OLD_MATVIEWS = settings.APP_DIR / "database_scripts" / "matviews" / "drop_old_matviews.sql"
 MATERIALIZED_VIEWS = OrderedDict(
