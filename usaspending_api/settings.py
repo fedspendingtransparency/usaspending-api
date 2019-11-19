@@ -50,7 +50,7 @@ if not USASPENDING_AWS_REGION:
 # AWS locations for CSV files
 CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
-BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads")
+BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads") + "/"
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
