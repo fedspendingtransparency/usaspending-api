@@ -1,6 +1,7 @@
 import copy
 import logging
 from datetime import datetime, timezone
+from calendar import monthrange
 
 from collections import OrderedDict
 from django.conf import settings
@@ -156,7 +157,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
         else:
-            end_date = "{}-{}-28".format(current_fy, datetime.now(timezone.utc).month)
+            current_month = datetime.now(timezone.utc).month
+            days_in_month = max(monthrange(current_fy, current_month))
+            end_date = "{}-{}-{}".format(current_fy, current_month, days_in_month)
 
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
         time_periods = self.filters.get("time_period", [default_time_period])
