@@ -52,29 +52,51 @@
           "type": "integer"
         },
         "piid": {
-          "index": false,
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "fain": {
-          "index": false,
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "uri": {
-          "index": false,
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "award_description": {
           "type": "text",
           "analyzer": "stemmer_analyzer"
         },
         "product_or_service_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "product_or_service_description": {
           "type": "text"
         },
         "naics_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "naics_description": {
           "type": "text"
@@ -98,10 +120,18 @@
           "type": "text"
         },
         "recipient_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "business_categories": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
@@ -110,6 +140,10 @@
           "format": "yyyy-MM-dd"
         },
         "action_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "fiscal_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
         },
@@ -172,26 +206,68 @@
           "index": false
         },
         "awarding_toptier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_toptier_agency_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "awarding_subtier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_subtier_agency_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "awarding_toptier_agency_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "funding_toptier_agency_code": {
+         "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "awarding_subtier_agency_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "funding_subtier_agency_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "awarding_toptier_agency_abbreviation": {
           "type": "text"
@@ -206,7 +282,12 @@
           "type": "text"
         },
         "cfda_number": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "cfda_title": {
           "type": "text",
@@ -218,37 +299,69 @@
         },
         "type_of_contract_pricing": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type_set_aside": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "extent_competed": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pulled_from": {
           "type": "text",
           "index": false
         },
         "pop_country_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_country_name": {
           "type": "text"
         },
         "pop_state_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_county_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_county_name": {
           "type": "text"
         },
         "pop_zip5": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_congressional_code": {
           "type": "keyword"
@@ -262,25 +375,55 @@
           }
         },
         "recipient_location_country_code": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": {
+              "type": "text"
+            }
+          }
         },
         "recipient_location_country_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_state_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_county_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_county_name": {
           "type": "text"
         },
         "recipient_location_zip5": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_congressional_code": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_city_name": {
           "type": "text",
@@ -294,8 +437,13 @@
           "type": "keyword",
           "null_value": "NULL"
         },
-         "treasury_account_identifiers": {
-          "type": "text"
+        "treasury_account_identifiers": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         }
       }
     }

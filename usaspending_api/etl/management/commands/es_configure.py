@@ -109,7 +109,7 @@ def validate_known_fields(template, awards):
     if defined_fields ^ load_columns:  # check if any fields are not in both sets
         raise RuntimeError(
             "Mismatch between template and fields in ETL! Resolve before continuing!\n {}".format(
-                defined_fields.difference(load_columns)
+                defined_fields.difference(load_columns) or load_columns.difference(defined_fields)
             )
         )
 

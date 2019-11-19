@@ -94,60 +94,49 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def create_elasticsearch_aggregation(self):
         all_aggregations = {
-            "aggs": {"group_by_fiscal_year": {"terms": {"field": "fiscal_year", "order": {"_key": "asc"}, "size": 50}}}
-        }
-
-        sum_obligated_amount_aggregation = elasticsearch_dollar_sum_aggregation("generated_pragmatic_obligation")
-
-        if self.group == "month" or self.group == "quarter":
-            field_name = "fiscal_{}".format(self.group)
-            nested_group_by_name = "group_by_{}".format(field_name)
-            all_aggregations["aggs"]["group_by_fiscal_year"]["aggs"] = {
-                nested_group_by_name: {
-                    "terms": {
-                        "field": field_name,
-                        "order": {"_key": "asc"},
-                        "size": 12 if self.group == "month" else 4,
+            "aggs": {
+                "transactions_over_time": {
+                    "date_histogram": {
+                        "field": "fiscal_date",
+                        "interval": "year" if self.group == "fiscal_year" else self.group,
+                        "format": "yyyy-MM-dd",
                     },
-                    "aggs": sum_obligated_amount_aggregation,
+                    "aggs": elasticsearch_dollar_sum_aggregation("generated_pragmatic_obligation"),
                 }
             }
-        else:
-            all_aggregations["aggs"]["group_by_fiscal_year"]["aggs"] = sum_obligated_amount_aggregation
+        }
 
         return all_aggregations
 
     def parse_elasticsearch_response(self, hits):
         results = []
 
-        if self.group == "fiscal_year":
-            for year_bucket in hits["aggregations"]["group_by_fiscal_year"]["buckets"]:
-                results.append(
-                    {
-                        "aggregated_amount": year_bucket["sum_as_dollars"]["value"],
-                        "time_period": {"fiscal_year": str(year_bucket["key"])},
-                    }
-                )
-        else:
-            nested_group_by_string = "group_by_fiscal_{}".format(self.group)
-            for year_bucket in hits["aggregations"]["group_by_fiscal_year"]["buckets"]:
-                for nested_bucket in year_bucket[nested_group_by_string]["buckets"]:
-                    results.append(
-                        {
-                            "aggregated_amount": nested_bucket["sum_as_dollars"]["value"],
-                            "time_period": {
-                                self.group: str(nested_bucket["key"]),
-                                "fiscal_year": str(year_bucket["key"]),
-                            },
-                        }
-                    )
+        for date_bucket in hits["aggregations"]["transactions_over_time"]["buckets"]:
+            key_as_date = datetime.strptime(date_bucket["key_as_string"], "%Y-%m-%d")
+            time_period = {"fiscal_year": str(key_as_date.year)}
+
+            if self.group == "quarter":
+                time_period["quarter"] = str(key_as_date.month // 3 + 1)
+            elif self.group == "month":
+                time_period["month"] = str(key_as_date.month)
+
+            results.append(
+                {
+                    "aggregated_amount": date_bucket.get("sum_as_dollars", {"value": 0})["value"],
+                    "time_period": time_period,
+                }
+            )
 
         return results
 
     def query_elasticsearch(self):
-        query = {"query": base_awards_query(self.filters), **self.create_elasticsearch_aggregation(), "size": 0}
+        query = {
+            "query": base_awards_query(self.filters, is_for_transactions=True),
+            **self.create_elasticsearch_aggregation(),
+            "size": 0,
+        }
 
-        hits = es_client_query(index="{}*".format(settings.TRANSACTIONS_INDEX_ROOT), body=query)
+        hits = es_client_query(index="*future-{}".format(settings.ES_TRANSACTIONS_NAME_SUFFIX), body=query)
 
         results = []
         if hits and hits["hits"]["total"] > 0:
@@ -161,20 +150,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
 
+        # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
+        # Otherwise, users will see blank results for years
+        current_fy = generate_fiscal_year(datetime.now(timezone.utc))
+        if self.group == "fiscal_year":
+            end_date = "{}-09-30".format(current_fy)
+        else:
+            end_date = "{}-{}-30".format(current_fy, datetime.now(timezone.utc).month)
+
+        default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
+        time_periods = self.filters.get("time_period", [default_time_period])
+
         # Temporarily will handle Subawards with ORM and Awards with ES for proof of concept
         if self.subawards or not self.filters.get("elasticsearch"):
             db_results, values = self.database_data_layer()
-
-            # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
-            # Otherwise, users will see blank results for years
-            current_fy = generate_fiscal_year(datetime.now(timezone.utc))
-            if self.group == "fiscal_year":
-                end_date = "{}-09-30".format(current_fy)
-            else:
-                end_date = "{}-{}-30".format(current_fy, datetime.now(timezone.utc).month)
-
-            default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
-            time_periods = self.filters.get("time_period", [default_time_period])
 
             results = bolster_missing_time_periods(
                 filter_time_periods=time_periods,
