@@ -76,7 +76,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     keyword = request_data["filters"]["keywords"]
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data["fields"]]
-    query_fields.extend(["award_id"])
+    query_fields.extend(["award_id", "generated_unique_award_id"])
     query_sort = TRANSACTIONS_LOOKUP[request_data["sort"]]
     query = {
         "_source": query_fields,
@@ -276,10 +276,9 @@ def base_awards_query(filters, is_for_transactions=False):
                     z = y.join(x)
                 else:
                     z = v
-                print(y)
                 queries.append({"query_string": {"query": z}})
 
-            query["bool"]["filter"].update({"dis_max": {"queries": queries}})
+            query["bool"]["filter"]["bool"]["should"] = query["bool"]["filter"]["bool"]["should"] + [{"dis_max": {"queries": queries}}]
 
         elif key == "time_period":
             should = []
@@ -298,8 +297,17 @@ def base_awards_query(filters, is_for_transactions=False):
                 )
             query["bool"].update({"should": should, "minimum_should_match": 1})
 
-        # elif key == "award_type_codes":
-        #     query.update({"terms": {"type": value}})
+        elif key == "award_type_codes":
+            should = []
+            for v in value:
+                should.append({"match": {"type": v}})
+            query["bool"]["filter"]["bool"].update(
+                {
+                    "should": query["bool"]["filter"]["bool"]["should"] + should,
+                    "minimum_should_match": int(query["bool"]["filter"]["bool"].get("minimum_should_match") or 0)
+                                            + 1,
+                }
+            )
 
         elif key == "agencies":
             funding = False
@@ -358,7 +366,7 @@ def base_awards_query(filters, is_for_transactions=False):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name.keyword": v.get("city"),
                 }
                 min_match = 0
                 for location in locations.keys():
@@ -404,7 +412,7 @@ def base_awards_query(filters, is_for_transactions=False):
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name.keyword": v.get("city"),
                 }
                 min_match = 0
                 for location in locations.keys():
@@ -436,9 +444,7 @@ def base_awards_query(filters, is_for_transactions=False):
         elif key == "award_ids":
             should = []
             for v in value:
-                should.append({"match": {"piid.keyword": v}})
-                should.append({"match": {"fain.keyword": v}})
-                should.append({"match": {"uri.keyword": v}})
+                should.append({"match": {"display_award_id": v}})
 
             query["bool"]["filter"]["bool"].update(
                 {
@@ -533,7 +539,7 @@ def base_awards_query(filters, is_for_transactions=False):
             )
 
     # i am sorry about this
-    if query["bool"]["filter"]["bool"]["should"] == None:
+    if len(query["bool"]["filter"]["bool"]["should"]) == None:
         query["bool"]["filter"]["bool"].pop("should")
         if query["bool"]["filter"]["bool"] == {}:
             query["bool"]["filter"].pop("bool")
@@ -565,14 +571,12 @@ def search_awards(request_data, lower_limit, limit):
         "query": base_awards_query(filters),
         "sort": [{query_sort: {"order": request_data["order"]}}],
     }
-    print(query)
     for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
             index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
-            break
-    else:
-        logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
-        return False, "Bad/Missing Award Types requested", None
+        else:
+            if set(request_data["filters"]["award_type_codes"]).issubset(award_types):
+                index_name = "{}-{}".format(settings.AWARDS_INDEX_ROOT, index)
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:

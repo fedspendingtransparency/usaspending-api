@@ -1,5 +1,6 @@
 from django.db import models
 
+from django.contrib.postgres.fields import ArrayField
 from usaspending_api.common.helpers.date_helper import fy
 
 
@@ -117,6 +118,7 @@ class TransactionNormalized(models.Model):
         max_digits=23, decimal_places=2, blank=True, null=True, help_text="Assistance Data variable."
     )
     unique_award_key = models.TextField(null=True, db_index=True)  # From broker.
+    business_categories = ArrayField(models.TextField(), default=list)
 
     def __str__(self):
         return "%s award: %s" % (self.type_description, self.award)

@@ -6,8 +6,10 @@ from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.search.tests.test_mock_data_search import all_filters
+from usaspending_api.search.tests.test_mock_data_search import non_legacy_filters, legacy_filters
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
+from usaspending_api.awards.models import Award
+from usaspending_api.references.models.ref_program_activity import RefProgramActivity
 
 
 @pytest.fixture
@@ -180,6 +182,21 @@ def spending_by_award_test_data():
         awarding_subtier_agency_name="awarding subtier 8006",
     )
 
+    # Ref Program Activity
+    ref_program_activity_1 = {"id": 1}
+    mommy.make("references.RefProgramActivity", **ref_program_activity_1)
+
+    # Ref Object Class
+    ref_object_class_1 = {"id": 1, "object_class": "111"}
+    mommy.make("references.ObjectClass", **ref_object_class_1)
+
+    # Financial Accounts by Awards
+    financial_accounts_by_awards_1 = {
+        "award": Award.objects.get(pk=1),
+        "program_activity": RefProgramActivity.objects.get(pk=1),
+    }
+    mommy.make("awards.FinancialAccountsByAwards", **financial_accounts_by_awards_1)
+
 
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, spending_by_award_test_data, refresh_matviews):
@@ -189,7 +206,7 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data,
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps(
-            {"subawards": True, "fields": ["Sub-Award ID"], "sort": "Sub-Award ID", "filters": all_filters()}
+            {"subawards": True, "fields": ["Sub-Award ID"], "sort": "Sub-Award ID", "filters": non_legacy_filters()}
         ),
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -263,7 +280,20 @@ def test_spending_by_award_success(client, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": all_filters()}),
+        data=json.dumps(
+            {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": non_legacy_filters()}
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_spending_by_award_legacy_filters(client, refresh_matviews):
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps({"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": legacy_filters()}),
     )
     assert resp.status_code == status.HTTP_200_OK
 

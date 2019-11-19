@@ -255,14 +255,8 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "naics_codes":
             in_query = [v for v in value]
-            # if len(in_query) != 0:
-            naics_query = Q()
-            for v in value:
-                if len(v) < 6:
-                    naics_query |= Q(naics_code__startswith=v)
-                else:
-                    naics_query |= Q(naics_code=v)
-                queryset = queryset.filter(naics_query)
+            if len(in_query) != 0:
+                queryset = queryset.filter(naics_code__in=in_query)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
@@ -299,22 +293,19 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         # Federal Account Filter
         elif key == "object_class":
-            faba_flag = True
             result = Q()
             for oc in value:
                 subresult = Q()
-                for (key, values) in oc.items():
-                    subresult &= filter_on("treasury_account__program_balances__object_class", key, values)
+                subresult &= filter_on("award__financial_set__object_class", "object_class", oc)
                 result |= subresult
-            faba_queryset = faba_queryset.filter(result)
+            queryset = queryset.filter(result)
 
         # Federal Account Filter
         elif key == "program_activity":
-            faba_flag = True
             or_queryset = Q()
             for v in value:
-                or_queryset |= Q(treasury_account__program_balances__program_activity__program_activity_code=v)
-            faba_queryset = faba_queryset.filter(or_queryset)
+                or_queryset |= Q(award__financial_set__program_activity__id=v)
+            queryset = queryset.filter(or_queryset)
 
     if faba_flag:
         award_ids = faba_queryset.values("award_id")
