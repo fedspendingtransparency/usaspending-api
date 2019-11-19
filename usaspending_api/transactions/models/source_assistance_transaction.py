@@ -15,6 +15,7 @@ class SourceAssistanceTransaction(models.Model):
 
         Put non-null fields on the top, all other fields sort alphabetically
     """
+
     published_award_financial_assistance_id = models.IntegerField(
         primary_key=True, help_text="surrogate primary key defined in Broker"
     )

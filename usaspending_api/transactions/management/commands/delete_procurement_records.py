@@ -23,6 +23,7 @@ class Command(GenericTransactionLoader, BaseCommand):
         parser.add_argument(
             "--date",
             dest="datetime",
+            required=True,
             type=datetime_command_line_argument_type(naive=True),  # Broker and S3 date/times are naive.
             help="Load/Reload records from the provided datetime to the script execution start time.",
         )
@@ -31,6 +32,7 @@ class Command(GenericTransactionLoader, BaseCommand):
         logger.info("STARTING SCRIPT")
         ids = self.determine_deleted_transactions(options["datetime"].date())
         import json
+
         logger.warn(json.dumps(ids))
 
     @staticmethod
@@ -59,19 +61,29 @@ class Command(GenericTransactionLoader, BaseCommand):
 
             file_date = datetime.strptime(key_name[: key_name.find("_")], "%m-%d-%Y").date()
 
-            if "/" not in key_name and file_date >= date:
-                with open("filename", "r+b") as data:
-                    s3_bucket.download_fileobj(key_name, data)
-                    data.seek(0)
-                    reader = [d.split(",") for d in data.read().decode("utf-8").splitlines()]
-                    # data.seek(0)
-                    # reader = csv.reader(data.read().decode("utf-8").splitlines())
+            if "/" in key_name or file_date < date:
+                continue
 
-                # next(reader)  # skip the header
-                unique_key_list = set([rows[0] for rows in reader[1:]])
+            reader = list()
+            logger.warn("========= {}".format(key_name))
 
-                if unique_key_list:
-                    ids_to_delete[file_date.strftime("%Y-%m-%d")] = unique_key_list
+            with open("filename", "r+b") as data:
+                s3_bucket.download_fileobj(key_name, data)
+                data.seek(0)
+                logger.warn(data.read().decode("utf-8"))
+                return
+                reader = [d.split(",") for d in data.read().decode("utf-8").splitlines()]
+                # data.seek(0)
+                # reader = csv.reader(data.read().decode("utf-8").splitlines())
+
+            # next(reader)  # skip the header
+
+            for rows in reader:
+                logger.warn(rows)
+            unique_key_list = list([int(rows[0]) for rows in reader[1:]])
+
+            if unique_key_list:
+                ids_to_delete[file_date.strftime("%Y-%m-%d")] = unique_key_list
 
         total_ids = sum([len(v) for v in ids_to_delete.values()])
         logger.info("Number of records to delete: {}".format(total_ids))
