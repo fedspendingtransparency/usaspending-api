@@ -156,7 +156,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
         else:
-            end_date = "{}-{}-30".format(current_fy, datetime.now(timezone.utc).month)
+            end_date = "{}-{}-28".format(current_fy, datetime.now(timezone.utc).month)
 
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
         time_periods = self.filters.get("time_period", [default_time_period])
