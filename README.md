@@ -11,18 +11,23 @@ _This API is utilized by USAspending.gov to obtain all federal spending data whi
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-You can install and run all USAspending components with just [Docker](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/). To develop, you will require:
-- [`python3`](https://docs.python-guide.org/starting/installation/#python-3-installation-guides)
-- [`pyenv`](https://github.com/pyenv/pyenv/#installation) using Python 3.5.x
-  - _NOTE: Read full install docs. `brew install` needs to be followed by additional steps to modify and source your `~/.bash_profile`_  
-- [`PostgreSQL`](https://www.postgresql.org/download/) 10.x (with a dedicated `data_store_api` database)
-- [`direnv`](https://github.com/direnv/direnv#install)
-  - For Mac OS, be sure to put the hook in your `~/.bash_profile`, not `~/.bashrc`
+- [`Docker`](https://docs.docker.com/install/) which will handle the other application dependencies.
 - `Bash` or another Unix Shell equivalent
-  - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+    - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+- [`Git`](https://git-scm.com/downloads)
+
+#### If not using Docker:
+> Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools.
+
 - Command line package manager
-  - Windows' WSL bash uses `apt-get`
-  - Mac OS users will use [`Homebrew`](https://brew.sh/)
+    - Windows' WSL bash uses `apt-get`
+    - MacOS users will use [`Homebrew`](https://brew.sh/)
+    - Linux users already know their package manager (yum, apt, pacman, etc.)
+- [`PostgreSQL`](https://www.postgresql.org/download/) version 10.x (with a dedicated `data_store_api` database)
+- [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 6.3
+- Python 3.7 environment
+  - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
+
 
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
@@ -40,7 +45,7 @@ There are three documented options for setting up a local database in order to r
 
 #### Option 1: Using a Locally Hosted Postgres Database
 Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
- - ['Postgres Setup Help'](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
+- [Postgres Setup Help](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
 
 Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
 
@@ -48,8 +53,7 @@ Make sure to grant whatever user you created for the data_store api database sup
 
 #### Option 2: Using the Docker Compose Postgres Database
 See below for basic setup instructions. For help with Docker Compose:
- - [Docker Installation](https://docs.docker.com/install/)
- - [Docker Compose](https://docs.docker.com/compose/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
 
 ##### Database Setup and Initialization with Docker Compose
@@ -58,13 +62,13 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-	- `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
+    - `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
 
-	- `docker-compose run usaspending-manage python -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+    - `docker-compose run usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
-	- `docker-compose run usaspending-manage python -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+    - `docker-compose run usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-	- `docker-compose up usaspending-db-sql`, then `docker-compose up usaspending-db-init` will provision the custom materialized views which are required by certain API endpoints.
+    - `docker-compose run usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
 
 ##### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
@@ -118,17 +122,17 @@ Once these are satisfied, simply run:
     (usaspending-api) $ pytest
 
 #### Required Python Libraries
-Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.5.x is being used (the latest RHEL package available for `python35u`: _`3.5.6` as of this writing_)
+Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.7.x is being used (the latest RHEL package available for `python36u`: _as of this writing_)
 
-    $ pyenv install 3.5.6
-    $ pyenv local 3.5.6
+    $ pyenv install 3.7.2
+    $ pyenv local 3.7.2
     $ python -m venv .venv/usaspending-api
     $ source .venv/usaspending-api/bin/activate
 
 
 Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
 
-    (usaspending-api) $ 
+    (usaspending-api) $
 
 [`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
 
@@ -155,12 +159,12 @@ To satisfy these dependencies and include execution of these tests, do the follo
 1. Ensure you have [`Docker`](https://docs.docker.com/install/) installed and running on your machine
 1. Ensure the `Broker` source code is checked out alongside this repo at `../data-act-broker-backend`
 1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and pointing to a live PostgreSQL server (no database required)
-1. Ensure you have built the `Broker` backend Docker image by running: 
+1. Ensure you have built the `Broker` backend Docker image by running:
 
 ```shell
     (usaspending-api) $ docker build -t dataact-broker-backend ../data-act-broker-backend
 ```
-    
+
 _NOTE: Broker source code should be re-fetched and image rebuilt to ensure latest integration is tested_
 
 Re-running the test suite using `pytest -rs` with these dependencies satisfied should yield no more skips of the broker integration tests.
