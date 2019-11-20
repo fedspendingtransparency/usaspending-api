@@ -48,9 +48,9 @@ if not USASPENDING_AWS_REGION:
     USASPENDING_AWS_REGION = os.environ.get("USASPENDING_AWS_REGION")
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads")
+CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
-BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads")
+BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads") + "/"
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
@@ -244,8 +244,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = str(APP_DIR / "static/")
-STATICFILES_DIRS = (str(APP_DIR / "static_doc_files"),)
+STATIC_ROOT = str(APP_DIR / "static/") + "/"
+STATICFILES_DIRS = (str(APP_DIR / "static_doc_files") + "/",)
 
 LOGGING = {
     "version": 1,
