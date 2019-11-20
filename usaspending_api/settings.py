@@ -244,8 +244,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = str(APP_DIR / "static/")
-STATICFILES_DIRS = (str(APP_DIR / "static_doc_files"),)
+STATIC_ROOT = str(APP_DIR / "static/") + "/"
+STATICFILES_DIRS = (str(APP_DIR / "static_doc_files") + "/",)
 
 LOGGING = {
     "version": 1,
