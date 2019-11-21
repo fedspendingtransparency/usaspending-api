@@ -111,6 +111,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         # "Place of Performance" fields below
         ("place_of_perform_country_c", "_pop_location_country_code"),
         ("place_of_perform_country_n", "_pop_country_name"),
+        ("place_of_perform_county_co", "_pop_county_code"),
         ("place_of_perform_county_na", "_pop_county_name"),
         ("place_of_performance_city", "_pop_city_name"),
         ("place_of_perfor_state_code", "_pop_state_code"),
@@ -220,6 +221,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_performance_state", "_pop_state_code"),
         ("place_of_perfor_state_desc", "_pop_state_name"),
         ("place_of_perform_city_name", "_pop_city_name"),
+        ("place_of_perform_county_co", "_pop_county_code"),
         ("place_of_perform_county_na", "_pop_county_name"),
         ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_congr", "_pop_congressional_code"),
