@@ -4,15 +4,12 @@ from django.db import connection
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 
-logger = logging.getLogger('console')
+logger = logging.getLogger("console")
 # if we're ever planning to run this again, update this to receive the app
 # list as a command argument instead of hard-coding here
-app_list = ['accounts', 'awards', 'common', 'financial_activities', 'references', 'submissions']
+app_list = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]
 
-remove_ghost_migrations = (
-    "DELETE FROM django_migrations "
-    "WHERE app in %s "
-)
+remove_ghost_migrations = "DELETE FROM django_migrations " "WHERE app in %s "
 
 
 class Command(BaseCommand):
@@ -23,6 +20,7 @@ class Command(BaseCommand):
     2. adds a new set of 0001_initial migration files that reflect the
        current state of the database
     """
+
     help = "Resets Django migrations"
 
     def handle(self, *args, **options):
@@ -34,9 +32,8 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             cursor.execute(remove_ghost_migrations, [tuple(app_list)])
             rows = cursor.rowcount
-        logger.info('Removed {} django_migrations records for apps {}'.format(
-            rows, app_list))
+        logger.info("Removed {} django_migrations records for apps {}".format(rows, app_list))
 
         # fake the intial migrations
         for app in app_list:
-            call_command('migrate', app_label=app, fake_initial=True, interactive=False)
+            call_command("migrate", app_label=app, fake_initial=True, interactive=False)
