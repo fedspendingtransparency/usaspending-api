@@ -11,7 +11,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
@@ -78,10 +78,10 @@ class BaseDownloadViewSet(APIView):
     def process_request(self, download_job):
         if settings.IS_LOCAL:
             # Locally, we do not use SQS
-            csv_generation.generate_csvs(download_job=download_job)
+            download_generation.generate_csvs(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
-            # csv_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
+            # download_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
                 message="Passing download_job {} to SQS".format(download_job.download_job_id), download_job=download_job
             )

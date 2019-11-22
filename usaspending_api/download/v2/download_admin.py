@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db.models import Q
 
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
@@ -27,7 +27,7 @@ class DownloadAdministrator:
     def restart_download_operation(self):
         if process_is_local():
             self.update_download_job(job_status_id=JOB_STATUS_DICT["ready"], error_message=None)
-            csv_generation.generate_csvs(download_job=self.download_job)
+            download_generation.generate_csvs(download_job=self.download_job)
         else:
             self.push_job_to_queue()
             self.update_download_job(job_status_id=JOB_STATUS_DICT["queued"], error_message=None)

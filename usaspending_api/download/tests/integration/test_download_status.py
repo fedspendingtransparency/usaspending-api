@@ -11,7 +11,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 
 
 @pytest.fixture
@@ -122,7 +122,7 @@ def download_test_data(db):
 
 @pytest.mark.django_db(transaction=True)
 def test_download_assistance_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -153,7 +153,7 @@ def test_download_assistance_status(client, download_test_data, refresh_matviews
 
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -193,7 +193,7 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
 
 @pytest.mark.django_db(transaction=True)
 def test_download_contract_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -231,7 +231,7 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
 
 @pytest.mark.django_db(transaction=True)
 def test_download_idv_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -263,7 +263,7 @@ def test_download_idv_status(client, download_test_data, refresh_matviews):
 
 @pytest.mark.django_db(transaction=True)
 def test_download_transactions_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -308,7 +308,7 @@ def test_download_transactions_status(client, download_test_data, refresh_matvie
 
 @pytest.mark.django_db(transaction=True)
 def test_download_transactions_limit(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     dl_resp = client.post(
         "/api/v2/download/transactions/",

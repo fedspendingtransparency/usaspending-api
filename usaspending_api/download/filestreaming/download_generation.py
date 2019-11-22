@@ -18,7 +18,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (
@@ -47,7 +47,7 @@ def generate_csvs(download_job):
     piid = json_request.get("piid", None)
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
-    extension = json_request["file_format"]
+    extension = json_request.get("file_format")
 
     file_name = start_download(download_job)
     try:
@@ -64,7 +64,9 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension)
+            parse_source(
+                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension
+            )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -143,21 +145,21 @@ def get_csv_sources(json_request):
 
             if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
                 # only generate d1 files if the user is asking for contract data
-                d1_source = CsvSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
+                d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
                 d1_filters = {"{}__isnull".format(VALUE_MAPPINGS[download_type]["contract_data"]): False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
 
             if award_type_codes & set(assistance_type_mapping.keys()):
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = CsvSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
+                d2_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
                 d2_filters = {"{}__isnull".format(VALUE_MAPPINGS[download_type]["assistance_data"]): False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
-            account_source = CsvSource(
+            account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
             )
             account_source.queryset = filter_function(
@@ -430,13 +432,13 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         logger.error(e)
         # temp file contains '\copy ([SQL]) To STDOUT  ...' so the SQL is 7 chars in up to ' To STDOUT '
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-        logger.error("Faulty SQL: {}".format(sql[7:sql.find(" To STDOUT ")]))
+        logger.error("Faulty SQL: {}".format(sql[7 : sql.find(" To STDOUT ")]))
         raise e
     except Exception as e:
         logger.error(e)
         # temp file contains '\copy ([SQL]) To STDOUT ...' so the SQL is 7 chars in up to ' To STDOUT '
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-        logger.error("Faulty SQL: {}".format(sql[7:sql.find(" To STDOUT ")]))
+        logger.error("Faulty SQL: {}".format(sql[7 : sql.find(" To STDOUT ")]))
         raise e
 
 

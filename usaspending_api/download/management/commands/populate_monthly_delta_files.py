@@ -15,8 +15,8 @@ from django.db.models import Case, When, Value, CharField, F
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
-from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.download_generation import split_and_zip_csvs
+from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
@@ -74,7 +74,7 @@ class Command(BaseCommand):
         award_map = AWARD_MAPPINGS[award_type]
 
         # Create Source and update fields to include correction_delete_ind
-        source = CsvSource(
+        source = DownloadSource(
             "transaction",
             award_map["letter_name"].lower(),
             "transactions",
@@ -323,11 +323,11 @@ class Command(BaseCommand):
     @staticmethod
     def apply_annotations_to_sql(raw_query, aliases):
         """
-        This function stolen from csv_generation.apply_annotations_to_sql and tweaked for this module.  This is
+        This function stolen from download_generation.apply_annotations_to_sql and tweaked for this module.  This is
         a hack to get the Delta scripts working.  It is possible this flavor of the function might work in
-        csv_generation as well, but this is a rush job.
+        download_generation as well, but this is a rush job.
 
-        TODO: See if this can be reconciled with csv_generation.apply_annotations_to_sql
+        TODO: See if this can be reconciled with download_generation.apply_annotations_to_sql
 
         This function serves two purposes:
             - apply aliases to all the return values in raw_query

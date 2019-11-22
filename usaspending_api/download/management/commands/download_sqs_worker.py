@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
 from usaspending_api.download.download_exceptions import FatalError
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
@@ -136,7 +136,7 @@ def download_service_app(download_job_id):
 
     # Retrieve the data and write to the CSV(s)
     try:
-        csv_generation.generate_csvs(download_job=download_job)
+        download_generation.generate_csvs(download_job=download_job)
     except Exception:
         write_to_log(message="Caught exception", download_job=download_job, is_error=True)
         return 11  # arbitrary positive integer

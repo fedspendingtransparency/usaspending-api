@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
@@ -73,7 +73,7 @@ class Command(BaseCommand):
             # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
             #       modify your bulk download settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-            csv_generation.generate_csvs(download_job=download_job)
+            download_generation.generate_csvs(download_job=download_job)
             if cleanup:
                 # Get all the files that have the same prefix except for the update date
                 file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'
