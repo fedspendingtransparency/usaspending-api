@@ -8,13 +8,16 @@ This endpoint is used by the Advanced Search download page.
 ## POST
 
 This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
-        
+
 + Request (application/json)
     + Attributes (object)
         + `columns` (optional, array[string])
         + `filters` (required, Filters, fixed-type)
         + `file_format` (optional, string)
             + Default: `csv`
+            + Members
+                - `csv`
+                - `tsv`
         + `limit` (optional, number)
     + Body
 
@@ -24,8 +27,8 @@ This route sends a request to the backend to begin generating a zipfile of award
                 },
                 "columns": [
                     "assistance_award_unique_key",
-                    "award_id_fain", 
-                    "award_id_uri", 
+                    "award_id_fain",
+                    "award_id_uri",
                     "sai_number",
                     "total_funding_amount"
                 ]
@@ -33,26 +36,26 @@ This route sends a request to the backend to begin generating a zipfile of award
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `file_name` (required, string) 
+        + `file_name` (required, string)
             Is the name of the zipfile containing CSVs that will be generated (file_name is timestamp followed by `_transactions` or `_awards`).
-        + `message` (required, string, nullable) 
+        + `message` (required, string, nullable)
             A human readable error message if the `status` is `failed`, otherwise it is `null`.
-        + `seconds_elapsed` (required, string, nullable) 
+        + `seconds_elapsed` (required, string, nullable)
             Is the time taken to genereate the file (if `status` is `finished` or `failed`), or time taken so far (if `running`).
-        + `status` (required, enum[string]) 
+        + `status` (required, enum[string])
             A string representing the current state of the CSV generation request.
             + Members
                 + `failed`
                 + `finished`
                 + `ready`
                 + `running`
-        + `total_columns` (required, number, nullable) 
+        + `total_columns` (required, number, nullable)
             Is the number of columns in the CSV, or `null` if not finished.
-        + `total_rows` (required, number, nullable) 
+        + `total_rows` (required, number, nullable)
             Is the number of rows in the CSV, or `null` if not finished.
-        + `total_size` (required, number, nullable) 
+        + `total_size` (required, number, nullable)
             Is the estimated file size of the CSV in kilobytes, or `null` if not finished.
-        + `url` (required, string) 
+        + `url` (required, string)
             The URL for the file.
 
 # Data Structures
