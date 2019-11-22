@@ -1,8 +1,8 @@
+import pytest
+
+from django.conf import settings
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, cleanse_values
-from django.conf import settings
-import os
-import pytest
 
 
 @pytest.mark.django_db(transaction=True)
@@ -22,10 +22,10 @@ def test_threaded_data_loader():
     )
 
     # We'll be using the tas_list.csv, modified to have fewer lines
-    file_path_1 = os.path.join(settings.BASE_DIR, "usaspending_api/data/testing_data/tas_list_1.csv")
+    file_path_1 = str(settings.APP_DIR / "data" / "testing_data" / "tas_list_1.csv")
     file_1_account_title = "Compensation of Members and Related Administrative Expenses, Senat"
 
-    file_path_2 = os.path.join(settings.BASE_DIR, "usaspending_api/data/testing_data/tas_list_2.csv")
+    file_path_2 = str(settings.APP_DIR / "data" / "testing_data" / "tas_list_2.csv")
     file_2_account_title = "Update Test Name"
 
     # Load it once

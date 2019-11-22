@@ -10,9 +10,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger(__name__)
 
 # Based on SAM Functional Data Dictionary
-SAM_FUNCTIONAL_DATA_DICTIONARY_CSV = os.path.join(
-    settings.BASE_DIR, "usaspending_api", "data", "sam_functional_data_dictionary.csv"
-)
+SAM_FUNCTIONAL_DATA_DICTIONARY_CSV = str(settings.APP_DIR / "data" / "sam_functional_data_dictionary.csv")
 DUNS_BUSINESS_TYPES_MAPPING = {}
 
 

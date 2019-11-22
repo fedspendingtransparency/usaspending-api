@@ -99,7 +99,7 @@ def test_load_ids_empty():
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.psycopg2.connect")
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
 @patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
@@ -129,7 +129,7 @@ def test_load_ids_dummy_id(
     mock__fy,
     mock__extract_broker_objects,
     mock___fetch_subtier_agency_id,
-    mock_psycopg2_connect,
+    mock_connection,
 ):
     """
     End-to-end unit test (which should not attempt database connections) to exercise the code-under-test
@@ -203,10 +203,20 @@ def test_setup_load_lists(monkeypatch):
     assert pairs == " val1=4, string_val=bob" or pairs == " string_val=bob, val1=4"
 
 
-def test_load_from_broker(monkeypatch):
+def test_load_from_broker():
     # There isn't much to test here since this is just a basic DB query
-    mock_cursor(monkeypatch, ["mock thing 1", "mock thing 2"])
-    assert _extract_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
+
+    # Setup Mocks
+    dummy_data = ["mock thing 1", "mock thing 2"]
+    mock_cursor = MagicMock()
+    mock_cursor.execute.return_value = None
+    mock_cursor.fetchall.return_value = dummy_data
+    mock_cursor.mogrify = lambda val1, val2: str(val2[0]).encode()
+    mock_broker_conn = MagicMock()
+    mock_broker_conn.connection.cursor().__enter__.return_value = mock_cursor
+
+    with patch.dict("usaspending_api.etl.transaction_loaders.fpds_loader.connections", data_broker=mock_broker_conn):
+        assert _extract_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
 
 
 # This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
@@ -238,7 +248,7 @@ def test_create_load_object(monkeypatch):
         "location_country_code": "COUNTRYCODE",
         "country_name": "COUNTRYNAME",
         "state_code": "STATECODE",
-        "state_description": "STATEDESCRIPTION",
+        "state_name": "STATEDESCRIPTION",
         "county_code": "COUNTYCODE",
         "county_name": "COUNTYNAME",
         "congressional_code": "CONGRESSIONALCODE",
@@ -250,6 +260,7 @@ def test_create_load_object(monkeypatch):
         "zip5": "ZIPFIVE",
         "zip_last4": "ZIP LAST 4",
         "is_fpds": True,
+        "data_source": "DBR",
         "place_of_performance_flag": False,
         "recipient_flag": True,
         "transaction_unique_id": 5,
@@ -267,9 +278,19 @@ def test_create_load_object(monkeypatch):
     assert actual_result == result
 
 
+@patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
 @patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
-def test_load_transactions(mock__fetch_subtier_agency_id, monkeypatch):
+def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     """Mostly testing that everything gets the primary keys it was looking for"""
+
+    # Setup Mocks
+    dummy_data = [[10]]
+    mock_cursor = MagicMock()
+    mock_cursor.execute.return_value = None
+    mock_cursor.fetchall.return_value = dummy_data
+    mock_cursor.mogrify = lambda val1, val2: str(val2[0]).encode()
+    mock_connection.connection.cursor().__enter__.return_value = mock_cursor
+
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
@@ -299,6 +320,4 @@ def test_load_transactions(mock__fetch_subtier_agency_id, monkeypatch):
     mega_key_list.update(mega_boolean_key_list)
 
     load_objects = _transform_objects([mega_key_list])
-
-    mock_cursor(monkeypatch, [[10]])  # ids for linked objects. No real DB so can't check that they really link
     _load_transactions(load_objects)

@@ -12,11 +12,11 @@ set
     last_modified_date = a.last_modified_date,
     latest_transaction_id = a.latest_transaction_id,
     prime_award_type = a.type,
-    business_categories = coalesce(le.business_categories, '{}'::text[])
+    business_categories = coalesce(tn.business_categories, '{}'::text[])
 
 from
     awards a
-    left outer join legal_entity le on le.legal_entity_id = a.recipient_id
+    left outer join transaction_normalized tn on tn.id = a.latest_transaction_id
 
 where
     a.generated_unique_award_id = temp_load_subawards_subaward.unique_award_key and

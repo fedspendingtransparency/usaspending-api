@@ -1,2 +1,1 @@
-supervisor==4.0.2
-uwsgi==2.0.17.1
+-r requirements-server.txt

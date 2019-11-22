@@ -1,44 +1,47 @@
 # Basic Dockerfile for the USASpendingAPI
 
-## 0) Add your DATABASE_URL on the ENV line below. Use host.docker.internal instead of localhost (overidden with Docker compose)
-##
-## 1) Init/run order w/Docker compose:
-##       docker-compose up usaspending-db (leave running)
-##       docker-compose up usaspending-db-migrate
-##       docker-compose up usaspending-db-sql
-##       docker-compose up usaspending-db-init
-##       docker-compose up usaspending-es (leave running, elasticsearch)
-##    Then run/re-run using the db you just created (may need to wait for the DB to be up and listening):
-##       docker-compose up usaspending-api
-##
+## Add your DATABASE_URL on the ENV line below. Use host.docker.internal instead of localhost (overidden with Docker compose)
+
 ## Optional) Run ad-hoc commands:
 #        docker build . -t usaspendingapi
 #        docker run -p 127.0.0.1:8000:8000 usaspendingapi <command>
 
 # Rebuild and run when code in /usaspending-api changes
 
-FROM python:3.5
+# See README.md for docker-compose information
+
+FROM centos:7
 
 WORKDIR /dockermount
 
-# For "Wrong sources.list entry or malformed file" re: main/binary-amd64/Packages, revisit
-RUN printf "deb http://archive.debian.org/debian/ jessie main\ndeb-src http://archive.debian.org/debian/ jessie main\ndeb http://security.debian.org jessie/updates main\ndeb-src http://security.debian.org jessie/updates main" > /etc/apt/sources.list
+RUN yum -y update && yum clean all
+RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel
+RUN yum -y groupinstall "Development Tools"
 
-# Install postgres client to access psql for database downloads
-RUN printf "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/pgdg.list
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-RUN apt-get update && apt-get install -y postgresql-client-10
+##### Install PostgreSQL 10 client (psql)
+RUN yum -y install https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-redhat10-10-2.noarch.rpm
+RUN yum -y install postgresql10
 
-RUN apt-get update -y
+##### Building python 3.7
+WORKDIR /usr/src
+RUN wget --quiet https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz
+RUN tar xzf Python-3.7.3.tgz
+WORKDIR /usr/src/Python-3.7.3
+RUN ./configure --enable-optimizations
+RUN make altinstall
+RUN ln -sf /usr/local/bin/python3.7 /usr/bin/python3
+RUN echo "$(python3 --version)"
 
-COPY requirements/requirements.txt /dockermount/requirements/requirements.txt
-RUN pip install -r requirements/requirements.txt
+##### Copy python packaged
+WORKDIR /dockermount
+COPY requirements/ /dockermount/requirements/
+RUN python3 -m pip install -r requirements/requirements.txt
 
+##### Copy the rest of the project files into the container
 COPY . /dockermount
 
-# Compose overrides DATABASE_URL
+##### Compose overrides DATABASE_URL
 ENV DATABASE_URL postgres://username@host.docker.internal:5432/data_store_api
-
 ENV PYTHONUNBUFFERED=0
 
 EXPOSE 8000

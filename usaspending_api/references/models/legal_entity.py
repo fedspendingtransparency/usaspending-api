@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
@@ -16,92 +15,6 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_fax_number = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True, db_index=True)
     business_types_description = models.TextField(blank=True, null=True)
-    """
-    Business Type Categories
-    Make sure to leave default as 'list', as [] would share across instances
-
-    Possible entries:
-
-    category_business
-    - small_business
-    - other_than_small_business
-    - corporate_entity_tax_exempt
-    - corporate_entity_not_tax_exempt
-    - partnership_or_limited_liability_partnership
-    - sole_proprietorship
-    - manufacturer_of_goods
-    - subchapter_s_corporation
-    - limited_liability_corporation
-
-    minority_owned_business
-    - alaskan_native_owned_business
-    - american_indian_owned_business
-    - asian_pacific_american_owned_business
-    - black_american_owned_business
-    - hispanic_american_owned_business
-    - native_american_owned_business
-    - native_hawaiian_owned_business
-    - subcontinent_asian_indian_american_owned_business
-    - tribally_owned_business
-    - other_minority_owned_business
-
-    women_owned_business
-    - women_owned_small_business
-    - economically_disadvantaged_women_owned_small_business
-    - joint_venture_women_owned_small_business
-    - joint_venture_economically_disadvantaged_women_owned_small_business
-
-    veteran_owned_business
-    - service_disabled_veteran_owned_business
-
-    special_designations
-    - 8a_program_participant
-    - ability_one_program
-    - dot_certified_disadvantaged_business_enterprise
-    - emerging_small_business
-    - federally_funded_research_and_development_corp
-    - historically_underutilized_business_firm
-    - labor_surplus_area_firm
-    - sba_certified_8a_joint_venture
-    - self_certified_small_disadvanted_business
-    - small_agricultural_cooperative
-    - small_disadvantaged_business
-    - community_developed_corporation_owned_firm
-    - us_owned_business
-    - foreign_owned_and_us_located_business
-    - foreign_owned_and_located_business
-    - foreign_government
-    - international_organization
-    - domestic_shelter
-    - hospital
-    - veterinary_hospital
-
-    nonprofit
-    - foundation
-    - community_development_corporations
-
-    higher_education
-    - educational_institution
-    - public_institution_of_higher_education
-    - private_institution_of_higher_education
-    - minority_serving_institution_of_higher_education
-    - school_of_forestry
-    - veterinary_college
-
-    government
-    - national_government
-    - interstate_entity
-    - regional_and_state_government
-    - regional_organization
-    - us_territory_or_possession
-    - council_of_governments
-    - local_government
-    - indian_native_american_tribal_government
-    - authorities_and_commissions
-
-    individuals
-    """
-    business_categories = ArrayField(models.TextField(), default=list)
 
     recipient_unique_id = models.TextField(blank=True, default="", null=True, verbose_name="DUNS Number", db_index=True)
     limited_liability_corporation = models.NullBooleanField(blank=False, default=False)

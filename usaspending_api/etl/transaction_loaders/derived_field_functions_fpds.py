@@ -53,15 +53,7 @@ def legal_entity_zip5(broker_input):
     return None
 
 
-def legal_entity_state_code(broker_input):
-    if broker_input["legal_entity_state_code"]:
-        return capitalize_if_string(broker_input["legal_entity_state_code"])
-    elif broker_input["legal_entity_state_descrip"]:
-        return code_to_state.get(broker_input["legal_entity_state_descrip"], {}).get("name")
-    return None
-
-
-def legal_entity_state_description(broker_input):
+def legal_entity_state_name(broker_input):
     if broker_input["legal_entity_state_descrip"]:
         return capitalize_if_string(broker_input["legal_entity_state_descrip"])
     elif broker_input["legal_entity_state_code"]:
@@ -81,5 +73,9 @@ def place_of_performance_state_description(broker_input):
     if broker_input["place_of_perfor_state_desc"]:
         return capitalize_if_string(broker_input["place_of_perfor_state_desc"])
     elif broker_input["place_of_performance_state"]:
-        return state_to_code.get(broker_input["place_of_performance_state"])
+        return code_to_state.get(broker_input["place_of_performance_state"], {}).get("name")
     return None
+
+
+def data_source(broker_input):
+    return "DBR"

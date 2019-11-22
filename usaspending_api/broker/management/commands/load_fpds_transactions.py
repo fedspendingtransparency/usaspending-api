@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, destroy_orphans, delete_stale_fpds
+from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -58,7 +58,7 @@ class Command(BaseCommand):
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
-            logger.info("{} total records".format(total_records))
+            logger.info("{} total records to update".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
             while True:
                 id_list = cursor.fetchmany(CHUNK_SIZE)
@@ -72,7 +72,7 @@ class Command(BaseCommand):
     @staticmethod
     def next_file_batch_generator(file):
         while True:
-            lines = file.readlines(CHUNK_SIZE)
+            lines = file.readlines(CHUNK_SIZE * 8)  # since this is by bytes, this allows a rough translation to lines
             lines = [line.decode("utf-8") for line in lines]
             if len(lines) == 0:
                 break
@@ -151,8 +151,9 @@ class Command(BaseCommand):
             self.load_fpds_incrementally(last_load)
 
         if self.modified_award_ids:
-            logger.info("cleaning orphaned metadata")
-            destroy_orphans()
+            # TODO: reactivate once this is performant. Currently the tables are too large to allow
+            # logger.info("cleaning orphaned metadata")
+            # destroy_orphans()
             logger.info(
                 "updating award values ({} awards touched by transaction modifications)".format(
                     len(self.modified_award_ids)
@@ -165,6 +166,14 @@ class Command(BaseCommand):
                 )
             )
             update_c_to_d_linkages("contract")
+
+        if failed_ids:
+            logger.error(
+                "The following detached_award_procurement_ids failed to load: {}".format(
+                    ["{},".format(failure) for failure in failed_ids]
+                )
+            )
+            raise SystemExit(1)
 
         if options["reload_all"] or options["since_last_load"]:
             # we wait until after the load finishes to update the load date because if this crashes we'll need to load again

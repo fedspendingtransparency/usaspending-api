@@ -1,5 +1,4 @@
 import logging
-import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -44,7 +43,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        sql_path = os.path.join(settings.BASE_DIR, "usaspending_api/awards/management/sql/restock_parent_award.sql")
+        sql_path = str(settings.APP_DIR / "awards/management/sql/restock_parent_award.sql")
 
         with open(sql_path) as f:
             sql = f.read()

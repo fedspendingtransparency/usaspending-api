@@ -56,8 +56,6 @@
     "LEFT OUTER JOIN",
     "  references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)",
     "LEFT OUTER JOIN",
-    "  legal_entity ON (transaction_normalized.recipient_id = legal_entity.legal_entity_id)",
-    "LEFT OUTER JOIN",
     "  agency AS AA ON (transaction_normalized.awarding_agency_id = AA.id)",
     "LEFT OUTER JOIN",
     "  toptier_agency AS TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)",
