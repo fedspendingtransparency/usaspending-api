@@ -13,7 +13,8 @@ This route sends a request to the backend to begin generating a zipfile of trans
     + Attributes (object)
         + `columns` (optional, array[string])
         + `filters` (required, Filters, fixed-type)
-        + `file_format` (optional, string)
+        + `file_format` (optional, enum[string])
+            The format of the file(s) in the zip file containing the data.
             + Default: `csv`
             + Members
                 + `csv`

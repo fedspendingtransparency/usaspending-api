@@ -84,7 +84,7 @@ def validate_idv_request(request_data):
     return {
         "account_level": "treasury_account",
         "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": _validate_file_formats(request_data),
         "include_file_description": {"source": settings.IDV_DOWNLOAD_README_FILE_PATH, "destination": "readme.txt"},
         "piid": piid,
         "is_for_idv": True,
@@ -105,7 +105,7 @@ def validate_contract_request(request_data):
     return {
         "account_level": "treasury_account",
         "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": _validate_file_formats(request_data),
         "include_file_description": {
             "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
             "destination": "ContractAwardSummary_download_readme.txt",
@@ -131,7 +131,7 @@ def validate_assistance_request(request_data):
     return {
         "account_level": "treasury_account",
         "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": _validate_file_formats(request_data),
         "include_file_description": {
             "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
             "destination": "AssistanceAwardSummary_download_readme.txt",
@@ -155,6 +155,8 @@ def validate_account_request(request_data):
     json_request["account_level"] = _validate_account_level(request_data, ["federal_account", "treasury_account"])
 
     filters = _validate_filters(request_data)
+
+    json_request["file_format"] = _validate_file_formats(request_data)
 
     # Validate required filters
     for required_filter in ["fy", "quarter"]:
