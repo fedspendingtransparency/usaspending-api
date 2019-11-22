@@ -680,19 +680,19 @@ This endpoint returns a list of data that is associated with the award profile p
         + `IDV_C`
         + `IDV_D`
         + `IDV_E`
-+ `type_description`: `Blanket Purchase Agreements (BPA) Calls` (required, string)
-+ `generated_unique_award_id`: `6657452ew23` (required, string)
-+ `piid`: `W31P4Q15A0024` (required, string)
++ `type_description` (required, string)
++ `generated_unique_award_id` (required, string)
++ `piid` (required, string)
     Award id
-+ `description`: `ewraijwrw` (required, string, nullable)
++ `description` (required, string, nullable)
     Description of the first transaction for this award
-+ `total_obligation`: 30400 (required, number, nullable)
-+ `base_exercised_options`: 23000 (required, number, nullable)
-+ `base_and_all_options`: 24500 (required, number)
++ `total_obligation` (required, number, nullable)
++ `base_exercised_options` (required, number, nullable)
++ `base_and_all_options` (required, number)
     The ceiling and amount of the award
-+ `date_signed`: `2006-01-15` (required, string, nullable)
-+ `subaward_count`: 430 (required, number)
-+ `total_subaward_amount`: 35345353453 (required, number, nullable)
++ `date_signed` (required, string, nullable)
++ `subaward_count` (required, number)
++ `total_subaward_amount` (required, number, nullable)
 + `awarding_agency` (required, Agency, fixed-type)
 + `funding_agency` (required, Agency, fixed-type, nullable)
 + `recipient` (required, Recipient, fixed-type)
@@ -724,27 +724,27 @@ This endpoint returns a list of data that is associated with the award profile p
         + `09`
         + `10`
         + `11`
-+ `record_type`: 1 (required, number)
-+ `type_description`: `Direct Loans` (required, string)
-+ `generated_unique_award_id`: `42954959` (required, string)
-+ `fain`: `43533A3` (required, string, nullable)
-+ `uri`: `5341QQ` (required, string, nullable)
-+ `description`: `ewraijwrw` (required, string, nullable)
-+ `transaction_obligated_amount`: 10700 (required, number, nullable)
++ `record_type` (required, number)
++ `type_description` (required, string)
++ `generated_unique_award_id` (required, string)
++ `fain` (required, string, nullable)
++ `uri` (required, string, nullable)
++ `description` (required, string, nullable)
++ `transaction_obligated_amount` (required, number, nullable)
     Used for Funding Obligated on Grants pages
-+ `total_obligation`: 2324 (required, number, nullable)
++ `total_obligation` (required, number, nullable)
 + `base_exercised_options` (required, number, nullable)
-+ `total_subsidy_cost`: 123 (required, number, nullable)
++ `total_subsidy_cost` (required, number, nullable)
     null except for loans
-+ `total_loan_value`: 24343 (required, number, nullable)
++ `total_loan_value` (required, number, nullable)
     null except for loans
 + `non_federal_funding` (required, number, nullable)
     null except for grants
 + `total_funding` (required, number, nullable)
     null except for grants
-+ `date_signed`: `2006-01-15` (required, string, nullable)
-+ `subaward_count`: 430 (required, number)
-+ `total_subaward_amount`: 35345353453 (required, number, nullable)
++ `date_signed` (required, string, nullable)
++ `subaward_count` (required, number)
++ `total_subaward_amount` (required, number, nullable)
 + `awarding_agency` (required, Agency, fixed-type)
 + `funding_agency` (required, Agency, fixed-type, nullable)
 + `recipient` (required, Recipient, fixed-type)
