@@ -518,7 +518,6 @@ query_paths = {
                     "award__latest_transaction__contract_data__other_not_for_profit_organ",
                 ),
                 ("the_ability_one_program", "award__latest_transaction__contract_data__the_ability_one_program"),
-                ("annual_revenue", "award__latest_transaction__contract_data__annual_revenue"),
                 (
                     "private_university_or_college",
                     "award__latest_transaction__contract_data__private_university_or_coll",
@@ -1025,7 +1024,6 @@ query_paths = {
                 ("nonprofit_organization", "transaction__contract_data__nonprofit_organization"),
                 ("other_not_for_profit_organization", "transaction__contract_data__other_not_for_profit_organ"),
                 ("the_ability_one_program", "transaction__contract_data__the_ability_one_program"),
-                ("annual_revenue", "transaction__contract_data__annual_revenue"),
                 ("private_university_or_college", "transaction__contract_data__private_university_or_coll"),
                 (
                     "state_controlled_institution_of_higher_learning",
