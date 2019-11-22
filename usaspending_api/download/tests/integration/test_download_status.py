@@ -16,6 +16,7 @@ from usaspending_api.download.filestreaming import csv_generation
 EXPECTED_COLUMNS_TRANSACTIONS = 275
 EXPECTED_COLUMNS_AWARDS = 261
 
+
 @pytest.fixture
 def download_test_data(db):
     # Populate job status lookup table
