@@ -19,6 +19,235 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Response 200 (application/json)
     + Attributes (ContractResponse)
+    + Body
+
+            {
+                "id": 22834500,
+                "generated_unique_award_id": "CONT_AWD_H907_9700_SPE2DX16D1500_9700",
+                "piid": "H907",
+                "category": "contract",
+                "type": "C",
+                "type_description": "DELIVERY ORDER",
+                "description": "4534723185!PV PHARM BRANCH, VENDOR, CAGE 0U9U0",
+                "total_obligation": 61241.34,
+                "subaward_count": 0,
+                "total_subaward_amount": null,
+                "date_signed": "2016-06-24",
+                "base_exercised_options": 61241.34,
+                "base_and_all_options": 61241.34,
+                "parent_award": {
+                    "agency_id": "9700",
+                    "agency_name": "Department of Defense",
+                    "award_id": 69513842,
+                    "generated_unique_award_id": "CONT_IDV_SPE2DX16D1500_9700",
+                    "idv_type_description": "IDC",
+                    "multiple_or_single_aw_desc": "SINGLE AWARD",
+                    "piid": "SPE2DX16D1500",
+                    "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY"
+                },
+                "latest_transaction_contract_data": {
+                    "idv_type_description": null,
+                    "type_of_idc_description": null,
+                    "referenced_idv_agency_iden": "9700",
+                    "referenced_idv_agency_desc": "DEPT OF DEFENSE",
+                    "solicitation_identifier": null,
+                    "solicitation_procedures": "NP",
+                    "number_of_offers_received": "4",
+                    "extent_competed": "A",
+                    "type_set_aside": "NONE",
+                    "type_set_aside_description": "NO SET ASIDE USED.",
+                    "evaluated_preference": "NONE",
+                    "fed_biz_opps": "N",
+                    "fed_biz_opps_description": "NO",
+                    "small_business_competitive": false,
+                    "product_or_service_code": "6505",
+                    "naics": "325411",
+                    "naics_description": "MEDICINAL AND BOTANICAL MANUFACTURING",
+                    "sea_transportation": "U",
+                    "clinger_cohen_act_planning": "N",
+                    "labor_standards": "X",
+                    "cost_or_pricing_data": "N",
+                    "domestic_or_foreign_entity": "A",
+                    "foreign_funding": "X",
+                    "major_program": null,
+                    "program_acronym": null,
+                    "subcontracting_plan": null,
+                    "multi_year_contract": "N",
+                    "consolidated_contract": "N",
+                    "type_of_contract_pricing": "J",
+                    "multiple_or_single_award_description": null,
+                    "solicitation_procedures_description": "NEGOTIATED PROPOSAL/QUOTE",
+                    "extent_competed_description": "FULL AND OPEN COMPETITION",
+                    "other_than_full_and_open": null,
+                    "other_than_full_and_open_description": null,
+                    "commercial_item_acquisition": "D",
+                    "commercial_item_acquisition_description": "COMMERCIAL ITEM PROCEDURES NOT USED",
+                    "commercial_item_test_program": "N",
+                    "commercial_item_test_program_description": "NO",
+                    "evaluated_preference_description": "NO PREFERENCE USED",
+                    "fair_opportunity_limited": null,
+                    "fair_opportunity_limited_description": null,
+                    "product_or_service_description": "DRUGS AND BIOLOGICALS",
+                    "dod_claimant_program": "C9B",
+                    "dod_claimant_program_description": "MEDICAL AND DENTAL SUPPLIES AND EQUIPMENT",
+                    "dod_acquisition_program": "000",
+                    "dod_acquisition_program_description": "NONE",
+                    "information_technology_commercial_item_category": "Z",
+                    "information_technology_commercial_item_category_description": "NOT IT PRODUCTS OR SERVICES",
+                    "sea_transportation_description": "UNKNOWN",
+                    "clinger_cohen_act_planning_description": "NO",
+                    "construction_wage_rate": "X",
+                    "construction_wage_rate_description": "NOT APPLICABLE",
+                    "labor_standards_description": "NOT APPLICABLE",
+                    "materials_supplies": "N",
+                    "materials_supplies_description": "NO",
+                    "cost_or_pricing_data_description": "NO",
+                    "domestic_or_foreign_entity_description": "U.S. OWNED BUSINESS",
+                    "foreign_funding_description": "NOT APPLICABLE",
+                    "interagency_contracting_authority": "X",
+                    "interagency_contracting_authority_description": "NOT APPLICABLE",
+                    "price_evaluation_adjustment": null,
+                    "subcontracting_plan_description": null,
+                    "multi_year_contract_description": "NO",
+                    "purchase_card_as_payment_method": "N",
+                    "purchase_card_as_payment_method_description": "NO",
+                    "consolidated_contract_description": "NO",
+                    "type_of_contract_pricing_description": "FIRM FIXED PRICE"
+                },
+                "funding_agency": {
+                    "id": 1219,
+                    "toptier_agency": {
+                        "name": "Department of Defense",
+                        "code": "097",
+                        "abbreviation": "DOD"
+                    },
+                    "subtier_agency": {
+                        "name": "Defense Logistics Agency",
+                        "code": "97AS",
+                        "abbreviation": "DLA"
+                    },
+                    "office_agency_name": "DLA TROOP SUPPORT"
+                },
+                "awarding_agency": {
+                    "id": 1219,
+                    "toptier_agency": {
+                        "name": "Department of Defense",
+                        "code": "097",
+                        "abbreviation": "DOD"
+                    },
+                    "subtier_agency": {
+                        "name": "Defense Logistics Agency",
+                        "code": "97AS",
+                        "abbreviation": "DLA"
+                    },
+                    "office_agency_name": "DLA TROOP SUPPORT"
+                },
+                "period_of_performance": {
+                    "start_date": "2016-06-24",
+                    "end_date": "2016-06-27",
+                    "last_modified_date": "2016-06-27 10:13:23",
+                    "potential_end_date": "2016-06-27 00:00:00"
+                },
+                "recipient": {
+                    "recipient_hash": "7aa9e102-b0b4-6fa9-aaf8-9d4047a84544-C",
+                    "recipient_name": "MCKESSON CORPORATION",
+                    "recipient_unique_id": "105919864",
+                    "parent_recipient_hash": "a10af851-96dd-8b60-d4ad-a1a1cdcfa97f-P",
+                    "parent_recipient_name": "MCKESSON CORPORATION",
+                    "parent_recipient_unique_id": "177667227",
+                    "business_categories": [
+                        "Category Business",
+                        "Corporate Entity Not Tax Exempt",
+                        "Not Designated a Small Business",
+                        "Special Designations",
+                        "U.S.-Owned Business"
+                    ],
+                    "location": {
+                        "location_country_code": "USA",
+                        "country_name": "UNITED STATES",
+                        "state_code": "CA",
+                        "state_name": "CALIFORNIA",
+                        "city_name": "WEST SACRAMENTO",
+                        "county_code": "113",
+                        "county_name": "YOLO",
+                        "address_line1": "3775 SEAPORT BLVD",
+                        "address_line2": null,
+                        "address_line3": null,
+                        "congressional_code": "06",
+                        "zip4": "3558",
+                        "zip5": "95691",
+                        "foreign_postal_code": null,
+                        "foreign_province": null
+                    }
+                },
+                "executive_details": {
+                    "officers": [
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        }
+                    ]
+                },
+                "place_of_performance": {
+                    "location_country_code": "USA",
+                    "country_name": "UNITED STATES",
+                    "county_code": "113",
+                    "county_name": "YOLO",
+                    "city_name": "WEST SACRAMENTO",
+                    "state_code": "CA",
+                    "state_name": "CALIFORNIA",
+                    "congressional_code": "06",
+                    "zip4": "3558",
+                    "zip5": "95691",
+                    "address_line1": null,
+                    "address_line2": null,
+                    "address_line3": null,
+                    "foreign_province": null,
+                    "foreign_postal_code": null
+                },
+                "psc_hierarchy": {
+                    "toptier_code": {},
+                    "midtier_code": {
+                        "code": "65",
+                        "description": "MEDICAL/DENTAL/VETERINARY EQPT/SUPP"
+                    },
+                    "subtier_code": {},
+                    "base_code": {
+                        "code": "6505",
+                        "description": "DRUGS AND BIOLOGICALS"
+                    }
+                },
+                "naics_hierarchy": {
+                    "toptier_code": {
+                        "code": "32",
+                        "description": "Manufacturing"
+                    },
+                    "midtier_code": {
+                        "code": "3254",
+                        "description": "Pharmaceutical and Medicine Manufacturing"
+                    },
+                    "base_code": {
+                        "code": "325411",
+                        "description": "Medicinal and Botanical Manufacturing"
+                    }
+                }
+            }
 
 + Request A request with a financial assistance id (application/json)
     + Parameters
@@ -26,6 +255,149 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Response 200 (application/json)
     + Attributes (FinancialAssistanceResponse)
+    + Body
+
+            {
+                "id": 70140000,
+                "generated_unique_award_id": "ASST_NON_12FA00PY54661041_12D2",
+                "fain": "12FA00PY54661041",
+                "uri": null,
+                "category": "direct payment",
+                "type": "10",
+                "type_description": "DIRECT PAYMENT WITH UNRESTRICTED USE (RETIREMENT, PENSION, VETERANS BENEFITS, ETC.) (D)",
+                "description": "AGRICULTURAL RISK COVERAGE PROG - COUNTY",
+                "subaward_count": 0,
+                "total_subaward_amount": null,
+                "awarding_agency": {
+                    "id": 153,
+                    "toptier_agency": {
+                        "name": "Department of Agriculture",
+                        "code": "012",
+                        "abbreviation": "USDA"
+                    },
+                    "subtier_agency": {
+                        "name": "Farm Service Agency",
+                        "code": "12D2",
+                        "abbreviation": "FSA"
+                    },
+                    "office_agency_name": null
+                },
+                "funding_agency": {
+                    "id": 153,
+                    "toptier_agency": {
+                        "name": "Department of Agriculture",
+                        "code": "012",
+                        "abbreviation": "USDA"
+                    },
+                    "subtier_agency": {
+                        "name": "Farm Service Agency",
+                        "code": "12D2",
+                        "abbreviation": "FSA"
+                    },
+                    "office_agency_name": null
+                },
+                "recipient": {
+                    "recipient_hash": null,
+                    "recipient_name": "REDACTED DUE TO PII",
+                    "recipient_unique_id": null,
+                    "parent_recipient_hash": null,
+                    "parent_recipient_name": null,
+                    "parent_recipient_unique_id": null,
+                    "business_categories": [
+                        "Individuals"
+                    ],
+                    "location": {
+                        "location_country_code": "USA",
+                        "country_name": "UNITED STATES",
+                        "state_code": "ND",
+                        "state_name": "NORTH DAKOTA",
+                        "city_name": "GARRISON",
+                        "county_code": "055",
+                        "county_name": "MCLEAN",
+                        "address_line1": null,
+                        "address_line2": null,
+                        "address_line3": null,
+                        "congressional_code": "00",
+                        "zip4": null,
+                        "zip5": "58540",
+                        "foreign_postal_code": null,
+                        "foreign_province": null
+                    }
+                },
+                "total_subsidy_cost": null,
+                "total_loan_value": null,
+                "total_obligation": 479.0,
+                "date_signed": "2017-10-04",
+                "base_and_all_options": null,
+                "base_exercised_options": null,
+                "non_federal_funding": 0.0,
+                "total_funding": 479.0,
+                "record_type": 3,
+                "cfda_info": [
+                    {
+                        "applicant_eligibility": "An eligible producer is eligible to enter into a contract if 1) the owner of the farm has an ownership of a crop and assumes all or a part of the risk producing a crop that is commensurate with that claimed ownership of the crop; 2) a producer, other than the owner, on a farm with a share-rent lease for such farm, regardless of the length of the lease, if the owner of the farm enters into the same contract; 3) a producer, other than an owner, on a farm who rents such farm under a lease expiring on or after September 30 of the year of the contract in which case the owner is not required to enter into the contract; 4) a producer, other than an owner , on a farm who cash rents such farm under a leasing expiring before September 30 of the year of the contract; 5)An owner of an eligible farm who cash rents such farm and the lease expires before September 30 of the year of the contract, if the tenant declines to enter into a contract for the applicable year.",
+                        "beneficiary_eligibility": "PLC provides payments to eligible producers on farms enrolled for the 2019 through 2023 crop years.",
+                        "cfda_federal_agency": "FARM SERVICE AGENCY, AGRICULTURE, DEPARTMENT OF",
+                        "cfda_number": "10.112",
+                        "cfda_objectives": "The Price Loss Coverage program (PLC) is carried over from the 2014 Farm Bill. PLC provides income support through price loss payments to eligible producers.",
+                        "cfda_obligations": "(Direct Payments for Specified Use) FY 18$1,231,000,000.00; FY 19 est $3,965,000,000.00; FY 20 est $4,691,000,000.00; FY 17$1,952,650,000.00; FY 16$5,841,000,000.00; - ",
+                        "cfda_popular_name": "(PLC)",
+                        "cfda_title": "Price Loss Coverage",
+                        "cfda_website": "http://www.fsa.usda.gov",
+                        "federal_action_obligation_amount": 479.0,
+                        "non_federal_funding_amount": 0.0,
+                        "sam_website": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view",
+                        "total_funding_amount": 479.0
+                    }
+                ],
+                "transaction_obligated_amount": null,
+                "period_of_performance": {
+                    "start_date": "2017-10-04",
+                    "end_date": "2017-10-04",
+                    "last_modified_date": "2018-10-27"
+                },
+                "executive_details": {
+                    "officers": [
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        }
+                    ]
+                },
+                "place_of_performance": {
+                    "location_country_code": "USA",
+                    "country_name": "UNITED STATES",
+                    "county_code": "055",
+                    "county_name": "MCLEAN",
+                    "city_name": "GARRISON",
+                    "state_code": "ND",
+                    "state_name": "NORTH DAKOTA",
+                    "congressional_code": "00",
+                    "zip4": null,
+                    "zip5": "58540",
+                    "address_line1": null,
+                    "address_line2": null,
+                    "address_line3": null,
+                    "foreign_province": null,
+                    "foreign_postal_code": null
+                }
+            }
 
 + Request A request with an IDV id (application/json)
     + Parameters
@@ -33,6 +405,229 @@ This endpoint returns a list of data that is associated with the award profile p
 
 + Response 200 (application/json)
     + Attributes (IDVResponse)
+    + Body
+
+            {
+                "id": 69023000,
+                "generated_unique_award_id": "CONT_IDV_FA304715A0037_9700",
+                "piid": "FA304715A0037",
+                "category": "idv",
+                "type": "IDV_E",
+                "type_description": "BPA",
+                "description": "IGF::CT::IGF TRANSPORTATION OF MILITARY WORKING DOGS",
+                "total_obligation": 0.0,
+                "subaward_count": 0,
+                "total_subaward_amount": null,
+                "date_signed": "2015-07-21",
+                "base_exercised_options": 0.0,
+                "base_and_all_options": 0.0,
+                "parent_award": null,
+                "latest_transaction_contract_data": {
+                    "idv_type_description": "BPA",
+                    "type_of_idc_description": null,
+                    "referenced_idv_agency_iden": null,
+                    "referenced_idv_agency_desc": null,
+                    "solicitation_identifier": null,
+                    "solicitation_procedures": null,
+                    "number_of_offers_received": null,
+                    "extent_competed": null,
+                    "type_set_aside": null,
+                    "type_set_aside_description": null,
+                    "evaluated_preference": null,
+                    "fed_biz_opps": "X",
+                    "fed_biz_opps_description": "NOT APPLICABLE",
+                    "small_business_competitive": false,
+                    "product_or_service_code": "V111",
+                    "naics": "488510",
+                    "naics_description": "FREIGHT TRANSPORTATION ARRANGEMENT",
+                    "sea_transportation": "N",
+                    "clinger_cohen_act_planning": "N",
+                    "labor_standards": "X",
+                    "cost_or_pricing_data": null,
+                    "domestic_or_foreign_entity": "D",
+                    "foreign_funding": "X",
+                    "major_program": null,
+                    "program_acronym": null,
+                    "subcontracting_plan": "B",
+                    "multi_year_contract": null,
+                    "consolidated_contract": "N",
+                    "type_of_contract_pricing": "1",
+                    "multiple_or_single_award_description": "SINGLE AWARD",
+                    "solicitation_procedures_description": null,
+                    "extent_competed_description": null,
+                    "other_than_full_and_open": null,
+                    "other_than_full_and_open_description": null,
+                    "commercial_item_acquisition": "A",
+                    "commercial_item_acquisition_description": "COMMERCIAL ITEM",
+                    "commercial_item_test_program": null,
+                    "commercial_item_test_program_description": null,
+                    "evaluated_preference_description": null,
+                    "fair_opportunity_limited": null,
+                    "fair_opportunity_limited_description": null,
+                    "product_or_service_description": "TRANSPORTATION/TRAVEL/RELOCATION- TRANSPORTATION: AIR FREIGHT",
+                    "dod_claimant_program": null,
+                    "dod_claimant_program_description": null,
+                    "dod_acquisition_program": null,
+                    "dod_acquisition_program_description": null,
+                    "information_technology_commercial_item_category": null,
+                    "information_technology_commercial_item_category_description": null,
+                    "sea_transportation_description": "NO",
+                    "clinger_cohen_act_planning_description": "NO",
+                    "construction_wage_rate": "N",
+                    "construction_wage_rate_description": "NO",
+                    "labor_standards_description": "NOT APPLICABLE",
+                    "materials_supplies": "N",
+                    "materials_supplies_description": "NO",
+                    "cost_or_pricing_data_description": null,
+                    "domestic_or_foreign_entity_description": "FOREIGN-OWNED BUSINESS NOT INCORPORATED IN THE U.S.",
+                    "foreign_funding_description": "NOT APPLICABLE",
+                    "interagency_contracting_authority": "X",
+                    "interagency_contracting_authority_description": "NOT APPLICABLE",
+                    "price_evaluation_adjustment": null,
+                    "subcontracting_plan_description": "PLAN NOT REQUIRED ",
+                    "multi_year_contract_description": null,
+                    "purchase_card_as_payment_method": null,
+                    "purchase_card_as_payment_method_description": null,
+                    "consolidated_contract_description": "NO",
+                    "type_of_contract_pricing_description": "ORDER DEPENDENT (IDV ALLOWS PRICING ARRANGEMENT TO BE DETERMINED SEPARATELY FOR EACH ORDER)"
+                },
+                "funding_agency": {
+                    "id": 1196,
+                    "toptier_agency": {
+                        "name": "Department of Defense",
+                        "code": "097",
+                        "abbreviation": "DOD"
+                    },
+                    "subtier_agency": {
+                        "name": "Department of the Air Force",
+                        "code": "5700",
+                        "abbreviation": "USAF"
+                    },
+                    "office_agency_name": "341 TRS DORR"
+                },
+                "awarding_agency": {
+                    "id": 1196,
+                    "toptier_agency": {
+                        "name": "Department of Defense",
+                        "code": "097",
+                        "abbreviation": "DOD"
+                    },
+                    "subtier_agency": {
+                        "name": "Department of the Air Force",
+                        "code": "5700",
+                        "abbreviation": "USAF"
+                    },
+                    "office_agency_name": "FA3016  502 CONS CL"
+                },
+                "period_of_performance": {
+                    "start_date": "2015-07-17",
+                    "end_date": "2020-07-16",
+                    "last_modified_date": "2018-06-11 16:42:25",
+                    "potential_end_date": null
+                },
+                "recipient": {
+                    "recipient_hash": "fc621300-584a-1b6f-0e5f-aba6b0deb70a-C",
+                    "recipient_name": "GRADLYN - G.K. AIRFREIGHT SERVICE GMBH",
+                    "recipient_unique_id": "317771921",
+                    "parent_recipient_hash": "fc621300-584a-1b6f-0e5f-aba6b0deb70a-P",
+                    "parent_recipient_name": "GK AIRFREIGHT-SERVICE GRADLYN KENNELS GMBH",
+                    "parent_recipient_unique_id": "317771921",
+                    "business_categories": [
+                        "Category Business",
+                        "Foreign Owned and Located",
+                        "International Organization",
+                        "Not Designated a Small Business",
+                        "Special Designations"
+                    ],
+                    "location": {
+                        "location_country_code": "DEU",
+                        "country_name": "GERMANY",
+                        "state_code": null,
+                        "state_name": "HESSEN",
+                        "city_name": "FRANKFURT AM MAIN",
+                        "county_code": null,
+                        "county_name": null,
+                        "address_line1": "CARGO CITY NORTH, GATE 26",
+                        "address_line2": "BUILDING 458",
+                        "address_line3": null,
+                        "congressional_code": null,
+                        "zip4": null,
+                        "zip5": null,
+                        "foreign_postal_code": null,
+                        "foreign_province": null
+                    }
+                },
+                "executive_details": {
+                    "officers": [
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        },
+                        {
+                            "name": null,
+                            "amount": null
+                        }
+                    ]
+                },
+                "place_of_performance": {
+                    "location_country_code": null,
+                    "country_name": null,
+                    "county_code": null,
+                    "county_name": null,
+                    "city_name": null,
+                    "state_code": null,
+                    "state_name": null,
+                    "congressional_code": null,
+                    "zip4": null,
+                    "zip5": null,
+                    "address_line1": null,
+                    "address_line2": null,
+                    "address_line3": null,
+                    "foreign_province": null,
+                    "foreign_postal_code": null
+                },
+                "psc_hierarchy": {
+                    "toptier_code": {
+                        "code": "V",
+                        "description": "TRANSPORT, TRAVEL, RELOCATION"
+                    },
+                    "midtier_code": {
+                        "code": "V1",
+                        "description": "TRANSPORTATION OF THINGS"
+                    },
+                    "subtier_code": {},
+                    "base_code": {
+                        "code": "V111",
+                        "description": "TRANSPORTATION/TRAVEL/RELOCATION- TRANSPORTATION: AIR FREIGHT"
+                    }
+                },
+                "naics_hierarchy": {
+                    "toptier_code": {
+                        "code": "48",
+                        "description": "Transportation and Warehousing"
+                    },
+                    "midtier_code": {
+                        "code": "4885",
+                        "description": "Freight Transportation Arrangement"
+                    },
+                    "base_code": {
+                        "code": "488510",
+                        "description": "Freight Transportation Arrangement"
+                    }
+                }
+            }
 
 # Data Structures
 
@@ -68,29 +663,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 + `parent_award` (required, ParentDetails, fixed-type, nullable)
     `null` if the contract has no parent
-+ `naics_hierarchy` (required, object)
-    - `toptier_code` (required, object)
-        - `description`: `Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `54` (optional, string)
-    - `midtier_code` (required, object)
-        - `description`: `Other Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `5419` (optional, string)
-    - `base_code` (required, object)
-        - `description`: `All Other Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `541900` (optional, string)
-+ `psc_hierarchy` (required, object)
-    - `toptier_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS, NOT R&D` (optional, string)
-        - `code`: `B` (optional, string)
-    - `midtier_code` (required, object)
-        - `description`: `SPECIAL STUDIES - NOT R and D` (optional, string)
-        - `code`: `B5` (optional, string)
-    - `base_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS- ECONOMIC` (optional, string)
-        - `code`: `B507` (optional, string)
-    - `subtier_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS- ECONOMIC` (optional, string)
-        - `code`: `B507` (optional, string)
++ `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
++ `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -128,29 +702,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `executive_details` (required, Executive, fixed-type)
 + `parent_award` (required, ParentDetails, fixed-type, nullable)
     `null` if the idv has no parent
-+ `naics_hierarchy` (required, object)
-    - `toptier_code` (required, object)
-        - `description`: `Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `54` (optional, string)
-    - `midtier_code` (required, object)
-        - `description`: `Other Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `5419` (optional, string)
-    - `base_code` (required, object)
-        - `description`: `All Other Professional, Scientific, and Technical Services` (optional, string)
-        - `code`: `541900` (optional, string)
-+ `psc_hierarchy` (required, object)
-    - `toptier_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS, NOT R&D` (optional, string)
-        - `code`: `B` (optional, string)
-    - `midtier_code` (required, object)
-        - `description`: `SPECIAL STUDIES - NOT R and D` (optional, string)
-        - `code`: `B5` (optional, string)
-    - `base_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS- ECONOMIC` (optional, string)
-        - `code`: `B507` (optional, string)
-    - `subtier_code` (required, object)
-        - `description`: `SPECIAL STUDIES/ANALYSIS- ECONOMIC` (optional, string)
-        - `code`: `B507` (optional, string)
++ `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
++ `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
@@ -359,3 +912,18 @@ This endpoint returns a list of data that is associated with the award profile p
 ## Officer (object)
 + `name` (required, string, nullable)
 + `amount` (required, number, nullable)
+
+## NAICSHierarchy (object)
++ `toptier_code` (required, HierarchyLeaf, fixed-type)
++ `midtier_code` (required, HierarchyLeaf, fixed-type)
++ `base_code` (required, HierarchyLeaf, fixed-type)
+
+## PSCHierarchy (object)
++ `toptier_code` (required, HierarchyLeaf, fixed-type)
++ `midtier_code` (required, HierarchyLeaf, fixed-type)
++ `subtier_code` (required, HierarchyLeaf, fixed-type)
++ `base_code` (required, HierarchyLeaf, fixed-type)
+
+## HierarchyLeaf (object)
++ `description` (optional, string)
++ `code` (optional, string)
