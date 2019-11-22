@@ -47,6 +47,7 @@ def generate_csvs(download_job):
     piid = json_request.get("piid", None)
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
+    extension = json_request["file_format"]
 
     file_name = start_download(download_job)
     try:
@@ -63,7 +64,7 @@ def generate_csvs(download_job):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit)
+            parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension)
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -172,7 +173,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit):
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
     """Write to csv and zip files using the source data"""
     d_map = {
         "d1": "contracts",
@@ -195,13 +196,13 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
             source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]["download_name"]
         )
     source_query = source.row_emitter(columns)
-    source.file_name = "{}.csv".format(source_name)
+    source.file_name = f"{source_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(message="Preparing to download data as {}".format(source_name), download_job=download_job)
+    write_to_log(message=f"Preparing to download data as {source_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns, extension)
 
     start_time = time.perf_counter()
     try:
@@ -220,7 +221,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_csvs, args=(zip_file_path, source_path, source_name, download_job)
+            target=split_and_zip_csvs, args=(zip_file_path, source_path, source_name, extension, download_job)
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -233,13 +234,13 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_csvs(zip_file_path, source_path, source_name, download_job=None):
+def split_and_zip_csvs(zip_file_path, source_path, source_name, extension, download_job=None):
     try:
         # Split CSV into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
 
-        output_template = "{}_%s.csv".format(source_name)
+        output_template = "{}_%s.{}".format(source_name, extension)
         write_to_log(message="Beginning the CSV file partition", download_job=download_job)
         list_of_csv_files = partition_large_csv_file(
             source_path, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
@@ -334,10 +335,17 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job, columns):
+def generate_temp_query_file(source_query, limit, source, download_job, columns, extension):
     if limit:
         source_query = source_query[:limit]
     csv_query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
+
+    if extension == "csv":
+        delimiter = "WITH CSV HEADER"
+    elif extension == "tsv":
+        delimiter = r"WITH CSV, DELIMITER E'\t' HEADER"
+    else:
+        raise RuntimeError(f"Unexpected value for 'file_format': {extension}")
 
     write_to_log(
         message="Creating PSQL Query: {}".format(csv_query_annotated), download_job=download_job, is_debug=True
@@ -345,8 +353,9 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns)
 
     # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
+
     with open(temp_sql_file_path, "w") as file:
-        file.write(r"\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
+        file.write(r"\copy ({}) To STDOUT {}".format(csv_query_annotated, delimiter))
 
     return temp_sql_file, temp_sql_file_path
 
@@ -416,23 +425,24 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         )
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
-        e.cmd = "[redacted]"
+        if not settings.IS_LOCAL:
+            e.cmd = "[redacted]"
         logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT with CSV HEADER' so the SQL is 7 chars in up to the last 27 chars
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()[7:-27]
-        logger.error("Faulty SQL: {}".format(sql))
+        # temp file contains '\copy ([SQL]) To STDOUT  ...' so the SQL is 7 chars in up to ' To STDOUT '
+        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+        logger.error("Faulty SQL: {}".format(sql[7:sql.find(" To STDOUT ")]))
         raise e
     except Exception as e:
         logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT with CSV HEADER' so the SQL is 7 chars in up to the last 27 chars
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()[7:-27]
-        logger.error("Faulty SQL: {}".format(sql))
+        # temp file contains '\copy ([SQL]) To STDOUT ...' so the SQL is 7 chars in up to ' To STDOUT '
+        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+        logger.error("Faulty SQL: {}".format(sql[7:sql.find(" To STDOUT ")]))
         raise e
 
 
 def retrieve_db_string():
     """It is necessary for this to be a function so the test suite can mock the connection string"""
-    return os.environ["DOWNLOAD_DATABASE_URL"]
+    return settings.DOWNLOAD_DATABASE_URL
 
 
 def strip_file_extension(file_name):

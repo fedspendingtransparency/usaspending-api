@@ -266,3 +266,5 @@ CFO_CGACS_MAPPING = OrderedDict(
     ]
 )
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
+
+FILE_FORMATS = ("csv", "tsv")

@@ -20,6 +20,7 @@ from usaspending_api.download.lookups import (
     YEAR_CONSTRAINT_FILTER_DEFAULTS,
     ROW_CONSTRAINT_FILTER_DEFAULTS,
     ACCOUNT_FILTER_DEFAULTS,
+    FILE_FORMATS,
 )
 
 
@@ -45,7 +46,7 @@ def validate_award_request(request_data):
 
     # Set defaults of non-required parameters
     json_request["columns"] = request_data.get("columns", [])
-    json_request["file_format"] = request_data.get("file_format", "csv")
+    json_request["file_format"] = _validate_file_formats(request_data)
 
     check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
 
@@ -274,3 +275,12 @@ def _validate_required_parameters(request_data, required_parameters):
     for required_param in required_parameters:
         if required_param not in request_data:
             raise InvalidParameterException("Missing one or more required body parameters: {}".format(required_param))
+
+
+def _validate_file_formats(json_request: dict) -> str:
+    """ensure the provided value is in the acceptable format enum"""
+    file_ext = str(json_request.get("file_format", FILE_FORMATS[0])).lower()
+    if file_ext not in FILE_FORMATS:
+        msg = f"{file_ext} is not an acceptable value for 'file_format'. Provide one of these values: {FILE_FORMATS}"
+        raise InvalidParameterException(msg)
+    return file_ext
