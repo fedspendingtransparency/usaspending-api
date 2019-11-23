@@ -123,6 +123,20 @@ def test_download_awards_without_columns(client, download_test_data):
 
 
 @pytest.mark.django_db
+def test_tsv_download_awards_without_columns(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    resp = client.post(
+        "/api/v2/download/awards/",
+        content_type="application/json",
+        data=json.dumps({"filters": {"award_type_codes": []}, "columns": []}),
+        file_format="tsv",
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert ".zip" in resp.json()["url"]
+
+
+@pytest.mark.django_db
 def test_download_awards_with_columns(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(

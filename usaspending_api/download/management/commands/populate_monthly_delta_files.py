@@ -15,7 +15,7 @@ from django.db.models import Case, When, Value, CharField, F
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_csv_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.download.filestreaming.download_generation import split_and_zip_csvs
+from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
@@ -185,7 +185,7 @@ class Command(BaseCommand):
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
 
             logger.info("Creating compressed file: {}".format(os.path.basename(zipfile_path)))
-            split_and_zip_csvs(zipfile_path, source_path, source_name)
+            split_and_zip_data_files(zipfile_path, source_path, source_name)
         else:
             zipfile_path = None
 

@@ -27,7 +27,7 @@ class DownloadAdministrator:
     def restart_download_operation(self):
         if process_is_local():
             self.update_download_job(job_status_id=JOB_STATUS_DICT["ready"], error_message=None)
-            download_generation.generate_csvs(download_job=self.download_job)
+            download_generation.generate_download(download_job=self.download_job)
         else:
             self.push_job_to_queue()
             self.update_download_job(job_status_id=JOB_STATUS_DICT["queued"], error_message=None)

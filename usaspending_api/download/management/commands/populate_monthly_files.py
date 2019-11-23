@@ -73,7 +73,7 @@ class Command(BaseCommand):
             # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
             #       modify your bulk download settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-            download_generation.generate_csvs(download_job=download_job)
+            download_generation.generate_download(download_job=download_job)
             if cleanup:
                 # Get all the files that have the same prefix except for the update date
                 file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'

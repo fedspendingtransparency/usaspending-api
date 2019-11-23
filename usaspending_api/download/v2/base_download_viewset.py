@@ -78,7 +78,7 @@ class BaseDownloadViewSet(APIView):
     def process_request(self, download_job):
         if settings.IS_LOCAL:
             # Locally, we do not use SQS
-            download_generation.generate_csvs(download_job=download_job)
+            download_generation.generate_download(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
