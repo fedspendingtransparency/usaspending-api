@@ -1,4 +1,4 @@
 [tool.black]
 line-length = 120
-target_version = ['py35']
-exclude = 'migrations'
+target_version = ['py37']
+exclude = '/(\.git|\.venv|venv|migrations)/'
