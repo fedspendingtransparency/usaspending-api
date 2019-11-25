@@ -3,6 +3,7 @@ from usaspending_api.common.helpers.orm_helpers import FiscalYear
 from django.db.models.functions import Concat
 from django.db.models import Value
 
+
 def universal_transaction_matview_annotations():
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
