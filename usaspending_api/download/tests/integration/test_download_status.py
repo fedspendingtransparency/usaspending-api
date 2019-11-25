@@ -12,9 +12,7 @@ from usaspending_api.common.helpers.generic_helper import generate_test_db_conne
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.download.filestreaming import csv_generation
-
-EXPECTED_COLUMNS_TRANSACTIONS = 275
-EXPECTED_COLUMNS_AWARDS = 261
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
 @pytest.fixture
@@ -168,7 +166,7 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == EXPECTED_COLUMNS_AWARDS
+    assert resp.json()["total_columns"] == len(query_paths["award"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -206,7 +204,7 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == EXPECTED_COLUMNS_TRANSACTIONS
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -244,7 +242,7 @@ def test_download_idv_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == EXPECTED_COLUMNS_TRANSACTIONS
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -284,7 +282,7 @@ def test_download_transactions_status(client, download_test_data, refresh_matvie
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == EXPECTED_COLUMNS_TRANSACTIONS
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -322,4 +320,4 @@ def test_download_transactions_limit(client, download_test_data, refresh_matview
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == EXPECTED_COLUMNS_TRANSACTIONS
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
