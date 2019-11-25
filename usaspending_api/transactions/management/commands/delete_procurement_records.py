@@ -1,9 +1,10 @@
 import boto3
 import csv
+import io
 import logging
-import os
 import re
 
+from collections import defaultdict
 from datetime import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -29,120 +30,85 @@ class Command(GenericTransactionLoader, BaseCommand):
             type=datetime_command_line_argument_type(naive=True),  # Broker and S3 date/times are naive.
             help="Load/Reload records from the provided datetime to the script execution start time.",
         )
+        parser.add_argument(
+            "--dry-run",
+            dest="skip_deletes",
+            action="store_true",
+            help="Obtain the list of removed transactions, but skip the delete step.",
+        )
 
     def handle(self, *args, **options):
-        logger.info("STARTING SCRIPT")
-        ids = self.determine_deleted_transactions(options["datetime"].date())
-        self.delete_rows(ids)
-
-    def delete_rows(self, ids):
-        sql = "DELETE FROM {} WHERE detached_award_procurement_id IN {}".format(self.destination_table_name, tuple(ids))
-        connection = get_connection(read_only=False)
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-            logger.info("Removed {} rows".format(cursor.fetchall()))
-
-    @staticmethod
-    def determine_deleted_transactions(date):
-        ids_to_delete = []
-        regex_str = ".*_delete_records_(IDV|award).*"
-
-        if settings.IS_LOCAL:
-            for file in os.listdir(settings.CSV_LOCAL_PATH):
-                if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= date:
-                    with open(settings.CSV_LOCAL_PATH + file, "r") as current_file:
-                        # open file, split string to array, skip the header
-                        reader = csv.reader(current_file.read().splitlines())
-                        next(reader)
-                        unique_key_list = [rows[0] for rows in reader]
-
-                        ids_to_delete += unique_key_list
-        else:
-            # Connect to AWS
-            aws_region = settings.USASPENDING_AWS_REGION
-            fpds_bucket_name = settings.FPDS_BUCKET_NAME
-
-            if not (aws_region and fpds_bucket_name):
-                raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME")
-
-            s3client = boto3.client("s3", region_name=aws_region)
-            s3resource = boto3.resource("s3", region_name=aws_region)
-            s3_bucket = s3resource.Bucket(fpds_bucket_name)
-
-            # make an array of all the keys in the bucket
-            file_list = [item.key for item in s3_bucket.objects.all()]
-
-            # Only use files that match the date we're currently checking
-            for item in file_list:
-                # if the date on the file is the same day as we're checking
-                if (
-                    re.search(regex_str, item)
-                    and "/" not in item
-                    and datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
-                ):
-                    s3_item = s3client.get_object(Bucket=fpds_bucket_name, Key=item)
-                    reader = csv.reader(s3_item["Body"].read().decode("utf-8").splitlines())
-
-                    # skip the header, the reader doesn't ignore it for some reason
-                    next(reader)
-                    # make an array of all the detached_award_procurement_ids
-                    unique_key_list = [rows[0] for rows in reader]
-
-                    ids_to_delete += unique_key_list
-
-        logger.info("Number of records to delete: %s" % str(len(ids_to_delete)))
-        return ids_to_delete
-
-    @staticmethod
-    def determine_deleted_transactions_experimental(date):
-        ids_to_delete = {}
-        regex_str = ".*_delete_records_(IDV|award).*"
-
-        if settings.IS_LOCAL:
-            logger.info("Local mode does not obtain deleted records")
-            return ids_to_delete
-
         if not (settings.USASPENDING_AWS_REGION and settings.FPDS_BUCKET_NAME):
             raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME")
 
-        # s3client = boto3.client("s3", region_name=settings.USASPENDING_AWS_REGION)
-        # s3resource = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
-        # s3_bucket = s3resource.Bucket(settings.FPDS_BUCKET_NAME)
+        logger.info("STARTING SCRIPT")
+        removed_records = self.fetch_deleted_transactions(options["datetime"].date())
+        import json
+
+        logger.warn(f"diagnostics: {json.dumps(removed_records)}")
+        if removed_records and not options["skip_deletes"]:
+            self.delete_rows(removed_records)
+        else:
+            logger.warn(f"Skipping deletes for {removed_records}")
+
+    def delete_rows(self, removed_records):
+        delete_template = "DELETE FROM {table} WHERE {key} IN {ids} AND updated_at < '{date}'::date"
+        connection = get_connection(read_only=False)
+        with connection.cursor() as cursor:
+            for date, ids in removed_records.items():
+                sql = delete_template.format(
+                    table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
+                )
+                cursor.execute(sql)
+                logger.info(f"Removed {cursor.rowcount} rows from {date} deletes")
+
+    @staticmethod
+    def fetch_deleted_transactions(date):
+        ids_to_delete = defaultdict(list)
+        regex_str = ".*_delete_records_(IDV|award).*"
+
+        if settings.IS_LOCAL:
+            logger.info("Local mode does not handle deleted records")
+            return ids_to_delete
+
         s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_bucket = s3.Bucket(settings.FPDS_BUCKET_NAME)
 
         # Only use files that match the date we're currently checking
         for obj in s3_bucket.objects.all():
             key_name = obj.key
-            if not re.search(regex_str, key_name):
+            if "/" in key_name or not re.search(regex_str, key_name):
                 continue
 
             file_date = datetime.strptime(key_name[: key_name.find("_")], "%m-%d-%Y").date()
 
-            if "/" in key_name or file_date < date:
+            if file_date < date:
                 continue
 
-            reader = list()
-            logger.warn("========= {}".format(key_name))
+            logger.info("========= {}".format(key_name))
+            data = io.BytesIO()
+            s3_bucket.download_fileobj(key_name, data)
+            data.seek(0)
+            reader = csv.reader(data.read().decode("utf-8").splitlines())
+            next(reader)  # skip the header
 
-            with open("filename", "r+b") as data:
-                s3_bucket.download_fileobj(key_name, data)
-                data.seek(0)
-                logger.warn(data.read().decode("utf-8"))
-                return
-                reader = [d.split(",") for d in data.read().decode("utf-8").splitlines()]
-                # data.seek(0)
-                # reader = csv.reader(data.read().decode("utf-8").splitlines())
+            full_key_list = [rows[0] for rows in reader]
+            numeric_keys = list([int(rows) for rows in full_key_list if rows.isnumeric()])
+            odd_ids = set(full_key_list).symmetric_difference([str(id) for id in numeric_keys])
 
-            # next(reader)  # skip the header
+            if odd_ids:
+                logger.info(f"Unexpected non-numeric IDs in file: {list(odd_ids)}")
 
-            for rows in reader:
-                logger.warn(rows)
-            unique_key_list = list([int(rows[0]) for rows in reader[1:]])
-
-            if unique_key_list:
-                ids_to_delete[file_date.strftime("%Y-%m-%d")] = unique_key_list
+            if numeric_keys:
+                logger.info(f"Obtained {len(numeric_keys)} IDs in file")
+                ids_to_delete[file_date.strftime("%Y-%m-%d")].extend(numeric_keys)
+            else:
+                logger.warn("No IDs in file!")
 
         total_ids = sum([len(v) for v in ids_to_delete.values()])
-        logger.info("Number of records to delete: {}".format(total_ids))
+        logger.info(f"Total number of delete records to process: {total_ids}")
         return ids_to_delete
+
+    @staticmethod
+    def store_delete_records():
+        logger.info("Nothing to store for procurement deletes")
