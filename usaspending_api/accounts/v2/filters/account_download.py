@@ -90,6 +90,7 @@ def account_download_filter(account_type, download_table, filters, account_level
                 "treasury_account__tas_rendering_label",
                 "program_activity__program_activity_code",
                 "object_class__object_class",
+                "object_class__direct_reimbursable",
             ],
         }
         distinct_cols = unique_columns_mapping[account_type]
@@ -231,12 +232,9 @@ def retrieve_fyq_filters(account_type, account_level, filters):
     if filters.get("fy", False) and filters.get("quarter", False):
         start_date, end_date = start_and_end_dates_from_fyq(filters["fy"], filters["quarter"])
 
-        reporting_period_start = "reporting_period_start"
-        reporting_period_end = "reporting_period_end"
-
         # For all files, filter up to and including the FYQ
-        reporting_period_start = "{}__gte".format(reporting_period_start)
-        reporting_period_end = "{}__lte".format(reporting_period_end)
+        reporting_period_start = "reporting_period_start__gte"
+        reporting_period_end = "reporting_period_end__lte"
         if str(filters["quarter"]) != "1":
             start_date = datetime.date(filters["fy"] - 1, 10, 1)
     else:
