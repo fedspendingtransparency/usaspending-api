@@ -1,6 +1,7 @@
 from django.contrib.postgres.aggregates import StringAgg
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
-
+from django.db.models.functions import Concat
+from django.db.models import Value
 
 def universal_transaction_matview_annotations():
     annotation_fields = {
@@ -24,6 +25,9 @@ def universal_award_matview_annotations():
         ),
         "federal_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
+        ),
+        "usaspending_permalink": Concat(
+            Value("https://usaspending.gov/#/award/"), "award__generated_unique_award_id"
         ),
     }
     return annotation_fields
