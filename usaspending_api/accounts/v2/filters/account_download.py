@@ -1,12 +1,13 @@
 import datetime
 
-from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, Value, When
 from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
 
@@ -132,6 +133,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
     # for all account types
     derived_fields = {
+        "last_reported_submission_period": FiscalYearAndQuarter("reporting_period_end"),
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         "treasury_account_symbol": Concat(
             Case(
@@ -181,6 +183,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 def generate_federal_account_query(queryset, account_type, tas_id):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
     derived_fields = {
+        "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
             "{}__federal_account__agency_identifier".format(tas_id),
