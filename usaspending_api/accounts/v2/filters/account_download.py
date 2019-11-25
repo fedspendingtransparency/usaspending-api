@@ -96,7 +96,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         distinct_cols = unique_columns_mapping[account_type]
         order_by_cols = distinct_cols + [
             "-reporting_period_start",
-            "-financial_accounts_by_program_activity_object_class_id",
+            "-pk",
         ]
         latest_ids_q = download_table.objects.filter(**query_filters).distinct(*distinct_cols).order_by(*order_by_cols)
         latest_ids = list(latest_ids_q.values_list(unique_id_mapping[account_type], flat=True))
