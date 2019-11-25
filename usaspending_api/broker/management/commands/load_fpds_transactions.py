@@ -156,7 +156,7 @@ class Command(BaseCommand):
             # destroy_orphans()
             logger.info(
                 "updating award values ({} awards touched by transaction modifications)".format(
-                    len(self.modified_award_ids)
+                    len(tuple(self.modified_award_ids))
                 )
             )
             logger.info("{} awards touched by update_awards()".format(update_awards(tuple(self.modified_award_ids))))
