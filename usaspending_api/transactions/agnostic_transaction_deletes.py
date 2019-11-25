@@ -1,14 +1,8 @@
-import boto3
-import csv
-import io
 import logging
-import re
 
-from collections import defaultdict
-from datetime import datetime
 from django.conf import settings
-from usaspending_api.common.helpers.sql_helpers import get_connection
 
+from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 
 logger = logging.getLogger("script")
