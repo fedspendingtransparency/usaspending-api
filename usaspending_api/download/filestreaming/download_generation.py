@@ -26,7 +26,7 @@ from usaspending_api.download.helpers import (
     multipart_upload,
     write_to_download_log as write_to_log,
 )
-from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
+from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
@@ -212,7 +212,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 
-        delim = get_extension_delimiter(extension)
+        delim = FILE_FORMATS[extension]["delimiter"]
 
         # Log how many rows we have
         write_to_log(message="Counting rows in delimited text file", download_job=download_job)
@@ -246,7 +246,7 @@ def split_and_zip_data_files(zip_file_path, source_path, source_name, extension,
         # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
-        delim = get_extension_delimiter(extension)
+        delim = FILE_FORMATS[extension]["delimiter"]
 
         output_template = f"{source_name}_%s.{extension}"
         write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
@@ -305,14 +305,17 @@ def wait_for_process(process, start_time, download_job):
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
-    while process.is_alive() and (time.perf_counter() - start_time) < MAX_VISIBILITY_TIMEOUT:
+    while process.is_alive():
+        if not download_job.monthly_download and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT:
+            break
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
             time.sleep(WAIT_FOR_PROCESS_SLEEP)
         sleep_count += 1
 
-    if (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
+    over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
+    if (not download_job.monthly_download and over_time) or process.exitcode != 0:
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
@@ -338,12 +341,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns,
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
 
-    if extension == "csv":
-        delimiter = "WITH CSV HEADER"
-    elif extension == "tsv":
-        delimiter = r"WITH CSV DELIMITER E'\t' HEADER"
-    else:
-        raise RuntimeError(f"Unexpected value for 'file_format': {extension}")
+    options = FILE_FORMATS[extension]["options"]
 
     write_to_log(message="Creating PSQL Query: {}".format(query_annotated), download_job=download_job, is_debug=True)
 
@@ -351,7 +349,7 @@ def generate_temp_query_file(source_query, limit, source, download_job, columns,
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
 
     with open(temp_sql_file_path, "w") as file:
-        file.write(r"\copy ({}) To STDOUT {}".format(query_annotated, delimiter))
+        file.write(r"\copy ({}) To STDOUT {}".format(query_annotated, options))
 
     return temp_sql_file, temp_sql_file_path
 
@@ -461,14 +459,3 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
-
-
-def get_extension_delimiter(extension: str) -> str:
-    if extension == "csv":
-        delimiter = ","
-    elif extension == "tsv":
-        delimiter = "\t"
-    else:
-        raise NotImplementedError(f"Unexpected extension value: {extension}")
-
-    return delimiter

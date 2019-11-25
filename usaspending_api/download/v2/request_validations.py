@@ -280,9 +280,9 @@ def _validate_required_parameters(request_data, required_parameters):
 
 
 def _validate_file_formats(json_request: dict) -> str:
-    """ensure the provided value is in the acceptable format enum"""
-    file_ext = str(json_request.get("file_format", FILE_FORMATS[0])).lower()
+    """ensure the provided value is in the acceptable format enum, defaults to csv"""
+    file_ext = str(json_request.get("file_format", "csv")).lower()
     if file_ext not in FILE_FORMATS:
-        msg = f"{file_ext} is not an acceptable value for 'file_format'. Provide one of these values: {FILE_FORMATS}"
+        msg = f"'{file_ext}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
         raise InvalidParameterException(msg)
     return file_ext
