@@ -13,7 +13,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_delimited_file
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
@@ -217,7 +217,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         # Log how many rows we have
         write_to_log(message="Counting rows in delimited text file", download_job=download_job)
         try:
-            download_job.number_of_rows += count_rows_in_csv_file(
+            download_job.number_of_rows += count_rows_in_delimited_file(
                 filename=source_path, has_header=True, delimiter=delim
             )
         except Exception:

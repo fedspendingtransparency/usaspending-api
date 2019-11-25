@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
@@ -268,7 +268,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
     if not skip_counts:
-        download_count = count_rows_in_csv_file(filename, has_header=True, safe=False)
+        download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
         if count != download_count:
             msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
             printf({"msg": msg.format(count, download_count, filename), "job": job_id, "f": "Download"})

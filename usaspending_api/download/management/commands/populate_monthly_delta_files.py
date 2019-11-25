@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField, F
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
 from usaspending_api.download.filestreaming.download_source import DownloadSource
@@ -180,7 +180,7 @@ class Command(BaseCommand):
         # Append deleted rows to the end of the file
         if not self.debugging_skip_deleted:
             self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
-        if count_rows_in_csv_file(source_path, has_header=True, safe=True) > 0:
+        if count_rows_in_delimited_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
 
