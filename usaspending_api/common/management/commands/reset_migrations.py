@@ -9,7 +9,7 @@ logger = logging.getLogger("console")
 # list as a command argument instead of hard-coding here
 app_list = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]
 
-remove_ghost_migrations = "DELETE FROM django_migrations " "WHERE app in %s "
+remove_ghost_migrations = "DELETE FROM django_migrations WHERE app in %s "
 
 
 class Command(BaseCommand):
