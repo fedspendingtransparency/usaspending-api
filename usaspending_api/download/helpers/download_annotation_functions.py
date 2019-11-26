@@ -68,5 +68,6 @@ def subaward_annotations():
         "prime_award_treasury_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
         ),
+        "usaspending_permalink": Concat(Value("https://usaspending.gov/#/award/"), "award__generated_unique_award_id"),
     }
     return annotation_fields

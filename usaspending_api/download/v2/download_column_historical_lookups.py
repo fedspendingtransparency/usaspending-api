@@ -1299,6 +1299,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
         "d2": OrderedDict(
@@ -1418,6 +1419,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
     },
