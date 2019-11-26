@@ -1422,10 +1422,7 @@ query_paths = {
     "account_balances": {
         "treasury_account": OrderedDict(
             [
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
+                ("last_reported_submission_period", None),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_identifier", "treasury_account_identifier__allocation_transfer_agency_id"),
                 ("agency_identifier", "treasury_account_identifier__agency_id"),
                 ("beginning_period_of_availability", "treasury_account_identifier__beginning_period_of_availability"),
@@ -1473,10 +1470,7 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
+                ("last_reported_submission_period", None),  # Column is appended to in account_download.py
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
@@ -1513,10 +1507,7 @@ query_paths = {
     "object_class_program_activity": {
         "treasury_account": OrderedDict(
             [
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
+                ("last_reported_submission_period", None),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_identifier", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -1550,10 +1541,7 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
+                ("last_reported_submission_period", None),  # Column is appended to in account_download.py
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
