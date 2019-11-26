@@ -31,7 +31,7 @@ class AgnosticTransactionLoader:
             "--ids",
             nargs="+",
             type=int,
-            help="Load/Reload transactions using this {} list (space-separated)".format(self.shared_pk),
+            help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)",
         )
         mutually_exclusive_group.add_argument(
             "--date",
@@ -43,23 +43,23 @@ class AgnosticTransactionLoader:
             "--since-last-load",
             dest="incremental_date",
             action="store_true",
-            help="Equivalent to loading from date, but date is drawn from last update date recorded in DB",
+            help="Equivalent to loading from date, but date is drawn from last update date recorded in DB.",
         )
         mutually_exclusive_group.add_argument(
             "--file",
             dest="file",
             type=filepath_command_line_argument_type(chunk_count=1),
             help=(
-                "Load/Reload transactions using {} values stored at this file path"
-                " (one ID per line) {}".format(self.shared_pk, SCHEMA_HELP_TEXT)
+                f"Load/Reload transactions using {self.shared_pk} values stored at this file path"
+                f" (one ID per line) {SCHEMA_HELP_TEXT}"
             ),
         )
         mutually_exclusive_group.add_argument(
             "--reload-all",
             action="store_true",
             help=(
-                "Script will load or reload all {} records from broker database, from all time."
-                " This does NOT clear the USASpending database first".format(self.broker_source_table_name)
+                f"Script will load or reload all {self.broker_source_table_name} records from broker database,"
+                " from all time. This does NOT clear the USASpending database first."
             ),
         )
 
@@ -91,13 +91,13 @@ class AgnosticTransactionLoader:
         with Timer(message="Compiling IDs to process", success_logger=logger.info, failure_logger=logger.error):
             self.file_path, self.total_ids_to_process = self.compile_transactions_to_process()
 
-        logger.info("{:,} IDs stored".format(self.total_ids_to_process))
+        logger.info(f"{self.total_ids_to_process:,} IDs stored")
         with Timer(message="Upsert operation", success_logger=logger.info, failure_logger=logger.error):
             self.copy_broker_table_data(self.broker_source_table_name, self.destination_table_name, self.shared_pk)
 
     def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
-        logger.info("Processed {:,} transction records (insert/update)".format(self.upsert_records))
+        logger.info(f"Processed {self.upsert_records:,} transction records (insert/update)")
         if self.successful_run and (self.is_incremental or self.options["reload_all"]):
             logger.info("Updated last run time for next incremental load")
             update_last_load_date(self.last_load_record, self.start_time)
@@ -124,7 +124,7 @@ class AgnosticTransactionLoader:
         else:
             ids = self.generate_ids_from_broker()
 
-        file_name = "{}_{}".format(self.working_file_prefix, self.start_time.strftime("%Y%m%d_%H%M%S_%f"))
+        file_name = f"{self.working_file_prefix}_{self.start_time.strftime('%Y%m%d_%H%M%S_%f')}"
         return store_ids_in_file(ids, file_name)
 
     def parse_options(self):
@@ -133,8 +133,8 @@ class AgnosticTransactionLoader:
             logger.info("FULL RELOAD")
             return ""
         elif self.options["datetime"]:
-            logger.info("Using datetime '{}'".format(self.options["datetime"]))
-            return "updated_at >= '{}'".format(self.options["datetime"])
+            logger.info(f"Using datetime '{self.options['datetime']}'")
+            return f"\"updated_at\" >= '{self.options['datetime']}'"
 
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
@@ -174,5 +174,5 @@ class AgnosticTransactionLoader:
             with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
                 record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
             transactions_remaining_count -= record_count
-            logger.info("{:,} successfull upserts, {:,} remaining.".format(record_count, transactions_remaining_count))
+            logger.info(f"{record_count:,} successfull upserts, {transactions_remaining_count:,} remaining.")
             self.upsert_records += record_count
