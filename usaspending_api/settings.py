@@ -78,7 +78,6 @@ CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_dow
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
-DOWNLOAD_PERMALINK_URL = HOST + "/#/award/"
 
 # Elasticsearch
 ES_HOSTNAME = ""
