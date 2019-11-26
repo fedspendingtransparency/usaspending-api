@@ -16,12 +16,11 @@ logger = logging.getLogger("script")
 
 
 class Command(AgnosticDeletes, BaseCommand):
-    help = "Upsert procurement transactions from a Broker database into an USAspending database"
+    help = "Delete procurement transactions in an USAspending database"
     destination_table_name = SourceProcurmentTransaction().table_name
     shared_pk = "detached_award_procurement_id"
 
-    @staticmethod
-    def fetch_deleted_transactions(date):
+    def fetch_deleted_transactions(self, date):
         ids_to_delete = defaultdict(list)
         regex_str = ".*_delete_records_(IDV|award).*"
 
@@ -67,6 +66,5 @@ class Command(AgnosticDeletes, BaseCommand):
         logger.info(f"Total number of delete records to process: {total_ids}")
         return ids_to_delete
 
-    @staticmethod
-    def store_delete_records():
+    def store_delete_records(self, id_list):
         logger.info("Nothing to store for procurement deletes")

@@ -9,7 +9,6 @@ logger = logging.getLogger("script")
 
 
 class AgnosticDeletes:
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--date",
@@ -51,5 +50,5 @@ class AgnosticDeletes:
     def fetch_deleted_transactions(self, date):
         raise NotImplementedError
 
-    def store_delete_records(self):
+    def store_delete_records(self, id_list):
         raise NotImplementedError
