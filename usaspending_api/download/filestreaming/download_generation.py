@@ -367,14 +367,16 @@ def apply_annotations_to_sql(raw_query, aliases):
     query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|FROM)", raw_query)[0]
+    selects_str = re.findall(
+        r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
+    )[0]
     just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(",")]
 
     # Create a list from the derived values between SELECT and FROM
     remove_selects = query_before_from.replace(selects_str[0], "")
     deriv_str_lookup = re.findall(
-        r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
+        r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
     )
     deriv_dict = {}
     for str_match in deriv_str_lookup:
@@ -389,7 +391,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     # Validate we have an alias for each value in the SELECT string
     if len(selects_list) != len(aliases_copy):
-        raise Exception("Length of alises doesn't match the columns in selects")
+        raise Exception("Length of aliases doesn't match the columns in selects")
 
     # Match aliases with their values
     values_list = [
