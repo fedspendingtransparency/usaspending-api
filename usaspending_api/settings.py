@@ -37,7 +37,8 @@ SECRET_KEY = get_random_string()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+HOST = "localhost:3000"  # To be overwritten by Ansible
+ALLOWED_HOSTS = ["*"]  # Ansible will insert the deployed url into this value
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
@@ -77,6 +78,7 @@ CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_dow
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
+DOWNLOAD_PERMALINK_URL = HOST + "/#/award/"
 
 # Elasticsearch
 ES_HOSTNAME = ""

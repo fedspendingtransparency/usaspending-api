@@ -1,5 +1,6 @@
 from django.contrib.postgres.aggregates import StringAgg
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
+from usaspending_api.settings import DOWNLOAD_PERMALINK_URL
 from django.db.models.functions import Concat
 from django.db.models import Value
 
@@ -27,7 +28,7 @@ def universal_award_matview_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value("https://usaspending.gov/#/award/"), "award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(Value(DOWNLOAD_PERMALINK_URL), "award__generated_unique_award_id"),
     }
     return annotation_fields
 
@@ -40,7 +41,7 @@ def idv_order_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value("https://usaspending.gov/#/award/"), "generated_unique_award_id"),
+        "usaspending_permalink": Concat(Value(DOWNLOAD_PERMALINK_URL), "generated_unique_award_id"),
     }
     return annotation_fields
 
@@ -68,6 +69,6 @@ def subaward_annotations():
         "prime_award_treasury_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value("https://usaspending.gov/#/award/"), "award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(Value(DOWNLOAD_PERMALINK_URL), "award__generated_unique_award_id"),
     }
     return annotation_fields
