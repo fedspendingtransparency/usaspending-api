@@ -93,9 +93,7 @@ class AgnosticTransactionLoader:
 
         logger.info("{:,} IDs stored".format(self.total_ids_to_process))
         with Timer(message="Upsert operation", success_logger=logger.info, failure_logger=logger.error):
-            self.copy_broker_table_data(
-                self.broker_source_table_name, self.destination_table_name, self.shared_pk,
-            )
+            self.copy_broker_table_data(self.broker_source_table_name, self.destination_table_name, self.shared_pk)
 
     def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
@@ -133,13 +131,14 @@ class AgnosticTransactionLoader:
         """Create the SQL predicate to limit which transaction records are transfered"""
         if self.options["reload_all"]:
             logger.info("FULL RELOAD")
-            return "TRUE"
+            return ""
         elif self.options["datetime"]:
             logger.info("Using datetime '{}'".format(self.options["datetime"]))
             return "updated_at >= '{}'".format(self.options["datetime"])
 
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
+
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
@@ -151,14 +150,18 @@ class AgnosticTransactionLoader:
                         yield broker_id
 
     def combine_sql(self):
-        sql = self.broker_select_sql.format(self.shared_pk, self.broker_source_table_name)
         predicate = self.parse_options()
 
-        keyword = "WHERE"
-        if "WHERE" in sql:
-            keyword = "AND"
+        if predicate == "":
+            optional_predicate = predicate
+        elif "WHERE" in self.broker_select_sql:
+            optional_predicate = f"AND {predicate}"
+        else:
+            optional_predicate = f"WHERE {predicate}"
 
-        return "{} {} {}".format(sql, keyword, predicate)
+        return self.broker_select_sql.format(
+            id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate
+        )
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
