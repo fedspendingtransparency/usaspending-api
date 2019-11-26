@@ -37,8 +37,11 @@ def read_file_for_database_ids(provided_uri, chunk_count):
     try:
         with RetrieveFileFromUri(provided_uri).get_file_object() as file:
             chunk_list = []
-            for line in file.readlines():
-                chunk_list.append(int(line.decode("utf-8")))
+            while True:
+                line = file.readline()
+                if not line:
+                    break
+                chunk_list.append(int(line))
                 if len(chunk_list) >= chunk_count:
                     yield chunk_list
                     chunk_list = []

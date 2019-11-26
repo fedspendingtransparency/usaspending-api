@@ -19,7 +19,7 @@ CHUNK_SIZE = 25000
 logger = logging.getLogger("script")
 
 
-class GenericTransactionLoader:
+class AgnosticTransactionLoader:
     is_incremental = False
     successful_run = False
     upsert_records = 0
@@ -133,7 +133,7 @@ class GenericTransactionLoader:
         """Create the SQL predicate to limit which transaction records are transfered"""
         if self.options["reload_all"]:
             logger.info("FULL RELOAD")
-            return ""
+            return "TRUE"
         elif self.options["datetime"]:
             logger.info("Using datetime '{}'".format(self.options["datetime"]))
             return "updated_at >= '{}'".format(self.options["datetime"])
