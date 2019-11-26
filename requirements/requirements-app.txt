@@ -42,7 +42,7 @@ py-gfm==0.1.4
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
-python-dateutil==2.7.3
+python-dateutil==2.8.0
 python-json-logger==0.1.9
 pytz==2019.2
 requests==2.22.0
