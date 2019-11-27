@@ -1063,6 +1063,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__contract_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__contract_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__contract_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__contract_data__last_modified"),
             ]
         ),
@@ -1172,6 +1173,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__assistance_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__assistance_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__assistance_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__assistance_data__modified_at"),
             ]
         ),

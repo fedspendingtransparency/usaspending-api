@@ -16,6 +16,7 @@ def universal_transaction_matview_annotations():
             ";",
             distinct=True,
         ),
+        "usaspending_permalink": Concat(Value(HOST + "/#/award/"), "transaction__award__generated_unique_award_id"),
     }
     return annotation_fields
 
