@@ -55,6 +55,7 @@ def idv_transaction_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
+        "usaspending_permalink": Concat(Value(HOST + "/#/award/"), "award__generated_unique_award_id"),
     }
     return annotation_fields
 
