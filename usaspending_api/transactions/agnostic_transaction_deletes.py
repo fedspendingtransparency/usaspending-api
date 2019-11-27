@@ -28,13 +28,15 @@ class AgnosticDeletes:
         if not (settings.USASPENDING_AWS_REGION and settings.FPDS_BUCKET_NAME):
             raise Exception("Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'FPDS_BUCKET_NAME'")
 
-        logger.info("STARTING SCRIPT")
+        logger.info(f"Starting processing deletes from {options['datetime']}")
         removed_records = self.fetch_deleted_transactions(options["datetime"].date())
 
-        if removed_records and not options["skip_deletes"]:
+        if options["skip_deletes"] and removed_records:
+            logger.warn(f"--dry-run flag used, skipping delete operations. IDs: {removed_records}")
+        elif removed_records:
             self.delete_rows(removed_records)
         else:
-            logger.warn(f"Skipping deletes for {removed_records}")
+            logger.warn("Nothing to delete")
 
     def delete_rows(self, removed_records):
         delete_template = "DELETE FROM {table} WHERE {key} IN {ids} AND updated_at < '{date}'::date"

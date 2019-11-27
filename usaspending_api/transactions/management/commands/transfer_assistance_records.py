@@ -7,6 +7,7 @@ from usaspending_api.transactions.models.source_assistance_transaction import So
 class Command(AgnosticTransactionLoader, BaseCommand):
     help = "Upsert assistance transactions from a Broker database into an USAspending database"
     broker_source_table_name = SourceAssistanceTransaction().broker_source_table
+    delete_management_command = "delete_assistance_records"
     destination_table_name = SourceAssistanceTransaction().table_name
     last_load_record = "source_assistance_transaction"
     lookback_minutes = 15

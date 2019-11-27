@@ -7,6 +7,7 @@ from usaspending_api.transactions.models.source_procurement_transaction import S
 class Command(AgnosticTransactionLoader, BaseCommand):
     help = "Upsert procurement transactions from a Broker database into an USAspending database"
     broker_source_table_name = SourceProcurmentTransaction().broker_source_table
+    delete_management_command = "delete_procurement_records"
     destination_table_name = SourceProcurmentTransaction().table_name
     last_load_record = "source_procurement_transaction"
     lookback_minutes = 0

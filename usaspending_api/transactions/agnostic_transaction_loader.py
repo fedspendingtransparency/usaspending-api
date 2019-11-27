@@ -2,6 +2,7 @@ import logging
 import psycopg2
 
 from datetime import datetime, timezone
+from django.core.management import call_command
 from pathlib import Path
 from typing import Tuple
 
@@ -15,11 +16,12 @@ from usaspending_api.transactions.loader_functions import filepath_command_line_
 from usaspending_api.transactions.loader_functions import read_file_for_database_ids
 from usaspending_api.transactions.loader_functions import store_ids_in_file
 
-CHUNK_SIZE = 25000
 logger = logging.getLogger("script")
 
 
 class AgnosticTransactionLoader:
+    begining_of_time = "1970-01-01"
+    chunk_size = 25000
     is_incremental = False
     successful_run = False
     upsert_records = 0
@@ -62,6 +64,14 @@ class AgnosticTransactionLoader:
                 " from all time. This does NOT clear the USASpending database first."
             ),
         )
+        parser.add_argument(
+            "--process-deletes",
+            action="store_true",
+            help=(
+                "If not in local mode, process deletes before beginning the upsert operations."
+                " This shouldn't be used with --file or --ids parameters"
+            ),
+        )
 
     def handle(self, *args, **options):
         logger.info("STARTING SCRIPT")
@@ -71,6 +81,12 @@ class AgnosticTransactionLoader:
         if self.options["incremental_date"]:
             self.is_incremental = True
             self.options["datetime"] = self.obtain_last_date()
+
+        if self.options["process_deletes"]:
+            delete_date = self.options["datetime"]
+            if not delete_date:
+                delete_date = self.begining_of_time
+            call_command(self.delete_management_command, date=delete_date)
 
         try:
             with Timer(message="script process", success_logger=logger.info, failure_logger=logger.error):
@@ -108,7 +124,7 @@ class AgnosticTransactionLoader:
             self.file_path.unlink()
 
         if self.successful_run:
-            logger.info("Success. Completing execution")
+            logger.info(f"Loading {self.destination_table_name} completed successfully")
         else:
             logger.info("Failed state on exit")
             raise SystemExit(1)
@@ -143,7 +159,7 @@ class AgnosticTransactionLoader:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
                 while True:
-                    id_list = [id[0] for id in cursor.fetchmany(size=CHUNK_SIZE)]
+                    id_list = [id[0] for id in cursor.fetchmany(size=self.chunk_size)]
                     if not id_list:
                         break
                     for broker_id in id_list:
@@ -169,10 +185,10 @@ class AgnosticTransactionLoader:
         source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
         transactions_remaining_count = self.total_ids_to_process
 
-        for id_list in read_file_for_database_ids(str(self.file_path), CHUNK_SIZE):
+        for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size):
             predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
             with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
                 record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
             transactions_remaining_count -= record_count
-            logger.info(f"{record_count:,} successfull upserts, {transactions_remaining_count:,} remaining.")
+            logger.info(f"{record_count:,} successful upserts, {transactions_remaining_count:,} remaining.")
             self.upsert_records += record_count
