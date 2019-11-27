@@ -129,7 +129,6 @@ def test_tsv_download_awards_without_columns(client, download_test_data):
         "/api/v2/download/awards/",
         content_type="application/json",
         data=json.dumps({"filters": {"award_type_codes": []}, "columns": [], "file_format": "tsv"}),
-        file_format="tsv",
     )
 
     assert resp.status_code == status.HTTP_200_OK
