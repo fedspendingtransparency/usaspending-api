@@ -33,6 +33,18 @@ def validate_award_request(request_data):
 
     json_request = {"download_types": award_levels, "filters": {}}
 
+    # Set defaults of non-required parameters
+    json_request["columns"] = request_data.get("columns", [])
+    json_request["file_format"] = str(json_request.get("file_format", "csv")).lower()
+
+    check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
+
+    json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
+
+    _validate_and_update_locations(filters, json_request)
+    _validate_tas_codes(filters, json_request)
+    _validate_file_format(json_request)
+
     # Overriding all other filters if the keyword filter is provided in year-constraint download
     # Make sure this is after checking the award_levels
     constraint_type = request_data.get("constraint_type")
@@ -43,17 +55,6 @@ def validate_award_request(request_data):
         }
         json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
         return json_request
-
-    # Set defaults of non-required parameters
-    json_request["columns"] = request_data.get("columns", [])
-    json_request["file_format"] = _validate_file_formats(request_data)
-
-    check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
-
-    json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
-
-    _validate_and_update_locations(filters, json_request)
-    _validate_tas_codes(filters, json_request)
 
     # Validate time periods
     total_range_count = validate_time_periods(filters, json_request)
@@ -81,10 +82,13 @@ def validate_idv_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
     award_id, piid, _, _, _ = _validate_award_id(request_data)
 
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
+
     return {
         "account_level": "treasury_account",
         "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
-        "file_format": _validate_file_formats(request_data),
+        "file_format": request_data["file_format"],
         "include_file_description": {"source": settings.IDV_DOWNLOAD_README_FILE_PATH, "destination": "readme.txt"},
         "piid": piid,
         "is_for_idv": True,
@@ -100,12 +104,15 @@ def validate_idv_request(request_data):
 
 def validate_contract_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award_id, piid, _, _, _ = _validate_award_id(request_data)
+
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
 
     return {
         "account_level": "treasury_account",
         "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
-        "file_format": _validate_file_formats(request_data),
+        "file_format": request_data["file_format"],
         "include_file_description": {
             "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
             "destination": "ContractAwardSummary_download_readme.txt",
@@ -124,14 +131,18 @@ def validate_contract_request(request_data):
 
 def validate_assistance_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award_id, _, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
+
     award = fain
     if "AGG" in generated_unique_award_id:
         award = uri
     return {
         "account_level": "treasury_account",
         "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
-        "file_format": _validate_file_formats(request_data),
+        "file_format": request_data["file_format"],
         "include_file_description": {
             "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
             "destination": "AssistanceAwardSummary_download_readme.txt",
@@ -156,7 +167,8 @@ def validate_account_request(request_data):
 
     filters = _validate_filters(request_data)
 
-    json_request["file_format"] = _validate_file_formats(request_data)
+    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(json_request)
 
     # Validate required filters
     for required_filter in ["fy", "quarter"]:
@@ -279,10 +291,8 @@ def _validate_required_parameters(request_data, required_parameters):
             raise InvalidParameterException("Missing one or more required body parameters: {}".format(required_param))
 
 
-def _validate_file_formats(json_request: dict) -> str:
-    """ensure the provided value is in the acceptable format enum, defaults to csv"""
-    file_ext = str(json_request.get("file_format", "csv")).lower()
-    if file_ext not in FILE_FORMATS:
-        msg = f"'{file_ext}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
+def _validate_file_format(json_request: dict) -> None:
+    val = json_request["file_format"]
+    if val not in FILE_FORMATS:
+        msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
         raise InvalidParameterException(msg)
-    return file_ext
