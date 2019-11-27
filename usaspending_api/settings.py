@@ -202,6 +202,7 @@ else:
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
 
+DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set

@@ -8,7 +8,7 @@ This endpoint is used by the Custom Award Data Download page.
 ## POST
 
 This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
-        
+
 + Request (application/json)
     + Attributes (object)
         + `award_levels` (required, array[enum[string]])
@@ -17,8 +17,12 @@ This route sends a request to the backend to begin generating a zipfile of award
                 + `sub_awards`
         + `filters` (required, Filters, fixed-type)
         + `columns` (optional, array[string])
-        + `file_format` (optional, string)
+        + `file_format` (optional, enum[string])
+            The format of the file(s) in the zip file containing the data.
             + Default: `csv`
+            + Members
+                + `csv`
+                + `tsv`
     + Body
 
             {
@@ -39,7 +43,7 @@ This route sends a request to the backend to begin generating a zipfile of award
     + Attributes (object)
         + `file_name` (required, string)
             Is the name of the zipfile containing CSVs that will be generated (file_name is timestamp followed by `_transactions` or `_awards`).
-        + `message` (required, string, nullable) 
+        + `message` (required, string, nullable)
             A human readable error message if the `status` is `failed`, otherwise it is `null`.
         + `seconds_elapsed` (required, string, nullable)
             Is the time taken to genereate the file (if `status` is `finished` or `failed`), or time taken so far (if `running`).
@@ -64,9 +68,9 @@ This route sends a request to the backend to begin generating a zipfile of award
 ## Filter Objects
 
 ### Filters (object)
-+ `agency` (required, string) 
++ `agency` (required, string)
     Agency database id to include, 'all' is also an option to include all agencies
-+ `award_types` (required, array[enum[string]]) 
++ `award_types` (required, array[enum[string]])
     + Members
         + `contracts`
         + `direct_payments`
@@ -74,7 +78,7 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `idvs`
         + `loans`
         + `other_financial_assistance`
-+ `date_range` (required, TimePeriod, fixed-type) 
++ `date_range` (required, TimePeriod, fixed-type)
     Object with start and end dates
 + `date_type` (required, enum[string])
     + Members
@@ -83,7 +87,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `keyword` (optional, string)
 + `place_of_performance_locations` (optional, array[Location], fixed-type)
 + `recipient_locations` (optional, array[Location], fixed-type)
-+ `sub_agency` (optional, string) 
++ `sub_agency` (optional, string)
     Sub-agency name to include (based on the agency filter)
 
 ### TimePeriod (object)

@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -109,7 +109,7 @@ def download_test_data(db):
 
 
 def test_download_count(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/count/",
         content_type="application/json",

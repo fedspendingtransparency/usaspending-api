@@ -13,12 +13,12 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file, partition_large_csv_file
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (
@@ -26,7 +26,7 @@ from usaspending_api.download.helpers import (
     multipart_upload,
     write_to_download_log as write_to_log,
 )
-from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
+from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
@@ -37,8 +37,8 @@ WAIT_FOR_PROCESS_SLEEP = 5
 logger = logging.getLogger("console")
 
 
-def generate_csvs(download_job):
-    """Derive the relevant file location and write CSVs to it"""
+def generate_download(download_job):
+    """Create data archive files from the download job object"""
 
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
@@ -47,6 +47,7 @@ def generate_csvs(download_job):
     piid = json_request.get("piid", None)
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
+    extension = json_request.get("file_format")
 
     file_name = start_download(download_job)
     try:
@@ -56,14 +57,16 @@ def generate_csvs(download_job):
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
 
-        write_to_log(message="Generating {}".format(file_name), download_job=download_job)
+        write_to_log(message=f"Generating {file_name}", download_job=download_job)
 
         # Generate sources from the JSON request object
-        sources = get_csv_sources(json_request)
+        sources = get_download_sources(json_request)
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit)
+            parse_source(
+                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension
+            )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -99,8 +102,7 @@ def generate_csvs(download_job):
             start_uploading = time.perf_counter()
             multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(
-                message="Uploading took {} seconds".format(time.perf_counter() - start_uploading),
-                download_job=download_job,
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job,
             )
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
@@ -118,8 +120,8 @@ def generate_csvs(download_job):
     return finish_download(download_job)
 
 
-def get_csv_sources(json_request):
-    csv_sources = []
+def get_download_sources(json_request):
+    download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request["filters"].get("agency", "all")
         filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
@@ -142,21 +144,21 @@ def get_csv_sources(json_request):
 
             if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
                 # only generate d1 files if the user is asking for contract data
-                d1_source = CsvSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
-                d1_filters = {"{}__isnull".format(VALUE_MAPPINGS[download_type]["contract_data"]): False}
+                d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
+                d1_filters = {f"{VALUE_MAPPINGS[download_type]['contract_data']}__isnull": False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
-                csv_sources.append(d1_source)
+                download_sources.append(d1_source)
 
             if award_type_codes & set(assistance_type_mapping.keys()):
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = CsvSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
-                d2_filters = {"{}__isnull".format(VALUE_MAPPINGS[download_type]["assistance_data"]): False}
+                d2_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
+                d2_filters = {f"{VALUE_MAPPINGS[download_type]['assistance_data']}__isnull": False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
-                csv_sources.append(d2_source)
+                download_sources.append(d2_source)
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
-            account_source = CsvSource(
+            account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
             )
             account_source.queryset = filter_function(
@@ -165,15 +167,15 @@ def get_csv_sources(json_request):
                 json_request["filters"],
                 json_request["account_level"],
             )
-            csv_sources.append(account_source)
+            download_sources.append(account_source)
 
-    verify_requested_columns_available(tuple(csv_sources), json_request.get("columns", []))
+    verify_requested_columns_available(tuple(download_sources), json_request.get("columns", []))
 
-    return csv_sources
+    return download_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit):
-    """Write to csv and zip files using the source data"""
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
+    """Write to delimited text file(s) and zip file(s) using the source data"""
     d_map = {
         "d1": "contracts",
         "d2": "assistance",
@@ -191,17 +193,17 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
-        source_name = "{}_{}_{}".format(
-            source.agency_code, d_map[source.file_type], VALUE_MAPPINGS[source.source_type]["download_name"]
-        )
+        download_name = VALUE_MAPPINGS[source.source_type]["download_name"]
+        source_name = f"{source.agency_code}_{d_map[source.file_type]}_{download_name}"
+
     source_query = source.row_emitter(columns)
-    source.file_name = "{}.csv".format(source_name)
+    source.file_name = f"{source_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(message="Preparing to download data as {}".format(source_name), download_job=download_job)
+    write_to_log(message=f"Preparing to download data as {source_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns)
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns, extension)
 
     start_time = time.perf_counter()
     try:
@@ -210,17 +212,23 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 
+        delim = FILE_FORMATS[extension]["delimiter"]
+
         # Log how many rows we have
-        write_to_log(message="Counting rows in CSV", download_job=download_job)
+        write_to_log(message="Counting rows in delimited text file", download_job=download_job)
         try:
-            download_job.number_of_rows += count_rows_in_csv_file(filename=source_path, has_header=True)
+            download_job.number_of_rows += count_rows_in_delimited_file(
+                filename=source_path, has_header=True, delimiter=delim
+            )
         except Exception:
-            write_to_log(message="Unable to obtain CSV line count", is_error=True, download_job=download_job)
+            write_to_log(
+                message="Unable to obtain delimited text file line count", is_error=True, download_job=download_job
+            )
         download_job.save()
 
-        # Create a separate process to split the large csv into smaller csvs and write to zip; wait
+        # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_csvs, args=(zip_file_path, source_path, source_name, download_job)
+            target=split_and_zip_data_files, args=(zip_file_path, source_path, source_name, extension, download_job)
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -233,39 +241,36 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_csvs(zip_file_path, source_path, source_name, download_job=None):
+def split_and_zip_data_files(zip_file_path, source_path, source_name, extension, download_job=None):
     try:
-        # Split CSV into separate files
+        # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
+        delim = FILE_FORMATS[extension]["delimiter"]
 
-        output_template = "{}_%s.csv".format(source_name)
-        write_to_log(message="Beginning the CSV file partition", download_job=download_job)
-        list_of_csv_files = partition_large_csv_file(
-            source_path, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
+        output_template = f"{source_name}_%s.{extension}"
+        write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
+        list_of_files = partition_large_delimited_file(
+            file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
         )
 
         if download_job:
-            write_to_log(
-                message="Partitioning CSV file into {} files took {:.4f} seconds".format(
-                    len(list_of_csv_files), time.perf_counter() - log_time
-                ),
-                download_job=download_job,
-            )
+            msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
+            write_to_log(message=msg, download_job=download_job)
 
-        # Zip the split CSVs into one zipfile
+        # Zip the split files into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
-        append_files_to_zip_file(list_of_csv_files, zip_file_path)
+        append_files_to_zip_file(list_of_files, zip_file_path)
 
         if download_job:
             write_to_log(
-                message="Writing to zipfile took {:.4f} seconds".format(time.perf_counter() - log_time),
+                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s".format(),
                 download_job=download_job,
             )
 
     except Exception as e:
-        message = "Exception while partitioning CSV"
+        message = "Exception while partitioning text file"
         fail_download(download_job, e, message)
         write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
@@ -280,9 +285,7 @@ def start_download(download_job):
     download_job.file_size = 0
     download_job.save()
 
-    write_to_log(
-        message="Starting to process DownloadJob {}".format(download_job.download_job_id), download_job=download_job
-    )
+    write_to_log(message=f"Starting to process DownloadJob {download_job.download_job_id}", download_job=download_job)
 
     return download_job.file_name
 
@@ -291,9 +294,7 @@ def finish_download(download_job):
     download_job.job_status_id = JOB_STATUS_DICT["finished"]
     download_job.save()
 
-    write_to_log(
-        message="Finished processing DownloadJob {}".format(download_job.download_job_id), download_job=download_job
-    )
+    write_to_log(message=f"Finished processing DownloadJob {download_job.download_job_id}", download_job=download_job)
 
     return download_job.file_name
 
@@ -304,26 +305,27 @@ def wait_for_process(process, start_time, download_job):
 
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
-    while process.is_alive() and (time.perf_counter() - start_time) < MAX_VISIBILITY_TIMEOUT:
+    while process.is_alive():
+        if not download_job.monthly_download and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT:
+            break
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
         else:
             time.sleep(WAIT_FOR_PROCESS_SLEEP)
         sleep_count += 1
 
-    if (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
+    over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
+    if (not download_job.monthly_download and over_time) or process.exitcode != 0:
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
-                message="Attempting to terminate process (pid {})".format(process.pid),
+                message=f"Attempting to terminate process (pid {process.pid})",
                 download_job=download_job,
                 is_error=True,
             )
             process.terminate()
             e = TimeoutError(
-                "DownloadJob {} lasted longer than {} hours".format(
-                    download_job.download_job_id, str(MAX_VISIBILITY_TIMEOUT / 3600)
-                )
+                f"DownloadJob {download_job.download_job_id} lasted longer than {MAX_VISIBILITY_TIMEOUT / 3600} hours"
             )
         else:
             # An error occurred in the process
@@ -334,19 +336,20 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job, columns):
+def generate_temp_query_file(source_query, limit, source, download_job, columns, extension):
     if limit:
         source_query = source_query[:limit]
-    csv_query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
+    query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
 
-    write_to_log(
-        message="Creating PSQL Query: {}".format(csv_query_annotated), download_job=download_job, is_debug=True
-    )
+    options = FILE_FORMATS[extension]["options"]
+
+    write_to_log(message="Creating PSQL Query: {}".format(query_annotated), download_job=download_job, is_debug=True)
 
     # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
+
     with open(temp_sql_file_path, "w") as file:
-        file.write(r"\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
+        file.write(r"\copy ({}) To STDOUT {}".format(query_annotated, options))
 
     return temp_sql_file, temp_sql_file_path
 
@@ -392,8 +395,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     # Match aliases with their values
     values_list = [
-        '{} AS "{}"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
-        for alias in aliases
+        f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
     return raw_query.replace(query_before_from, ", ".join(values_list), 1)
@@ -413,28 +415,30 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
         duration = time.perf_counter() - log_time
         write_to_log(
-            message="Wrote {}, took {:.4f} seconds".format(os.path.basename(source_path), duration),
-            download_job=download_job,
+            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job,
         )
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
-        e.cmd = "[redacted]"
+        if not settings.IS_LOCAL:
+            e.cmd = "[redacted]"
         logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT with CSV HEADER' so the SQL is 7 chars in up to the last 27 chars
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()[7:-27]
-        logger.error("Faulty SQL: {}".format(sql))
+        # temp file contains '\copy ([SQL]) To STDOUT  ...' so the SQL is 7 chars in up to ' To STDOUT '
+        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+        logger.error(f"Faulty SQL: {sql[7 : sql.find(' To STDOUT ')]}")
         raise e
     except Exception as e:
+        if not settings.IS_LOCAL:
+            e.cmd = "[redacted]"
         logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT with CSV HEADER' so the SQL is 7 chars in up to the last 27 chars
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()[7:-27]
-        logger.error("Faulty SQL: {}".format(sql))
+        # temp file contains '\copy ([SQL]) To STDOUT ...' so the SQL is 7 chars in up to ' To STDOUT '
+        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+        logger.error(f"Faulty SQL: {sql[7 : sql.find(' To STDOUT ')]}")
         raise e
 
 
 def retrieve_db_string():
     """It is necessary for this to be a function so the test suite can mock the connection string"""
-    return os.environ["DOWNLOAD_DATABASE_URL"]
+    return settings.DOWNLOAD_DATABASE_URL
 
 
 def strip_file_extension(file_name):
@@ -445,7 +449,7 @@ def fail_download(download_job, exception, message):
     stack_trace = "".join(
         traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
     )
-    download_job.error_message = "{}:\n{}".format(message, stack_trace)
+    download_job.error_message = f"{message}:\n{stack_trace}"
     download_job.job_status_id = JOB_STATUS_DICT["failed"]
     download_job.save()
 
