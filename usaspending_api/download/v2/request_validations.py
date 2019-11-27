@@ -35,7 +35,7 @@ def validate_award_request(request_data):
 
     # Set defaults of non-required parameters
     json_request["columns"] = request_data.get("columns", [])
-    json_request["file_format"] = str(json_request.get("file_format", "csv")).lower()
+    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
 
     check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
 
