@@ -1711,9 +1711,6 @@ query_paths["idv_transaction_history"] = {
         ]
     )
 }
-query_paths["idv_transaction_history"]["d1"].update(
-    {"usaspending_permalink": None}
-)  # this is adding a value, not replaceing
 
 query_paths["assistance_transaction_history"] = {
     "d2": OrderedDict(
