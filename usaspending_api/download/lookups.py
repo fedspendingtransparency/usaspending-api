@@ -266,3 +266,8 @@ CFO_CGACS_MAPPING = OrderedDict(
     ]
 )
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
+
+FILE_FORMATS = {
+    "csv": {"delimiter": ",", "options": "WITH CSV HEADER"},
+    "tsv": {"delimiter": "\t", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
+}
