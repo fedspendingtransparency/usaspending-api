@@ -204,7 +204,7 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == len(query_paths["idv_transaction_history"]["d1"])
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
