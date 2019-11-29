@@ -6,6 +6,7 @@ from django.db.models import Value
 
 award_url = HOST + "/#/award/" if "localhost" in HOST else "https://" + HOST + "/#/award/"
 
+
 def universal_transaction_matview_annotations():
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
