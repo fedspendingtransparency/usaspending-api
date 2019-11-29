@@ -4,7 +4,7 @@ from usaspending_api.download.v2 import download_column_historical_lookups
 from usaspending_api.references.models import ToptierAgency
 
 
-class CsvSource:
+class DownloadSource:
     def __init__(self, model_type, file_type, source_type, agency_id):
         self.model_type = model_type
         self.file_type = file_type
@@ -26,7 +26,7 @@ class CsvSource:
         self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
 
     def __repr__(self):
-        return "CsvSource('{}', '{}', '{}', '{}')".format(
+        return "DownloadSource('{}', '{}', '{}', '{}')".format(
             self.model_type, self.file_type, self.source_type, self.agency_code
         )
 

@@ -3,7 +3,6 @@ language: python
 cache: pip
 
 python:
-  - '3.5'
   - '3.7'
 
 services:
@@ -41,7 +40,7 @@ before_install:
   - npm install dredd@5.4.1 --global
 
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then travis_retry pip install -r requirements/requirements_3-7.txt; else travis_retry pip install -r requirements/requirements.txt; fi
+  - travis_retry pip install -r requirements/requirements.txt
   - pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
@@ -73,7 +72,7 @@ before_script:
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
   - flake8
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.7' ]]; then black --check --diff . ; fi
+  - black --check --diff .
   - python manage.py check_for_endpoint_documentation
   - pytest --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx

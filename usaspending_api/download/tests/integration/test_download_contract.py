@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -111,7 +111,7 @@ def download_test_data(db):
 
 @pytest.mark.django_db
 def test_download_contract_without_columns(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/contract/", content_type="application/json", data=json.dumps({"award_id": 456, "columns": []})
     )
@@ -122,7 +122,7 @@ def test_download_contract_without_columns(client, download_test_data):
 
 @pytest.mark.django_db
 def test_download_contract_with_columns(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/contract/",
         content_type="application/json",
@@ -146,7 +146,7 @@ def test_download_contract_with_columns(client, download_test_data):
 
 @pytest.mark.django_db
 def test_download_contract_bad_award_id_raises(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"award_id": -1, "columns": []}
     resp = client.post("/api/v2/download/assistance/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

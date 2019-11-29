@@ -4,7 +4,7 @@ import re
 import psycopg2
 from datetime import datetime, timezone
 
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, destroy_orphans, delete_stale_fpds
+from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, delete_stale_fpds
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
@@ -58,7 +58,7 @@ class Command(BaseCommand):
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
-            logger.info("{} total records".format(total_records))
+            logger.info("{} total records to update".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
             while True:
                 id_list = cursor.fetchmany(CHUNK_SIZE)
@@ -151,11 +151,12 @@ class Command(BaseCommand):
             self.load_fpds_incrementally(last_load)
 
         if self.modified_award_ids:
-            logger.info("cleaning orphaned metadata")
-            destroy_orphans()
+            # TODO: reactivate once this is performant. Currently the tables are too large to allow
+            # logger.info("cleaning orphaned metadata")
+            # destroy_orphans()
             logger.info(
                 "updating award values ({} awards touched by transaction modifications)".format(
-                    len(self.modified_award_ids)
+                    len(set(self.modified_award_ids))
                 )
             )
             logger.info("{} awards touched by update_awards()".format(update_awards(tuple(self.modified_award_ids))))
