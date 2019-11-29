@@ -37,8 +37,8 @@ SECRET_KEY = get_random_string()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-HOST = "localhost:3000"  # To be overwritten by Ansible
-ALLOWED_HOSTS = ["*"]  # Ansible will insert the deployed url into this value
+HOST = "localhost:3000"
+ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
