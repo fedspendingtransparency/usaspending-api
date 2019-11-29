@@ -26,7 +26,7 @@ class Command(AgnosticDeletes, BaseCommand):
 
         if settings.IS_LOCAL:
             logger.info("Local mode does not handle deleted records")
-            return ids_to_delete
+            return None
 
         s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_bucket = s3.Bucket(settings.FPDS_BUCKET_NAME)

@@ -19,7 +19,7 @@ class Command(AgnosticDeletes, BaseCommand):
     def fetch_deleted_transactions(self, date):
         if settings.IS_LOCAL:
             logger.info("Local mode does not handle deleted records")
-            return {date: 0}
+            return None
 
         sql = """
         select  published_award_financial_assistance_id
