@@ -37,6 +37,7 @@ SECRET_KEY = get_random_string()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads

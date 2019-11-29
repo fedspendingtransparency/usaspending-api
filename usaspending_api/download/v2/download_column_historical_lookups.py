@@ -570,6 +570,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "award__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "award__latest_transaction__contract_data__last_modified"),
             ]
         ),
@@ -699,6 +700,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "award__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "award__latest_transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1061,6 +1063,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__contract_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__contract_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__contract_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__contract_data__last_modified"),
             ]
         ),
@@ -1170,6 +1173,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__assistance_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__assistance_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__assistance_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1293,6 +1297,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
         "d2": OrderedDict(
@@ -1412,6 +1417,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
     },
@@ -1705,6 +1711,7 @@ query_paths["idv_transaction_history"] = {
         ]
     )
 }
+
 query_paths["assistance_transaction_history"] = {
     "d2": OrderedDict(
         [
