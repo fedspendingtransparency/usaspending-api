@@ -5,11 +5,8 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import EXCLUDE_CGAC
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
-from usaspending_api.references.models import LegalEntity
 from usaspending_api.references.v1.serializers import AgencySerializer
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.common.api_versioning import removed
-from django.utils.decorators import method_decorator
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -163,52 +160,6 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
         queryset = queryset.annotate(product_or_service_code=F("code"), psc_description=F("description"))
 
         return Response({"results": list(queryset.values("product_or_service_code", "psc_description")[:limit])})
-
-
-@method_decorator(removed, name="post")
-class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
-    """
-    This route sends a request to the backend to retrieve Parent and Recipient DUNS
-    matching the search text in order of similarity.
-    """
-
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/recipient.md"
-
-    @cache_response()
-    def post(self, request):
-        """Return a list of legal entity IDs whose recipient name contains search_text,
-        OR a list od legal entity IDs matching a valid DUNS number.
-        Include search_text in response for frontend. """
-
-        # Limit not used here
-        search_text, _ = self.get_request_payload(request)
-
-        queryset = LegalEntity.objects.all()
-
-        if len(search_text) < 3:
-            raise InvalidParameterException(
-                "search_text '{}' does not meet the minimum length of 3 characters".format(search_text)
-            )
-
-        is_duns = False
-        if len(search_text) == 9 and queryset.filter(recipient_unique_id=search_text).exists():
-            is_duns = True
-
-        if is_duns:
-            queryset = queryset.filter(recipient_unique_id=search_text)
-        else:
-            queryset = queryset.filter(recipient_name__icontains=search_text)
-
-        recipients = queryset
-
-        response = {
-            "results": {
-                "search_text": search_text,
-                "recipient_id_list": recipients.values_list("legal_entity_id", flat=True),
-            }
-        }
-
-        return Response(response)
 
 
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):

@@ -134,34 +134,30 @@ def awards_and_transactions(db):
     # Legal Entity
     parent_legal_entity = {
         "pk": 2,
-        "business_categories": ["limited liability"],
         "location": Location.objects.get(pk=2),
         "recipient_name": "PARENT LEGAL ENTITY",
         "recipient_unique_id": "123",
     }
-    legal_entity = {
-        "pk": 1,
-        "business_categories": ["small_business"],
-        "recipient_name": "LEGAL ENTITY",
-        "recipient_unique_id": "456",
-    }
+    legal_entity = {"pk": 1, "recipient_name": "LEGAL ENTITY", "recipient_unique_id": "456"}
 
     mommy.make("references.LegalEntity", **parent_legal_entity)
     mommy.make("references.LegalEntity", **legal_entity)
 
     # Transaction Normalized
-    asst_trans_norm_1 = {"pk": 1, "award_id": 1}
-    asst_trans_norm_2 = {"pk": 3, "award_id": 3}
-    asst_trans_norm_3 = {"pk": 4, "award_id": 3}
-    asst_trans_norm_4 = {"pk": 5, "award_id": 3}
+    bc = {"business_categories": ["small_business"]}
 
-    cont_trans_norm_1 = {"pk": 2, "award_id": 2}
-    cont_trans_norm_2 = {"pk": 6, "award_id": 5}
-    cont_trans_norm_3 = {"pk": 7, "award_id": 6}
-    cont_trans_norm_4 = {"pk": 8, "award_id": 7}
-    cont_trans_norm_5 = {"pk": 9, "award_id": 8}
-    cont_trans_norm_6 = {"pk": 10, "award_id": 9}
-    cont_trans_norm_7 = {"pk": 11, "award_id": 10}
+    asst_trans_norm_1 = {"pk": 1, "award_id": 1, **bc}
+    asst_trans_norm_2 = {"pk": 3, "award_id": 3, **bc}
+    asst_trans_norm_3 = {"pk": 4, "award_id": 3, **bc}
+    asst_trans_norm_4 = {"pk": 5, "award_id": 3, **bc}
+
+    cont_trans_norm_1 = {"pk": 2, "award_id": 2, **bc}
+    cont_trans_norm_2 = {"pk": 6, "award_id": 5, **bc}
+    cont_trans_norm_3 = {"pk": 7, "award_id": 6, **bc}
+    cont_trans_norm_4 = {"pk": 8, "award_id": 7, **bc}
+    cont_trans_norm_5 = {"pk": 9, "award_id": 8, **bc}
+    cont_trans_norm_6 = {"pk": 10, "award_id": 9, **bc}
+    cont_trans_norm_7 = {"pk": 11, "award_id": 10, **bc}
 
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_1)
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_2)

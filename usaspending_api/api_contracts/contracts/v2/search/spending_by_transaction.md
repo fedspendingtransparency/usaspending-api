@@ -38,7 +38,7 @@ Returns transaction records which match the keyword and award type code filters.
     + Body
 
             {
-                "limit": 35,
+                "limit": 10,
                 "page_metadata": {
                     "page": 1,
                     "hasPrevious": false,
@@ -48,59 +48,124 @@ Returns transaction records which match the keyword and award type code filters.
                 },
                 "results": [
                     {
-                        "Transaction Amount": "40000000.00",
-                        "Award Type": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-                        "Awarding Agency": "Department of Transportation",
-                        "internal_id": "68856340",
-                        "Action Date": "2018-05-21",
-                        "Recipient Name": "LEIDOS INNOVATIONS CORPORATION",
-                        "Mod": "P00206",
-                        "Award ID": "DTFAWA05C00031R",
-                        "Awarding Sub Agency": "Federal Aviation Administration"
+                        "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                        "Award ID": "HSSCCG10J00265",
+                        "Awarding Agency": "Department of Homeland Security",
+                        "Action Date": "2012-06-20",
+                        "internal_id": "24261000",
+                        "Mod": "P00011",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "15639242.36",
+                        "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                        "Award Type": "DELIVERY ORDER"
                     },
                     {
-                        "Transaction Amount": "30000000.00",
-                        "Award Type": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-                        "Awarding Agency": "Department of Transportation",
-                        "internal_id": "68856340",
-                        "Action Date": "2018-09-26",
-                        "Recipient Name": "LEIDOS INNOVATIONS CORPORATION",
-                        "Mod": "P00216",
-                        "Award ID": "DTFAWA05C00031R",
-                        "Awarding Sub Agency": "Federal Aviation Administration"
+                        "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                        "Award ID": "HSSCCG10J00265",
+                        "Awarding Agency": "Department of Homeland Security",
+                        "Action Date": "2011-06-21",
+                        "internal_id": "24261000",
+                        "Mod": "P00008",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "15226100.09",
+                        "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                        "Award Type": "DELIVERY ORDER"
                     },
                     {
-                        "Transaction Amount": "9920443.99",
-                        "Award Type": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-                        "Awarding Agency": "Department of Transportation",
-                        "internal_id": "68856340",
-                        "Action Date": "2018-09-19",
-                        "Recipient Name": "LEIDOS INNOVATIONS CORPORATION",
-                        "Mod": "P00215",
-                        "Award ID": "DTFAWA05C00031R",
-                        "Awarding Sub Agency": "Federal Aviation Administration"
+                        "Awarding Sub Agency": "Federal Acquisition Service",
+                        "Award ID": "GSTO405BF0033",
+                        "Awarding Agency": "General Services Administration",
+                        "Action Date": "2008-07-17",
+                        "internal_id": "22509500",
+                        "Mod": "0",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "12669957.55",
+                        "generated_internal_id": "CONT_AWD_GSTO405BF0033_4735_GS09K99BHD0010_4735",
+                        "Award Type": "DO"
                     },
                     {
-                        "Transaction Amount": "6384553.00",
-                        "Award Type": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-                        "Awarding Agency": "Department of Transportation",
-                        "internal_id": "68856340",
-                        "Action Date": "2018-05-01",
-                        "Recipient Name": "LEIDOS INNOVATIONS CORPORATION",
-                        "Mod": "P00205",
-                        "Award ID": "DTFAWA05C00031R",
-                        "Awarding Sub Agency": "Federal Aviation Administration"
+                        "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                        "Award ID": "HSSCCG10J00265",
+                        "Awarding Agency": "Department of Homeland Security",
+                        "Action Date": "2013-06-25",
+                        "internal_id": "24261000",
+                        "Mod": "P00019",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "10497321.20",
+                        "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                        "Award Type": "DELIVERY ORDER"
                     },
                     {
-                        "Transaction Amount": "5052922.00",
-                        "Award Type": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
-                        "Awarding Agency": "Department of Transportation",
-                        "internal_id": "69009914",
-                        "Action Date": "2018-04-24",
-                        "Recipient Name": "LEIDOS INNOVATIONS CORPORATION",
-                        "Mod": "P00120",
-                        "Award ID": "DTFAWA03C00059R",
-                        "Awarding Sub Agency": "Federal Aviation Administration"
+                        "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                        "Award ID": "HHSM500201600013U",
+                        "Awarding Agency": "Department of Health and Human Services",
+                        "Action Date": "2019-08-26",
+                        "internal_id": "23325500",
+                        "Mod": "P00006",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "8303064.00",
+                        "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                        "Award Type": "DELIVERY ORDER"
+                    },
+                    {
+                        "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                        "Award ID": "HHSM500201600013U",
+                        "Awarding Agency": "Department of Health and Human Services",
+                        "Action Date": "2018-08-27",
+                        "internal_id": "23325500",
+                        "Mod": "P00003",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "7964806.00",
+                        "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                        "Award Type": "DELIVERY ORDER"
+                    },
+                    {
+                        "Awarding Sub Agency": "Defense Finance and Accounting Service",
+                        "Award ID": "0148",
+                        "Awarding Agency": "Department of Defense",
+                        "Action Date": "2008-12-16",
+                        "internal_id": "2748500",
+                        "Mod": "9",
+                        "Recipient Name": "LEIDOS GOVERNMENT SERVICES, INC.",
+                        "Transaction Amount": "7796098.43",
+                        "generated_internal_id": "CONT_AWD_0148_9700_MDA22001D0002_9700",
+                        "Award Type": "DO"
+                    },
+                    {
+                        "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                        "Award ID": "HSSCCG10J00265",
+                        "Awarding Agency": "Department of Homeland Security",
+                        "Action Date": "2010-09-20",
+                        "internal_id": "24261000",
+                        "Mod": "0",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "7780154.53",
+                        "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                        "Award Type": "DELIVERY ORDER"
+                    },
+                    {
+                        "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                        "Award ID": "HHSM500201600013U",
+                        "Awarding Agency": "Department of Health and Human Services",
+                        "Action Date": "2018-01-11",
+                        "internal_id": "23325500",
+                        "Mod": "P00002",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "6600114.00",
+                        "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                        "Award Type": "DELIVERY ORDER"
+                    },
+                    {
+                        "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                        "Award ID": "HHSM500201600013U",
+                        "Awarding Agency": "Department of Health and Human Services",
+                        "Action Date": "2017-07-06",
+                        "internal_id": "23325500",
+                        "Mod": "5",
+                        "Recipient Name": "LEIDOS, INC.",
+                        "Transaction Amount": "6339520.00",
+                        "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                        "Award Type": "DELIVERY ORDER"
                     }
                 ]
             }
@@ -123,27 +188,29 @@ Returns transaction records which match the keyword and award type code filters.
 + `Awarding Agency`: `Department of Transportation` (required, string, nullable)
 + `Awarding Sub Agency`: `Federal Aviation Administration` (required, string, nullable)
 + `internal_id`: `68856340` (required, string, nullable)
++ `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
 + `Mod`: `P00206` (required, string, nullable)
 + `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
 + `Transaction Amount`: `40000000.00` (required, string, nullable)
 
 ### Default
-+ `Action Date`: `2018-05-21` (required, string, nullable)
-+ `Award ID`: `DTFAWA05C00031R` (required, string, nullable)
-+ `Award Type`: `INDEFINITE DELIVERY / INDEFINITE QUANTITY` (required, string, nullable)
-+ `Awarding Agency`: `Department of Transportation` (required, string, nullable)
-+ `Awarding Sub Agency`: `Federal Aviation Administration` (required, string, nullable)
-+ `awarding_agency_id`: `239` (required, string, nullable)
-+ `Funding Agency`: `Department of Agriculture` (required, string, nullable)
-+ `Funding Sub Agency`: `Forest Service` (required, string, nullable)
-+ `internal_id`: `68856340` (required, string, nullable)
-+ `Issued Date`: `2018-05-21` (required, string, nullable)
-+ `Last Date to Order`: `2022-05-21` (required, string, nullable)
-+ `Loan Value`: `1400.00` (required, string, nullable)
-+ `Mod`: `P00206` (required, string, nullable)
-+ `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
-+ `Subsidy Cost`: `91400.00` (required, string, nullable)
-+ `Transaction Amount`: `40000000.00` (required, string, nullable)
++ `Action Date` (required, string, nullable)
++ `Award ID` (required, string, nullable)
++ `Award Type` (required, string, nullable)
++ `Awarding Agency` (required, string, nullable)
++ `Awarding Sub Agency` (required, string, nullable)
++ `awarding_agency_id` (required, string, nullable)
++ `Funding Agency` (required, string, nullable)
++ `Funding Sub Agency` (required, string, nullable)
++ `internal_id` (required, string, nullable)
++ `generated_internal_id` (required, string, nullable)
++ `Issued Date` (required, string, nullable)
++ `Last Date to Order` (required, string, nullable)
++ `Loan Value` (required, string, nullable)
++ `Mod` (required, string, nullable)
++ `Recipient Name` (required, string, nullable)
++ `Subsidy Cost` (required, string, nullable)
++ `Transaction Amount` (required, string, nullable)
 
 
 ## FilterObjectAwardTypes (array)
@@ -206,6 +273,7 @@ List of column names to request
 - `Funding Agency`
 - `Funding Sub Agency`
 - `internal_id`
+- `generated_internal_id`
 - `Issued Date`
 - `Last Date to Order`
 - `Loan Value`

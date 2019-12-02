@@ -126,7 +126,6 @@ def insert_new_fabs(to_insert):
         )
         legal_entity_value_map = {
             "location": legal_entity_location,
-            "business_categories": get_business_categories(row=row, data_type="fabs"),
             "business_types_description": row["business_types_desc"],
         }
         legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
@@ -167,6 +166,7 @@ def insert_new_fabs(to_insert):
             "last_modified_date": last_mod_date,
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
+            "business_categories": get_business_categories(row=row, data_type="fabs"),
         }
 
         transaction_normalized_dict = load_data_into_model(
