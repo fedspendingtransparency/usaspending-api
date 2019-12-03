@@ -7,6 +7,7 @@ from time import perf_counter, sleep
 from usaspending_api import settings
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import (
@@ -103,6 +104,7 @@ class Command(BaseCommand):
         printf({"msg": "Starting script\n{}".format("=" * 56)})
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**self.config)})
+        ensure_transaction_etl_view_exists()
 
         self.run_load_steps()
         self.complete_process()
