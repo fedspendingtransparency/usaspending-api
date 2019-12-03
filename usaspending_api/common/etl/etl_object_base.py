@@ -23,8 +23,8 @@ class ETLObjectBase(metaclass=ABCMeta):
     def object_representation(self) -> Composed:
         return self._get_object_representation()
 
-    def complex_object_representation(self, customizer: List[dict]) -> Composed:
-        return self._get_object_representation(customizer)
+    def object_representation_custom_predicate(self, custom_predicate: List[dict]) -> Composed:
+        return self._get_object_representation(custom_predicate)
 
     @abstractmethod
     def _get_columns(self) -> List[str]:

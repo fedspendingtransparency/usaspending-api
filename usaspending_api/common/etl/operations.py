@@ -193,7 +193,7 @@ def upsert_records_with_predicate(
         destination_object_representation=destination.object_representation,
         insert_columns=primatives.make_column_list(insertable_columns),
         select_columns=primatives.make_column_list(insertable_columns, alias, destination.insert_overrides),
-        source_object=source.complex_object_representation(predicate),
+        source_object=source.object_representation_custom_predicate(predicate),
         excluded=excluded,
     )
 
@@ -206,4 +206,5 @@ __all__ = [
     "insert_missing_rows",
     "stage_table",
     "update_changed_rows",
+    "upsert_records_with_predicate",
 ]
