@@ -13,10 +13,10 @@ from django.core.management.base import BaseCommand
 from django.db.models import Case, When, Value, CharField, F
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
-from usaspending_api.common.csv_helpers import count_rows_in_csv_file
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.download.filestreaming.csv_generation import split_and_zip_csvs
-from usaspending_api.download.filestreaming.csv_source import CsvSource
+from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
+from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
@@ -74,7 +74,7 @@ class Command(BaseCommand):
         award_map = AWARD_MAPPINGS[award_type]
 
         # Create Source and update fields to include correction_delete_ind
-        source = CsvSource(
+        source = DownloadSource(
             "transaction",
             award_map["letter_name"].lower(),
             "transactions",
@@ -180,12 +180,12 @@ class Command(BaseCommand):
         # Append deleted rows to the end of the file
         if not self.debugging_skip_deleted:
             self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
-        if count_rows_in_csv_file(source_path, has_header=True, safe=True) > 0:
+        if count_rows_in_delimited_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
 
             logger.info("Creating compressed file: {}".format(os.path.basename(zipfile_path)))
-            split_and_zip_csvs(zipfile_path, source_path, source_name)
+            split_and_zip_data_files(zipfile_path, source_path, source_name)
         else:
             zipfile_path = None
 
@@ -323,11 +323,11 @@ class Command(BaseCommand):
     @staticmethod
     def apply_annotations_to_sql(raw_query, aliases):
         """
-        This function stolen from csv_generation.apply_annotations_to_sql and tweaked for this module.  This is
+        This function stolen from download_generation.apply_annotations_to_sql and tweaked for this module.  This is
         a hack to get the Delta scripts working.  It is possible this flavor of the function might work in
-        csv_generation as well, but this is a rush job.
+        download_generation as well, but this is a rush job.
 
-        TODO: See if this can be reconciled with csv_generation.apply_annotations_to_sql
+        TODO: See if this can be reconciled with download_generation.apply_annotations_to_sql
 
         This function serves two purposes:
             - apply aliases to all the return values in raw_query
@@ -343,7 +343,7 @@ class Command(BaseCommand):
 
         # Create a list from the non-derived values between SELECT and FROM
         selects_str = re.findall(
-            r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|FROM)", raw_query
+            r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
         )[0]
         just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
         selects_list = [select.strip() for select in just_selects.strip().split(",")]
@@ -351,7 +351,7 @@ class Command(BaseCommand):
         # Create a list from the derived values between SELECT and FROM
         remove_selects = query_before_from.replace(selects_str[0], "")
         deriv_str_lookup = re.findall(
-            r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
+            r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
         )
         deriv_dict = {}
         for str_match in deriv_str_lookup:
@@ -366,7 +366,7 @@ class Command(BaseCommand):
 
         # Validate we have an alias for each value in the SELECT string
         if len(selects_list) != len(aliases_copy):
-            raise Exception("Length of alises doesn't match the columns in selects")
+            raise Exception("Length of aliases doesn't match the columns in selects")
 
         # Match aliases with their values
         values_list = [

@@ -1,12 +1,13 @@
 import datetime
 
-from django.db.models import Case, CharField, OuterRef, Subquery, Sum, Value, When
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, Value, When
 from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
 
@@ -90,10 +91,11 @@ def account_download_filter(account_type, download_table, filters, account_level
                 "treasury_account__tas_rendering_label",
                 "program_activity__program_activity_code",
                 "object_class__object_class",
+                "object_class__direct_reimbursable",
             ],
         }
         distinct_cols = unique_columns_mapping[account_type]
-        order_by_cols = distinct_cols + ["-reporting_period_start"]
+        order_by_cols = distinct_cols + ["-reporting_period_start", "-pk"]
         latest_ids_q = download_table.objects.filter(**query_filters).distinct(*distinct_cols).order_by(*order_by_cols)
         latest_ids = list(latest_ids_q.values_list(unique_id_mapping[account_type], flat=True))
         if latest_ids:
@@ -128,6 +130,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
     # for all account types
     derived_fields = {
+        "last_reported_submission_period": FiscalYearAndQuarter("reporting_period_end"),
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         "treasury_account_symbol": Concat(
             Case(
@@ -177,6 +180,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 def generate_federal_account_query(queryset, account_type, tas_id):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
     derived_fields = {
+        "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
             "{}__federal_account__agency_identifier".format(tas_id),
@@ -231,12 +235,9 @@ def retrieve_fyq_filters(account_type, account_level, filters):
     if filters.get("fy", False) and filters.get("quarter", False):
         start_date, end_date = start_and_end_dates_from_fyq(filters["fy"], filters["quarter"])
 
-        reporting_period_start = "reporting_period_start"
-        reporting_period_end = "reporting_period_end"
-
         # For all files, filter up to and including the FYQ
-        reporting_period_start = "{}__gte".format(reporting_period_start)
-        reporting_period_end = "{}__lte".format(reporting_period_end)
+        reporting_period_start = "reporting_period_start__gte"
+        reporting_period_end = "reporting_period_end__lte"
         if str(filters["quarter"]) != "1":
             start_date = datetime.date(filters["fy"] - 1, 10, 1)
     else:

@@ -18,11 +18,11 @@ from usaspending_api.common.matview_manager import (
 )
 from usaspending_api.references.models import Agency
 
+
 logger = logging.getLogger(__name__)
-
 TEMP_SQL_FILES = [str(DEFAULT_MATIVEW_DIR / val["sql_filename"]) for val in MATERIALIZED_VIEWS.values()]
-
 VIEW_SQL_FILES = [str(val) for val in OVERLAY_VIEWS]
+REFRESH_MATVIEWS_SQL = " ".join(f"refresh materialized view {matview_name};" for matview_name in MATERIALIZED_VIEWS)
 
 
 def read_text_file(filepath):
@@ -188,6 +188,11 @@ def generate_matviews():
             cursor.execute(matview_sql_file)
         for view_sql_file in get_sql(VIEW_SQL_FILES):
             cursor.execute(view_sql_file)
+
+
+def refresh_matviews():
+    with connection.cursor() as cursor:
+        cursor.execute(REFRESH_MATVIEWS_SQL)
 
 
 def get_sql(sql_files):
