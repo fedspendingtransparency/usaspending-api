@@ -29,3 +29,34 @@ AS $$
   RETURN result::public.total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.urlencode(str_val TEXT)
+RETURNS text
+IMMUTABLE PARALLEL SAFE
+AS $$
+  DECLARE
+    DECLARE result text;
+  BEGIN
+    result = REPLACE($1, '%', '%25');
+    result = REPLACE(result, ' ', '%20');
+    result = REPLACE(result, '!', '%21');
+    result = REPLACE(result, '#', '%23');
+    result = REPLACE(result, '$', '%24');
+    result = REPLACE(result, '&', '%26');
+    result = REPLACE(result, '''', '%27');
+    result = REPLACE(result, '(', '%28');
+    result = REPLACE(result, ')', '%29');
+    result = REPLACE(result, '*', '%2A');
+    result = REPLACE(result, '+', '%2B');
+    result = REPLACE(result, ',', '%2C');
+    result = REPLACE(result, '/', '%2F');
+    result = REPLACE(result, ':', '%3A');
+    result = REPLACE(result, ';', '%3B');
+    result = REPLACE(result, '=', '%3D');
+    result = REPLACE(result, '?', '%3F');
+    result = REPLACE(result, '@', '%40');
+    result = REPLACE(result, '[', '%5B');
+    result = REPLACE(result, ']', '%5D');
+  RETURN result;
+  END;
+$$ LANGUAGE plpgsql;
