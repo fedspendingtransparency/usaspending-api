@@ -30,7 +30,7 @@ AS $$
   END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.urlencode(str_val TEXT)
+CREATE OR REPLACE FUNCTION public.urlencode(str_val text)
 RETURNS text
 IMMUTABLE PARALLEL SAFE
 AS $$
@@ -60,3 +60,19 @@ AS $$
   RETURN result;
   END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.urlencode_arr(url text)
+RETURNS text AS $$
+BEGIN
+  RETURN (
+    WITH str AS (
+        SELECT
+            CASE WHEN $1 ~ '^[% !#$&''\(\)*+,/:;=?@\[\]]' THEN array[''] END || regexp_split_to_array ($1, '([% !#$&''\(\)*+,/:;=?@\[\]])+', 'i') plain,
+            ARRAY(SELECT (regexp_matches ($1, '(([% !#$&''\(\)*+,/:;=?@\[\]])+)', 'gi'))[1]) special
+    )
+    SELECT coalesce(string_agg(plain[i] || CASE WHEN COALESCE(special[i], '') = '' THEN '' ELSE UPPER(CONCAT('%', to_hex(get_byte(special[i]::bytea, 0)))) END, ''), $1)
+    FROM str,
+      (SELECT generate_series(1, array_upper(special,1) + 1) i FROM str) as series
+    );
+END
+$$ LANGUAGE plpgsql IMMUTABLE STRICT;
