@@ -30,49 +30,33 @@ AS $$
   END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.urlencode(str_val text)
-RETURNS text
+
+CREATE OR REPLACE FUNCTION public.urlencode(INOUT str_val text)
 IMMUTABLE PARALLEL SAFE
 AS $$
-  DECLARE
-    DECLARE result text;
   BEGIN
-    result = REPLACE($1, '%', '%25');
-    result = REPLACE(result, ' ', '%20');
-    result = REPLACE(result, '!', '%21');
-    result = REPLACE(result, '#', '%23');
-    result = REPLACE(result, '$', '%24');
-    result = REPLACE(result, '&', '%26');
-    result = REPLACE(result, '''', '%27');
-    result = REPLACE(result, '(', '%28');
-    result = REPLACE(result, ')', '%29');
-    result = REPLACE(result, '*', '%2A');
-    result = REPLACE(result, '+', '%2B');
-    result = REPLACE(result, ',', '%2C');
-    result = REPLACE(result, '/', '%2F');
-    result = REPLACE(result, ':', '%3A');
-    result = REPLACE(result, ';', '%3B');
-    result = REPLACE(result, '=', '%3D');
-    result = REPLACE(result, '?', '%3F');
-    result = REPLACE(result, '@', '%40');
-    result = REPLACE(result, '[', '%5B');
-    result = REPLACE(result, ']', '%5D');
-  RETURN result;
+    -- Only percent-encode special characters, pass all unicode and other ascii characters
+    -- IMPORTANT! handle % first, otherwise it can return incorrect results
+    -- Appears to be inefficient, but it beat an "optimized" algorithm using regex and arrays
+    str_val := REPLACE(str_val, '%', '%25');
+    str_val := REPLACE(str_val, ' ', '%20');
+    str_val := REPLACE(str_val, '!', '%21');
+    str_val := REPLACE(str_val, '#', '%23');
+    str_val := REPLACE(str_val, '$', '%24');
+    str_val := REPLACE(str_val, '&', '%26');
+    str_val := REPLACE(str_val, '''', '%27');
+    str_val := REPLACE(str_val, '(', '%28');
+    str_val := REPLACE(str_val, ')', '%29');
+    str_val := REPLACE(str_val, '*', '%2A');
+    str_val := REPLACE(str_val, '+', '%2B');
+    str_val := REPLACE(str_val, ',', '%2C');
+    str_val := REPLACE(str_val, '/', '%2F');
+    str_val := REPLACE(str_val, ':', '%3A');
+    str_val := REPLACE(str_val, ';', '%3B');
+    str_val := REPLACE(str_val, '=', '%3D');
+    str_val := REPLACE(str_val, '?', '%3F');
+    str_val := REPLACE(str_val, '@', '%40');
+    str_val := REPLACE(str_val, '[', '%5B');
+    str_val := REPLACE(str_val, ']', '%5D');
   END;
 $$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION public.urlencode_arr(url text)
-RETURNS text AS $$
-BEGIN
-  RETURN (
-    WITH str AS (
-        SELECT
-            CASE WHEN $1 ~ '^[% !#$&''\(\)*+,/:;=?@\[\]]' THEN array[''] END || regexp_split_to_array ($1, '([% !#$&''\(\)*+,/:;=?@\[\]])+', 'i') plain,
-            ARRAY(SELECT (regexp_matches ($1, '(([% !#$&''\(\)*+,/:;=?@\[\]])+)', 'gi'))[1]) special
-    )
-    SELECT coalesce(string_agg(plain[i] || CASE WHEN COALESCE(special[i], '') = '' THEN '' ELSE UPPER(CONCAT('%', to_hex(get_byte(special[i]::bytea, 0)))) END, ''), $1)
-    FROM str,
-      (SELECT generate_series(1, array_upper(special,1) + 1) i FROM str) as series
-    );
-END
-$$ LANGUAGE plpgsql IMMUTABLE STRICT;
