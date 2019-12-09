@@ -156,7 +156,7 @@ class Command(BaseCommand):
         if self.config["create_new_index"]:
             printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"])
+            swap_aliases(self.elasticsearch_client, self.config["index_name"], awards=True)
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})

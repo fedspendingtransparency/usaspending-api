@@ -159,7 +159,7 @@ AWARD_VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_accounts",
+    "treasury_account_identifiers",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -362,11 +362,17 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     return count
 
 
-def csv_chunk_gen(filename, chunksize, job_id):
+def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS}
-    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
+    dtype = {k: str for k in AWARD_VIEW_COLUMNS} if awards else {k: str for k in TRANSACTION_VIEW_COLUMNS}
+    # Specifying a dtype is not enough for these columns
+    converters = {
+        "business_categories": convert_postgres_array_as_string_to_list,
+        "treasury_account_identifiers": convert_postgres_array_as_string_to_list,
+        "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
+    }
+    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize, converters=converters):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
 
@@ -416,9 +422,12 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, silent=False):
+def create_aliases(client, index, awards=False, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
+        if awards:
+            alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
+        else:
+            alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
         if silent is False:
             printf(
                 {
@@ -434,12 +443,12 @@ def create_aliases(client, index, silent=False):
     # If the alias is on multiple indexes, the loads will fail!
     printf(
         {
-            "msg": "Putting alias '{}' on {}".format(settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
+            "msg": "Putting alias '{}' on {}".format(settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
             "job": None,
             "f": "ES Alias Put",
         }
     )
-    put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
+    put_alias(client, index, settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
 def set_final_index_config(client, index):
@@ -457,12 +466,14 @@ def set_final_index_config(client, index):
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def swap_aliases(client, index):
+def swap_aliases(client, index, awards=False):
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
-
-    alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
+    if awards:
+        alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
+    else:
+        alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
     old_indexes = []
 
     try:
@@ -473,7 +484,7 @@ def swap_aliases(client, index):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    create_aliases(client, index)
+    create_aliases(client, index, awards)
 
     try:
         if old_indexes:
@@ -496,7 +507,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["awards"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})

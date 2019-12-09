@@ -105,7 +105,7 @@ SELECT
   views.product_or_service_description,
   views.naics_code,
   views.naics_description,
-  TREASURY_ACCT.treasury_accounts
+  TREASURY_ACCT.treasury_account_identifiers
   FROM views
   LEFT JOIN
   (SELECT
@@ -129,7 +129,7 @@ SELECT
         'epoa', taa.beginning_period_of_availability,
         'a', taa.availability_type_code
       )
-    ) treasury_accounts
+    ) treasury_account_identifiers
   FROM
     federal_account fa
     INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id
@@ -137,5 +137,5 @@ SELECT
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
-    faba.award_id
- TREASURY_ACCT ON (FED_ACCT.award_id = views.award_id);
+    faba.award_id)
+ TREASURY_ACCT ON (TREASURY_ACCT.award_id = views.award_id);
