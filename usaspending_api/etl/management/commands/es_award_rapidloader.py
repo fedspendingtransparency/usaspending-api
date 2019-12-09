@@ -170,9 +170,9 @@ class Command(BaseCommand):
 
 def process_cli_parameters(options: dict, es_client) -> None:
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
-    simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts")
+    simple_args = ("create_new_index", "snapshot", "index_name", "directory", "skip_counts")
     config = set_config(simple_args, options)
-
+    config["process_deletes"] = False
     config["fiscal_years"] = fiscal_years_for_processing(options)
     config["directory"] = Path(config["directory"]).resolve()
 
@@ -217,9 +217,6 @@ def process_cli_parameters(options: dict, es_client) -> None:
     elif config["starting_date"] < default_datetime:
         printf({"msg": "Fatal error: --start-datetime is too early. Set no earlier than {}".format(default_datetime)})
         raise SystemExit(1)
-    elif not config["is_incremental_load"] and config["process_deletes"]:
-        printf({"msg": "Skipping deletions for ths load, --deleted overwritten to False"})
-        config["process_deletes"] = False
 
     return config
 
@@ -231,6 +228,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
         "root_index": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
         "processing_start_datetime": datetime.now(timezone.utc),
         "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
+        "awards": True,
     }
 
     config.update({k: v for k, v in arg_parse_options.items() if k in copy_args})

@@ -16,6 +16,10 @@ from time import perf_counter, sleep
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
+    ensure_transaction_etl_view_exists,
+    ensure_award_etl_view_exists,
+)
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -88,7 +92,7 @@ VIEW_COLUMNS = [
     "recipient_location_congressional_code",
     "recipient_location_city_name",
 ]
-AWARD_VIEW_COLUMNS = VIEW_COLUMNS = [
+AWARD_VIEW_COLUMNS = [
     "award_id",
     "generated_unique_award_id",
     "display_award_id",
@@ -107,6 +111,7 @@ AWARD_VIEW_COLUMNS = VIEW_COLUMNS = [
     "recipient_id",
     "recipient_name",
     "recipient_hash",
+    "recipient_unique_id",
     "parent_recipient_unique_id",
     "business_categories",
     "action_date",
@@ -154,7 +159,7 @@ AWARD_VIEW_COLUMNS = VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_account_identifiers",
+    "treasury_accounts",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -162,29 +167,29 @@ UPDATE_DATE_SQL = " AND update_date >= '{}'"
 COUNT_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE transaction_fiscal_year={fy}{update_date}
+WHERE {type_fy}fiscal_year={fy}{update_date}
 """
 
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE transaction_fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
 CHECK_IDS_SQL = """
-WITH temp_transaction_ids AS (
+WITH temp_{view_type}_ids AS (
   SELECT *
-  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
+  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_{view_type}_id)
 )
-SELECT transaction_id, generated_unique_transaction_id, update_date
+SELECT {view_type}_id, generated_unique_{view_type}_id, update_date
 FROM {view}
 WHERE EXISTS (
   SELECT *
-  FROM temp_transaction_ids
+  FROM temp_{view_type}_ids
   WHERE
-    {view}.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
-    AND transaction_fiscal_year={fy}
+    {view}.generated_unique_{view_type}_id = temp_{view_type}_ids.generated_unique_{view_type}_id
+    AND {type_fy}fiscal_year={fy}
 )
 """
 
@@ -217,6 +222,13 @@ class DataJob:
 # Helper functions for several Django management commands focused on ETL into a Elasticsearch cluster
 # ==============================================================================
 
+def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
+    """
+        Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
+        be passed a list instead of a string. In the case of an empty array, return null
+        For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
+    """
+    return array_as_string.replace("{", "").replace("}", "").split(",") if len(array_as_string) > 2 else None
 
 def process_guarddog(process_list):
     """
@@ -240,21 +252,24 @@ def configure_sql_strings(config, filename, deleted_ids):
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+    if config["awards"]:
+        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+        view_type = "award"
+        type_fy = ""
+    else:
+        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        view_type = "transaction"
+        type_fy = "transaction_"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"],
-        update_date=update_date_str,
-        filename=filename,
-        view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+        fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
     )
 
-    count_sql = COUNT_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-    )
+    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
 
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])
+        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
     else:
         id_sql = None
 
@@ -285,6 +300,10 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a reoccuring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    if config["awards"]:
+        ensure_award_etl_view_exists()
+    else:
+        ensure_transaction_etl_view_exists()
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
@@ -300,6 +319,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "process_deletes": config["process_deletes"],
+                "awards": config["awards"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -354,7 +374,10 @@ def csv_chunk_gen(filename, chunksize, job_id):
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only")
+        if config["awards"]:
+            call_command("es_configure", "--template-only", "--awards")
+        else:
+            call_command("es_configure", "--template-only")
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -373,11 +396,11 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None):
+def streaming_post_to_es(client, chunk, index_name, awards, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -491,7 +514,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, job.name)
+        streaming_post_to_es(client, chunk, job.index, config["awards"], job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
