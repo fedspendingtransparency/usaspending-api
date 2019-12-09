@@ -34,6 +34,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.urlencode(INOUT str_val text)
 IMMUTABLE PARALLEL SAFE
 AS $$
+  DECLARE
+    DECLARE i text;
+    DECLARE temp_array text[];
+    DECLARE building_array text[];
+    DECLARE hex_code text;
   BEGIN
     -- Only percent-encode special characters, pass all unicode and other ascii characters
     -- IMPORTANT! handle % first, otherwise it can return incorrect results
@@ -58,5 +63,19 @@ AS $$
     str_val := REPLACE(str_val, '@', '%40');
     str_val := REPLACE(str_val, '[', '%5B');
     str_val := REPLACE(str_val, ']', '%5D');
+
+    FOREACH i IN ARRAY ARRAY(SELECT (regexp_matches (str_val, '([^[:ascii:]])', 'gi'))[1]) LOOP
+      hex_code = UPPER(encode(i::bytea, 'hex'));
+
+      building_array = '{}';
+      temp_array = string_to_array(hex_code, null);
+      FOR i IN 0..char_length(hex_code) - 1 LOOP
+        IF i % 2 = 0 THEN
+          building_array := array_append(building_array, '%');
+        END IF;
+        building_array := array_append(building_array, temp_array[i+1]);
+      END LOOP;
+      str_val := REPLACE(str_val, i, array_to_string(building_array, ''));
+    END LOOP;
   END;
 $$ LANGUAGE plpgsql;
