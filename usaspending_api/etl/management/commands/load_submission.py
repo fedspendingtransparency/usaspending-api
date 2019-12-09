@@ -201,14 +201,13 @@ def get_object_class_row(row):
             # and I don't have a better one.
             direct_reimbursable = None
 
-    # This will throw an error if the object class does not exist which is the new desired behavior.
+    # This will throw an exception if the object class does not exist which is the new desired behavior.
     try:
         return ObjectClass.objects.get(object_class=object_class, direct_reimbursable=direct_reimbursable)
-    except Exception:
-        logger.error(
-            f"Unable to find object class where object_class={object_class}, direct_reimbursable={direct_reimbursable}."
+    except ObjectClass.DoesNotExist:
+        raise ObjectClass.DoesNotExist(
+            f"Unable to find object class for object_class={object_class}, direct_reimbursable={direct_reimbursable}."
         )
-        raise
 
 
 def get_or_create_program_activity(row, submission_attributes):
