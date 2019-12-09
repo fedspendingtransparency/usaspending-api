@@ -143,7 +143,7 @@ def update_skipped_tas(row, tas_rendering_label, skipped_tas):
         skipped_tas[tas_rendering_label]["rows"] += [row["row_number"]]
 
 
-def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
+def get_object_class(row_object_class, row_direct_reimbursable):
     """Lookup an object class record.
 
         Args:
@@ -153,20 +153,20 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
     """
 
     row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
-    return get_or_create_object_class_rw(row, logger)
+    return get_object_class_row(row)
 
 
 class Bunch:
-    "Generic class to hold a group of attributes."
+    """Generic class to hold a group of attributes."""
 
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
 
-def get_or_create_object_class_rw(row, logger):
+def get_object_class_row(row):
     """Lookup an object class record.
 
-       (As ``get_or_create_object_class``, but arguments are bunched into a ``row`` object.)
+       (As ``get_object_class``, but arguments are bunched into a ``row`` object.)
 
         Args:
             row.object_class: object class from the broker
@@ -174,51 +174,41 @@ def get_or_create_object_class_rw(row, logger):
                 (used only when the object_class is 3 digits instead of 4)
     """
 
-    if len(row.object_class) == 4:
+    # Object classes are numeric strings so let's ensure the one we're passed is actually a string before we begin.
+    object_class = str(row.object_class).zfill(3) if type(row.object_class) is int else row.object_class
+
+    # As per DEV-4030, "000" object class is a special case due to common spreadsheet mangling issues.  If
+    # we receive an object class that is all zeroes, convert it to "000".  This also handles the special
+    # case of "0000".
+    if object_class is not None and object_class == "0" * len(object_class):
+        object_class = "000"
+
+    # Alias this to cut down on line lengths a little below.
+    ocdr = ObjectClass.DIRECT_REIMBURSABLE
+
+    if len(object_class) == 4:
         # this is a 4 digit object class, 1st digit = direct/reimbursable information
-        direct_reimbursable = row.object_class[:1]
-        object_class = row.object_class[1:]
+        direct_reimbursable = ocdr.LEADING_DIGIT_MAPPING[object_class[0]]
+        object_class = object_class[1:]
     else:
         # the object class field is the 3 digit version, so grab direct/reimbursable information from a separate field
-        if row.by_direct_reimbursable_fun is None:
+        try:
+            direct_reimbursable = ocdr.BY_DIRECT_REIMBURSABLE_FUN_MAPPING[row.by_direct_reimbursable_fun]
+        except KeyError:
+            # So Broker sort of validates this data, but not really.  It warns submitters that their data
+            # is bad but doesn't force them to actually fix it.  As such, we are going to just ignore
+            # anything we do not recognize.  Terrible solution, but it's what we've been doing to date
+            # and I don't have a better one.
             direct_reimbursable = None
-        elif row.by_direct_reimbursable_fun.lower() == "d":
-            direct_reimbursable = 1
-        elif row.by_direct_reimbursable_fun.lower() == "r":
-            direct_reimbursable = 2
-        else:
-            direct_reimbursable = None
-        object_class = row.object_class
 
-    # set major object class; note that we shouldn't have to do this once we have a complete list of object classes
-    # loaded to ObjectClass (we only fill it in now should it be needed by the subsequent get_or_create)
-    major_object_class = "{}0".format(object_class[:1])
-    if major_object_class == "10":
-        major_object_class_name = "Personnel compensation and benefits"
-    elif major_object_class == "20":
-        major_object_class_name = "Contractual services and supplies"
-    elif major_object_class == "30":
-        major_object_class_name = "Acquisition of assets"
-    elif major_object_class == "40":
-        major_object_class_name = "Grants and fixed charges"
-    elif major_object_class == "90":
-        major_object_class_name = "Other"
-    else:
-        major_object_class_name = "Unknown"
-
-    # we couldn't find a matching object class record, so create one
-    # (note: is this really what we want to do? should we map to an 'unknown' instead?)
-    # should
-    obj_class, created = ObjectClass.objects.get_or_create(
-        major_object_class=major_object_class,
-        major_object_class_name=major_object_class_name,
-        object_class=object_class,
-        direct_reimbursable=direct_reimbursable,
-    )
-    if created:
-        logger.warning("Created missing object_class record for {}".format(object_class))
-
-    return obj_class
+    # This will throw an error if the object class does not exist which is the new desired behavior.
+    try:
+        return ObjectClass.objects.get(object_class=object_class, direct_reimbursable=direct_reimbursable)
+    except Exception:
+        logger.error(
+            f"Unable to find object class where object_class={object_class}, direct_reimbursable={direct_reimbursable}."
+        )
+        raise
 
 
 def get_or_create_program_activity(row, submission_attributes):
@@ -293,7 +283,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
     else:
         # we've already loaded this broker submission, so delete it before reloading if there's another submission that
         # references this one as a "previous submission" do not proceed.
-        # TODO: now that we're chaining submisisons together, get clarification on what should happen when a submission
+        # TODO: now that we're chaining submissions together, get clarification on what should happen when a submission
         # in the middle of the chain is deleted
 
         TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
@@ -477,8 +467,8 @@ def get_file_b(submission_attributes, db_cursor):
             "ending_period_of_availabil, "
             "main_account_code, "
             "RIGHT(object_class, 3) AS object_class, "
-            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'd' "
-            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'r' "
+            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' "
+            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' "
             "ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, "
             "tas, "
             "tas_id, "
@@ -529,8 +519,8 @@ def get_file_b(submission_attributes, db_cursor):
             "ending_period_of_availabil, "
             "main_account_code, "
             "RIGHT(object_class, 3), "
-            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'd' "
-            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'r' "
+            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' "
+            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' "
             "ELSE by_direct_reimbursable_fun END, "
             "program_activity_code, "
             "program_activity_name, "
@@ -589,7 +579,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "reporting_period_end": submission_attributes.reporting_period_end,
             "treasury_account": treasury_account,
             "appropriation_account_balances": account_balances,
-            "object_class": get_or_create_object_class(row["object_class"], row["by_direct_reimbursable_fun"], logger),
+            "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
             "program_activity": get_or_create_program_activity(row, submission_attributes),
         }
 
@@ -675,9 +665,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
     skipped_tas = {}
 
-    award_financial_frame["object_class"] = award_financial_frame.apply(
-        get_or_create_object_class_rw, axis=1, logger=logger
-    )
+    award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
     award_financial_frame["program_activity"] = award_financial_frame.apply(
         get_or_create_program_activity, axis=1, submission_attributes=submission_attributes
     )

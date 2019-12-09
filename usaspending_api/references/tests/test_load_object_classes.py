@@ -1,0 +1,161 @@
+import csv
+import pytest
+
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from pathlib import Path
+from usaspending_api.references.models import ObjectClass
+
+
+# This is created as needed.  It is not a static file.
+OBJECT_CLASS_FILE = Path(__file__).resolve().parent / "data" / "test_object_classes.csv"
+
+# Several data samples.
+GOOD_SAMPLE = [("100", "Test 100"), ("1100", "Test 1100"), ("2100", "Test 2100")]
+IGNORE_BLANK_SAMPLE = [("100", "Test 100"), ("1100", "Test 1100"), ("2100", "Test 2100"), ("", "")]
+ADDITIONAL_SAMPLE = [("200", "Test 200"), ("1200", "Test 1200"), ("2200", "Test 2200")]
+UPDATE_SAMPLE = [("100", "Test 100 update"), ("1100", "Test 1100 update"), ("2100", "Test 2100 update")]
+NON_DIGIT_SAMPLE = [("x00", "Not digits")]
+TOO_MANY_DIGITS_SAMPLE = [("11100", "too many digits")]
+BAD_DR_DIGIT_SAMPLE = [("5100", "Bad D/R digit")]
+MISSING_NAME_SAMPLE = [("1100", "")]
+
+
+@pytest.fixture
+def disable_vacuuming(monkeypatch):
+    """
+    We cannot run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
+    function that performs the vacuuming.
+    """
+    monkeypatch.setattr(
+        "usaspending_api.references.management.commands.load_object_classes.Command._vacuum_tables", lambda a: None
+    )
+
+
+@pytest.fixture(scope="session")
+def remove_csv_file():
+    """ Ensure the CSV file goes away at the end of the tests. """
+    yield
+    OBJECT_CLASS_FILE.unlink()
+
+
+def mock_data(object_classes):
+    """ [(object class, object class name), ...] """
+    with open(OBJECT_CLASS_FILE, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows([("MAX OC Code", "MAX Object Class name")] + object_classes)
+
+
+@pytest.mark.django_db
+def test_happy_path(transactional_db, remove_csv_file):
+    """
+    We're running this one without a transaction just to ensure the vacuuming doesn't blow up.  For
+    the remaining tests we'll run inside of a transaction since it's faster.
+    """
+
+    # Confirm everything is empty.
+    assert ObjectClass.objects.count() == 0
+
+    # Load all the things.
+    mock_data(GOOD_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+
+    # We should have 6 records; the three we added plus the three default "000" object classes.
+    assert ObjectClass.objects.count() == 6
+
+    # Perform two deep dives; one for the records we just added and one for a "000" object class.
+    oc = ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
+    assert oc.major_object_class == "10"
+    assert oc.major_object_class_name == "Personnel compensation and benefits"
+    assert oc.object_class == "100"
+    assert oc.object_class_name == "Test 1100"
+    assert oc.direct_reimbursable == "D"
+    assert oc.direct_reimbursable_name == "Direct"
+    assert oc.create_date is not None
+    assert oc.update_date is not None
+
+    oc = ObjectClass.objects.get(object_class="000", direct_reimbursable=None)
+    assert oc.major_object_class == "00"
+    assert oc.major_object_class_name == "Unknown"
+    assert oc.object_class == "000"
+    assert oc.object_class_name == "Unknown"
+    assert oc.direct_reimbursable is None
+    assert oc.direct_reimbursable_name is None
+    assert oc.create_date is not None
+    assert oc.update_date is not None
+
+    # These will blow up if a record is missing.
+    ObjectClass.objects.get(object_class="000", direct_reimbursable=None)
+    ObjectClass.objects.get(object_class="000", direct_reimbursable="D")
+    ObjectClass.objects.get(object_class="000", direct_reimbursable="R")
+    ObjectClass.objects.get(object_class="100", direct_reimbursable=None)
+    ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
+    ObjectClass.objects.get(object_class="100", direct_reimbursable="R")
+
+
+@pytest.mark.django_db
+def test_no_file_provided():
+
+    # This should error since file is required.
+    with pytest.raises(CommandError):
+        call_command("load_object_classes")
+
+
+@pytest.mark.django_db
+def test_ignore_blanks(disable_vacuuming, remove_csv_file):
+
+    assert ObjectClass.objects.count() == 0
+    mock_data(IGNORE_BLANK_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.count() == 6
+
+
+@pytest.mark.django_db
+def test_adding_rows(disable_vacuuming, remove_csv_file):
+
+    assert ObjectClass.objects.count() == 0
+    mock_data(GOOD_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.count() == 6
+    mock_data(ADDITIONAL_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.count() == 9
+
+
+@pytest.mark.django_db
+def test_updating_rows(disable_vacuuming, remove_csv_file):
+
+    assert ObjectClass.objects.count() == 0
+    mock_data(GOOD_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.count() == 6
+    mock_data(UPDATE_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.count() == 6
+
+    oc = ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
+    assert oc.object_class_name == "Test 1100 update"
+
+
+@pytest.mark.django_db
+def test_bad_data(remove_csv_file):
+
+    assert ObjectClass.objects.count() == 0
+
+    mock_data(NON_DIGIT_SAMPLE)
+    with pytest.raises(RuntimeError):
+        call_command("load_object_classes", OBJECT_CLASS_FILE)
+
+    mock_data(TOO_MANY_DIGITS_SAMPLE)
+    with pytest.raises(RuntimeError):
+        call_command("load_object_classes", OBJECT_CLASS_FILE)
+
+    mock_data(BAD_DR_DIGIT_SAMPLE)
+    with pytest.raises(RuntimeError):
+        call_command("load_object_classes", OBJECT_CLASS_FILE)
+
+    mock_data(MISSING_NAME_SAMPLE)
+    with pytest.raises(RuntimeError):
+        call_command("load_object_classes", OBJECT_CLASS_FILE)
+
+    assert ObjectClass.objects.count() == 0

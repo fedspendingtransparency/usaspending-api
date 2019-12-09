@@ -89,7 +89,7 @@ class ThreadedDataLoader:
 
         # Spawn our processes
         # We have to kill any DB connections before forking processes, as Django will want to share the single
-        # connection with all processes and we don't want to have any deadlock/effeciency problems due to that
+        # connection with all processes and we don't want to have any deadlock/efficiency problems due to that
         db.connections.close_all()
         pool = []
         for i in range(self.processes):
