@@ -98,7 +98,7 @@
           "analyzer": "stemmer_analyzer"
         },
         "total_obl_bin": {
-          "type": "text"
+          "type": "keyword"
         },
         "total_subsidy_cost": {
           "type": "scaled_float",
