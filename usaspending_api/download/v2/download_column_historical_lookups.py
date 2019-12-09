@@ -1236,11 +1236,13 @@ query_paths = {
                     "broker_subaward__place_of_perform_country_na",
                 ),
                 ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_naics_code", "broker_subaward__naics"),
                 ("prime_award_naics_description", "broker_subaward__naics_description"),
                 ("subaward_type", "broker_subaward__subaward_type"),
-                ("subaward_report_year", "broker_subaward__subaward_report_year"),
-                ("subaward_report_month", "broker_subaward__subaward_report_month"),
+                ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
+                ("subaward_fsrs_report_year", "broker_subaward__subaward_report_year"),
+                ("subaward_fsrs_report_month", "broker_subaward__subaward_report_month"),
                 ("subaward_number", "broker_subaward__subaward_number"),
                 ("subaward_amount", "broker_subaward__subaward_amount"),
                 ("subaward_action_date", "broker_subaward__sub_action_date"),
@@ -1298,6 +1300,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
+                ("subaward_fsrs_report_last_modified_date", "broker_subaward__date_submitted"),
             ]
         ),
         "d2": OrderedDict(
@@ -1356,11 +1359,13 @@ query_paths = {
                     "broker_subaward__place_of_perform_country_na",
                 ),
                 ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_cfda_number", "broker_subaward__cfda_numbers"),
                 ("prime_award_cfda_title", "broker_subaward__cfda_titles"),
                 ("subaward_type", "broker_subaward__subaward_type"),
-                ("subaward_report_year", "broker_subaward__subaward_report_year"),
-                ("subaward_report_month", "broker_subaward__subaward_report_month"),
+                ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
+                ("subaward_fsrs_report_year", "broker_subaward__subaward_report_year"),
+                ("subaward_fsrs_report_month", "broker_subaward__subaward_report_month"),
                 ("subaward_number", "broker_subaward__subaward_number"),
                 ("subaward_amount", "broker_subaward__subaward_amount"),
                 ("subaward_action_date", "broker_subaward__sub_action_date"),
@@ -1418,6 +1423,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
+                ("subaward_fsrs_report_last_modified_date", "broker_subaward__date_submitted"),
             ]
         ),
     },
