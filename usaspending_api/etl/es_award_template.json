@@ -143,7 +143,7 @@
             }
           }
         },
-         "business_categories": {
+        "business_categories": {
           "type": "text",
           "fields": {
             "keyword": {
@@ -218,7 +218,8 @@
             "keyword": {
               "type": "keyword"
             }
-          }        },
+          }
+        },
         "funding_subtier_agency_name": {
           "type": "text",
           "fields": {
@@ -236,7 +237,7 @@
           }
         },
         "funding_toptier_agency_code": {
-         "type": "text",
+          "type": "text",
           "fields": {
             "keyword": {
               "type": "keyword"
@@ -433,10 +434,28 @@
           "type": "text"
         },
         "treasury_account_identifiers": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
+          "type": "nested",
+          "properties": {
+            "aid": {
+              "type": "integer"
+            },
+            "ata": {
+              "type": "integer"
+            },
+            "main": {
+              "type": "integer"
+            },
+            "sub": {
+              "type": "integer"
+            },
+            "bpoa": {
+              "type": "integer"
+            },
+            "epoa": {
+              "type": "integer"
+            },
+            "a": {
+              "type": "text"
             }
           }
         }

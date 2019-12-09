@@ -27,6 +27,7 @@ def ensure_transaction_etl_view_exists(force: bool = False) -> None:
     with connection.cursor() as cursor:
         cursor.execute(view_sql)
 
+
 def ensure_award_etl_view_exists(force: bool = False) -> None:
     """
     The view is used to populate the Elasticsearch transaction index.

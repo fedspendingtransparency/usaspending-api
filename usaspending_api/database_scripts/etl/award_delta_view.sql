@@ -105,7 +105,7 @@ SELECT
   views.product_or_service_description,
   views.naics_code,
   views.naics_description,
-  ARRAY_TO_STRING(views.treasury_account_identifiers, ', ') AS treasury_account_identifiers
+  TREASURY_ACCT.treasury_accounts
   FROM views
   LEFT JOIN
   (SELECT
@@ -116,4 +116,26 @@ SELECT
   ) recipient_lookup ON recipient_lookup.duns = views.recipient_unique_id AND views.recipient_unique_id IS NOT NULL
   LEFT JOIN
   recipient_profile rp  on recipient_lookup.recipient_hash = rp.recipient_hash
-ORDER BY views.total_obligation DESC NULLS LAST;
+  LEFT OUTER JOIN (
+  SELECT
+    faba.award_id,
+    JSONB_AGG(
+      JSONB_BUILD_OBJECT(
+        'aid', taa.agency_id,
+        'ata', taa.allocation_transfer_agency_id,
+        'main', taa.main_account_code,
+        'sub', taa.sub_account_code,
+        'bpoa', taa.beginning_period_of_availability,
+        'epoa', taa.beginning_period_of_availability,
+        'a', taa.availability_type_code
+      )
+    ) treasury_accounts
+  FROM
+    federal_account fa
+    INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id
+    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
+  WHERE
+    faba.award_id IS NOT NULL
+  GROUP BY
+    faba.award_id
+ TREASURY_ACCT ON (FED_ACCT.award_id = views.award_id);

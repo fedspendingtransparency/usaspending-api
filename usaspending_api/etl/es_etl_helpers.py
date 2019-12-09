@@ -154,7 +154,7 @@ AWARD_VIEW_COLUMNS = VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_account_identifiers"
+    "treasury_account_identifiers",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
