@@ -36,46 +36,28 @@ IMMUTABLE PARALLEL SAFE
 AS $$
   DECLARE
     DECLARE i text;
-    DECLARE temp_array text[];
-    DECLARE building_array text[];
-    DECLARE hex_code text;
+    DECLARE reassemble_array text[];
+    DECLARE hex_code_array text[];
   BEGIN
-    -- Only percent-encode special characters, pass all unicode and other ascii characters
+    -- Percent-encode all characters which aren't considered the "unreserved list"
+    --  of URL characters: A-Za-z0-9\-_.~
+    --  (This is the most conservative approach when implementing URLencoding)
+    -- The logic appears to be inefficient, but it beat more "optimized" algorithms
+
     -- IMPORTANT! handle % first, otherwise it can return incorrect results
-    -- Appears to be inefficient, but it beat an "optimized" algorithm using regex and arrays
     str_val := REPLACE(str_val, '%', '%25');
-    str_val := REPLACE(str_val, ' ', '%20');
-    str_val := REPLACE(str_val, '!', '%21');
-    str_val := REPLACE(str_val, '#', '%23');
-    str_val := REPLACE(str_val, '$', '%24');
-    str_val := REPLACE(str_val, '&', '%26');
-    str_val := REPLACE(str_val, '''', '%27');
-    str_val := REPLACE(str_val, '(', '%28');
-    str_val := REPLACE(str_val, ')', '%29');
-    str_val := REPLACE(str_val, '*', '%2A');
-    str_val := REPLACE(str_val, '+', '%2B');
-    str_val := REPLACE(str_val, ',', '%2C');
-    str_val := REPLACE(str_val, '/', '%2F');
-    str_val := REPLACE(str_val, ':', '%3A');
-    str_val := REPLACE(str_val, ';', '%3B');
-    str_val := REPLACE(str_val, '=', '%3D');
-    str_val := REPLACE(str_val, '?', '%3F');
-    str_val := REPLACE(str_val, '@', '%40');
-    str_val := REPLACE(str_val, '[', '%5B');
-    str_val := REPLACE(str_val, ']', '%5D');
 
-    FOREACH i IN ARRAY ARRAY(SELECT (regexp_matches (str_val, '([^[:ascii:]])', 'gi'))[1]) LOOP
-      hex_code = UPPER(encode(i::bytea, 'hex'));
+    FOREACH i IN ARRAY ARRAY(SELECT DISTINCT (regexp_matches (str_val, '([^A-Za-z0-9\-_.~%])', 'gi'))[1]) LOOP
+      reassemble_array = '{}';
+      hex_code_array = string_to_array(UPPER(encode(i::bytea, 'hex')), NULL);
 
-      building_array = '{}';
-      temp_array = string_to_array(hex_code, null);
-      FOR i IN 0..char_length(hex_code) - 1 LOOP
+      FOR i IN 0..array_length(hex_code_array, 1) - 1 LOOP
         IF i % 2 = 0 THEN
-          building_array := array_append(building_array, '%');
+          reassemble_array := array_append(reassemble_array, '%');
         END IF;
-        building_array := array_append(building_array, temp_array[i+1]);
+        reassemble_array := array_append(reassemble_array, hex_code_array[i+1]);
       END LOOP;
-      str_val := REPLACE(str_val, i, array_to_string(building_array, ''));
+      str_val := REPLACE(str_val, i, array_to_string(reassemble_array, ''));
     END LOOP;
   END;
 $$ LANGUAGE plpgsql;
