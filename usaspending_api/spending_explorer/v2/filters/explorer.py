@@ -96,6 +96,8 @@ class Explorer(object):
 
     def recipient(self):
         # Recipients Queryset
+        # The two querysets here are identical, other than that the annotation traces differently to either the
+        # transaction_fabs or transaction_fpds table depending on the type of the latest transaction
         alt_set = (
             self.alt_set.filter(
                 ~Q(transaction_obligated_amount=Decimal("NaN")), award__latest_transaction__is_fpds=False
@@ -109,7 +111,19 @@ class Explorer(object):
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
-        )
+            | self.alt_set.filter(
+                ~Q(transaction_obligated_amount=Decimal("NaN")), award__latest_transaction__is_fpds=True
+            )
+            .annotate(
+                id=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                type=Value("recipient", output_field=CharField()),
+                name=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                code=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+            )
+            .values("id", "type", "name", "code", "amount")
+            .annotate(total=Sum("transaction_obligated_amount"))
+            .order_by("-total")
+        ).distinct()
 
         return alt_set
 
