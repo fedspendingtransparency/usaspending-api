@@ -1,6 +1,3 @@
-"""
-As of this writing, the raw source object class file can be found on S3 at s3://gtas-sf133/object_class.csv
-"""
 import logging
 import re
 
@@ -13,7 +10,6 @@ from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictiona
 from usaspending_api.common.etl import ETLTable, mixins, ETLTemporaryTable
 from usaspending_api.common.etl.operations import insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import get_connection
-from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.references.models import ObjectClass
 
@@ -88,6 +84,16 @@ class Command(mixins.ETLMixin, BaseCommand):
                 logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
                 raise
 
+    @staticmethod
+    def _prep(text):
+        """
+        A semi-common problem with CSV files that have been edited by third party tools is the
+        introduction of leading and/or trailing spaces.  Strip them.
+        """
+        if text and type(text) is str:
+            return text.strip()
+        return text
+
     def _read_raw_object_classes_csv(self):
 
         object_classes = read_csv_file_as_list_of_dictionaries(self.object_class_file)
@@ -97,11 +103,11 @@ class Command(mixins.ETLMixin, BaseCommand):
         self.raw_object_classes = [
             RawObjectClass(
                 row_number=row_number,
-                object_class=prep(object_class["MAX OC Code"]),
-                object_class_name=prep(object_class["MAX Object Class name"]),
+                object_class=self._prep(object_class["MAX OC Code"]),
+                object_class_name=self._prep(object_class["MAX Object Class name"]),
             )
             for row_number, object_class in enumerate(object_classes, start=1)
-            if object_class["MAX OC Code"]
+            if self._prep(object_class["MAX OC Code"])
         ]
 
         return len(self.raw_object_classes)

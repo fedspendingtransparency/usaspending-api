@@ -19,6 +19,7 @@ NON_DIGIT_SAMPLE = [("x00", "Not digits")]
 TOO_MANY_DIGITS_SAMPLE = [("11100", "too many digits")]
 BAD_DR_DIGIT_SAMPLE = [("5100", "Bad D/R digit")]
 MISSING_NAME_SAMPLE = [("1100", "")]
+LEADING_TRAILING_SPACES_SAMPLE = [(" 100 ", " Test 100 "), (" 1100 ", " Test 1100 "), (" 2100 ", " Test 2100 ")]
 
 
 @pytest.fixture
@@ -135,6 +136,17 @@ def test_updating_rows(disable_vacuuming, remove_csv_file):
 
     oc = ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
     assert oc.object_class_name == "Test 1100 update"
+
+
+@pytest.mark.django_db
+def test_leading_trailing_spaces(disable_vacuuming, remove_csv_file):
+
+    assert ObjectClass.objects.count() == 0
+    mock_data(LEADING_TRAILING_SPACES_SAMPLE)
+    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    assert ObjectClass.objects.get(object_class="100", direct_reimbursable=None).object_class_name == "Test 100"
+    assert ObjectClass.objects.get(object_class="100", direct_reimbursable="D").object_class_name == "Test 1100"
+    assert ObjectClass.objects.get(object_class="100", direct_reimbursable="R").object_class_name == "Test 2100"
 
 
 @pytest.mark.django_db
