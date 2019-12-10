@@ -7,23 +7,45 @@ from usaspending_api.references.models import ToptierAgency
 
 
 def create_unique_filename(json_request, request_agency=None):
+    import json
+    print(f"agency: {request_agency} request: {json.dumps(json_request)}")
+
     if json_request.get("is_for_idv"):
         download_name = "IDV_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
     elif json_request.get("is_for_contract"):
         download_name = "CONT_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
     elif json_request.get("is_for_assistance"):
         download_name = "ASST_" + slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
+    elif json_request["request_type"] == "account":
+        file_name_template = obtain_zip_filename_format(json_request["download_types"])
+        prefix = obtain_filename_prefix_from_agency_id(request_agency)
+        level = "FA" if json_request["account_level"] == "federal_account" else "TAS"
+        additional_quarters = ""
+
+        if json_request["filters"]["quarter"] != 1:
+            additional_quarters = f"-Q{json_request['filters']['quarter']}"
+
+        download_name = file_name_template.format(fy=json_request["filters"]["fy"], date_range=additional_quarters, level=level, agency=prefix)
     else:
+        # request_type: assistance, award, idv, account, contract
         download_types = json_request["download_types"]
         prefix = obtain_filename_prefix_from_agency_id(request_agency)
         award_type_name = create_award_level_string(download_types)
         download_name = "{}_{}".format(prefix, award_type_name)
-    timestamped_file_name = get_timestamped_filename("{}.zip".format(download_name))
+
+    datetime_format = "%Y-%m-%d_H%HM%MS%S%f"
+    timestamped_file_name = get_timestamped_filename(f"{download_name}.zip", datetime_format=datetime_format)
     return timestamped_file_name
 
 
+def obtain_zip_filename_format(download_types):
+    if len(download_types) > 1:
+        raise NotImplementedError
+    return VALUE_MAPPINGS[download_types[0]]["zipfile_template"]
+
+
 def obtain_filename_prefix_from_agency_id(request_agency):
-    result = "all"
+    result = "All"
     if request_agency:
         toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
         if toptier_agency_filter:
@@ -32,13 +54,11 @@ def obtain_filename_prefix_from_agency_id(request_agency):
 
 
 def create_award_level_string(download_types):
-    return "_".join(VALUE_MAPPINGS[award_level]["download_name"] for award_level in download_types)
+    return "+".join(VALUE_MAPPINGS[award_level]["download_name"] for award_level in download_types)
 
 
 def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
-    """
-        Gets a Timestamped file name to prevent conflicts on S3 Uploading
-    """
+    """Return an updated filename to include current timestamp"""
     file_sans_extension, file_extension = filename.split(".")
     timestamp = datetime.strftime(datetime.now(timezone.utc), datetime_format)
     return "{}_{}.{}".format(file_sans_extension, timestamp, file_extension)

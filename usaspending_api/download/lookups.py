@@ -94,7 +94,8 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": AppropriationAccountBalances,
         "table_name": "account_balances",
-        "download_name": "account_balances",
+        "download_name": "AccountBalances",
+        "zipfile_template": "FY{fy}Q1{date_range}_{level}_{agency}_AccountBalances",
         "filter_function": account_download_filter,
     },
     # Object Class Program Activity Account Data
@@ -102,14 +103,16 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
-        "download_name": "account_breakdown_by_program_activity_object_class",
+        "download_name": "AccountBreakdownByProgramActivityObjectClass",
+        "zipfile_template": "FY{fy}Q1{date_range}_{level}_{agency}_AccountBreakdownByProgramActivityObjectClass",
         "filter_function": account_download_filter,
     },
     "award_financial": {
         "source_type": "account",
         "table": FinancialAccountsByAwards,
         "table_name": "award_financial",
-        "download_name": "account_breakdown_by_award",
+        "download_name": "AccountBreakdownByAward",
+        "zipfile_template": "FY{fy}Q1{date_range}_{level}_{agency}_AccountBreakdownByAward",
         "filter_function": account_download_filter,
     },
     "idv_orders": {
