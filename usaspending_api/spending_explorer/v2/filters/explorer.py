@@ -97,12 +97,14 @@ class Explorer(object):
     def recipient(self):
         # Recipients Queryset
         alt_set = (
-            self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")), award__recipient__isnull=False)
+            self.alt_set.filter(
+                ~Q(transaction_obligated_amount=Decimal("NaN")), award__latest_transaction__is_fpds=False
+            )
             .annotate(
-                id=F("award__recipient__recipient_name"),
+                id=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 type=Value("recipient", output_field=CharField()),
-                name=F("award__recipient__recipient_name"),
-                code=F("award__recipient__recipient_name"),
+                name=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+                code=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
             )
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))

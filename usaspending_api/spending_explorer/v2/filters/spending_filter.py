@@ -3,6 +3,7 @@ import logging
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +69,11 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == "recipient":
-                and_alt_set = alt_set.filter(award__recipient__recipient_name=value)
-                alt_set &= and_alt_set
+                or_alt_set = alt_set.filter(
+                    Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    | Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                )
+                alt_set &= or_alt_set
 
             # award, award_category
             elif key == "award" or key == "award_category":
