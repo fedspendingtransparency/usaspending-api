@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 # Imports from your apps
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionNormalized
-
+from usaspending_api.references.models import ObjectClass
 
 DB_CURSOR_PARAMS = {
     DEFAULT_DB_ALIAS: MagicMock(),
@@ -51,6 +51,7 @@ def test_load_submission_file_c_no_d_linkage(mock_db_cursor):
         },
         {"model": TransactionNormalized, "id": -999, "award_id": -999},
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -97,6 +98,7 @@ def test_load_submission_file_c_piid_with_unmatched_parent_piid(mock_db_cursor):
             "latest_transaction_id": -1234,
         },
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -143,6 +145,7 @@ def test_load_submission_file_c_piid_with_no_parent_piid(mock_db_cursor):
             "latest_transaction_id": -998,
         },
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -189,6 +192,7 @@ def test_load_submission_file_c_piid_with_parent_piid(mock_db_cursor):
             "latest_transaction_id": -997,
         },
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -229,6 +233,7 @@ def test_load_submission_file_c_fain(mock_db_cursor):
         {"model": TransactionNormalized, "id": -997},
         {"model": Award, "id": -997, "fain": "RANDOM_LOAD_SUB_FAIN", "latest_transaction_id": -997},
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -269,6 +274,7 @@ def test_load_submission_file_c_uri(mock_db_cursor):
         {"model": TransactionNormalized, "id": -997},
         {"model": Award, "id": -997, "uri": "RANDOM_LOAD_SUB_URI", "latest_transaction_id": -997},
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -323,6 +329,7 @@ def test_load_submission_file_c_fain_and_uri(mock_db_cursor):
             "latest_transaction_id": -1999,
         },
     ]
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
 
     for entry in models_to_mock:
         mommy.make(entry.pop("model"), **entry)
@@ -358,6 +365,8 @@ def test_load_submission_transaction_obligated_amount(mock_db_cursor):
             "tas_rendering_label": "999-999-000-0000-0000",
         },
     )
+    mommy.make(ObjectClass, id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
+
     call_command("load_submission", "-9999")
 
     expected_results = 0
