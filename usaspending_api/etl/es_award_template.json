@@ -433,7 +433,7 @@
         "naics_description": {
           "type": "text"
         },
-        "treasury_account_identifiers": {
+        "treasury_accounts": {
           "type": "nested",
           "properties": {
             "aid": {

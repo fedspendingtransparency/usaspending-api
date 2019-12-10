@@ -159,7 +159,7 @@ AWARD_VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_account_identifiers",
+    "treasury_accounts",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -222,6 +222,7 @@ class DataJob:
 # Helper functions for several Django management commands focused on ETL into a Elasticsearch cluster
 # ==============================================================================
 
+
 def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
     """
         Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
@@ -229,6 +230,7 @@ def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
         For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
     """
     return array_as_string.replace("{", "").replace("}", "").split(",") if len(array_as_string) > 2 else None
+
 
 def process_guarddog(process_list):
     """
@@ -365,11 +367,12 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in AWARD_VIEW_COLUMNS} if awards else {k: str for k in TRANSACTION_VIEW_COLUMNS}
+    dtype = {k: str for k in AWARD_VIEW_COLUMNS} if awards else {k: str for k in VIEW_COLUMNS}
     # Specifying a dtype is not enough for these columns
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
         "treasury_account_identifiers": convert_postgres_array_as_string_to_list,
+        "treasury_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
         "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
     }
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize, converters=converters):
@@ -406,7 +409,9 @@ def streaming_post_to_es(client, chunk, index_name, awards, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")):
+        for ok, item in helpers.streaming_bulk(
+            client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")
+        ):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -422,7 +427,7 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, awards=False, silent=False):
+def create_aliases(client, index, silent=False, awards=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if awards:
             alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
@@ -443,7 +448,9 @@ def create_aliases(client, index, awards=False, silent=False):
     # If the alias is on multiple indexes, the loads will fail!
     printf(
         {
-            "msg": "Putting alias '{}' on {}".format(settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
+            "msg": "Putting alias '{}' on {}".format(
+                settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
+            ),
             "job": None,
             "f": "ES Alias Put",
         }

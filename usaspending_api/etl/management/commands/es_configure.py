@@ -56,12 +56,8 @@ class Command(BaseCommand):
         template_name = "{type}_template".format(type="award" if self.awards else "transaction")
 
         self.run_curl_cmd(
-            payload=template,
-            url=CURL_COMMANDS["template"],
-            host=settings.ES_HOSTNAME,
-            name=template_name,
+            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
         )
-
 
     def run_curl_cmd(self, **kwargs):
         url = kwargs["url"].format(**kwargs)
@@ -72,20 +68,23 @@ class Command(BaseCommand):
         print("\n\n---------------------------------------------------------------")
         return
 
-
     def get_elasticsearch_settings(self):
         es_config = self.return_json_from_file(FILES["settings"])
         es_config["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
         return es_config["cluster"], es_config["settings"]
 
-
     def get_index_template(self):
-        template = self.return_json_from_file(FILES["{view}_template".format(view="award" if self.awards else "transaction")])
-        template["index_patterns"] = ["*{}".format(settings.ES_AWARDS_NAME_SUFFIX if self.awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)]
-        template["settings"]["index.max_result_window"] = settings.ES_AWARDS_MAX_RESULT_WINDOW if self.awards else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+        template = self.return_json_from_file(
+            FILES["{view}_template".format(view="award" if self.awards else "transaction")]
+        )
+        template["index_patterns"] = [
+            "*{}".format(settings.ES_AWARDS_NAME_SUFFIX if self.awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)
+        ]
+        template["settings"]["index.max_result_window"] = (
+            settings.ES_AWARDS_MAX_RESULT_WINDOW if self.awards else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+        )
         self.validate_known_fields(template)
         return template
-
 
     def return_json_from_file(self, path):
         """Read and parse file as JSON
@@ -102,18 +101,24 @@ class Command(BaseCommand):
 
         return json_to_dict
 
-
     def validate_known_fields(self, template):
-        defined_fields = set([field for field in template["mappings"]["{view}_mapping".format(view="award" if self.awards else "transaction")]["properties"]])
-        load_columns = set(AWARD_VIEW_COLUMNS) if self.awards else VIEW_COLUMNS
+        defined_fields = set(
+            [
+                field
+                for field in template["mappings"][
+                    "{view}_mapping".format(view="award" if self.awards else "transaction")
+                ]["properties"]
+            ]
+        )
+        load_columns = set(AWARD_VIEW_COLUMNS) if self.awards else set(VIEW_COLUMNS)
         if defined_fields ^ load_columns:  # check if any fields are not in both sets
             raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
 
 
-    def retrieve_transaction_index_template(self):
-        """This function is used for test configuration"""
-        with open(str(FILES["{view}_template".format(view="award" if self.awards else "transaction")])) as f:
-            mapping_dict = json.load(f)
-            template = json.dumps(mapping_dict)
+def retrieve_transaction_index_template():
+    """This function is used for test configuration"""
+    with open(str(FILES["{}_template".format("transaction")])) as f:
+        mapping_dict = json.load(f)
+        template = json.dumps(mapping_dict)
 
-        return template
+    return template

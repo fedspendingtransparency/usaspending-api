@@ -105,7 +105,7 @@ SELECT
   views.product_or_service_description,
   views.naics_code,
   views.naics_description,
-  TREASURY_ACCT.treasury_account_identifiers
+  TREASURY_ACCT.treasury_account_identifiers as treasury_accounts
   FROM views
   LEFT JOIN
   (SELECT
