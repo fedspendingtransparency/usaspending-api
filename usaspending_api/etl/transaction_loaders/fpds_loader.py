@@ -95,9 +95,8 @@ def delete_stale_fpds(date):
             # in the update awards stage later on
             cursor.execute(
                 "update awards set latest_transaction_id = null, earliest_transaction_id = null "
-                "where latest_transaction_id in ({}) returning id".format(
-                    ",".join([str(row[0]) for row in transaction_normalized_ids])
-                )
+                "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
+                "returning id".format(ids=",".join([str(row[0]) for row in transaction_normalized_ids]))
             )
             awards_touched = cursor.fetchall()
 

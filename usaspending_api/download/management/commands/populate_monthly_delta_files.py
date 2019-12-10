@@ -185,7 +185,7 @@ class Command(BaseCommand):
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
 
             logger.info("Creating compressed file: {}".format(os.path.basename(zipfile_path)))
-            split_and_zip_data_files(zipfile_path, source_path, source_name)
+            split_and_zip_data_files(zipfile_path, source_path, source_name, "csv")
         else:
             zipfile_path = None
 
