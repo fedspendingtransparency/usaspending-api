@@ -28,10 +28,11 @@ def create_unique_filename(json_request, request_agency=None):
         download_name = file_name_template.format(fy=json_request["filters"]["fy"], date_range=additional_quarters, level=level, agency=prefix)
     else:
         # request_type: assistance, award, idv, account, contract
+        prefix = "All_" if json_request.get("constraint_type", "") == "year" else ""
         download_types = json_request["download_types"]
-        prefix = obtain_filename_prefix_from_agency_id(request_agency)
+        agency = obtain_filename_prefix_from_agency_id(request_agency)
         award_type_name = create_award_level_string(download_types)
-        download_name = "{}_{}".format(prefix, award_type_name)
+        download_name = f"{prefix}{agency}_{award_type_name}"
 
     datetime_format = "%Y-%m-%d_H%HM%MS%S%f"
     timestamped_file_name = get_timestamped_filename(f"{download_name}.zip", datetime_format=datetime_format)

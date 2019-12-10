@@ -9,6 +9,7 @@ import tempfile
 import time
 import traceback
 
+from datetime import datetime, timezone
 from django.conf import settings
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
@@ -177,14 +178,14 @@ def get_download_sources(json_request):
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
     """Write to delimited text file(s) and zip file(s) using the source data"""
     d_map = {
-        "d1": "contracts",
-        "d2": "assistance",
+        "d1": "Contracts",
+        "d2": "Assistance",
         "treasury_account": "treasury_account",
         "federal_account": "federal_account",
     }
     if download_job and download_job.monthly_download:
-        # Use existing detailed filename from parent file for monthly files
-        # e.g. `019_Assistance_Delta_20180917_%s.csv`
+        # For monthly archives, use the existing detailed zip filename for the data files
+        # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
         source_name = strip_file_extension(download_job.file_name)
     elif source.is_for_idv or source.is_for_contract:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
@@ -193,8 +194,16 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
+        print(f"Source: {source} zip: {zip_file_path}, download {download_job.json_request}")
         download_name = VALUE_MAPPINGS[source.source_type]["download_name"]
-        source_name = f"{source.agency_code}_{d_map[source.file_type]}_{download_name}"
+        if zip_file_path.startswith("All"):
+            prefix = "All_"
+            agency = f"_{'All' if source.agency_code == 'all' else source.agency_code}"
+        else:
+            prefix = ""
+            agency = ""
+        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
+        source_name = f"{prefix}{d_map[source.file_type]}{agency}_{download_name}_{timestamp}"
 
     source_query = source.row_emitter(columns)
     source.file_name = f"{source_name}.{extension}"
