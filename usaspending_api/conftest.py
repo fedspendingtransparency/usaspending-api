@@ -16,7 +16,11 @@ from usaspending_api.common.helpers.generic_helper import (
     refresh_matviews as perform_refresh_matviews,
 )
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
-from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_broker_server_dblink_exists
+from usaspending_api.conftest_helpers import (
+    TestElasticSearchIndex,
+    ensure_broker_server_dblink_exists,
+    TestElasticAwardSearchIndex,
+)
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
@@ -289,6 +293,21 @@ def elasticsearch_transaction_index(db):
     """
     elastic_search_index = TestElasticSearchIndex()
     with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_award_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    award index.  To use, create some mock database data then call
+    elasticsearch_award_index.update_index to populate Elasticsearch.
+
+    See test_demo_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticAwardSearchIndex()
+    with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
 

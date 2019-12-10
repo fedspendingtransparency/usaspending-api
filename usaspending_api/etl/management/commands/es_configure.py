@@ -117,7 +117,16 @@ class Command(BaseCommand):
 
 def retrieve_transaction_index_template():
     """This function is used for test configuration"""
-    with open(str(FILES["{}_template".format("transaction")])) as f:
+    with open(str(FILES["transaction_template"])) as f:
+        mapping_dict = json.load(f)
+        template = json.dumps(mapping_dict)
+
+    return template
+
+
+def retrieve_award_index_template():
+    """This function is used for test configuration"""
+    with open(str(FILES["award_template"])) as f:
         mapping_dict = json.load(f)
         template = json.dumps(mapping_dict)
 

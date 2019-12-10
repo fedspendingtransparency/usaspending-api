@@ -9,7 +9,10 @@ from string import Template
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
-from usaspending_api.etl.management.commands.es_configure import retrieve_transaction_index_template
+from usaspending_api.etl.management.commands.es_configure import (
+    retrieve_transaction_index_template,
+    retrieve_award_index_template,
+)
 
 
 class TestElasticSearchIndex:
@@ -70,6 +73,74 @@ class TestElasticSearchIndex:
         """
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
+
+    @classmethod
+    def _generate_index_name(cls):
+        return "test-{}-{}".format(
+            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
+        )
+
+
+class TestElasticAwardSearchIndex:
+    def __init__(self):
+        """
+        We will be prefixing all aliases with the index name to ensure
+        uniquity, otherwise, we may end up with aliases representing more
+        than one index which may throw off our search results.
+        """
+        self.index_name = self._generate_index_name()
+        self.alias_prefix = self.index_name
+        self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
+        self.template = retrieve_award_index_template()
+        self.mappings = json.loads(self.template)["mappings"]
+        self.doc_type = str(list(self.mappings.keys())[0])
+
+    def delete_index(self):
+        self.client.indices.delete(self.index_name, ignore_unavailable=True)
+
+    def update_index(self):
+        """
+        To ensure a fresh Elasticsearch index, delete the old one, update the
+        materialized views, re-create the Elasticsearch index, create aliases
+        for the index, and add contents.
+        """
+        self.delete_index()
+        self._refresh_materialized_views()
+        self.client.indices.create(self.index_name, self.template)
+        create_aliases(self.client, self.index_name, True)
+        self._add_contents()
+
+    def _add_contents(self):
+        """
+        Get all of the transactions presented in the view and
+        stuff them into the Elasticsearch index.
+        """
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM {}".format(settings.ES_AWARDS_ETL_VIEW_NAME))
+            awards = ordered_dictionary_fetcher(cursor)
+
+        for award in awards:
+            self.client.index(
+                self.index_name, self.doc_type, json.dumps(award, cls=DjangoJSONEncoder), award["award_id"],
+            )
+
+        # Force newly added documents to become searchable.
+        self.client.indices.refresh(self.index_name)
+
+    @staticmethod
+    def _refresh_materialized_views():
+        """
+        This materialized view is used by the es etl view, so
+        we will need to refresh it in order for the view to see
+        changes to the underlying tables.
+        """
+        with connection.cursor() as cursor:
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_contract_award_search;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_idv_award_search;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_grant_award_search;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_directpayment_award_search;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_loan_award_search;")
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_other_award_search;")
 
     @classmethod
     def _generate_index_name(cls):
