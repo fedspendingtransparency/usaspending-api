@@ -11,7 +11,7 @@ from usaspending_api.common.elasticsearch.client import es_client_query
 logger = logging.getLogger("console")
 
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
-KEYWORD_DATATYPE_FIELDS = ["{}.raw".format(i) for i in KEYWORD_DATATYPE_FIELDS]
+KEYWORD_DATATYPE_FIELDS = [field for field in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 

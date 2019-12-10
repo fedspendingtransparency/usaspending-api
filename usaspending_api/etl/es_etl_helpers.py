@@ -43,8 +43,10 @@ VIEW_COLUMNS = [
     "award_category",
     "recipient_unique_id",
     "parent_recipient_unique_id",
+    "recipient_hash",
     "recipient_name",
     "action_date",
+    "fiscal_action_date",
     "period_of_performance_start_date",
     "period_of_performance_current_end_date",
     "ordering_period_end_date",
@@ -54,8 +56,13 @@ VIEW_COLUMNS = [
     "transaction_amount",
     "face_value_loan_guarantee",
     "original_loan_subsidy_cost",
+    "generated_pragmatic_obligation",
     "awarding_agency_id",
     "funding_agency_id",
+    "awarding_toptier_agency_id",
+    "funding_toptier_agency_id",
+    "awarding_subtier_agency_id",
+    "funding_subtier_agency_id",
     "awarding_toptier_agency_name",
     "funding_toptier_agency_name",
     "awarding_subtier_agency_name",
@@ -64,6 +71,12 @@ VIEW_COLUMNS = [
     "funding_toptier_agency_abbreviation",
     "awarding_subtier_agency_abbreviation",
     "funding_subtier_agency_abbreviation",
+    "awarding_toptier_agency_code",
+    "funding_toptier_agency_code",
+    "awarding_subtier_agency_code",
+    "funding_subtier_agency_code",
+    "cfda_id",
+    "cfda_number",
     "cfda_title",
     "cfda_popular_name",
     "type_of_contract_pricing",
@@ -87,6 +100,9 @@ VIEW_COLUMNS = [
     "recipient_location_zip5",
     "recipient_location_congressional_code",
     "recipient_location_city_name",
+    "treasury_account_identifiers",
+    "federal_accounts",
+    "business_categories",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -148,6 +164,15 @@ class DataJob:
 # ==============================================================================
 # Helper functions for several Django management commands focused on ETL into a Elasticsearch cluster
 # ==============================================================================
+
+
+def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
+    """
+        Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
+        be passed a list instead of a string. In the case of an empty array, return null
+        For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
+    """
+    return array_as_string.replace("{", "").replace("}", "").split(",") if len(array_as_string) > 2 else None
 
 
 def process_guarddog(process_list):
@@ -276,9 +301,15 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 
 def csv_chunk_gen(filename, chunksize, job_id):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
+    # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
+    converters = {
+        "business_categories": convert_postgres_array_as_string_to_list,
+        "treasury_account_identifiers": convert_postgres_array_as_string_to_list,
+        "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
+    }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS}
-    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
+    dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
+    for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
 

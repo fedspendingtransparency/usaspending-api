@@ -35,9 +35,11 @@ SELECT
   UTM.award_category,
   UTM.recipient_unique_id,
   UTM.parent_recipient_unique_id,
+  CONCAT(UTM.recipient_hash, '-', case when UTM.parent_recipient_unique_id is null then 'R' else 'C' end) as recipient_hash,
   UTM.recipient_name,
 
   UTM.action_date,
+  DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
   AWD.period_of_performance_start_date,
   AWD.period_of_performance_current_end_date,
   FPDS.ordering_period_end_date,
@@ -47,9 +49,14 @@ SELECT
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
   UTM.original_loan_subsidy_cost,
+  UTM.generated_pragmatic_obligation,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
+  AA.toptier_agency_id AS awarding_toptier_agency_id,
+  FA.toptier_agency_id AS funding_toptier_agency_id,
+  AA.subtier_agency_id AS awarding_subtier_agency_id,
+  FA.subtier_agency_id AS funding_subtier_agency_id,
   UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
@@ -58,7 +65,13 @@ SELECT
   UTM.funding_toptier_agency_abbreviation,
   UTM.awarding_subtier_agency_abbreviation,
   UTM.funding_subtier_agency_abbreviation,
+  TAA.toptier_code AS awarding_toptier_agency_code,
+  TFA.toptier_code AS funding_toptier_agency_code,
+  SAA.subtier_code AS awarding_subtier_agency_code,
+  SFA.subtier_code AS funding_subtier_agency_code,
 
+  CFDA.id AS cfda_id,
+  UTM.cfda_number,
   UTM.cfda_title,
   '' AS cfda_popular_name,
   UTM.type_of_contract_pricing,
@@ -83,10 +96,43 @@ SELECT
   UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
-  UTM.recipient_location_city_name
+  UTM.recipient_location_city_name,
+
+  UTM.treasury_account_identifiers,
+  ACCT.federal_accounts,
+  UTM.business_categories
 
 FROM universal_transaction_matview UTM
-JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
+INNER JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT OUTER JOIN awards AWD ON (UTM.award_id = AWD.id);
+LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
+-- Similar joins are already performed oon universal_transaction_matview, however, to avoid making the matview larger
+-- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
+-- added to the universal_transaction_matview.
+LEFT JOIN agency AA ON (TM.awarding_agency_id = AA.id)
+LEFT JOIN agency FA ON (TM.funding_agency_id = FA.id)
+LEFT JOIN toptier_agency TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)
+LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
+LEFT JOIN toptier_agency TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
+LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
+LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
+LEFT JOIN (
+  SELECT
+    faba.award_id,
+    JSONB_AGG(
+      DISTINCT JSONB_BUILD_OBJECT(
+        'id', fa.id,
+        'account_title', fa.account_title,
+        'federal_account_code', fa.federal_account_code
+      )
+    ) federal_accounts
+  FROM
+    federal_account fa
+    INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id
+    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
+  WHERE
+    faba.award_id IS NOT NULL
+  GROUP BY
+    faba.award_id
+) ACCT ON (ACCT.award_id = TM.award_id);;
