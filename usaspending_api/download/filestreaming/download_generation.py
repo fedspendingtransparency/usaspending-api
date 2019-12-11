@@ -124,7 +124,7 @@ def generate_download(download_job):
 def get_download_sources(json_request):
     download_sources = []
     for download_type in json_request["download_types"]:
-        agency_id = json_request["filters"].get("agency", "all")
+        agency_id = json_request.get("agency", "all")
         filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
         download_type_table = VALUE_MAPPINGS[download_type]["table"]
 
@@ -180,8 +180,8 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     d_map = {
         "d1": "Contracts",
         "d2": "Assistance",
-        "treasury_account": "treasury_account",
-        "federal_account": "federal_account",
+        "treasury_account": "TAS",
+        "federal_account": "FA",
     }
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
@@ -194,16 +194,33 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
-        print(f"Source: {source} zip: {zip_file_path}, download {download_job.json_request}")
-        download_name = VALUE_MAPPINGS[source.source_type]["download_name"]
-        if zip_file_path.startswith("All"):
-            prefix = "All_"
-            agency = f"_{'All' if source.agency_code == 'all' else source.agency_code}"
+        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+        if_agency = "_"
+
+        if source.agency_code == "all":
+            agency = "All"
         else:
-            prefix = ""
+            agency = str(source.agency_code)
+
+        request = json.loads(download_job.json_request)
+        filters = request["filters"]
+        fy = filters.get("fy")
+        date_range = ""
+        if filters.get("quarter") != 1:
+            date_range = f"-Q{filters.get('quarter')}"
+        if request.get("limit"):
             agency = ""
+            if_agency = ""
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
-        source_name = f"{prefix}{d_map[source.file_type]}{agency}_{download_name}_{timestamp}"
+        source_name = file_name_pattern.format(
+            agency=agency,
+            level=d_map[source.file_type],
+            timestamp=timestamp,
+            fy=fy,
+            date_range=date_range,
+            if_agency=if_agency,
+            type=d_map[source.file_type],
+        )
 
     source_query = source.row_emitter(columns)
     source.file_name = f"{source_name}.{extension}"

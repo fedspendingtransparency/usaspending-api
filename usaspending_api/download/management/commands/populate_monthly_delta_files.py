@@ -154,7 +154,7 @@ class Command(BaseCommand):
         working_dir = f"{settings.CSV_LOCAL_PATH}_{agency_code}_delta_gen_{timestamp}/"
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
-        agency_str = 'All' if agency_code == 'all' else agency_code
+        agency_str = "All" if agency_code == "all" else agency_code
         source_name = f"FY(All)-{agency_str}_{award_type}_Delta_{datetime.strftime(date.today(), '%Y%m%d')}"
         source_path = os.path.join(working_dir, "{}.csv".format(source_name))
 

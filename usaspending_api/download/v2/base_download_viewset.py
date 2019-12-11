@@ -64,8 +64,7 @@ class BaseDownloadViewSet(APIView):
             cached_filename = cached_download["file_name"]
             return self.get_download_response(file_name=cached_filename)
 
-        request_agency = json_request.get("filters", {}).get("agency", None)
-        final_output_zip_name = create_unique_filename(json_request, request_agency)
+        final_output_zip_name = create_unique_filename(json_request, json_request["agency"])
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
         )

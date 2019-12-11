@@ -78,6 +78,5 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 del filters["sub_agency"]
             else:
                 filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": toptier_name}]
-        del filters["agency"]
 
         request_data["filters"] = filters

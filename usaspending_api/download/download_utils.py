@@ -7,9 +7,6 @@ from usaspending_api.references.models import ToptierAgency
 
 
 def create_unique_filename(json_request, request_agency=None):
-    import json
-    print(f"agency: {request_agency} request: {json.dumps(json_request)}")
-
     if json_request.get("is_for_idv"):
         download_name = "IDV_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
     elif json_request.get("is_for_contract"):
@@ -25,10 +22,14 @@ def create_unique_filename(json_request, request_agency=None):
         if json_request["filters"]["quarter"] != 1:
             additional_quarters = f"-Q{json_request['filters']['quarter']}"
 
-        download_name = file_name_template.format(fy=json_request["filters"]["fy"], date_range=additional_quarters, level=level, agency=prefix)
+        download_name = file_name_template.format(
+            fy=json_request["filters"]["fy"], date_range=additional_quarters, level=level, agency=prefix
+        )
     else:
-        # request_type: assistance, award, idv, account, contract
-        prefix = "All_" if json_request.get("constraint_type", "") == "year" else ""
+        if json_request.get("constraint_type", "") == "year":
+            prefix = "All_" if request_agency == "all" else f"{request_agency}_"
+        else:
+            prefix = ""
         download_types = json_request["download_types"]
         agency = obtain_filename_prefix_from_agency_id(request_agency)
         award_type_name = create_award_level_string(download_types)
@@ -47,7 +48,7 @@ def obtain_zip_filename_format(download_types):
 
 def obtain_filename_prefix_from_agency_id(request_agency):
     result = "All"
-    if request_agency:
+    if request_agency and request_agency != "all":
         toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
         if toptier_agency_filter:
             result = toptier_agency_filter.toptier_code
@@ -55,7 +56,13 @@ def obtain_filename_prefix_from_agency_id(request_agency):
 
 
 def create_award_level_string(download_types):
-    return "+".join(VALUE_MAPPINGS[award_level]["download_name"] for award_level in download_types)
+    type_list = []
+    for award_level in download_types:
+        if "type_name" in VALUE_MAPPINGS[award_level]:
+            type_list.append(VALUE_MAPPINGS[award_level]["type_name"])
+        else:
+            type_list.append(VALUE_MAPPINGS[award_level]["download_name"])
+    return "+".join(type_list)
 
 
 def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
