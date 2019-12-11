@@ -261,12 +261,7 @@
           }
         },
         "recipient_location_country_code": {
-          "type": "keyword",
-          "fields": {
-            "raw": {
-              "type": "text"
-            }
-          }
+          "type": "keyword"
         },
         "recipient_location_country_name": {
           "type": "text",
@@ -277,23 +272,18 @@
           }
         },
         "recipient_location_state_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "recipient_location_county_code": {
+          "type": "keyword"
+        },
+        "recipient_location_county_name": {
           "type": "text",
           "fields": {
             "keyword": {
               "type": "keyword"
             }
           }
-        },
-        "recipient_location_county_name": {
-          "type": "text"
         },
         "recipient_location_zip5": {
           "type": "text",
@@ -304,12 +294,7 @@
           }
         },
         "recipient_location_congressional_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "recipient_location_city_name": {
           "type": "text",
@@ -320,34 +305,29 @@
           }
         },
         "pop_country_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_country_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "pop_state_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "pop_county_code": {
+          "type": "keyword"
+        },
+        "pop_county_name": {
           "type": "text",
           "fields": {
             "keyword": {
               "type": "keyword"
             }
           }
-        },
-        "pop_county_name": {
-          "type": "text"
         },
         "pop_zip5": {
           "type": "text",
