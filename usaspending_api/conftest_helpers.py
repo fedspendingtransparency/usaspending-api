@@ -53,7 +53,7 @@ class TestElasticSearchIndex:
             cursor.execute(transaction_delta_view_sql)
             cursor.execute(f"SELECT * FROM {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
             transactions = ordered_dictionary_fetcher(cursor)
-            cursor.execute(f"DROP VIEW IF EXISTS {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
+            cursor.execute(f"DROP VIEW {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
 
         for transaction in transactions:
             self.client.index(
