@@ -29,9 +29,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--awards",
-            action="store_true",
-            help="When this flag is set, will create an awards type index instead of a transaction type index.",
+            "--type",
+            type=str,
+            help="Select which type of index to configure, current options are awards or transactions",
+            choices=["transactions", "awards"],
+            default="transactions",
         )
         parser.add_argument(
             "--template-only",
@@ -42,10 +44,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not settings.ES_HOSTNAME:
             raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
-        if options["awards"]:
-            self.awards = True
-        else:
-            self.awards = False
+        self.type = options["type"]
+        self.template = "{}_template".format(options["type"][:-1])
+        if options["type"] == "awards":
+            self.index_pattern = "*{}".format(settings.ES_AWARDS_NAME_SUFFIX)
+            self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
+            self.load_columns = AWARD_VIEW_COLUMNS
+        elif options["type"] == "transactions":
+            self.index_pattern = "*{}".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
+            self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+            self.load_columns = VIEW_COLUMNS
+
         cluster, index_settings = self.get_elasticsearch_settings()
         template = self.get_index_template()
 
@@ -53,7 +62,7 @@ class Command(BaseCommand):
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
             self.run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
 
-        template_name = "{type}_template".format(type="award" if self.awards else "transaction")
+        template_name = "{type}_template".format(type=self.type)
 
         self.run_curl_cmd(
             payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
@@ -74,15 +83,9 @@ class Command(BaseCommand):
         return es_config["cluster"], es_config["settings"]
 
     def get_index_template(self):
-        template = self.return_json_from_file(
-            FILES["{view}_template".format(view="award" if self.awards else "transaction")]
-        )
-        template["index_patterns"] = [
-            "*{}".format(settings.ES_AWARDS_NAME_SUFFIX if self.awards else settings.ES_TRANSACTIONS_NAME_SUFFIX)
-        ]
-        template["settings"]["index.max_result_window"] = (
-            settings.ES_AWARDS_MAX_RESULT_WINDOW if self.awards else settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-        )
+        template = self.return_json_from_file(FILES[self.template])
+        template["index_patterns"] = [self.index_pattern]
+        template["settings"]["index.max_result_window"] = self.max_result_window
         self.validate_known_fields(template)
         return template
 
@@ -103,14 +106,9 @@ class Command(BaseCommand):
 
     def validate_known_fields(self, template):
         defined_fields = set(
-            [
-                field
-                for field in template["mappings"][
-                    "{view}_mapping".format(view="award" if self.awards else "transaction")
-                ]["properties"]
-            ]
+            [field for field in template["mappings"]["{view}_mapping".format(view=self.type[:-1])]["properties"]]
         )
-        load_columns = set(AWARD_VIEW_COLUMNS) if self.awards else set(VIEW_COLUMNS)
+        load_columns = set(self.load_columns)
         if defined_fields ^ load_columns:  # check if any fields are not in both sets
             raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
 

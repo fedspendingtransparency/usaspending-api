@@ -16,10 +16,6 @@ from time import perf_counter, sleep
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
-    ensure_transaction_etl_view_exists,
-    ensure_award_etl_view_exists,
-)
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -302,10 +298,6 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a reoccuring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
-    if config["awards"]:
-        ensure_award_etl_view_exists()
-    else:
-        ensure_transaction_etl_view_exists()
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
     while not fetch_jobs.empty():
@@ -384,9 +376,9 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
         if config["awards"]:
-            call_command("es_configure", "--template-only", "--awards")
+            call_command("es_configure", "--template-only", "--type=awards")
         else:
-            call_command("es_configure", "--template-only")
+            call_command("es_configure", "--template-only", "--type=transactions")
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -491,7 +483,7 @@ def swap_aliases(client, index, awards=False):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    create_aliases(client, index, awards)
+    create_aliases(client, index, awards=awards)
 
     try:
         if old_indexes:

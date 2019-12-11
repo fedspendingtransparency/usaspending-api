@@ -1,8 +1,6 @@
-import json
 import pytest
 
 from model_mommy import mommy
-from rest_framework import status
 
 
 @pytest.fixture
