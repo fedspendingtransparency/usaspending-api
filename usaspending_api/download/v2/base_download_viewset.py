@@ -58,13 +58,11 @@ class BaseDownloadViewSet(APIView):
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(
-                message="Generating file from cached download job ID: {}".format(cached_download["download_job_id"])
-            )
+            write_to_log(message=f"Generating file from cached download job ID: {cached_download['download_job_id']}")
             cached_filename = cached_download["file_name"]
             return self.get_download_response(file_name=cached_filename)
 
-        final_output_zip_name = create_unique_filename(json_request, json_request["agency"])
+        final_output_zip_name = create_unique_filename(json_request, json_request.get("agency", "all"))
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
         )
@@ -82,7 +80,7 @@ class BaseDownloadViewSet(APIView):
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
-                message="Passing download_job {} to SQS".format(download_job.download_job_id), download_job=download_job
+                message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
             )
             queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
@@ -92,7 +90,7 @@ class BaseDownloadViewSet(APIView):
         download job"""
         download_job = DownloadJob.objects.filter(file_name=file_name).first()
         if not download_job:
-            raise NotFound("Download job with filename {} does not exist.".format(file_name))
+            raise NotFound(f"Download job with filename {file_name} does not exist.")
 
         # Compile url to file
         if settings.IS_LOCAL:
