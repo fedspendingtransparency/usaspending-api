@@ -185,7 +185,7 @@ class Command(BaseCommand):
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
 
             logger.info("Creating compressed file: {}".format(os.path.basename(zipfile_path)))
-            split_and_zip_data_files(zipfile_path, source_path, source_name)
+            split_and_zip_data_files(zipfile_path, source_path, source_name, "csv")
         else:
             zipfile_path = None
 
@@ -370,8 +370,7 @@ class Command(BaseCommand):
 
         # Match aliases with their values
         values_list = [
-            '{} AS "{}"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
-            for alias in aliases
+            f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
         ]
 
         return raw_query.replace(query_before_from, ", ".join(values_list))
