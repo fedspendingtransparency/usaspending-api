@@ -135,4 +135,4 @@ LEFT JOIN (
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
-) ACCT ON (ACCT.award_id = TM.award_id);;
+) ACCT ON (ACCT.award_id = TM.award_id);

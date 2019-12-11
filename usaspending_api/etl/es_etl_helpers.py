@@ -169,10 +169,10 @@ class DataJob:
 def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
     """
         Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
-        be passed a list instead of a string. In the case of an empty array, return null
+        be passed a list instead of a string. In the case of an empty array, return null.
         For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
     """
-    return array_as_string.replace("{", "").replace("}", "").split(",") if len(array_as_string) > 2 else None
+    return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
 
 
 def process_guarddog(process_list):
