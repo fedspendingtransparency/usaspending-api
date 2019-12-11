@@ -371,8 +371,7 @@ class Command(BaseCommand):
 
         # Match aliases with their values
         values_list = [
-            '{} AS "{}"'.format(deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0), alias)
-            for alias in aliases
+            f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
         ]
 
         return raw_query.replace(query_before_from, ", ".join(values_list))

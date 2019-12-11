@@ -2,7 +2,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
 from usaspending_api.settings import HOST
 from django.db.models.functions import Concat
-from django.db.models import Value
+from django.db.models import Func, F, Value
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
@@ -18,7 +18,9 @@ def universal_transaction_matview_annotations():
             ";",
             distinct=True,
         ),
-        "usaspending_permalink": Concat(Value(AWARD_URL), "transaction__award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(
+            Value(AWARD_URL), Func(F("transaction__award__generated_unique_award_id"), function="urlencode"), Value("/")
+        ),
     }
     return annotation_fields
 
@@ -31,7 +33,9 @@ def universal_award_matview_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value(AWARD_URL), "award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(
+            Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+        ),
     }
     return annotation_fields
 
@@ -44,7 +48,9 @@ def idv_order_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value(AWARD_URL), "generated_unique_award_id"),
+        "usaspending_permalink": Concat(
+            Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
+        ),
     }
     return annotation_fields
 
@@ -58,7 +64,9 @@ def idv_transaction_annotations():
         "federal_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value(AWARD_URL), "award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(
+            Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+        ),
     }
     return annotation_fields
 
@@ -73,6 +81,8 @@ def subaward_annotations():
         "prime_award_treasury_accounts_funding_this_award": StringAgg(
             "award__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
         ),
-        "usaspending_permalink": Concat(Value(AWARD_URL), "award__generated_unique_award_id"),
+        "usaspending_permalink": Concat(
+            Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+        ),
     }
     return annotation_fields
