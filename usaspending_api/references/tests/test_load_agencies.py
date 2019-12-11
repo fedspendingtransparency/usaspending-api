@@ -71,7 +71,7 @@ def test_no_file_provided():
 
 @pytest.mark.django_db
 def test_create_agency(disable_vacuuming, monkeypatch):
-    """ Let's add a agency record to the "raw" file and see what happens. """
+    """ Let's add an agency record to the "raw" file and see what happens. """
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
