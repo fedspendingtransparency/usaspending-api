@@ -6,6 +6,7 @@ from usaspending_api import settings
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
     DataJob,
+    deleted_awards,
     download_db_records,
     es_data_loader,
     printf,
@@ -57,6 +58,20 @@ class AwardRapidloader:
         )
 
         process_list[0].start()  # Start Download process
+
+        if self.config["process_deletes"]:
+            process_list.append(
+                Process(
+                    name="S3 Deleted Records Scrapper Process",
+                    target=deleted_awards,
+                    args=(self.elasticsearch_client, self.config),
+                )
+            )
+            process_list[-1].start()  # start S3 csv fetch proces
+            while process_list[-1].is_alive():
+                printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
+                sleep(7)
+
         process_list[1].start()  # start ES ingest process
 
         while True:

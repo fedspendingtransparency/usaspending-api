@@ -98,22 +98,22 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.elasticsearch_client = instantiate_elasticsearch_client()
-        self.config = process_cli_parameters(options, self.elasticsearch_client)
+        elasticsearch_client = instantiate_elasticsearch_client()
+        config = process_cli_parameters(options, elasticsearch_client)
 
         start = perf_counter()
         printf({"msg": "Starting script\n{}".format("=" * 56)})
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
-        printf({"msg": start_msg.format(**self.config)})
+        printf({"msg": start_msg.format(**config)})
 
         loader = None
 
-        if self.config["type"] == "transactions":
+        if config["type"] == "transactions":
             ensure_transaction_etl_view_exists()
-            loader = TransactionRapidloader(self.config, self.elasticsearch_client)
-        elif self.config["type"] == "awards":
+            loader = TransactionRapidloader(config, elasticsearch_client)
+        elif config["type"] == "awards":
             ensure_award_etl_view_exists()
-            loader = AwardRapidloader(self.config, self.elasticsearch_client)
+            loader = AwardRapidloader(config, elasticsearch_client)
         loader.run_load_steps()
         loader.complete_process()
 
@@ -122,7 +122,7 @@ class Command(BaseCommand):
         printf({"msg": "---------------------------------------------------------------"})
 
 
-def process_cli_parameters(options: dict, es_client) -> None:
+def process_cli_parameters(options: dict, es_client):
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
     simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts", "type")
     config = set_config(simple_args, options)
@@ -144,21 +144,26 @@ def process_cli_parameters(options: dict, es_client) -> None:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-award for S3
-        config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
+        config["starting_date"] = get_last_load_date("es_{}".format(options["type"]), default=default_datetime)
 
     config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    if options["type"] == "awards":
+        config["max_query_size"] = settings.ES_AWARDS_MAX_RESULT_WINDOW
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
         config["starting_date"] != default_datetime
     )
 
     if config["is_incremental_load"]:
+        write_alias = settings.ES_TRANSACTIONS_WRITE_ALIAS
+        if config["type"] == "awards":
+            write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
             msg = "Ignoring provided index name, using alias '{}' for incremental load"
-            printf({"msg": msg.format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
-        config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
-        if not es_client.cat.aliases(name=settings.ES_TRANSACTIONS_WRITE_ALIAS):
-            printf({"msg": "Fatal error: write alias '{}' is missing".format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
+            printf({"msg": msg.format(write_alias)})
+        config["index_name"] = write_alias
+        if not es_client.cat.aliases(name=write_alias):
+            printf({"msg": "Fatal error: write alias '{}' is missing".format(write_alias)})
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):

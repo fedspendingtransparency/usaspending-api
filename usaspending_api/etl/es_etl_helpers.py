@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_sql_to_ordered_dictionary
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -203,6 +203,7 @@ AWARD_DESC_CATEGORIES = {
 }
 
 UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
+UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
 
 
 class DataJob:
@@ -547,6 +548,24 @@ def deleted_transactions(client, config):
     delete_transactions_from_es(client, id_list, None, config, None)
 
 
+def deleted_awards(client, config):
+    """
+    so we have to find all the awards connected to these transactions,
+    if we can't find the awards in the database, then we have to delete them from es
+    """
+    # deleted_ids = [{"key": "CONT_TX_9700_9700_0001_0_W56HZV09D0173_1", "col": "generated_unique_transaction_id"}]
+    deleted_ids = gather_deleted_ids(config)
+    id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
+    award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
+    deleted_awards = check_awards_for_deletes(award_ids)
+    if len(deleted_awards) != 0:
+        award_id_list = [
+            {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
+            for deleted_award in deleted_awards
+        ]
+    delete_awards_from_es(client, award_id_list, None, config, None)
+
+
 def take_snapshot(client, index, repository):
     snapshot_name = "{}-{}".format(index, str(datetime.now().date()))
     try:
@@ -675,6 +694,85 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             delete_body = delete_query(response)
+            try:
+                client.delete_by_query(
+                    index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
+                )
+            except Exception as e:
+                printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
+    end_ = client.search(index=index)["hits"]["total"]
+
+    t = perf_counter() - start
+    total = str(start_ - end_)
+    printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
+    return
+
+
+def get_deleted_award_ids(client, id_list, config, index=None):
+    """
+        id_list = [{key:'key1',col:'tranaction_id'},
+                   {key:'key2',col:'generated_unique_transaction_id'}],
+                   ...]
+     """
+    if index is None:
+        index = "{}-*".format(config["root_index"])
+    col_to_items_dict = defaultdict(list)
+    for l in id_list:
+        col_to_items_dict[l["col"]].append(l["key"])
+    awards = []
+    for column, values in col_to_items_dict.items():
+        values_generator = chunks(values, 1000)
+        for v in values_generator:
+            body = filter_query(column, v)
+            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
+            if response["hits"]["total"] != 0:
+                awards = [x["_source"]["generated_unique_award_id"] for x in response["hits"]["hits"]]
+    return awards
+
+
+def check_awards_for_deletes(id_list):
+    formatted_value_ids = ""
+    for x in id_list:
+        formatted_value_ids += "('" + x + "'),"
+
+    sql = """
+        SELECT x.generated_unique_award_id FROM (values {ids}) AS x(generated_unique_award_id)
+        LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
+        WHERE a.generated_unique_award_id is null"""
+    results = execute_sql_to_ordered_dictionary(sql.format(ids=formatted_value_ids[:-1]))
+    return results
+
+
+def delete_awards_from_es(client, id_list, job_id, config, index=None):
+    """
+    id_list = [{key:'key1',col:'award_id'},
+               {key:'key2',col:'generated_unique_award_id'}],
+               ...]
+    """
+    start = perf_counter()
+
+    printf({"msg": "Deleting up to {} document(s)".format(len(id_list)), "f": "ES Delete", "job": job_id})
+
+    if index is None:
+        index = "{}-*".format(config["root_index"])
+    start_ = client.search(index=index)["hits"]["total"]
+    printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
+    col_to_items_dict = defaultdict(list)
+    for l in id_list:
+        col_to_items_dict[l["col"]].append(l["key"])
+
+    for column, values in col_to_items_dict.items():
+        printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
+        values_generator = chunks(values, 1000)
+        for v in values_generator:
+            # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
+            # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the
+            # time of this comment, we are migrating to using a single index.
+            body = filter_query(column, v)
+            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
+            delete_body = {
+                "query": {"ids": {"type": "award_mapping", "values": [i["_id"] for i in response["hits"]["hits"]]}}
+            }
             try:
                 client.delete_by_query(
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
