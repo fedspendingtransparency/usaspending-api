@@ -168,6 +168,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             Value("-"),
             "{}__federal_account__main_account_code".format(tas_id),
         ),
+        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
     }
 
     # Derive recipient_parent_name
@@ -188,6 +189,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             "{}__federal_account__main_account_code".format(tas_id),
         ),
         "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
+        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
     }
 
     # Derive recipient_parent_name for award_financial downloads
