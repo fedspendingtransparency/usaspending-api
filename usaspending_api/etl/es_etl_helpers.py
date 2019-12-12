@@ -570,7 +570,10 @@ def deleted_awards(client, config):
             {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
             for deleted_award in deleted_awards
         ]
-    delete_awards_from_es(client, award_id_list, None, config, None)
+        delete_awards_from_es(client, award_id_list, None, config, None)
+    else:
+        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+    return
 
 
 def take_snapshot(client, index, repository):
