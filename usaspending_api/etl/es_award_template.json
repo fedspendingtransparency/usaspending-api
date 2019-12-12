@@ -388,9 +388,6 @@
             }
           }
         },
-        "pulled_from": {
-          "type": "text"
-        },
         "product_or_service_code": {
           "type": "text",
           "fields": {

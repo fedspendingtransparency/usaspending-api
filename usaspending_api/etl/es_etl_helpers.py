@@ -147,7 +147,6 @@ AWARD_VIEW_COLUMNS = [
     "pop_city_name",
     "cfda_number",
     "sai_number",
-    "pulled_from",
     "type_of_contract_pricing",
     "extent_competed",
     "type_set_aside",
@@ -359,14 +358,14 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in AWARD_VIEW_COLUMNS} if awards else {k: str for k in VIEW_COLUMNS}
-    # Specifying a dtype is not enough for these columns
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
         "treasury_account_identifiers": convert_postgres_array_as_string_to_list,
         "treasury_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
         "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
     }
+    dtype = {k: str for k in AWARD_VIEW_COLUMNS if k not in converters} if awards else {k: str for k in VIEW_COLUMNS if k not in converters}
+    # Specifying a dtype is not enough for these columns
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize, converters=converters):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
