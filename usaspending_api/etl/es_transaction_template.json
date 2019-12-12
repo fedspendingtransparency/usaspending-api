@@ -79,13 +79,23 @@
           "analyzer": "stemmer_analyzer"
         },
         "product_or_service_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "product_or_service_description": {
           "type": "text"
         },
         "naics_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "naics_description": {
           "type": "text"
@@ -277,16 +287,28 @@
           "index": false
         },
         "type_of_contract_pricing": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type_set_aside": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "extent_competed": {
-          "type": "text"
-        },
-        "pulled_from": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type": {
           "type": "keyword",

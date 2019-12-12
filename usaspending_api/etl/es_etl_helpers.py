@@ -82,7 +82,6 @@ VIEW_COLUMNS = [
     "type_of_contract_pricing",
     "type_set_aside",
     "extent_competed",
-    "pulled_from",
     "type",
     "pop_country_code",
     "pop_country_name",

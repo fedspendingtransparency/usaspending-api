@@ -77,7 +77,6 @@ SELECT
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
   UTM.extent_competed,
-  UTM.pulled_from,
   UTM.type,
 
   UTM.pop_country_code,
@@ -107,7 +106,7 @@ INNER JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
--- Similar joins are already performed oon universal_transaction_matview, however, to avoid making the matview larger
+-- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
 LEFT JOIN agency AA ON (TM.awarding_agency_id = AA.id)
