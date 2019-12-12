@@ -364,7 +364,11 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
         "treasury_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
         "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
     }
-    dtype = {k: str for k in AWARD_VIEW_COLUMNS if k not in converters} if awards else {k: str for k in VIEW_COLUMNS if k not in converters}
+    dtype = (
+        {k: str for k in AWARD_VIEW_COLUMNS if k not in converters}
+        if awards
+        else {k: str for k in VIEW_COLUMNS if k not in converters}
+    )
     # Specifying a dtype is not enough for these columns
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize, converters=converters):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
