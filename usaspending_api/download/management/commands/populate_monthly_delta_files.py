@@ -155,7 +155,7 @@ class Command(BaseCommand):
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
         agency_str = "All" if agency_code == "all" else agency_code
-        source_name = f"FY(All)-{agency_str}_{award_type}_Delta_{datetime.strftime(date.today(), '%Y%m%d')}"
+        source_name = f"FY(All)_{agency_str}_{award_type}_Delta_{datetime.strftime(date.today(), '%Y%m%d')}"
         source_path = os.path.join(working_dir, "{}.csv".format(source_name))
 
         # Create a unique temporary file with the raw query

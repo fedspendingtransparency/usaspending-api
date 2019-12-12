@@ -50,8 +50,8 @@ class ListMonthlyDownloadsViewSet(APIView):
         # Populate regex
         monthly_download_prefixes = f"FY{fiscal_year}_{agency['toptier_code']}_{download_type}"
         monthly_download_regex = r"{}_Full_.*\.zip".format(monthly_download_prefixes)
-        delta_download_prefixes = f"FY(All)-{agency['toptier_code']}_{download_type}"
-        delta_download_regex = r"FY\(All\)-{}_{}_Delta_.*\.zip".format(agency["toptier_code"], download_type)
+        delta_download_prefixes = f"FY(All)_{agency['toptier_code']}_{download_type}"
+        delta_download_regex = r"FY\(All\)_{}_{}_Delta_.*\.zip".format(agency["toptier_code"], download_type)
 
         # Retrieve and filter the files we need
         bucket = boto3.resource("s3", region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
