@@ -19,6 +19,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
@@ -195,7 +196,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        if_agency = "_"
+        agency_is_optional = "_"
 
         if source.agency_code == "all":
             agency = "All"
@@ -204,21 +205,16 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         request = json.loads(download_job.json_request)
         filters = request["filters"]
-        fy = filters.get("fy")
-        date_range = ""
-        if filters.get("quarter") != 1:
-            date_range = f"-Q{filters.get('quarter')}"
         if request.get("limit"):
             agency = ""
-            if_agency = ""
+            agency_is_optional = ""
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
         source_name = file_name_pattern.format(
             agency=agency,
+            agency_is_optional=agency_is_optional,
+            data_quarters=construct_data_date_range(filters),
             level=d_map[source.file_type],
             timestamp=timestamp,
-            fy=fy,
-            date_range=date_range,
-            if_agency=if_agency,
             type=d_map[source.file_type],
         )
 

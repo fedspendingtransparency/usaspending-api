@@ -17,13 +17,9 @@ def create_unique_filename(json_request, request_agency=None):
         file_name_template = obtain_zip_filename_format(json_request["download_types"])
         prefix = obtain_filename_prefix_from_agency_id(request_agency)
         level = "FA" if json_request["account_level"] == "federal_account" else "TAS"
-        additional_quarters = ""
-
-        if json_request["filters"]["quarter"] != 1:
-            additional_quarters = f"-Q{json_request['filters']['quarter']}"
 
         download_name = file_name_template.format(
-            fy=json_request["filters"]["fy"], date_range=additional_quarters, level=level, agency=prefix
+            data_quarters=construct_data_date_range(json_request["filters"]), level=level, agency=prefix
         )
     else:
         if json_request.get("constraint_type", "") == "year":
@@ -62,7 +58,7 @@ def create_award_level_string(download_types):
             type_list.append(VALUE_MAPPINGS[award_level]["type_name"])
         else:
             type_list.append(VALUE_MAPPINGS[award_level]["download_name"])
-    return "+".join(type_list)
+    return "And".join(type_list)
 
 
 def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
@@ -78,3 +74,10 @@ def log_new_download_job(request, download_job):
         download_job=download_job,
         other_params={"request_addr": get_remote_addr(request)},
     )
+
+
+def construct_data_date_range(provided_filters: dict) -> str:
+    string = f"FY{provided_filters.get('fy')}Q1"
+    if provided_filters.get("quarter") != 1:
+        string += f"-Q{provided_filters.get('quarter')}"
+    return string
