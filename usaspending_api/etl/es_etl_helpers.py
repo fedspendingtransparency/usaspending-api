@@ -560,10 +560,12 @@ def deleted_awards(client, config):
     """
     # deleted_ids = [{"key": "CONT_TX_9700_9700_0001_0_W56HZV09D0173_1", "col": "generated_unique_transaction_id"}]
     deleted_ids = gather_deleted_ids(config)
+    if len(deleted_ids) == 0:
+        return
     id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
-    deleted_awards = check_awards_for_deletes(award_ids)
-    if len(deleted_awards) != 0:
+    deleted_award_ids = check_awards_for_deletes(award_ids)
+    if len(deleted_award_ids) != 0:
         award_id_list = [
             {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
             for deleted_award in deleted_awards
