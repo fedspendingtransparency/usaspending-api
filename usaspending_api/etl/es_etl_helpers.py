@@ -265,7 +265,6 @@ def configure_sql_strings(config, filename, deleted_ids):
     )
 
     count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
-
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
@@ -514,8 +513,14 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             continue
         iteration = perf_counter()
         if config["process_deletes"]:
-            id_list = [{"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
-            delete_transactions_from_es(client, id_list, job.name, config, job.index)
+            if config["awards"]:
+                id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in
+                           chunk]
+                delete_awards_from_es(client, id_list, job.name, config, job.index)
+            else:
+                id_list = [{"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in
+                           chunk]
+                delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
         current_rows = "({}-{})".format(count * chunksize + 1, count * chunksize + len(chunk))
         printf(
