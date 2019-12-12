@@ -98,7 +98,7 @@ VALUE_MAPPINGS = {
         "table": AppropriationAccountBalances,
         "table_name": "account_balances",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "filter_function": account_download_filter,
     },
     # Object Class Program Activity Account Data
@@ -107,7 +107,7 @@ VALUE_MAPPINGS = {
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
         "filter_function": account_download_filter,
     },
     "award_financial": {
@@ -115,7 +115,7 @@ VALUE_MAPPINGS = {
         "table": FinancialAccountsByAwards,
         "table_name": "award_financial",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
         "filter_function": account_download_filter,
     },
     "idv_orders": {

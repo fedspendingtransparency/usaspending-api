@@ -31,7 +31,7 @@ class BaseDownloadViewSet(APIView):
         bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
 
-    def post(self, request, request_type="award"):
+    def post(self, request, request_type="award", origination=None):
         if request_type == "award":
             json_request = validate_award_request(request.data)
         elif request_type == "idv":
@@ -62,7 +62,7 @@ class BaseDownloadViewSet(APIView):
             cached_filename = cached_download["file_name"]
             return self.get_download_response(file_name=cached_filename)
 
-        final_output_zip_name = create_unique_filename(json_request, json_request.get("agency", "all"))
+        final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
         )
