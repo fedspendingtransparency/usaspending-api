@@ -29,11 +29,14 @@ def create_unique_filename(json_request, origination=None):
             agency=agency, data_quarters=data_quarters, level=level, timestamp=timestamp,
         )
     else:  # "award" downloads
-        download_types = json_request["download_types"]
         agency = ""
-        award_type_name = create_award_level_string(download_types)
-        if origination == "bulk_download":
+
+        # Since Keyword Search using the "Bulk Download" Endpoint for unknown reasons
+        # Check for the specific filter to mimic the Advanced Search download filename
+        if origination == "bulk_download" and "elasticsearch_keyword" not in json_request["filters"]:
             agency = obtain_filename_prefix_from_agency_id(request_agency) + "_"
+
+        award_type_name = create_award_level_string(json_request["download_types"])
         download_name = f"{agency}{award_type_name}_{timestamp}.zip"
 
     return download_name
