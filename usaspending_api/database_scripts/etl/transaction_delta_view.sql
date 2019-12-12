@@ -97,8 +97,8 @@ SELECT
   UTM.recipient_location_congressional_code,
   UTM.recipient_location_city_name,
 
-  UTM.treasury_account_identifiers,
-  ACCT.federal_accounts,
+  TREASURY_ACCT.treasury_accounts,
+  FEDERAL_ACCT.federal_accounts,
   UTM.business_categories
 
 FROM universal_transaction_matview UTM
@@ -121,6 +121,29 @@ LEFT JOIN (
     faba.award_id,
     JSONB_AGG(
       DISTINCT JSONB_BUILD_OBJECT(
+        'aid', taa.agency_id,
+        'ata', taa.allocation_transfer_agency_id,
+        'main', taa.main_account_code,
+        'sub', taa.sub_account_code,
+        'bpoa', taa.beginning_period_of_availability,
+        'epoa', taa.beginning_period_of_availability,
+        'a', taa.availability_type_code
+       )
+     ) treasury_accounts
+ FROM
+   federal_account fa
+   INNER JOIN treasury_appropriation_account taa ON (fa.id = taa.federal_account_id)
+   INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+ WHERE
+   faba.award_id IS NOT NULL
+ GROUP BY
+   faba.award_id
+) TREASURY_ACCT ON (TREASURY_ACCT.award_id = UTM.award_id)
+LEFT JOIN (
+  SELECT
+    faba.award_id,
+    JSONB_AGG(
+      DISTINCT JSONB_BUILD_OBJECT(
         'id', fa.id,
         'account_title', fa.account_title,
         'federal_account_code', fa.federal_account_code
@@ -134,4 +157,4 @@ LEFT JOIN (
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
-) ACCT ON (ACCT.award_id = TM.award_id);
+) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id);

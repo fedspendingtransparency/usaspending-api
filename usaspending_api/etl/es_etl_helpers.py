@@ -99,7 +99,7 @@ VIEW_COLUMNS = [
     "recipient_location_zip5",
     "recipient_location_congressional_code",
     "recipient_location_city_name",
-    "treasury_account_identifiers",
+    "treasury_accounts",
     "federal_accounts",
     "business_categories",
 ]
@@ -172,6 +172,15 @@ def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
         For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
     """
     return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
+
+
+def convert_postgres_json_array_as_string_to_json(json_array_as_string: str) -> dict:
+    """
+        Postgres JSON arrays (jsonb) are stored in CSVs as strings. Elasticsearch is able to handle
+        JSON arrays with nested types, but needs to be passed a list JSON instead of a string.
+        In the case of an empty array, return null.
+    """
+    return json.loads(json_array_as_string) if json_array_as_string else None
 
 
 def process_guarddog(process_list):
@@ -303,8 +312,8 @@ def csv_chunk_gen(filename, chunksize, job_id):
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
-        "treasury_account_identifiers": convert_postgres_array_as_string_to_list,
-        "federal_accounts": lambda string_to_convert: json.loads(string_to_convert) if string_to_convert else None,
+        "treasury_accounts": convert_postgres_json_array_as_string_to_json,
+        "federal_accounts": convert_postgres_json_array_as_string_to_json,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
