@@ -560,9 +560,10 @@ def deleted_awards(client, config):
     """
     deleted_ids = gather_deleted_ids(config)
     id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
-    print(id_list)
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
-    print(award_ids)
+    if (len(award_ids)) == 0:
+        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+        return
     deleted_award_ids = check_awards_for_deletes(award_ids)
     if len(deleted_award_ids) != 0:
         award_id_list = [
