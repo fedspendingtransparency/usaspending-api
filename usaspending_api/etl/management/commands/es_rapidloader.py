@@ -93,6 +93,12 @@ class Command(BaseCommand):
             help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss is always "
             "a safe format. Wrap in quotes if date/time contains spaces.",
         )
+        parser.add_argument(
+            "--skip-delete-index",
+            action="store_true",
+            help="When creating a new index skip the step that deletes the old indexes and swaps the aliases. "
+            "Only used when --create-new-index is provided.",
+        )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
