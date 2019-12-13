@@ -100,7 +100,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
 
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = AwardRapidloader(config, elasticsearch_client)
-    assert(loader.__class__() == AwardRapidloader)
+    assert(loader.__class__.__name__ == "AwardRapidloader")
     # loader.run_load_steps()
     # loader.complete_process()
     #
@@ -111,3 +111,31 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     # client = elasticsearch_award_index.client
     # response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
     # assert response["hits"]["total"] == 1
+
+def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
+    config = {
+        "aws_region": "us-gov-west-1",
+        "s3_bucket": "fpds-deleted-records-nonprod",
+        "root_index": "transaction-query",
+        "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
+        "verbose": False,
+        "type": "transactions",
+        "process_deletes": False,
+        "directory": str(Path(__file__).resolve().parent),
+        "skip_counts": False,
+        "index_name": "test-{}-{}".format(
+            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
+        ),
+        "create_new_index": True,
+        "snapshot": False,
+        "fiscal_years": [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "starting_date": datetime(2007, 10, 1, 0, 0, tzinfo=timezone.utc),
+        "max_query_size": 50000,
+        "is_incremental_load": False,
+        "awards": True,
+    }
+
+    elasticsearch_client = instantiate_elasticsearch_client()
+    loader = TransactionRapidloader(config, elasticsearch_client)
+    assert(loader.__class__.__name__ == "TransactionRapidloader")
+    # loader.run_load_steps()

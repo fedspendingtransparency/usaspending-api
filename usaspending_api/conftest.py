@@ -10,7 +10,7 @@ from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
 
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.generic_helper import (
     generate_matviews,
     refresh_matviews as perform_refresh_matviews,
@@ -264,7 +264,8 @@ def django_db_setup(
             )
         else:
             generate_matviews()
-            ensure_transaction_etl_view_exists()
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
     def teardown_database():
         with django_db_blocker.unblock():

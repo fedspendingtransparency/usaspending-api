@@ -11,33 +11,11 @@ def verify_database_view_exists(view_name: str) -> bool:
 
     return view_name in list_of_available_views
 
+def ensure_view_exists(view_name, force: bool = False):
+    view_file_path = settings.APP_DIR / "database_scripts" / "etl" / (view_name + ".sql")
 
-def ensure_transaction_etl_view_exists(force: bool = False) -> None:
-    """
-    The view is used to populate the Elasticsearch transaction index.
-    This function will ensure the view exists in the database.
-    """
-
-    if verify_database_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME) and not force:
+    if verify_database_view_exists(view_name) and not force:
         return
-
-    view_file_path = settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"
-
-    view_sql = view_file_path.read_text()
-    with connection.cursor() as cursor:
-        cursor.execute(view_sql)
-
-
-def ensure_award_etl_view_exists(force: bool = False) -> None:
-    """
-    The view is used to populate the Elasticsearch transaction index.
-    This function will ensure the view exists in the database.
-    """
-
-    if verify_database_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME) and not force:
-        return
-
-    view_file_path = settings.APP_DIR / "database_scripts" / "etl" / "award_delta_view.sql"
 
     view_sql = view_file_path.read_text()
     with connection.cursor() as cursor:

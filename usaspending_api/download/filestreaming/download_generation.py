@@ -31,7 +31,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FI
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
-EXCEL_ROW_LIMIT = 1_000_000
+EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
 logger = logging.getLogger("console")
@@ -102,7 +102,7 @@ def generate_download(download_job):
             start_uploading = time.perf_counter()
             multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(
-                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job,
             )
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
@@ -319,7 +319,9 @@ def wait_for_process(process, start_time, download_job):
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
-                message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
+                message=f"Attempting to terminate process (pid {process.pid})",
+                download_job=download_job,
+                is_error=True,
             )
             process.terminate()
             e = TimeoutError(
@@ -413,7 +415,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
         duration = time.perf_counter() - log_time
         write_to_log(
-            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
+            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job,
         )
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string

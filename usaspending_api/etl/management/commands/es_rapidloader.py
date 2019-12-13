@@ -6,10 +6,7 @@ from time import perf_counter
 from usaspending_api import settings
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
-    ensure_transaction_etl_view_exists,
-    ensure_award_etl_view_exists,
-)
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import printf
@@ -109,10 +106,10 @@ class Command(BaseCommand):
         loader = None
 
         if config["type"] == "transactions":
-            ensure_transaction_etl_view_exists()
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             loader = TransactionRapidloader(config, elasticsearch_client)
         elif config["type"] == "awards":
-            ensure_award_etl_view_exists()
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
             loader = AwardRapidloader(config, elasticsearch_client)
         loader.run_load_steps()
         loader.complete_process()
