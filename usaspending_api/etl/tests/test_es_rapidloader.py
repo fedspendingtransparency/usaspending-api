@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-from django.conf import settings
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.award_rapidloader import AwardRapidloader
@@ -84,7 +83,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
         "verbose": False,
         "type": "awards",
         "process_deletes": False,
-        "directory": str(Path(__file__).resolve().parent),
+        "directory": Path(__file__).resolve().parent,
         "skip_counts": False,
         "index_name": "test-{}-{}".format(
             datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
@@ -101,16 +100,6 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = AwardRapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "AwardRapidloader"
-    # loader.run_load_steps()
-    # loader.complete_process()
-    #
-    # # This is the important part.  This ensures data is loaded into your Elasticsearch.
-    # # elasticsearch_award_index.update_index()
-    # query = {"query": {"bool": {"must": [{"match": {"piid": "IND12PB00323"}}]}}, "_source": ["award_id"]}
-    #
-    # client = elasticsearch_award_index.client
-    # response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    # assert response["hits"]["total"] == 1
 
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
