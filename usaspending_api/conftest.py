@@ -18,8 +18,7 @@ from usaspending_api.common.helpers.generic_helper import (
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
-    ensure_broker_server_dblink_exists,
-    TestElasticAwardSearchIndex,
+    ensure_broker_server_dblink_exists
 )
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
@@ -292,7 +291,7 @@ def elasticsearch_transaction_index(db):
 
     See test_demo_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex()
+    elastic_search_index = TestElasticSearchIndex("transactions")
     with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
@@ -307,7 +306,7 @@ def elasticsearch_award_index(db):
 
     See test_award_index_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticAwardSearchIndex()
+    elastic_search_index = TestElasticSearchIndex("awards")
     with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()

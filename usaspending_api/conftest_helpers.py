@@ -16,16 +16,17 @@ from usaspending_api.etl.management.commands.es_configure import (
 
 
 class TestElasticSearchIndex:
-    def __init__(self):
+    def __init__(self, *args):
         """
         We will be prefixing all aliases with the index name to ensure
         uniquity, otherwise, we may end up with aliases representing more
         than one index which may throw off our search results.
         """
+        self.type = args[0]
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_transaction_index_template()
+        self.template = retrieve_transaction_index_template() if self.type == "transactions" else retrieve_award_index_template()
         self.mappings = json.loads(self.template)["mappings"]
         self.doc_type = str(list(self.mappings.keys())[0])
 
@@ -39,9 +40,9 @@ class TestElasticSearchIndex:
         for the index, and add contents.
         """
         self.delete_index()
-        self._refresh_materialized_views()
+        self._refresh_materialized_views(self.type)
         self.client.indices.create(self.index_name, self.template)
-        create_aliases(self.client, self.index_name, True)
+        create_aliases(self.client, self.index_name, True, awards=(self.type == "awards"))
         self._add_contents()
 
     def _add_contents(self):
@@ -49,103 +50,55 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        transaction_delta_view_sql = open(
-            str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r"
-        ).read()
+        view_sql = open(
+            str(settings.APP_DIR / "database_scripts" / "etl" / "award_delta_view.sql"), "r").read() if self.type =="awards" else open(str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r").read()
         with connection.cursor() as cursor:
-            cursor.execute(transaction_delta_view_sql)
-            cursor.execute(f"SELECT * FROM {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
-            transactions = ordered_dictionary_fetcher(cursor)
-            cursor.execute(f"DROP VIEW {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
+            cursor.execute(view_sql)
+            if self.type == "transactions":
+                cursor.execute(f"SELECT * FROM {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
+                transactions = ordered_dictionary_fetcher(cursor)
+                cursor.execute(f"DROP VIEW {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
 
-        for transaction in transactions:
-            self.client.index(
-                self.index_name,
-                self.doc_type,
-                json.dumps(transaction, cls=DjangoJSONEncoder),
-                transaction["transaction_id"],
-            )
+                for transaction in transactions:
+                    self.client.index(
+                        self.index_name,
+                        self.doc_type,
+                        json.dumps(transaction, cls=DjangoJSONEncoder),
+                        transaction["transaction_id"],
+                    )
+            elif self.type == "awards":
+                cursor.execute(f"SELECT * FROM {settings.ES_AWARDS_ETL_VIEW_NAME};")
+                awards = ordered_dictionary_fetcher(cursor)
+                cursor.execute(f"DROP VIEW {settings.ES_AWARDS_ETL_VIEW_NAME};")
 
+                for award in awards:
+                    self.client.index(
+                        self.index_name,
+                        self.doc_type,
+                        json.dumps(award, cls=DjangoJSONEncoder),
+                        award["award_id"],
+                    )
+                    
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
 
     @staticmethod
-    def _refresh_materialized_views():
+    def _refresh_materialized_views(type):
         """
         This materialized view is used by the es etl view, so
         we will need to refresh it in order for the view to see
         changes to the underlying tables.
         """
         with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
-
-    @classmethod
-    def _generate_index_name(cls):
-        return "test-{}-{}".format(
-            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
-        )
-
-
-class TestElasticAwardSearchIndex:
-    def __init__(self):
-        """
-        We will be prefixing all aliases with the index name to ensure
-        uniquity, otherwise, we may end up with aliases representing more
-        than one index which may throw off our search results.
-        """
-        self.index_name = self._generate_index_name()
-        self.alias_prefix = self.index_name
-        self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_award_index_template()
-        self.mappings = json.loads(self.template)["mappings"]
-        self.doc_type = str(list(self.mappings.keys())[0])
-
-    def delete_index(self):
-        self.client.indices.delete(self.index_name, ignore_unavailable=True)
-
-    def update_index(self):
-        """
-        To ensure a fresh Elasticsearch index, delete the old one, update the
-        materialized views, re-create the Elasticsearch index, create aliases
-        for the index, and add contents.
-        """
-        self.delete_index()
-        self._refresh_materialized_views()
-        self.client.indices.create(self.index_name, self.template)
-        create_aliases(self.client, self.index_name, silent=True, awards=True)
-        self._add_contents()
-
-    def _add_contents(self):
-        """
-        Get all of the transactions presented in the view and
-        stuff them into the Elasticsearch index.
-        """
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM {}".format(settings.ES_AWARDS_ETL_VIEW_NAME))
-            awards = ordered_dictionary_fetcher(cursor)
-
-        for award in awards:
-            self.client.index(
-                self.index_name, self.doc_type, json.dumps(award, cls=DjangoJSONEncoder), award["award_id"],
-            )
-
-        # Force newly added documents to become searchable.
-        self.client.indices.refresh(self.index_name)
-
-    @staticmethod
-    def _refresh_materialized_views():
-        """
-        This materialized view is used by the es etl view, so
-        we will need to refresh it in order for the view to see
-        changes to the underlying tables.
-        """
-        with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_contract_award_search;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_idv_award_search;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_grant_award_search;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_directpayment_award_search;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_loan_award_search;")
-            cursor.execute("REFRESH MATERIALIZED VIEW mv_other_award_search;")
+            if type == "transactions":
+                cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
+            else:
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_contract_award_search;")
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_idv_award_search;")
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_grant_award_search;")
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_directpayment_award_search;")
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_loan_award_search;")
+                cursor.execute("REFRESH MATERIALIZED VIEW mv_other_award_search;")
 
     @classmethod
     def _generate_index_name(cls):
