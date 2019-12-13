@@ -2,11 +2,14 @@ import logging
 import re
 
 from django.conf import settings
+from elasticsearch_dsl import Search, Q
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.client import es_client_query, es_dsl_search
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger("console")
 
@@ -220,3 +223,325 @@ def concat_if_array(data):
             # This should never happen if TinyShield is functioning properly
             logger.error("Keyword submitted was not a string or array")
             return ""
+
+
+def get_base_search_with_filters(filters: dict) -> Search:
+    search = es_dsl_search()
+    key_list = [
+        "keywords",
+        "elasticsearch_keyword",
+        "time_period",
+        "award_type_codes",
+        "agencies",
+        "legal_entities",
+        "recipient_id",
+        "recipient_search_text",
+        "recipient_scope",
+        "recipient_locations",
+        "recipient_type_names",
+        "place_of_performance_scope",
+        "place_of_performance_locations",
+        "award_amounts",
+        "award_ids",
+        "program_numbers",
+        "naics_codes",
+        "psc_codes",
+        "contract_pricing_type_codes",
+        "set_aside_type_codes",
+        "extent_competed_type_codes",
+        "tas_codes",
+    ]
+    must_queries = []
+
+    for key, value in filters.items():
+        if value is None:
+            raise InvalidParameterException(f"Invalid filter: {key} has null as its value.")
+
+        if key not in key_list:
+            raise InvalidParameterException(f"Invalid filter: {key} does not exist.")
+
+        if key == "keywords":
+            keyword_queries = []
+
+            for v in value:
+                keyword_queries.append(Q("query_string", query=v, default_operator="AND"))
+
+            must_queries.append(Q("dis_max", queries=keyword_queries))
+
+        elif key == "time_period":
+            time_period_query = []
+
+            for v in value:
+                start_date = v["start_date"] or settings.API_SEARCH_MIN_DATE
+                end_date = v["end_date"] or settings.API_MAX_DATE
+                time_period_query.append(Q("range", action_date={"gte": start_date, "lte": end_date}))
+
+            must_queries.append(Q("bool", should=time_period_query, minimum_should_match=1))
+
+        elif key == "award_type_codes":
+            award_type_codes_query = []
+
+            for v in value:
+                award_type_codes_query.append(Q("match", type=v))
+
+            must_queries.append(Q("bool", should=award_type_codes_query, minimum_should_match=1))
+
+        elif key == "agencies":
+            awarding_agency_query = []
+            funding_agency_query = []
+
+            agency_query_lookup = {
+                "awarding": {
+                    "toptier": lambda name: awarding_agency_query.append(
+                        Q("match", awarding_toptier_agency_name__keyword=name)
+                    ),
+                    "subtier": lambda name: awarding_agency_query.append(
+                        Q("match", awarding_subtier_agency_name__keyword=name)
+                    ),
+                },
+                "funding": {
+                    "toptier": lambda name: funding_agency_query.append(
+                        Q("match", funding_toptier_agency_name__keyword=name)
+                    ),
+                    "subtier": lambda name: funding_agency_query.append(
+                        Q("match", funding_subtier_agency_name__keyword=name)
+                    ),
+                },
+            }
+
+            for v in value:
+                agency_name = v["name"]
+                agency_tier = v["tier"]
+                agency_type = v["type"]
+                agency_query_lookup[agency_type][agency_tier](agency_name)
+
+            must_queries.extend(
+                [
+                    Q("bool", should=awarding_agency_query, minimum_should_match=1),
+                    Q("bool", should=funding_agency_query, minimum_should_match=1),
+                ]
+            )
+
+        elif key == "legal_entities":
+            # This filter key has effectively become obsolete by recipient_search_text
+            msg = 'API request included "{}" key. No filtering will occur with provided value "{}"'
+            logger.info(msg.format(key, value))
+
+        elif key == "recipient_search_text":
+            recipient_search_query = []
+
+            for v in value:
+                recipient_search_query.append(Q("wildcard", recipient_name=f"{v}*"))
+
+            must_queries.append(Q("bool", should=recipient_search_query, minimum_should_match=1))
+
+        elif key == "recipient_id":
+            recipient_id_query = Q()
+            recipient_hash = value[:-2]
+
+            if value.endswith("P"):
+                parent_duns_rows = RecipientProfile.objects.filter(
+                    recipient_hash=recipient_hash, recipient_level="P"
+                ).values("recipient_unique_id")
+                if len(parent_duns_rows) == 1:
+                    parent_duns = parent_duns_rows[0]["recipient_unique_id"]
+                    recipient_id_query = Q("match", parent_recipient_unique_id=parent_duns)
+                elif len(parent_duns_rows) > 2:
+                    # shouldn't occur
+                    raise InvalidParameterException("Non-unique parent record found in RecipientProfile")
+            else:
+                recipient_id_query = Q("match", recipient_hash=value)
+
+            must_queries.append(Q("bool", must=recipient_id_query))
+
+        elif key == "recipient_scope":
+            recipient_scope_query = Q("match", recipient_location_country_code="USA")
+
+            if value == "domestic":
+                must_queries.append(Q("bool", must=recipient_scope_query))
+            elif value == "foreign":
+                must_queries.append(Q("bool", must_not=recipient_scope_query))
+
+        elif key == "recipient_locations":
+            recipient_locations_query = []
+
+            recipient_locations_query_lookup = {
+                "country_code": lambda country_code: Q("match", recipient_location_country_code=country_code),
+                "state_code": lambda state_code: Q("match", recipient_location_state_code=state_code),
+                "county_code": lambda county_code: Q("match", recipient_location_county_code__keyword=county_code),
+                "congressional_code": lambda congressional_code: Q(
+                    "match", recipient_location_congressional_code__keyword=congressional_code
+                ),
+                "city_name": lambda city_name: Q("match", recipient_location_city_name__keyword=city_name),
+                "zip5": lambda zip5: Q("match", recipient_location_zip5=zip5),
+            }
+
+            for v in value:
+                location_query = []
+                location_lookup = {
+                    "country_code": v.get("country"),
+                    "state_code": v.get("state"),
+                    "county_code": v.get("county"),
+                    "congressional_code": v.get("district"),
+                    "city_name": v.get("city"),
+                    "zip5": v.get("zip"),
+                }
+
+                for location_key, location_value in location_lookup.items():
+                    if location_value is not None:
+                        location_query.append(recipient_locations_query_lookup[location_key](location_value))
+
+                recipient_locations_query.append(Q("bool", must=location_query))
+
+            must_queries.append(Q("bool", should=recipient_locations_query, minimum_should_match=1))
+
+        elif key == "recipient_type_names":
+            recipient_type_query = []
+
+            for v in value:
+                recipient_type_query.append(Q("match", business_categories=v))
+
+            must_queries.append(Q("bool", should=recipient_type_query, minimum_should_match=1))
+
+        elif key == "place_of_performance_scope":
+            pop_scope_query = Q("match", pop_country_code="USA")
+
+            if value == "domestic":
+                must_queries.append(Q("bool", must=pop_scope_query))
+            elif value == "foreign":
+                must_queries.append(Q("bool", must_not=pop_scope_query))
+
+        elif key == "place_of_performance_locations":
+            pop_locations_query = []
+
+            pop_locations_query_lookup = {
+                "country_code": lambda country_code: Q("match", pop_country_code=country_code),
+                "state_code": lambda state_code: Q("match", pop_state_code=state_code),
+                "county_code": lambda county_code: Q("match", pop_county_code__keyword=county_code),
+                "congressional_code": lambda congressional_code: Q(
+                    "match", pop_congressional_code__keyword=congressional_code
+                ),
+                "city_name": lambda city_name: Q("match", pop_city_name__keyword=city_name),
+                "zip5": lambda zip5: Q("match", pop_zip5=zip5),
+            }
+
+            for v in value:
+                location_query = []
+                location_lookup = {
+                    "country_code": v.get("country"),
+                    "state_code": v.get("state"),
+                    "county_code": v.get("county"),
+                    "congressional_code": v.get("district"),
+                    "city_name": v.get("city"),
+                    "zip5": v.get("zip"),
+                }
+
+                for location_key, location_value in location_lookup.items():
+                    if location_value is not None:
+                        location_query.append(pop_locations_query_lookup[location_key](location_value))
+
+                pop_locations_query.append(Q("bool", must=location_query))
+
+            must_queries.append(Q("bool", should=pop_locations_query, minimum_should_match=1))
+
+        elif key == "award_amounts":
+            award_amounts_query = []
+
+            for v in value:
+                lower_bound = v.get("lower_bound")
+                upper_bound = v.get("upper_bound")
+                award_amounts_query.append(Q("range", award_amount={"gte": lower_bound, "lte": upper_bound}))
+
+            must_queries.append(Q("bool", should=award_amounts_query, minimum_should_match=1))
+
+        elif key == "award_ids":
+            award_ids_query = []
+
+            for v in value:
+                award_ids_query.append(Q("match", display_award_id=v))
+
+            must_queries.append(Q("bool", should=award_ids_query, minimum_should_match=1))
+
+        elif key == "program_numbers":
+            programs_numbers_query = []
+
+            for v in value:
+                programs_numbers_query.append(Q("match", cfda_number=v))
+
+            must_queries.append(Q("bool", should=programs_numbers_query, minimum_should_match=1))
+
+        elif key == "naics_codes":
+            naics_codes_query = []
+
+            for v in value:
+                naics_codes_query.append(Q("match", naics_code__keyword=v))
+
+            must_queries.append(Q("bool", should=naics_codes_query, minimum_should_match=1))
+
+        elif key == "psc_codes":
+            psc_codes_query = []
+
+            for v in value:
+                psc_codes_query.append(Q("match", product_or_service_code__keyword=v))
+
+            must_queries.append(Q("bool", should=psc_codes_query, minimum_should_match=1))
+
+        elif key == "contract_pricing_type_codes":
+            contract_pricing_query = []
+
+            for v in value:
+                contract_pricing_query.append(Q("match", type_of_contract_pricing__keyword=v))
+
+            must_queries.append(Q("bool", should=contract_pricing_query, minimum_should_match=1))
+
+        elif key == "set_aside_type_codes":
+            set_aside_query = []
+
+            for v in value:
+                set_aside_query.append(Q("match", type_set_aside__keyword=v))
+
+            must_queries.append(Q("bool", should=set_aside_query, minimum_should_match=1))
+
+        elif key == "extent_competed_type_codes":
+            extent_competed_query = []
+
+            for v in value:
+                extent_competed_query.append(Q("match", extent_competed__keyword=v))
+
+            must_queries.append(Q("bool", should=extent_competed_query, minimum_should_match=1))
+
+        elif key == "tas_codes":
+            tas_codes_query = []
+
+            tas_codes_query_lookup = {
+                "aid": lambda aid: Q("match", treasury_accounts__aid=aid),
+                "ata": lambda ata: Q("match", treasury_accounts__ata=ata),
+                "main": lambda main: Q("match", treasury_accounts__main=main),
+                "sub": lambda sub: Q("match", treasury_accounts__sub=sub),
+                "bpoa": lambda bpoa: Q("match", treasury_accounts__bpoa=bpoa),
+                "epoa": lambda epoa: Q("match", treasury_accounts__epoa=epoa),
+                "a": lambda a: Q("match", treasury_accounts__a=a),
+            }
+
+            for v in value:
+                code_query = []
+                code_lookup = {
+                    "aid": v.get("aid"),
+                    "ata": v.get("ata"),
+                    "main": v.get("main"),
+                    "sub": v.get("sub"),
+                    "bpoa": v.get("bpoa"),
+                    "epoa": v.get("epoa"),
+                    "a": v.get("a"),
+                }
+
+                for code_key, code_value in code_lookup.items():
+                    if code_value is not None:
+                        code_query.append(tas_codes_query_lookup[code_key](code_value))
+
+                tas_codes_query.append(Q("bool", must=code_query))
+
+            nested_query = Q("bool", should=tas_codes_query, minimum_should_match=1)
+            must_queries.append(Q("nested", path="treasury_accounts", query=nested_query))
+
+    return search.filter("bool", must=must_queries)

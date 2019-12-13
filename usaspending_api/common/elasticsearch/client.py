@@ -9,13 +9,14 @@ from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
 from elasticsearch.connection import create_ssl_context
+from elasticsearch_dsl import Search
 from ssl import CERT_NONE
 
 logger = logging.getLogger("console")
 CLIENT = None
 
 
-def instantiate_elasticsearch_client():
+def instantiate_elasticsearch_client() -> Elasticsearch:
     es_kwargs = {"timeout": 300}
 
     if "https" in settings.ES_HOSTNAME:
@@ -24,7 +25,7 @@ def instantiate_elasticsearch_client():
     return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
-def create_es_client():
+def create_es_client() -> Elasticsearch:
     if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
         logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
     global CLIENT
@@ -48,7 +49,7 @@ def create_es_client():
         logger.error("Error creating the elasticsearch client: {}".format(e))
 
 
-def es_client_query(index, body, timeout="1m", retries=5):
+def es_client_query(index: str, body: dict, timeout: str = "1m", retries: int = 5) -> Elasticsearch:
     if CLIENT is None:
         create_es_client()
     if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
@@ -67,7 +68,13 @@ def es_client_query(index, body, timeout="1m", retries=5):
     return None
 
 
-def _es_search(index, body, timeout):
+def es_dsl_search() -> Search:
+    if CLIENT is None:
+        create_es_client()
+    return Search().using(CLIENT)
+
+
+def _es_search(index: str, body: dict, timeout: int) -> dict:
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:

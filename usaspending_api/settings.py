@@ -90,6 +90,7 @@ ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
+ES_HTTP_HEADER = "HTTP_EXPERIMENTAL_API"
 
 # Application definition
 INSTALLED_APPS = [
