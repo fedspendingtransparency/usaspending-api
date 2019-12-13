@@ -11,11 +11,9 @@ def create_unique_filename(json_request, origination=None):
     request_agency = json_request.get("agency", "all")
 
     if json_request.get("is_for_idv"):
-        slug_text = slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
-        download_name = f"IDV_{slug_text}_{timestamp}.zip"
+        download_name = f"IDV_{slugify_text_for_file_names(json_request.get('piid'), 'UNKNOWN', 50)}_{timestamp}.zip"
     elif json_request.get("is_for_contract"):
-        slug_text = slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
-        download_name = f"CONT_{slug_text}_{timestamp}.zip"
+        download_name = f"CONT_{slugify_text_for_file_names(json_request.get('piid'), 'UNKNOWN', 50)}_{timestamp}.zip"
     elif json_request.get("is_for_assistance"):
         slug_text = slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
         download_name = f"ASST_{slug_text}_{timestamp}.zip"

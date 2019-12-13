@@ -196,7 +196,6 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        agency_is_optional = "_"
 
         if source.agency_code == "all":
             agency = "All"
@@ -207,11 +206,11 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         filters = request["filters"]
         if request.get("limit"):
             agency = ""
-            agency_is_optional = ""
+        else:
+            agency = f"{agency}_"
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
         source_name = file_name_pattern.format(
             agency=agency,
-            agency_is_optional=agency_is_optional,
             data_quarters=construct_data_date_range(filters),
             level=d_map[source.file_type],
             timestamp=timestamp,
