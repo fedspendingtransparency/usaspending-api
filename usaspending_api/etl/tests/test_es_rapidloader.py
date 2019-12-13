@@ -100,7 +100,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
 
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = AwardRapidloader(config, elasticsearch_client)
-    assert(loader.__class__.__name__ == "AwardRapidloader")
+    assert loader.__class__.__name__ == "AwardRapidloader"
     # loader.run_load_steps()
     # loader.complete_process()
     #
@@ -111,6 +111,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     # client = elasticsearch_award_index.client
     # response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
     # assert response["hits"]["total"] == 1
+
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
     config = {
@@ -137,5 +138,5 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
 
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = TransactionRapidloader(config, elasticsearch_client)
-    assert(loader.__class__.__name__ == "TransactionRapidloader")
+    assert loader.__class__.__name__ == "TransactionRapidloader"
     # loader.run_load_steps()

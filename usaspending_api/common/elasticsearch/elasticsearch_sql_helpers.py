@@ -11,6 +11,7 @@ def verify_database_view_exists(view_name: str) -> bool:
 
     return view_name in list_of_available_views
 
+
 def ensure_view_exists(view_name, force: bool = False):
     view_file_path = settings.APP_DIR / "database_scripts" / "etl" / (view_name + ".sql")
 
