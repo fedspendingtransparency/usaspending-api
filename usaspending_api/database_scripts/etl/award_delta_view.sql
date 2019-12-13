@@ -26,7 +26,7 @@ SELECT
   vw_award_search.recipient_id,
   vw_award_search.recipient_name,
   vw_award_search.recipient_unique_id,
-  CONCAT(rp.recipient_hash, '-', case when vw_award_search.parent_recipient_unique_id is null then 'R' else 'C' end) as recipient_hash,
+  recipient_lookup.recipient_hash,
   vw_award_search.parent_recipient_unique_id,
   vw_award_search.business_categories,
 
@@ -91,8 +91,6 @@ SELECT
     duns
   FROM recipient_lookup AS rlv
   ) recipient_lookup ON recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL
-  LEFT JOIN
-  recipient_profile rp  on recipient_lookup.recipient_hash = rp.recipient_hash
   LEFT OUTER JOIN (
   SELECT
     faba.award_id,
