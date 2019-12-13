@@ -304,7 +304,7 @@ def elasticsearch_award_index(db):
     award index.  To use, create some mock database data then call
     elasticsearch_award_index.update_index to populate Elasticsearch.
 
-    See test_demo_elasticsearch_tests.py for sample usage.
+    See test_award_index_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticAwardSearchIndex()
     with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
