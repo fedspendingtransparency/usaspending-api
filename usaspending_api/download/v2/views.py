@@ -22,6 +22,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/idv.md"
 
     def post(self, request):
+        request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "idv")
 
 
@@ -33,6 +34,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/contract.md"
 
     def post(self, request):
+        request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "contract")
 
 
@@ -44,6 +46,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/assistance.md"
 
     def post(self, request):
+        request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "assistance")
 
 

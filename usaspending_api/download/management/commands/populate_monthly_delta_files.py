@@ -151,10 +151,11 @@ class Command(BaseCommand):
 
         # Create file paths and working directory
         timestamp = datetime.strftime(datetime.now(), "%Y%m%d%H%M%S%f")
-        working_dir = "{}_{}_delta_gen_{}/".format(settings.CSV_LOCAL_PATH, agency_code, timestamp)
+        working_dir = f"{settings.CSV_LOCAL_PATH}_{agency_code}_delta_gen_{timestamp}/"
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
-        source_name = "{}_{}_Delta_{}".format(agency_code, award_type, datetime.strftime(date.today(), "%Y%m%d"))
+        agency_str = "All" if agency_code == "all" else agency_code
+        source_name = f"FY(All)_{agency_str}_{award_type}_Delta_{datetime.strftime(date.today(), '%Y%m%d')}"
         source_path = os.path.join(working_dir, "{}.csv".format(source_name))
 
         # Create a unique temporary file with the raw query
