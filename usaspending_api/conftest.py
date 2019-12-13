@@ -16,10 +16,7 @@ from usaspending_api.common.helpers.generic_helper import (
     refresh_matviews as perform_refresh_matviews,
 )
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
-from usaspending_api.conftest_helpers import (
-    TestElasticSearchIndex,
-    ensure_broker_server_dblink_exists
-)
+from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_broker_server_dblink_exists
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 

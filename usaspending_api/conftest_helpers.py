@@ -26,7 +26,9 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_transaction_index_template() if self.type == "transactions" else retrieve_award_index_template()
+        self.template = (
+            retrieve_transaction_index_template() if self.type == "transactions" else retrieve_award_index_template()
+        )
         self.mappings = json.loads(self.template)["mappings"]
         self.doc_type = str(list(self.mappings.keys())[0])
 
@@ -50,8 +52,11 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        view_sql = open(
-            str(settings.APP_DIR / "database_scripts" / "etl" / "award_delta_view.sql"), "r").read() if self.type =="awards" else open(str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r").read()
+        view_sql = (
+            open(str(settings.APP_DIR / "database_scripts" / "etl" / "award_delta_view.sql"), "r").read()
+            if self.type == "awards"
+            else open(str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r").read()
+        )
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
             if self.type == "transactions":
@@ -73,12 +78,9 @@ class TestElasticSearchIndex:
 
                 for award in awards:
                     self.client.index(
-                        self.index_name,
-                        self.doc_type,
-                        json.dumps(award, cls=DjangoJSONEncoder),
-                        award["award_id"],
+                        self.index_name, self.doc_type, json.dumps(award, cls=DjangoJSONEncoder), award["award_id"],
                     )
-                    
+
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
 
