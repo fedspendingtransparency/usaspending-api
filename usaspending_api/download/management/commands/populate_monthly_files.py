@@ -204,7 +204,7 @@ class Command(BaseCommand):
         toptier_agencies = list(toptier_agencies.values("name", "toptier_agency_id", "toptier_code"))
         # Adding 'all' to prevent duplication of code
         if include_all:
-            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "toptier_code": "all"})
+            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "toptier_code": "All"})
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date) + 1)
 
@@ -226,10 +226,10 @@ class Command(BaseCommand):
                 start_date = "{}-10-01".format(fiscal_year - 1)
                 end_date = "{}-09-30".format(fiscal_year)
                 for award_type in award_types:
-                    file_name = "{}_{}_{}".format(fiscal_year, agency["toptier_code"], award_type.capitalize())
-                    full_file_name = "{}_Full_{}.zip".format(file_name, updated_date_timestamp)
+                    file_name = f"FY{fiscal_year}_{agency['toptier_code']}_{award_type.capitalize()}"
+                    full_file_name = f"{file_name}_Full_{updated_date_timestamp}.zip"
                     if not clobber and file_name in reuploads:
-                        logger.info("Skipping already uploaded: {}".format(full_file_name))
+                        logger.info(f"Skipping already uploaded: {full_file_name}")
                         continue
                     if placeholders:
                         empty_file = empty_contracts_file if award_type == "contracts" else empty_asssistance_file
