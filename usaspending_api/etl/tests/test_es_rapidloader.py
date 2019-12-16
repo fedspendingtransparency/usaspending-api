@@ -7,6 +7,7 @@ from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.award_rapidloader import AwardRapidloader
 from model_mommy import mommy
 from usaspending_api.etl.transaction_rapidloader import TransactionRapidloader
+from usaspending_api.etl.es_etl_helpers import configure_sql_strings
 
 
 @pytest.fixture
@@ -96,7 +97,6 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
         "is_incremental_load": False,
         "awards": True,
     }
-
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = AwardRapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "AwardRapidloader"
@@ -111,7 +111,7 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
         "verbose": False,
         "type": "transactions",
         "process_deletes": False,
-        "directory": str(Path(__file__).resolve().parent),
+        "directory": Path(__file__).resolve().parent,
         "skip_counts": False,
         "index_name": "test-{}-{}".format(
             datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
@@ -124,8 +124,44 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
         "is_incremental_load": False,
         "awards": True,
     }
-
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = TransactionRapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "TransactionRapidloader"
-    # loader.run_load_steps()
+
+
+def test_configure_sql_strings():
+    config = {
+        "aws_region": "us-gov-west-1",
+        "s3_bucket": "fpds-deleted-records-nonprod",
+        "root_index": "transaction-query",
+        "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
+        "verbose": False,
+        "type": "transactions",
+        "process_deletes": False,
+        "directory": Path(__file__).resolve().parent,
+        "skip_counts": False,
+        "index_name": "test-{}-{}".format(
+            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
+        ),
+        "create_new_index": True,
+        "snapshot": False,
+        "fiscal_year": 2019,
+        "starting_date": datetime(2007, 10, 1, 0, 0, tzinfo=timezone.utc),
+        "max_query_size": 50000,
+        "is_incremental_load": False,
+        "awards": True,
+    }
+    copy, id, count = configure_sql_strings(config, "filename", [1])
+    copy_sql = """"COPY (
+    SELECT *
+    FROM award_delta_view
+    WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
+) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
+"""
+    count_sql = """
+SELECT COUNT(*) AS count
+FROM award_delta_view
+WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
+"""
+    assert copy == copy_sql
+    assert count == count_sql

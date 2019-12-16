@@ -62,7 +62,7 @@ class Command(BaseCommand):
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
             self.run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
 
-        template_name = "{type}_template".format(type=self.type)
+        template_name = "{type}_template".format(type=self.type[:-1])
 
         self.run_curl_cmd(
             payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
