@@ -518,8 +518,6 @@ query_paths = {
                     "award__latest_transaction__contract_data__other_not_for_profit_organ",
                 ),
                 ("the_ability_one_program", "award__latest_transaction__contract_data__the_ability_one_program"),
-                ("number_of_employees", "award__latest_transaction__contract_data__number_of_employees"),
-                ("annual_revenue", "award__latest_transaction__contract_data__annual_revenue"),
                 (
                     "private_university_or_college",
                     "award__latest_transaction__contract_data__private_university_or_coll",
@@ -572,6 +570,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "award__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "award__latest_transaction__contract_data__last_modified"),
             ]
         ),
@@ -701,6 +700,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "award__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "award__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "award__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "award__latest_transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1026,8 +1026,6 @@ query_paths = {
                 ("nonprofit_organization", "transaction__contract_data__nonprofit_organization"),
                 ("other_not_for_profit_organization", "transaction__contract_data__other_not_for_profit_organ"),
                 ("the_ability_one_program", "transaction__contract_data__the_ability_one_program"),
-                ("number_of_employees", "transaction__contract_data__number_of_employees"),
-                ("annual_revenue", "transaction__contract_data__annual_revenue"),
                 ("private_university_or_college", "transaction__contract_data__private_university_or_coll"),
                 (
                     "state_controlled_institution_of_higher_learning",
@@ -1065,6 +1063,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__contract_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__contract_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__contract_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__contract_data__last_modified"),
             ]
         ),
@@ -1174,6 +1173,7 @@ query_paths = {
                 ("highly_compensated_officer_4_amount", "transaction__assistance_data__officer_4_amount"),
                 ("highly_compensated_officer_5_name", "transaction__assistance_data__officer_5_name"),
                 ("highly_compensated_officer_5_amount", "transaction__assistance_data__officer_5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
                 ("last_modified_date", "transaction__assistance_data__modified_at"),
             ]
         ),
@@ -1297,6 +1297,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
         "d2": OrderedDict(
@@ -1416,12 +1417,17 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_4_amount", "broker_subaward__sub_high_comp_officer4_amount"),
                 ("subawardee_highly_compensated_officer_5_name", "broker_subaward__sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "broker_subaward__sub_high_comp_officer5_amount"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
     },
     "account_balances": {
         "treasury_account": OrderedDict(
             [
+                (
+                    "last_reported_submission_period",
+                    "last_reported_submission_period",
+                ),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_identifier", "treasury_account_identifier__allocation_transfer_agency_id"),
                 ("agency_identifier", "treasury_account_identifier__agency_id"),
                 ("beginning_period_of_availability", "treasury_account_identifier__beginning_period_of_availability"),
@@ -1469,6 +1475,10 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
+                (
+                    "last_reported_submission_period",
+                    "last_reported_submission_period",
+                ),  # Column is appended to in account_download.py
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
@@ -1505,6 +1515,10 @@ query_paths = {
     "object_class_program_activity": {
         "treasury_account": OrderedDict(
             [
+                (
+                    "last_reported_submission_period",
+                    "last_reported_submission_period",
+                ),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_identifier", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -1538,6 +1552,10 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
+                (
+                    "last_reported_submission_period",
+                    "last_reported_submission_period",
+                ),  # Column is appended to in account_download.py
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py
@@ -1693,6 +1711,7 @@ query_paths["idv_transaction_history"] = {
         ]
     )
 }
+
 query_paths["assistance_transaction_history"] = {
     "d2": OrderedDict(
         [

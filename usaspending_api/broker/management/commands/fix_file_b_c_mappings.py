@@ -42,8 +42,7 @@ broker_website_cols_mapping = {
     "beginning_period_of_availability": "COALESCE(beginning_period_of_availa, '''')",
     "ending_period_of_availability": "COALESCE(ending_period_of_availabil, '''')",
     "availability_type_code": "COALESCE(availability_type_code, '''')",
-    "direct_reimbursable": "CASE WHEN by_direct_reimbursable_fun = ''D'' then 1"
-    + "WHEN by_direct_reimbursable_fun = ''R'' then 2 ELSE NULL END",
+    "direct_reimbursable": "by_direct_reimbursable_fun",
 }
 
 
