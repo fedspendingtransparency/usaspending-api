@@ -90,7 +90,7 @@ def test_award_endpoint(client):
 def test_null_awards():
     """Test the award.nonempty command."""
     mommy.make("awards.Award", total_obligation="2000", _quantity=2)
-    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None, recipient=None)
+    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None)
 
     assert Award.objects.count() == 3
     assert Award.nonempty.count() == 2

@@ -168,6 +168,78 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             Value("-"),
             "{}__federal_account__main_account_code".format(tas_id),
         ),
+        "recipient_duns": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__awardee_or_recipient_uniqu".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__awardee_or_recipient_uniqu".format(
+                tas_id
+            ),
+        ),
+        "recipient_name": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__awardee_or_recipient_legal".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__awardee_or_recipient_legal".format(
+                tas_id
+            ),
+        ),
+        "recipient_parent_duns": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__ultimate_parent_unique_ide".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__ultimate_parent_unique_ide".format(
+                tas_id
+            ),
+        ),
+        "recipient_parent_name": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__ultimate_parent_legal_enti".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__ultimate_parent_legal_enti".format(
+                tas_id
+            ),
+        ),
+        "recipient_country": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_country_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_country_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_state": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_state_descrip".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_state_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_county": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_county_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_county_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_city": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_city_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_city_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_congressional_district": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_congressional".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_congressional".format(
+                tas_id
+            ),
+        ),
     }
 
     # Derive recipient_parent_name
@@ -188,6 +260,78 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             "{}__federal_account__main_account_code".format(tas_id),
         ),
         "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
+        "recipient_duns": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__awardee_or_recipient_uniqu".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__awardee_or_recipient_uniqu".format(
+                tas_id
+            ),
+        ),
+        "recipient_name": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__awardee_or_recipient_legal".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__awardee_or_recipient_legal".format(
+                tas_id
+            ),
+        ),
+        "recipient_parent_duns": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__ultimate_parent_unique_ide".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__ultimate_parent_unique_ide".format(
+                tas_id
+            ),
+        ),
+        "recipient_parent_name": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__ultimate_parent_legal_enti".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__ultimate_parent_legal_enti".format(
+                tas_id
+            ),
+        ),
+        "recipient_country": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_country_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_country_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_state": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_state_descrip".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_state_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_county": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_county_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_county_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_city": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_city_name".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_city_name".format(
+                tas_id
+            ),
+        ),
+        "recipient_congressional_district": Coalesce(
+            "{}__financialaccountsbyawards__award__latest_transaction__contract_data__legal_entity_congressional".format(
+                tas_id
+            ),
+            "{}__financialaccountsbyawards__award__latest_transaction__assistance_data__legal_entity_congressional".format(
+                tas_id
+            ),
+        ),
     }
 
     # Derive recipient_parent_name for award_financial downloads

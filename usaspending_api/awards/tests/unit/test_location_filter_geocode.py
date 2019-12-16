@@ -15,7 +15,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("references.LegalEntity", legal_entity_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -28,9 +27,8 @@ def award_data_fixture(db):
         place_of_performance_state="TX",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", recipient_id=1, type="A")
+    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
 
-    mommy.make("references.LegalEntity", legal_entity_id=2)
     mommy.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -42,9 +40,8 @@ def award_data_fixture(db):
         place_of_performance_state="TX",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", recipient_id=2, type="A")
+    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
 
-    mommy.make("references.LegalEntity", legal_entity_id=3)
     mommy.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -55,9 +52,8 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", recipient_id=2, type="A")
+    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
 
-    mommy.make("references.LegalEntity", legal_entity_id=4)
     mommy.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -69,8 +65,7 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", recipient_id=2, type="A")
-    mommy.make("references.LegalEntity", legal_entity_id=4)
+    mommy.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
     mommy.make("awards.TransactionNormalized", id=5, action_date="2010-10-01", award_id=5, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -82,7 +77,7 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", recipient_id=2, type="A")
+    mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 
 
 def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
