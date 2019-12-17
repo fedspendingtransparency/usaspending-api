@@ -12,7 +12,7 @@
       "analyzer": {
         "stemmer_analyzer": {
             "tokenizer": "standard",
-            "filter": ["standard", "lowercase", "singular_stemmer"]
+            "filter": ["lowercase", "singular_stemmer"]
         }
       },
       "filter": {
@@ -23,18 +23,7 @@
       }
     }
   },
-  "sort": {
-    "fields": [
-      "transaction_amount",
-      "action_date"
-    ],
-    "order": [
-      "desc",
-      "desc"
-    ]
-  },
   "mappings": {
-    "transaction_mapping": {
       "properties": {
         "transaction_id": {
           "type": "integer"
@@ -417,6 +406,6 @@
           "type": "keyword"
         }
       }
-    }
+
   }
 }

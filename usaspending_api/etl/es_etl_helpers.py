@@ -348,7 +348,7 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="_doc"):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 

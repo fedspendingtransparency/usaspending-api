@@ -90,7 +90,7 @@ def return_json_from_file(path):
 
 
 def validate_known_fields(template):
-    defined_fields = set([field for field in template["mappings"]["transaction_mapping"]["properties"]])
+    defined_fields = set([field for field in template["mappings"]["properties"]])
     load_columns = set(VIEW_COLUMNS)
     if defined_fields ^ load_columns:  # check if any fields are not in both sets
         raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
