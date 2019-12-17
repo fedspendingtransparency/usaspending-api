@@ -1,6 +1,6 @@
 import pytest
 
-from usaspending_api.bulk_download.sqs_handler import (
+from usaspending_api.common.sqs.sqs_handler import (
     get_sqs_queue,
     FAKE_QUEUE,
     FAKE_DEAD_LETTER_QUEUE,

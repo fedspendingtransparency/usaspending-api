@@ -8,7 +8,7 @@ from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
 
-from usaspending_api.bulk_download.sqs_handler import FAKE_QUEUE
+from usaspending_api.common.sqs.sqs_handler import FAKE_QUEUE
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases

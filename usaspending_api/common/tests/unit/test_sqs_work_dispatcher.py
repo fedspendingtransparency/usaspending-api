@@ -11,8 +11,8 @@ from unittest import TestCase
 from random import randint
 from botocore.config import Config
 from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
-from usaspending_api.bulk_download.sqs_handler import get_sqs_queue
-from usaspending_api.bulk_download.sqs_work_dispatcher import (
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
     QueueWorkerProcessError,
     QueueWorkDispatcherError,

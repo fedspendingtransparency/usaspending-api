@@ -10,7 +10,7 @@ from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
 
-from usaspending_api.bulk_download.sqs_handler import FAKE_QUEUE
+from usaspending_api.common.sqs.sqs_handler import FAKE_QUEUE
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.helpers.generic_helper import (
     generate_matviews,
