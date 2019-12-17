@@ -407,5 +407,3 @@ def local_queue_dir():
     yield
     # Clean up any files created on disk
     remove_local_queue_data_files()
-
-

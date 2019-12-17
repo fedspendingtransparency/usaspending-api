@@ -36,7 +36,7 @@ class _FakeFileBackedSQSQueue:
         self.max_receive_count = max_receive_count
         self.queue_url = queue_url
         self.FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
-        with open(self._QUEUE_DATA_FILE, 'w+b') as queue_data_file:
+        with open(self._QUEUE_DATA_FILE, "w+b") as queue_data_file:
             pickle.dump(deque([]), queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
         # Make sure this stays last
         self._INSTANCE_STATE_MEMENTO = self.__dict__.copy()
@@ -55,24 +55,24 @@ class _FakeFileBackedSQSQueue:
     @classmethod
     def _enqueue(cls, msg: FakeSQSMessage):
         with FileLock(cls._QUEUE_DATA_FILE + ".lock"):
-            with open(cls._QUEUE_DATA_FILE, 'r+b') as queue_data_file:
+            with open(cls._QUEUE_DATA_FILE, "r+b") as queue_data_file:
                 messages = pickle.load(queue_data_file)
             messages.appendleft(msg)
-            with open(cls._QUEUE_DATA_FILE, 'w+b') as queue_data_file:
+            with open(cls._QUEUE_DATA_FILE, "w+b") as queue_data_file:
                 pickle.dump(messages, queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def _remove(cls, msg: FakeSQSMessage):
         with FileLock(cls._QUEUE_DATA_FILE + ".lock"):
-            with open(cls._QUEUE_DATA_FILE, 'r+b') as queue_data_file:
+            with open(cls._QUEUE_DATA_FILE, "r+b") as queue_data_file:
                 messages = pickle.load(queue_data_file)
             messages.remove(msg)
-            with open(cls._QUEUE_DATA_FILE, 'w+b') as queue_data_file:
+            with open(cls._QUEUE_DATA_FILE, "w+b") as queue_data_file:
                 pickle.dump(messages, queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def _messages(cls) -> deque:
-        with open(cls._QUEUE_DATA_FILE, 'rb') as queue_data_file:
+        with open(cls._QUEUE_DATA_FILE, "rb") as queue_data_file:
             messages = pickle.load(queue_data_file)
             return messages
 
@@ -87,21 +87,21 @@ class _FakeFileBackedSQSQueue:
     @classmethod
     def receive_messages(
         cls,
-        WaitTimeSeconds,             # noqa
-        AttributeNames=None,         # noqa
+        WaitTimeSeconds,  # noqa
+        AttributeNames=None,  # noqa
         MessageAttributeNames=None,  # noqa
-        VisibilityTimeout=30,        # noqa
-        MaxNumberOfMessages=1,       # noqa
+        VisibilityTimeout=30,  # noqa
+        MaxNumberOfMessages=1,  # noqa
     ) -> List[FakeSQSMessage]:
         # Limit returned messages by MaxNumberOfMessages: start=0, stop=MaxNumberOfMessages
-        with open(cls._QUEUE_DATA_FILE, 'rb') as queue_data_file:
+        with open(cls._QUEUE_DATA_FILE, "rb") as queue_data_file:
             messages_to_recv = pickle.load(queue_data_file)
         messages_to_recv.reverse()
         return list(islice(messages_to_recv, 0, MaxNumberOfMessages))
 
     @classmethod
     def purge(cls):
-        with open(cls._QUEUE_DATA_FILE, 'w+b') as queue_data_file:
+        with open(cls._QUEUE_DATA_FILE, "w+b") as queue_data_file:
             pickle.dump(deque([]), queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @property
@@ -137,11 +137,11 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
 
     @staticmethod
     def receive_messages(
-        WaitTimeSeconds,             # noqa
-        AttributeNames=None,         # noqa
+        WaitTimeSeconds,  # noqa
+        AttributeNames=None,  # noqa
         MessageAttributeNames=None,  # noqa
-        VisibilityTimeout=30,        # noqa
-        MaxNumberOfMessages=1,       # noqa
+        VisibilityTimeout=30,  # noqa
+        MaxNumberOfMessages=1,  # noqa
     ):
         _FakeStatelessLoggingSQSDeadLetterQueue.logger.debug(
             "executing SQSMockDeadLetterQueue.receive_messages("
