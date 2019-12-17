@@ -43,12 +43,17 @@ class TestElasticSearchIndex:
 
     def _add_contents(self):
         """
-        Get all of the transactions presented in the view and
-        stuff them into the Elasticsearch index.
+        Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
+        The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
+        transaction_delta_view_sql = open(
+            str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r"
+        ).read()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM {}".format(settings.ES_TRANSACTIONS_ETL_VIEW_NAME))
+            cursor.execute(transaction_delta_view_sql)
+            cursor.execute(f"SELECT * FROM {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
             transactions = ordered_dictionary_fetcher(cursor)
+            cursor.execute(f"DROP VIEW {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
 
         for transaction in transactions:
             self.client.index(
