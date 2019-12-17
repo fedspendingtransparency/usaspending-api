@@ -921,13 +921,13 @@ class SQSWorkDispatcherTests(TestCase):
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_1,
-                "Was expecting to find a trace of cleanup attempt 1 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 1 tracked in the work queue",
             )
             cleanup_attempt_2 = wq.get(True, 1)
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_2,
-                "Was expecting to find a trace of cleanup attempt 2 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 2 tracked in the work queue",
             )
             self.assertTrue(wq.empty(), "There should be no more work tracked on the work Queue")
             # TODO: Test that the "dead letter queue" has this message - maybe by asserting the log statement
@@ -1030,13 +1030,13 @@ class SQSWorkDispatcherTests(TestCase):
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_1,
-                "Was expecting to find a trace of cleanup attempt 1 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 1 tracked in the work queue",
             )
             cleanup_attempt_2 = wq.get(True, 1)
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_2,
-                "Was expecting to find a trace of cleanup attempt 2 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 2 tracked in the work queue",
             )
             self.assertTrue(wq.empty(), "There should be no more work tracked on the work Queue")
             # TODO: Test that the "dead letter queue" has this message - maybe by asserting the log statement
@@ -1177,19 +1177,19 @@ class SQSWorkDispatcherTests(TestCase):
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_1,
-                "Was expecting to find a trace of cleanup attempt 1 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 1 tracked in the work queue",
             )
             cleanup_attempt_2 = wq.get(True, 1)
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_2,
-                "Was expecting to find a trace of cleanup attempt 2 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 2 tracked in the work queue",
             )
             cleanup_end = wq.get(True, 1)
             self.assertEqual(
                 "cleanup_end_with_dead_worker_{}".format(msg_body),
                 cleanup_end,
-                "Was expecting to find a trace of cleanup reaching its end, " "after worker was killed (try 2)",
+                "Was expecting to find a trace of cleanup reaching its end, after worker was killed (try 2)",
             )
             self.assertTrue(wq.empty(), "There should be no more work tracked on the work Queue")
             # TODO: Test that the "dead letter queue" has this message - maybe by asserting the log statement
@@ -1335,19 +1335,19 @@ class SQSWorkDispatcherTests(TestCase):
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_1,
-                "Was expecting to find a trace of cleanup attempt 1 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 1 tracked in the work queue",
             )
             cleanup_attempt_2 = wq.get()
             self.assertEqual(
                 "cleanup_start_{}".format(msg_body),
                 cleanup_attempt_2,
-                "Was expecting to find a trace of cleanup attempt 2 " "tracked in the work queue",
+                "Was expecting to find a trace of cleanup attempt 2 tracked in the work queue",
             )
             cleanup_end = wq.get()
             self.assertEqual(
                 "cleanup_end_with_dead_worker_{}".format(msg_body),
                 cleanup_end,
-                "Was expecting to find a trace of cleanup reaching its end, " "after worker was killed (try 2)",
+                "Was expecting to find a trace of cleanup reaching its end, after worker was killed (try 2)",
             )
             self.assertTrue(wq.empty(), "There should be no more work tracked on the work Queue")
         finally:
@@ -1391,7 +1391,7 @@ class SQSWorkDispatcherTests(TestCase):
         fail_with_runaway_proc = False
         if worker and worker.is_alive():
             logger.warning(
-                "Dispatched worker process with PID {} did not complete in timeout. " "Killing it.".format(worker.pid)
+                "Dispatched worker process with PID {} did not complete in timeout. Killing it.".format(worker.pid)
             )
             os.kill(worker.pid, signal.SIGKILL)
             fail_with_runaway_proc = True

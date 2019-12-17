@@ -439,8 +439,11 @@ class SQSWorkDispatcher:
 
         if received_messages:
             self._current_sqs_message = received_messages[0]
-            log_job_message(logger=self._logger, message="Message received: {}".format(
-                self._current_sqs_message.body), job_type=self.worker_process_name,)
+            log_job_message(
+                logger=self._logger,
+                message="Message received: {}".format(self._current_sqs_message.body),
+                job_type=self.worker_process_name,
+            )
 
     def delete_message_from_queue(self):
         """ Deletes the message from SQS. This is usually treated as a *successful* culmination of message handling,
@@ -834,20 +837,14 @@ class SQSWorkDispatcher:
                             "Raising exception.".format(self._exit_handling_timeout)
                         )
                         log_job_message(
-                            logger=self._logger,
-                            message=message,
-                            job_type=self.worker_process_name,
-                            is_error=True,
+                            logger=self._logger, message=message, job_type=self.worker_process_name, is_error=True,
                         )
                         raise QueueWorkDispatcherError(message)
                 except Exception as exc:
                     exit_handling_failed = True
                     message = "Execution of exit_handler failed for unknown reason. See Traceback."
                     log_job_message(
-                        logger=self._logger,
-                        message=message,
-                        job_type=self.worker_process_name,
-                        is_exception=True,
+                        logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True,
                     )
                     raise QueueWorkDispatcherError(message) from exc
 
