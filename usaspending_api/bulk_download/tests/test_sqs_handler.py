@@ -10,7 +10,12 @@ from usaspending_api.bulk_download.sqs_handler import (
 
 @pytest.fixture
 def purged_queue(local_queue_dir):
+    """Ensure a clean queue before and after each test"""
     FAKE_QUEUE.purge()
+    FAKE_QUEUE.reset_instance_state()
+    yield
+    FAKE_QUEUE.purge()
+    FAKE_QUEUE.reset_instance_state()
 
 
 pytestmark = pytest.mark.usefixtures("purged_queue")  # run fixture before every test function in this module
