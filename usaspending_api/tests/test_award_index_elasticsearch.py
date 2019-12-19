@@ -71,30 +71,6 @@ def create_query(should) -> dict:
     return query
 
 
-def test_positive_sample_query(db, award_data_fixture, elasticsearch_award_index):
-    """
-    A super simple direct search against Elasticsearch that returns one record.
-    """
-    # This is the important part.  This ensures data is loaded into your Elasticsearch.
-    elasticsearch_award_index.update_index()
-    query = {"query": {"bool": {"must": [{"match": {"piid": "IND12PB00323"}}]}}, "_source": ["award_id"]}
-    client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
-
-
-def test_negative_sample_query(db, award_data_fixture, elasticsearch_award_index):
-    """
-    A super simple direct search against Elasticsearch that returns no results.
-    """
-    # This is the important part.  This ensures data is loaded into your Elasticsearch.
-    elasticsearch_award_index.update_index()
-    query = {"query": {"bool": {"must": [{"match": {"recipient_location_zip": "edcba"}}]}}, "_source": ["award_id"]}
-    client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
-
-
 def test_date_range(db, award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {
@@ -221,7 +197,7 @@ def test_recipient_location(db, award_data_fixture, elasticsearch_award_index):
     should = [
         {"match": {"recipient_location_country_code": "USA"}},
         {"match": {"recipient_location_state_code": "VA"}},
-        {"match": {"recipient_location_congressional_code": "11"}}
+        {"match": {"recipient_location_congressional_code": "11"}},
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
@@ -232,7 +208,7 @@ def test_recipient_location(db, award_data_fixture, elasticsearch_award_index):
     should = [
         {"match": {"recipient_location_country_code": "USA"}},
         {"match": {"recipient_location_state_code": "VA"}},
-        {"match": {"recipient_location_congressional_code": "10"}}
+        {"match": {"recipient_location_congressional_code": "10"}},
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
@@ -245,7 +221,7 @@ def test_pop_location(db, award_data_fixture, elasticsearch_award_index):
     should = [
         {"match": {"pop_country_code": "USA"}},
         {"match": {"pop_state_code": "VA"}},
-        {"match": {"pop_congressional_code": "11"}}
+        {"match": {"pop_congressional_code": "11"}},
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
@@ -255,7 +231,7 @@ def test_pop_location(db, award_data_fixture, elasticsearch_award_index):
     should = [
         {"match": {"pop_country_code": "USA"}},
         {"match": {"pop_state_code": "VA"}},
-        {"match": {"pop_congressional_code": "10"}}
+        {"match": {"pop_congressional_code": "10"}},
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3

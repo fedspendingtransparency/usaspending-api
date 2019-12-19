@@ -100,6 +100,8 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = AwardRapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "AwardRapidloader"
+    loader.run_load_steps()
+    elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
 
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
@@ -127,6 +129,8 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = TransactionRapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "TransactionRapidloader"
+    loader.run_load_steps()
+    elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
 
 
 def test_configure_sql_strings():
@@ -152,11 +156,11 @@ def test_configure_sql_strings():
         "awards": True,
     }
     copy, id, count = configure_sql_strings(config, "filename", [1])
-    copy_sql = """"COPY (
+    copy_sql = """COPY (
     SELECT *
     FROM award_delta_view
     WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
-) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
+) TO 'filename' DELIMITER ',' CSV HEADER
 """
     count_sql = """
 SELECT COUNT(*) AS count
