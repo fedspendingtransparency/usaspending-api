@@ -188,31 +188,34 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
 
     if source.is_for_idv or source.is_for_contract:
-        return file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
-
-    if source.is_for_assistance:
-        return file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
-
-    if source.agency_code == "all":
-        agency = "All"
+        data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+    elif source.is_for_assistance:
+        data_file_name = file_name_pattern.format(
+            assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
+        )
     else:
-        agency = str(source.agency_code)
+        if source.agency_code == "all":
+            agency = "All"
+        else:
+            agency = str(source.agency_code)
 
-    request = json.loads(download_job.json_request)
-    filters = request["filters"]
-    if request.get("limit"):
-        agency = ""
-    else:
-        agency = f"{agency}_"
-    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
+        request = json.loads(download_job.json_request)
+        filters = request["filters"]
+        if request.get("limit"):
+            agency = ""
+        else:
+            agency = f"{agency}_"
+        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
-    return file_name_pattern.format(
-        agency=agency,
-        data_quarters=construct_data_date_range(filters),
-        level=d_map[source.file_type],
-        timestamp=timestamp,
-        type=d_map[source.file_type],
-    )
+        data_file_name = file_name_pattern.format(
+            agency=agency,
+            data_quarters=construct_data_date_range(filters),
+            level=d_map[source.file_type],
+            timestamp=timestamp,
+            type=d_map[source.file_type],
+        )
+
+    return data_file_name
 
 
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
