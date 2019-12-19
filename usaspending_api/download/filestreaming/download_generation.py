@@ -179,39 +179,40 @@ def get_download_sources(json_request):
 
 def build_data_file_name(source, download_job, piid, assistance_id):
     d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
+
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
-        data_file_name = strip_file_extension(download_job.file_name)
-    else:
-        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        if source.is_for_idv or source.is_for_contract:
-            data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
-        elif source.is_for_assistance:
-            data_file_name = file_name_pattern.format(
-                assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
-            )
-        else:
-            if source.agency_code == "all":
-                agency = "All"
-            else:
-                agency = str(source.agency_code)
+        return strip_file_extension(download_job.file_name)
 
-            request = json.loads(download_job.json_request)
-            filters = request["filters"]
-            if request.get("limit"):
-                agency = ""
-            else:
-                agency = f"{agency}_"
-            timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
-            data_file_name = file_name_pattern.format(
-                agency=agency,
-                data_quarters=construct_data_date_range(filters),
-                level=d_map[source.file_type],
-                timestamp=timestamp,
-                type=d_map[source.file_type],
-            )
-    return data_file_name
+    file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+
+    if source.is_for_idv or source.is_for_contract:
+        return file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+
+    if source.is_for_assistance:
+        return file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
+
+    if source.agency_code == "all":
+        agency = "All"
+    else:
+        agency = str(source.agency_code)
+
+    request = json.loads(download_job.json_request)
+    filters = request["filters"]
+    if request.get("limit"):
+        agency = ""
+    else:
+        agency = f"{agency}_"
+    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
+
+    return file_name_pattern.format(
+        agency=agency,
+        data_quarters=construct_data_date_range(filters),
+        level=d_map[source.file_type],
+        timestamp=timestamp,
+        type=d_map[source.file_type],
+    )
 
 
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
