@@ -221,7 +221,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
     """Write to delimited text file(s) and zip file(s) using the source data"""
     export_function = generate_default_export_query
-    if not download_job or not download_job.monthly_download:
+    if source and source.source_type in VALUE_MAPPINGS:
         export_function = VALUE_MAPPINGS[source.source_type].get("export_query_function") or export_function
 
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
