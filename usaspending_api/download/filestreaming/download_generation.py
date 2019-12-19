@@ -105,7 +105,7 @@ def generate_download(download_job):
             start_uploading = time.perf_counter()
             multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(
-                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job,
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
             )
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
@@ -177,26 +177,18 @@ def get_download_sources(json_request):
     return download_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
-    """Write to delimited text file(s) and zip file(s) using the source data"""
-    d_map = {
-        "d1": "Contracts",
-        "d2": "Assistance",
-        "treasury_account": "TAS",
-        "federal_account": "FA",
-    }
-    export_function = generate_default_export_query
+def build_data_file_name(source, download_job, piid, assistance_id):
+    d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
-        source_name = strip_file_extension(download_job.file_name)
+        data_file_name = strip_file_extension(download_job.file_name)
     else:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        export_function = VALUE_MAPPINGS[source.source_type].get("export_query_function") or export_function
         if source.is_for_idv or source.is_for_contract:
-            source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+            data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
         elif source.is_for_assistance:
-            source_name = file_name_pattern.format(
+            data_file_name = file_name_pattern.format(
                 assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
             )
         else:
@@ -212,19 +204,29 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
             else:
                 agency = f"{agency}_"
             timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
-            source_name = file_name_pattern.format(
+            data_file_name = file_name_pattern.format(
                 agency=agency,
                 data_quarters=construct_data_date_range(filters),
                 level=d_map[source.file_type],
                 timestamp=timestamp,
                 type=d_map[source.file_type],
             )
+    return data_file_name
+
+
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
+    """Write to delimited text file(s) and zip file(s) using the source data"""
+    export_function = generate_default_export_query
+    if not download_job or not download_job.monthly_download:
+        export_function = VALUE_MAPPINGS[source.source_type].get("export_query_function") or export_function
+
+    data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
     source_query = source.row_emitter(columns)
-    source.file_name = f"{source_name}.{extension}"
+    source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(message=f"Preparing to download data as {source_name}", download_job=download_job)
+    write_to_log(message=f"Preparing to download data as {data_file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
     export_query = generate_export_query(source_query, limit, source, columns, extension, export_function)
@@ -253,7 +255,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_data_files, args=(zip_file_path, source_path, source_name, extension, download_job)
+            target=split_and_zip_data_files, args=(zip_file_path, source_path, data_file_name, extension, download_job)
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -266,14 +268,14 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_data_files(zip_file_path, source_path, source_name, extension, download_job=None):
+def split_and_zip_data_files(zip_file_path, source_path, data_file_name, extension, download_job=None):
     try:
         # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
         delim = FILE_FORMATS[extension]["delimiter"]
 
-        output_template = f"{source_name}_%s.{extension}"
+        output_template = f"{data_file_name}_%s.{extension}"
         write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
         list_of_files = partition_large_delimited_file(
             file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
@@ -290,7 +292,7 @@ def split_and_zip_data_files(zip_file_path, source_path, source_name, extension,
 
         if download_job:
             write_to_log(
-                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job,
+                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
             )
 
     except Exception as e:
@@ -343,9 +345,7 @@ def wait_for_process(process, start_time, download_job):
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
-                message=f"Attempting to terminate process (pid {process.pid})",
-                download_job=download_job,
-                is_error=True,
+                message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
             )
             process.terminate()
             e = TimeoutError(
@@ -441,7 +441,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
         duration = time.perf_counter() - log_time
         write_to_log(
-            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job,
+            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
         )
     except Exception as e:
         if not settings.IS_LOCAL:
