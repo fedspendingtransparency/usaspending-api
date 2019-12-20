@@ -243,9 +243,15 @@ def matview_search_filter(filters, model, for_downloads=False):
         elif key == "award_ids":
             filter_obj = Q()
             for val in value:
-                # award_id_string is a Postgres TS_vector
-                # award_id_string = piid + fain + uri
-                filter_obj |= Q(award_ts_vector=val)
+                # DEV-3843 asks that, if an award ID is surrounded by quotes, we perform an exact
+                # match.  To this end, if val is surrounded by quotes, perform the full text search
+                # for performance reasons, but also filter the results by exact match on piid, fain,
+                # or uri.
+                if val and val.startswith('"') and val.endswith('"'):
+                    val = val[1:-1]  # Strip off the quotes.
+                    filter_obj |= Q(award_ts_vector=val) & (Q(piid=val) | Q(fain=val) | Q(uri=val))
+                else:
+                    filter_obj |= Q(award_ts_vector=val)
             queryset = queryset.filter(filter_obj)
 
         elif key == "program_numbers":
