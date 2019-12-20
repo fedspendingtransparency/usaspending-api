@@ -113,18 +113,9 @@ class Command(BaseCommand):
             raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
 
 
-def retrieve_transaction_index_template():
+def retrieve_index_template(template):
     """This function is used for test configuration"""
-    with open(str(FILES["transaction_template"])) as f:
-        mapping_dict = json.load(f)
-        template = json.dumps(mapping_dict)
-
-    return template
-
-
-def retrieve_award_index_template():
-    """This function is used for test configuration"""
-    with open(str(FILES["award_template"])) as f:
+    with open(str(FILES[template])) as f:
         mapping_dict = json.load(f)
         template = json.dumps(mapping_dict)
 

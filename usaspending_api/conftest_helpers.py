@@ -10,8 +10,7 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
 from usaspending_api.etl.management.commands.es_configure import (
-    retrieve_transaction_index_template,
-    retrieve_award_index_template,
+    retrieve_index_template
 )
 
 
@@ -26,9 +25,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = (
-            retrieve_transaction_index_template() if self.type == "transactions" else retrieve_award_index_template()
-        )
+        self.template = retrieve_index_template("{}_template".format(self.type[:-1]))
         self.mappings = json.loads(self.template)["mappings"]
         self.doc_type = str(list(self.mappings.keys())[0])
 
