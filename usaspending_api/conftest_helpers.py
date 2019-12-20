@@ -5,7 +5,10 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
+from pathlib import Path
 from string import Template
+
+from usaspending_api.common.sqs.sqs_handler import FAKE_QUEUE
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
@@ -135,3 +138,14 @@ def ensure_broker_server_dblink_exists():
         # Ensure foreign server setup to point to the broker DB for dblink to work
         broker_server_script_template = Template(broker_server_script)
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
+
+
+def remove_local_queue_data_files():
+    """Delete any local files created to persist or access file-backed queue data from ``FakeFileBackedSQSQueue``"""
+    queue_data_file = FAKE_QUEUE._QUEUE_DATA_FILE
+    lock_file_path = Path(queue_data_file + ".lock")
+    if lock_file_path.exists():
+        lock_file_path.unlink()
+    queue_data_file_path = Path(queue_data_file)
+    if queue_data_file_path.exists():
+        queue_data_file_path.unlink()
