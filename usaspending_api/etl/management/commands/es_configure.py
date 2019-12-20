@@ -79,7 +79,7 @@ class Command(BaseCommand):
 
     def get_elasticsearch_settings(self):
         es_config = self.return_json_from_file(FILES["settings"])
-        es_config["settings"]["index.max_result_window"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+        es_config["settings"]["index.max_result_window"] = self.max_result_window
         return es_config["cluster"], es_config["settings"]
 
     def get_index_template(self):
