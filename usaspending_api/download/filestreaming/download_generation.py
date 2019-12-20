@@ -22,7 +22,7 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
-from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file, write_files_to_zip_file
 from usaspending_api.download.helpers import (
     verify_requested_columns_available,
     multipart_upload,
@@ -282,7 +282,7 @@ def split_and_zip_data_files(zip_file_path, source_path, source_name, extension,
         # Zip the split files into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
-        append_files_to_zip_file(list_of_files, zip_file_path)
+        write_files_to_zip_file(list_of_files, zip_file_path)
 
         if download_job:
             write_to_log(

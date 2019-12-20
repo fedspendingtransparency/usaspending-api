@@ -1,185 +1,124 @@
-import botocore
-import os
-import signal
+import logging
 import time
+import traceback
 
-from multiprocessing import Process
-
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.download.download_exceptions import FatalError
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.sqs.sqs_work_dispatcher import SQSWorkDispatcher, QueueWorkerProcessError
 from usaspending_api.download.filestreaming.download_generation import generate_download
-from usaspending_api.download.helpers import write_to_download_log as write_to_log
+from usaspending_api.common.sqs.sqs_job_logging import log_job_message
+from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
-BSD_SIGNALS = {
-    1: "SIGHUP [1] (Hangup detected on controlling terminal or death of controlling process)",
-    2: "SIGINT [2] (Interrupt from keyboard)",
-    3: "SIGQUIT [3] (Quit from keyboard)",
-    4: "SIGILL [4] (Illegal Instruction)",
-    6: "SIGABRT [6] (Abort signal from abort(3))",
-    8: "SIGFPE [8] (Floating point exception)",
-    9: "SIGKILL [9] (non-catchable, non-ignorable kill)",
-    11: "SIGSEGV [11] (Invalid memory reference)",
-    14: "SIGALRM [12] (Timer signal from alarm(2))",
-    15: "SIGTERM [15] (software termination signal)",
-}
-current_message = None
-DEFAULT_VISIBILITY_TIMEOUT = 60
-LONG_POLL_SECONDS = 10
-MONITOR_SLEEP_TIME = 5  # This needs to be less than DEFAULT_VISIBILITY_TIMEOUT
+logger = logging.getLogger(__name__)
+JOB_TYPE = "USAspendingDownloader"
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        if MONITOR_SLEEP_TIME >= DEFAULT_VISIBILITY_TIMEOUT:
-            msg = "MONITOR_SLEEP_TIME must be less than DEFAULT_VISIBILITY_TIMEOUT. Otherwise job duplication can occur"
-            raise Exception(msg)
-        for sig in [signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]:
-            signal.signal(sig, signal_handler)  # route signal handling to custom function
-        download_service_manager()
+        queue = get_sqs_queue()
 
-
-def signal_handler(signum, frame):
-    """
-        Custom handler code to execute when the process receives a signal.
-        Allows the script to update/release jobs and then gracefully exit.
-    """
-    # If the signal is in BSD_SIGNALS, use the human-readable string, otherwise use the signal value
-    signal_or_human = BSD_SIGNALS.get(signum, signum)
-    write_to_log({"message": "Received signal ({}). Gracefully stopping Download Job".format(signal_or_human)})
-    surrender_sqs_message_to_other_clients(current_message)
-    raise SystemExit  # quietly end parent process
-
-
-def download_service_manager():
-    global current_message
-
-    while True:
-        current_message = poll_queue(long_poll_time=LONG_POLL_SECONDS)
-
-        if not current_message:
-            continue
-
-        download_job_id = int(current_message.body)
-
-        write_to_log(message="Message Received: {}".format(current_message))
-        download_app = create_and_start_new_process(download_job_id)
-
-        monitor_process = True
-        while monitor_process:
-            monitor_process = False
-            if download_app.is_alive():
-                # Monitor process. Send heartbeats to SQS
-                set_sqs_message_visibility(current_message, DEFAULT_VISIBILITY_TIMEOUT)
-                time.sleep(MONITOR_SLEEP_TIME)
-                monitor_process = True
-            elif download_app.exitcode == 0:  # If process exits with 0: success! Remove from queue
-                remove_message_from_sqs(current_message)
-                current_message = None
-            elif download_app.exitcode > 0:  # If process exits with positive code, there was an error. Don't retry
-                write_to_log(
-                    message="Download Job ({}) Process existed with {}.".format(download_job_id, download_app.exitcode)
-                )
-                update_download_record(download_job_id, "failed")
-            elif download_app.exitcode < 0:
-                """ If process exits with a negative code, process was terminated by a signal since
-                a Python subprocess returns the negative value of the signal.
-                If the signal is in BSD_SIGNALS, use the human-readable string, otherwise use the signal value"""
-                signum = download_app.exitcode * -1
-                signal_or_human = BSD_SIGNALS.get(signum, signum)
-                write_to_log(
-                    message="Download Job ({}) Process existed with {}.".format(download_job_id, signal_or_human)
-                )
-                update_download_record(download_job_id, "ready")
-                surrender_sqs_message_to_other_clients(current_message)
-                time.sleep(MONITOR_SLEEP_TIME)  # Wait. System might be shutting down.
-
-
-def poll_queue(long_poll_time):
-    # Future TODO: allow different types of queues (redis, etc)
-    return poll_sqs_for_message(settings.BULK_DOWNLOAD_SQS_QUEUE_NAME, long_poll_time)
-
-
-def poll_sqs_for_message(queue_name, wait_time):
-    """ Returns 0 or 1 message from the queue"""
-    try:
-        queue = get_sqs_queue_resource(queue_name=queue_name)
-        sqs_message = queue.receive_messages(
-            WaitTimeSeconds=wait_time,
-            MessageAttributeNames=["All"],
-            VisibilityTimeout=DEFAULT_VISIBILITY_TIMEOUT,
-            MaxNumberOfMessages=1,
+        log_job_message(
+            logger=logger, message="Starting SQS polling", job_type=JOB_TYPE,
         )
-    except botocore.exceptions.ClientError:
-        write_to_log(message="SQS connection issue. Investigate settings", is_error=True)
-        raise SystemExit(1)
+        keep_polling = True
+        while keep_polling:
+            # Setup dispatcher that coordinates job activity on SQS
+            dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True,)
 
-    return sqs_message[0] if sqs_message else None
+            try:
 
+                # Check the queue for work
+                message_found = dispatcher.dispatch(download_service_app)
 
-def create_and_start_new_process(download_job_id):
-    download_app = Process(
-        name="Download Service Worker Proccess", target=download_service_app, args=(download_job_id,)
-    )
-    download_app.start()
+                # Mark the job as failed if there was an error processing the download, if retries after interrupt
+                # are not allowed, or if all retries have been exhausted
+                # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
+                # handle this case
+                # Retries are allowed or denied by the SQS queue's RedrivePolicy config (maxReceiveCount > 1 = retries)
+                # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
+                # - As coded, no cleanup should be needed to retry a download
+                #   - the psql -o will overwrite the output file
+                #   - the zip will use 'w' write mode to create from scratch each time
+                # The worker function controls the maximum allowed runtime of the job
 
-    return download_app
+            except QueueWorkerProcessError as exc:
+                # This means an error occurred in the job-processing code
+                # Try to mark the job as failed, but continue raising the original Exception if not possible
+                # This has likely already been set on the job from within error-handling code of the target of the
+                # worker process, but this is here to for redundancy. Do not set an error
+                try:
+                    if exc.queue_message and exc.queue_message.body:
+                        download_job_id = int(exc.queue_message.body)
+                        stack_trace = "".join(
+                            traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+                        )
+                        _update_download_job_status(download_job_id, "failed", stack_trace)
+                except:
+                    pass
+                raise exc
+
+            # When you receive an empty response from the queue, wait before trying again
+            if not message_found:
+                time.sleep(1)
+
+            # If this process is exiting, don't poll for more work
+            keep_polling = not dispatcher.is_exiting
 
 
 def download_service_app(download_job_id):
-    download_job = retrieve_download_job_from_db(download_job_id)
-    write_to_log(message="Starting new Download Service App with pid {}".format(os.getpid()), download_job=download_job)
-
-    # Retrieve the data and write to the data files
-    try:
-        generate_download(download_job=download_job)
-    except Exception:
-        write_to_log(message="Caught exception", download_job=download_job, is_error=True)
-        return 11  # arbitrary positive integer
-
-    return 0
+    download_job = _retrieve_download_job_from_db(download_job_id)
+    log_job_message(
+        logger=logger,
+        message="Starting processing of download request",
+        job_type=JOB_TYPE,
+        job_id=download_job_id,
+        other_params=download_job_to_log_dict(download_job),
+    )
+    generate_download(download_job=download_job)
 
 
-def remove_message_from_sqs(message):
-    if message is None:
-        return
-    try:
-        message.delete()
-    except Exception:
-        write_to_log(message="Unable to delete SQS message. Message might have previously been released or removed")
-
-
-def set_sqs_message_visibility(message, new_visibility):
-    if message is None:
-        write_to_log(message="No SQS message to modify. Message might have previously been released or removed")
-        return
-    try:
-        message.change_visibility(VisibilityTimeout=new_visibility)
-    except botocore.exceptions.ClientError:
-        write_to_log(message="Unable to set VisibilityTimeout. Message might have previously been released or removed")
-
-
-def surrender_sqs_message_to_other_clients(message):
-    # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
-    set_sqs_message_visibility(message, 0)
-
-
-def retrieve_download_job_from_db(download_job_id):
+def _retrieve_download_job_from_db(download_job_id):
     download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
+
     if download_job is None:
-        raise FatalError("Download Job {} record missing in DB!".format(download_job_id))
+        raise DownloadJobNoneError(download_job_id)
+
     return download_job
 
 
-def update_download_record(download_job_id, status, error_message=None):
-    download_job = retrieve_download_job_from_db(download_job_id)
+def _update_download_job_status(download_job_id, status, error_message=None, overwrite_error_message=False):
+    """Handles status updates on the DownloadJob records
+
+    Args:
+        download_job_id (int): id of the DownloadJob record being processed
+        status (str): a status key to JOB_STATUS_DICT dictionary
+        error_message (str): error message to potentially apply to the DownloadJob record if
+            ``overwrite_error_message`` is True or if there is no prior error message on the record
+        overwrite_error_message (bool): if explicitly set to True, and error_message is not None, the provided error
+            message will overwrite an existing error message on the DownloadJob object. By default it will not.
+    """
+    download_job = _retrieve_download_job_from_db(download_job_id)
 
     download_job.job_status_id = JOB_STATUS_DICT[status]
-    if error_message:
-        download_job.error_message = str(error_message)
+    if overwrite_error_message or (error_message and not download_job.error_message):
+        download_job.error_message = str(error_message) if error_message else None
 
     download_job.save()
+
+
+class DownloadJobNoneError(ValueError):
+    """ Custom fatal exception representing the scenario where the DownloadJob object to be processed does not
+        exist in the database with the given ID.
+    """
+
+    def __init__(self, download_job_id, *args, **kwargs):
+        default_message = f"DownloadJob with id = {download_job_id} was not found in the database."
+
+        if args or kwargs:
+            super().__init__(*args, **kwargs)
+        else:
+            super().__init__(default_message)
+        self.download_job_id = download_job_id

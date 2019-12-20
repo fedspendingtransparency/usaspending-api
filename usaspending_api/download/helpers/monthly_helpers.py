@@ -19,19 +19,23 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
     transfer.upload_file(source_path, bucketname, os.path.basename(keyname))
 
 
-def write_to_download_log(message, download_job=None, is_debug=False, is_error=False, other_params={}):
+def write_to_download_log(
+        message,
+        message_type="USAspendingDownloader",
+        download_job=None,
+        is_debug=False,
+        is_error=False,
+        other_params=None,
+):
     """Handles logging for the downloader instance"""
+    if not other_params:
+        other_params = {}
     if settings.IS_LOCAL:
         log_dict = message
     else:
-        log_dict = {"message": message, "message_type": "USAspendingDownloader"}
+        log_dict = {"message": message, "message_type": message_type}
 
-        if download_job:
-            log_dict["download_job_id"] = download_job.download_job_id
-            log_dict["file_name"] = download_job.file_name
-            log_dict["json_request"] = download_job.json_request
-            if download_job.error_message:
-                log_dict["error_message"] = download_job.error_message
+        download_job_to_log_dict(download_job, log_dict)
 
         for param in other_params:
             if param not in log_dict:
@@ -43,6 +47,18 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
         logger.debug(log_dict)
     else:
         logger.info(log_dict)
+
+
+def download_job_to_log_dict(download_job, log_dict=None):
+    if not log_dict:
+        log_dict = {}
+    if download_job:
+        log_dict["download_job_id"] = download_job.download_job_id
+        log_dict["file_name"] = download_job.file_name
+        log_dict["json_request"] = download_job.json_request
+        if download_job.error_message:
+            log_dict["error_message"] = download_job.error_message
+    return log_dict
 
 
 def pull_modified_agencies_cgacs():

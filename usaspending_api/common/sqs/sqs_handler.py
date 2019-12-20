@@ -173,6 +173,12 @@ class FakeSQSMessage:
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
+    def __str__(self):
+        return (
+            f"FakeSQSMessage(queue_url={self.queue_url}, receipt_handle={self.receipt_handle}, "
+            f"body={self.body}, attributes={self.attributes}, message_attributes={self.message_attributes})"
+        )
+
     def delete(self):
         FAKE_QUEUE._remove(self)
 

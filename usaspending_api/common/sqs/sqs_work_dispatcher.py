@@ -2,6 +2,7 @@ import logging
 import inspect
 import json
 import os
+from abc import ABC, ABCMeta, abstractmethod
 
 import psutil as ps
 import signal
@@ -121,7 +122,9 @@ class SQSWorkDispatcher:
                 "_monitor_sleep_time must be less than _default_visibility_timeout. "
                 "Otherwise job duplication can occur"
             )
-            raise QueueWorkDispatcherError(msg)
+            raise QueueWorkDispatcherError(
+                msg, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
+            )
 
         # Map handler functions for each of the exit signals we want to handle on the parent dispatcher process
         for sig in self.EXIT_SIGNALS:
@@ -465,14 +468,16 @@ class SQSWorkDispatcher:
             self._current_sqs_message.delete()
             self._current_sqs_message = None
         except Exception as exc:
-            log_job_message(
-                logger=self._logger,
-                message="Unable to delete SQS message from queue. "
-                "Message might have previously been deleted upon completion or failure",
-                job_type=self.worker_process_name,
-                is_exception=True,
+            message = (
+                "Unable to delete SQS message from queue. "
+                "Message might have previously been deleted upon completion or failure"
             )
-            raise QueueWorkDispatcherError() from exc
+            log_job_message(
+                logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True,
+            )
+            raise QueueWorkDispatcherError(
+                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+            ) from exc
 
     def surrender_message_to_other_consumers(self, delay=0):
         """ Return the message back into its original queue for other consumers to process it.
@@ -539,7 +544,9 @@ class SQSWorkDispatcher:
                     "retrieved with this queue.".format(self.sqs_queue_instance)
                 )
                 log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_error=True)
-                raise QueueWorkDispatcherError(error)
+                raise QueueWorkDispatcherError(
+                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
+                )
 
             redrive_json = json.loads(redrive_policy)
             dlq_arn = redrive_json.get("deadLetterTargetArn")
@@ -550,7 +557,9 @@ class SQSWorkDispatcher:
                     'for SQS queue "{}"'.format(self.sqs_queue_instance)
                 )
                 log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_error=True)
-                raise QueueWorkDispatcherError(error)
+                raise QueueWorkDispatcherError(
+                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
+                )
             dlq_name = dlq_arn.split(":")[-1]
 
             # Copy the message to the designated dead letter queue
@@ -568,7 +577,9 @@ class SQSWorkDispatcher:
                 "to the dead letter queue [{}].".format(os.getpid(), self._worker_process.pid, dlq_name)
             )
             log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_exception=True)
-            raise QueueWorkDispatcherError(error) from exc
+            raise QueueWorkDispatcherError(
+                error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+            ) from exc
 
         log_job_message(
             logger=self._logger,
@@ -642,7 +653,9 @@ class SQSWorkDispatcher:
                     self._worker_process.pid, self._worker_process.exitcode
                 )
                 log_job_message(logger=self._logger, message=message, job_type=self.worker_process_name, is_error=True)
-                raise QueueWorkerProcessError(message)
+                raise QueueWorkerProcessError(
+                    message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
+                )
             elif self._worker_process.exitcode < 0:
                 # If process exits with a negative code, process was terminated by a signal since
                 # a Python subprocess returns the negative value of the signal.
@@ -839,14 +852,20 @@ class SQSWorkDispatcher:
                         log_job_message(
                             logger=self._logger, message=message, job_type=self.worker_process_name, is_error=True,
                         )
-                        raise QueueWorkDispatcherError(message)
+                        raise QueueWorkDispatcherError(
+                            message,
+                            worker_process_name=self.worker_process_name,
+                            queue_message=self._current_sqs_message,
+                        )
                 except Exception as exc:
                     exit_handling_failed = True
                     message = "Execution of exit_handler failed for unknown reason. See Traceback."
                     log_job_message(
                         logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True,
                     )
-                    raise QueueWorkDispatcherError(message) from exc
+                    raise QueueWorkDispatcherError(
+                        message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                    ) from exc
 
             if self.allow_retries:
                 log_job_message(
@@ -922,7 +941,9 @@ class SQSWorkDispatcher:
                         "Worker process with PID [{}] was not able to complete its job due to "
                         "interruption from exit signal [{}]. The queue message for that job "
                         "was moved to the Dead Letter Queue, where it can be reviewed for a "
-                        "manual restart, or other remediation.".format(self._worker_process.pid, signal_or_human)
+                        "manual restart, or other remediation.".format(self._worker_process.pid, signal_or_human),
+                        worker_process_name=self.worker_process_name,
+                        queue_message=self._current_sqs_message,
                     )
 
     def _set_message_visibility(self, new_visibility):
@@ -954,10 +975,38 @@ class SQSWorkDispatcher:
                 "Message might have previously been deleted upon completion or failure"
             )
             log_job_message(logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True)
-            raise QueueWorkDispatcherError(message) from exc
+            raise QueueWorkDispatcherError(
+                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+            ) from exc
 
 
-class QueueWorkerProcessError(Exception):
+class AbstractQueueError(Exception, metaclass=ABCMeta):
+    """ Abstract base exception representing for error scenarios encountered in the queue dispatcher or worker."""
+
+    def __init__(self, *args, worker_process_name=None, queue_message=None, **kwargs):
+        if not worker_process_name:
+            worker_process_name = "Unknown Worker"
+
+        if queue_message:
+            default_message = (
+                f"Queue processing error with non-zero exit code for worker process"
+                f' "{worker_process_name}" working on message: {queue_message}'
+            )
+        else:
+            default_message = (
+                f"Queue processing error with non-zero exit code for worker process"
+                f' "{worker_process_name}". Queue Message None or not provided.'
+            )
+
+        if args or kwargs:
+            super().__init__(*args, **kwargs)
+        else:
+            super().__init__(default_message)
+        self.worker_process_name = worker_process_name
+        self.queue_message = queue_message
+
+
+class QueueWorkerProcessError(AbstractQueueError):
     """ Custom exception representing the scenario where the spawned worker process has failed
         with a non-zero exit code, indicating some kind of failure.
     """
@@ -965,7 +1014,7 @@ class QueueWorkerProcessError(Exception):
     pass
 
 
-class QueueWorkDispatcherError(Exception):
+class QueueWorkDispatcherError(AbstractQueueError):
     """ Custom exception representing the scenario where the parent process dispatching to and monitoring the worker
         process has failed with some kind of unexpected exception.
     """
