@@ -206,7 +206,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         filters = request["filters"]
         if request.get("limit"):
             agency = ""
-        else:
+        elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
         source_name = file_name_pattern.format(
@@ -221,7 +221,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     source.file_name = f"{source_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(message=f"Preparing to download data as {source_name}", download_job=download_job)
+    write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns, extension)
