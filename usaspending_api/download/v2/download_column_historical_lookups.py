@@ -1359,7 +1359,6 @@ query_paths = {
                     "broker_subaward__place_of_perform_country_na",
                 ),
                 ("prime_award_description", "broker_subaward__award_description"),
-                ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_cfda_number", "broker_subaward__cfda_numbers"),
                 ("prime_award_cfda_title", "broker_subaward__cfda_titles"),
                 ("subaward_type", "broker_subaward__subaward_type"),
