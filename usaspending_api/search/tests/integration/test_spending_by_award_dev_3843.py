@@ -2,7 +2,7 @@ import json
 import pytest
 
 from rest_framework import status
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, Subaward
 
 
 @pytest.fixture
@@ -15,6 +15,26 @@ def award_id_search_data(spending_by_award_test_data):
     Award.objects.filter(id=2).update(piid="abc 111")
     Award.objects.filter(id=3).update(piid="abc       111")
 
+    Subaward.objects.filter(id=1).update(piid="abc111")
+    Subaward.objects.filter(id=2).update(piid="abc111")
+    Subaward.objects.filter(id=3).update(piid="abc 111")
+    Subaward.objects.filter(id=6).update(piid="abc       111")
+
+
+def build_request_data(award_ids, subawards):
+    return json.dumps(
+        {
+            "filters": {
+                "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                "award_type_codes": ["A", "B", "C", "D"],
+                "award_ids": award_ids,
+            },
+            "fields": ["Sub-Award ID" if subawards else "Award ID"],
+            "sort": "Sub-Award ID" if subawards else "Award ID",
+            "subawards": subawards,
+        }
+    )
+
 
 @pytest.mark.django_db
 def test_award_id_search(client, award_id_search_data, refresh_matviews):
@@ -23,20 +43,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     """
     # Control test.  This should return only the one award.
     resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
-                    "award_type_codes": ["A", "B", "C", "D"],
-                    "award_ids": ["abc111"],
-                },
-                "fields": ["Award ID"],
-                "sort": "Award ID",
-                "subawards": False,
-            }
-        ),
+        "/api/v2/search/spending_by_award", content_type="application/json", data=build_request_data(["abc111"], False)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -46,18 +53,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
-                    "award_type_codes": ["A", "B", "C", "D"],
-                    "award_ids": ["abc       111"],
-                },
-                "fields": ["Award ID"],
-                "sort": "Award ID",
-                "subawards": False,
-            }
-        ),
+        data=build_request_data(["abc       111"], False),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -68,18 +64,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
-                    "award_type_codes": ["A", "B", "C", "D"],
-                    "award_ids": ['"abc       111"'],
-                },
-                "fields": ["Award ID"],
-                "sort": "Award ID",
-                "subawards": False,
-            }
-        ),
+        data=build_request_data(['"abc       111"'], False),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -89,18 +74,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
-                    "award_type_codes": ["A", "B", "C", "D"],
-                    "award_ids": ['"abc       111"', "abc111"],
-                },
-                "fields": ["Award ID"],
-                "sort": "Award ID",
-                "subawards": False,
-            }
-        ),
+        data=build_request_data(['"abc       111"', "abc111"], False),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -111,21 +85,20 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
-                    "award_type_codes": ["A", "B", "C", "D"],
-                    "award_ids": ['"abc       111"', '"abc 111"', '"abc111"'],
-                },
-                "fields": ["Award ID"],
-                "sort": "Award ID",
-                "subawards": False,
-            }
-        ),
+        data=build_request_data(['"abc       111"', '"abc 111"', '"abc111"'], False),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 3
     assert resp.data["results"][0]["Award ID"] == "abc111"
     assert resp.data["results"][1]["Award ID"] == "abc 111"
     assert resp.data["results"][2]["Award ID"] == "abc       111"
+
+    # Subaward check.
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=build_request_data(['"abc       111"'], True),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 1
+    assert resp.data["results"][0]["Sub-Award ID"] == "66666"

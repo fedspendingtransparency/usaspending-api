@@ -311,7 +311,8 @@ Request Parameter Description:
 ```
 
 Request parameter description:
-* `award_ids` (List) : Top level key name for filter. Contains list of fains/piids/uris corresponding to Awards.
+* `award_ids` (List) : Top level key name for filter. Contains list of fains/piids/uris corresponding to Awards. Award IDs surrounded by quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
+
 
 ## Award Amount
 
