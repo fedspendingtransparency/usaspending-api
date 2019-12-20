@@ -2,7 +2,7 @@ import logging
 import inspect
 import json
 import os
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import psutil as ps
 import signal

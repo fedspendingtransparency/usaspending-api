@@ -16,7 +16,7 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
     QueueWorkerProcessError,
     QueueWorkDispatcherError,
-    AbstractQueueError)
+)
 from time import sleep
 
 
@@ -1374,8 +1374,8 @@ class SQSWorkDispatcherTests(TestCase):
             (unknown_worker in str(err_ctx1.exception)), f"QueueWorkerProcessError did not mention '{unknown_worker}'."
         )
         self.assertTrue(
-            ("Queue Message None or not provided" in str(err_ctx1.exception)), f"QueueWorkerProcessError did not "
-                                                                               f"mention '{no_queue_message}'.",
+            ("Queue Message None or not provided" in str(err_ctx1.exception)),
+            f"QueueWorkerProcessError did not " f"mention '{no_queue_message}'.",
         )
         self.assertEqual(err_ctx1.exception.worker_process_name, unknown_worker)
         self.assertIsNone(err_ctx1.exception.queue_message)
@@ -1441,9 +1441,7 @@ class SQSWorkDispatcherTests(TestCase):
         def raise_exc_with_qmsg_and_worker_process_name_and_message():
             fake_queue_message.body = 1166
             raise QueueWorkerProcessError(
-                "Custom Message about THIS",
-                worker_process_name="MyJob",
-                queue_message=fake_queue_message,
+                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message,
             )
 
         with self.assertRaises(QueueWorkerProcessError) as err_ctx6:
