@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 from django.core.management.base import BaseCommand
 from pathlib import Path
 from time import perf_counter
@@ -10,8 +11,7 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensur
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
 from usaspending_api.etl.es_etl_helpers import printf
-from usaspending_api.etl.award_rapidloader import AwardRapidloader
-from usaspending_api.etl.transaction_rapidloader import TransactionRapidloader
+from usaspending_api.etl.rapidloader import Rapidloader
 
 
 class Command(BaseCommand):
@@ -109,14 +109,12 @@ class Command(BaseCommand):
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**config)})
 
-        loader = None
-
         if config["type"] == "transactions":
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
-            loader = TransactionRapidloader(config, elasticsearch_client)
         elif config["type"] == "awards":
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
-            loader = AwardRapidloader(config, elasticsearch_client)
+
+        loader = Rapidloader(config, elasticsearch_client)
         loader.run_load_steps()
         loader.complete_process()
 
@@ -125,9 +123,18 @@ class Command(BaseCommand):
         printf({"msg": "---------------------------------------------------------------"})
 
 
-def process_cli_parameters(options: dict, es_client):
+def process_cli_parameters(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
-    simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts", "type")
+    simple_args = (
+        "skip_delete_index",
+        "process_deletes",
+        "create_new_index",
+        "snapshot",
+        "index_name",
+        "directory",
+        "skip_counts",
+        "type",
+    )
     config = set_config(simple_args, options)
 
     config["fiscal_years"] = fiscal_years_for_processing(options)
@@ -138,7 +145,10 @@ def process_cli_parameters(options: dict, es_client):
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = default_datetime
-        check_new_index_name_is_ok(config["index_name"], config["type"])
+        check_new_index_name_is_ok(
+            config["index_name"],
+            settings.ES_AWARDS_NAME_SUFFIX if config["type"] == "awards" else settings.ES_TRANSACTIONS_NAME_SUFFIX,
+        )
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
@@ -188,24 +198,16 @@ def process_cli_parameters(options: dict, es_client):
 
 def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
-    if arg_parse_options["type"] == "transactions":
-        config = {
-            "aws_region": settings.USASPENDING_AWS_REGION,
-            "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-            "root_index": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-            "processing_start_datetime": datetime.now(timezone.utc),
-            "verbose": arg_parse_options["verbosity"]
-            > 1,  # convert the management command's levels of verbosity to a bool
-        }
+    root_index = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
     if arg_parse_options["type"] == "awards":
-        config = {
-            "aws_region": settings.USASPENDING_AWS_REGION,
-            "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-            "root_index": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-            "processing_start_datetime": datetime.now(timezone.utc),
-            "verbose": arg_parse_options["verbosity"]
-            > 1,  # convert the management command's levels of verbosity to a bool
-        }
+        root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
+    config = {
+        "aws_region": settings.USASPENDING_AWS_REGION,
+        "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
+        "root_index": root_index,
+        "processing_start_datetime": datetime.now(timezone.utc),
+        "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
+    }
 
     config.update({k: v for k, v in arg_parse_options.items() if k in copy_args})
     return config
@@ -217,16 +219,6 @@ def fiscal_years_for_processing(options: list) -> list:
     return [int(x) for x in options["fiscal_years"]]
 
 
-def check_new_index_name_is_ok(provided_name: str, type: str) -> None:
-    if type == "transactions":
-        if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_SUFFIX):
-            raise SystemExit(
-                "new index name doesn't end with the expected pattern: '{}'".format(
-                    settings.ES_TRANSACTIONS_NAME_SUFFIX
-                )
-            )
-    if type == "awards":
-        if not provided_name.endswith(settings.ES_AWARDS_NAME_SUFFIX):
-            raise SystemExit(
-                "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_AWARDS_NAME_SUFFIX)
-            )
+def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
+    if not provided_name.endswith(suffix):
+        raise SystemExit("new index name doesn't end with the expected pattern: '{}'".format(suffix))

@@ -3,7 +3,7 @@ import json
 import os
 import pandas as pd
 import psycopg2
-import subprocess
+
 import tempfile
 
 from collections import defaultdict
@@ -274,7 +274,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-    if config["awards"]:
+    if config["type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
         type_fy = ""
@@ -336,7 +336,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "process_deletes": config["process_deletes"],
-                "awards": config["awards"],
+                "type": config["type"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -398,7 +398,7 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        if config["awards"]:
+        if config["type"] == "awards":
             call_command("es_configure", "--template-only", "--type=awards")
         else:
             call_command("es_configure", "--template-only", "--type=transactions")
@@ -420,12 +420,12 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, awards, job_id=None):
+def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
         # "doc_type" is set in the index templete file. Don't change this without changing in json file first
         for ok, item in helpers.streaming_bulk(
-            client, chunk, index=index_name, doc_type="{}_mapping".format("award" if awards else "transaction")
+            client, chunk, index=index_name, doc_type="{}_mapping".format(type[:-1])
         ):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
@@ -442,9 +442,9 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, silent=False, awards=False):
+def create_aliases(client, index, type, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        if awards:
+        if type == "awards":
             alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
         else:
             alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
@@ -464,13 +464,15 @@ def create_aliases(client, index, silent=False, awards=False):
     printf(
         {
             "msg": "Putting alias '{}' on {}".format(
-                settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
+                settings.ES_AWARDS_WRITE_ALIAS if type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
             ),
             "job": None,
             "f": "ES Alias Put",
         }
     )
-    put_alias(client, index, settings.ES_AWARDS_WRITE_ALIAS if awards else settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
+    put_alias(
+        client, index, settings.ES_AWARDS_WRITE_ALIAS if type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS, {}
+    )
 
 
 def set_final_index_config(client, index):
@@ -488,11 +490,11 @@ def set_final_index_config(client, index):
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def swap_aliases(client, index, awards=False):
+def swap_aliases(client, index, type):
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
-    if awards:
+    if type == "awards":
         alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
     else:
         alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
@@ -506,7 +508,7 @@ def swap_aliases(client, index, awards=False):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    create_aliases(client, index, awards=awards)
+    create_aliases(client, index, type=type)
 
     try:
         if old_indexes:
@@ -529,14 +531,14 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["awards"])
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
             continue
         iteration = perf_counter()
         if config["process_deletes"]:
-            if config["awards"]:
+            if config["type"] == "awards":
                 id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
                 delete_awards_from_es(client, id_list, job.name, config, job.index)
             else:
@@ -553,7 +555,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, config["awards"], job.name)
+        streaming_post_to_es(client, chunk, job.index, config["type"], job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),

@@ -7,6 +7,7 @@ from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
     DataJob,
     deleted_transactions,
+    deleted_awards,
     download_db_records,
     es_data_loader,
     printf,
@@ -17,11 +18,10 @@ from usaspending_api.etl.es_etl_helpers import (
 )
 
 
-class TransactionRapidloader:
+class Rapidloader:
     def __init__(self, *args):
         """Set values based on env vars and when the script started"""
         self.config = args[0]
-        self.config["awards"] = False
         self.elasticsearch_client = args[1]
 
     def run_load_steps(self) -> None:
@@ -32,7 +32,9 @@ class TransactionRapidloader:
         for fiscal_year in self.config["fiscal_years"]:
             job_number += 1
             index = self.config["index_name"]
-            filename = str(self.config["directory"] / "{fy}_transactions.csv".format(fy=fiscal_year))
+            filename = str(
+                self.config["directory"] / "{fy}_{type}.csv".format(fy=fiscal_year, type=self.config["type"])
+            )
 
             new_job = DataJob(job_number, index, fiscal_year, filename)
 
@@ -42,21 +44,18 @@ class TransactionRapidloader:
 
         printf({"msg": "There are {} jobs to process".format(job_number)})
 
-        process_list = []
-        process_list.append(
+        process_list = [
             Process(
                 name="Download Process",
                 target=download_db_records,
                 args=(download_queue, es_ingest_queue, self.config),
-            )
-        )
-        process_list.append(
+            ),
             Process(
                 name="ES Index Process",
                 target=es_data_loader,
                 args=(self.elasticsearch_client, download_queue, es_ingest_queue, self.config),
-            )
-        )
+            ),
+        ]
 
         process_list[0].start()  # Start Download process
 
@@ -64,7 +63,7 @@ class TransactionRapidloader:
             process_list.append(
                 Process(
                     name="S3 Deleted Records Scrapper Process",
-                    target=deleted_transactions,
+                    target=deleted_transactions if self.cong["type"] == "transactions" else deleted_awards,
                     args=(self.elasticsearch_client, self.config),
                 )
             )
@@ -87,7 +86,7 @@ class TransactionRapidloader:
         if self.config["create_new_index"]:
             printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"], False)
+            swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["type"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})
