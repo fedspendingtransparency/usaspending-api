@@ -281,8 +281,25 @@ LOGGING = {
         "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
+        # The root logger; i.e. "all modules"
+        "": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
-        "console": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        # Catch-all logger (over)used for non-Django-API commands that output to the console
+        "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # Logger used to specifically record exceptions
+        "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
+        # ======== Module-specific loggers ========
+        "usaspending_api.common.sqs": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False
+        },
+        "usaspending_api.download": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False
+        },
     },
 }
 

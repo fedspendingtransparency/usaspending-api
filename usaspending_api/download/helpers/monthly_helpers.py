@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from usaspending_api.references.models import ToptierAgency
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def multipart_upload(bucketname, regionname, source_path, keyname):

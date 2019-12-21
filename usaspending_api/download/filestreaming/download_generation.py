@@ -36,7 +36,7 @@ MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def generate_download(download_job):

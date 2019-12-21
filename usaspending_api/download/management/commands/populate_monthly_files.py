@@ -17,7 +17,7 @@ from usaspending_api.download.v2.request_validations import validate_award_reque
 from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 award_mappings = {
     "contracts": ["contracts", "idvs"],

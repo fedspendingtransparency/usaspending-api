@@ -5,7 +5,11 @@ import traceback
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
-from usaspending_api.common.sqs.sqs_work_dispatcher import SQSWorkDispatcher, QueueWorkerProcessError
+from usaspending_api.common.sqs.sqs_work_dispatcher import (
+    SQSWorkDispatcher,
+    QueueWorkerProcessError,
+    QueueWorkDispatcherError,
+)
 from usaspending_api.download.filestreaming.download_generation import generate_download
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
@@ -19,22 +23,20 @@ JOB_TYPE = "USAspendingDownloader"
 class Command(BaseCommand):
     def handle(self, *args, **options):
         queue = get_sqs_queue()
-
-        log_job_message(
-            logger=logger, message="Starting SQS polling", job_type=JOB_TYPE,
-        )
+        log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
+        message_found = None
         keep_polling = True
         while keep_polling:
             # Setup dispatcher that coordinates job activity on SQS
-            dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True,)
+            dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True)
 
             try:
 
-                # Check the queue for work
+                # Check the queue for work and hand it to the given processing function
                 message_found = dispatcher.dispatch(download_service_app)
 
-                # Mark the job as failed if there was an error processing the download, if retries after interrupt
-                # are not allowed, or if all retries have been exhausted
+                # Mark the job as failed if: there was an error processing the download; retries after interrupt
+                # are not allowed; or all retries have been exhausted
                 # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
                 # handle this case
                 # Retries are allowed or denied by the SQS queue's RedrivePolicy config (maxReceiveCount > 1 = retries)
@@ -44,21 +46,8 @@ class Command(BaseCommand):
                 #   - the zip will use 'w' write mode to create from scratch each time
                 # The worker function controls the maximum allowed runtime of the job
 
-            except QueueWorkerProcessError as exc:
-                # This means an error occurred in the job-processing code
-                # Try to mark the job as failed, but continue raising the original Exception if not possible
-                # This has likely already been set on the job from within error-handling code of the target of the
-                # worker process, but this is here to for redundancy. Do not set an error
-                try:
-                    if exc.queue_message and exc.queue_message.body:
-                        download_job_id = int(exc.queue_message.body)
-                        stack_trace = "".join(
-                            traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
-                        )
-                        _update_download_job_status(download_job_id, "failed", stack_trace)
-                except:
-                    pass
-                raise exc
+            except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
+                _handle_queue_error(exc)
 
             # When you receive an empty response from the queue, wait before trying again
             if not message_found:
@@ -107,6 +96,36 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
         download_job.error_message = str(error_message) if error_message else None
 
     download_job.save()
+
+
+def _handle_queue_error(exc):
+    """Handles exceptions raised when processing a message from the queue.
+
+    It handles two types:
+        QueueWorkerProcessError: an error in the job-processing code
+        QueueWorkDispatcherError: exception raised in the job-processing code
+
+    Try to mark the job as failed, but continue raising the original Exception if not possible
+    This has likely already been set on the job from within error-handling code of the target of the
+    worker process, but this is here to for redundancy
+    """
+    try:
+        download_job_id = None
+        if exc.queue_message and exc.queue_message.body:
+            download_job_id = int(exc.queue_message.body)
+        log_job_message(
+            logger=logger,
+            message=f"{type(exc).__name__} caught. Attempting to fail the DownloadJob",
+            job_type=JOB_TYPE,
+            job_id=download_job_id,
+            is_exception=True,
+        )
+        if download_job_id:
+            stack_trace = "".join(traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__))
+            _update_download_job_status(download_job_id, "failed", stack_trace)
+    except:
+        pass
+    raise exc
 
 
 class DownloadJobNoneError(ValueError):
