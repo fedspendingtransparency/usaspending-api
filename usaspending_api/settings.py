@@ -273,16 +273,16 @@ LOGGING = {
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
-        "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "console": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }
 

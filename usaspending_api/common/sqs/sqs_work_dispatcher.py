@@ -49,7 +49,7 @@ class SQSWorkDispatcher:
 
     """
 
-    _logger = logging.getLogger(__name__)
+    _logger = logging.getLogger("console")
 
     EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
     # NOTE: We are not handling signal.SIGSTOP or signal.SIGTSTP because those are suspensions.
