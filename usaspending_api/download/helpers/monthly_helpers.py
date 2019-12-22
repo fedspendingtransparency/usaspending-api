@@ -20,12 +20,7 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
 
 
 def write_to_download_log(
-        message,
-        message_type="USAspendingDownloader",
-        download_job=None,
-        is_debug=False,
-        is_error=False,
-        other_params=None,
+    message, job_type="USAspendingDownloader", download_job=None, is_debug=False, is_error=False, other_params=None,
 ):
     """Handles logging for the downloader instance"""
     if not other_params:
@@ -33,7 +28,7 @@ def write_to_download_log(
     if settings.IS_LOCAL:
         log_dict = message
     else:
-        log_dict = {"message": message, "message_type": message_type}
+        log_dict = {"message": message}
 
         download_job_to_log_dict(download_job, log_dict)
 
@@ -42,10 +37,13 @@ def write_to_download_log(
                 log_dict[param] = other_params[param]
 
     if is_error:
+        log_dict["message_type"] = f"{job_type}Error"
         logger.exception(log_dict)
     elif is_debug:
+        log_dict["message_type"] = f"{job_type}Debug"
         logger.debug(log_dict)
     else:
+        log_dict["message_type"] = f"{job_type}Info"
         logger.info(log_dict)
 
 
@@ -54,6 +52,7 @@ def download_job_to_log_dict(download_job, log_dict=None):
         log_dict = {}
     if download_job:
         log_dict["download_job_id"] = download_job.download_job_id
+        log_dict["job_id"] = download_job.download_job_id  # to match log structure of generic queued jobs
         log_dict["file_name"] = download_job.file_name
         log_dict["json_request"] = download_job.json_request
         if download_job.error_message:

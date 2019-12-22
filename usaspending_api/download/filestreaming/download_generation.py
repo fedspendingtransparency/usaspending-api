@@ -441,7 +441,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
         if not settings.IS_LOCAL:
-            e.cmd = "[redacted]"
+            e.cmd = "[redacted psql command]"
         logger.error(e)
         # temp file contains '\copy ([SQL]) To STDOUT  ...' so the SQL is 7 chars in up to ' To STDOUT '
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
@@ -449,7 +449,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         raise e
     except Exception as e:
         if not settings.IS_LOCAL:
-            e.cmd = "[redacted]"
+            e.cmd = "[redacted psql command]"
         logger.error(e)
         # temp file contains '\copy ([SQL]) To STDOUT ...' so the SQL is 7 chars in up to ' To STDOUT '
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()

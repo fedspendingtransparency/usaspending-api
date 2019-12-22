@@ -290,16 +290,8 @@ LOGGING = {
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {
-            "handlers": ["console", "console_file"],
-            "level": "DEBUG",
-            "propagate": False
-        },
-        "usaspending_api.download": {
-            "handlers": ["console", "console_file"],
-            "level": "DEBUG",
-            "propagate": False
-        },
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }
 
