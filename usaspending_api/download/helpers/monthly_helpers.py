@@ -3,7 +3,6 @@ import logging
 import math
 import os
 
-from django.conf import settings
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
