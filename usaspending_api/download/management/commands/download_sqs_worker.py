@@ -122,8 +122,16 @@ def _handle_queue_error(exc):
         )
         if download_job_id:
             stack_trace = "".join(traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__))
-            _update_download_job_status(download_job_id, "failed", stack_trace)
-    except:
+            status = "failed"
+            _update_download_job_status(download_job_id, status, stack_trace)
+            log_job_message(
+                logger=logger,
+                message=f"Marked DownloadJob with id = {download_job_id} as {status}",
+                job_type=JOB_TYPE,
+                job_id=download_job_id,
+                is_exception=True,
+            )
+    except:  # noqa
         pass
     raise exc
 

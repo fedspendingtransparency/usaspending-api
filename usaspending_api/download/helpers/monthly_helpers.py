@@ -25,16 +25,14 @@ def write_to_download_log(
     """Handles logging for the downloader instance"""
     if not other_params:
         other_params = {}
-    if settings.IS_LOCAL:
-        log_dict = message
-    else:
-        log_dict = {"message": message}
 
-        download_job_to_log_dict(download_job, log_dict)
+    log_dict = {"message": message}
 
-        for param in other_params:
-            if param not in log_dict:
-                log_dict[param] = other_params[param]
+    download_job_to_log_dict(download_job, log_dict)
+
+    for param in other_params:
+        if param not in log_dict:
+            log_dict[param] = other_params[param]
 
     if is_error:
         log_dict["message_type"] = f"{job_type}Error"
