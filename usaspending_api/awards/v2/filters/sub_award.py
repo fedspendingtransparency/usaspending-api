@@ -7,7 +7,7 @@ from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers import build_tas_codes_filter
+from usaspending_api.search.helpers import build_tas_codes_filter, build_award_ids_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -206,12 +206,7 @@ def subaward_filter(filters, for_downloads=False):
             queryset &= total_obligation_queryset(value, SubawardView, filters)
 
         elif key == "award_ids":
-            filter_obj = Q()
-            for val in value:
-                # award_id_string is a Postgres TS_vector
-                # award_id_string = piid + fain + uri + subaward_number
-                filter_obj |= Q(award_ts_vector=val)
-            queryset = queryset.filter(filter_obj)
+            queryset = build_award_ids_filter(queryset, value, ("piid", "fain"))
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
