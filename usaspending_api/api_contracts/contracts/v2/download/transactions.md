@@ -67,7 +67,7 @@ This route sends a request to the backend to begin generating a zipfile of trans
 ### Filters (object)
 + `award_amounts` (optional, array[AwardAmount], fixed-type)
 + `award_ids` (optional, array[string])
-    Award IDs surrounded by quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
+    Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_type_codes` (optional, array[string])
 + `agencies` (optional, array[Agency], fixed-type)
 + `contract_pricing_type_codes` (optional, array[string])

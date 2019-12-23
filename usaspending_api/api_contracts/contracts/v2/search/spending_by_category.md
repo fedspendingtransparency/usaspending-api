@@ -86,7 +86,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `recipient_type_names`: `category_business` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
-    Award IDs surrounded by quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
+    Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes`: `311812` (optional, array[string])
