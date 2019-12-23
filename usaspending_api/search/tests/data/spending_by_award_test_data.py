@@ -8,10 +8,6 @@ from usaspending_api.references.models.ref_program_activity import RefProgramAct
 @pytest.fixture
 def spending_by_award_test_data():
 
-    mommy.make("references.LegalEntity", legal_entity_id=1001)
-    mommy.make("references.LegalEntity", legal_entity_id=1002)
-    mommy.make("references.LegalEntity", legal_entity_id=1003)
-
     mommy.make(
         "recipient.RecipientLookup",
         id=1001,
@@ -65,7 +61,6 @@ def spending_by_award_test_data():
         type="A",
         category="contract",
         piid="abc111",
-        recipient_id=1001,
         earliest_transaction_id=1,
         latest_transaction_id=2,
         generated_unique_award_id="CONT_AWD_TESTING_1",
@@ -77,7 +72,6 @@ def spending_by_award_test_data():
         type="A",
         category="contract",
         piid="abc222",
-        recipient_id=1002,
         earliest_transaction_id=3,
         latest_transaction_id=3,
         generated_unique_award_id="CONT_AWD_TESTING_2",
@@ -89,7 +83,6 @@ def spending_by_award_test_data():
         type="A",
         category="contract",
         piid="abc333",
-        recipient_id=1003,
         earliest_transaction_id=4,
         latest_transaction_id=6,
         generated_unique_award_id="CONT_AWD_TESTING_3",
