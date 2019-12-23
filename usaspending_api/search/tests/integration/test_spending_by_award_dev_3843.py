@@ -57,8 +57,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert resp.data["results"][0]["Award ID"] == "abc 111"
-    assert resp.data["results"][1]["Award ID"] == "abc       111"
+    assert {resp.data["results"][0]["Award ID"], resp.data["results"][1]["Award ID"]} == {"abc 111", "abc       111"}
 
     # The new DEV-3843 behavior.  Should return only the exact match.
     resp = client.post(
@@ -78,8 +77,7 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert resp.data["results"][0]["Award ID"] == "abc111"
-    assert resp.data["results"][1]["Award ID"] == "abc       111"
+    assert {resp.data["results"][0]["Award ID"], resp.data["results"][1]["Award ID"]} == {"abc111", "abc       111"}
 
     # And finally, everything by exact match.
     resp = client.post(
@@ -89,9 +87,11 @@ def test_award_id_search(client, award_id_search_data, refresh_matviews):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 3
-    assert resp.data["results"][0]["Award ID"] == "abc111"
-    assert resp.data["results"][1]["Award ID"] == "abc 111"
-    assert resp.data["results"][2]["Award ID"] == "abc       111"
+    assert {
+        resp.data["results"][0]["Award ID"],
+        resp.data["results"][1]["Award ID"],
+        resp.data["results"][2]["Award ID"],
+    } == {"abc111", "abc 111", "abc       111"}
 
     # Subaward check.
     resp = client.post(
