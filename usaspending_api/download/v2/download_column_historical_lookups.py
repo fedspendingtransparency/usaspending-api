@@ -1359,7 +1359,6 @@ query_paths = {
                     "broker_subaward__place_of_perform_country_na",
                 ),
                 ("prime_award_description", "broker_subaward__award_description"),
-                ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_cfda_number", "broker_subaward__cfda_numbers"),
                 ("prime_award_cfda_title", "broker_subaward__cfda_titles"),
                 ("subaward_type", "broker_subaward__subaward_type"),
@@ -1585,7 +1584,7 @@ query_paths = {
     "award_financial": {
         "treasury_account": OrderedDict(
             [
-                ("submission_period", "reporting_period_end"),
+                ("submission_period", "submission_period"),  # Column is appended to in account_download.py
                 ("allocation_transfer_agency_identifier", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -1649,7 +1648,7 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("submission_period", "reporting_period_end"),
+                ("submission_period", "submission_period"),  # Column is appended to in account_download.py
                 ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_name", "agency_name"),  # Column is appended to in account_download.py

@@ -34,6 +34,7 @@ def validate_award_request(request_data):
     json_request = {"download_types": award_levels, "filters": {}}
 
     # Set defaults of non-required parameters
+    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
     json_request["columns"] = request_data.get("columns", [])
     json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
 
@@ -193,6 +194,7 @@ def validate_account_request(request_data):
         raise InvalidParameterException("Invalid Parameter: submission_type must be {}".format(valid_submissions))
 
     json_request["download_types"] = [filters["submission_type"]]
+    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
