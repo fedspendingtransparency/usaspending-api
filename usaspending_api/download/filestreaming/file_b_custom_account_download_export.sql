@@ -1,12 +1,12 @@
 -- Connections are pooled which means it's possible for temporary tables to survive beyond what we
 -- would typically consider a "session".  Drop the temporary table just to be safe.
-drop table if exists temp_file_b_custom_account_download_cleanup;
+drop table if exists {temp_table};
 
 
 -- Add a row number (effectively a unique, surrogate id) to our normal download query and stuff it
 -- into a temporary table.
 create temporary table
-    temp_file_b_custom_account_download_cleanup
+    {temp_table}
 as select
     row_number() over () as rownumber,
     t.*
@@ -19,15 +19,15 @@ from
 -- This significantly sped up subsequent queries for certain criteria. For example, the TAS query
 -- for all of 2018 went from 1.5 minutes to 30 seconds.
 create
-index   temp_file_b_custom_account_download_cleanup_index
-on      temp_file_b_custom_account_download_cleanup ({tas_or_fas});
+index   {temp_table}_index
+on      {temp_table} ({tas_or_fas});
 
 
 -- "is distinct from" can be terribly inefficient.  As an example, the delete query further down
 -- below took 45 seconds using "is (not) distinct from" and only 500 milliseconds using equals
 -- for all TAS for 2018.  Since, in this context, nulls and ""s are functionally equivalent, let's
 -- just replace all nulls with ""s on join columns to speed up queries.
-update  temp_file_b_custom_account_download_cleanup
+update  {temp_table}
 
 set     {tas_or_fas} = coalesce({tas_or_fas}, ''),
         object_class_code = coalesce(object_class_code, ''),
@@ -71,7 +71,7 @@ calculate_rollups as (
         sum(deobligations_or_recoveries_or_refunds_from_prior_year) as deobligations_or_recoveries_or_refunds_from_prior_year,
         sum(gross_outlay_amount) as gross_outlay_amount
     from
-        temp_file_b_custom_account_download_cleanup
+        {temp_table}
     where
         '{tas_or_fas}' = 'federal_account_symbol'
     group by
@@ -87,7 +87,7 @@ calculate_rollups as (
 
 update_rollups as (
     update
-        temp_file_b_custom_account_download_cleanup as keeper
+        {temp_table} as keeper
     set
         last_reported_submission_period = rollups.last_reported_submission_period,
         obligations_incurred = rollups.obligations_incurred,
@@ -107,7 +107,7 @@ update_rollups as (
 )
 
 delete
-from    temp_file_b_custom_account_download_cleanup as t
+from    {temp_table} as t
 using   update_rollups as r
 where   t.{tas_or_fas} = r.{tas_or_fas} and
         t.object_class_code = r.object_class_code and
@@ -120,10 +120,10 @@ where   t.{tas_or_fas} = r.{tas_or_fas} and
 -- Delete $0 rows where the {tas_or_fas} in question is represented elsewhere with a
 -- non $0 row.  A $0 row is one where all of the dollar figures are $0.
 delete
-from    temp_file_b_custom_account_download_cleanup as t
+from    {temp_table} as t
 where   exists (
             select
-            from    temp_file_b_custom_account_download_cleanup as n
+            from    {temp_table} as n
             where   n.{tas_or_fas} = t.{tas_or_fas} and (
                         obligations_incurred != 0 or
                         deobligations_or_recoveries_or_refunds_from_prior_year != 0 or
@@ -151,14 +151,14 @@ sorted_zero_sums as (
                                 budget_subfunction,
                                 direct_or_reimbursable_funding_source
             ) as ordinal
-    from    temp_file_b_custom_account_download_cleanup
+    from    {temp_table}
     where   obligations_incurred = 0 and
             deobligations_or_recoveries_or_refunds_from_prior_year = 0 and
             gross_outlay_amount = 0
 )
 
 delete
-from    temp_file_b_custom_account_download_cleanup as t
+from    {temp_table} as t
 where   exists(
             select
             from    sorted_zero_sums as s
@@ -168,11 +168,11 @@ where   exists(
 
 
 -- Remove the rownumber column as it is not part of the download file spec.
-alter table temp_file_b_custom_account_download_cleanup drop column rownumber;
+alter table {temp_table} drop column rownumber;
 
 
 -- Export the results.
-\copy (select * from temp_file_b_custom_account_download_cleanup order by last_reported_submission_period, {tas_or_fas}, object_class_code, program_activity_code, budget_function, budget_subfunction, direct_or_reimbursable_funding_source) to stdout {export_options};
+\copy (select * from {temp_table} order by last_reported_submission_period, {tas_or_fas}, object_class_code, program_activity_code, budget_function, budget_subfunction, direct_or_reimbursable_funding_source) to stdout {export_options};
 
 
-drop table if exists temp_file_b_custom_account_download_cleanup;
+drop table if exists {temp_table};

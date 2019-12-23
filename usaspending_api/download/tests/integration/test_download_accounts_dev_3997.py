@@ -49,7 +49,7 @@ def get_csv_contents_and_clean_up(zip_file_path):
 
 
 @pytest.mark.django_db
-def test_dev_3997(client, transactional_db):
+def test_download_accounts_dev_3997(client, transactional_db):
     """
     As part of DEV-3997, special roll-ups/excisions were added to File B downloads.  This tests to
     ensure those are happening correctly.  The specific conditions we are testing for:
@@ -72,7 +72,7 @@ def test_dev_3997(client, transactional_db):
             - budget_subfunction
           and two flavors of direct_reimbursable where at least one is missing (e.g. either null and
           R or null and D), combine all the rows into one, summing their dollar figures and grabbing
-          the highest last_reported_submission_period while retaining either the R or D.
+          the highest last_reported_submission_period while retaining the R or D.
 
     To this end, we are going to perform a simple input => output check by carefully mocking data that
     expresses all of the conditions above ensuring they get rolled up or eliminated correctly in the output.
