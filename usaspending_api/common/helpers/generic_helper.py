@@ -104,9 +104,17 @@ def dates_are_month_bookends(start, end):
     return False
 
 
-def min_and_max_from_date_ranges(filter_time_periods):
-    min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
-    max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
+def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
+    """
+    Returns the min and max date from a list of dictionaries that represent time periods. If a start date or end
+    date is not specified for a date range then the API_SEARCH_MIN_DATE or API_MAX_DATE are used, respectively.
+    """
+    start_dates = [t.get("start_date") for t in filter_time_periods]
+    end_dates = [t.get("end_date") for t in filter_time_periods]
+
+    min_date = min(start_dates) if all(start_dates) else settings.API_SEARCH_MIN_DATE
+    max_date = max(end_dates) if all(end_dates) else settings.API_MAX_DATE
+
     return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
 
 

@@ -1,5 +1,6 @@
 import copy
 import logging
+import pandas as pd
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -8,6 +9,7 @@ from django.conf import settings
 from django.db.models import Sum
 from elasticsearch_dsl import A, Search
 from elasticsearch_dsl.response import AggResponse
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -16,8 +18,13 @@ from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
-from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import (
+    bolster_missing_time_periods,
+    generate_fiscal_year,
+    min_and_max_from_date_ranges,
+)
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -74,15 +81,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             obligation_column = "generated_pragmatic_obligation"
 
         values = ["fy"]
-        if self.groupings[self.group] == "month":
+        if self.group == "month":
             queryset = queryset.annotate(month=FiscalMonth("action_date"), fy=FiscalYear("action_date"))
             values.append("month")
 
-        elif self.groupings[self.group] == "quarter":
+        elif self.group == "quarter":
             queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), fy=FiscalYear("action_date"))
             values.append("quarter")
 
-        elif self.groupings[self.group] == "fiscal_year":
+        elif self.group == "fiscal_year":
             queryset = queryset.annotate(fy=FiscalYear("action_date"))
 
         queryset = (
@@ -118,50 +125,62 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "sum_as_cents", sum_as_cents_agg
         ).pipeline("sum_as_dollars", sum_as_dollars_agg)
 
-    def parse_elasticsearch_response(self, agg_response: AggResponse) -> list:
+    def parse_elasticsearch_bucket(self, bucket):
+        key_as_date = pd.to_datetime(bucket["key_as_string"], format="%Y-%m-%d")
+        time_period = {"fiscal_year": str(key_as_date.year)}
+
+        if self.group == "quarter":
+            time_period["quarter"] = str(key_as_date.quarter)
+        elif self.group == "month":
+            time_period["month"] = str(key_as_date.month)
+
+        aggregated_amount = bucket.get("sum_as_dollars", {"value": 0})["value"]
+        return {"aggregated_amount": aggregated_amount, "time_period": time_period}
+
+    def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         results = []
+        frequency_lookup = {"fiscal_year": "YS", "quarter": "QS", "month": "MS"}
+        min_date, max_date = min_and_max_from_date_ranges(time_periods)
+        date_range = pd.date_range(start=min_date, end=max_date, freq=frequency_lookup[self.group])
+        date_buckets = agg_response.group_by_time_period.buckets
+        parsed_bucket = None
 
-        for date_bucket in agg_response.group_by_time_period.buckets:
-            key_as_date = datetime.strptime(date_bucket.key_as_string, "%Y-%m-%d")
-            time_period = {"fiscal_year": str(key_as_date.year)}
+        for date in date_range:
+            if date_buckets and parsed_bucket is None:
+                parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 
+            time_period = {"fiscal_year": str(date.year)}
             if self.group == "quarter":
-                time_period["quarter"] = str(key_as_date.month // 3 + 1)
+                time_period["quarter"] = str(date.quarter)
             elif self.group == "month":
-                time_period["month"] = str(key_as_date.month)
+                time_period["month"] = str(date.month)
 
-            if hasattr(date_bucket, "sum_as_dollars"):
-                aggregated_amount = date_bucket.sum_as_dollars.value
+            if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
+                results.append(parsed_bucket)
+                parsed_bucket = None
             else:
-                aggregated_amount = 0
-            results.append(
-                {"aggregated_amount": aggregated_amount, "time_period": time_period}
-            )
+                results.append({"aggregated_amount": 0, "time_period": time_period})
 
         return results
 
-    def query_elasticsearch(self) -> list:
+    def query_elasticsearch(self, time_periods: list) -> list:
         search = get_base_search_with_filters(self.filters)
         self.apply_elasticsearch_aggregations(search)
         response = search.execute()
-
-        results = []
-        if response.hits.total > 0:
-            results = self.parse_elasticsearch_response(response.aggs)
-        return results
+        return self.build_elasticsearch_result(response.aggs, time_periods)
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         json_request = self.validate_request_data(request.data)
-        self.group = json_request["group"]
+        self.group = self.groupings[json_request["group"]]
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
-        self.elasticsearch = request.META.get(settings.ES_HTTP_HEADER, False)
+        self.elasticsearch = is_experimental_elasticsearch_api(request)
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
         current_fy = generate_fiscal_year(datetime.now(timezone.utc))
-        if self.groupings[self.group] == "fiscal_year":
+        if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
         else:
             current_month = datetime.now(timezone.utc).month
@@ -172,7 +191,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = self.filters.get("time_period", [default_time_period])
 
         if self.elasticsearch and not self.subawards:
-            results = self.query_elasticsearch()
+            results = self.query_elasticsearch(time_periods)
         else:
             db_results, values = self.database_data_layer()
             results = bolster_missing_time_periods(
@@ -182,4 +201,4 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 columns={"aggregated_amount": "aggregated_amount"},
             )
 
-        return Response(OrderedDict([("group", self.groupings[self.group]), ("results", results)]))
+        return Response(OrderedDict([("group", self.group), ("results", results)]))

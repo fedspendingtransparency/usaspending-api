@@ -9,7 +9,6 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASE
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 from usaspending_api.common.elasticsearch.client import es_client_query, es_dsl_search
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger("console")
 
@@ -336,19 +335,9 @@ def get_base_search_with_filters(filters: dict) -> Search:
             must_queries.append(Q("bool", should=recipient_search_query, minimum_should_match=1))
 
         elif key == "recipient_id":
-            recipient_id_query = Q()
-            recipient_hash = value[:-2]
 
             if value.endswith("P"):
-                parent_duns_rows = RecipientProfile.objects.filter(
-                    recipient_hash=recipient_hash, recipient_level="P"
-                ).values("recipient_unique_id")
-                if len(parent_duns_rows) == 1:
-                    parent_duns = parent_duns_rows[0]["recipient_unique_id"]
-                    recipient_id_query = Q("match", parent_recipient_unique_id=parent_duns)
-                elif len(parent_duns_rows) > 2:
-                    # shouldn't occur
-                    raise InvalidParameterException("Non-unique parent record found in RecipientProfile")
+                recipient_id_query = Q("match", parent_recipient_hash=value)
             else:
                 recipient_id_query = Q("match", recipient_hash=value)
 

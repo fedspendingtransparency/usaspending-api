@@ -114,12 +114,6 @@
         "recipient_unique_id": {
           "type": "text"
         },
-        "parent_recipient_unique_id": {
-          "type": "text"
-        },
-        "recipient_hash": {
-          "type": "keyword"
-        },
         "recipient_name": {
           "type": "text",
           "fields": {
@@ -127,6 +121,23 @@
               "type": "keyword"
             }
           }
+        },
+        "recipient_hash": {
+          "type": "keyword"
+        },
+        "parent_recipient_unique_id": {
+          "type": "text"
+        },
+        "parent_recipient_name": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "parent_recipient_hash": {
+          "type": "keyword"
         },
         "action_date": {
           "type": "date",
