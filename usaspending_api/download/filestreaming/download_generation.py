@@ -421,7 +421,9 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     # Validate we have an alias for each value in the SELECT string
     if len(selects_list) != len(aliases_copy):
-        raise Exception("Length of aliases doesn't match the columns in selects")
+        raise Exception(
+            f"Length of aliases ({len(aliases_copy)}) doesn't match the columns in selects ({len(selects_list)})"
+        )
 
     # Match aliases with their values
     values_list = [

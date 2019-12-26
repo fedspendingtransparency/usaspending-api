@@ -149,3 +149,33 @@ def test_subset_of_fields_returned(client, transaction_data, elasticsearch_trans
         assert "generated_internal_id" in result
 
         assert "Last Date to Order" not in result
+
+
+@pytest.mark.django_db
+def test_columns_can_be_sorted(client, transaction_data, elasticsearch_transaction_index):
+
+    elasticsearch_transaction_index.update_index()
+
+    fields = [
+        "Action Date",
+        "Award ID",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+        "Award Type",
+        "Mod",
+        "Recipient Name",
+        "Action Date",
+    ]
+
+    request = {
+        "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "order": "desc",
+    }
+
+    for field in fields:
+        request["sort"] = field
+        resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+        assert resp.status_code == status.HTTP_200_OK, f"Failed to sort column: {field}"

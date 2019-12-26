@@ -4,16 +4,18 @@ import re
 from django.conf import settings
 from elasticsearch_dsl import Search, Q
 
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-from usaspending_api.common.elasticsearch.client import es_client_query, es_dsl_search
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    TRANSACTIONS_LOOKUP,
+    TRANSACTIONS_SOURCE_LOOKUP,
+    KEYWORD_DATATYPE_FIELDS,
+    INDEX_ALIASES_TO_AWARD_TYPES,
+)
+from usaspending_api.common.elasticsearch.client import es_client_query
 
 logger = logging.getLogger("console")
 
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
-TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
+TRANSACTIONS_SOURCE_LOOKUP.update({v: k for k, v in TRANSACTIONS_SOURCE_LOOKUP.items()})
 
 
 def es_sanitize(input_string):
@@ -38,7 +40,9 @@ def es_minimal_sanitize(keyword):
 
 
 def swap_keys(dictionary_):
-    return dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items())
+    return dict(
+        (TRANSACTIONS_SOURCE_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items()
+    )
 
 
 def format_for_frontend(response):
@@ -67,7 +71,7 @@ def search_transactions(request_data, lower_limit, limit):
     """
 
     keyword = request_data["filters"]["keywords"]
-    query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data["fields"]]
+    query_fields = [TRANSACTIONS_SOURCE_LOOKUP[i] for i in request_data["fields"]]
     query_fields.extend(["award_id", "generated_unique_award_id"])
     query_sort = TRANSACTIONS_LOOKUP[request_data["sort"]]
     query = {
