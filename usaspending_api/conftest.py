@@ -10,13 +10,18 @@ from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
 
+from usaspending_api.common.sqs.sqs_handler import FAKE_QUEUE
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.helpers.generic_helper import (
     generate_matviews,
     refresh_matviews as perform_refresh_matviews,
 )
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
-from usaspending_api.conftest_helpers import TestElasticSearchIndex, ensure_broker_server_dblink_exists
+from usaspending_api.conftest_helpers import (
+    TestElasticSearchIndex,
+    ensure_broker_server_dblink_exists,
+    remove_local_queue_data_files,
+)
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
@@ -394,3 +399,11 @@ def temp_file_path():
         os.remove(path)
     except Exception:
         pass
+
+
+@pytest.fixture(scope="session")
+def local_queue_dir():
+    FAKE_QUEUE.FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
+    yield
+    # Clean up any files created on disk
+    remove_local_queue_data_files()

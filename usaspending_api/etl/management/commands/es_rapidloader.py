@@ -95,6 +95,12 @@ class Command(BaseCommand):
             help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss is always "
             "a safe format. Wrap in quotes if date/time contains spaces.",
         )
+        parser.add_argument(
+            "--skip-delete-index",
+            action="store_true",
+            help="When creating a new index skip the step that deletes the old indexes and swaps the aliases. "
+            "Only used when --create-new-index is provided.",
+        )
 
     def handle(self, *args, **options):
         self.elasticsearch_client = instantiate_elasticsearch_client()
@@ -175,9 +181,12 @@ class Command(BaseCommand):
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:
-            printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"])
+            if self.config["skip_delete_index"]:
+                printf({"msg": "Skipping deletion of old indices"})
+            else:
+                printf({"msg": "Closing old indices and adding aliases"})
+                swap_aliases(self.elasticsearch_client, self.config["index_name"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})
@@ -191,7 +200,15 @@ class Command(BaseCommand):
 
 def process_cli_parameters(options: dict, es_client) -> None:
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
-    simple_args = ("process_deletes", "create_new_index", "snapshot", "index_name", "directory", "skip_counts")
+    simple_args = (
+        "process_deletes",
+        "create_new_index",
+        "snapshot",
+        "index_name",
+        "directory",
+        "skip_counts",
+        "skip_delete_index",
+    )
     config = set_config(simple_args, options)
 
     config["fiscal_years"] = fiscal_years_for_processing(options)

@@ -29,3 +29,35 @@ AS $$
   RETURN result::public.total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.urlencode(INOUT str_val text)
+IMMUTABLE PARALLEL SAFE
+AS $$
+  DECLARE
+    DECLARE i text;
+    DECLARE reassemble_array text[];
+    DECLARE hex_code_array text[];
+  BEGIN
+    -- Percent-encode all characters which aren't considered the "unreserved list"
+    --  of URL characters: A-Za-z0-9\-_.~
+    --  (This is the most conservative approach when implementing URLencoding)
+    -- The logic appears to be inefficient, but it beat more "optimized" algorithms
+
+    -- IMPORTANT! handle % first, otherwise it can return incorrect results
+    str_val := REPLACE(str_val, '%', '%25');
+
+    FOREACH i IN ARRAY ARRAY(SELECT DISTINCT (regexp_matches (str_val, '([^A-Za-z0-9\-_.~%])', 'gi'))[1]) LOOP
+      reassemble_array = '{}';
+      hex_code_array = string_to_array(UPPER(encode(i::bytea, 'hex')), NULL);
+
+      FOR i IN 0..array_length(hex_code_array, 1) - 1 LOOP
+        IF i % 2 = 0 THEN
+          reassemble_array := array_append(reassemble_array, '%');
+        END IF;
+        reassemble_array := array_append(reassemble_array, hex_code_array[i+1]);
+      END LOOP;
+      str_val := REPLACE(str_val, i, array_to_string(reassemble_array, ''));
+    END LOOP;
+  END;
+$$ LANGUAGE plpgsql;

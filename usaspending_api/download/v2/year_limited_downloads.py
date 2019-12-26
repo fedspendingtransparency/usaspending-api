@@ -17,7 +17,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
 
-        return BaseDownloadViewSet.post(self, request, "award")
+        return BaseDownloadViewSet.post(self, request, "award", "bulk_download")
 
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""
@@ -78,6 +78,5 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 del filters["sub_agency"]
             else:
                 filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": toptier_name}]
-        del filters["agency"]
 
         request_data["filters"] = filters
