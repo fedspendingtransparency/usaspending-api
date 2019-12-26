@@ -633,6 +633,7 @@ query_paths = {
                     "recipient_foreign_postal_code",
                     "award__latest_transaction__assistance_data__legal_entity_foreign_posta",
                 ),
+                ("primary_place_of_performance_scope", "primary_place_of_performance_scope"),
                 (
                     "primary_place_of_performance_country_code",
                     "award__latest_transaction__assistance_data__place_of_perform_country_c",
@@ -1120,6 +1121,7 @@ query_paths = {
                 ("recipient_foreign_city_name", "transaction__assistance_data__legal_entity_foreign_city"),
                 ("recipient_foreign_province_name", "transaction__assistance_data__legal_entity_foreign_provi"),
                 ("recipient_foreign_postal_code", "transaction__assistance_data__legal_entity_foreign_posta"),
+                ("primary_place_of_performance_scope", "primary_place_of_performance_scope"),
                 (
                     "primary_place_of_performance_country_code",
                     "transaction__assistance_data__place_of_perform_country_c",
@@ -1339,6 +1341,7 @@ query_paths = {
                 ("prime_awardee_congressional_district", "broker_subaward__legal_entity_congressional"),
                 ("prime_awardee_foreign_postal_code", "broker_subaward__legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "broker_subaward__business_types"),
+                ("prime_award_primary_place_of_performance_scope", "subaward__prime_award_primary_place_of_performance_scope"),
                 ("prime_award_primary_place_of_performance_city_name", "broker_subaward__place_of_perform_city_name"),
                 ("prime_award_primary_place_of_performance_state_code", "broker_subaward__place_of_perform_state_code"),
                 ("prime_award_primary_place_of_performance_state_name", "broker_subaward__place_of_perform_state_name"),

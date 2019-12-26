@@ -20,3 +20,17 @@ from
 where
     fpds.transaction_id = temp_load_subawards_subaward.latest_transaction_id and
     temp_load_subawards_subaward.latest_transaction_id is not null;
+
+
+update
+    temp_load_subawards_subaward
+
+set
+    prime_award_primary_place_of_performance_scope = fabs.prime_award_primary_place_of_performance_scope
+
+from
+    transaction_fabs fabs
+
+where
+    fabs.transaction_id = temp_load_subawards_subaward.latest_transaction_id and
+    temp_load_subawards_subaward.latest_transaction_id is not null;
