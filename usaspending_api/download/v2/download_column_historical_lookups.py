@@ -26,7 +26,7 @@ query_paths = {
                 ("award_id_piid", "award__piid"),
                 ("parent_award_agency_id", "award__latest_transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "award__latest_transaction__contract_data__referenced_idv_agency_desc"),
-                ("parent_award_id", "award__parent_award_piid"),
+                ("parent_award_id_piid", "award__parent_award_piid"),
                 ("total_obligated_amount", "award__total_obligation"),
                 ("current_total_value_of_award", "award__latest_transaction__contract_data__current_total_value_award"),
                 (
@@ -69,8 +69,8 @@ query_paths = {
                     "award__latest_transaction__contract_data__vendor_doing_as_business_n",
                 ),
                 ("cage_code", "award__latest_transaction__contract_data__cage_code"),
-                ("recipient_parent_name", "award__latest_transaction__contract_data__ultimate_parent_legal_enti"),
                 ("recipient_parent_duns", "award__latest_transaction__contract_data__ultimate_parent_unique_ide"),
+                ("recipient_parent_name", "award__latest_transaction__contract_data__ultimate_parent_legal_enti"),
                 ("recipient_country_code", "award__latest_transaction__contract_data__legal_entity_country_code"),
                 ("recipient_country_name", "award__latest_transaction__contract_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "award__latest_transaction__contract_data__legal_entity_address_line1"),
@@ -261,6 +261,10 @@ query_paths = {
                 ("fed_biz_opps", "award__latest_transaction__contract_data__fed_biz_opps_description"),
                 ("local_area_set_aside_code", "award__latest_transaction__contract_data__local_area_set_aside"),
                 ("local_area_set_aside", "award__latest_transaction__contract_data__local_area_set_aside_desc"),
+                (
+                    "price_evaluation_adjustment_preference_percent_difference",
+                    "award__latest_transaction__contract_data__price_evaluation_adjustmen",
+                ),
                 (
                     "clinger_cohen_act_planning_code",
                     "award__latest_transaction__contract_data__clinger_cohen_act_planning",
@@ -715,7 +719,7 @@ query_paths = {
                 ("transaction_number", "transaction__contract_data__transaction_number"),
                 ("parent_award_agency_id", "transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "transaction__contract_data__referenced_idv_agency_desc"),
-                ("parent_award_id", "transaction__contract_data__parent_award_id"),
+                ("parent_award_piid", "transaction__contract_data__parent_award_id"),
                 ("parent_award_modification_number", "transaction__contract_data__referenced_idv_modificatio"),
                 ("federal_action_obligation", "transaction__federal_action_obligation"),
                 ("total_dollars_obligated", "transaction__contract_data__total_obligated_amount"),
@@ -752,8 +756,8 @@ query_paths = {
                 ("recipient_name", "transaction__contract_data__awardee_or_recipient_legal"),
                 ("recipient_doing_business_as_name", "transaction__contract_data__vendor_doing_as_business_n"),
                 ("cage_code", "transaction__contract_data__cage_code"),
-                ("recipient_parent_name", "transaction__contract_data__ultimate_parent_legal_enti"),
                 ("recipient_parent_duns", "transaction__contract_data__ultimate_parent_unique_ide"),
+                ("recipient_parent_name", "transaction__contract_data__ultimate_parent_legal_enti"),
                 ("recipient_country_code", "transaction__contract_data__legal_entity_country_code"),
                 ("recipient_country_name", "transaction__contract_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "transaction__contract_data__legal_entity_address_line1"),
@@ -1076,12 +1080,13 @@ query_paths = {
                 ("award_id_uri", "transaction__assistance_data__uri"),
                 ("sai_number", "transaction__assistance_data__sai_number"),
                 ("federal_action_obligation", "transaction__federal_action_obligation"),
+                ("total_obligated_amount", "transaction__award__total_obligation"),
                 ("non_federal_funding_amount", "transaction__assistance_data__non_federal_funding_amount"),
-                ("total_funding_amount", "transaction__assistance_data__total_funding_amount"),
+                ("total_non_federal_funding_amount", "transaction__award__non_federal_funding_amount"),
                 ("face_value_of_loan", "transaction__assistance_data__face_value_loan_guarantee"),
-                ("original_subsidy_cost", "transaction__original_loan_subsidy_cost"),
-                ("total_subsidy_cost", "transaction__award__total_subsidy_cost"),
-                ("total_loan_value", "transaction__award__total_loan_value"),
+                ("original_loan_subsidy_cost", "transaction__original_loan_subsidy_cost"),
+                ("total_face_value_of_loan", "transaction__award__total_loan_value"),
+                ("total_loan_subsidy_cost", "transaction__award__total_subsidy_cost"),
                 ("action_date", "transaction__action_date"),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
@@ -1102,8 +1107,8 @@ query_paths = {
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
-                ("recipient_parent_name", "transaction__assistance_data__ultimate_parent_legal_enti"),
                 ("recipient_parent_duns", "transaction__assistance_data__ultimate_parent_unique_ide"),
+                ("recipient_parent_name", "transaction__assistance_data__ultimate_parent_legal_enti"),
                 ("recipient_country_code", "transaction__assistance_data__legal_entity_country_code"),
                 ("recipient_country_name", "transaction__assistance_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "transaction__assistance_data__legal_entity_address_line1"),
@@ -1608,11 +1613,15 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-                ("piid", "piid"),
-                ("parent_award_piid", "parent_award_id"),
-                ("fain", "fain"),
-                ("uri", "uri"),
+                ("award_id_piid", "piid"),
+                ("parent_award_id_piid", "parent_award_id"),
+                ("award_id_fain", "fain"),
+                ("award_id_uri", "uri"),
+                ("period_of_performance_start_date", "award__period_of_performance_start_date"),
+                ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
+                ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
@@ -1622,6 +1631,10 @@ query_paths = {
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
+                ("awarding_office_code", None),  # Column is annotated in account_download.py
+                ("awarding_office_name", None),  # Column is annotated in account_download.py
+                ("funding_agency_code", None),  # Column is annotated in account_download.py
+                ("funding_agency_name", None),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1639,11 +1652,14 @@ query_paths = {
                     "primary_place_of_performance_congressional_district",
                     "award__place_of_performance__congressional_code",
                 ),
-                ("primary_place_of_performance_zip_4", "award__place_of_performance__zip4"),
+                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
+                ("product_or_service_code", "award__latest_transaction__product_or_service_code"),
+                ("product_or_service_code_description", "award__latest_transaction__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
         "federal_account": OrderedDict(
@@ -1659,11 +1675,15 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-                ("piid", "piid"),
-                ("parent_award_piid", "parent_award_id"),
-                ("fain", "fain"),
-                ("uri", "uri"),
+                ("award_id_piid", "piid"),
+                ("parent_award_id_piid", "parent_award_id"),
+                ("award_id_fain", "fain"),
+                ("award_id_uri", "uri"),
+                ("period_of_performance_start_date", "award__period_of_performance_start_date"),
+                ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
+                ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
@@ -1673,6 +1693,10 @@ query_paths = {
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
+                ("awarding_office_code", None),  # Column is annotated in account_download.py
+                ("awarding_office_name", None),  # Column is annotated in account_download.py
+                ("funding_agency_code", None),  # Column is annotated in account_download.py
+                ("funding_agency_name", None),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1691,8 +1715,11 @@ query_paths = {
                 ),
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
+                ("product_or_service_code", "award__latest_transaction__product_or_service_code"),
+                ("product_or_service_code_description", "award__latest_transaction__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
+                ("usaspending_permalink", None),  # to be filled in by annotation
             ]
         ),
     },
