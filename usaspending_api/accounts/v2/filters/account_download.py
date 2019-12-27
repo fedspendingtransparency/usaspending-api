@@ -284,6 +284,22 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__funding_agency_name",
         "award__latest_transaction__assistance_data__funding_agency_name",
     )
+    derived_fields["funding_sub_agency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_sub_tier_agency_co",
+        "award__latest_transaction__assistance_data__funding_sub_tier_agency_co",
+    )
+    derived_fields["funding_sub_agency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_sub_tier_agency_na",
+        "award__latest_transaction__assistance_data__funding_sub_tier_agency_na",
+    )
+    derived_fields["funding_office_code"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_office_code",
+        "award__latest_transaction__assistance_data__funding_office_code",
+    )
+    derived_fields["funding_office_name"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_office_name",
+        "award__latest_transaction__assistance_data__funding_office_name",
+    )
     derived_fields["usaspending_permalink"] = Concat(
         Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
     )

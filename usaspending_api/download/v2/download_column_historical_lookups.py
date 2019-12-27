@@ -1635,6 +1635,10 @@ query_paths = {
                 ("awarding_office_name", None),  # Column is annotated in account_download.py
                 ("funding_agency_code", None),  # Column is annotated in account_download.py
                 ("funding_agency_name", None),  # Column is annotated in account_download.py
+                ("funding_sub_agency_code", None),  # Column is annotated in account_download.py
+                ("funding_sub_agency_name", None),  # Column is annotated in account_download.py
+                ("funding_office_code", None),  # Column is annotated in account_download.py
+                ("funding_office_name", None),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1655,8 +1659,8 @@ query_paths = {
                 ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
-                ("product_or_service_code", "award__latest_transaction__product_or_service_code"),
-                ("product_or_service_code_description", "award__latest_transaction__product_or_service_co_desc"),
+                ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
+                ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
@@ -1697,6 +1701,10 @@ query_paths = {
                 ("awarding_office_name", None),  # Column is annotated in account_download.py
                 ("funding_agency_code", None),  # Column is annotated in account_download.py
                 ("funding_agency_name", None),  # Column is annotated in account_download.py
+                ("funding_sub_agency_code", None),  # Column is annotated in account_download.py
+                ("funding_sub_agency_name", None),  # Column is annotated in account_download.py
+                ("funding_office_code", None),  # Column is annotated in account_download.py
+                ("funding_office_name", None),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1706,6 +1714,7 @@ query_paths = {
                 ("recipient_county", "award__recipient__location__county_name"),
                 ("recipient_city", "award__recipient__location__city_name"),
                 ("recipient_congressional_district", "award__recipient__location__congressional_code"),
+                ("recipient_zip_code", "award__recipient__location__zip4"),
                 ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
                 ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
                 ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
@@ -1713,10 +1722,11 @@ query_paths = {
                     "primary_place_of_performance_congressional_district",
                     "award__place_of_performance__congressional_code",
                 ),
+                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
-                ("product_or_service_code", "award__latest_transaction__product_or_service_code"),
-                ("product_or_service_code_description", "award__latest_transaction__product_or_service_co_desc"),
+                ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
+                ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
