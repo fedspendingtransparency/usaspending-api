@@ -100,8 +100,10 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
 
         queryset = queryset.annotate(
             award_category=F("award__category"),
-            recipient_id=F("recipient__legal_entity_id"),
-            recipient_name=F("recipient__recipient_name"),
+            recipient_name=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+        ) | queryset.annotate(
+            award_category=F("award__category"),
+            recipient_name=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
         )
 
         if award_category is not None:
@@ -115,7 +117,7 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
 
         # Sum Obligations for each Recipient
         queryset = (
-            queryset.values("award_category", "recipient_id", "recipient_name")
+            queryset.values("award_category", "recipient_name")
             .annotate(obligated_amount=Sum("federal_action_obligation"))
             .order_by("-obligated_amount")
         )
