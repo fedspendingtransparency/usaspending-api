@@ -142,7 +142,7 @@ LEFT JOIN (
         'main', taa.main_account_code,
         'sub', taa.sub_account_code,
         'bpoa', taa.beginning_period_of_availability,
-        'epoa', taa.beginning_period_of_availability,
+        'epoa', taa.ending_period_of_availability,
         'a', taa.availability_type_code
        )
      ) treasury_accounts

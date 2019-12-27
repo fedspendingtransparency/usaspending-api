@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import time
+import pandas as pd
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
@@ -172,6 +173,29 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
         result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
         del result["time_period"]["fy"]
     return results
+
+
+def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> pd.DatetimeIndex:
+    """
+    Using a min date, max date, and a frequency indicator generates a DatetimeIndex with
+    pandas' date_range function for the specific fiscal year.
+    """
+    min_date += pd.DateOffset(months=3)
+    max_date += pd.DateOffset(months=3)
+    if frequency == "fiscal_year":
+        freq = "YS"
+        if not min_date.is_year_start:
+            min_date -= pd.offsets.YearBegin()
+    elif frequency == "quarter":
+        freq = "QS"
+        if not min_date.is_quarter_start:
+            min_date -= pd.offsets.QuarterBegin()
+    else:
+        freq = "MS"
+        if not min_date.is_month_start:
+            min_date -= pd.offsets.MonthBegin()
+
+    return pd.date_range(start=min_date, end=max_date, freq=freq)
 
 
 def within_one_year(d1, d2):

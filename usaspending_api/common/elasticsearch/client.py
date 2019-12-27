@@ -68,10 +68,10 @@ def es_client_query(index: str, body: dict, timeout: str = "1m", retries: int = 
     return None
 
 
-def es_dsl_search() -> Search:
+def es_dsl_search(index_name: str) -> Search:
     if CLIENT is None:
         create_es_client()
-    return Search().using(CLIENT)
+    return Search(using=CLIENT, index=index_name)
 
 
 def _es_search(index: str, body: dict, timeout: int) -> dict:

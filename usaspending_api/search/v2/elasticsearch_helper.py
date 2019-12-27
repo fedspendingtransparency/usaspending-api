@@ -10,7 +10,8 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.client import es_client_query, es_dsl_search
+from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger("console")
 
@@ -228,8 +229,8 @@ def concat_if_array(data):
             return ""
 
 
-def get_base_search_with_filters(filters: dict) -> Search:
-    search = es_dsl_search()
+def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
+    search = es_dsl_search(index_name)
     key_list = [
         "keywords",
         "elasticsearch_keyword",
@@ -275,8 +276,8 @@ def get_base_search_with_filters(filters: dict) -> Search:
             time_period_query = []
 
             for v in value:
-                start_date = v["start_date"] or settings.API_SEARCH_MIN_DATE
-                end_date = v["end_date"] or settings.API_MAX_DATE
+                start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
+                end_date = v.get("end_date") or settings.API_MAX_DATE
                 time_period_query.append(Q("range", action_date={"gte": start_date, "lte": end_date}))
 
             must_queries.append(Q("bool", should=time_period_query, minimum_should_match=1))

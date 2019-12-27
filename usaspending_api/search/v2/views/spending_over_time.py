@@ -24,15 +24,24 @@ from usaspending_api.common.helpers.generic_helper import (
     bolster_missing_time_periods,
     generate_fiscal_year,
     min_and_max_from_date_ranges,
+    generate_fiscal_date_range,
 )
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import get_base_search_with_filters
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("console")
 
 API_VERSION = settings.API_VERSION
+GROUPING_LOOKUP = {
+    "quarter": "quarter",
+    "q": "quarter",
+    "fiscal_year": "fiscal_year",
+    "fy": "fiscal_year",
+    "month": "month",
+    "m": "month",
+}
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -43,22 +52,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_over_time.md"
 
-    def validate_request_data(self, json_data):
-        self.groupings = {
-            "quarter": "quarter",
-            "q": "quarter",
-            "fiscal_year": "fiscal_year",
-            "fy": "fiscal_year",
-            "month": "month",
-            "m": "month",
-        }
+    @staticmethod
+    def validate_request_data(json_data):
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "group",
                 "key": "group",
                 "type": "enum",
-                "enum_values": list(self.groupings.keys()),
+                "enum_values": list(GROUPING_LOOKUP.keys()),
                 "default": "fy",
                 "optional": False,  # allow to be optional in the future
             },
@@ -139,9 +141,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         results = []
-        frequency_lookup = {"fiscal_year": "YS", "quarter": "QS", "month": "MS"}
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
-        date_range = pd.date_range(start=min_date, end=max_date, freq=frequency_lookup[self.group])
+        date_range = generate_fiscal_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
@@ -164,7 +165,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, time_periods: list) -> list:
-        search = get_base_search_with_filters(self.filters)
+        search = get_base_search_with_filters(
+            index_name="{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX), filters=self.filters
+        )
         self.apply_elasticsearch_aggregations(search)
         response = search.execute()
         return self.build_elasticsearch_result(response.aggs, time_periods)
@@ -172,7 +175,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request: Request) -> Response:
         json_request = self.validate_request_data(request.data)
-        self.group = self.groupings[json_request["group"]]
+        self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
         self.elasticsearch = is_experimental_elasticsearch_api(request)
@@ -191,6 +194,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = self.filters.get("time_period", [default_time_period])
 
         if self.elasticsearch and not self.subawards:
+            logger.info("Using experimental Elasticsearch functionality for 'spending_over_time'")
             results = self.query_elasticsearch(time_periods)
         else:
             db_results, values = self.database_data_layer()

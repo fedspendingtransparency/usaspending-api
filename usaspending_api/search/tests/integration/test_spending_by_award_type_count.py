@@ -8,7 +8,7 @@ from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
-from usaspending_api.search.tests.test_mock_data_search import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 
 
 @pytest.fixture
