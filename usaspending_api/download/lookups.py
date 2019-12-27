@@ -106,8 +106,8 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
-        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
     },
     "award_financial": {
