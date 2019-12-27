@@ -224,7 +224,6 @@ class TransactionNormalizedSerializer(LimitableSerializer):
             "modification_number",
             "awarding_agency",
             "funding_agency",
-            "recipient",
             "description",
             "place_of_performance",
             "contract_data",  # must match related_name in TransactionFPDS
@@ -265,7 +264,6 @@ class AwardSerializer(LimitableSerializer):
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
-            "recipient",
             "date_signed__fy",
             "subaward_count",
             "total_subaward_amount",
