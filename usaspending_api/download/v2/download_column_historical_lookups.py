@@ -1627,10 +1627,10 @@ query_paths = {
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
-                ("awarding_agency_code", "award__awarding_agency__toptier_agency__toptier_code"),
-                ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
-                ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
-                ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
+                ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
+                ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
+                ("awarding_subagency_code", "awarding_subagency_code"),  # Column is annotated in account_download.py
+                ("awarding_subagency_name", "awarding_subagency_name"),  # Column is annotated in account_download.py
                 ("awarding_office_code", "awarding_office_code"),  # Column is annotated in account_download.py
                 ("awarding_office_name", "awarding_office_name"),  # Column is annotated in account_download.py
                 ("funding_agency_code", "funding_agency_code"),  # Column is annotated in account_download.py
@@ -1660,7 +1660,10 @@ query_paths = {
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
-                ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
+                (
+                    "product_or_service_code_description",
+                    "award__latest_transaction__contract_data__product_or_service_co_desc",
+                ),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
@@ -1693,10 +1696,10 @@ query_paths = {
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
-                ("awarding_agency_code", "award__awarding_agency__toptier_agency__toptier_code"),
-                ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
-                ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
-                ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
+                ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
+                ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
+                ("awarding_subagency_code", "awarding_subagency_code"),  # Column is annotated in account_download.py
+                ("awarding_subagency_name", "awarding_subagency_name"),  # Column is annotated in account_download.py
                 ("awarding_office_code", "awarding_office_code"),  # Column is annotated in account_download.py
                 ("awarding_office_name", "awarding_office_name"),  # Column is annotated in account_download.py
                 ("funding_agency_code", "funding_agency_code"),  # Column is annotated in account_download.py
@@ -1726,7 +1729,10 @@ query_paths = {
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
-                ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
+                (
+                    "product_or_service_code_description",
+                    "award__latest_transaction__contract_data__product_or_service_co_desc",
+                ),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation

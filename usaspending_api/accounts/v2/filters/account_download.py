@@ -268,6 +268,22 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__contract_award_type_desc",
         "award__latest_transaction__assistance_data__assistance_type_desc",
     )
+    derived_fields["awarding_agency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_agency_code",
+        "award__latest_transaction__assistance_data__awarding_agency_code",
+    )
+    derived_fields["awarding_agency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_agency_name",
+        "award__latest_transaction__assistance_data__awarding_agency_name",
+    )
+    derived_fields["awarding_subagency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_sub_tier_agency_c",
+        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_c",
+    )
+    derived_fields["awarding_subagency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_sub_tier_agency_n",
+        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_n",
+    )
     derived_fields["awarding_office_code"] = Coalesce(
         "award__latest_transaction__contract_data__awarding_office_code",
         "award__latest_transaction__assistance_data__awarding_office_code",
