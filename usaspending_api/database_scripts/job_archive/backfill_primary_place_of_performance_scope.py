@@ -13,8 +13,6 @@ Purpose:
         - published_award_financial_assistance
     And populate FABS transaction table columns:
         - primary_place_of_performance_scope
-    And ensure transactions are included in monthly archive delta files
-        - transaction_delta
 """
 import logging
 import math
@@ -55,11 +53,6 @@ WHERE
         fabs.place_of_performance_scope IS DISTINCT FROM broker.place_of_performance_scope
     )
 RETURNING fabs.transaction_id
-"""
-
-ADD_TRANSACTIONS_TO_DELTA = """
-INSERT INTO transaction_delta (transaction_id, created_at)
-VALUES {} ON CONFLICT (transaction_id) DO NOTHING
 """
 
 
@@ -124,12 +117,6 @@ def run_spending_update_query(transaction_sql, transaction_type, broker_data):
             update_cursor.execute(update_query, [col for row in broker_data for col in row])
         row_count = update_cursor.rowcount
         logging.info("[{}] {:,} rows updated in {}".format(transaction_type, row_count, t.elapsed_as_string))
-        if row_count > 0:
-            now = datetime.now(timezone.utc)
-            insert_values = ",".join(["({},'{}')".format(id[0], now) for id in update_cursor.fetchall()])
-            update_cursor.execute(ADD_TRANSACTIONS_TO_DELTA.format(insert_values))
-            logging.info("[{}] {:,} rows added to transaction_delta".format(transaction_type, update_cursor.rowcount))
-
         return row_count
 
 
