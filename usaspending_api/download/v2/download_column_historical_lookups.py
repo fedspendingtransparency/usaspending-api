@@ -719,7 +719,7 @@ query_paths = {
                 ("transaction_number", "transaction__contract_data__transaction_number"),
                 ("parent_award_agency_id", "transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "transaction__contract_data__referenced_idv_agency_desc"),
-                ("parent_award_piid", "transaction__contract_data__parent_award_id"),
+                ("parent_award_id_piid", "transaction__contract_data__parent_award_id"),
                 ("parent_award_modification_number", "transaction__contract_data__referenced_idv_modificatio"),
                 ("federal_action_obligation", "transaction__federal_action_obligation"),
                 ("total_dollars_obligated", "transaction__contract_data__total_obligated_amount"),
@@ -1631,14 +1631,14 @@ query_paths = {
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
-                ("awarding_office_code", None),  # Column is annotated in account_download.py
-                ("awarding_office_name", None),  # Column is annotated in account_download.py
-                ("funding_agency_code", None),  # Column is annotated in account_download.py
-                ("funding_agency_name", None),  # Column is annotated in account_download.py
-                ("funding_sub_agency_code", None),  # Column is annotated in account_download.py
-                ("funding_sub_agency_name", None),  # Column is annotated in account_download.py
-                ("funding_office_code", None),  # Column is annotated in account_download.py
-                ("funding_office_name", None),  # Column is annotated in account_download.py
+                ("awarding_office_code", "awarding_office_code"),  # Column is annotated in account_download.py
+                ("awarding_office_name", "awarding_office_name"),  # Column is annotated in account_download.py
+                ("funding_agency_code", "funding_agency_code"),  # Column is annotated in account_download.py
+                ("funding_agency_name", "funding_agency_name"),  # Column is annotated in account_download.py
+                ("funding_sub_agency_code", "funding_sub_agency_code"),  # Column is annotated in account_download.py
+                ("funding_sub_agency_name", "funding_sub_agency_name"),  # Column is annotated in account_download.py
+                ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
+                ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1663,7 +1663,7 @@ query_paths = {
                 ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
-                ("usaspending_permalink", None),  # to be filled in by annotation
+                ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
             ]
         ),
         "federal_account": OrderedDict(
@@ -1697,14 +1697,14 @@ query_paths = {
                 ("awarding_agency_name", "award__awarding_agency__toptier_agency__name"),
                 ("awarding_subagency_code", "award__awarding_agency__subtier_agency__subtier_code"),
                 ("awarding_subagency_name", "award__awarding_agency__subtier_agency__name"),
-                ("awarding_office_code", None),  # Column is annotated in account_download.py
-                ("awarding_office_name", None),  # Column is annotated in account_download.py
-                ("funding_agency_code", None),  # Column is annotated in account_download.py
-                ("funding_agency_name", None),  # Column is annotated in account_download.py
-                ("funding_sub_agency_code", None),  # Column is annotated in account_download.py
-                ("funding_sub_agency_name", None),  # Column is annotated in account_download.py
-                ("funding_office_code", None),  # Column is annotated in account_download.py
-                ("funding_office_name", None),  # Column is annotated in account_download.py
+                ("awarding_office_code", "awarding_office_code"),  # Column is annotated in account_download.py
+                ("awarding_office_name", "awarding_office_name"),  # Column is annotated in account_download.py
+                ("funding_agency_code", "funding_agency_code"),  # Column is annotated in account_download.py
+                ("funding_agency_name", "funding_agency_name"),  # Column is annotated in account_download.py
+                ("funding_sub_agency_code", "funding_sub_agency_code"),  # Column is annotated in account_download.py
+                ("funding_sub_agency_name", "funding_sub_agency_name"),  # Column is annotated in account_download.py
+                ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
+                ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
                 ("recipient_duns", "award__recipient__recipient_unique_id"),
                 ("recipient_name", "award__recipient__recipient_name"),
                 ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
@@ -1729,7 +1729,7 @@ query_paths = {
                 ("product_or_service_code_description", "award__latest_transaction__contract_data__product_or_service_co_desc"),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
-                ("usaspending_permalink", None),  # to be filled in by annotation
+                ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
             ]
         ),
     },

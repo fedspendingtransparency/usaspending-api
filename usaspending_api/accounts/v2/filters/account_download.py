@@ -300,8 +300,17 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__funding_office_name",
         "award__latest_transaction__assistance_data__funding_office_name",
     )
-    derived_fields["usaspending_permalink"] = Concat(
-        Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+    derived_fields["usaspending_permalink"] = Case(
+        When(
+            **{
+                "award__generated_unique_award_id__isnull": False,
+                "then": Concat(
+                    Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+                ),
+            }
+        ),
+        default=Value(""),
+        output_field=CharField(),
     )
 
     return derived_fields
