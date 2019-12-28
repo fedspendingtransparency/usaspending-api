@@ -42,6 +42,7 @@ def spending_over_time_test_data(db):
             action_date=action_date,
             award_id=award_id,
             awarding_agency_id=awarding_agency_id,
+            business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
             description=f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None,
             federal_action_obligation=federal_action_obligation,
             funding_agency_id=funding_agency_id,
@@ -131,6 +132,7 @@ def spending_over_time_test_data(db):
             mommy.make(
                 "awards.TransactionFPDS",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
+                awardee_or_recipient_uniqu=f"{transaction_id:09d}",
                 extent_competed=f"extent_competed_{transaction_id}",
                 legal_entity_country_code="USA",
                 legal_entity_country_name="USA",
@@ -165,6 +167,7 @@ def spending_over_time_test_data(db):
             mommy.make(
                 "awards.TransactionFABS",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
+                awardee_or_recipient_uniqu=f"{transaction_id:09d}",
                 cfda_number=f"cfda_number_{transaction_id}",
                 fain=f"fain_{transaction_id}",
                 legal_entity_country_code="USA",
@@ -344,12 +347,23 @@ def test_correct_response_for_each_filter(
     )
 
     test_cases = [
-        test_correct_response_for_keywords,
-        test_correct_response_for_time_period,
-        test_correct_response_for_award_type_codes,
-        test_correct_response_for_agencies,
-        test_correct_response_for_tas_codes,
-        test_correct_response_for_pop_location,
+        _test_correct_response_for_keywords,
+        _test_correct_response_for_time_period,
+        _test_correct_response_for_award_type_codes,
+        _test_correct_response_for_agencies,
+        _test_correct_response_for_tas_codes,
+        _test_correct_response_for_pop_location,
+        _test_correct_response_for_recipient_location,
+        _test_correct_response_for_recipient_search_text,
+        _test_correct_response_for_recipient_type_names,
+        _test_correct_response_for_award_amounts,
+        _test_correct_response_for_cfda_program,
+        _test_correct_response_for_naics_codes,
+        _test_correct_response_for_psc_codes,
+        _test_correct_response_for_contract_pricing_type_codes,
+        _test_correct_response_for_set_aside_type_codes,
+        _test_correct_response_for_set_extent_competed_type_codes,
+        _test_correct_response_for_recipient_id,
     ]
 
     for test in test_cases:
@@ -358,18 +372,20 @@ def test_correct_response_for_each_filter(
     assert len(logging_statements) == len(test_cases), "Elasticsearch was not used for one of the tests"
 
 
-def test_correct_response_for_keywords(client):
+def _test_correct_response_for_keywords(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
-        data=json.dumps({"group": "fiscal_year", "filters": {"keywords": ["test description"]}}),
+        data=json.dumps(
+            {"group": "fiscal_year", "filters": {"keywords": ["test", "recipient_name_", "recipient_name_1"]}}
+        ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
         {"aggregated_amount": 24030.0, "time_period": {"fiscal_year": "2010"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 8001.0, "time_period": {"fiscal_year": "2011"}},
         {"aggregated_amount": 24036.0, "time_period": {"fiscal_year": "2012"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
         {"aggregated_amount": 24042.0, "time_period": {"fiscal_year": "2014"}},
@@ -381,10 +397,10 @@ def test_correct_response_for_keywords(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
 
 
-def test_correct_response_for_time_period(client):
+def _test_correct_response_for_time_period(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -414,10 +430,10 @@ def test_correct_response_for_time_period(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
 
 
-def test_correct_response_for_award_type_codes(client):
+def _test_correct_response_for_award_type_codes(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -440,10 +456,10 @@ def test_correct_response_for_award_type_codes(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "Award Type Codes filter does not match expected result"
 
 
-def test_correct_response_for_agencies(client):
+def _test_correct_response_for_agencies(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -478,10 +494,10 @@ def test_correct_response_for_agencies(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "Agency filter does not match expected result"
 
 
-def test_correct_response_for_tas_codes(client):
+def _test_correct_response_for_tas_codes(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -536,10 +552,10 @@ def test_correct_response_for_tas_codes(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "TAS Codes filter does not match expected result"
 
 
-def test_correct_response_for_pop_location(client):
+def _test_correct_response_for_pop_location(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -550,7 +566,7 @@ def test_correct_response_for_pop_location(client):
                     "place_of_performance_locations": [
                         {"country": "USA", "state": "pop_state_code_2", "city": "pop_city_name_2"},
                         {"country": "USA", "state": "pop_state_code_12", "county": "012"},
-                        {"country": "USA", "state": "pop_state_code_17", "district": "17"},
+                        {"country": "USA", "state": "pop_state_code_18", "district": "18"},
                         {"country": "USA", "zip": "pop_zip5_19"},
                     ],
                 },
@@ -574,7 +590,366 @@ def test_correct_response_for_pop_location(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json().get("results") == expected_result
+    assert resp.json().get("results") == expected_result, "Place of Performance filter does not match expected result"
+
+
+def _test_correct_response_for_recipient_location(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "recipient_locations": [
+                        {"country": "USA", "state": "le_state_code_4", "city": "le_city_name_4"},
+                        {"country": "USA", "state": "le_state_code_7", "county": "007"},
+                        {"country": "USA", "state": "le_state_code_17", "district": "17"},
+                        {"country": "USA", "zip": "le_zip5_20"},
+                    ],
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 8020.0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8004.0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 16024.0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Recipient Location filter does not match expected result"
+
+
+def _test_correct_response_for_recipient_search_text(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"]
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 16030.0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8014.0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
+
+
+def _test_correct_response_for_recipient_type_names(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {"recipient_type_names": ["business_category_1_3", "business_category_2_8"]},
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 8003.0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8008.0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Recipient Type Names filter does not match expected result"
+
+
+def _test_correct_response_for_award_amounts(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "award_amounts": [
+                        {"upper_bound": 9001},
+                        {"lower_bound": 9013, "upper_bound": 9017},
+                        {"lower_bound": 9027},
+                    ],
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 8000.0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 8001.0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 8013.0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8014.0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 8015.0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 8016.0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 16044.0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8028.0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 8029.0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Award Amounts filter does not match expected result"
+
+
+def _test_correct_response_for_cfda_program(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {"program_numbers": ["cfda_number_11", "cfda_number_21", "cfda_number_25"]},
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 16032.0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 8025.0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
+
+
+def _test_correct_response_for_naics_codes(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {"group": "fiscal_year", "filters": {"naics_codes": ["naics_code_8", "naics_code_16", "naics_code_26"]}}
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 16042.0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8008.0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
+
+
+def _test_correct_response_for_psc_codes(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {"group": "fiscal_year", "filters": {"psc_codes": ["psc_code_2", "psc_code_12", "psc_code_24"]}}
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 16014.0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8024.0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
+
+
+def _test_correct_response_for_contract_pricing_type_codes(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "contract_pricing_type_codes": [
+                        "type_of_contract_pricing_0",
+                        "type_of_contract_pricing_10",
+                        "type_of_contract_pricing_22",
+                    ],
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 16010.0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 8022.0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert (
+        resp.json().get("results") == expected_result
+    ), "Contract Pricing Type Codes filter does not match expected result"
+
+
+def _test_correct_response_for_set_aside_type_codes(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {"set_aside_type_codes": ["type_set_aside_16", "type_set_aside_26", "type_set_aside_28"]},
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 16042.0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8028.0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
+
+
+def _test_correct_response_for_set_extent_competed_type_codes(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "extent_competed_type_codes": ["extent_competed_4", "extent_competed_24", "extent_competed_26"],
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 16028.0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 8026.0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert (
+        resp.json().get("results") == expected_result
+    ), "Extent Competed Type Codes filter does not match expected result"
+
+
+def _test_correct_response_for_recipient_id(client):
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {"group": "fiscal_year", "filters": {"recipient_id": "c551b3f8-d9ef-ac00-5e79-33d33ceb7483-R"}}
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010"}},
+        {"aggregated_amount": 8021.0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2012"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2016"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Recipient ID filter does not match expected result"
 
 
 @pytest.mark.django_db

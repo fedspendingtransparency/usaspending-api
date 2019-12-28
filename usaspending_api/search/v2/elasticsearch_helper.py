@@ -266,9 +266,19 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
 
         if key == "keywords":
             keyword_queries = []
-
+            fields = [
+                "recipient_name",
+                "naics_description",
+                "product_or_service_description",
+                "award_description",
+                "piid",
+                "fain",
+                "uri",
+                "recipient_unique_id",
+                "parent_recipient_unique_id",
+            ]
             for v in value:
-                keyword_queries.append(Q("query_string", query=v, default_operator="AND"))
+                keyword_queries.append(Q("query_string", query=v, default_operator="AND", fields=fields))
 
             must_queries.append(Q("dis_max", queries=keyword_queries))
 
@@ -317,7 +327,11 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
                 agency_name = v["name"]
                 agency_tier = v["tier"]
                 agency_type = v["type"]
-                agency_query_lookup[agency_type][agency_tier](agency_name)
+                agency_query = Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+                if agency_type == "awarding":
+                    awarding_agency_query.append(agency_query)
+                elif agency_type == "funding":
+                    funding_agency_query.append(agency_query)
 
             must_queries.extend(
                 [
@@ -333,9 +347,19 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
 
         elif key == "recipient_search_text":
             recipient_search_query = []
+            fields = ["recipient_name"]
 
             for v in value:
-                recipient_search_query.append(Q("wildcard", recipient_name=f"{v}*"))
+                upper_recipient_string = v.upper()
+                recipient_name_query = Q(
+                    "query_string", query=upper_recipient_string, default_operator="AND", fields=fields
+                )
+
+                if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                    recipient_duns_query = Q("match", recipient_unique_id=upper_recipient_string)
+                    recipient_search_query.append(Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
+                else:
+                    recipient_search_query.append(recipient_name_query)
 
             must_queries.append(Q("bool", should=recipient_search_query, minimum_should_match=1))
 
@@ -359,17 +383,6 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
         elif key == "recipient_locations":
             recipient_locations_query = []
 
-            recipient_locations_query_lookup = {
-                "country_code": lambda country_code: Q("match", recipient_location_country_code=country_code),
-                "state_code": lambda state_code: Q("match", recipient_location_state_code=state_code),
-                "county_code": lambda county_code: Q("match", recipient_location_county_code__keyword=county_code),
-                "congressional_code": lambda congressional_code: Q(
-                    "match", recipient_location_congressional_code__keyword=congressional_code
-                ),
-                "city_name": lambda city_name: Q("match", recipient_location_city_name__keyword=city_name),
-                "zip5": lambda zip5: Q("match", recipient_location_zip5=zip5),
-            }
-
             for v in value:
                 location_query = []
                 location_lookup = {
@@ -377,13 +390,13 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name__keyword": v.get("city"),
                     "zip5": v.get("zip"),
                 }
 
                 for location_key, location_value in location_lookup.items():
                     if location_value is not None:
-                        location_query.append(recipient_locations_query_lookup[location_key](location_value))
+                        location_query.append(Q("match", **{f"recipient_location_{location_key}": location_value}))
 
                 recipient_locations_query.append(Q("bool", must=location_query))
 
@@ -408,17 +421,6 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
         elif key == "place_of_performance_locations":
             pop_locations_query = []
 
-            pop_locations_query_lookup = {
-                "country_code": lambda country_code: Q("match", pop_country_code=country_code),
-                "state_code": lambda state_code: Q("match", pop_state_code=state_code),
-                "county_code": lambda county_code: Q("match", pop_county_code__keyword=county_code),
-                "congressional_code": lambda congressional_code: Q(
-                    "match", pop_congressional_code__keyword=congressional_code
-                ),
-                "city_name": lambda city_name: Q("match", pop_city_name__keyword=city_name),
-                "zip5": lambda zip5: Q("match", pop_zip5=zip5),
-            }
-
             for v in value:
                 location_query = []
                 location_lookup = {
@@ -426,13 +428,13 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
                     "state_code": v.get("state"),
                     "county_code": v.get("county"),
                     "congressional_code": v.get("district"),
-                    "city_name": v.get("city"),
+                    "city_name__keyword": v.get("city"),
                     "zip5": v.get("zip"),
                 }
 
                 for location_key, location_value in location_lookup.items():
                     if location_value is not None:
-                        location_query.append(pop_locations_query_lookup[location_key](location_value))
+                        location_query.append(Q("match", **{f"pop_{location_key}": location_value}))
 
                 pop_locations_query.append(Q("bool", must=location_query))
 
@@ -507,16 +509,6 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
         elif key == "tas_codes":
             tas_codes_query = []
 
-            tas_codes_query_lookup = {
-                "aid": lambda aid: Q("match", treasury_accounts__aid=aid),
-                "ata": lambda ata: Q("match", treasury_accounts__ata=ata),
-                "main": lambda main: Q("match", treasury_accounts__main=main),
-                "sub": lambda sub: Q("match", treasury_accounts__sub=sub),
-                "bpoa": lambda bpoa: Q("match", treasury_accounts__bpoa=bpoa),
-                "epoa": lambda epoa: Q("match", treasury_accounts__epoa=epoa),
-                "a": lambda a: Q("match", treasury_accounts__a=a),
-            }
-
             for v in value:
                 code_query = []
                 code_lookup = {
@@ -531,7 +523,7 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
 
                 for code_key, code_value in code_lookup.items():
                     if code_value is not None:
-                        code_query.append(tas_codes_query_lookup[code_key](code_value))
+                        code_query.append(Q("match", **{f"treasury_accounts__{code_key}": code_value}))
 
                 tas_codes_query.append(Q("bool", must=code_query))
 
