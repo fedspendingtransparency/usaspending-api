@@ -26,7 +26,7 @@ update
     temp_load_subawards_subaward
 
 set
-    prime_award_primary_place_of_performance_scope = fabs.primary_place_of_performance_scope
+    place_of_perform_scope = fabs.place_of_performance_scope
 
 from
     transaction_fabs fabs

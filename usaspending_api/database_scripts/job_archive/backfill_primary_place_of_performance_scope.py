@@ -1,7 +1,7 @@
 """
 Jira Ticket Number(s): DEV-4120
 
-    Backfill missing primary_place_of_performance_scope values
+    Backfill missing place_of_performance_scope values
 
 Expected CLI:
 
@@ -9,17 +9,16 @@ Expected CLI:
 
 Purpose:
 
-    Fetch primary_place_of_performance_scope from Broker table:
+    Fetch place_of_performance_scope from Broker table:
         - published_award_financial_assistance
     And populate FABS transaction table columns:
-        - primary_place_of_performance_scope
+        - place_of_performance_scope
 """
 import logging
 import math
 import psycopg2
 import time
 
-from datetime import datetime, timezone
 from os import environ
 
 

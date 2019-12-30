@@ -14,12 +14,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='subaward',
-            name='prime_award_primary_place_of_performance_scope',
+            name='place_of_perform_scope',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='transactionfabs',
-            name='primary_place_of_performance_scope',
+            name='place_of_performance_scope',
             field=models.TextField(blank=True, null=True),
         ),
     ]
