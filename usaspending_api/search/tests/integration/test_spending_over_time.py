@@ -252,12 +252,14 @@ the endpoint these tests should be updated to reflect the change.
 
 
 @pytest.mark.django_db
-def test_spending_over_time_elasticsearch_http_header(client, monkeypatch):
+def test_spending_over_time_elasticsearch_http_header(client, monkeypatch, elasticsearch_transaction_index):
     logging_statements = []
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
     )
+
+    elasticsearch_transaction_index.update_index()
 
     # Logging statement is triggered for Prime Awards when Header is present
     resp = client.post(
@@ -953,12 +955,14 @@ def _test_correct_response_for_recipient_id(client):
 
 
 @pytest.mark.django_db
-def test_failure_with_invalid_filters(client, monkeypatch):
+def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_transaction_index):
     logging_statements = []
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
     )
+
+    elasticsearch_transaction_index.update_index()
 
     # Fails with no filters
     resp = client.post(
@@ -985,12 +989,14 @@ def test_failure_with_invalid_filters(client, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_failure_with_invalid_group(client, monkeypatch):
+def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transaction_index):
     logging_statements = []
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
     )
+
+    elasticsearch_transaction_index.update_index()
 
     # Fails with wrong group
     logging_statements.clear()
