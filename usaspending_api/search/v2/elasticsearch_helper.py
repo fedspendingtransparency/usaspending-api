@@ -304,25 +304,6 @@ def get_base_search_with_filters(index_name: str, filters: dict) -> Search:
             awarding_agency_query = []
             funding_agency_query = []
 
-            agency_query_lookup = {
-                "awarding": {
-                    "toptier": lambda name: awarding_agency_query.append(
-                        Q("match", awarding_toptier_agency_name__keyword=name)
-                    ),
-                    "subtier": lambda name: awarding_agency_query.append(
-                        Q("match", awarding_subtier_agency_name__keyword=name)
-                    ),
-                },
-                "funding": {
-                    "toptier": lambda name: funding_agency_query.append(
-                        Q("match", funding_toptier_agency_name__keyword=name)
-                    ),
-                    "subtier": lambda name: funding_agency_query.append(
-                        Q("match", funding_subtier_agency_name__keyword=name)
-                    ),
-                },
-            }
-
             for v in value:
                 agency_name = v["name"]
                 agency_tier = v["tier"]
