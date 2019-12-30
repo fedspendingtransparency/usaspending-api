@@ -7,9 +7,6 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
     transaction_normalized_functions,
-    legal_entity_nonboolean_columns,
-    legal_entity_boolean_columns,
-    legal_entity_functions,
     recipient_location_nonboolean_columns,
     recipient_location_functions,
     place_of_performance_nonboolean_columns,
@@ -30,8 +27,6 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_normalized,
     insert_transaction_normalized,
     insert_transaction_fpds,
-    bulk_insert_recipient_location,
-    bulk_insert_recipient,
     bulk_insert_place_of_performance,
     insert_award,
 )
@@ -178,9 +173,6 @@ def _transform_objects(broker_objects):
             "recipient_location": _create_load_object(
                 broker_object, recipient_location_nonboolean_columns, None, recipient_location_functions
             ),
-            "legal_entity": _create_load_object(
-                broker_object, legal_entity_nonboolean_columns, legal_entity_boolean_columns, legal_entity_functions
-            ),
             "place_of_performance_location": _create_load_object(
                 broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
             ),
@@ -251,15 +243,6 @@ def _load_and_link_leaf_objects(cursor, load_objects):
     First create the records that don't have a foreign key out to anything else in one transaction per type,
     then put foreign keys to those objects into the load objects still to be loaded
     """
-    inserted_recipient_locations = bulk_insert_recipient_location(cursor, load_objects)
-    for index, elem in enumerate(inserted_recipient_locations):
-        load_objects[index]["legal_entity"]["location_id"] = inserted_recipient_locations[index]
-
-    inserted_recipients = bulk_insert_recipient(cursor, load_objects)
-    for index, elem in enumerate(inserted_recipients):
-        load_objects[index]["transaction_normalized"]["recipient_id"] = inserted_recipients[index]
-        load_objects[index]["award"]["recipient_id"] = inserted_recipients[index]
-
     inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
     for index, elem in enumerate(inserted_place_of_performance):
         load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[index]
