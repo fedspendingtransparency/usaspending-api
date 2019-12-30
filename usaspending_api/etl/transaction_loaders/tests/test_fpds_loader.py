@@ -10,8 +10,6 @@ from usaspending_api.etl.transaction_loaders.fpds_loader import (
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    legal_entity_nonboolean_columns,
-    legal_entity_boolean_columns,
     recipient_location_nonboolean_columns,
     recipient_location_functions,
     place_of_performance_nonboolean_columns,
@@ -71,8 +69,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **legal_entity_nonboolean_columns,
-        **{key: str(random.choice([True, False])) for key in legal_entity_boolean_columns},
         **recipient_location_nonboolean_columns,
         **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
@@ -105,8 +101,6 @@ def test_load_ids_empty():
 @patch(
     "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
 )
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient_location")
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_place_of_performance")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._matching_award")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_award")
@@ -124,8 +118,6 @@ def test_load_ids_dummy_id(
     mock__insert_award,
     mock__matching_award,
     mock__bulk_insert_place_of_performance,
-    mock__bulk_insert_recipient,
-    mock__bulk_insert_recipient_location,
     mock__fy,
     mock__extract_broker_objects,
     mock___fetch_subtier_agency_id,
@@ -162,8 +154,6 @@ def test_load_ids_dummy_id(
     # - and an existing transaction that it belongs to was found in usaspending
 
     # One call per batch of transactions to load from broker into usaspending
-    assert mock__bulk_insert_recipient_location.call_count == 1
-    assert mock__bulk_insert_recipient.call_count == 1
     assert mock__bulk_insert_place_of_performance.call_count == 1
 
     # One call per transactions to load from broker into usaspending
@@ -294,7 +284,6 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
-    mega_key_list.update(legal_entity_nonboolean_columns)
     mega_key_list.update(recipient_location_nonboolean_columns)
     mega_key_list.update(recipient_location_functions)
     mega_key_list.update(place_of_performance_nonboolean_columns)
@@ -312,7 +301,6 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
 
     mega_boolean_key_list = {}
     mega_boolean_key_list.update(transaction_fpds_boolean_columns)
-    mega_boolean_key_list.update(legal_entity_boolean_columns)
 
     for key in mega_boolean_key_list:
         mega_boolean_key_list[key] = "false"
