@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                     key.delete()
                     logger.info("Deleting {} from bucket".format(key.key))
         else:
-            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):

@@ -6,12 +6,17 @@ import os
 import signal
 import psutil as ps
 
-import pytest
 from unittest import TestCase
 from random import randint
+
+import pytest
 from botocore.config import Config
 from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue, FakeSQSMessage
+from usaspending_api.common.sqs.sqs_handler import (
+    get_sqs_queue,
+    FakeSQSMessage,
+    UNITTEST_FAKE_QUEUE_NAME,
+)
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
     QueueWorkerProcessError,
@@ -19,14 +24,25 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
 )
 from time import sleep
 
+from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue
 
-@pytest.mark.usefixtures("local_queue_dir")
+
+@pytest.fixture()
+def _patch_get_sqs_queue(fake_sqs_queue, monkeypatch):
+    """
+    Patch the use of get_sqs_queue HERE, in tests in this module (defined by ``__name__``), where the function is
+    imported as a new name in this module.
+
+    Chaining to fixture ``fake_sqs_queue`` will also take care of fake-queue purging and cleanup.
+    """
+    monkeypatch.setattr(f"{__name__}.get_sqs_queue", get_unittest_fake_sqs_queue)
+    should_be_fake = get_sqs_queue()
+    # Check that the patch worked, and the fake unit test queue is returned
+    assert should_be_fake.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
+
+
+@pytest.mark.usefixtures("_patch_get_sqs_queue")
 class SQSWorkDispatcherTests(TestCase):
-    def tearDown(self):
-        get_sqs_queue().purge()  # clear any lingering messages in the queue between tests
-        get_sqs_queue().reset_instance_state()
-        super().tearDown()
-
     def test_dispatch_with_default_numeric_message_body_succeeds(self):
         """ SQSWorkDispatcher can execute work on a numeric message body successfully
 
@@ -1363,7 +1379,8 @@ class SQSWorkDispatcherTests(TestCase):
     def test_worker_process_error_exception_data(self):
         unknown_worker = "Unknown Worker"
         no_queue_message = "Queue Message None or not provided"
-        fake_queue_message = FakeSQSMessage()
+        queue = get_sqs_queue()
+        fake_queue_message = FakeSQSMessage(queue.url)
 
         def raise_exc_no_args():
             raise QueueWorkerProcessError()

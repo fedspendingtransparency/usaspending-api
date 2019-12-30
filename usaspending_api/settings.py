@@ -43,6 +43,16 @@ ALLOWED_HOSTS = ["*"]
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# How to handle downloads locally
+# True: process it right away by the API;
+# False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
+RUN_LOCAL_DOWNLOAD_IN_PROCESS = (
+    False
+    if os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS")
+    and os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS").lower() in ["false", "0", "no"]
+    else True
+)
+
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
 if not USASPENDING_AWS_REGION:
@@ -292,6 +302,7 @@ LOGGING = {
         # ======== Module-specific loggers ========
         "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
         "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }
 

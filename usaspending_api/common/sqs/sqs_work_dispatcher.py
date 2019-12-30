@@ -49,8 +49,6 @@ class SQSWorkDispatcher:
 
     """
 
-    _logger = logging.getLogger("console")
-
     EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
     # NOTE: We are not handling signal.SIGSTOP or signal.SIGTSTP because those are suspensions.
     # There may be valid cases to suspend and then later resume the process.
@@ -89,6 +87,7 @@ class SQSWorkDispatcher:
                     do its work, set this to ``True``, so that ``Process.daemon`` will be set to ``False``,
                     allowing the creation of grandchild processes from the dispatcher's child worker process.
         """
+        self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.sqs_queue_instance = sqs_queue_instance
         self.worker_process_name = worker_process_name
         self._default_visibility_timeout = default_visibility_timeout

@@ -12,6 +12,11 @@ import uuid
 
 from usaspending_api import settings
 
+LOCAL_FAKE_QUEUE_NAME = "local-fake-queue"
+UNITTEST_FAKE_QUEUE_NAME = "unittest-fake-queue"
+UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME = "unittest-fake-dead-letter-queue"
+FAKE_QUEUE_DATA_PATH = pathlib.Path(settings.BULK_DOWNLOAD_LOCAL_PATH) / "local_queue"
+
 
 class _FakeFileBackedSQSQueue:
     """
@@ -22,24 +27,50 @@ class _FakeFileBackedSQSQueue:
     of multiple processes/sub-processes accessing the queue. If queue data was in-memory, each process would have
     independent and divergent memory, and so synchronized activity with a single queue would not be possible. A
     single file backing the queue solves this, and pickle is used to read and write queue data state from/to the file.
+
+    This implementation of the queue follows a Singleton pattern so that all objects of this class in the same
+    process will be the same instance.
     """
 
-    _FAKE_AWS_ACCT = uuid.uuid4().hex
-    UNITTEST_FAKE_QUEUE = "unittest-fake-queue"
-    FAKE_QUEUE_URL = f"https://fake-us-region.queue.amazonaws.com/{_FAKE_AWS_ACCT}/{UNITTEST_FAKE_QUEUE}"
-    FAKE_QUEUE_DATA_PATH = pathlib.Path(settings.BULK_DOWNLOAD_LOCAL_PATH) / "local_queue"
-    _QUEUE_DATA_FILE = str(FAKE_QUEUE_DATA_PATH / f"{_FAKE_AWS_ACCT}_{UNITTEST_FAKE_QUEUE}.pickle")
+    _FAKE_AWS_ACCT = "localfakeawsaccount"
+    _FAKE_QUEUE_URL = f"https://fake-us-region.queue.amazonaws.com/{_FAKE_AWS_ACCT}/{LOCAL_FAKE_QUEUE_NAME}"
+    _QUEUE_DATA_FILE = str(FAKE_QUEUE_DATA_PATH / f"{LOCAL_FAKE_QUEUE_NAME}.pickle")
 
-    _INSTANCE_STATE_MEMENTO = None
+    _instance_state_memento = None
 
-    def __init__(self, queue_url=FAKE_QUEUE_URL, max_receive_count=1):
+    def __new__(cls, *args, **kwargs):
+        """Implementation of the Singleton pattern from:
+        https://www.python.org/download/releases/2.2.3/descrintro/#__new__
+        """
+        it = cls.__dict__.get("__it__")
+        if it is not None:
+            return it
+        cls.__it__ = it = object.__new__(cls)
+        it._init(*args, **kwargs)
+        return it
+
+    # NOTE: do not implement __init__, as it will get re-invoked on each call to the constructor.
+    # In accordance with Singletons, we want instantiation only ONCE using the _init(...) function
+
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("Do not attempt to instantiate a new object. Acquire the Singleton instance via instance()")
+
+    def _init(self, queue_url=None, max_receive_count=1):
+        if not queue_url:
+            queue_url = self._FAKE_QUEUE_URL
         self.max_receive_count = max_receive_count
         self.queue_url = queue_url
-        self.FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
-        with open(self._QUEUE_DATA_FILE, "w+b") as queue_data_file:
-            pickle.dump(deque([]), queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
+        FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
+        # The local queue can live on with data. Don't recreate unless it doesn't exist
+        if not pathlib.Path(self._QUEUE_DATA_FILE).exists():
+            with open(self._QUEUE_DATA_FILE, "w+b") as queue_data_file:
+                pickle.dump(deque([]), queue_data_file, protocol=pickle.HIGHEST_PROTOCOL)
         # Make sure this stays last
-        self._INSTANCE_STATE_MEMENTO = self.__dict__.copy()
+        self._instance_state_memento = self.__dict__.copy()
+
+    @classmethod
+    def instance(cls, *args, **kwargs):
+        return cls.__new__(cls, args, kwargs)
 
     def reset_instance_state(self):
         """Because multiple tests in a single test session may be using the same FAKE_QUEUE instance, this method can
@@ -48,9 +79,9 @@ class _FakeFileBackedSQSQueue:
 
            Using a loose implementation of the memento pattern.
         """
-        if not self._INSTANCE_STATE_MEMENTO:
+        if not self._instance_state_memento:
             raise ValueError("Prior instance state to restore was not saved. Saved instance state is None")
-        self.__dict__.update(self._INSTANCE_STATE_MEMENTO)
+        self.__dict__.update(self._instance_state_memento)
 
     @classmethod
     def _enqueue(cls, msg: FakeSQSMessage):
@@ -78,7 +109,7 @@ class _FakeFileBackedSQSQueue:
 
     @classmethod
     def send_message(cls, MessageBody: str, MessageAttributes: dict = None):  # noqa
-        msg = FakeSQSMessage(cls.FAKE_QUEUE_URL)
+        msg = FakeSQSMessage(cls._FAKE_QUEUE_URL)
         msg.body = MessageBody
         msg.message_attributes = MessageAttributes
         cls._enqueue(msg)
@@ -107,9 +138,22 @@ class _FakeFileBackedSQSQueue:
     @property
     def attributes(self):
         fake_redrive = '{{"deadLetterTargetArn": "FAKE_ARN:{}", "maxReceiveCount": {}}}'.format(
-            FAKE_DEAD_LETTER_QUEUE.UNITTEST_FAKE_DEAD_LETTER_QUEUE, self.max_receive_count
+            UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME, self.max_receive_count
         )
         return {"ReceiveMessageWaitTimeSeconds": "10", "RedrivePolicy": fake_redrive}
+
+    @property
+    def url(self):
+        return self._FAKE_QUEUE_URL
+
+
+class _FakeUnitTestFileBackedSQSQueue(_FakeFileBackedSQSQueue):
+    """Subclass of the local file-backed queue used transiently during unit test sessions"""
+
+    # NOTE: Must override ALL class attributes of base class
+    _FAKE_AWS_ACCT = uuid.uuid4().hex
+    _FAKE_QUEUE_URL = f"https://fake-us-region.queue.amazonaws.com/{_FAKE_AWS_ACCT}/{UNITTEST_FAKE_QUEUE_NAME}"
+    _QUEUE_DATA_FILE = str(FAKE_QUEUE_DATA_PATH / f"{_FAKE_AWS_ACCT}_{UNITTEST_FAKE_QUEUE_NAME}.pickle")
 
 
 class _FakeStatelessLoggingSQSDeadLetterQueue:
@@ -118,15 +162,11 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
     nothing but log that the action occurred.
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#queue"""
 
-    UNITTEST_FAKE_DEAD_LETTER_QUEUE = "unittest-fake-dead-letter-queue"
-    FAKE_DEAD_LETTER_QUEUE_URL = (
-        f"https://fake-us-region.queue.amazonaws.com/{uuid.uuid4().hex}/{UNITTEST_FAKE_DEAD_LETTER_QUEUE}"
+    _FAKE_DEAD_LETTER_QUEUE_URL = (
+        f"https://fake-us-region.queue.amazonaws.com/{uuid.uuid4().hex}/{UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME}"
     )
-
-    def __init__(self, queue_url=FAKE_DEAD_LETTER_QUEUE_URL):
-        self.queue_url = queue_url
-
     logger = logging.getLogger(__name__)
+    url = _FAKE_DEAD_LETTER_QUEUE_URL
 
     @staticmethod
     def send_message(MessageBody, MessageAttributes=None):  # noqa
@@ -152,16 +192,11 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
         return []
 
 
-# Pseudo-singleton instances of the Fake Queue and Fake Dead Letter Queue
-FAKE_QUEUE = _FakeFileBackedSQSQueue()
-FAKE_DEAD_LETTER_QUEUE = _FakeStatelessLoggingSQSDeadLetterQueue()
-
-
 class FakeSQSMessage:
     """Fakes portions of a boto3 SQS resource ``Message`` object.
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#message"""
 
-    def __init__(self, queue_url: str = FAKE_QUEUE.UNITTEST_FAKE_QUEUE):
+    def __init__(self, queue_url):
         self.queue_url = queue_url
         self.receipt_handle = str(uuid.uuid4())
         self.body = None
@@ -180,7 +215,16 @@ class FakeSQSMessage:
         )
 
     def delete(self):
-        FAKE_QUEUE._remove(self)
+        if self.queue_url == _FakeStatelessLoggingSQSDeadLetterQueue.url:
+            pass  # not a persistent queue
+        elif self.queue_url == _FakeFileBackedSQSQueue.instance().url:
+            _FakeFileBackedSQSQueue.instance()._remove(self)
+        elif self.queue_url == _FakeUnitTestFileBackedSQSQueue.instance().url:
+            _FakeUnitTestFileBackedSQSQueue.instance()._remove(self)
+        else:
+            raise ValueError(
+                f"Cannot locate queue instance with url = {self.queue_url}, from which to delete the " f"message"
+            )
 
     def change_visibility(self, VisibilityTimeout):  # noqa
         # Do nothing
@@ -196,9 +240,9 @@ def get_sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settin
     if settings.IS_LOCAL:
         # Ensure the "singleton" instances of the queue is returned, so that multiple consumers, possibly on
         # different processes or threads, are accessing the same queue data
-        if queue_name == FAKE_DEAD_LETTER_QUEUE.UNITTEST_FAKE_DEAD_LETTER_QUEUE:
-            return FAKE_DEAD_LETTER_QUEUE
-        return FAKE_QUEUE
+        if queue_name == UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME:
+            return _FakeStatelessLoggingSQSDeadLetterQueue()
+        return _FakeFileBackedSQSQueue.instance()
     else:
         # stuff that's in get_queue
         sqs = boto3.resource("sqs", region_name)
