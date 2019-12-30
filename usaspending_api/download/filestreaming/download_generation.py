@@ -383,9 +383,13 @@ def apply_annotations_to_sql(raw_query, aliases):
     """
     aliases_copy = list(aliases)
 
+    print(f"\nraw_query: \n\n{raw_query}")
+
     # Extract everything between the first SELECT and the last FROM
-    query_before_group_by = raw_query.split("GROUP BY ")[0]
+    query_before_group_by = raw_query[: top_level_division_point(raw_query)]
     query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
+
+    print(f"\nquery_before_from: \n\n{query_before_from}")
 
     # Create a list from the non-derived values between SELECT and FROM
     selects_str = re.findall(
@@ -393,6 +397,8 @@ def apply_annotations_to_sql(raw_query, aliases):
     )[0]
     just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
     selects_list = [select.strip() for select in just_selects.strip().split(",")]
+
+    print(f"\nselects_list: \n\n{selects_list}")
 
     # Create a list from the derived values between SELECT and FROM
     remove_selects = query_before_from.replace(selects_str[0], "")
@@ -410,6 +416,8 @@ def apply_annotations_to_sql(raw_query, aliases):
         if alias in aliases_copy:
             aliases_copy.remove(alias)
 
+    print(f"\nderiv_str_lookup: \n\n{deriv_str_lookup}")
+
     # Validate we have an alias for each value in the SELECT string
     if len(selects_list) != len(aliases_copy):
         raise Exception("Length of aliases doesn't match the columns in selects")
@@ -420,6 +428,23 @@ def apply_annotations_to_sql(raw_query, aliases):
     ]
 
     return raw_query.replace(query_before_from, ", ".join(values_list), 1)
+
+
+def top_level_division_point(sql):
+    in_quotes = False
+    parens_depth = 0
+
+    for index, char in enumerate(sql):
+        if char == "(":
+            parens_depth = parens_depth + 1
+        if char == ")":
+            parens_depth = parens_depth - 1
+
+        if parens_depth == 0:
+            if sql[index : index + 9] == "GROUP BY ":
+                return index
+
+    return len(sql)
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
