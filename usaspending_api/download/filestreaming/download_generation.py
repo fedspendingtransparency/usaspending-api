@@ -381,45 +381,22 @@ def apply_annotations_to_sql(raw_query, aliases):
     want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-    aliases_copy = list(aliases)
 
-    print(f"\nraw_query: \n\n{raw_query}")
-
-    # Extract everything between the first SELECT and the last FROM
-    query_before_group_by = raw_query[: top_level_division_point(raw_query)]
-    query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
-
-    print(f"\nquery_before_from: \n\n{query_before_from}")
+    select_statements = _select_columns(raw_query)
 
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(
-        r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
-    )[0]
-    just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
-    selects_list = [select.strip() for select in just_selects.strip().split(",")]
-
-    print(f"\nselects_list: \n\n{selects_list}")
+    selects_list = list(filter(lambda str: re.search(r'^"[^"]*"\."[^"]*"$', str.strip()), select_statements))
 
     # Create a list from the derived values between SELECT and FROM
-    remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall(
-        r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
-    )
+    aliased_list = list(filter(lambda str: not re.search(r'^"[^"]*"\."[^"]*"$', str.strip()), select_statements))
     deriv_dict = {}
-    for str_match in deriv_str_lookup:
-        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
-        alias = str_match[2][:-1].strip() if str_match[2][-1:] == "," else str_match[2].strip()
-        if (alias[-1:] == '"' and alias[:1] == '"') or (alias[-1:] == "'" and alias[:1] == "'"):
-            alias = alias[1:-1]
-        deriv_dict[alias] = "{}{}".format(str_match[0], str_match[1]).strip()
-        # Provides some safety if a field isn't provided in this historical_lookup
-        if alias in aliases_copy:
-            aliases_copy.remove(alias)
-
-    print(f"\nderiv_str_lookup: \n\n{deriv_str_lookup}")
+    for str in aliased_list:
+        print(str)
+        split_string = _bottom_level_split(str, "AS")
+        deriv_dict[split_string[1].replace('"', "")] = split_string[0]
 
     # Validate we have an alias for each value in the SELECT string
-    if len(selects_list) != len(aliases_copy):
+    if len(aliased_list) != len(aliases):
         raise Exception("Length of aliases doesn't match the columns in selects")
 
     # Match aliases with their values
@@ -427,12 +404,14 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    return raw_query.replace(query_before_from, ", ".join(values_list), 1)
+    return raw_query.replace(_bottom_level_split(raw_query, "FROM")[0], ", ".join(values_list), 1)
 
 
-def top_level_division_point(sql):
-    in_quotes = False
+def _select_columns(sql):
+    # TODO: Find a way to forgive myself for the following lines
     parens_depth = 0
+    last_processed_index = 0
+    retval = []
 
     for index, char in enumerate(sql):
         if char == "(":
@@ -441,10 +420,33 @@ def top_level_division_point(sql):
             parens_depth = parens_depth - 1
 
         if parens_depth == 0:
-            if sql[index : index + 9] == "GROUP BY ":
-                return index
+            # Ignore the SELECT statement
+            if sql[index : index + 6] == "SELECT":
+                last_processed_index = last_processed_index + 6
+            # If there is a FROM at the bottom level, we have all the values we need and can return
+            if sql[index : index + 4] == "FROM":
+                retval.append(sql[last_processed_index:index])
+                return retval
+            # If there is a comma on the bottom level, add another select value and start parsing a new one
+            if char == ",":
+                retval.append(sql[last_processed_index:index])
+                last_processed_index = index + 1  # skips the comma by design
 
-    return len(sql)
+    return retval  # this will almost certainly error out later.
+
+
+def _bottom_level_split(sql, splitter):
+    # TODO: Find a way to forgive myself for the following lines
+    parens_depth = 0
+    for index, char in enumerate(sql):
+        if char == "(":
+            parens_depth = parens_depth + 1
+        if char == ")":
+            parens_depth = parens_depth - 1
+
+        if parens_depth == 0:
+            if sql[index : index + len(splitter)] == splitter:
+                return [sql[:index], sql[index + 3 :]]
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
