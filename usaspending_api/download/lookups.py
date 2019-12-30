@@ -30,6 +30,9 @@ from usaspending_api.awards.v2.filters.matview_filters import (
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.download.filestreaming.generate_export_query import (
+    generate_file_b_custom_account_download_export_query,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
     universal_transaction_matview_annotations,
@@ -106,9 +109,10 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
-        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
+        "export_query_function": generate_file_b_custom_account_download_export_query,
     },
     "award_financial": {
         "source_type": "account",
