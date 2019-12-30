@@ -34,7 +34,7 @@ SELECT
 FROM
     published_award_financial_assistance
 WHERE
-    published_award_financial_assistance_id IN %s
+    published_award_financial_assistance_id BETWEEN {min} AND {max}
 """
 
 SPENDING_FABS_UPDATE_SQL = """
@@ -56,7 +56,7 @@ RETURNING fabs.transaction_id
 
 
 GET_FABS_IDS_SQL = """
-SELECT published_award_financial_assistance_id
+SELECT MIN(published_award_financial_assistance_id), MAX(published_award_financial_assistance_id)
 FROM published_award_financial_assistance
 WHERE place_of_performance_scope IS NOT NULL
 """
@@ -103,9 +103,9 @@ def print_no_rows_to_update(transaction_type):
     logging.info("[{}] No rows to update".format(transaction_type))
 
 
-def run_broker_select_query(transaction_sql, id_tuple):
+def run_broker_select_query(transaction_sql, min_id, max_id):
     with broker_connection.cursor() as select_cursor:
-        select_cursor.execute(transaction_sql, [id_tuple])
+        select_cursor.execute(transaction_sql.format(min=min_id, max=max_id))
         return select_cursor.fetchall()
 
 
@@ -133,21 +133,24 @@ if __name__ == "__main__":
             spending_connection.autocommit = True
 
             logging.info("Running FABS backfill from Broker to USAspending")
-            logging.info("Finding Detached_Award_Procurement_IDs for FABS...")
+            logging.info("Finding IDs for FABS...")
             with broker_connection.cursor() as cursor:
                 cursor.execute(GET_FABS_IDS_SQL)
-                fabs_ids = tuple(id[0] for id in cursor.fetchall())
-                fabs_total = len(fabs_ids)
+                result = cursor.fetchall()
 
-            logging.info("Total Detached_Award_Procurement_IDs: {:,}".format(fabs_total))
+            min_id, max_id = result[0]
+            fabs_total = max_id - min_id
+
+            logging.info(f"MIN ID: {min_id:,}, MAX ID: {max_id:,}")
+            logging.info(f"Potential total IDs: {fabs_total:,}")
 
             with Timer() as chunk_timer:
-                for i in range(0, fabs_total, CHUNK_SIZE):
-                    max_index = i + CHUNK_SIZE if i + CHUNK_SIZE < fabs_total else fabs_total
-                    fabs_ids_batch = tuple(fabs_ids[i:max_index])
+                _min = min_id
+                while _min <= max_id:
+                    _max = min(_min + CHUNK_SIZE - 1, max_id)
 
-                    logging.info("Fetching {}-{} out of {} records from broker".format(i, max_index, fabs_total))
-                    broker_fabs_data = run_broker_select_query(BROKER_FABS_SELECT_SQL, fabs_ids_batch)
+                    logging.info("Fetching {}-{} out of {} records from broker".format(_min, _max, fabs_total))
+                    broker_fabs_data = run_broker_select_query(BROKER_FABS_SELECT_SQL, min_id=_min, max_id=_max)
                     if broker_fabs_data:
                         updated_row_count = run_spending_update_query(
                             SPENDING_FABS_UPDATE_SQL, "FABS", broker_fabs_data
@@ -155,6 +158,8 @@ if __name__ == "__main__":
                         fabs_row_count += updated_row_count
                     else:
                         print_no_rows_to_update("FABS")
+
+                    _min = _max + 1
 
             logging.info(
                 "Finished running FABS backfill. Took {} to update {:,} rows".format(
