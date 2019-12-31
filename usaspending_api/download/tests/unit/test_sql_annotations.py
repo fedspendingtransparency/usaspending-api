@@ -52,6 +52,6 @@ def test_apply_annotations_to_sql():
 
     annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = 'SELECT  (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode")  AS "alias_one",  "table"."col1" AS "col1",  "table"."col2" AS "col2"FROM table WHERE six = \'something\''
+    annotated_string = 'SELECT  (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one",  "table"."col1" AS "col1",  "table"."col2" AS "col2"FROM table WHERE six = \'something\''
 
     assert annotated_sql == annotated_string
