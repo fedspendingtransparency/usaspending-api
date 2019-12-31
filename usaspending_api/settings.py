@@ -283,12 +283,12 @@ LOGGING = {
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
@@ -300,9 +300,8 @@ LOGGING = {
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
-        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
-        "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 
