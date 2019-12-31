@@ -393,11 +393,12 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     select_statements = _select_columns(raw_query)
 
+    DIRECT_SELECT_QUERY_REGEX = r'^"[^"]*"\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = list(filter(lambda str: re.search(r'^"[^"]*"\."[^"]*"$', str.strip()), select_statements))
+    selects_list = list(filter(lambda str: re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
 
     # Create a list from the derived values between SELECT and FROM
-    aliased_list = list(filter(lambda str: not re.search(r'^"[^"]*"\."[^"]*"$', str.strip()), select_statements))
+    aliased_list = list(filter(lambda str: not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
     deriv_dict = {}
     for str in aliased_list:
         split_string = _bottom_level_split(str, "AS")
