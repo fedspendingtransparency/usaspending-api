@@ -173,7 +173,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         award_ids = Award.objects.filter(id__in=internal_ids).values_list("id", "generated_unique_award_id")
         award_ids = {internal_id: guai for internal_id, guai in award_ids}
         for record in records:
-            record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepency
+            record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepancy
         return records
 
     def get_sort_by_fields(self):

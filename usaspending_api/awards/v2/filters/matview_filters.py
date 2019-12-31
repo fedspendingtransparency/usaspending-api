@@ -12,7 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers import build_tas_codes_filter
+from usaspending_api.search.helpers import build_tas_codes_filter, build_award_ids_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -241,12 +241,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset &= total_obligation_queryset(value, model, filters)
 
         elif key == "award_ids":
-            filter_obj = Q()
-            for val in value:
-                # award_id_string is a Postgres TS_vector
-                # award_id_string = piid + fain + uri
-                filter_obj |= Q(award_ts_vector=val)
-            queryset = queryset.filter(filter_obj)
+            queryset = build_award_ids_filter(queryset, value, ("piid", "fain", "uri"))
 
         elif key == "program_numbers":
             in_query = [v for v in value]
