@@ -1,8 +1,9 @@
 from django.contrib.postgres.aggregates import StringAgg
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
+from usaspending_api.awards.models import Award
 from usaspending_api.settings import HOST
 from django.db.models.functions import Concat
-from django.db.models import Func, F, Value
+from django.db.models import Func, F, Value, Subquery, OuterRef, TextField
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
@@ -10,8 +11,11 @@ AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/aw
 def universal_transaction_matview_annotations():
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
-        "treasury_accounts_funding_this_award": StringAgg(
-            "transaction__award__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
+        "treasury_accounts_funding_this_award": Subquery(
+            Award.objects.filter(id=OuterRef("award_id"))
+            .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
+            .values("value"),
+            output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": StringAgg(
             "transaction__award__financial_set__treasury_account__federal_account__federal_account_code",
