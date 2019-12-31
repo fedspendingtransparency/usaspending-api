@@ -495,7 +495,7 @@ def _kill_spawned_processes(download_job=None):
     for spawn_of_job in job.children(recursive=True):
         write_to_log(
             message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
-                    f"[{spawn_of_job.name}]",
+            f"[{spawn_of_job.name}]",
             download_job=download_job,
             is_error=True,
         )
