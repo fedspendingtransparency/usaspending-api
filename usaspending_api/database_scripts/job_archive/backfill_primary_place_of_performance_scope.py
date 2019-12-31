@@ -51,7 +51,6 @@ WHERE
     AND (
         fabs.place_of_performance_scope IS DISTINCT FROM broker.place_of_performance_scope
     )
-RETURNING fabs.transaction_id
 """
 
 
@@ -124,7 +123,7 @@ if __name__ == "__main__":
     logging.getLogger()
     logging.basicConfig(level=logging.INFO, format=log_format, datefmt="%Y/%m/%d %H:%M:%S (%Z)")
 
-    fabs_row_count, fabs_row_count = 0, 0
+    fabs_row_count = 0
 
     with Timer() as overall_timer:
         with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, psycopg2.connect(
