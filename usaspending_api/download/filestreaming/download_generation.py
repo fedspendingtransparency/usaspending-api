@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 import os
+import psutil as ps
 import re
 import shutil
 import subprocess
@@ -96,6 +97,7 @@ def generate_download(download_job):
         # Remove working directory
         if os.path.exists(working_dir):
             shutil.rmtree(working_dir)
+        _kill_spawned_processes(download_job)
 
     try:
         # push file to S3 bucket, if not local
@@ -119,6 +121,7 @@ def generate_download(download_job):
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
             os.remove(zip_file_path)
+        _kill_spawned_processes(download_job)
 
     return finish_download(download_job)
 
@@ -484,3 +487,16 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
+
+
+def _kill_spawned_processes(download_job=None):
+    """Cleanup (kill) any spawned child processes during this job run"""
+    job = ps.Process(os.getpid())
+    for spawn_of_job in job.children(recursive=True):
+        write_to_log(
+            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
+                    f"[{spawn_of_job.name}]",
+            download_job=download_job,
+            is_error=True,
+        )
+        spawn_of_job.kill()

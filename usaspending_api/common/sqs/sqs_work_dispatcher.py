@@ -719,10 +719,8 @@ class SQSWorkDispatcher:
                 "Exiting worker process with original exit signal.".format(os.getpid(), signal_or_human),
                 is_warning=True,
             )
+            self._kill_worker(with_signal=signum)
 
-            # Ensure the worker exits as would have occurred if not handling its signals
-            signal.signal(signum, signal.SIG_DFL)
-            os.kill(self._worker_process.pid, signum)
         elif not parent_dispatcher_signaled:
             log_dispatcher_message(
                 self,
@@ -733,6 +731,9 @@ class SQSWorkDispatcher:
                 ),
                 is_error=True,
             )
+            # Attempt to cleanup children, but likely will be a no-op because the worker has already exited and
+            # orphaned them
+            self._kill_worker(with_signal=signum, just_kill_descendants=True)
 
         else:  # dispatcher signaled
             log_dispatcher_message(
@@ -782,7 +783,7 @@ class SQSWorkDispatcher:
                         ),
                         is_debug=True,
                     )
-                    worker.kill()
+                    self._kill_worker()
             else:
                 try_attempt = "second" if is_retry else "first"
                 log_dispatcher_message(
@@ -871,16 +872,13 @@ class SQSWorkDispatcher:
 
             # Now that SQS message has been handled, ensure worker process is dead
             if self._worker_process.is_alive():
-                worker = ps.Process(self._worker_process.pid)
-                # Use kill instead of multiprocess.Process.terminate() or psutil.Process.terminate(), since each of
-                # those send a signal.SIGTERM which is not as immediate and final as kill (signal.SIGKILL)
                 log_dispatcher_message(
                     self,
                     message="Message handled. Now killing worker process with PID [{}] "
-                    "as it is alive but has no more work to do.".format(worker.pid),
+                    "as it is alive but has no more work to do.".format(self._worker_process.pid),
                     is_debug=True,
                 )
-                worker.kill()
+                self._kill_worker()
         finally:
             if exit_handling_failed:
                 # Don't perform final logic if we got here after failing to execute the exit handler
@@ -958,6 +956,41 @@ class SQSWorkDispatcher:
             raise QueueWorkDispatcherError(
                 message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             ) from exc
+
+    def _kill_worker(self, with_signal=None, just_kill_descendants=False):
+        """
+        Cleanup (kill) a worker process and its spawned descendant processes
+        Args:
+            with_signal: Use this termination signal when killing. Otherwise, hard kill (-9)
+            just_kill_descendants: Set to True to leave the worker and only kill its descendants
+        """
+        worker = ps.Process(self._worker_process.pid)
+        if self._worker_can_start_child_processes:
+            # First kill any other processes the worker may have spawned
+            for spawn_of_worker in worker.children(recursive=True):
+                if with_signal:
+                    log_dispatcher_message(
+                        self,
+                        message=f"Attempting to terminate child process with PID [{spawn_of_worker.pid}] and name "
+                                f"[{spawn_of_worker.name}] using singal [{with_signal}]",
+                        is_warning=True,
+                    )
+                    spawn_of_worker.send_signal(with_signal)
+                else:
+                    log_dispatcher_message(
+                        self,
+                        message=f"Attempting to kill child process with PID [{spawn_of_worker.pid}] and name "
+                                f"[{spawn_of_worker.name}]",
+                        is_warning=True,
+                    )
+                    spawn_of_worker.kill()
+        if not just_kill_descendants:
+            if with_signal:
+                # Ensure the worker exits as would have occurred if not handling its signals
+                signal.signal(with_signal, signal.SIG_DFL)
+                worker.send_signal(with_signal)
+            else:
+                worker.kill()
 
 
 class AbstractQueueError(Exception, metaclass=ABCMeta):
