@@ -401,7 +401,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     aliased_list = list(filter(lambda str: not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
     deriv_dict = {}
     for str in aliased_list:
-        split_string = _bottom_level_split(str, "AS")
+        split_string = _top_level_split(str, "AS")
         alias = split_string[1].replace('"', "").replace(",", ",").strip()
         if alias not in aliases:
             raise Exception(f"alias ${alias} not found!")
@@ -412,16 +412,21 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    return raw_query.replace(_bottom_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
+    return raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
 
 
 def _select_columns(sql):
     # TODO: Find a way to forgive myself for the following lines
+    in_quotes = False
     parens_depth = 0
     last_processed_index = 0
     retval = []
 
     for index, char in enumerate(sql):
+        if char == '"':
+            in_quotes = not in_quotes
+        if in_quotes:
+            continue
         if char == "(":
             parens_depth = parens_depth + 1
         if char == ")":
@@ -443,10 +448,15 @@ def _select_columns(sql):
     return retval  # this will almost certainly error out later.
 
 
-def _bottom_level_split(sql, splitter):
+def _top_level_split(sql, splitter):
     # TODO: Find a way to forgive myself for the following lines
+    in_quotes = False
     parens_depth = 0
     for index, char in enumerate(sql):
+        if char == '"':
+            in_quotes = not in_quotes
+        if in_quotes:
+            continue
         if char == "(":
             parens_depth = parens_depth + 1
         if char == ")":
@@ -454,7 +464,7 @@ def _bottom_level_split(sql, splitter):
 
         if parens_depth == 0:
             if sql[index : index + len(splitter)] == splitter:
-                return [sql[:index], sql[index + 3 :]]
+                return [sql[:index], sql[index + len(splitter) :]]
     raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
