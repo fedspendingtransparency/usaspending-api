@@ -393,7 +393,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     select_statements = _select_columns(raw_query)
 
-    DIRECT_SELECT_QUERY_REGEX = r'^"[^"]*"\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
+    DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
     selects_list = list(filter(lambda str: re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
 
@@ -401,10 +401,10 @@ def apply_annotations_to_sql(raw_query, aliases):
     aliased_list = list(filter(lambda str: not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
     deriv_dict = {}
     for str in aliased_list:
-        split_string = _top_level_split(str, "AS")
+        split_string = _top_level_split(str, " AS ")
         alias = split_string[1].replace('"', "").replace(",", ",").strip()
         if alias not in aliases:
-            raise Exception(f"alias ${alias} not found!")
+            raise Exception(f'alias "{alias}" not found!')
         deriv_dict[alias] = split_string[0]
 
     # Match aliases with their values
