@@ -12,7 +12,7 @@ import multiprocessing as mp
 from botocore.exceptions import ClientError, EndpointConnectionError, NoCredentialsError, NoRegionError
 
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
-from usaspending_api.common.sqs.sqs_job_logging import log_job_message
+from usaspending_api.common.sqs.sqs_job_logging import log_dispatcher_message
 
 # Not a complete list of signals
 # NOTE: 1-15 are relatively standard on unix platforms; > 15 can change from platform to platform
@@ -149,6 +149,22 @@ class SQSWorkDispatcher:
         retries = redrive_json.get("maxReceiveCount")
         return retries and retries > 1
 
+    @property
+    def message_try_attempt(self):
+        """ int: Give an approximation of which attempt this is to process this message
+
+            Will return None if the message has not been received yet or if the receive count is not being tracked
+            This can be used to determine if this is a retry of this message (if return value > 1)
+        """
+        if not self._current_sqs_message:
+            return None
+        # get the non-user-defined (queue-defined) attributes on the message
+        q_msg_attr = self._current_sqs_message.attributes
+        if q_msg_attr.get("ApproximateReceiveCount") is None:
+            return None
+        else:
+            return int(q_msg_attr.get("ApproximateReceiveCount"))
+
     def _dispatch(self, job, worker_process_name=None, exit_handler=None, *job_args, **job_kwargs):
         """ Dispatch work to be performed in a newly started worker process.
 
@@ -179,11 +195,10 @@ class SQSWorkDispatcher:
         if self._current_sqs_message is None:
             raise AttributeError("Cannot dispatch work when there is no current message in self._current_sqs_message")
         self.worker_process_name = worker_process_name or self.worker_process_name or job.__name__
-        log_job_message(
-            logger=self._logger,
+        log_dispatcher_message(
+            self,
             message="Creating and starting worker process named [{}] to invoke callable [{}] "
             "with args={} and kwargs={}".format(self.worker_process_name, job, job_args, job_kwargs),
-            job_type=self.worker_process_name,
         )
 
         # Set the exit_handler function if provided, or reset to None
@@ -212,12 +227,11 @@ class SQSWorkDispatcher:
             daemon=not self._worker_can_start_child_processes,
         )
         self._worker_process.start()
-        log_job_message(
-            logger=self._logger,
+        log_dispatcher_message(
+            self,
             message="Worker process named [{}] started with process ID [{}]".format(
                 self.worker_process_name, self._worker_process.pid
             ),
-            job_type=self.worker_process_name,
             is_debug=True,
         )
         self._monitor_work_progress()
@@ -423,28 +437,22 @@ class SQSWorkDispatcher:
                 MaxNumberOfMessages=1,
             )
         except (EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError) as conn_exc:
-            log_job_message(
-                logger=self._logger,
-                message="SQS connection issue. See Traceback and investigate settings",
-                job_type=self.worker_process_name,
-                is_exception=True,
+            log_dispatcher_message(
+                self, message="SQS connection issue. See Traceback and investigate settings", is_exception=True,
             )
             raise SystemExit(1) from conn_exc
         except Exception as exc:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Unknown error occurred when attempting to receive messages from the queue. See Traceback",
-                job_type=self.worker_process_name,
                 is_exception=True,
             )
             raise SystemExit(1) from exc
 
         if received_messages:
             self._current_sqs_message = received_messages[0]
-            log_job_message(
-                logger=self._logger,
-                message="Message received: {}".format(self._current_sqs_message.body),
-                job_type=self.worker_process_name,
+            log_dispatcher_message(
+                self, message="Message received: {}".format(self._current_sqs_message.body),
             )
 
     def delete_message_from_queue(self):
@@ -455,11 +463,10 @@ class SQSWorkDispatcher:
                 QueueWorkDispatcherError: If for some reason the boto3 delete() operation caused an error
         """
         if self._current_sqs_message is None:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Message to delete does not exist. "
                 "Message might have previously been moved, released, or deleted",
-                job_type=self.worker_process_name,
                 is_warning=True,
             )
             return
@@ -471,9 +478,7 @@ class SQSWorkDispatcher:
                 "Unable to delete SQS message from queue. "
                 "Message might have previously been deleted upon completion or failure"
             )
-            log_job_message(
-                logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True,
-            )
+            log_dispatcher_message(self, message=message, is_exception=True)
             raise QueueWorkDispatcherError(
                 message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             ) from exc
@@ -503,12 +508,11 @@ class SQSWorkDispatcher:
             retried = 0
             if self._current_sqs_message.attributes.get("ApproximateReceiveCount") is not None:
                 retried = int(self._current_sqs_message.attributes.get("ApproximateReceiveCount"))
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Returning message to its queue for retry number {} in {} seconds. "
                 "If this exceeds the configured number of retries in the queue, it "
                 "will be moved to its Dead Letter Queue".format(retried + 1, delay),
-                job_type=self.worker_process_name,
             )
 
         self._set_message_visibility(delay)
@@ -524,11 +528,10 @@ class SQSWorkDispatcher:
                     configured, specified, or connectible for this queue.
         """
         if self._current_sqs_message is None:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Unable to move SQS message to the dead letter queue. No current message exists. "
                 "Message might have previously been moved, released, or deleted",
-                job_type=self.worker_process_name,
                 is_warning=True,
             )
             return
@@ -542,7 +545,7 @@ class SQSWorkDispatcher:
                     "It was not set, or was not included as an attribute to be "
                     "retrieved with this queue.".format(self.sqs_queue_instance)
                 )
-                log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_error=True)
+                log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
                     error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
                 )
@@ -555,7 +558,7 @@ class SQSWorkDispatcher:
                     "Cannot find a dead letter queue in the RedrivePolicy "
                     'for SQS queue "{}"'.format(self.sqs_queue_instance)
                 )
-                log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_error=True)
+                log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
                     error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
                 )
@@ -575,19 +578,18 @@ class SQSWorkDispatcher:
                 "for worker process with PID [{}] "
                 "to the dead letter queue [{}].".format(os.getpid(), self._worker_process.pid, dlq_name)
             )
-            log_job_message(logger=self._logger, message=error, job_type=self.worker_process_name, is_exception=True)
+            log_dispatcher_message(self, message=error, is_exception=True)
             raise QueueWorkDispatcherError(
                 error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             ) from exc
 
-        log_job_message(
-            logger=self._logger,
+        log_dispatcher_message(
+            self,
             message='Message sent to dead letter queue "{}" '
             "with [{}] response code. "
             "Now deleting message from origin queue".format(
                 dlq_name, dlq_response["ResponseMetadata"]["HTTPStatusCode"]
             ),
-            job_type=self.worker_process_name,
             is_debug=True,
         )
         self.delete_message_from_queue()
@@ -618,13 +620,12 @@ class SQSWorkDispatcher:
             if self._worker_process.is_alive():
                 # Process still working. Send "heartbeat" to SQS so it may continue
                 if (heartbeats * self._monitor_sleep_time) >= self._sqs_heartbeat_log_period_seconds:
-                    log_job_message(
-                        logger=self._logger,
+                    log_dispatcher_message(
+                        self,
                         message="Job worker process with PID [{}] is still running. "
                         "Renewing VisibilityTimeout of {} seconds".format(
                             self._worker_process.pid, self._default_visibility_timeout
                         ),
-                        job_type=self.worker_process_name,
                         is_debug=True,
                     )
                     heartbeats = 0
@@ -635,11 +636,10 @@ class SQSWorkDispatcher:
                 monitor_process = True
             elif self._worker_process.exitcode == 0:
                 # If process exits with 0: success! Remove from queue
-                log_job_message(
-                    logger=self._logger,
+                log_dispatcher_message(
+                    self,
                     message="Job worker process with PID [{}] completed with 0 for exit code (success). Deleting "
                     "message from the queue".format(self._worker_process.pid),
-                    job_type=self.worker_process_name,
                 )
                 self.delete_message_from_queue()
             elif self._worker_process.exitcode > 0:
@@ -651,7 +651,7 @@ class SQSWorkDispatcher:
                 message = "Job worker process with PID [{}] errored with exit code: {}.".format(
                     self._worker_process.pid, self._worker_process.exitcode
                 )
-                log_job_message(logger=self._logger, message=message, job_type=self.worker_process_name, is_error=True)
+                log_dispatcher_message(self, message=message, is_error=True)
                 raise QueueWorkerProcessError(
                     message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
                 )
@@ -711,13 +711,12 @@ class SQSWorkDispatcher:
         signal_or_human = BSD_SIGNALS.get(signum, signum)
 
         if is_worker_process:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Worker process with PID [{}] received signal [{}] while running. "
                 "It should not be handled in this exit signal handler, "
                 "as it is meant to run from the parent dispatcher process."
                 "Exiting worker process with original exit signal.".format(os.getpid(), signal_or_human),
-                job_type=self.worker_process_name,
                 is_warning=True,
             )
 
@@ -725,23 +724,21 @@ class SQSWorkDispatcher:
             signal.signal(signum, signal.SIG_DFL)
             os.kill(self._worker_process.pid, signum)
         elif not parent_dispatcher_signaled:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Job worker process with PID [{}] exited due to signal with exit code: [{}], "
                 "after receiving exit signal [{}]. "
                 "Gracefully handling exit of job".format(
                     self._worker_process.pid, self._worker_process.exitcode, signal_or_human
                 ),
-                job_type=self.worker_process_name,
                 is_error=True,
             )
 
         else:  # dispatcher signaled
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="Parent dispatcher process with PID [{}] received signal [{}] while running. "
                 "Gracefully stopping job being worked".format(os.getpid(), signal_or_human),
-                job_type=self.worker_process_name,
                 is_error=True,
             )
 
@@ -766,12 +763,11 @@ class SQSWorkDispatcher:
                 worker = ps.Process(self._worker_process.pid)
                 if not is_retry:
                     # Suspend the child worker process so it does not conflict with doing cleanup in the exit_handler
-                    log_job_message(
-                        logger=self._logger,
+                    log_dispatcher_message(
+                        self,
                         message="Suspending worker process with PID [{}] during first try of exit_handler".format(
                             self._worker_process.pid
                         ),
-                        job_type=self.worker_process_name,
                         is_debug=True,
                     )
                     worker.suspend()
@@ -779,23 +775,21 @@ class SQSWorkDispatcher:
                     # This is try 2. The cleanup was not able to complete on try 1 with the worker process merely
                     # suspended. There could be some kind of transaction deadlock. Kill the worker to clear the way
                     # for cleanup retry
-                    log_job_message(
-                        logger=self._logger,
+                    log_dispatcher_message(
+                        self,
                         message="Killing worker process with PID [{}] during second try of exit_handler".format(
                             self._worker_process.pid
                         ),
-                        job_type=self.worker_process_name,
                         is_debug=True,
                     )
                     worker.kill()
             else:
                 try_attempt = "second" if is_retry else "first"
-                log_job_message(
-                    logger=self._logger,
+                log_dispatcher_message(
+                    self,
                     message="Worker process with PID [{}] is not alive during {} try of exit_handler".format(
                         self._worker_process.pid, try_attempt
                     ),
-                    job_type=self.worker_process_name,
                     is_debug=True,
                 )
 
@@ -810,34 +804,31 @@ class SQSWorkDispatcher:
                         if queue_message_param or arg_spec.varkw == "kwargs":
                             # it defines a param named "queue_message", or accepts kwargs,
                             # so pass along the message as "queue_message" in  case it's needed
-                            log_job_message(
-                                logger=self._logger,
+                            log_dispatcher_message(
+                                self,
                                 message="Invoking job exit_handler [{}] with args={}, kwargs={}, "
                                 "and queue_message={}".format(
                                     self._exit_handler, self._job_args, self._job_kwargs, self._current_sqs_message
                                 ),
-                                job_type=self.worker_process_name,
                             )
                             self._exit_handler(
                                 *self._job_args, **self._job_kwargs, queue_message=self._current_sqs_message
                             )
                         else:
-                            log_job_message(
-                                logger=self._logger,
+                            log_dispatcher_message(
+                                self,
                                 message="Invoking job exit_handler [{}] with args={} "
                                 "and kwargs={}".format(self._exit_handler, self._job_args, self._job_kwargs),
-                                job_type=self.worker_process_name,
                             )
                             self._exit_handler(*self._job_args, **self._job_kwargs)
                 except TimeoutError:
                     exit_handling_failed = True
                     if not is_retry:
-                        log_job_message(
-                            logger=self._logger,
+                        log_dispatcher_message(
+                            self,
                             message="Could not perform cleanup during exiting of job in allotted "
                             "_exit_handling_timeout ({}s). "
                             "Retrying once.".format(self._exit_handling_timeout),
-                            job_type=self.worker_process_name,
                             is_warning=True,
                         )
                         # Attempt retry
@@ -848,9 +839,7 @@ class SQSWorkDispatcher:
                             "_exit_handling_timeout ({}s) after 2 tries. "
                             "Raising exception.".format(self._exit_handling_timeout)
                         )
-                        log_job_message(
-                            logger=self._logger, message=message, job_type=self.worker_process_name, is_error=True,
-                        )
+                        log_dispatcher_message(self, message=message, is_error=True)
                         raise QueueWorkDispatcherError(
                             message,
                             worker_process_name=self.worker_process_name,
@@ -859,28 +848,24 @@ class SQSWorkDispatcher:
                 except Exception as exc:
                     exit_handling_failed = True
                     message = "Execution of exit_handler failed for unknown reason. See Traceback."
-                    log_job_message(
-                        logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True,
-                    )
+                    log_dispatcher_message(self, message=message, is_exception=True)
                     raise QueueWorkDispatcherError(
                         message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
                     ) from exc
 
             if self.allow_retries:
-                log_job_message(
-                    logger=self._logger,
+                log_dispatcher_message(
+                    self,
                     message="Dispatcher for this job allows retries of the message. "
                     "Attempting to return message to its queue.",
-                    job_type=self.worker_process_name,
                 )
                 self.surrender_message_to_other_consumers()
             else:
                 # Otherwise, attempt to send message directly to the dead letter queue
-                log_job_message(
-                    logger=self._logger,
+                log_dispatcher_message(
+                    self,
                     message="Dispatcher for this job does not allow message to be retried. "
                     "Attempting to move message to its Dead Letter Queue.",
-                    job_type=self.worker_process_name,
                 )
                 self.move_message_to_dead_letter_queue()
 
@@ -889,11 +874,10 @@ class SQSWorkDispatcher:
                 worker = ps.Process(self._worker_process.pid)
                 # Use kill instead of multiprocess.Process.terminate() or psutil.Process.terminate(), since each of
                 # those send a signal.SIGTERM which is not as immediate and final as kill (signal.SIGKILL)
-                log_job_message(
-                    logger=self._logger,
+                log_dispatcher_message(
+                    self,
                     message="Message handled. Now killing worker process with PID [{}] "
                     "as it is alive but has no more work to do.".format(worker.pid),
-                    job_type=self.worker_process_name,
                     is_debug=True,
                 )
                 worker.kill()
@@ -902,14 +886,13 @@ class SQSWorkDispatcher:
                 # Don't perform final logic if we got here after failing to execute the exit handler
                 if is_retry:
                     # 2nd time we've failed to process exit_handle? - log so and move to DLQ
-                    log_job_message(
-                        logger=self._logger,
+                    log_dispatcher_message(
+                        self,
                         message="Graceful exit_handling failed after 2 attempts for job being worked by worker process "
                         "with PID [{}]. An attempt to put message directly on the Dead Letter Queue will be "
                         "made, because cleanup logic in the exit_handler could not be guaranteed "
                         "(retrying a message without prior cleanup "
                         "may compound problems).".format(self._worker_process.pid),
-                        job_type=self.worker_process_name,
                         is_error=True,
                     )
                     self.move_message_to_dead_letter_queue()
@@ -919,11 +902,10 @@ class SQSWorkDispatcher:
                 if self._dispatcher_exiting:
                     # An exit signal was received by the parent dispatcher process.
                     # Continue with exiting the parent process, as per the original signal, after having handled it
-                    log_job_message(
-                        logger=self._logger,
+                    log_dispatcher_message(
+                        self,
                         message="Exiting from parent dispatcher process with PID [{}] "
                         "to culminate exit-handling of signal [{}]".format(os.getpid(), signal_or_human),
-                        job_type=self.worker_process_name,
                         is_debug=True,
                     )
                     # Simply doing sys.exit or raise SystemExit, even with a given negative exit code won't exit this
@@ -958,11 +940,10 @@ class SQSWorkDispatcher:
                 QueueWorkDispatcherError: If for some reason the boto3 change_visibility() operation caused an error
         """
         if self._current_sqs_message is None:
-            log_job_message(
-                logger=self._logger,
+            log_dispatcher_message(
+                self,
                 message="No SQS message to change visibility of. Message might have previously been released, "
                 "deleted, or moved to dead letter queue.",
-                job_type=self.worker_process_name,
                 is_warning=True,
             )
             return
@@ -973,7 +954,7 @@ class SQSWorkDispatcher:
                 "Unable to set VisibilityTimeout. "
                 "Message might have previously been deleted upon completion or failure"
             )
-            log_job_message(logger=self._logger, message=message, job_type=self.worker_process_name, is_exception=True)
+            log_dispatcher_message(self, message=message, is_exception=True)
             raise QueueWorkDispatcherError(
                 message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             ) from exc

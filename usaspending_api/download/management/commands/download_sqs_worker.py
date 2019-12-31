@@ -1,7 +1,6 @@
 import logging
 import time
 import traceback
-from ddtrace import tracer
 
 from django.core.management.base import BaseCommand
 
@@ -16,7 +15,6 @@ from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api import settings
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
@@ -27,66 +25,38 @@ class Command(BaseCommand):
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
-        # TODO:remove below diagnostic
-        logger.debug(
-            f"Datadog Tracer ENABLED = {tracer.enabled} and settings.DEBUG = {settings.DEBUG} \nDETAILS:"
-            f"\n{tracer}\nDICT:\n{tracer.__dict__}"
-        )
-        root_span = tracer.current_root_span()
-        if root_span:
-            logger.debug(f"Datadog ROOT span exists.\n DETAILS:\n{root_span}")
-        else:
-            logger.debug(
-                "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " "started"
-            )
+        message_found = None
+        keep_polling = True
+        while keep_polling:
+            # Setup dispatcher that coordinates job activity on SQS
+            dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True)
 
-        # Set Datadog info to Trace this activity in APM
-        tracer.set_service_info(app_type="job", app="usaspending", service="bulk-download")
-        # NOTE: can also use tracer.set_tags() to pass in dictionary of global tags for all traces
-        with tracer.trace(f"job.{JOB_TYPE}", resource=queue.url):
-            root_span = tracer.current_root_span()
-            if root_span:
-                logger.debug(
-                    f"Datadog ROOT span exists.\nSPAN DETAILS:\n{root_span}\nTRACER DETAILS:\n{tracer}\nTRACER DICT:\n{tracer.__dict__}"
-                )
-            else:
-                logger.debug(
-                    "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " "started"
-                )
-            message_found = None
-            keep_polling = True
-            while keep_polling:
-                # Setup dispatcher that coordinates job activity on SQS
-                dispatcher = SQSWorkDispatcher(
-                    queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True
-                )
+            try:
 
-                try:
+                # Check the queue for work and hand it to the given processing function
+                message_found = dispatcher.dispatch(download_service_app)
 
-                    # Check the queue for work and hand it to the given processing function
-                    message_found = dispatcher.dispatch(download_service_app)
+                # Mark the job as failed if: there was an error processing the download; retries after interrupt
+                # are not allowed; or all retries have been exhausted
+                # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
+                # handle this case
+                # Retries are allowed or denied by the SQS queue's RedrivePolicy config
+                # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
+                # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
+                # - As coded, no cleanup should be needed to retry a download
+                #   - the psql -o will overwrite the output file
+                #   - the zip will use 'w' write mode to create from scratch each time
+                # The worker function controls the maximum allowed runtime of the job
 
-                    # Mark the job as failed if: there was an error processing the download; retries after interrupt
-                    # are not allowed; or all retries have been exhausted
-                    # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
-                    # handle this case
-                    # Retries are allowed or denied by the SQS queue's RedrivePolicy config
-                    # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
-                    # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
-                    # - As coded, no cleanup should be needed to retry a download
-                    #   - the psql -o will overwrite the output file
-                    #   - the zip will use 'w' write mode to create from scratch each time
-                    # The worker function controls the maximum allowed runtime of the job
+            except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
+                _handle_queue_error(exc)
 
-                except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
-                    _handle_queue_error(exc)
+            # When you receive an empty response from the queue, wait before trying again
+            if not message_found:
+                time.sleep(1)
 
-                # When you receive an empty response from the queue, wait before trying again
-                if not message_found:
-                    time.sleep(1)
-
-                # If this process is exiting, don't poll for more work
-                keep_polling = not dispatcher.is_exiting
+            # If this process is exiting, don't poll for more work
+            keep_polling = not dispatcher.is_exiting
 
 
 def download_service_app(download_job_id):
@@ -99,7 +69,6 @@ def download_service_app(download_job_id):
         job_id=download_job_id,
         other_params=download_job_details,
     )
-    tracer.set_tags(download_job_details)
     generate_download(download_job=download_job)
 
 

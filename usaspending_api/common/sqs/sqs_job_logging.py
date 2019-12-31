@@ -6,6 +6,7 @@ def log_job_message(
     message,
     job_type,
     job_id=None,
+    attempt=None,
     is_debug=False,
     is_warning=False,
     is_error=False,
@@ -21,6 +22,7 @@ def log_job_message(
         "job_id": job_id,
         "proc_id": os.getpid(),
         "parent_proc_id": os.getppid(),
+        "attempt": attempt,
         "message": message,
     }
 
@@ -43,3 +45,25 @@ def log_job_message(
     else:
         log_dict["message_type"] = f"{job_type}Info"
         logger.info(log_dict)
+
+
+def log_dispatcher_message(
+    sqs_work_dispatcher,
+    message,
+    is_debug=False,
+    is_warning=False,
+    is_error=False,
+    is_exception=False,
+    other_params=None,
+):
+    log_job_message(
+        logger=sqs_work_dispatcher._logger,
+        message=message,
+        job_type=sqs_work_dispatcher.worker_process_name,
+        attempt=sqs_work_dispatcher.message_try_attempt,
+        is_debug=is_debug,
+        is_warning=is_warning,
+        is_error=is_error,
+        is_exception=is_exception,
+        other_params=other_params,
+    )

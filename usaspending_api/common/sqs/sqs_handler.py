@@ -232,8 +232,8 @@ class FakeSQSMessage:
 
     @property
     def attributes(self):
-        # This is where more SQS message `attributes` can be mocked, e.g. ApproximateReceiveCount and others
-        return {}
+        # This is where more SQS message `attributes` can be mocked
+        return {"ApproximateReceiveCount": "1"}  # NOTE: Not an accurate count of try attempts. Just returning a number
 
 
 def get_sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME):
