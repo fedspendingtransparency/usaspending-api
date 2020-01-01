@@ -975,7 +975,10 @@ class SQSWorkDispatcher:
                         f"[{spawn_of_worker.name}] using singal [{with_signal}]",
                         is_warning=True,
                     )
-                    spawn_of_worker.send_signal(with_signal)
+                    try:
+                        spawn_of_worker.send_signal(with_signal)
+                    except ps.NoSuchProcess:
+                        pass
                 else:
                     log_dispatcher_message(
                         self,
@@ -983,14 +986,20 @@ class SQSWorkDispatcher:
                         f"[{spawn_of_worker.name}]",
                         is_warning=True,
                     )
-                    spawn_of_worker.kill()
+                    try:
+                        spawn_of_worker.kill()
+                    except ps.NoSuchProcess:
+                        pass
         if not just_kill_descendants:
             if with_signal:
                 # Ensure the worker exits as would have occurred if not handling its signals
                 signal.signal(with_signal, signal.SIG_DFL)
                 worker.send_signal(with_signal)
             else:
-                worker.kill()
+                try:
+                    worker.kill()
+                except ps.NoSuchProcess:
+                    pass
 
 
 class AbstractQueueError(Exception, metaclass=ABCMeta):
