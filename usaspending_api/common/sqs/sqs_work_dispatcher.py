@@ -970,7 +970,7 @@ class SQSWorkDispatcher:
             worker = ps.Process(self._worker_process.pid)
         except ps.NoSuchProcess:
             return
-            
+
         if self._worker_can_start_child_processes:
             # First kill any other processes the worker may have spawned
             for spawn_of_worker in worker.children(recursive=True):
