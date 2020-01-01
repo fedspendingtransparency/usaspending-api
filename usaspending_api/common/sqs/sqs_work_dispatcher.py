@@ -964,7 +964,13 @@ class SQSWorkDispatcher:
             with_signal: Use this termination signal when killing. Otherwise, hard kill (-9)
             just_kill_descendants: Set to True to leave the worker and only kill its descendants
         """
-        worker = ps.Process(self._worker_process.pid)
+        if not self._worker_process or not ps.pid_exists(self._worker_process.pid):
+            return
+        try:
+            worker = ps.Process(self._worker_process.pid)
+        except ps.NoSuchProcess:
+            return
+            
         if self._worker_can_start_child_processes:
             # First kill any other processes the worker may have spawned
             for spawn_of_worker in worker.children(recursive=True):
