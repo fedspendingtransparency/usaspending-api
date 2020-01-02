@@ -1,5 +1,5 @@
 from django.db.models import F, Sum, Q, Case, Value, When, CharField
-
+from django.db.models.functions import Coalesce
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import (
     AwardTypeAwardSpendingSerializer,
@@ -100,10 +100,10 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
 
         queryset = queryset.annotate(
             award_category=F("award__category"),
-            recipient_name=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
-        ) | queryset.annotate(
-            award_category=F("award__category"),
-            recipient_name=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+            recipient_name=Coalesce(
+                F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+                F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+            ),
         )
 
         if award_category is not None:
