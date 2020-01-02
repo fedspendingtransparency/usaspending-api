@@ -193,6 +193,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         ),
         "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "last_modified_date_NAME_CONFLICT_RESOLVER": Max("submission__certified_date"),
     }
 
     # Derive recipient_parent_name for award_financial downloads

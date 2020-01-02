@@ -430,7 +430,15 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    return raw_query.replace(query_before_from, ", ".join(values_list), 1)
+    sql = raw_query.replace(query_before_from, ", ".join(values_list), 1)
+
+    # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
+    # the fields, there's one final step.  For annotated fields, naming conflicts occur at the time they are
+    # applied to the queryset which means they never get to this function.  To work around this, we give them
+    # a name that cannot conflict with a field name on the model and then remove that conflict resolver here.
+    # As of this writing, the conflict resolver is "_NAME_CONFLICT_RESOLVER" appended to the conflicting name.
+    # Let's remove that.
+    return sql.replace("_NAME_CONFLICT_RESOLVER", "")
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
