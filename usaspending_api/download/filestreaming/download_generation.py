@@ -499,4 +499,7 @@ def _kill_spawned_processes(download_job=None):
             download_job=download_job,
             is_error=True,
         )
-        spawn_of_job.kill()
+        try:
+            spawn_of_job.kill()
+        except ps.NoSuchProcess:
+            pass

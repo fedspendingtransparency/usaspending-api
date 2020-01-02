@@ -964,7 +964,13 @@ class SQSWorkDispatcher:
             with_signal: Use this termination signal when killing. Otherwise, hard kill (-9)
             just_kill_descendants: Set to True to leave the worker and only kill its descendants
         """
-        worker = ps.Process(self._worker_process.pid)
+        if not self._worker_process or not ps.pid_exists(self._worker_process.pid):
+            return
+        try:
+            worker = ps.Process(self._worker_process.pid)
+        except ps.NoSuchProcess:
+            return
+
         if self._worker_can_start_child_processes:
             # First kill any other processes the worker may have spawned
             for spawn_of_worker in worker.children(recursive=True):
@@ -975,7 +981,10 @@ class SQSWorkDispatcher:
                         f"[{spawn_of_worker.name}] using singal [{with_signal}]",
                         is_warning=True,
                     )
-                    spawn_of_worker.send_signal(with_signal)
+                    try:
+                        spawn_of_worker.send_signal(with_signal)
+                    except ps.NoSuchProcess:
+                        pass
                 else:
                     log_dispatcher_message(
                         self,
@@ -983,14 +992,20 @@ class SQSWorkDispatcher:
                         f"[{spawn_of_worker.name}]",
                         is_warning=True,
                     )
-                    spawn_of_worker.kill()
+                    try:
+                        spawn_of_worker.kill()
+                    except ps.NoSuchProcess:
+                        pass
         if not just_kill_descendants:
             if with_signal:
                 # Ensure the worker exits as would have occurred if not handling its signals
                 signal.signal(with_signal, signal.SIG_DFL)
                 worker.send_signal(with_signal)
             else:
-                worker.kill()
+                try:
+                    worker.kill()
+                except ps.NoSuchProcess:
+                    pass
 
 
 class AbstractQueueError(Exception, metaclass=ABCMeta):
