@@ -17,10 +17,15 @@ def universal_transaction_matview_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "federal_accounts_funding_this_award": StringAgg(
-            "transaction__award__financial_set__treasury_account__federal_account__federal_account_code",
-            ";",
-            distinct=True,
+        "federal_accounts_funding_this_award": Subquery(
+            Award.objects.filter(id=OuterRef("award_id"))
+            .annotate(
+                value=StringAgg(
+                    "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
+            .values("value"),
+            output_field=TextField(),
         ),
         "usaspending_permalink": Concat(
             Value(AWARD_URL), Func(F("transaction__award__generated_unique_award_id"), function="urlencode"), Value("/")

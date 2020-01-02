@@ -386,14 +386,14 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = list(filter(lambda str: re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
+    selects_list = [str for str in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
 
     # Create a list from the derived values between SELECT and FROM
-    aliased_list = list(filter(lambda str: not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip()), select_statements))
+    aliased_list = [str for str in select_statements if not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
     deriv_dict = {}
     for str in aliased_list:
         split_string = _top_level_split(str, " AS ")
-        alias = split_string[1].replace('"', "").replace(",", ",").strip()
+        alias = split_string[1].replace('"', "").replace(",", "").strip()
         if alias not in aliases:
             raise Exception(f'alias "{alias}" not found!')
         deriv_dict[alias] = split_string[0]
@@ -407,7 +407,6 @@ def apply_annotations_to_sql(raw_query, aliases):
 
 
 def _select_columns(sql):
-    # TODO: Find a way to forgive myself for the following lines
     in_quotes = False
     parens_depth = 0
     last_processed_index = 0
@@ -440,7 +439,6 @@ def _select_columns(sql):
 
 
 def _top_level_split(sql, splitter):
-    # TODO: Find a way to forgive myself for the following lines
     in_quotes = False
     parens_depth = 0
     for index, char in enumerate(sql):
