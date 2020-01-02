@@ -102,14 +102,14 @@ def validate_datetime(rule):
     if "min" in rule:
         min_cap = datetime.datetime.strptime(rule["min"], dt_format)
         if value < min_cap:
-            logger.info("{}. Setting to {}".format(BELOW_MINIMUM_MSG.format(**rule), min_cap))
-            value = min_cap
+            message = rule.get("min_message", BELOW_MINIMUM_MSG).format(**rule)
+            raise UnprocessableEntityException(message)
 
     if "max" in rule:
         max_cap = datetime.datetime.strptime(rule["max"], dt_format)
         if value > max_cap:
-            logger.info(ABOVE_MAXIMUM_MSG.format(**rule))
-            value = max_cap
+            message = rule.get("max_message", ABOVE_MAXIMUM_MSG).format(**rule)
+            raise UnprocessableEntityException(message)
 
     # Future TODO: change this to returning the appropriate object (Date or Datetime) instead of converting to string
     if rule["type"] == "date":

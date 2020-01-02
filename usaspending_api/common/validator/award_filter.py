@@ -5,6 +5,12 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
 
 
+TIME_PERIOD_MIN_MESSAGE = (
+    "%s falls before the minimum search date.  For data prior to {min}, consider using "
+    "one of the download endpoints listed on https://api.usaspending.gov/docs/endpoints."
+)
+TIME_PERIOD_MAX_MESSAGE = "%s falls after the maximum search date of {max}."
+
 AWARD_FILTER = [
     {"name": "award_ids", "type": "array", "array_type": "text", "text_type": "search"},
     {
@@ -31,8 +37,20 @@ AWARD_FILTER = [
         "type": "array",
         "array_type": "object",
         "object_keys": {
-            "start_date": {"type": "date", "min": settings.API_SEARCH_MIN_DATE, "max": settings.API_MAX_DATE},
-            "end_date": {"type": "date", "min": settings.API_SEARCH_MIN_DATE, "max": settings.API_MAX_DATE},
+            "start_date": {
+                "type": "date",
+                "min": settings.API_SEARCH_MIN_DATE,
+                "min_message": TIME_PERIOD_MIN_MESSAGE % "start_date",
+                "max": settings.API_MAX_DATE,
+                "max_message": TIME_PERIOD_MAX_MESSAGE % "start_date",
+            },
+            "end_date": {
+                "type": "date",
+                "min": settings.API_SEARCH_MIN_DATE,
+                "min_message": TIME_PERIOD_MIN_MESSAGE % "end_date",
+                "max": settings.API_MAX_DATE,
+                "max_message": TIME_PERIOD_MAX_MESSAGE % "end_date",
+            },
             "date_type": {
                 "type": "enum",
                 "enum_values": ["action_date", "last_modified_date"],
