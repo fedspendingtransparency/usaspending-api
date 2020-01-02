@@ -178,9 +178,9 @@ List of table columns
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01`.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use one of our `download` or `bulk_download` endpoints.
 + `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01`.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use one of our `download` or `bulk_download` endpoints.
 + `date_type` (optional, enum[string])
     + Members
         + `action_date`
