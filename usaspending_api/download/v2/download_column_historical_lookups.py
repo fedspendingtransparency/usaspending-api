@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 """
 Sets up mappings from column names used in downloads to the query paths used to get the data from django.
@@ -1129,7 +1130,7 @@ query_paths = {
                 ("recipient_foreign_city_name", "transaction__assistance_data__legal_entity_foreign_city"),
                 ("recipient_foreign_province_name", "transaction__assistance_data__legal_entity_foreign_provi"),
                 ("recipient_foreign_postal_code", "transaction__assistance_data__legal_entity_foreign_posta"),
-                ("primary_place_of_performance_scope", "transaction__assistance_data__place_of_performance_scope",),
+                ("primary_place_of_performance_scope", "transaction__assistance_data__place_of_performance_scope"),
                 (
                     "primary_place_of_performance_country_code",
                     "transaction__assistance_data__place_of_perform_country_c",
@@ -1349,7 +1350,7 @@ query_paths = {
                 ("prime_awardee_congressional_district", "broker_subaward__legal_entity_congressional"),
                 ("prime_awardee_foreign_postal_code", "broker_subaward__legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "broker_subaward__business_types"),
-                ("prime_award_primary_place_of_performance_scope", "subaward__place_of_perform_scope",),
+                ("prime_award_primary_place_of_performance_scope", "subaward__place_of_perform_scope"),
                 ("prime_award_primary_place_of_performance_city_name", "broker_subaward__place_of_perform_city_name"),
                 ("prime_award_primary_place_of_performance_state_code", "broker_subaward__place_of_perform_state_code"),
                 ("prime_award_primary_place_of_performance_state_name", "broker_subaward__place_of_perform_state_name"),
@@ -1487,6 +1488,7 @@ query_paths = {
                 ("unobligated_balance", "unobligated_balance_cpe"),
                 ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
+                ("last_modified_date", "submission__certified_date"),
             ]
         ),
         "federal_account": OrderedDict(
@@ -1525,6 +1527,10 @@ query_paths = {
                 ("unobligated_balance", "unobligated_balance"),
                 ("gross_outlay_amount", "gross_outlay_amount"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },
@@ -1564,6 +1570,7 @@ query_paths = {
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
+                ("last_modified_date", "submission__certified_date"),
             ]
         ),
         "federal_account": OrderedDict(
@@ -1588,6 +1595,10 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },
@@ -1674,6 +1685,7 @@ query_paths = {
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
+                ("last_modified_date", "submission__certified_date"),
             ]
         ),
         "federal_account": OrderedDict(
@@ -1744,10 +1756,15 @@ query_paths = {
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },
 }
+
 # IDV Orders are nearly identical to awards but start from the Awards table
 # instead of from UniversalAwardView materialized view so we need to lop off
 # the leading "award__" bit.
