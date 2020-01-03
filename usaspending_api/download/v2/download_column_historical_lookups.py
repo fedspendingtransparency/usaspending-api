@@ -1645,16 +1645,17 @@ query_paths = {
                 ("funding_sub_agency_name", "funding_sub_agency_name"),  # Column is annotated in account_download.py
                 ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
                 ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
-                ("recipient_duns", "award__recipient__recipient_unique_id"),
-                ("recipient_name", "award__recipient__recipient_name"),
-                ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
-                ("recipient_parent_name", "recipient_parent_name"),
-                ("recipient_country", "award__recipient__location__country_name"),
-                ("recipient_state", "award__recipient__location__state_name"),
-                ("recipient_county", "award__recipient__location__county_name"),
-                ("recipient_city", "award__recipient__location__city_name"),
-                ("recipient_congressional_district", "award__recipient__location__congressional_code"),
-                ("recipient_zip_code", "award__recipient__location__zip4"),
+                ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
+                ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
+                ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
+                ("recipient_parent_name", "recipient_parent_name"),  # Column is annotated in account_download.py
+                ("recipient_country", "recipient_country"),  # Column is annotated in account_download.py
+                ("recipient_state", "recipient_state"),  # Column is annotated in account_download.py
+                ("recipient_county", "recipient_county"),  # Column is annotated in account_download.py
+                ("recipient_city", "recipient_city"),  # Column is annotated in account_download.py
+                ("recipient_congressional_district", "recipient_congressional_district"),
+                # Column is annotated in account_download.py
+                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
                 ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
                 ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
@@ -1714,16 +1715,17 @@ query_paths = {
                 ("funding_sub_agency_name", "funding_sub_agency_name"),  # Column is annotated in account_download.py
                 ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
                 ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
-                ("recipient_duns", "award__recipient__recipient_unique_id"),
-                ("recipient_name", "award__recipient__recipient_name"),
-                ("recipient_parent_duns", "award__recipient__parent_recipient_unique_id"),
-                ("recipient_parent_name", "recipient_parent_name"),
-                ("recipient_country", "award__recipient__location__country_name"),
-                ("recipient_state", "award__recipient__location__state_name"),
-                ("recipient_county", "award__recipient__location__county_name"),
-                ("recipient_city", "award__recipient__location__city_name"),
-                ("recipient_congressional_district", "award__recipient__location__congressional_code"),
-                ("recipient_zip_code", "award__recipient__location__zip4"),
+                ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
+                ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
+                ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
+                ("recipient_parent_name", "recipient_parent_name"),  # Column is annotated in account_download.py
+                ("recipient_country", "recipient_country"),  # Column is annotated in account_download.py
+                ("recipient_state", "recipient_state"),  # Column is annotated in account_download.py
+                ("recipient_county", "recipient_county"),  # Column is annotated in account_download.py
+                ("recipient_city", "recipient_city"),  # Column is annotated in account_download.py
+                ("recipient_congressional_district", "recipient_congressional_district"),
+                # Column is annotated in account_download.py
+                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
                 ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
                 ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
