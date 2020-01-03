@@ -329,7 +329,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
             **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
         )
         assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response for group: {group}"
-        assert len(logging_statements) == 2, "Expected two logging statement"
+        assert len(logging_statements) == 1, "Expected one logging statement"
 
 
 @pytest.mark.django_db
@@ -379,7 +379,13 @@ def _test_correct_response_for_keywords(client):
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps(
-            {"group": "fiscal_year", "filters": {"keywords": ["test", "recipient_name_", "recipient_name_1"]}}
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "keywords": ["test", "recipient_name_", "recipient_name_1"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+            }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
@@ -413,7 +419,7 @@ def _test_correct_response_for_time_period(client):
                     "time_period": [
                         {"start_date": "2012-01-01", "end_date": "2013-09-30"},
                         {"start_date": "2015-01-01", "end_date": "2016-09-30"},
-                        {"start_date": "2018-01-01"},
+                        {"start_date": "2017-08-01", "end_date": "2018-05-30"},
                     ]
                 },
             }
@@ -426,10 +432,8 @@ def _test_correct_response_for_time_period(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2014"}},
         {"aggregated_amount": 24045.0, "time_period": {"fiscal_year": "2015"}},
         {"aggregated_amount": 24048.0, "time_period": {"fiscal_year": "2016"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
-        {"aggregated_amount": 24054.0, "time_period": {"fiscal_year": "2018"}},
-        {"aggregated_amount": 24057.0, "time_period": {"fiscal_year": "2019"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
+        {"aggregated_amount": 16024.0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 16046.0, "time_period": {"fiscal_year": "2018"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
@@ -439,7 +443,15 @@ def _test_correct_response_for_award_type_codes(client):
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
-        data=json.dumps({"group": "fiscal_year", "filters": {"award_type_codes": ["A", "B", "C", "D"]}}),
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
@@ -474,7 +486,8 @@ def _test_correct_response_for_agencies(client):
                         {"type": "awarding", "tier": "subtier", "name": "subtier_awarding_agency_agency_name_4"},
                         {"type": "funding", "tier": "toptier", "name": "toptier_funding_agency_agency_name_4"},
                         {"type": "funding", "tier": "subtier", "name": "subtier_funding_agency_agency_name_4"},
-                    ]
+                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -533,6 +546,7 @@ def _test_correct_response_for_tas_codes(client):
                             "sub": "taa_sub_15",
                         },
                     ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -571,6 +585,7 @@ def _test_correct_response_for_pop_location(client):
                         {"country": "USA", "state": "pop_state_code_18", "district": "18"},
                         {"country": "USA", "zip": "pop_zip5_19"},
                     ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -609,6 +624,7 @@ def _test_correct_response_for_recipient_location(client):
                         {"country": "USA", "state": "le_state_code_17", "district": "17"},
                         {"country": "USA", "zip": "le_zip5_20"},
                     ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -641,7 +657,8 @@ def _test_correct_response_for_recipient_search_text(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"]
+                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -673,7 +690,10 @@ def _test_correct_response_for_recipient_type_names(client):
         data=json.dumps(
             {
                 "group": "fiscal_year",
-                "filters": {"recipient_type_names": ["business_category_1_3", "business_category_2_8"]},
+                "filters": {
+                    "recipient_type_names": ["business_category_1_3", "business_category_2_8"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
@@ -710,6 +730,7 @@ def _test_correct_response_for_award_amounts(client):
                         {"lower_bound": 9013, "upper_bound": 9017},
                         {"lower_bound": 9027},
                     ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -741,7 +762,10 @@ def _test_correct_response_for_cfda_program(client):
         data=json.dumps(
             {
                 "group": "fiscal_year",
-                "filters": {"program_numbers": ["cfda_number_11", "cfda_number_21", "cfda_number_25"]},
+                "filters": {
+                    "program_numbers": ["cfda_number_11", "cfda_number_21", "cfda_number_25"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
@@ -770,7 +794,13 @@ def _test_correct_response_for_naics_codes(client):
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps(
-            {"group": "fiscal_year", "filters": {"naics_codes": ["naics_code_8", "naics_code_16", "naics_code_26"]}}
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "naics_codes": ["naics_code_8", "naics_code_16", "naics_code_26"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+            }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
@@ -798,7 +828,13 @@ def _test_correct_response_for_psc_codes(client):
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps(
-            {"group": "fiscal_year", "filters": {"psc_codes": ["psc_code_2", "psc_code_12", "psc_code_24"]}}
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "psc_codes": ["psc_code_2", "psc_code_12", "psc_code_24"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+            }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
@@ -834,6 +870,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                         "type_of_contract_pricing_10",
                         "type_of_contract_pricing_22",
                     ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -867,7 +904,10 @@ def _test_correct_response_for_set_aside_type_codes(client):
         data=json.dumps(
             {
                 "group": "fiscal_year",
-                "filters": {"set_aside_type_codes": ["type_set_aside_16", "type_set_aside_26", "type_set_aside_28"]},
+                "filters": {
+                    "set_aside_type_codes": ["type_set_aside_16", "type_set_aside_26", "type_set_aside_28"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
@@ -900,6 +940,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 "group": "fiscal_year",
                 "filters": {
                     "extent_competed_type_codes": ["extent_competed_4", "extent_competed_24", "extent_competed_26"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
@@ -931,7 +972,13 @@ def _test_correct_response_for_recipient_id(client):
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps(
-            {"group": "fiscal_year", "filters": {"recipient_id": "c551b3f8-d9ef-ac00-5e79-33d33ceb7483-R"}}
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "recipient_id": "c551b3f8-d9ef-ac00-5e79-33d33ceb7483-R",
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+            }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )

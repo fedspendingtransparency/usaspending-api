@@ -1,10 +1,10 @@
 import logging
 import subprocess
 import time
-import pandas as pd
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import connection
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
@@ -60,9 +60,15 @@ def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
     validate_date(date)
 
-    if date.month in [10, 11, 12, "10", "11", "12"]:
-        return int(date.month) - 9
-    return int(date.month) + 3
+    if date.month in [10, 11, 12]:
+        return date.month - 9
+    return date.month + 3
+
+
+def generate_fiscal_quarter(date):
+    """ Generate fiscal quarter based on the date provided """
+    validate_date(date)
+    return FiscalDate(date.year, date.month, date.day).quarter
 
 
 def generate_fiscal_year_and_quarter(date):
@@ -106,16 +112,8 @@ def dates_are_month_bookends(start, end):
 
 
 def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
-    """
-    Returns the min and max date from a list of dictionaries that represent time periods. If a start date or end
-    date is not specified for a date range then the API_SEARCH_MIN_DATE or API_MAX_DATE are used, respectively.
-    """
-    start_dates = [t.get("start_date") for t in filter_time_periods]
-    end_dates = [t.get("end_date") for t in filter_time_periods]
-
-    min_date = min(start_dates) if all(start_dates) else settings.API_SEARCH_MIN_DATE
-    max_date = max(end_dates) if all(end_dates) else settings.API_MAX_DATE
-
+    min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
+    max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
     return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
 
 
@@ -126,12 +124,12 @@ def create_full_time_periods(min_date, max_date, group, columns):
         return [{**cols, **{"time_period": {"fy": str(fy)}}} for fy in fiscal_years]
 
     if group == "month":
-        period = int(generate_fiscal_month(min_date))
-        ending = int(generate_fiscal_month(max_date))
+        period = generate_fiscal_month(min_date)
+        ending = generate_fiscal_month(max_date)
         rollover = 12
-    else:  # Quarters
-        period = int(generate_fiscal_year_and_quarter(min_date).split("-Q")[-1])
-        ending = int(generate_fiscal_year_and_quarter(max_date).split("-Q")[-1])
+    else:  # quarter
+        period = generate_fiscal_quarter(min_date)
+        ending = generate_fiscal_quarter(max_date)
         rollover = 4
 
     results = []
@@ -151,7 +149,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             filter_time_periods: list of time_period objects usually provided by filters
                 - {'start_date':..., 'end_date':...}
             queryset: the resulting data to split into these results
-            data_range_type: how the results are split
+            date_range_type: how the results are split
                 - 'fy', 'quarter', or 'month'
             columns: dictionary of columns to include from the queryset
                 - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
@@ -175,27 +173,31 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
     return results
 
 
-def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> pd.DatetimeIndex:
+def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
     """
-    Using a min date, max date, and a frequency indicator generates a DatetimeIndex with
-    pandas' date_range function for the specific fiscal year.
+    Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
+    the fiscal_year, quarter, and month.
     """
-    min_date += pd.DateOffset(months=3)
-    max_date += pd.DateOffset(months=3)
     if frequency == "fiscal_year":
-        freq = "YS"
-        if not min_date.is_year_start:
-            min_date -= pd.offsets.YearBegin()
+        interval = 12
     elif frequency == "quarter":
-        freq = "QS"
-        if not min_date.is_quarter_start:
-            min_date -= pd.offsets.QuarterBegin()
-    else:
-        freq = "MS"
-        if not min_date.is_month_start:
-            min_date -= pd.offsets.MonthBegin()
+        interval = 3
+    else:  # month
+        interval = 1
 
-    return pd.date_range(start=min_date, end=max_date, freq=freq)
+    date_range = []
+    current_date = min_date
+    while current_date <= max_date:
+        date_range.append(
+            {
+                "fiscal_year": generate_fiscal_year(current_date),
+                "fiscal_quarter": generate_fiscal_quarter(current_date),
+                "fiscal_month": generate_fiscal_month(current_date),
+            }
+        )
+        current_date = current_date + relativedelta(months=interval)
+
+    return date_range
 
 
 def within_one_year(d1, d2):

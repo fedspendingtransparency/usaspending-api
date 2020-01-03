@@ -1,6 +1,5 @@
 import copy
 import logging
-import pandas as pd
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -17,6 +16,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
@@ -25,11 +25,12 @@ from usaspending_api.common.helpers.generic_helper import (
     generate_fiscal_year,
     min_and_max_from_date_ranges,
     generate_fiscal_date_range,
+    generate_fiscal_month,
 )
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import get_base_search_with_filters
 
 logger = logging.getLogger("console")
 
@@ -53,7 +54,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_over_time.md"
 
     @staticmethod
-    def validate_request_data(json_data):
+    def validate_request_data(json_data: dict) -> dict:
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
@@ -74,7 +75,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return validated_data
 
-    def database_data_layer(self):
+    def database_data_layer(self) -> tuple:
         if self.subawards:
             queryset = subaward_filter(self.filters)
             obligation_column = "amount"
@@ -127,12 +128,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "sum_as_cents", sum_as_cents_agg
         ).pipeline("sum_as_dollars", sum_as_dollars_agg)
 
-    def parse_elasticsearch_bucket(self, bucket):
-        key_as_date = pd.to_datetime(bucket["key_as_string"], format="%Y-%m-%d")
+    def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
+        """
+        Takes a dictionary representing one of the Elasticsearch buckets returned from the aggregation
+        and returns a dictionary representation used in the API response.
+
+        It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
+        for each bucket which is a date as a string.
+        """
+        key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
         time_period = {"fiscal_year": str(key_as_date.year)}
 
         if self.group == "quarter":
-            time_period["quarter"] = str(key_as_date.quarter)
+            quarter = (key_as_date.month - 1) // 3 + 1
+            time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
 
@@ -142,19 +151,19 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
-        date_range = generate_fiscal_date_range(min_date, max_date, self.group)
+        fiscal_date_range = generate_fiscal_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
-        for date in date_range:
+        for fiscal_date in fiscal_date_range:
             if date_buckets and parsed_bucket is None:
                 parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 
-            time_period = {"fiscal_year": str(date.year)}
+            time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
             if self.group == "quarter":
-                time_period["quarter"] = str(date.quarter)
+                time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
             elif self.group == "month":
-                time_period["month"] = str(date.month)
+                time_period["month"] = str(fiscal_date["fiscal_month"])
 
             if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
                 results.append(parsed_bucket)
@@ -165,11 +174,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, time_periods: list) -> list:
-        search = get_base_search_with_filters(
-            index_name="{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX), filters=self.filters
-        )
+        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
+        search = Search(index=f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
-        response = search.execute()
+        response = es_client_query(search=search)
         return self.build_elasticsearch_result(response.aggs, time_periods)
 
     @cache_response()
@@ -186,9 +194,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
         else:
-            current_month = datetime.now(timezone.utc).month
-            days_in_month = monthrange(current_fy, current_month)[1]
-            end_date = f"{current_fy}-{current_month}-{days_in_month}"
+            current_fiscal_month = generate_fiscal_month(datetime.now(timezone.utc))
+            days_in_month = monthrange(current_fy, current_fiscal_month)[1]
+            end_date = f"{current_fy}-{current_fiscal_month}-{days_in_month}"
 
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
         time_periods = self.filters.get("time_period", [default_time_period])

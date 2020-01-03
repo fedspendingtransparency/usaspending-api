@@ -1,3 +1,5 @@
+from typing import Union
+
 import certifi
 import logging
 import json
@@ -11,6 +13,8 @@ from elasticsearch import TransportError
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search
 from ssl import CERT_NONE
+
+from elasticsearch_dsl.response import Response
 
 logger = logging.getLogger("console")
 CLIENT = None
@@ -49,7 +53,9 @@ def create_es_client() -> Elasticsearch:
         logger.error("Error creating the elasticsearch client: {}".format(e))
 
 
-def es_client_query(index: str, body: dict, timeout: str = "1m", retries: int = 5) -> Elasticsearch:
+def es_client_query(
+    index: str = None, body: dict = None, timeout: str = "1m", retries: int = 5, search: Search = None
+) -> Union[Elasticsearch, Response]:
     if CLIENT is None:
         create_es_client()
     if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
@@ -59,26 +65,27 @@ def es_client_query(index: str, body: dict, timeout: str = "1m", retries: int = 
     elif retries < 1:
         retries = 1
     for attempt in range(retries):
-        response = _es_search(index=index, body=body, timeout=timeout)
+        response = _es_search(index=index, body=body, search=search, timeout=timeout)
+        if response is None and search is None:
+            logger.info(f"Failure using these: Index='{index}', Body={json.dumps(body)}")
         if response is None:
-            logger.info("Failure using these: Index='{}', body={}".format(index, json.dumps(body)))
+            logger.info(f"Failure using these: Body={json.dumps(search.to_dict())}")
         else:
             return response
-    logger.error("Unable to reach elasticsearch cluster. {} attempt(s) made".format(retries))
+    logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made")
     return None
 
 
-def es_dsl_search(index_name: str) -> Search:
-    if CLIENT is None:
-        create_es_client()
-    return Search(using=CLIENT, index=index_name)
-
-
-def _es_search(index: str, body: dict, timeout: int) -> dict:
+def _es_search(
+    index: str = None, body: dict = None, search: Search = None, timeout: int = "1m"
+) -> Union[dict, Response]:
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:
-        result = CLIENT.search(index=index, body=body, timeout=timeout)
+        if search is not None:
+            result = search.using(CLIENT).params(timeout=timeout).execute()
+        else:
+            result = CLIENT.search(index=index, body=body, timeout=timeout)
     except NameError as e:
         logger.error(error_template.format(type="Hostname", e=str(e)))
     except (ConnectionError, ConnectionTimeout) as e:
