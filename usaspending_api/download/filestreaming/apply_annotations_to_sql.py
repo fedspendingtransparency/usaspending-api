@@ -59,7 +59,10 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    sql = raw_query.replace(query_before_from, ", ".join(values_list))
+    # For each query in a UNION, apply our SELECT statement "fixes".  This, of course, requires that the SELECT
+    # statement for each query in the UNION to be identical which will probably fail some day, but works for our
+    # current use cases.
+    sql = " UNION ".join([s.replace(query_before_from, ", ".join(values_list), 1) for s in raw_query.split(" UNION ")])
 
     # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
     # the SELECT columns, there's one final step.  The Django ORM does now allow alias names to conflict with
