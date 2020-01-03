@@ -126,7 +126,8 @@
           "type": "keyword"
         },
         "parent_recipient_unique_id": {
-          "type": "keyword"
+          "type": "keyword",
+          "null_value": "NULL"
         },
         "parent_recipient_name": {
           "type": "text",

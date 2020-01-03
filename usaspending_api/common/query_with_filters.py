@@ -138,12 +138,13 @@ class _RecipientId(_Filter):
 
     @classmethod
     def _generate_elasticsearch_query(cls, filter_value: str) -> ES_Q:
+        recipient_hash = filter_value[:-2]
         if filter_value.endswith("P"):
-            recipient_id_query = ES_Q("match", parent_recipient_hash=filter_value)
+            return ES_Q("match", parent_recipient_hash=recipient_hash)
+        elif filter_value.endswith("C"):
+            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("match", parent_recipient_unique_id="NULL")
         else:
-            recipient_id_query = ES_Q("match", recipient_hash=filter_value)
-
-        return ES_Q("bool", must=recipient_id_query)
+            return ES_Q("match", recipient_hash=recipient_hash) & ES_Q("match", parent_recipient_unique_id="NULL")
 
 
 class _RecipientScope(_Filter):
@@ -154,9 +155,9 @@ class _RecipientScope(_Filter):
         recipient_scope_query = ES_Q("match", recipient_location_country_code="USA")
 
         if filter_value == "domestic":
-            return ES_Q("bool", must=recipient_scope_query)
+            return recipient_scope_query
         elif filter_value == "foreign":
-            return ES_Q("bool", must_not=recipient_scope_query)
+            return ~recipient_scope_query
 
 
 class _RecipientLocations(_Filter):
@@ -207,9 +208,9 @@ class _PlaceOfPerformanceScope(_Filter):
         pop_scope_query = ES_Q("match", pop_country_code="USA")
 
         if filter_values == "domestic":
-            return ES_Q("bool", must=pop_scope_query)
+            return pop_scope_query
         elif filter_values == "foreign":
-            return ES_Q("bool", must_not=pop_scope_query)
+            return ~pop_scope_query
 
 
 class _PlaceOfPerformanceLocations(_Filter):

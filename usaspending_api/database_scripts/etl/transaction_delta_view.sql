@@ -36,15 +36,11 @@ SELECT
 
   UTM.recipient_unique_id,
   UTM.recipient_name,
-  CONCAT(UTM.recipient_hash, '-', CASE WHEN UTM.parent_recipient_unique_id IS NULL THEN 'R' ELSE 'C' END) AS recipient_hash,
+  UTM.recipient_hash,
 
   UTM.parent_recipient_unique_id,
-  UPPER(PRL.recipient_name) AS parent_recipient_name,
-  CASE
-    WHEN PRL.recipient_hash IS NOT NULL THEN PRL.recipient_hash || '-P'
-    WHEN UTM.parent_recipient_unique_id IS NOT NULL THEN MD5(UPPER(COALESCE(FPDS.awardee_or_recipient_legal, FABS.awardee_or_recipient_legal)))::uuid || '-P'
-    ELSE NULL
-  END AS parent_recipient_hash,
+  UPPER(PRL.legal_business_name) AS parent_recipient_name,
+  PRL.recipient_hash as parent_recipient_hash,
 
   UTM.action_date,
   DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
@@ -124,14 +120,7 @@ LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
 LEFT JOIN toptier_agency TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
-LEFT JOIN (
-  SELECT
-    recipient_hash,
-    legal_business_name as recipient_name,
-    duns
-  FROM
-    recipient_lookup
-) PRL ON (PRL.duns = COALESCE(FPDS.ultimate_parent_unique_ide, FABS.ultimate_parent_unique_ide) AND COALESCE(FPDS.ultimate_parent_unique_ide, FABS.ultimate_parent_unique_ide) IS NOT NULL)
+LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
 LEFT JOIN (
   SELECT
     faba.award_id,

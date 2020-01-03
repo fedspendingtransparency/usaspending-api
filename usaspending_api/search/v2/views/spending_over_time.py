@@ -115,9 +115,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         group_by_time_period_agg = A(
             "date_histogram", field="fiscal_action_date", interval=interval, format="yyyy-MM-dd"
         )
-        sum_as_cents_agg = A(
-            "sum", script={"lang": "painless", "source": f"doc['generated_pragmatic_obligation'].value * 100"}
-        )
+        sum_as_cents_agg = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
         sum_as_dollars_agg = A(
             "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
         )
