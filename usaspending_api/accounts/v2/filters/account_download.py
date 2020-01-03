@@ -8,7 +8,7 @@ from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
-from usaspending_api.download.filestreaming.apply_annotations_to_sql import NAMING_CONFLICT_SUFFIX
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_SUFFIX
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
 from usaspending_api.settings import HOST

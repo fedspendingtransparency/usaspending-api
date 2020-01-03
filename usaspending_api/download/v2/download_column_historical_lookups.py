@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from usaspending_api.download.filestreaming.apply_annotations_to_sql import NAMING_CONFLICT_SUFFIX
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_SUFFIX
 
 """
 Sets up mappings from column names used in downloads to the query paths used to get the data from django.
