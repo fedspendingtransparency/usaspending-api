@@ -20,7 +20,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
-from usaspending_api.download.filestreaming import NAMING_CONFLICT_SUFFIX
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
@@ -438,8 +438,9 @@ def apply_annotations_to_sql(raw_query, aliases):
     # column/field names on the underlying model.  For annotated fields, naming conflict exceptions occur at
     # the time they are applied to the queryset which means they never get to this function.  To work around
     # this, we give them a temporary name that cannot conflict with a field name on the model by appending
-    # the suffix specified by NAMING_CONFLICT_SUFFIX.  Now that we have the "final" SQL, we must remove that suffix.
-    return sql.replace(NAMING_CONFLICT_SUFFIX, "")
+    # the suffix specified by NAMING_CONFLICT_DISCRIMINATOR.  Now that we have the "final" SQL, we must remove
+    # that suffix.
+    return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):

@@ -15,7 +15,7 @@ from django.db.models import Case, When, Value, CharField, F
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.download.filestreaming import NAMING_CONFLICT_SUFFIX
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
@@ -382,8 +382,9 @@ class Command(BaseCommand):
         # column/field names on the underlying model.  For annotated fields, naming conflict exceptions occur at
         # the time they are applied to the queryset which means they never get to this function.  To work around
         # this, we give them a temporary name that cannot conflict with a field name on the model by appending
-        # the suffix specified by NAMING_CONFLICT_SUFFIX.  Now that we have the "final" SQL, we must remove that suffix.
-        return sql.replace(NAMING_CONFLICT_SUFFIX, "")
+        # the suffix specified by NAMING_CONFLICT_DISCRIMINATOR.  Now that we have the "final" SQL, we must remove
+        # that suffix.
+        return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
     def parse_filters(self, award_types, agency):
         """ Convert readable filters to a filter object usable for the matview filter """

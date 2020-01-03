@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from usaspending_api.download.filestreaming import NAMING_CONFLICT_SUFFIX
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 """
 Sets up mappings from column names used in downloads to the query paths used to get the data from django.
@@ -1528,8 +1528,8 @@ query_paths = {
                 ("gross_outlay_amount", "gross_outlay_amount"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                 ),  # Column is annotated in account_download.py
             ]
         ),
@@ -1596,8 +1596,8 @@ query_paths = {
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount"),
                 (
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                 ),  # Column is annotated in account_download.py
             ]
         ),
@@ -1755,8 +1755,8 @@ query_paths = {
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 (
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
-                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                 ),  # Column is annotated in account_download.py
             ]
         ),
