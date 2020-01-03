@@ -8,7 +8,8 @@ def apply_annotations_to_sql(raw_query, aliases):
     """
     Postgres offers the ability to SELECT raw SQL directly to a file (CSV, TSV, etc) using psql from the command
     line which is much more efficient than returning the results to Python and saving those results to a file.
-    To this end, we need explicit control over SELECT aliases and the order in which SELECT values are returned.
+    To this end, we need explicit control over SELECT aliases and the order in which SELECT values are returned
+    in order to meet file structure requirements.
 
     Django's ORM does not allow SELECT column/annotation aliases to conflict with the underlying model field
     names.  Additionally, Django's ORM does not allow us to specify the order in which SELECT columns/annotations
