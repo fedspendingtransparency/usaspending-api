@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from usaspending_api.download.filestreaming.apply_annotations_to_sql import NAMING_CONFLICT_SUFFIX
 
 """
 Sets up mappings from column names used in downloads to the query paths used to get the data from django.
@@ -1527,9 +1528,9 @@ query_paths = {
                 ("gross_outlay_amount", "gross_outlay_amount"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                ),  # Column is appended to in account_download.py
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },
@@ -1595,9 +1596,9 @@ query_paths = {
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount"),
                 (
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                ),  # Column is appended to in account_download.py
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },
@@ -1754,9 +1755,9 @@ query_paths = {
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 (
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                    "last_modified_date_NAME_CONFLICT_RESOLVER",
-                ),  # Column is appended to in account_download.py.  Also, this name will be replaced in post.  See
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                    "last_modified_date" + NAMING_CONFLICT_SUFFIX,
+                ),  # Column is annotated in account_download.py
             ]
         ),
     },

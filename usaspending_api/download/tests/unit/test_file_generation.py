@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.download.filestreaming import download_generation
+from usaspending_api.download.filestreaming.apply_annotations_to_sql import apply_annotations_to_sql
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
 
@@ -133,7 +134,7 @@ def test_apply_annotations_to_sql_just_values():
     sql_string = str("SELECT one, two, three, four, five FROM table WHERE six = 'something'")
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT one AS "alias_one", two AS "alias_two", three AS "alias_three", four AS '
@@ -149,7 +150,7 @@ def test_apply_annotations_to_sql_just_case():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT one AS "alias_one", two AS "alias_two", CASE WHEN three = TRUE THEN \'3\' ELSE '
@@ -166,7 +167,7 @@ def test_apply_annotations_to_sql_just_concat():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         "SELECT one AS \"alias_one\", two AS \"alias_two\", CONCAT(three, '-', not_three, '-', "
@@ -183,7 +184,7 @@ def test_apply_annotations_to_sql_multilevel_concat():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT one AS "alias_one", two AS "alias_two", CONCAT(three, \'-\', CONCAT(not_three, '
@@ -201,7 +202,7 @@ def test_apply_annotations_to_sql_case_then_concat():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT CASE WHEN one = TRUE THEN \'1\' ELSE NULL END AS "alias_one", two AS "alias_two", '
@@ -218,7 +219,7 @@ def test_apply_annotations_to_sql_concat_then_case():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT CASE WHEN one = TRUE THEN \'1\' ELSE NULL END AS "alias_one", two AS "alias_two", '
@@ -235,11 +236,36 @@ def test_apply_annotations_to_sql_subquery():
     )
     aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
 
-    annotated_sql = download_generation.apply_annotations_to_sql(sql_string, aliases)
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
     annotated_string = str(
         'SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = '
         'table."othercode") AS "alias_one", two AS "alias_two", three AS "alias_three", '
         'four AS "alias_four", five AS "alias_five" FROM table WHERE six = \'something\''
     )
+    assert annotated_sql == annotated_string
+
+
+def test_apply_annotations_to_sql_union():
+    sql_string = str(
+        '(SELECT two, three, four, five, (SELECT table2."three" FROM table_two table2 WHERE '
+        "table2.\"code\" = table.\"othercode\") AS 'alias_one' FROM table WHERE six = 'something') "
+        "UNION "
+        '(SELECT two, three, four, five, (SELECT table2."three" FROM table_two table2 WHERE '
+        "table2.\"code\" = table.\"othercode\") AS 'alias_one' FROM table WHERE six = 'something')"
+    )
+    aliases = ["alias_one", "alias_two", "alias_three", "alias_four", "alias_five"]
+
+    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
+
+    annotated_string = str(
+        '(SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = '
+        'table."othercode") AS "alias_one", two AS "alias_two", three AS "alias_three", '
+        'four AS "alias_four", five AS "alias_five" FROM table WHERE six = \'something\') '
+        "UNION "
+        '(SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = '
+        'table."othercode") AS "alias_one", two AS "alias_two", three AS "alias_three", '
+        'four AS "alias_four", five AS "alias_five" FROM table WHERE six = \'something\')'
+    )
+
     assert annotated_sql == annotated_string

@@ -2,7 +2,6 @@ import json
 import logging
 import multiprocessing
 import os
-import re
 import shutil
 import subprocess
 import tempfile
@@ -20,6 +19,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
+from usaspending_api.download.filestreaming.apply_annotations_to_sql import apply_annotations_to_sql
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
@@ -36,6 +36,7 @@ DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
+
 
 logger = logging.getLogger("console")
 
@@ -382,63 +383,6 @@ def generate_export_query_temp_file(export_query, download_job):
         file.write(export_query)
 
     return temp_sql_file, temp_sql_file_path
-
-
-def apply_annotations_to_sql(raw_query, aliases):
-    """
-    Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
-    want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
-    function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
-    """
-    aliases_copy = list(aliases)
-
-    # Extract everything between the first SELECT and the last FROM
-    query_before_group_by = raw_query.split("GROUP BY ")[0]
-    query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
-
-    # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(
-        r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
-    )[0]
-    just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
-    selects_list = [select.strip() for select in just_selects.strip().split(",")]
-
-    # Create a list from the derived values between SELECT and FROM
-    remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall(
-        r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
-    )
-    deriv_dict = {}
-    for str_match in deriv_str_lookup:
-        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
-        alias = str_match[2][:-1].strip() if str_match[2][-1:] == "," else str_match[2].strip()
-        if (alias[-1:] == '"' and alias[:1] == '"') or (alias[-1:] == "'" and alias[:1] == "'"):
-            alias = alias[1:-1]
-        deriv_dict[alias] = "{}{}".format(str_match[0], str_match[1]).strip()
-        # Provides some safety if a field isn't provided in this historical_lookup
-        if alias in aliases_copy:
-            aliases_copy.remove(alias)
-
-    # Validate we have an alias for each value in the SELECT string
-    if len(selects_list) != len(aliases_copy):
-        raise Exception(
-            f"Length of aliases ({len(aliases_copy)}) doesn't match the columns in selects ({len(selects_list)})"
-        )
-
-    # Match aliases with their values
-    values_list = [
-        f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
-    ]
-
-    sql = raw_query.replace(query_before_from, ", ".join(values_list), 1)
-
-    # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
-    # the fields, there's one final step.  For annotated fields, naming conflicts occur at the time they are
-    # applied to the queryset which means they never get to this function.  To work around this, we give them
-    # a name that cannot conflict with a field name on the model and then remove that conflict resolver here.
-    # As of this writing, the conflict resolver is "_NAME_CONFLICT_RESOLVER" appended to the conflicting name.
-    # Let's remove that.
-    return sql.replace("_NAME_CONFLICT_RESOLVER", "")
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):

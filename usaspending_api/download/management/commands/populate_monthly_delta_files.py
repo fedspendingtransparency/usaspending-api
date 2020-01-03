@@ -15,6 +15,7 @@ from django.db.models import Case, When, Value, CharField, F
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+from usaspending_api.download.filestreaming.apply_annotations_to_sql import apply_annotations_to_sql
 from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
@@ -160,7 +161,7 @@ class Command(BaseCommand):
 
         # Create a unique temporary file with the raw query
         raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
-        csv_query_annotated = self.apply_annotations_to_sql(raw_quoted_query, source.human_names)
+        csv_query_annotated = apply_annotations_to_sql(raw_quoted_query, source.human_names)
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
         with open(temp_sql_file_path, "w") as file:
             file.write("\\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
@@ -320,61 +321,6 @@ class Command(BaseCommand):
                 return False
 
         return "{}-{}-{}".format(year, month, day)
-
-    @staticmethod
-    def apply_annotations_to_sql(raw_query, aliases):
-        """
-        This function stolen from download_generation.apply_annotations_to_sql and tweaked for this module.  This is
-        a hack to get the Delta scripts working.  It is possible this flavor of the function might work in
-        download_generation as well, but this is a rush job.
-
-        TODO: See if this can be reconciled with download_generation.apply_annotations_to_sql
-
-        This function serves two purposes:
-            - apply aliases to all the return values in raw_query
-            - reorder annotated columns
-        """
-        aliases_copy = list(aliases)
-
-        # Extract everything between the first SELECT and the last FROM
-        query_before_group_by = raw_query.split("GROUP BY ")[0]
-        query_before_from = re.sub(
-            r"\(?SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1
-        )
-
-        # Create a list from the non-derived values between SELECT and FROM
-        selects_str = re.findall(
-            r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
-        )[0]
-        just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
-        selects_list = [select.strip() for select in just_selects.strip().split(",")]
-
-        # Create a list from the derived values between SELECT and FROM
-        remove_selects = query_before_from.replace(selects_str[0], "")
-        deriv_str_lookup = re.findall(
-            r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
-        )
-        deriv_dict = {}
-        for str_match in deriv_str_lookup:
-            # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
-            alias = str_match[2][:-1].strip() if str_match[2][-1:] == "," else str_match[2].strip()
-            if (alias[-1:] == '"' and alias[:1] == '"') or (alias[-1:] == "'" and alias[:1] == "'"):
-                alias = alias[1:-1]
-            deriv_dict[alias] = "{}{}".format(str_match[0], str_match[1]).strip()
-            # Provides some safety if a field isn't provided in this historical_lookup
-            if alias in aliases_copy:
-                aliases_copy.remove(alias)
-
-        # Validate we have an alias for each value in the SELECT string
-        if len(selects_list) != len(aliases_copy):
-            raise Exception("Length of aliases doesn't match the columns in selects")
-
-        # Match aliases with their values
-        values_list = [
-            f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
-        ]
-
-        return raw_query.replace(query_before_from, ", ".join(values_list))
 
     def parse_filters(self, award_types, agency):
         """ Convert readable filters to a filter object usable for the matview filter """
