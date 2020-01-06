@@ -36,11 +36,11 @@ def test_top_level_split_unsplittable():
 
 def test_select_columns_nesting_logic():
     basic_sql = "SELECT steve,jimmy,bob FROM the bench"
-    assert _select_columns(basic_sql) == [" steve", "jimmy", "bob "]
+    assert _select_columns(basic_sql) == ["steve", "jimmy", "bob"]
     nested_sql = (
         "SELECT (SELECT things FROM a place), stuff , (things FROM stuff) FROM otherstuff SELECT FROM FROM SELECT"
     )
-    assert _select_columns(nested_sql) == [" (SELECT things FROM a place)", " stuff ", " (things FROM stuff) "]
+    assert _select_columns(nested_sql) == ["(SELECT things FROM a place)", "stuff", "(things FROM stuff)"]
 
 
 def test_apply_annotations_to_sql():
@@ -52,6 +52,6 @@ def test_apply_annotations_to_sql():
 
     annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = 'SELECT  (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one",  "table"."col1" AS "col1",  "table"."col2" AS "col2"FROM table WHERE six = \'something\''
+    annotated_string = 'SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one", "table"."col1" AS "col1", "table"."col2" AS "col2"FROM table WHERE six = \'something\''
 
     assert annotated_sql == annotated_string

@@ -386,7 +386,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = [str for str in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
+    selects_list = [str for str in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, str)]
 
     # Create a list from the derived values between SELECT and FROM
     aliased_list = [str for str in select_statements if not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
@@ -428,11 +428,11 @@ def _select_columns(sql):
                 last_processed_index = last_processed_index + 6
             # If there is a FROM at the bottom level, we have all the values we need and can return
             if sql[index : index + 4] == "FROM":
-                retval.append(sql[last_processed_index:index])
+                retval.append(sql[last_processed_index:index].strip())
                 return retval
             # If there is a comma on the bottom level, add another select value and start parsing a new one
             if char == ",":
-                retval.append(sql[last_processed_index:index])
+                retval.append(sql[last_processed_index:index].strip())
                 last_processed_index = index + 1  # skips the comma by design
 
     return retval  # this will almost certainly error out later.
