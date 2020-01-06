@@ -72,8 +72,9 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             results = self.handle_subawards(filters)
         else:
             results = self.handle_awards(filters, empty_results)
+        results["message"] = get_time_period_message()
 
-        return Response({"results": results, "message": get_time_period_message()})
+        return Response({"results": results})
 
     @staticmethod
     def handle_awards(filters: dict, results_object: dict) -> dict:

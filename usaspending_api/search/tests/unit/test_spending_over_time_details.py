@@ -8,6 +8,7 @@ from rest_framework import status
 from django_mock_queries.query import MockModel
 
 from usaspending_api.awards.models_matviews import SummaryTransactionView
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 
 
@@ -119,6 +120,7 @@ def test_spending_over_time_fy_ordering(populate_models, client, mock_matviews_q
             {"aggregated_amount": 170.0, "time_period": {"fiscal_year": "2017"}},
             {"aggregated_amount": 0, "time_period": {"fiscal_year": "2018"}},
         ],
+        "message": get_time_period_message(),
     }
 
     resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
@@ -183,6 +185,7 @@ def test_spending_over_time_month_ordering(populate_models, client, mock_matview
             {"time_period": {"fiscal_year": "2013", "month": "11"}, "aggregated_amount": 0},
             {"time_period": {"fiscal_year": "2013", "month": "12"}, "aggregated_amount": 0},
         ],
+        "message": get_time_period_message(),
     }
 
     resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
@@ -206,6 +209,7 @@ def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_m
                 {"start_date": "2011-02-01", "end_date": "2011-03-31"},
             ]
         },
+        "message": get_time_period_message(),
     }
 
     expected_response = {
@@ -226,6 +230,7 @@ def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_m
             {"aggregated_amount": 110.0, "time_period": {"fiscal_year": "2011", "month": "6"}},
         ],
         "group": "month",
+        "message": get_time_period_message(),
     }
 
     resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))

@@ -1,6 +1,7 @@
 import pytest
 
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet, GLOBAL_MAP
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
 from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping
@@ -128,7 +129,12 @@ def test_get_queryset():
 def test_populate_response():
     view = instantiate_view_for_tests()
 
-    expected_dictionary = {"limit": 5, "results": ["item 1", "item 2"], "page_metadata": {"page": 1, "hasNext": True}}
+    expected_dictionary = {
+        "limit": 5,
+        "results": ["item 1", "item 2"],
+        "page_metadata": {"page": 1, "hasNext": True},
+        "message": get_time_period_message(),
+    }
     assert view.populate_response(results=["item 1", "item 2"], has_next=True) == expected_dictionary
 
     expected_dictionary["results"] = []

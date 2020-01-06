@@ -4,6 +4,8 @@ from decimal import Decimal
 from django.db import connection
 from django_mock_queries.query import MockModel, MockSet
 from model_mommy import mommy
+
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.v2.views.spending_by_category import BusinessLogic
 
@@ -38,6 +40,7 @@ def test_category_awarding_agency_awards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 15, "name": "Department of Pizza", "code": "DOP", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -72,6 +75,7 @@ def test_category_awarding_agency_subawards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 15, "name": "Department of Pizza", "code": "DOP", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -106,6 +110,7 @@ def test_category_awarding_subagency_awards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 20, "name": "Department of Sub-pizza", "code": "DOSP", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -140,6 +145,7 @@ def test_category_awarding_subagency_subawards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 20, "name": "Department of Sub-pizza", "code": "DOSP", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -174,6 +180,7 @@ def test_category_funding_agency_awards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 100, "name": "Department of Calzone", "code": "DOC", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -208,6 +215,7 @@ def test_category_funding_agency_subawards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 100, "name": "Department of Calzone", "code": "DOC", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -242,6 +250,7 @@ def test_category_funding_subagency_awards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 0, "name": "Department of Sub-calzone", "code": "DOSC", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -276,6 +285,7 @@ def test_category_funding_subagency_subawards(mock_matviews_qs, mock_agencies):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 0, "name": "Department of Sub-calzone", "code": "DOSC", "id": 2}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -322,6 +332,7 @@ def test_category_recipient_duns_awards(mock_matviews_qs):
             {"amount": 11, "name": "John Doe", "code": "1234JD4321", "recipient_id": None},
             {"amount": 2, "name": "University of Pawnee", "code": "00UOP00", "recipient_id": None},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -388,6 +399,7 @@ def test_category_recipient_duns_subawards():
                 "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
             },
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -425,6 +437,7 @@ def test_category_recipient_parent_duns_awards(mock_matviews_qs, mock_recipients
             {"amount": 11, "name": "John Doe", "code": "1234JD4321", "id": 2},
             {"amount": 2, "name": "University of Pawnee", "code": "00UOP00", "id": 1},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -454,6 +467,7 @@ def test_category_recipient_parent_duns_subawards(mock_matviews_qs, mock_recipie
             {"amount": 11, "name": "John Doe", "code": "1234JD4321", "id": 2},
             {"amount": 2, "name": "University of Pawnee", "code": "00UOP00", "id": 1},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -476,6 +490,7 @@ def test_category_cfda_awards(mock_matviews_qs, mock_cfda):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -498,6 +513,7 @@ def test_category_cfda_subawards(mock_matviews_qs, mock_cfda):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -526,6 +542,7 @@ def test_category_psc_awards(mock_matviews_qs, mock_psc):
             {"amount": 4, "code": "PSC 9876", "id": None, "name": "PSC DESCRIPTION DOWN"},
             {"amount": 2, "code": "PSC 1234", "id": None, "name": "PSC DESCRIPTION UP"},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -555,6 +572,7 @@ def test_category_psc_subawards(mock_matviews_qs, mock_psc):
             {"amount": 4, "code": "PSC 9876", "id": None, "name": "PSC DESCRIPTION DOWN"},
             {"amount": 2, "code": "PSC 1234", "id": None, "name": "PSC DESCRIPTION UP"},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -592,6 +610,7 @@ def test_category_naics_awards(mock_matviews_qs, mock_naics):
             {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
             {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -612,6 +631,7 @@ def test_category_county_awards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "04", "name": "COUNTYSVILLE", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -632,6 +652,7 @@ def test_category_county_subawards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "04", "name": "COUNTYSVILLE", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -652,6 +673,7 @@ def test_category_district_awards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "06", "name": "XY-06", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -672,6 +694,7 @@ def test_category_district_awards_multiple_districts(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -692,6 +715,7 @@ def test_category_district_subawards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "06", "name": "XY-06", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -714,6 +738,7 @@ def test_category_state_territory(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "XY", "name": "Test State", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -736,6 +761,7 @@ def test_category_state_territory_subawards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "XY", "name": "Test State", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -757,6 +783,7 @@ def test_category_country(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "US", "name": "UNITED STATES", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -778,6 +805,7 @@ def test_category_country_subawards(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "US", "name": "UNITED STATES", "id": None}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -819,6 +847,7 @@ def test_category_federal_accounts(mock_matviews_qs):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
@@ -869,6 +898,7 @@ def test_category_federal_accounts_subawards(
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
+        "message": get_time_period_message(),
     }
 
     assert expected_response == spending_by_category_logic
