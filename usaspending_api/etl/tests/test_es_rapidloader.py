@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
-import tempfile
 import pytest
+import tempfile
 
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
@@ -95,7 +95,8 @@ config = {
 }
 
 
-def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index):
+def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index, tmpdir):
+    config["directory"] = tmpdir
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
@@ -104,7 +105,8 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
 
 
-def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
+def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index, tmpdir):
+    config["directory"] = tmpdir
     config["root_index"] = "transaction-query"
     config["type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
