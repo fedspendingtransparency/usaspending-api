@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from elasticsearch_dsl import A, Search
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
@@ -28,7 +29,10 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 )
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -97,6 +101,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "sort_order": json_request["order"],
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
+        self.elasticsearch = is_experimental_elasticsearch_api(request)
+
+        if self.elasticsearch and not self.subawards:
+            logger.info("Using experimental Elasticsearch functionality for 'spending_over_time'")
+            results = self.query_elasticsearch()
+
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
@@ -224,3 +234,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
         }
+
+    def query_elasticsearch(self, time_periods: list) -> list:
+        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
+        search = Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
+        self.apply_elasticsearch_aggregations(search)
+        response = es_client_query(search=search)
+        return self.build_elasticsearch_result(response.aggs, time_periods)
