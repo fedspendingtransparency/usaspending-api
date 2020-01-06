@@ -317,7 +317,7 @@ def get_time_period_message():
     return (
         "For searches, time period start and end dates are currently limited to an earliest date of "
         f"{settings.API_SEARCH_MIN_DATE}.  For data going back to {settings.API_MIN_DATE}, use either the Custom "
-        "Award Download feature on the website or one of our `download` or `bulk_download` API endpoints as "
+        "Award Download feature on the website or one of our download or bulk_download API endpoints as "
         "listed on https://api.usaspending.gov/docs/endpoints."
     )
 
