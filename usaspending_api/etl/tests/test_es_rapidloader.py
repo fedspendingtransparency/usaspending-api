@@ -80,7 +80,7 @@ config = {
     "verbose": False,
     "type": "awards",
     "process_deletes": False,
-    "directory": Path(__file__).resolve().parent,
+    "directory": Path("/tmp"),
     "skip_counts": False,
     "index_name": "test-{}-{}".format(
         datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()

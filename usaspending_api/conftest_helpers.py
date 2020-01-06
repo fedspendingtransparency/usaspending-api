@@ -12,9 +12,7 @@ from usaspending_api.common.sqs.sqs_handler import FAKE_QUEUE
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
-from usaspending_api.etl.management.commands.es_configure import (
-    retrieve_index_template
-)
+from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
 class TestElasticSearchIndex:
