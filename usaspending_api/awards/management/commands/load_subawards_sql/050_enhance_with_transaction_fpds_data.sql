@@ -1,4 +1,4 @@
--- Enhance subawards with transaction data.
+-- Enhance subawards with transaction FPDS data.
 
 
 
@@ -18,5 +18,4 @@ from
     left outer join psc on fpds.product_or_service_code = psc.code
 
 where
-    fpds.transaction_id = temp_load_subawards_subaward.latest_transaction_id and
-    temp_load_subawards_subaward.latest_transaction_id is not null;
+    fpds.transaction_id = temp_load_subawards_subaward.latest_transaction_id;

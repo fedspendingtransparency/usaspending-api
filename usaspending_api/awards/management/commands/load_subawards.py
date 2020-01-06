@@ -92,7 +92,8 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         self._execute_etl_dml_sql_directory_file("030_frame_out_subawards")
         self._execute_etl_dml_sql_directory_file("040_enhance_with_awards_data")
-        self._execute_etl_dml_sql_directory_file("050_enhance_with_transaction_data")
+        self._execute_etl_dml_sql_directory_file("050_enhance_with_transaction_fpds_data.sql")
+        self._execute_etl_dml_sql_directory_file("051_enhance_with_transaction_fabs_data.sql")
         self._execute_etl_dml_sql_directory_file("060_enhance_with_cfda_data")
         self._execute_etl_dml_sql_directory_file("070_enhance_with_awarding_agency")
         self._execute_etl_dml_sql_directory_file("080_enhance_with_funding_agency")
