@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from pathlib import Path
-
+import tempfile
 import pytest
+
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.rapidloader import Rapidloader
@@ -80,7 +81,7 @@ config = {
     "verbose": False,
     "type": "awards",
     "process_deletes": False,
-    "directory": Path("/tmp"),
+    "directory": Path(tempfile.gettempdir()),
     "skip_counts": False,
     "index_name": "test-{}-{}".format(
         datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
