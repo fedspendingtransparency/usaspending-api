@@ -96,7 +96,7 @@ config = {
 
 
 def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index, tmpdir):
-    config["directory"] = tmpdir
+    config["directory"] = tmpdir.mkdir("awards")
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
@@ -106,7 +106,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
 
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index, tmpdir):
-    config["directory"] = tmpdir
+    config["directory"] = tmpdir.mkdir("transactions")
     config["root_index"] = "transaction-query"
     config["type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
