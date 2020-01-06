@@ -5,8 +5,9 @@ from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from elasticsearch_dsl import A, Search
+from elasticsearch_dsl import Search
 
+import logging
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
@@ -38,6 +39,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
+logger = logging.getLogger("console")
 
 GLOBAL_MAP = {
     "award": {
@@ -103,15 +105,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
         self.elasticsearch = is_experimental_elasticsearch_api(request)
 
-        if self.elasticsearch and not self.subawards:
-            logger.info("Using experimental Elasticsearch functionality for 'spending_over_time'")
-            results = self.query_elasticsearch()
-
-
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
+
+        if self.elasticsearch and not self.is_subaward:
+            logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
+            results = self.query_elasticsearch()
+            return Response(self.construct_es_reponse(results))
 
         return Response(self.create_response(self.construct_queryset()))
 
@@ -235,9 +237,37 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
         }
 
-    def query_elasticsearch(self, time_periods: list) -> list:
+    def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
-        search = Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
-        self.apply_elasticsearch_aggregations(search)
+        sort_field = self.get_sort_by_fields()
+        sorts = ["-" + field if self.pagination["sort_order"] == "desc" else field for field in sort_field]
+        search = (
+            Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+            .filter(filter_query)
+            .sort(*sorts)[
+                ((self.pagination["page"] - 1) * self.pagination["limit"]):
+                (((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"])
+            ]
+        )
         response = es_client_query(search=search)
-        return self.build_elasticsearch_result(response.aggs, time_periods)
+        return response
+
+    def construct_es_reponse(self, response) -> dict:
+        results = []
+        for res in response:
+            hit = res.to_dict()
+            row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
+
+            for field in self.fields:
+                row[field] = hit.get(
+                    self.constants["type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(field)
+                )
+
+            if "Award ID" in self.fields:
+                for id_type in self.constants["award_id_fields"]:
+                    if hit[id_type]:
+                        row["Award ID"] = hit[id_type]
+                        break
+            results.append(row)
+        results = self.add_award_generated_id_field(results)
+        return self.populate_response(results=results, has_next=len(response) > self.pagination["limit"])
