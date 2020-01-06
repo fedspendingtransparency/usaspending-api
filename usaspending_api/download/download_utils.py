@@ -6,25 +6,49 @@ from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency
 
 
-def create_unique_filename(json_request, request_agency=None):
+def create_unique_filename(json_request, origination=None):
+    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
+    request_agency = json_request.get("agency", "all")
+
     if json_request.get("is_for_idv"):
-        download_name = "IDV_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
+        download_name = f"IDV_{slugify_text_for_file_names(json_request.get('piid'), 'UNKNOWN', 50)}_{timestamp}.zip"
     elif json_request.get("is_for_contract"):
-        download_name = "CONT_" + slugify_text_for_file_names(json_request.get("piid"), "UNKNOWN", 50)
+        download_name = f"CONT_{slugify_text_for_file_names(json_request.get('piid'), 'UNKNOWN', 50)}_{timestamp}.zip"
     elif json_request.get("is_for_assistance"):
-        download_name = "ASST_" + slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
-    else:
-        download_types = json_request["download_types"]
-        prefix = obtain_filename_prefix_from_agency_id(request_agency)
-        award_type_name = create_award_level_string(download_types)
-        download_name = "{}_{}".format(prefix, award_type_name)
-    timestamped_file_name = get_timestamped_filename("{}.zip".format(download_name))
-    return timestamped_file_name
+        slug_text = slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
+        download_name = f"ASST_{slug_text}_{timestamp}.zip"
+    elif json_request["request_type"] == "account":
+        file_name_template = obtain_zip_filename_format(json_request["download_types"])
+        agency = obtain_filename_prefix_from_agency_id(request_agency)
+        level = "FA" if json_request["account_level"] == "federal_account" else "TAS"
+        data_quarters = construct_data_date_range(json_request["filters"])
+
+        download_name = file_name_template.format(
+            agency=agency, data_quarters=data_quarters, level=level, timestamp=timestamp,
+        )
+    else:  # "award" downloads
+        agency = ""
+
+        # Since Keyword Search using the "Bulk Download" Endpoint for unknown reasons
+        # Check for the specific filter to mimic the Advanced Search download filename
+        if origination == "bulk_download" and "elasticsearch_keyword" not in json_request["filters"]:
+            agency = obtain_filename_prefix_from_agency_id(request_agency) + "_"
+
+        award_type_name = create_award_level_string(json_request["download_types"])
+        download_name = f"{agency}{award_type_name}_{timestamp}.zip"
+
+    return download_name
+
+
+def obtain_zip_filename_format(download_types):
+    if len(download_types) > 1:
+        raise NotImplementedError
+    return VALUE_MAPPINGS[download_types[0]]["zipfile_template"] + ".zip"
 
 
 def obtain_filename_prefix_from_agency_id(request_agency):
-    result = "all"
-    if request_agency:
+    result = "All"
+    if request_agency and request_agency != "all":
         toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
         if toptier_agency_filter:
             result = toptier_agency_filter.toptier_code
@@ -32,16 +56,13 @@ def obtain_filename_prefix_from_agency_id(request_agency):
 
 
 def create_award_level_string(download_types):
-    return "_".join(VALUE_MAPPINGS[award_level]["download_name"] for award_level in download_types)
-
-
-def get_timestamped_filename(filename, datetime_format="%Y%m%d%H%M%S%f"):
-    """
-        Gets a Timestamped file name to prevent conflicts on S3 Uploading
-    """
-    file_sans_extension, file_extension = filename.split(".")
-    timestamp = datetime.strftime(datetime.now(timezone.utc), datetime_format)
-    return "{}_{}.{}".format(file_sans_extension, timestamp, file_extension)
+    type_list = []
+    for award_level in download_types:
+        if "type_name" in VALUE_MAPPINGS[award_level]:
+            type_list.append(VALUE_MAPPINGS[award_level]["type_name"])
+        else:
+            type_list.append(VALUE_MAPPINGS[award_level]["download_name"])
+    return "And".join(type_list)
 
 
 def log_new_download_job(request, download_job):
@@ -50,3 +71,10 @@ def log_new_download_job(request, download_job):
         download_job=download_job,
         other_params={"request_addr": get_remote_addr(request)},
     )
+
+
+def construct_data_date_range(provided_filters: dict) -> str:
+    string = f"FY{provided_filters.get('fy')}Q1"
+    if provided_filters.get("quarter") != 1:
+        string += f"-Q{provided_filters.get('quarter')}"
+    return string

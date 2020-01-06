@@ -9,6 +9,7 @@ import tempfile
 import time
 import traceback
 
+from datetime import datetime, timezone
 from django.conf import settings
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
@@ -18,6 +19,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
@@ -123,7 +125,7 @@ def generate_download(download_job):
 def get_download_sources(json_request):
     download_sources = []
     for download_type in json_request["download_types"]:
-        agency_id = json_request["filters"].get("agency", "all")
+        agency_id = json_request.get("agency", "all")
         filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
         download_type_table = VALUE_MAPPINGS[download_type]["table"]
 
@@ -177,14 +179,14 @@ def get_download_sources(json_request):
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
     """Write to delimited text file(s) and zip file(s) using the source data"""
     d_map = {
-        "d1": "contracts",
-        "d2": "assistance",
-        "treasury_account": "treasury_account",
-        "federal_account": "federal_account",
+        "d1": "Contracts",
+        "d2": "Assistance",
+        "treasury_account": "TAS",
+        "federal_account": "FA",
     }
     if download_job and download_job.monthly_download:
-        # Use existing detailed filename from parent file for monthly files
-        # e.g. `019_Assistance_Delta_20180917_%s.csv`
+        # For monthly archives, use the existing detailed zip filename for the data files
+        # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
         source_name = strip_file_extension(download_job.file_name)
     elif source.is_for_idv or source.is_for_contract:
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
@@ -193,14 +195,33 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
         source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
     else:
-        download_name = VALUE_MAPPINGS[source.source_type]["download_name"]
-        source_name = f"{source.agency_code}_{d_map[source.file_type]}_{download_name}"
+        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+
+        if source.agency_code == "all":
+            agency = "All"
+        else:
+            agency = str(source.agency_code)
+
+        request = json.loads(download_job.json_request)
+        filters = request["filters"]
+        if request.get("limit"):
+            agency = ""
+        elif source.file_type not in ("treasury_account", "federal_account"):
+            agency = f"{agency}_"
+        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
+        source_name = file_name_pattern.format(
+            agency=agency,
+            data_quarters=construct_data_date_range(filters),
+            level=d_map[source.file_type],
+            timestamp=timestamp,
+            type=d_map[source.file_type],
+        )
 
     source_query = source.row_emitter(columns)
     source.file_name = f"{source_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(message=f"Preparing to download data as {source_name}", download_job=download_job)
+    write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns, extension)
