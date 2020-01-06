@@ -13,7 +13,11 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
-from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import (
+    bolster_missing_time_periods,
+    generate_fiscal_year,
+    get_time_period_message,
+)
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -115,5 +119,5 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             date_range_type=values[-1],
             columns={"aggregated_amount": "aggregated_amount"},
         )
-
-        return Response({"group": self.groupings[self.group], "results": results})
+        response = {"group": self.groupings[self.group], "results": results, "message": get_time_period_message()}
+        return Response(response)

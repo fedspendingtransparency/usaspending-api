@@ -14,6 +14,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -72,7 +73,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             results = self.handle_awards(filters, empty_results)
 
-        return Response({"results": results})
+        return Response({"results": results, "message": get_time_period_message()})
 
     @staticmethod
     def handle_awards(filters: dict, results_object: dict) -> dict:

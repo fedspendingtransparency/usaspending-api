@@ -6,10 +6,10 @@ from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
 
 
 TIME_PERIOD_MIN_MESSAGE = (
-    "%s falls before the minimum search date.  For data prior to {min}, consider using "
-    "one of the download endpoints listed on https://api.usaspending.gov/docs/endpoints."
+    "%s falls before the earliest available search date of {min}.  For data going back to %s, use either the "
+    "Custom Award Download feature on the website or one of our `download` or `bulk_download` API endpoints "
+    "listed on https://api.usaspending.gov/docs/endpoints."
 )
-TIME_PERIOD_MAX_MESSAGE = "%s falls after the maximum search date of {max}."
 
 AWARD_FILTER = [
     {"name": "award_ids", "type": "array", "array_type": "text", "text_type": "search"},
@@ -40,16 +40,14 @@ AWARD_FILTER = [
             "start_date": {
                 "type": "date",
                 "min": settings.API_SEARCH_MIN_DATE,
-                "min_message": TIME_PERIOD_MIN_MESSAGE % "start_date",
+                "min_exception": TIME_PERIOD_MIN_MESSAGE % ("start_date", settings.API_MIN_DATE),
                 "max": settings.API_MAX_DATE,
-                "max_message": TIME_PERIOD_MAX_MESSAGE % "start_date",
             },
             "end_date": {
                 "type": "date",
                 "min": settings.API_SEARCH_MIN_DATE,
-                "min_message": TIME_PERIOD_MIN_MESSAGE % "end_date",
+                "min_exception": TIME_PERIOD_MIN_MESSAGE % ("end_date", settings.API_MIN_DATE),
                 "max": settings.API_MAX_DATE,
-                "max_message": TIME_PERIOD_MAX_MESSAGE % "end_date",
             },
             "date_type": {
                 "type": "enum",

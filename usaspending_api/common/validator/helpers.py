@@ -99,17 +99,26 @@ def validate_datetime(rule):
         error_message = INVALID_TYPE_MSG.format(**rule) + ". Expected format: ({})".format(dt_format)
         raise InvalidParameterException(error_message)
 
+    # DEV-4097 introduces new behavior whereby minimum/maximum date violations should raise an error.  To
+    # implement this, we added a min/max_exception property to the rule.  If that property exists, we will
+    # raise an exception, otherwise we will retain the old behavior for backward compatibility.
     if "min" in rule:
         min_cap = datetime.datetime.strptime(rule["min"], dt_format)
         if value < min_cap:
-            message = rule.get("min_message", BELOW_MINIMUM_MSG).format(**rule)
-            raise UnprocessableEntityException(message)
+            if "min_exception" in rule:
+                message = rule["min_exception"].format(**rule)
+                raise UnprocessableEntityException(message)
+            logger.info("{}. Setting to {}".format(BELOW_MINIMUM_MSG.format(**rule), min_cap))
+            value = min_cap
 
     if "max" in rule:
         max_cap = datetime.datetime.strptime(rule["max"], dt_format)
         if value > max_cap:
-            message = rule.get("max_message", ABOVE_MAXIMUM_MSG).format(**rule)
-            raise UnprocessableEntityException(message)
+            if "max_exception" in rule:
+                message = rule["max_exception"].format(**rule)
+                raise UnprocessableEntityException(message)
+            logger.info(ABOVE_MAXIMUM_MSG.format(**rule))
+            value = max_cap
 
     # Future TODO: change this to returning the appropriate object (Date or Datetime) instead of converting to string
     if rule["type"] == "date":

@@ -49,6 +49,8 @@ This endpoint returns the count of new awards grouped by time period in ascendin
 
 ## TimePeriodObject (object)
 + `start_date`: `2016-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use one of our `download` or `bulk_download` endpoints.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `end_date`: `2017-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use one of our `download` or `bulk_download` endpoints.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
