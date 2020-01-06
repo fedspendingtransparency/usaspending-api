@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import psycopg2
 
+# import subprocess
 import tempfile
 
 from collections import defaultdict

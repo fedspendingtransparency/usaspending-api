@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 import pytest
@@ -96,17 +97,20 @@ config = {
 
 
 def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index, tmpdir):
-    config["directory"] = tmpdir.mkdir("awards")
+    os.mkdir(config["directory"] / "test")
+    config["directory"] = config["directory"] / "test"
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
+    os.rmdir(config["directory"])
 
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index, tmpdir):
-    config["directory"] = tmpdir.mkdir("transactions")
+    os.mkdir(config["directory"])
+    config["directory"] = config["directory"]
     config["root_index"] = "transaction-query"
     config["type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
@@ -115,6 +119,7 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
+    os.rmdir(config["directory"])
 
 
 def test_configure_sql_strings():
