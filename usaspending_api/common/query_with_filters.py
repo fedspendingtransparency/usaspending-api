@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 class _Filter(metaclass=ABCMeta):
     """
-    Represents a filter object used to query currently only Elasticsearch. The idea is that this
-    ABC and QueryWithFilters can be altered to work with Django as well down the road.
+    Represents a filter object used to currently query only Elasticsearch.
     """
 
     underscore_name = None
@@ -410,7 +409,7 @@ class QueryWithFilters:
             # Validate the filters
             if filter_type in cls.unsupported_filters:
                 msg = "API request included '{}' key. No filtering will occur with provided value '{}'"
-                logger.info(msg.format(filter_type, filter_values))
+                logger.warning(msg.format(filter_type, filter_values))
                 continue
             elif filter_type not in cls.filter_lookup.keys():
                 raise InvalidParameterException(f"Invalid filter: {filter_type} does not exist.")
