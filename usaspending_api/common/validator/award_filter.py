@@ -7,7 +7,7 @@ from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
 
 TIME_PERIOD_MIN_MESSAGE = (
     "%s falls before the earliest available search date of {min}.  For data going back to %s, use either the "
-    "Custom Award Download feature on the website or one of our `download` or `bulk_download` API endpoints "
+    "Custom Award Download feature on the website or one of our download or bulk_download API endpoints "
     "listed on https://api.usaspending.gov/docs/endpoints."
 )
 
