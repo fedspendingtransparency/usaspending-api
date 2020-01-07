@@ -51,7 +51,7 @@ def generate_download(download_job):
     piid = json_request.get("piid", None)
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
-    extension = json_request.get("file_format")
+    file_format = json_request.get("file_format")
 
     file_name = start_download(download_job)
     try:
@@ -69,7 +69,7 @@ def generate_download(download_job):
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             parse_source(
-                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension
+                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
             )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
@@ -219,7 +219,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     return data_file_name
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):
     """Write to delimited text file(s) and zip file(s) using the source data"""
     export_function = generate_default_export_query
     if source and source.source_type in VALUE_MAPPINGS:
@@ -228,13 +228,14 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
     source_query = source.row_emitter(columns)
+    extension = FILE_FORMATS[file_format]["extension"]
     source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
     write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    export_query = generate_export_query(source_query, limit, source, columns, extension, export_function)
+    export_query = generate_export_query(source_query, limit, source, columns, file_format, export_function)
     temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
@@ -244,7 +245,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 
-        delim = FILE_FORMATS[extension]["delimiter"]
+        delim = FILE_FORMATS[file_format]["delimiter"]
 
         # Log how many rows we have
         write_to_log(message="Counting rows in delimited text file", download_job=download_job)
@@ -260,7 +261,8 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_data_files, args=(zip_file_path, source_path, data_file_name, extension, download_job)
+            target=split_and_zip_data_files,
+            args=(zip_file_path, source_path, data_file_name, file_format, download_job),
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -273,12 +275,13 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_data_files(zip_file_path, source_path, data_file_name, extension, download_job=None):
+def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
     try:
         # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
-        delim = FILE_FORMATS[extension]["delimiter"]
+        delim = FILE_FORMATS[file_format]["delimiter"]
+        extension = FILE_FORMATS[file_format]["extension"]
 
         output_template = f"{data_file_name}_%s.{extension}"
         write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
@@ -365,11 +368,11 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_export_query(source_query, limit, source, columns, extension, generate_export_query_function):
+def generate_export_query(source_query, limit, source, columns, file_format, generate_export_query_function):
     if limit:
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
-    options = FILE_FORMATS[extension]["options"]
+    options = FILE_FORMATS[file_format]["options"]
     return generate_export_query_function(source, query_annotated, options)
 
 
