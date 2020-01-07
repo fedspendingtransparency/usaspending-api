@@ -2,7 +2,6 @@ import logging
 import inspect
 import json
 import os
-from abc import ABCMeta
 
 import psutil as ps
 import signal
@@ -11,6 +10,11 @@ import multiprocessing as mp
 
 from botocore.exceptions import ClientError, EndpointConnectionError, NoCredentialsError, NoRegionError
 
+from usaspending_api.common.sqs.queue_exceptions import (
+    QueueWorkDispatcherError,
+    QueueWorkerProcessError,
+    ExecutionTimeout,
+)
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.common.sqs.sqs_job_logging import log_dispatcher_message
 
@@ -451,9 +455,7 @@ class SQSWorkDispatcher:
 
         if received_messages:
             self._current_sqs_message = received_messages[0]
-            log_dispatcher_message(
-                self, message="Message received: {}".format(self._current_sqs_message.body),
-            )
+            log_dispatcher_message(self, message="Message received: {}".format(self._current_sqs_message.body))
 
     def delete_message_from_queue(self):
         """ Deletes the message from SQS. This is usually treated as a *successful* culmination of message handling,
@@ -1006,62 +1008,3 @@ class SQSWorkDispatcher:
                     worker.kill()
                 except ps.NoSuchProcess:
                     pass
-
-
-class AbstractQueueError(Exception, metaclass=ABCMeta):
-    """ Abstract base exception representing for error scenarios encountered in the queue dispatcher or worker."""
-
-    def __init__(self, *args, worker_process_name=None, queue_message=None, **kwargs):
-        if not worker_process_name:
-            worker_process_name = "Unknown Worker"
-
-        if queue_message:
-            default_message = (
-                f"Queue processing error with non-zero exit code for worker process"
-                f' "{worker_process_name}" working on message: {queue_message}'
-            )
-        else:
-            default_message = (
-                f"Queue processing error with non-zero exit code for worker process"
-                f' "{worker_process_name}". Queue Message None or not provided.'
-            )
-
-        if args or kwargs:
-            super().__init__(*args, **kwargs)
-        else:
-            super().__init__(default_message)
-        self.worker_process_name = worker_process_name
-        self.queue_message = queue_message
-
-
-class QueueWorkerProcessError(AbstractQueueError):
-    """ Custom exception representing the scenario where the spawned worker process has failed
-        with a non-zero exit code, indicating some kind of failure.
-    """
-
-    pass
-
-
-class QueueWorkDispatcherError(AbstractQueueError):
-    """ Custom exception representing the scenario where the parent process dispatching to and monitoring the worker
-        process has failed with some kind of unexpected exception.
-    """
-
-    pass
-
-
-class ExecutionTimeout:
-    def __init__(self, seconds=0, error_message="Execution took longer than the allotted time"):
-        self.seconds = seconds
-        self.error_message = error_message
-
-    def _timeout_handler(self, signum, frame):
-        raise TimeoutError(self.error_message)
-
-    def __enter__(self):
-        if self.seconds > 0:
-            signal.signal(signal.SIGALRM, self._timeout_handler)
-            signal.alarm(self.seconds)
-
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
