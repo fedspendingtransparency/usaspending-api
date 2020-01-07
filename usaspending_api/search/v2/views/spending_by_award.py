@@ -28,11 +28,21 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
     loan_award_mapping,
     non_loan_assistance_award_mapping,
 )
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    contracts_mapping,
+    idv_mapping,
+    loan_mapping,
+    non_loan_assist_mapping,
+)
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
+
+
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -59,6 +69,12 @@ GLOBAL_MAP = {
             **{award_type: award_idv_mapping for award_type in idv_type_mapping},
             **{award_type: loan_award_mapping for award_type in loan_type_mapping},
             **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
+        },
+        "elasticsearch_type_code_to_field_map": {
+            **{award_type: contracts_mapping for award_type in contract_type_mapping},
+            **{award_type: idv_mapping for award_type in idv_type_mapping},
+            **{award_type: loan_mapping for award_type in loan_type_mapping},
+            **{award_type: non_loan_assist_mapping for award_type in non_loan_assistance_type_mapping},
         },
         "annotations": {"_recipient_id": annotate_recipient_id},
         "filter_queryset_func": matview_search_filter_determine_award_matview_model,
@@ -245,11 +261,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
             Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
             .filter(filter_query)
             .sort(*sorts)[
-                ((self.pagination["page"] - 1) * self.pagination["limit"]):
-                (((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"])
+                ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
+                    ((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"]
+                )
             ]
         )
         response = es_client_query(search=search)
+
         return response
 
     def construct_es_reponse(self, response) -> dict:
@@ -260,14 +278,54 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             for field in self.fields:
                 row[field] = hit.get(
-                    self.constants["type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(field)
+                    self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
+                        field
+                    )
                 )
+            row["generated_internal_id"] = hit["generated_unique_award_id"]
+            row["recipient_id"] = hit.get("recipient_unique_id")
+            row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
 
             if "Award ID" in self.fields:
-                for id_type in self.constants["award_id_fields"]:
-                    if hit[id_type]:
-                        row["Award ID"] = hit[id_type]
-                        break
+                row["Award ID"] = hit["display_award_id"]
             results.append(row)
-        results = self.add_award_generated_id_field(results)
-        return self.populate_response(results=results, has_next=len(response) > self.pagination["limit"])
+        self.append_recipient_hash_level(results)
+        return self.populate_response(
+            results=results,
+            has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+            > self.pagination["limit"],
+        )
+
+    def append_recipient_hash_level(self, results):
+        for result in results:
+            id = result.get("recipient_id")
+            parent_id = result.get("parent_recipient_unique_id")
+            if id:
+                sql = """(
+                        select
+                            rp.recipient_hash || '-' ||  rp.recipient_level as hash
+                        from
+                            recipient_profile rp
+                            inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+                        where
+                            rl.duns = {recipient_id} and
+                            rp.recipient_level = case
+                                when {parent_recipient_unique_id} is null then 'R'
+                                else 'C'
+                            end and
+                        rp.recipient_name not in {special_cases}
+                )"""
+
+                special_cases = ["'" + case + "'" for case in SPECIAL_CASES]
+                SQL = sql.format(
+                    recipient_id="'" + id + "'",
+                    parent_recipient_unique_id=parent_id if parent_id else "null",
+                    special_cases="(" + ", ".join(special_cases) + ")",
+                )
+                row = execute_sql_to_ordered_dictionary(SQL)
+                if len(row) > 0:
+                    result["recipient_id"] = row[0].get("hash")
+                else:
+                    result["recipient_id"] = None
+                result.pop("parent_recipient_unique_id")
+        return results
