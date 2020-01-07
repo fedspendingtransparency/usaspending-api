@@ -31,7 +31,7 @@ class _Filter(metaclass=ABCMeta):
     @abstractmethod
     def _generate_elasticsearch_query(cls, filter_values: Union[str, list]) -> Union[ES_Q, List[ES_Q]]:
         """ Returns a Q object used to query Elasticsearch. """
-        raise NotImplementedError("Must be implemented in subclasses of _Filter.")
+        pass
 
 
 class _Keywords(_Filter):
