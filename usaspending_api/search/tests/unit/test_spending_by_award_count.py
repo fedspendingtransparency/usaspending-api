@@ -3,6 +3,7 @@ import pytest
 
 from model_mommy import mommy
 from rest_framework import status
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 
 
 @pytest.fixture
@@ -146,7 +147,8 @@ def test_spending_by_award_count(client, db, award_data_fixture, refresh_matview
     }
 
     expected_response = {
-        "results": {"contracts": 2, "idvs": 4, "loans": 1, "direct_payments": 0, "grants": 0, "other": 1}
+        "results": {"contracts": 2, "idvs": 4, "loans": 1, "direct_payments": 0, "grants": 0, "other": 1},
+        "messages": [get_time_period_message()],
     }
 
     resp = client.post(
@@ -168,7 +170,8 @@ def test_spending_by_award_count_idvs(client, db, award_data_fixture, refresh_ma
     }
 
     expected_response = {
-        "results": {"contracts": 0, "idvs": 3, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0}
+        "results": {"contracts": 0, "idvs": 3, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
+        "messages": [get_time_period_message()],
     }
 
     resp = client.post(

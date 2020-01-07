@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -73,8 +73,8 @@ class BaseDownloadViewSet(APIView):
         return self.get_download_response(file_name=final_output_zip_name)
 
     def process_request(self, download_job):
-        if settings.IS_LOCAL:
-            # Locally, we do not use SQS
+        if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
+            # Eagerly execute the download in this running process
             download_generation.generate_download(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
@@ -82,7 +82,7 @@ class BaseDownloadViewSet(APIView):
             write_to_log(
                 message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
             )
-            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def get_download_response(self, file_name):

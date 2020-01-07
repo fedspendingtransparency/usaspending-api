@@ -2,7 +2,7 @@ import logging
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def verify_requested_columns_available(sources, requested):

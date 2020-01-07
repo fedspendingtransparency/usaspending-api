@@ -12,7 +12,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import alias_response
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -179,6 +179,7 @@ class BusinessLogic:
             "page_metadata": page_metadata,
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
             "results": results[: self.limit],
+            "messages": [get_time_period_message()],
         }
         return response
 
