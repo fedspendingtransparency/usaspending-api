@@ -5,7 +5,7 @@ from django.db.models import F, Sum
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.matviews.models import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.cache_decorator import cache_response

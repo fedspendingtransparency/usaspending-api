@@ -8,7 +8,7 @@ from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.matviews.models import SubawardView
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException

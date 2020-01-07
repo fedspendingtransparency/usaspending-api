@@ -13,7 +13,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import AwardSearchView, UniversalTransactionView, SubawardView
+from usaspending_api.matviews.models import AwardSearchView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,

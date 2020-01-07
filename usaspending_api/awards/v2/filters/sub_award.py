@@ -2,7 +2,7 @@ import itertools
 import logging
 
 from django.db.models import Q
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.matviews.models import SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException

@@ -6,7 +6,7 @@ import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.matviews.models import SubawardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model

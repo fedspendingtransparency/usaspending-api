@@ -321,7 +321,7 @@ def test_extract_business_categories(monkeypatch):
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": business_categories}
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
+    monkeypatch.setattr("usaspending_api.matviews.models.UniversalTransactionView.objects", utm_objects)
 
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
     mommy.make(LegalEntity, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
@@ -469,7 +469,7 @@ def test_recipient_overview(client, mock_matviews_qs, monkeypatch):
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": expected_business_cat}
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
+    monkeypatch.setattr("usaspending_api.matviews.models.UniversalTransactionView.objects", utm_objects)
 
     resp = client.get(recipient_overview_endpoint(r_id))
     assert resp.status_code == status.HTTP_200_OK

@@ -7,7 +7,7 @@ from datetime import datetime
 from rest_framework import status
 from django_mock_queries.query import MockModel
 
-from usaspending_api.awards.models_matviews import SummaryTransactionView
+from usaspending_api.matviews.models import SummaryTransactionView
 from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 
 

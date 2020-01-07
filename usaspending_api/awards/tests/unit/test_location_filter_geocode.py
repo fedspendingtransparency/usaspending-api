@@ -1,7 +1,7 @@
 import pytest
 
 from model_mommy import mommy
-from usaspending_api.awards.models_matviews import ContractAwardSearchMatview
+from usaspending_api.matviews.models import ContractAwardSearchMatview
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
     geocode_filter_locations,
